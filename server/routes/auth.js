@@ -6,10 +6,9 @@ const supabase = require('../config/supabase');
 // Store OAuth states temporarily (in production, use Redis or database)
 const oauthStates = new Map();
 
-// Callback URL for Twitter OAuth
-const CALLBACK_URL = process.env.REPLIT_DEV_DOMAIN 
-  ? `https://${process.env.REPLIT_DEV_DOMAIN}/auth/twitter/callback`
-  : 'http://localhost:5000/auth/twitter/callback';
+// Callback URL for Twitter OAuth - USE YOUR PUBLISHED APP URL
+const CALLBACK_URL = process.env.TWITTER_CALLBACK_URL 
+  || 'https://nine-lives-network.replit.app/auth/twitter/callback';
 
 /**
  * GET /auth/twitter
