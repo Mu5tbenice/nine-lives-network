@@ -34,7 +34,105 @@ router.get('/twitter', async (req, res) => {
       }
     }
 
-    res.redirect(url);
+    // Force browser to handle OAuth (prevent X app from hijacking)
+    // Add a timestamp to prevent caching issues on mobile
+    const browserUrl = url + '&force_login=false&screen_hint=login';
+
+    res.redirect(browserUrl);
+  } catch (error) {
+    console.error('Error starting Twitter OAuth:', error);
+    res.redirect('/register.html?error=oauth_failed');
+  }
+});
+
+/**
+ * GET /auth/twitter-mobile
+ * Alternative mobile-friendly login that shows instructions
+ */
+router.get('/twitter-mobile', async (req, res) => {
+  try {
+    const { url, codeVerifier, state } = authClient.generateOAuth2AuthLink(
+      CALLBACK_URL,
+      { scope: ['tweet.read', 'users.read'] }
+    );
+
+    // Store the codeVerifier for later use
+    oauthStates.set(state, {
+      codeVerifier,
+      createdAt: Date.now()
+    });
+
+    // Clean up old states (older than 10 minutes)
+    for (const [key, value] of oauthStates.entries()) {
+      if (Date.now() - value.createdAt > 10 * 60 * 1000) {
+        oauthStates.delete(key);
+      }
+    }
+
+    // Send an HTML page that opens in browser properly
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Login with X - Nine Lives Network</title>
+        <style>
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0f;
+            color: #e0d4ff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+          }
+          h1 { color: #b8a9ff; margin-bottom: 10px; }
+          p { color: #8b7faa; margin-bottom: 20px; }
+          .btn {
+            background: #1da1f2;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 18px;
+            display: inline-block;
+            margin: 10px;
+          }
+          .btn:hover { background: #0d8bd9; }
+          .tip {
+            background: #1a1a2e;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 14px;
+            max-width: 300px;
+          }
+        </style>
+      </head>
+      <body>
+        <h1>🐱 Nine Lives Network</h1>
+        <p>Tap the button below to login with X</p>
+
+        <a href="${url}" class="btn" target="_blank" rel="noopener">
+          Login with X
+        </a>
+
+        <div class="tip">
+          <strong>📱 Tip:</strong> If the X app opens instead of a login page, 
+          long-press the button and choose "Open in Browser"
+        </div>
+
+        <p style="margin-top: 30px;">
+          <a href="/" style="color: #8b7faa;">← Back to Home</a>
+        </p>
+      </body>
+      </html>
+    `);
   } catch (error) {
     console.error('Error starting Twitter OAuth:', error);
     res.redirect('/register.html?error=oauth_failed');
