@@ -12,16 +12,32 @@
   <!-- Styles -->
   <link rel="stylesheet" href="/css/styles.css">
 
-  <!-- Splash Page Specific Styles -->
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
   <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Main Container */
     .splash-container {
-      min-height: 100vh;
+      position: relative;
+      width: 100%;
+      height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: var(--space-lg);
-      position: relative;
       overflow: hidden;
     }
 
@@ -40,6 +56,41 @@
       z-index: -2;
     }
 
+    /* Three.js Canvas Container */
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    #canvas-container canvas {
+      display: block;
+    }
+
+    /* Mystical Glow Behind Cat */
+    .cat-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -60%);
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(138, 43, 226, 0.4) 0%, rgba(255, 215, 0, 0.2) 30%, transparent 60%);
+      animation: pulseGlow 3s ease-in-out infinite;
+      z-index: 0;
+      pointer-events: none;
+      border-radius: 50%;
+      filter: blur(40px);
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.6; transform: translate(-50%, -60%) scale(1); }
+      50% { opacity: 1; transform: translate(-50%, -60%) scale(1.15); }
+    }
+
     /* Floating Particles */
     .particles {
       position: fixed;
@@ -47,7 +98,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: -1;
+      z-index: 0;
       pointer-events: none;
     }
 
@@ -80,175 +131,156 @@
       }
     }
 
-    /* Wizard Cat Video Container */
-    .wizard-cat-container {
-      position: relative;
-      width: 100%;
-      max-width: 500px;
-      margin-bottom: var(--space-md);
-      perspective: 1000px;
-    }
-
-    .wizard-cat-wrapper {
-      position: relative;
-      animation: float 4s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-
-    .wizard-cat-video {
-      width: 100%;
-      height: auto;
-      display: block;
-      transition: transform 0.15s ease-out;
-      /* Circular/oval mask that fades at edges */
-      -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 45%, black 30%, transparent 70%);
-      mask-image: radial-gradient(ellipse 70% 70% at 50% 45%, black 30%, transparent 70%);
-    }
-
-    .wizard-cat-glow {
+    /* UI Overlay */
+    .ui-overlay {
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 80%;
-      height: 80%;
-      background: radial-gradient(circle, rgba(138, 43, 226, 0.3) 0%, rgba(255, 215, 0, 0.15) 30%, transparent 60%);
-      animation: pulse 3s ease-in-out infinite;
-      z-index: -1;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
       pointer-events: none;
-      border-radius: 50%;
-      filter: blur(20px);
     }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
-      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-    }
-
-    /* Title */
-    .splash-title {
-      font-size: 2.5rem;
+    /* Title at top */
+    .title-container {
+      position: absolute;
+      top: 5%;
+      left: 50%;
+      transform: translateX(-50%);
       text-align: center;
-      margin-bottom: var(--space-sm);
+      pointer-events: auto;
+    }
+
+    .splash-title {
+      font-family: var(--font-main);
+      font-size: 1.75rem;
       background: linear-gradient(135deg, var(--accent-gold), var(--accent-cyan));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      text-shadow: none;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      margin-bottom: 0.5rem;
     }
 
     .splash-subtitle {
       font-family: var(--font-body);
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       color: var(--text-secondary);
-      text-align: center;
-      margin-bottom: var(--space-xl);
     }
 
-    /* CTA Button */
-    .cta-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: var(--space-md);
+    /* Orbital Menu Buttons */
+    .menu-buttons {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 500px;
+      height: 500px;
+      pointer-events: none;
     }
 
-    .btn-enter {
-      font-size: 1rem;
-      padding: var(--space-lg) var(--space-xl);
-      animation: glow 2s ease-in-out infinite;
-    }
-
-    /* Season Info */
-    .season-info {
-      margin-top: var(--space-xl);
-      padding: var(--space-lg);
-      background: rgba(26, 26, 46, 0.8);
-      border: 1px solid var(--bg-light);
-      border-radius: var(--radius-md);
-      text-align: center;
-      max-width: 500px;
-    }
-
-    .season-badge {
-      display: inline-block;
+    .menu-btn {
+      position: absolute;
+      pointer-events: auto;
       font-family: var(--font-main);
       font-size: 0.625rem;
-      padding: var(--space-xs) var(--space-md);
-      background: var(--accent-purple);
-      color: var(--text-primary);
-      border-radius: var(--radius-sm);
-      margin-bottom: var(--space-md);
-    }
-
-    /* Game Overview */
-    .game-overview {
-      margin-top: var(--space-xl);
-      max-width: 800px;
-      text-align: center;
-    }
-
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: var(--space-lg);
-      margin-top: var(--space-lg);
-    }
-
-    .feature {
-      padding: var(--space-lg);
-      background: var(--bg-medium);
-      border: 1px solid var(--bg-light);
-      border-radius: var(--radius-md);
-      transition: all 0.3s ease;
-    }
-
-    .feature:hover {
-      border-color: var(--accent-gold);
-      transform: translateY(-5px);
-    }
-
-    .feature-icon {
-      font-size: 2rem;
-      margin-bottom: var(--space-md);
-    }
-
-    .feature h3 {
-      font-size: 0.75rem;
+      padding: 1rem 1.5rem;
+      background: rgba(10, 10, 15, 0.8);
+      border: 2px solid var(--accent-gold);
       color: var(--accent-gold);
-      margin-bottom: var(--space-sm);
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: all 0.3s ease;
+      white-space: nowrap;
     }
 
-    .feature p {
-      font-size: 1rem;
-      color: var(--text-secondary);
-      margin: 0;
+    .menu-btn:hover {
+      background: var(--accent-gold);
+      color: var(--bg-dark);
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+      transform: scale(1.1);
     }
 
-    /* Footer */
-    .splash-footer {
-      margin-top: var(--space-xl);
-      padding-top: var(--space-lg);
-      border-top: 1px solid var(--bg-light);
+    .menu-btn:active {
+      transform: scale(1.05);
+    }
+
+    /* Button Positions - Arranged around the cat */
+    .btn-play {
+      top: 50%;
+      right: -20px;
+      transform: translateY(-50%);
+    }
+
+    .btn-play:hover {
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    .btn-map {
+      top: 50%;
+      left: -20px;
+      transform: translateY(-50%);
+    }
+
+    .btn-map:hover {
+      transform: translateY(-50%) scale(1.1);
+    }
+
+    .btn-leaderboard {
+      top: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .btn-leaderboard:hover {
+      transform: translateX(-50%) scale(1.1);
+    }
+
+    .btn-howto {
+      bottom: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .btn-howto:hover {
+      transform: translateX(-50%) scale(1.1);
+    }
+
+    /* Primary CTA - Bigger and glowing */
+    .btn-play {
+      font-size: 0.75rem;
+      padding: 1.25rem 2rem;
+      animation: glowPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+      50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.6); }
+    }
+
+    /* Bottom Info */
+    .bottom-info {
+      position: absolute;
+      bottom: 3%;
+      left: 50%;
+      transform: translateX(-50%);
       text-align: center;
-      color: var(--text-muted);
-      font-size: 0.875rem;
+      pointer-events: auto;
     }
 
     .social-links {
       display: flex;
       justify-content: center;
-      gap: var(--space-lg);
-      margin-bottom: var(--space-md);
+      gap: 1.5rem;
+      margin-bottom: 0.5rem;
     }
 
     .social-links a {
       color: var(--text-secondary);
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       transition: color 0.2s ease;
     }
 
@@ -256,185 +288,358 @@
       color: var(--accent-gold);
     }
 
+    .copyright {
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    /* Season Badge */
+    .season-badge {
+      position: absolute;
+      top: 15%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-main);
+      font-size: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--accent-purple);
+      color: var(--text-primary);
+      border-radius: 4px;
+      pointer-events: auto;
+    }
+
+    /* Loading Screen */
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-dark);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      transition: opacity 0.5s ease;
+    }
+
+    .loading-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .loading-text {
+      font-family: var(--font-main);
+      font-size: 0.75rem;
+      color: var(--accent-gold);
+      margin-top: 1rem;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid var(--bg-light);
+      border-top-color: var(--accent-gold);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     /* Responsive */
     @media (max-width: 768px) {
       .splash-title {
-        font-size: 1.5rem;
+        font-size: 1rem;
       }
 
       .splash-subtitle {
-        font-size: 1.125rem;
+        font-size: 1rem;
       }
 
-      .wizard-cat-container {
-        max-width: 350px;
+      .menu-buttons {
+        width: 320px;
+        height: 400px;
       }
 
-      .btn-enter {
+      .menu-btn {
+        font-size: 0.5rem;
+        padding: 0.75rem 1rem;
+      }
+
+      .btn-play {
+        font-size: 0.625rem;
+        padding: 1rem 1.5rem;
+        right: -10px;
+      }
+
+      .btn-map {
+        left: -10px;
+      }
+
+      .cat-glow {
+        width: 280px;
+        height: 280px;
+      }
+
+      .title-container {
+        top: 3%;
+      }
+
+      .season-badge {
+        top: 12%;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .splash-title {
         font-size: 0.75rem;
-        padding: var(--space-md) var(--space-lg);
+        letter-spacing: 2px;
       }
 
-      .features {
-        grid-template-columns: 1fr;
+      .menu-buttons {
+        width: 280px;
+        height: 350px;
+      }
+
+      .menu-btn {
+        font-size: 0.4rem;
+        padding: 0.6rem 0.8rem;
       }
     }
   </style>
 </head>
 <body>
+  <!-- Loading Screen -->
+  <div class="loading-screen" id="loadingScreen">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Summoning wizard cat...</div>
+  </div>
+
   <!-- Magic Background -->
   <div class="magic-bg"></div>
 
-  <!-- Floating Particles (generated by JS) -->
+  <!-- Floating Particles -->
   <div class="particles" id="particles"></div>
 
-  <!-- Main Content -->
-  <main class="splash-container">
+  <!-- Mystical Glow -->
+  <div class="cat-glow"></div>
 
-    <!-- Wizard Cat Video -->
-    <div class="wizard-cat-container">
-      <div class="wizard-cat-glow"></div>
-      <div class="wizard-cat-wrapper" id="wizardCatWrapper">
-        <video 
-          class="wizard-cat-video"
-          id="wizardCatVideo"
-          autoplay 
-          loop 
-          muted 
-          playsinline
-        >
-          <source src="/assets/images/wizard-cat.mp4" type="video/mp4">
-          <!-- Fallback to image if video doesn't load -->
-          <img src="/assets/images/wizard-cat.png" alt="Nine Lives Network Wizard Cat">
-        </video>
-      </div>
-    </div>
+  <!-- Three.js Canvas -->
+  <div id="canvas-container"></div>
 
+  <!-- UI Overlay -->
+  <div class="ui-overlay">
     <!-- Title -->
-    <h1 class="splash-title">Nine Lives Network</h1>
-    <p class="splash-subtitle">Cast spells. Control territory. Rule Avaloris.</p>
-
-    <!-- CTA -->
-    <div class="cta-container" id="ctaContainer">
-      <a href="/register.html" class="btn btn-primary btn-enter" id="ctaButton">Enter the Realm</a>
-      <p class="text-muted" style="font-size: 0.875rem;" id="ctaSubtext">Join the battle on Twitter</p>
-      <a href="/how-to-play.html" style="display: block; margin-top: var(--space-md); color: var(--accent-gold); font-size: 0.875rem;">📜 How to Play</a>
+    <div class="title-container">
+      <h1 class="splash-title">Nine Lives Network</h1>
+      <p class="splash-subtitle">Cast spells. Control territory. Rule Avaloris.</p>
     </div>
 
-    <!-- Season Info -->
-    <div class="season-info">
-      <span class="season-badge">Season 0 - Beta</span>
-      <p style="margin: 0;">
-        Nine magical schools compete for control of Avaloris.<br>
-        <span class="text-gold">Choose your allegiance. Cast your spells. Claim victory.</span>
-      </p>
+    <!-- Season Badge -->
+    <div class="season-badge">Season 0 - Beta</div>
+
+    <!-- Orbital Menu Buttons -->
+    <div class="menu-buttons">
+      <a href="/register.html" class="menu-btn btn-play" id="ctaButton">Enter Realm</a>
+      <a href="/map.html" class="menu-btn btn-map">Map</a>
+      <a href="/leaderboards.html" class="menu-btn btn-leaderboard">Leaderboards</a>
+      <a href="/how-to-play.html" class="menu-btn btn-howto">How to Play</a>
     </div>
 
-    <!-- Game Overview -->
-    <section class="game-overview">
-      <h2 class="mb-lg">How It Works</h2>
-      <div class="features">
-        <div class="feature">
-          <div class="feature-icon">🐱</div>
-          <h3>Join a School</h3>
-          <p>Choose from 9 magical schools, each with unique spells and playstyles</p>
-        </div>
-        <div class="feature">
-          <div class="feature-icon">✨</div>
-          <h3>Cast Spells</h3>
-          <p>Reply to daily objectives on Twitter to cast spells and earn points</p>
-        </div>
-        <div class="feature">
-          <div class="feature-icon">🗺️</div>
-          <h3>Control Territory</h3>
-          <p>Compete with other schools to dominate the map of Avaloris</p>
-        </div>
-        <div class="feature">
-          <div class="feature-icon">🏆</div>
-          <h3>Win Rewards</h3>
-          <p>Climb leaderboards and earn rewards for your school and community</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- World of Avaloris -->
-    <section class="game-overview" style="margin-top: var(--space-xl);">
-      <h2 class="mb-lg">The World of Avaloris</h2>
-      <p style="color: var(--text-secondary); text-align: center; max-width: 600px; margin: 0 auto var(--space-lg);">
-        A realm of floating islands, crystal caverns, and volcanic peaks. Nine schools of magic battle for control of its territories.
-      </p>
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-md); max-width: 800px; margin: 0 auto;">
-        <div style="position: relative; border-radius: var(--radius-md); overflow: hidden; aspect-ratio: 16/9;">
-          <img src="/assets/images/env-crystal-cave.jpg" alt="Crystal Caverns" style="width: 100%; height: 100%; object-fit: cover;">
-          <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: var(--space-sm); background: linear-gradient(transparent, rgba(0,0,0,0.8));">
-            <span style="font-family: var(--font-main); font-size: 0.625rem; color: var(--accent-cyan);">Crystal Caverns</span>
-          </div>
-        </div>
-        <div style="position: relative; border-radius: var(--radius-md); overflow: hidden; aspect-ratio: 16/9;">
-          <img src="/assets/images/env-ember-peaks.jpg" alt="Ember Peaks" style="width: 100%; height: 100%; object-fit: cover;">
-          <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: var(--space-sm); background: linear-gradient(transparent, rgba(0,0,0,0.8));">
-            <span style="font-family: var(--font-main); font-size: 0.625rem; color: #FF4500;">Ember Peaks</span>
-          </div>
-        </div>
-        <div style="position: relative; border-radius: var(--radius-md); overflow: hidden; aspect-ratio: 16/9;">
-          <img src="/assets/images/env-storm-citadel.jpg" alt="Storm Citadel" style="width: 100%; height: 100%; object-fit: cover;">
-          <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: var(--space-sm); background: linear-gradient(transparent, rgba(0,0,0,0.8));">
-            <span style="font-family: var(--font-main); font-size: 0.625rem; color: #FFD700;">Storm Citadel</span>
-          </div>
-        </div>
-        <div style="position: relative; border-radius: var(--radius-md); overflow: hidden; aspect-ratio: 16/9;">
-          <img src="/assets/images/env-mystic-valley.jpg" alt="Mystic Valley" style="width: 100%; height: 100%; object-fit: cover;">
-          <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: var(--space-sm); background: linear-gradient(transparent, rgba(0,0,0,0.8));">
-            <span style="font-family: var(--font-main); font-size: 0.625rem; color: #98FB98;">Mystic Valley</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Nerm Section -->
-    <section class="game-overview" style="margin-top: var(--space-xl);">
-      <div style="display: flex; align-items: center; justify-content: center; gap: var(--space-lg); flex-wrap: wrap;">
-        <img src="/assets/images/nerm.jpg" alt="Nerm" style="width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--accent-purple); object-fit: cover;">
-        <div style="max-width: 400px; text-align: left;">
-          <h2 style="color: var(--accent-purple); margin-bottom: var(--space-sm);">Meet Nerm</h2>
-          <p style="color: var(--text-secondary); margin: 0;">
-            A grumpy floating cat head who's been watching wizards fail for 400 years. 
-            He follows players around Avaloris, judging their every spell. 
-            He's not helpful. He's just... there.
-          </p>
-          <a href="https://twitter.com/9LV_Nerm" target="_blank" style="color: var(--accent-purple); font-size: 0.875rem; display: inline-block; margin-top: var(--space-sm);">Follow @9LV_Nerm →</a>
-        </div>
-      </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="splash-footer">
+    <!-- Bottom Info -->
+    <div class="bottom-info">
       <div class="social-links">
-        <a href="https://twitter.com/9LVNetwork" target="_blank" title="Follow @9LVNetwork">𝕏</a>
+        <a href="https://twitter.com/9LVNetwork" target="_blank" title="@9LVNetwork">𝕏</a>
+        <a href="https://twitter.com/9LV_Nerm" target="_blank" title="@9LV_Nerm">🐱</a>
       </div>
-      <p style="margin-bottom: var(--space-sm);">
-        <a href="https://twitter.com/9LVNetwork" target="_blank" style="color: var(--text-muted);">@9LVNetwork</a> · 
-        <a href="https://twitter.com/9LV_Nerm" target="_blank" style="color: var(--text-muted);">@9LV_Nerm</a>
-      </p>
-      <p>© 2025 Nine Lives Network. All rights reserved.</p>
-    </footer>
+      <p class="copyright">© 2025 Nine Lives Network</p>
+    </div>
+  </div>
 
-  </main>
-
-  <!-- JavaScript -->
-  <script src="/js/splash.js"></script>
   <script>
+    // =============================================
+    // Three.js Wizard Cat Head - Mario 64 Style
+    // =============================================
+
+    let scene, camera, renderer, wizardCat, mixer;
+    let mouseX = 0, mouseY = 0;
+    let targetRotationX = 0, targetRotationY = 0;
+    let windowHalfX = window.innerWidth / 2;
+    let windowHalfY = window.innerHeight / 2;
+
+    // Initialize
+    init();
+    animate();
+
+    function init() {
+      const container = document.getElementById('canvas-container');
+
+      // Scene
+      scene = new THREE.Scene();
+
+      // Camera - positioned to frame head and upper body
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 4.2, 6); // Adjusted to frame head
+      camera.lookAt(0, 4, 0); // Look at head height
+
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ 
+        antialias: true, 
+        alpha: true 
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setClearColor(0x000000, 0);
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      container.appendChild(renderer.domElement);
+
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+
+      const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      mainLight.position.set(5, 10, 7);
+      scene.add(mainLight);
+
+      // Purple accent light from below left
+      const purpleLight = new THREE.PointLight(0x8A2BE2, 0.5, 20);
+      purpleLight.position.set(-3, 2, 3);
+      scene.add(purpleLight);
+
+      // Gold accent light from right
+      const goldLight = new THREE.PointLight(0xFFD700, 0.4, 20);
+      goldLight.position.set(3, 5, 2);
+      scene.add(goldLight);
+
+      // Cyan rim light from behind
+      const cyanLight = new THREE.PointLight(0x00D4FF, 0.3, 15);
+      cyanLight.position.set(0, 4, -4);
+      scene.add(cyanLight);
+
+      // Load wizard cat model
+      const loader = new THREE.GLTFLoader();
+      loader.load(
+        '/assets/models/wizard-cat.glb',
+        function(gltf) {
+          wizardCat = gltf.scene;
+
+          // Scale and position the model
+          wizardCat.scale.set(1, 1, 1);
+          wizardCat.position.set(0, 0, 0);
+
+          // Find and hide the backdrop if it exists
+          wizardCat.traverse((child) => {
+            if (child.name === 'Backdrop' || child.name === 'Plane' || child.name === 'Plane.002') {
+              child.visible = false;
+            }
+          });
+
+          scene.add(wizardCat);
+
+          // Hide loading screen
+          setTimeout(() => {
+            document.getElementById('loadingScreen').classList.add('hidden');
+          }, 500);
+        },
+        function(progress) {
+          // Loading progress
+          const percent = (progress.loaded / progress.total * 100).toFixed(0);
+          console.log('Loading: ' + percent + '%');
+        },
+        function(error) {
+          console.error('Error loading model:', error);
+          // Hide loading screen even on error
+          document.getElementById('loadingScreen').classList.add('hidden');
+        }
+      );
+
+      // Event listeners
+      document.addEventListener('mousemove', onMouseMove, false);
+      document.addEventListener('touchmove', onTouchMove, { passive: false });
+      window.addEventListener('resize', onWindowResize, false);
+
+      // Create particles
+      createParticles();
+    }
+
+    function onMouseMove(event) {
+      mouseX = (event.clientX - windowHalfX) / windowHalfX;
+      mouseY = (event.clientY - windowHalfY) / windowHalfY;
+    }
+
+    function onTouchMove(event) {
+      if (event.touches.length === 1) {
+        event.preventDefault();
+        mouseX = (event.touches[0].clientX - windowHalfX) / windowHalfX;
+        mouseY = (event.touches[0].clientY - windowHalfY) / windowHalfY;
+      }
+    }
+
+    function onWindowResize() {
+      windowHalfX = window.innerWidth / 2;
+      windowHalfY = window.innerHeight / 2;
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      if (wizardCat) {
+        // Smooth rotation following mouse (Mario 64 style)
+        targetRotationY = mouseX * 0.5; // Left-right rotation
+        targetRotationX = mouseY * 0.3; // Up-down rotation (subtle)
+
+        // Smooth interpolation
+        wizardCat.rotation.y += (targetRotationY - wizardCat.rotation.y) * 0.05;
+        wizardCat.rotation.x += (targetRotationX - wizardCat.rotation.x) * 0.05;
+
+        // Subtle floating animation
+        wizardCat.position.y = Math.sin(Date.now() * 0.001) * 0.1;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    // Create floating particles
+    function createParticles() {
+      const particlesContainer = document.getElementById('particles');
+      const particleCount = 30;
+
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.top = Math.random() * 100 + '%';
+        particle.style.animationDelay = Math.random() * 8 + 's';
+        particle.style.animationDuration = (6 + Math.random() * 4) + 's';
+
+        // Random colors
+        const colors = ['#FFD700', '#8A2BE2', '#00D4FF', '#FF6B35'];
+        particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+
+        particlesContainer.appendChild(particle);
+      }
+    }
+
     // Check if user is logged in
     document.addEventListener('DOMContentLoaded', () => {
       const playerId = localStorage.getItem('player_id');
       if (playerId) {
-        // User is logged in - show dashboard button
         const ctaButton = document.getElementById('ctaButton');
-        const ctaSubtext = document.getElementById('ctaSubtext');
-
         ctaButton.href = '/dashboard.html';
-        ctaButton.textContent = 'Go to Dashboard';
-        ctaSubtext.textContent = 'Welcome back, wizard!';
+        ctaButton.textContent = 'Dashboard';
       }
     });
   </script>
