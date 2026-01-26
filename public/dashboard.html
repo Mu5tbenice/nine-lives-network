@@ -198,6 +198,49 @@
       font-size: 1rem;
     }
 
+    /* Countdown Timer */
+    .countdown-container {
+      margin-top: var(--space-lg);
+      padding: var(--space-md);
+      background: var(--bg-dark);
+      border-radius: var(--radius-md);
+      text-align: center;
+    }
+
+    .countdown-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: var(--space-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-sm);
+    }
+
+    .hourglass {
+      display: inline-block;
+      animation: hourglassSpin 2s ease-in-out infinite;
+      font-size: 1.25rem;
+    }
+
+    @keyframes hourglassSpin {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(180deg); }
+    }
+
+    .countdown-timer {
+      font-family: var(--font-main);
+      font-size: 1.5rem;
+      color: var(--accent-cyan);
+      letter-spacing: 2px;
+    }
+
+    .countdown-subtext {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: var(--space-sm);
+    }
+
     /* Cast History */
     .history-section {
       background: var(--bg-medium);
@@ -300,6 +343,169 @@
       font-size: 0.875rem;
       margin-left: var(--space-sm);
     }
+
+    /* How To Play Button */
+    .help-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--accent-gold);
+      color: var(--bg-dark);
+      font-size: 1.5rem;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+      transition: all 0.3s ease;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .help-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 30px rgba(255, 215, 0, 0.6);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      padding: var(--space-lg);
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-medium);
+      border: 2px solid var(--accent-gold);
+      border-radius: var(--radius-md);
+      max-width: 600px;
+      width: 100%;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .modal-header {
+      padding: var(--space-lg);
+      border-bottom: 1px solid var(--bg-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      font-size: 1rem;
+      color: var(--accent-gold);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      color: var(--accent-gold);
+    }
+
+    .modal-body {
+      padding: var(--space-lg);
+    }
+
+    .modal-section {
+      margin-bottom: var(--space-lg);
+    }
+
+    .modal-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .modal-section h3 {
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      margin-bottom: var(--space-md);
+    }
+
+    .modal-section p {
+      color: var(--text-secondary);
+      margin-bottom: var(--space-sm);
+    }
+
+    .points-breakdown {
+      background: var(--bg-dark);
+      border-radius: var(--radius-sm);
+      padding: var(--space-md);
+    }
+
+    .points-row {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-sm) 0;
+      border-bottom: 1px solid var(--bg-light);
+    }
+
+    .points-row:last-child {
+      border-bottom: none;
+    }
+
+    .points-row .label {
+      color: var(--text-secondary);
+    }
+
+    .points-row .value {
+      color: var(--accent-gold);
+      font-family: var(--font-main);
+      font-size: 0.875rem;
+    }
+
+    .step-list {
+      list-style: none;
+      counter-reset: steps;
+    }
+
+    .step-list li {
+      counter-increment: steps;
+      padding: var(--space-sm) 0;
+      padding-left: 2.5rem;
+      position: relative;
+      color: var(--text-secondary);
+    }
+
+    .step-list li::before {
+      content: counter(steps);
+      position: absolute;
+      left: 0;
+      top: var(--space-sm);
+      width: 1.75rem;
+      height: 1.75rem;
+      background: var(--accent-gold);
+      color: var(--bg-dark);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-main);
+      font-size: 0.625rem;
+    }
   </style>
 </head>
 <body>
@@ -347,6 +553,16 @@
           <a href="https://twitter.com/9LVNetwork" target="_blank" class="btn" style="margin-top: var(--space-md);">
             Cast Your Spell →
           </a>
+
+          <!-- Countdown Timer -->
+          <div class="countdown-container">
+            <div class="countdown-label">
+              <span class="hourglass">⏳</span>
+              Next score calculation in:
+            </div>
+            <div class="countdown-timer" id="countdownTimer">--:--</div>
+            <div class="countdown-subtext">Scores update every 15 minutes</div>
+          </div>
         </div>
 
         <!-- Stats Grid -->
@@ -404,68 +620,192 @@
     </div>
   </main>
 
+  <!-- How To Play Button -->
+  <button class="help-btn" id="helpBtn" title="How To Play">❓</button>
+
+  <!-- How To Play Modal -->
+  <div class="modal-overlay" id="helpModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>📜 How To Play</h2>
+        <button class="modal-close" id="closeModal">×</button>
+      </div>
+      <div class="modal-body">
+
+        <div class="modal-section">
+          <h3>🎯 How to Score Points</h3>
+          <ol class="step-list">
+            <li>Go to <a href="https://twitter.com/9LVNetwork" target="_blank" style="color: var(--accent-cyan);">@9LVNetwork</a> on Twitter/X</li>
+            <li>Find today's objective tweet</li>
+            <li>Reply to the tweet with your spell!</li>
+            <li>Wait for scores to update (every 15 mins)</li>
+          </ol>
+        </div>
+
+        <div class="modal-section">
+          <h3>⭐ Points Breakdown</h3>
+          <div class="points-breakdown">
+            <div class="points-row">
+              <span class="label">Base cast (any reply)</span>
+              <span class="value">+10</span>
+            </div>
+            <div class="points-row">
+              <span class="label">School flair (use spell keywords)</span>
+              <span class="value">+2</span>
+            </div>
+            <div class="points-row">
+              <span class="label">Descriptive cast (10-30 words)</span>
+              <span class="value">+3</span>
+            </div>
+            <div class="points-row">
+              <span class="label">Detailed cast (30+ words)</span>
+              <span class="value">+5</span>
+            </div>
+            <div class="points-row">
+              <span class="label">Home zone bonus</span>
+              <span class="value">+20%</span>
+            </div>
+            <div class="points-row">
+              <span class="label">Nerm noticed (random 10%)</span>
+              <span class="value">+20</span>
+            </div>
+            <div class="points-row">
+              <span class="label">Spell of the Day (manual award)</span>
+              <span class="value">+50</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-section">
+          <h3>🔮 Mana System</h3>
+          <p>You have 5 mana per day. Each spell cast costs 1 mana.</p>
+          <p>Mana resets at midnight UTC.</p>
+        </div>
+
+        <div class="modal-section">
+          <h3>🏆 Winning</h3>
+          <p>The school with the most control % at end of day wins the zone!</p>
+          <p>Winners get +5 bonus points. Help your school dominate!</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
   <script>
     // School data for colors - WoW-style distinct colors
     const schools = {
-      1: { name: 'Ember Covenant', color: '#FF4500' },      // Orange-Red
-      2: { name: 'Tidal Conclave', color: '#00BFFF' },      // Sky Blue  
-      3: { name: 'Stone Covenant', color: '#8B4513' },      // Brown
-      4: { name: 'Zephyr Circle', color: '#98FB98' },       // Pale Green
-      5: { name: 'Storm Assembly', color: '#FFD700' },      // Gold
-      6: { name: 'Umbral Syndicate', color: '#9932CC' },    // Purple
-      7: { name: 'Radiant Order', color: '#FFFFE0' },       // Light Yellow
-      8: { name: 'Arcane Spire', color: '#00FFFF' },        // Cyan
-      9: { name: 'WildCat Path', color: '#FF1493' },        // Pink
+      1: { name: 'Ember Covenant', color: '#FF4500' },
+      2: { name: 'Tidal Conclave', color: '#00BFFF' },
+      3: { name: 'Stone Covenant', color: '#8B4513' },
+      4: { name: 'Zephyr Circle', color: '#98FB98' },
+      5: { name: 'Storm Assembly', color: '#FFD700' },
+      6: { name: 'Umbral Syndicate', color: '#9932CC' },
+      7: { name: 'Radiant Order', color: '#FFFFE0' },
+      8: { name: 'Arcane Spire', color: '#00FFFF' },
+      9: { name: 'WildCat Path', color: '#FF1493' },
     };
 
     let currentPlayer = null;
+    let countdownInterval = null;
 
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
       loadDashboard();
+      initModal();
+      startCountdown();
     });
+
+    // Modal functionality
+    function initModal() {
+      const helpBtn = document.getElementById('helpBtn');
+      const modal = document.getElementById('helpModal');
+      const closeBtn = document.getElementById('closeModal');
+
+      helpBtn.addEventListener('click', () => {
+        modal.classList.add('active');
+      });
+
+      closeBtn.addEventListener('click', () => {
+        modal.classList.remove('active');
+      });
+
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+        }
+      });
+
+      // ESC key to close
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+          modal.classList.remove('active');
+        }
+      });
+    }
+
+    // Countdown timer - updates every second
+    function startCountdown() {
+      updateCountdown();
+      countdownInterval = setInterval(updateCountdown, 1000);
+    }
+
+    function updateCountdown() {
+      const now = new Date();
+      const minutes = now.getMinutes();
+      const seconds = now.getSeconds();
+
+      // Calculate time until next 15-minute mark
+      const minutesUntilNext = 15 - (minutes % 15) - 1;
+      const secondsUntilNext = 60 - seconds;
+
+      // Adjust if we're exactly on a 15-minute mark
+      let displayMinutes = minutesUntilNext;
+      let displaySeconds = secondsUntilNext;
+
+      if (secondsUntilNext === 60) {
+        displayMinutes = minutesUntilNext + 1;
+        displaySeconds = 0;
+      }
+
+      // Format display
+      const timerDisplay = document.getElementById('countdownTimer');
+      if (timerDisplay) {
+        const mins = String(displayMinutes).padStart(2, '0');
+        const secs = String(displaySeconds % 60).padStart(2, '0');
+        timerDisplay.textContent = `${mins}:${secs}`;
+      }
+    }
 
     // Load dashboard data
     async function loadDashboard() {
-      // Get player ID from URL or localStorage
       const params = new URLSearchParams(window.location.search);
       const playerId = params.get('player_id') || localStorage.getItem('player_id');
 
       if (!playerId) {
-        // Not logged in, redirect to register
         window.location.href = '/register.html';
         return;
       }
 
-      // Store player ID
       localStorage.setItem('player_id', playerId);
 
       try {
-        // Fetch player data
         const response = await fetch(`/api/players/${playerId}`);
         if (!response.ok) throw new Error('Failed to load player');
 
         currentPlayer = await response.json();
 
-        // Display data
         displayPlayerInfo(currentPlayer);
         displayMana(currentPlayer.mana);
         displayPoints(currentPlayer);
 
-        // Load cast history
         loadCastHistory(playerId);
-
-        // Load ranks
         loadRanks(playerId);
-
-        // Load current objective
         loadObjective();
 
-        // Show content
         document.getElementById('loading').style.display = 'none';
         document.getElementById('dashboardContent').style.display = 'block';
 
-        // Clean URL
         window.history.replaceState({}, '', '/dashboard.html');
 
       } catch (error) {
@@ -476,7 +816,6 @@
       }
     }
 
-    // Display player info
     function displayPlayerInfo(player) {
       document.getElementById('playerHandle').textContent = '@' + player.twitter_handle;
 
@@ -484,7 +823,6 @@
       document.getElementById('schoolName').textContent = school.name;
       document.getElementById('schoolDot').style.background = school.color;
 
-      // Show profile image if set
       if (player.profile_image) {
         document.getElementById('playerAvatar').innerHTML = `<img src="${player.profile_image}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
       }
@@ -496,7 +834,6 @@
       }
     }
 
-    // Display mana orbs
     function displayMana(mana) {
       const maxMana = 5;
       const container = document.getElementById('manaDisplay');
@@ -508,7 +845,6 @@
         container.appendChild(orb);
       }
 
-      // Calculate time until midnight UTC
       const now = new Date();
       const midnight = new Date(now);
       midnight.setUTCHours(24, 0, 0, 0);
@@ -518,13 +854,11 @@
       document.getElementById('manaTimer').textContent = `Resets in ${hoursLeft}h ${minsLeft}m`;
     }
 
-    // Display points
     function displayPoints(player) {
       document.getElementById('seasonalPoints').textContent = player.seasonal_points || 0;
       document.getElementById('lifetimePoints').textContent = player.lifetime_points || 0;
     }
 
-    // Load cast history
     async function loadCastHistory(playerId) {
       try {
         const response = await fetch(`/api/players/${playerId}/casts`);
@@ -553,16 +887,12 @@
       }
     }
 
-    // Load ranks
     async function loadRanks(playerId) {
-      // For now, just show placeholders
-      // These will be implemented with the leaderboard routes
       document.getElementById('individualRank').textContent = '-';
       document.getElementById('schoolRank').textContent = '-';
       document.getElementById('communityRank').textContent = '-';
     }
 
-    // Format time ago
     function formatTime(dateString) {
       const date = new Date(dateString);
       const now = new Date();
@@ -578,7 +908,6 @@
       return `${days}d ago`;
     }
 
-    // Load current objective from API
     async function loadObjective() {
       try {
         const response = await fetch('/api/zones');
@@ -599,7 +928,6 @@
       }
     }
 
-    // Logout
     document.getElementById('logoutBtn').addEventListener('click', (e) => {
       e.preventDefault();
       localStorage.removeItem('player_id');

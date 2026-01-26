@@ -70,14 +70,14 @@
       display: block;
     }
 
-    /* Mystical Glow Behind Cat */
+    /* Mystical Glow Behind Cat - positioned higher for head */
     .cat-glow {
       position: absolute;
-      top: 50%;
+      top: 40%;
       left: 50%;
-      transform: translate(-50%, -60%);
-      width: 400px;
-      height: 400px;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      height: 300px;
       background: radial-gradient(circle, rgba(138, 43, 226, 0.4) 0%, rgba(255, 215, 0, 0.2) 30%, transparent 60%);
       animation: pulseGlow 3s ease-in-out infinite;
       z-index: 0;
@@ -87,8 +87,8 @@
     }
 
     @keyframes pulseGlow {
-      0%, 100% { opacity: 0.6; transform: translate(-50%, -60%) scale(1); }
-      50% { opacity: 1; transform: translate(-50%, -60%) scale(1.15); }
+      0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
     }
 
     /* Floating Particles */
@@ -154,7 +154,7 @@
 
     .splash-title {
       font-family: var(--font-main);
-      font-size: 1.75rem;
+      font-size: 1.5rem;
       background: linear-gradient(135deg, var(--accent-gold), var(--accent-cyan));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -170,14 +170,29 @@
       color: var(--text-secondary);
     }
 
-    /* Orbital Menu Buttons */
+    /* Season Badge */
+    .season-badge {
+      position: absolute;
+      top: 14%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-main);
+      font-size: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--accent-purple);
+      color: var(--text-primary);
+      border-radius: 4px;
+      pointer-events: auto;
+    }
+
+    /* Menu Buttons - ALL UNIFORM */
     .menu-buttons {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 500px;
-      height: 500px;
+      width: 600px;
+      height: 450px;
       pointer-events: none;
     }
 
@@ -185,75 +200,72 @@
       position: absolute;
       pointer-events: auto;
       font-family: var(--font-main);
-      font-size: 0.625rem;
-      padding: 1rem 1.5rem;
-      background: rgba(10, 10, 15, 0.8);
+      font-size: 0.6rem;
+      width: 160px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 10, 15, 0.9);
       border: 2px solid var(--accent-gold);
       color: var(--accent-gold);
       text-decoration: none;
       text-transform: uppercase;
       letter-spacing: 2px;
       transition: all 0.3s ease;
-      white-space: nowrap;
     }
 
     .menu-btn:hover {
       background: var(--accent-gold);
       color: var(--bg-dark);
       box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-      transform: scale(1.1);
-    }
-
-    .menu-btn:active {
       transform: scale(1.05);
     }
 
-    /* Button Positions - Arranged around the cat */
+    .menu-btn:active {
+      transform: scale(1.02);
+    }
+
+    /* Button Positions - Arranged around the cat head */
     .btn-play {
-      top: 50%;
-      right: -20px;
+      top: 45%;
+      right: 0;
       transform: translateY(-50%);
+      animation: glowPulse 2s ease-in-out infinite;
     }
 
     .btn-play:hover {
-      transform: translateY(-50%) scale(1.1);
+      transform: translateY(-50%) scale(1.05);
     }
 
     .btn-map {
-      top: 50%;
-      left: -20px;
+      top: 45%;
+      left: 0;
       transform: translateY(-50%);
     }
 
     .btn-map:hover {
-      transform: translateY(-50%) scale(1.1);
+      transform: translateY(-50%) scale(1.05);
     }
 
     .btn-leaderboard {
-      top: 5%;
+      top: 10%;
       left: 50%;
       transform: translateX(-50%);
     }
 
     .btn-leaderboard:hover {
-      transform: translateX(-50%) scale(1.1);
+      transform: translateX(-50%) scale(1.05);
     }
 
     .btn-howto {
-      bottom: 5%;
+      bottom: 10%;
       left: 50%;
       transform: translateX(-50%);
     }
 
     .btn-howto:hover {
-      transform: translateX(-50%) scale(1.1);
-    }
-
-    /* Primary CTA - Bigger and glowing */
-    .btn-play {
-      font-size: 0.75rem;
-      padding: 1.25rem 2rem;
-      animation: glowPulse 2s ease-in-out infinite;
+      transform: translateX(-50%) scale(1.05);
     }
 
     @keyframes glowPulse {
@@ -282,6 +294,7 @@
       color: var(--text-secondary);
       font-size: 1.25rem;
       transition: color 0.2s ease;
+      text-decoration: none;
     }
 
     .social-links a:hover {
@@ -292,21 +305,6 @@
       font-family: var(--font-body);
       font-size: 0.875rem;
       color: var(--text-muted);
-    }
-
-    /* Season Badge */
-    .season-badge {
-      position: absolute;
-      top: 15%;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: var(--font-main);
-      font-size: 0.5rem;
-      padding: 0.5rem 1rem;
-      background: var(--accent-purple);
-      color: var(--text-primary);
-      border-radius: 4px;
-      pointer-events: auto;
     }
 
     /* Loading Screen */
@@ -367,28 +365,53 @@
       }
 
       .menu-buttons {
-        width: 320px;
-        height: 400px;
+        width: 100%;
+        height: 100%;
+        padding: 20px;
       }
 
       .menu-btn {
+        width: 130px;
+        height: 45px;
         font-size: 0.5rem;
-        padding: 0.75rem 1rem;
       }
 
       .btn-play {
-        font-size: 0.625rem;
-        padding: 1rem 1.5rem;
-        right: -10px;
+        top: auto;
+        bottom: 25%;
+        right: 10%;
+        transform: none;
+      }
+
+      .btn-play:hover {
+        transform: scale(1.05);
       }
 
       .btn-map {
-        left: -10px;
+        top: auto;
+        bottom: 25%;
+        left: 10%;
+        transform: none;
+      }
+
+      .btn-map:hover {
+        transform: scale(1.05);
+      }
+
+      .btn-leaderboard {
+        top: 20%;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .btn-howto {
+        bottom: 12%;
       }
 
       .cat-glow {
-        width: 280px;
-        height: 280px;
+        width: 200px;
+        height: 200px;
+        top: 45%;
       }
 
       .title-container {
@@ -396,7 +419,8 @@
       }
 
       .season-badge {
-        top: 12%;
+        top: 11%;
+        font-size: 0.4rem;
       }
     }
 
@@ -406,14 +430,14 @@
         letter-spacing: 2px;
       }
 
-      .menu-buttons {
-        width: 280px;
-        height: 350px;
+      .splash-subtitle {
+        font-size: 0.875rem;
       }
 
       .menu-btn {
+        width: 110px;
+        height: 40px;
         font-size: 0.4rem;
-        padding: 0.6rem 0.8rem;
       }
     }
   </style>
@@ -448,7 +472,7 @@
     <!-- Season Badge -->
     <div class="season-badge">Season 0 - Beta</div>
 
-    <!-- Orbital Menu Buttons -->
+    <!-- Orbital Menu Buttons - ALL SAME SIZE -->
     <div class="menu-buttons">
       <a href="/register.html" class="menu-btn btn-play" id="ctaButton">Enter Realm</a>
       <a href="/map.html" class="menu-btn btn-map">Map</a>
@@ -469,6 +493,7 @@
   <script>
     // =============================================
     // Three.js Wizard Cat Head - Mario 64 Style
+    // FIXED: Camera framed on HEAD ONLY
     // =============================================
 
     let scene, camera, renderer, wizardCat, mixer;
@@ -487,10 +512,10 @@
       // Scene
       scene = new THREE.Scene();
 
-      // Camera - positioned to frame head and upper body
-      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 4.2, 6); // Adjusted to frame head
-      camera.lookAt(0, 4, 0); // Look at head height
+      // Camera - ZOOMED IN ON HEAD ONLY
+      camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(0, 5.2, 4.5); // Higher Y, closer Z = see head only
+      camera.lookAt(0, 4.8, 0); // Look at head/hat area
 
       // Renderer
       renderer = new THREE.WebGLRenderer({ 
@@ -513,7 +538,7 @@
 
       // Purple accent light from below left
       const purpleLight = new THREE.PointLight(0x8A2BE2, 0.5, 20);
-      purpleLight.position.set(-3, 2, 3);
+      purpleLight.position.set(-3, 3, 3);
       scene.add(purpleLight);
 
       // Gold accent light from right
@@ -523,7 +548,7 @@
 
       // Cyan rim light from behind
       const cyanLight = new THREE.PointLight(0x00D4FF, 0.3, 15);
-      cyanLight.position.set(0, 4, -4);
+      cyanLight.position.set(0, 5, -4);
       scene.add(cyanLight);
 
       // Load wizard cat model
@@ -537,10 +562,15 @@
           wizardCat.scale.set(1, 1, 1);
           wizardCat.position.set(0, 0, 0);
 
-          // Find and hide the backdrop if it exists
+          // Hide backdrop and body parts we don't want to see
           wizardCat.traverse((child) => {
+            // Hide backdrop
             if (child.name === 'Backdrop' || child.name === 'Plane' || child.name === 'Plane.002') {
               child.visible = false;
+            }
+            // Log mesh names to help debug
+            if (child.isMesh) {
+              console.log('Mesh found:', child.name);
             }
           });
 
@@ -552,13 +582,11 @@
           }, 500);
         },
         function(progress) {
-          // Loading progress
           const percent = (progress.loaded / progress.total * 100).toFixed(0);
           console.log('Loading: ' + percent + '%');
         },
         function(error) {
           console.error('Error loading model:', error);
-          // Hide loading screen even on error
           document.getElementById('loadingScreen').classList.add('hidden');
         }
       );
@@ -598,15 +626,15 @@
 
       if (wizardCat) {
         // Smooth rotation following mouse (Mario 64 style)
-        targetRotationY = mouseX * 0.5; // Left-right rotation
-        targetRotationX = mouseY * 0.3; // Up-down rotation (subtle)
+        targetRotationY = mouseX * 0.4; // Left-right rotation
+        targetRotationX = mouseY * 0.2; // Up-down rotation (subtle)
 
         // Smooth interpolation
         wizardCat.rotation.y += (targetRotationY - wizardCat.rotation.y) * 0.05;
         wizardCat.rotation.x += (targetRotationX - wizardCat.rotation.x) * 0.05;
 
         // Subtle floating animation
-        wizardCat.position.y = Math.sin(Date.now() * 0.001) * 0.1;
+        wizardCat.position.y = Math.sin(Date.now() * 0.001) * 0.05;
       }
 
       renderer.render(scene, camera);
@@ -625,7 +653,6 @@
         particle.style.animationDelay = Math.random() * 8 + 's';
         particle.style.animationDuration = (6 + Math.random() * 4) + 's';
 
-        // Random colors
         const colors = ['#FFD700', '#8A2BE2', '#00D4FF', '#FF6B35'];
         particle.style.background = colors[Math.floor(Math.random() * colors.length)];
 
