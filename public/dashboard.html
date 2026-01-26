@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard | Nine Lives Network</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <style>
+    .dashboard-container {
+      min-height: 100vh;
+      background: var(--bg-dark);
+      padding-top: 80px;
+    }
+
+    /* Navigation */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-md) var(--space-lg);
+      background: var(--bg-medium);
+      border-bottom: 2px solid var(--bg-light);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+    }
+
+    .nav-logo {
+      font-family: var(--font-main);
+      font-size: 0.75rem;
+      color: var(--accent-gold);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: var(--space-lg);
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: var(--font-main);
+      font-size: 0.5rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-decoration: none;
+    }
+
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--accent-gold);
+    }
+
+    /* Main Content */
+    .dashboard-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-lg);
+    }
+
+    /* Welcome Header */
+    .welcome-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-lg);
+      margin-bottom: var(--space-xl);
+    }
+
+    .player-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--bg-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      border: 3px solid var(--accent-gold);
+    }
+
+    .player-info h1 {
+      font-size: 1.25rem;
+      margin-bottom: var(--space-xs);
+    }
+
+    .player-handle {
+      color: var(--accent-cyan);
+      font-size: 1.125rem;
+    }
+
+    .player-school {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-top: var(--space-sm);
+      padding: var(--space-xs) var(--space-md);
+      background: var(--bg-medium);
+      border-radius: var(--radius-sm);
+    }
+
+    .school-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--space-lg);
+      margin-bottom: var(--space-xl);
+    }
+
+    .stat-card {
+      background: var(--bg-medium);
+      border: 2px solid var(--bg-light);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+    }
+
+    .stat-card h3 {
+      font-size: 0.625rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-md);
+    }
+
+    .stat-value {
+      font-family: var(--font-main);
+      font-size: 2rem;
+      color: var(--accent-gold);
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      margin-top: var(--space-xs);
+    }
+
+    /* Mana Display */
+    .mana-display {
+      display: flex;
+      gap: var(--space-sm);
+      margin: var(--space-md) 0;
+    }
+
+    .mana-orb {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #00d4ff, #0066cc);
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .mana-orb.empty {
+      background: var(--bg-dark);
+      box-shadow: none;
+      opacity: 0.3;
+    }
+
+    .mana-timer {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+      margin-top: var(--space-sm);
+    }
+
+    /* Objective Card */
+    .objective-card {
+      background: linear-gradient(135deg, var(--bg-medium), var(--bg-light));
+      border: 2px solid var(--accent-gold);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+      margin-bottom: var(--space-xl);
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
+    }
+
+    .objective-card h3 {
+      font-size: 0.75rem;
+      color: var(--accent-gold);
+      margin-bottom: var(--space-md);
+    }
+
+    .objective-zone {
+      font-family: var(--font-main);
+      font-size: 1.25rem;
+      color: var(--text-primary);
+      margin-bottom: var(--space-sm);
+    }
+
+    .objective-timer {
+      color: var(--accent-cyan);
+      font-size: 1rem;
+    }
+
+    /* Cast History */
+    .history-section {
+      background: var(--bg-medium);
+      border: 2px solid var(--bg-light);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+    }
+
+    .history-section h3 {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-lg);
+    }
+
+    .cast-list {
+      list-style: none;
+    }
+
+    .cast-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-md);
+      border-bottom: 1px solid var(--bg-light);
+    }
+
+    .cast-item:last-child {
+      border-bottom: none;
+    }
+
+    .cast-spell {
+      font-family: var(--font-main);
+      font-size: 0.625rem;
+      color: var(--accent-gold);
+    }
+
+    .cast-time {
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .cast-points {
+      color: var(--success);
+      font-weight: bold;
+    }
+
+    .empty-history {
+      text-align: center;
+      color: var(--text-muted);
+      padding: var(--space-xl);
+    }
+
+    /* Ranks */
+    .ranks-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-md);
+      margin-top: var(--space-md);
+    }
+
+    @media (max-width: 600px) {
+      .ranks-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .rank-item {
+      text-align: center;
+      padding: var(--space-md);
+      background: var(--bg-dark);
+      border-radius: var(--radius-sm);
+    }
+
+    .rank-position {
+      font-family: var(--font-main);
+      font-size: 1.5rem;
+      color: var(--accent-gold);
+    }
+
+    .rank-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: var(--space-xs);
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: var(--space-xl);
+      color: var(--text-muted);
+    }
+
+    /* Community Tag */
+    .community-tag {
+      display: inline-block;
+      padding: var(--space-xs) var(--space-sm);
+      background: var(--accent-purple);
+      color: white;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      margin-left: var(--space-sm);
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <a href="/" class="nav-logo">Nine Lives Network</a>
+    <ul class="nav-links">
+      <li><a href="/dashboard.html" class="active">Dashboard</a></li>
+      <li><a href="/map.html">Map</a></li>
+      <li><a href="/leaderboards.html">Leaderboards</a></li>
+      <li><a href="#" id="logoutBtn">Logout</a></li>
+    </ul>
+  </nav>
+
+  <main class="dashboard-container">
+    <div class="dashboard-content">
+
+      <!-- Loading State -->
+      <div id="loading" class="loading">
+        <p>Loading your dashboard...</p>
+      </div>
+
+      <!-- Dashboard Content (hidden until loaded) -->
+      <div id="dashboardContent" style="display: none;">
+
+        <!-- Welcome Header -->
+        <div class="welcome-header">
+          <div class="player-avatar" id="playerAvatar">🐱</div>
+          <div class="player-info">
+            <h1>Welcome back!</h1>
+            <div class="player-handle" id="playerHandle">@username</div>
+            <div class="player-school">
+              <span class="school-dot" id="schoolDot"></span>
+              <span id="schoolName">School Name</span>
+            </div>
+            <span class="community-tag" id="communityTag" style="display: none;"></span>
+          </div>
+        </div>
+
+        <!-- Current Objective -->
+        <div class="objective-card">
+          <h3>⚔️ Today's Objective</h3>
+          <div class="objective-zone" id="objectiveZone">Loading...</div>
+          <div class="objective-timer" id="objectiveTimer"></div>
+          <a href="https://twitter.com/9LVNetwork" target="_blank" class="btn" style="margin-top: var(--space-md);">
+            Cast Your Spell →
+          </a>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+
+          <!-- Mana -->
+          <div class="stat-card">
+            <h3>🔮 Mana</h3>
+            <div class="mana-display" id="manaDisplay">
+              <!-- Filled by JS -->
+            </div>
+            <div class="mana-timer" id="manaTimer">Resets at midnight UTC</div>
+          </div>
+
+          <!-- Points -->
+          <div class="stat-card">
+            <h3>⭐ Points</h3>
+            <div class="stat-value" id="seasonalPoints">0</div>
+            <div class="stat-label">This Season</div>
+            <div style="margin-top: var(--space-md); color: var(--text-muted);">
+              <span id="lifetimePoints">0</span> lifetime
+            </div>
+          </div>
+
+          <!-- Ranks -->
+          <div class="stat-card">
+            <h3>🏆 Your Ranks</h3>
+            <div class="ranks-grid">
+              <div class="rank-item">
+                <div class="rank-position" id="individualRank">-</div>
+                <div class="rank-label">Individual</div>
+              </div>
+              <div class="rank-item">
+                <div class="rank-position" id="schoolRank">-</div>
+                <div class="rank-label">School</div>
+              </div>
+              <div class="rank-item">
+                <div class="rank-position" id="communityRank">-</div>
+                <div class="rank-label">Community</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Cast History -->
+        <div class="history-section">
+          <h3>📜 Recent Casts</h3>
+          <ul class="cast-list" id="castList">
+            <li class="empty-history">No spells cast yet. Visit Twitter to cast your first spell!</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // School data for colors - WoW-style distinct colors
+    const schools = {
+      1: { name: 'Ember Covenant', color: '#FF4500' },      // Orange-Red
+      2: { name: 'Tidal Conclave', color: '#00BFFF' },      // Sky Blue  
+      3: { name: 'Stone Covenant', color: '#8B4513' },      // Brown
+      4: { name: 'Zephyr Circle', color: '#98FB98' },       // Pale Green
+      5: { name: 'Storm Assembly', color: '#FFD700' },      // Gold
+      6: { name: 'Umbral Syndicate', color: '#9932CC' },    // Purple
+      7: { name: 'Radiant Order', color: '#FFFFE0' },       // Light Yellow
+      8: { name: 'Arcane Spire', color: '#00FFFF' },        // Cyan
+      9: { name: 'WildCat Path', color: '#FF1493' },        // Pink
+    };
+
+    let currentPlayer = null;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      loadDashboard();
+    });
+
+    // Load dashboard data
+    async function loadDashboard() {
+      // Get player ID from URL or localStorage
+      const params = new URLSearchParams(window.location.search);
+      const playerId = params.get('player_id') || localStorage.getItem('player_id');
+
+      if (!playerId) {
+        // Not logged in, redirect to register
+        window.location.href = '/register.html';
+        return;
+      }
+
+      // Store player ID
+      localStorage.setItem('player_id', playerId);
+
+      try {
+        // Fetch player data
+        const response = await fetch(`/api/players/${playerId}`);
+        if (!response.ok) throw new Error('Failed to load player');
+
+        currentPlayer = await response.json();
+
+        // Display data
+        displayPlayerInfo(currentPlayer);
+        displayMana(currentPlayer.mana);
+        displayPoints(currentPlayer);
+
+        // Load cast history
+        loadCastHistory(playerId);
+
+        // Load ranks
+        loadRanks(playerId);
+
+        // Load current objective
+        loadObjective();
+
+        // Show content
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('dashboardContent').style.display = 'block';
+
+        // Clean URL
+        window.history.replaceState({}, '', '/dashboard.html');
+
+      } catch (error) {
+        console.error('Error loading dashboard:', error);
+        document.getElementById('loading').innerHTML = `
+          <p>Failed to load dashboard. <a href="/register.html">Try logging in again</a></p>
+        `;
+      }
+    }
+
+    // Display player info
+    function displayPlayerInfo(player) {
+      document.getElementById('playerHandle').textContent = '@' + player.twitter_handle;
+
+      const school = schools[player.school_id];
+      document.getElementById('schoolName').textContent = school.name;
+      document.getElementById('schoolDot').style.background = school.color;
+
+      // Show profile image if set
+      if (player.profile_image) {
+        document.getElementById('playerAvatar').innerHTML = `<img src="${player.profile_image}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+      }
+
+      if (player.community_tag) {
+        const tagEl = document.getElementById('communityTag');
+        tagEl.textContent = player.community_tag;
+        tagEl.style.display = 'inline-block';
+      }
+    }
+
+    // Display mana orbs
+    function displayMana(mana) {
+      const maxMana = 5;
+      const container = document.getElementById('manaDisplay');
+      container.innerHTML = '';
+
+      for (let i = 0; i < maxMana; i++) {
+        const orb = document.createElement('div');
+        orb.className = 'mana-orb' + (i >= mana ? ' empty' : '');
+        container.appendChild(orb);
+      }
+
+      // Calculate time until midnight UTC
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setUTCHours(24, 0, 0, 0);
+      const hoursLeft = Math.floor((midnight - now) / (1000 * 60 * 60));
+      const minsLeft = Math.floor(((midnight - now) % (1000 * 60 * 60)) / (1000 * 60));
+
+      document.getElementById('manaTimer').textContent = `Resets in ${hoursLeft}h ${minsLeft}m`;
+    }
+
+    // Display points
+    function displayPoints(player) {
+      document.getElementById('seasonalPoints').textContent = player.seasonal_points || 0;
+      document.getElementById('lifetimePoints').textContent = player.lifetime_points || 0;
+    }
+
+    // Load cast history
+    async function loadCastHistory(playerId) {
+      try {
+        const response = await fetch(`/api/players/${playerId}/casts`);
+        if (!response.ok) return;
+
+        const casts = await response.json();
+        const list = document.getElementById('castList');
+
+        if (casts.length === 0) {
+          list.innerHTML = '<li class="empty-history">No spells cast yet. Visit Twitter to cast your first spell!</li>';
+          return;
+        }
+
+        list.innerHTML = casts.map(cast => `
+          <li class="cast-item">
+            <div>
+              <div class="cast-spell">${cast.spell_name}</div>
+              <div class="cast-time">${formatTime(cast.created_at)}</div>
+            </div>
+            <div class="cast-points">+${cast.points_earned}</div>
+          </li>
+        `).join('');
+
+      } catch (error) {
+        console.error('Error loading cast history:', error);
+      }
+    }
+
+    // Load ranks
+    async function loadRanks(playerId) {
+      // For now, just show placeholders
+      // These will be implemented with the leaderboard routes
+      document.getElementById('individualRank').textContent = '-';
+      document.getElementById('schoolRank').textContent = '-';
+      document.getElementById('communityRank').textContent = '-';
+    }
+
+    // Format time ago
+    function formatTime(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diff = now - date;
+
+      const mins = Math.floor(diff / (1000 * 60));
+      if (mins < 60) return `${mins}m ago`;
+
+      const hours = Math.floor(mins / 60);
+      if (hours < 24) return `${hours}h ago`;
+
+      const days = Math.floor(hours / 24);
+      return `${days}d ago`;
+    }
+
+    // Load current objective from API
+    async function loadObjective() {
+      try {
+        const response = await fetch('/api/zones');
+        const zones = await response.json();
+
+        const objective = zones.find(z => z.is_current_objective);
+
+        if (objective) {
+          document.getElementById('objectiveZone').textContent = objective.name;
+          document.getElementById('objectiveTimer').textContent = objective.bonus_effect || 'Battle for control!';
+        } else {
+          document.getElementById('objectiveZone').textContent = 'No objective set';
+          document.getElementById('objectiveTimer').textContent = 'Check back soon!';
+        }
+      } catch (error) {
+        console.error('Error loading objective:', error);
+        document.getElementById('objectiveZone').textContent = 'Error loading';
+      }
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('player_id');
+      window.location.href = '/';
+    });
+  </script>
+</body>
+</html>

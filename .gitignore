@@ -1,6 +1,48 @@
-node_modules
-dist
+# Dependencies
+node_modules/
+
+# Environment variables (NEVER COMMIT)
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS generated files
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE/Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Test coverage
+coverage/
+
+# Build outputs
+dist/
+build/
+
+# Replit specific
+.replit
+replit.nix
+.cache/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Package lock (optional - uncomment if you want to ignore)
+# package-lock.json
