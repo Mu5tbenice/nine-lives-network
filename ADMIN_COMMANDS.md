@@ -76,16 +76,93 @@ curl "http://localhost:5000/api/admin/test-bot" -H "x-admin-key: YOUR_KEY"
 
 ---
 
+## Activity Decay Commands
+
+### Run Activity Decay Manually
+```bash
+curl -X POST "http://localhost:5000/api/admin/activity-decay" -H "x-admin-key: YOUR_KEY"
+```
+
+### View Inactive Players
+```bash
+curl "http://localhost:5000/api/admin/inactive-players" -H "x-admin-key: YOUR_KEY"
+```
+
+### Reactivate a Player
+```bash
+curl -X POST "http://localhost:5000/api/admin/reactivate-player/1" -H "x-admin-key: YOUR_KEY"
+```
+
+---
+
+## Nerm Bot Commands
+
+### Test Nerm Connection
+```bash
+curl "http://localhost:5000/api/admin/test-nerm" -H "x-admin-key: YOUR_KEY"
+```
+
+### Check Nerm Rate Limit Status
+```bash
+curl "http://localhost:5000/api/admin/nerm-status" -H "x-admin-key: YOUR_KEY"
+```
+
+### Make Nerm Post Custom Message
+```bash
+curl -X POST "http://localhost:5000/api/admin/nerm-post" \
+  -H "x-admin-key: YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "watching."}'
+```
+
+### Generate Nerm Response (without posting)
+```bash
+curl -X POST "http://localhost:5000/api/admin/nerm-generate" \
+  -H "x-admin-key: YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"prompt": "Someone just cast a terrible spell"}'
+```
+
+### Make Nerm Post Daily Observation
+```bash
+curl -X POST "http://localhost:5000/api/admin/nerm-observation" -H "x-admin-key: YOUR_KEY"
+```
+
+### Make Nerm Roast a Player
+```bash
+curl -X POST "http://localhost:5000/api/admin/nerm-roast" \
+  -H "x-admin-key: YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"player": "SomeWizard", "reason": "cast the same spell 5 times"}'
+```
+
+---
+
 ## Automated Schedule (Cron Jobs)
 
 These run automatically when the server is running:
 
 | Time (UTC) | Action |
 |------------|--------|
-| Every 2 min | Process spell casts from Twitter |
+| Every 15 min | Process spell casts (only when objective active) |
 | 08:00 | Post daily objective |
+| 14:00 | Nerm afternoon post (50% chance) |
+| 22:00 | Nerm daily roast |
 | 23:00 | End of day processing + post results |
 | 00:00 | Reset all player mana to 5 |
+| 01:00 | Activity decay check |
+| 03:00 | Nerm existential moment (30% chance) |
+
+---
+
+## Activity Decay Rules
+
+| Inactivity | Penalty |
+|------------|---------|
+| 3-7 days | -5% seasonal points |
+| 7+ days | Marked inactive (hidden from leaderboards) |
+
+Players reactivate automatically when they cast again.
 
 ---
 
@@ -126,30 +203,23 @@ These run automatically when the server is running:
 
 ---
 
-## Activity Decay Commands
+## Monitoring & Logs
 
-### Run Activity Decay Manually
+### Check Server Health
 ```bash
-curl -X POST "http://localhost:5000/api/admin/activity-decay" -H "x-admin-key: YOUR_KEY"
+curl "http://localhost:5000/api/health"
 ```
 
-### View Inactive Players
-```bash
-curl "http://localhost:5000/api/admin/inactive-players" -H "x-admin-key: YOUR_KEY"
-```
+### View Deployment Logs
+In Replit: Go to **Deployments** tab → Click on your deployment → **Logs**
 
-### Reactivate a Player
-```bash
-curl -X POST "http://localhost:5000/api/admin/reactivate-player/1" -H "x-admin-key: YOUR_KEY"
-```
+### Check What Happened Overnight
+1. Check @9LVNetwork Twitter for posted tweets
+2. Check @9LV_Nerm Twitter for Nerm posts
+3. Run stats command: `curl "http://localhost:5000/api/admin/stats" -H "x-admin-key: YOUR_KEY"`
+4. Check Supabase dashboard for database activity
 
----
-
-## Activity Decay Rules
-
-| Inactivity | Penalty |
-|------------|---------|
-| 3-7 days | -5% seasonal points |
-| 7+ days | Marked inactive (hidden from leaderboards) |
-
-Players reactivate automatically when they cast again.
+### If Something Seems Wrong
+1. Check Deployment Logs in Replit
+2. Redeploy if needed: Deployments → Redeploy
+3. Or restart in Shell: `pkill -f node && npm start`

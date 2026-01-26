@@ -1,5 +1,12 @@
 const { TwitterApi } = require('twitter-api-v2');
+const { createClient } = require('@supabase/supabase-js');
 const supabase = require('../config/supabase');
+
+// Admin client for writes (using service role to bypass RLS)
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 // Create client for @9LVNetwork
 function getNineLivesClient() {
@@ -57,7 +64,7 @@ Reply with your spell to claim territory for your school!
     console.log('Posted daily objective:', data.id);
 
     // Store the tweet ID for tracking replies
-    await supabase
+    await supabaseAdmin
       .from('zones')
       .update({ 
         objective_tweet_id: data.id,
@@ -258,8 +265,8 @@ async function processSpellCasts() {
         nermNoticeCount++;
       }
 
-      // Record the cast
-      const { data: cast, error } = await supabase
+      // Record the cast using ADMIN client to bypass RLS
+      const { data: cast, error } = await supabaseAdmin
         .from('casts')
         .insert({
           player_id: player.id,
@@ -277,8 +284,8 @@ async function processSpellCasts() {
         continue;
       }
 
-      // Deduct mana and update points
-      await supabase
+      // Deduct mana and update points using ADMIN client
+      await supabaseAdmin
         .from('players')
         .update({ 
           mana: player.mana - spell.mana_cost,
@@ -303,10 +310,10 @@ async function processSpellCasts() {
       console.log(`✨ Cast processed: @${user.username} cast ${spell.name} for ${finalPoints} points`);
     }
 
-    // Update last processed tweet ID
+    // Update last processed tweet ID using ADMIN client
     if (tweets.length > 0) {
       const latestId = tweets[0].id;
-      await supabase
+      await supabaseAdmin
         .from('zones')
         .update({ last_processed_tweet_id: latestId })
         .eq('id', zone.id);
@@ -433,15 +440,15 @@ async function updateZoneControl(zoneId, schoolId, points) {
       .single();
 
     if (existing) {
-      // Update existing control
+      // Update existing control using ADMIN client
       const newPercentage = Math.min(100, existing.control_percentage + (points / 10));
-      await supabase
+      await supabaseAdmin
         .from('zone_control')
         .update({ control_percentage: newPercentage })
         .eq('id', existing.id);
     } else {
-      // Create new control record
-      await supabase
+      // Create new control record using ADMIN client
+      await supabaseAdmin
         .from('zone_control')
         .insert({
           zone_id: zoneId,
@@ -472,10 +479,10 @@ async function normalizeZoneControl(zoneId) {
   const total = controls.reduce((sum, c) => sum + c.control_percentage, 0);
 
   if (total > 100) {
-    // Normalize
+    // Normalize using ADMIN client
     for (const control of controls) {
       const normalized = (control.control_percentage / total) * 100;
-      await supabase
+      await supabaseAdmin
         .from('zone_control')
         .update({ control_percentage: normalized })
         .eq('id', control.id);
@@ -488,14 +495,14 @@ async function normalizeZoneControl(zoneId) {
  */
 async function setDailyObjective(zoneId) {
   try {
-    // Clear current objective
-    await supabase
+    // Clear current objective using ADMIN client
+    await supabaseAdmin
       .from('zones')
       .update({ is_current_objective: false })
       .eq('is_current_objective', true);
 
-    // Set new objective
-    await supabase
+    // Set new objective using ADMIN client
+    await supabaseAdmin
       .from('zones')
       .update({ is_current_objective: true })
       .eq('id', zoneId);
