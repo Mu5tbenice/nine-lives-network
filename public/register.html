@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register | Nine Lives Network</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <style>
+    .register-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-xl) var(--space-lg);
+      background: 
+        radial-gradient(ellipse at 30% 20%, rgba(138, 43, 226, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(255, 215, 0, 0.08) 0%, transparent 50%),
+        var(--bg-dark);
+    }
+
+    .register-card {
+      background: var(--bg-medium);
+      border: 2px solid var(--bg-light);
+      border-radius: var(--radius-lg);
+      padding: var(--space-xl);
+      max-width: 600px;
+      width: 100%;
+    }
+
+    .register-title {
+      text-align: center;
+      margin-bottom: var(--space-lg);
+      color: var(--accent-gold);
+    }
+
+    .register-subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-xl);
+    }
+
+    /* Steps */
+    .step {
+      display: none;
+    }
+
+    .step.active {
+      display: block;
+    }
+
+    /* Twitter Button */
+    .btn-twitter {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-md);
+      width: 100%;
+      padding: var(--space-lg);
+      background: #1DA1F2;
+      border: none;
+      color: white;
+      font-family: var(--font-main);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-twitter:hover {
+      background: #0d8bd9;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(29, 161, 242, 0.4);
+    }
+
+    .btn-twitter svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    /* School Selection */
+    .schools-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-md);
+      margin: var(--space-lg) 0;
+    }
+
+    @media (max-width: 600px) {
+      .schools-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .school-card {
+      background: var(--bg-light);
+      border: 3px solid transparent;
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .school-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .school-card.selected {
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+
+    .school-color {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin: 0 auto var(--space-sm);
+      border: 2px solid rgba(255,255,255,0.2);
+    }
+
+    .school-name {
+      font-family: var(--font-main);
+      font-size: 0.5rem;
+      color: var(--text-primary);
+      margin-bottom: var(--space-xs);
+    }
+
+    .school-element {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    /* Community Tag */
+    .form-group {
+      margin: var(--space-lg) 0;
+    }
+
+    .form-label {
+      display: block;
+      font-family: var(--font-main);
+      font-size: 0.625rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-sm);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: var(--space-md);
+      background: var(--bg-dark);
+      border: 2px solid var(--bg-light);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 1.125rem;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent-gold);
+    }
+
+    .form-hint {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-top: var(--space-xs);
+    }
+
+    /* Error Messages */
+    .error-message {
+      background: rgba(255, 68, 102, 0.1);
+      border: 1px solid var(--error);
+      color: var(--error);
+      padding: var(--space-md);
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--space-lg);
+      text-align: center;
+    }
+
+    /* Success */
+    .success-message {
+      background: rgba(0, 255, 136, 0.1);
+      border: 1px solid var(--success);
+      color: var(--success);
+      padding: var(--space-md);
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--space-lg);
+      text-align: center;
+    }
+
+    /* Complete Button */
+    .btn-complete {
+      width: 100%;
+      margin-top: var(--space-lg);
+    }
+
+    /* User Info Display */
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      padding: var(--space-md);
+      background: var(--bg-dark);
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--space-lg);
+    }
+
+    .user-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--accent-purple);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .user-handle {
+      font-family: var(--font-main);
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+    }
+
+    /* Back Link */
+    .back-link {
+      display: inline-block;
+      margin-bottom: var(--space-lg);
+      color: var(--text-secondary);
+      font-size: 0.875rem;
+    }
+
+    .back-link:hover {
+      color: var(--accent-gold);
+    }
+  </style>
+</head>
+<body>
+  <main class="register-container">
+    <a href="/" class="back-link">← Back to Home</a>
+
+    <div class="register-card">
+      <h1 class="register-title">Join the Battle</h1>
+
+      <!-- Error Display -->
+      <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+      <!-- Step 1: Twitter Login -->
+      <div id="step1" class="step active">
+        <p class="register-subtitle">Connect your Twitter account to begin your journey in Avaloris</p>
+
+        <a href="/auth/twitter" class="btn-twitter">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          Sign in with X
+        </a>
+
+        <p style="text-align: center; margin-top: var(--space-lg); color: var(--text-muted); font-size: 0.875rem;">
+          Requirements: Account must be 30+ days old, 50+ followers, 10+ tweets
+        </p>
+      </div>
+
+      <!-- Step 2: Choose School -->
+      <div id="step2" class="step">
+        <div class="user-info">
+          <div class="user-avatar">🐱</div>
+          <div>
+            <div class="user-handle" id="displayHandle">@username</div>
+            <div style="color: var(--text-muted); font-size: 0.875rem;">Ready to join a school</div>
+          </div>
+        </div>
+
+        <p class="register-subtitle">Choose your magical school wisely - this cannot be changed!</p>
+
+        <div class="schools-grid" id="schoolsGrid">
+          <!-- Schools will be loaded here -->
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Community Tag (Optional)</label>
+          <input type="text" id="communityTag" class="form-input" placeholder="e.g. $BONK, $WIF, etc.">
+          <p class="form-hint">Represent your crypto community on the leaderboards</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Profile Image URL (Optional)</label>
+          <input type="text" id="profileImage" class="form-input" placeholder="https://...">
+          <p class="form-hint">Paste a link to your profile picture (NFT, avatar, etc.)</p>
+          <div id="pfpPreview" style="margin-top: var(--space-sm); display: none;">
+            <img id="pfpPreviewImg" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-gold);">
+          </div>
+        </div>
+
+        <div style="background: rgba(255, 68, 68, 0.1); border: 1px solid #ff4444; border-radius: var(--radius-sm); padding: var(--space-md); margin-bottom: var(--space-lg);">
+          <p style="color: #ff6666; font-size: 0.875rem; margin: 0;">
+            ⚠️ <strong>Warning:</strong> Your school choice is permanent! You cannot change schools after registering.
+          </p>
+        </div>
+
+        <button id="completeBtn" class="btn btn-primary btn-complete" disabled>
+          Complete Registration
+        </button>
+      </div>
+
+      <!-- Step 3: Success -->
+      <div id="step3" class="step">
+        <div class="success-message">
+          🎉 Welcome to Nine Lives Network!
+        </div>
+        <p class="register-subtitle">You have joined <span id="schoolName" class="text-gold">your school</span>!</p>
+        <a href="/dashboard.html" class="btn btn-primary btn-complete">Go to Dashboard</a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // School data - WoW-style distinct colors
+    const schools = [
+      { id: 1, name: 'Ember Covenant', element: 'Fire', color: '#FF4500' },
+      { id: 2, name: 'Tidal Conclave', element: 'Water', color: '#00BFFF' },
+      { id: 3, name: 'Stone Covenant', element: 'Earth', color: '#8B4513' },
+      { id: 4, name: 'Zephyr Circle', element: 'Air', color: '#98FB98' },
+      { id: 5, name: 'Storm Assembly', element: 'Lightning', color: '#FFD700' },
+      { id: 6, name: 'Umbral Syndicate', element: 'Shadow', color: '#9932CC' },
+      { id: 7, name: 'Radiant Order', element: 'Light', color: '#FFFFE0' },
+      { id: 8, name: 'Arcane Spire', element: 'Arcane', color: '#00FFFF' },
+      { id: 9, name: 'WildCat Path', element: 'Chaos', color: '#FF1493' },
+    ];
+
+    let selectedSchool = null;
+    let twitterData = {};
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      renderSchools();
+      checkUrlParams();
+    });
+
+    // Check URL params for OAuth callback or errors
+    function checkUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+
+      // Check for errors
+      const error = params.get('error');
+      if (error) {
+        showError(getErrorMessage(error));
+        return;
+      }
+
+      // Check if coming back from Twitter OAuth
+      const step = params.get('step');
+      if (step === 'choose_school') {
+        twitterData = {
+          twitter_id: params.get('twitter_id'),
+          twitter_handle: params.get('twitter_handle'),
+          access_token: params.get('access_token'),
+          refresh_token: params.get('refresh_token')
+        };
+
+        document.getElementById('displayHandle').textContent = '@' + twitterData.twitter_handle;
+        showStep(2);
+
+        // Clean up URL
+        window.history.replaceState({}, '', '/register.html');
+      }
+    }
+
+    // Render school cards
+    function renderSchools() {
+      const grid = document.getElementById('schoolsGrid');
+      grid.innerHTML = schools.map(school => `
+        <div class="school-card" data-id="${school.id}" onclick="selectSchool(${school.id})">
+          <div class="school-color" style="background: ${school.color};"></div>
+          <div class="school-name">${school.name}</div>
+          <div class="school-element">${school.element}</div>
+        </div>
+      `).join('');
+    }
+
+    // Select a school
+    function selectSchool(id) {
+      selectedSchool = id;
+
+      // Update UI
+      document.querySelectorAll('.school-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      document.querySelector(`.school-card[data-id="${id}"]`).classList.add('selected');
+
+      // Enable button
+      document.getElementById('completeBtn').disabled = false;
+    }
+
+    // PFP Preview
+    document.getElementById('profileImage').addEventListener('input', (e) => {
+      const url = e.target.value.trim();
+      const preview = document.getElementById('pfpPreview');
+      const img = document.getElementById('pfpPreviewImg');
+
+      if (url) {
+        img.src = url;
+        img.onload = () => { preview.style.display = 'block'; };
+        img.onerror = () => { preview.style.display = 'none'; };
+      } else {
+        preview.style.display = 'none';
+      }
+    });
+
+    // Complete registration
+    document.getElementById('completeBtn').addEventListener('click', async () => {
+      if (!selectedSchool || !twitterData.twitter_id) return;
+
+      const btn = document.getElementById('completeBtn');
+      btn.disabled = true;
+      btn.textContent = 'Registering...';
+
+      try {
+        const response = await fetch('/auth/complete-registration', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            twitter_id: twitterData.twitter_id,
+            twitter_handle: twitterData.twitter_handle,
+            school_id: selectedSchool,
+            community_tag: document.getElementById('communityTag').value.trim() || null,
+            profile_image: document.getElementById('profileImage').value.trim() || null
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Save player ID to localStorage
+          localStorage.setItem('player_id', data.player.id);
+
+          const school = schools.find(s => s.id === selectedSchool);
+          document.getElementById('schoolName').textContent = school.name;
+          showStep(3);
+        } else {
+          showError(data.error || 'Registration failed');
+          btn.disabled = false;
+          btn.textContent = 'Complete Registration';
+        }
+      } catch (error) {
+        showError('Something went wrong. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Complete Registration';
+      }
+    });
+
+    // Show a specific step
+    function showStep(num) {
+      document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
+      document.getElementById('step' + num).classList.add('active');
+    }
+
+    // Show error message
+    function showError(message) {
+      const el = document.getElementById('errorMessage');
+      el.textContent = message;
+      el.style.display = 'block';
+    }
+
+    // Get friendly error messages
+    function getErrorMessage(code) {
+      const messages = {
+        'oauth_failed': 'Failed to connect to Twitter. Please try again.',
+        'invalid_state': 'Session expired. Please try again.',
+        'callback_failed': 'Twitter authentication failed. Please try again.',
+        'account_too_new': 'Your Twitter account must be at least 30 days old.',
+        'not_enough_followers': 'You need at least 50 followers to register.',
+        'not_enough_tweets': 'You need at least 10 tweets to register.',
+      };
+      return messages[code] || 'An error occurred. Please try again.';
+    }
+  </script>
+</body>
+</html>te

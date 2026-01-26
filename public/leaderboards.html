@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboards | Nine Lives Network</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <style>
+    .leaderboards-container {
+      min-height: 100vh;
+      background: var(--bg-dark);
+      padding-top: 80px;
+    }
+
+    /* Navigation */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-md) var(--space-lg);
+      background: var(--bg-medium);
+      border-bottom: 2px solid var(--bg-light);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+    }
+
+    .nav-logo {
+      font-family: var(--font-main);
+      font-size: 0.75rem;
+      color: var(--accent-gold);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: var(--space-lg);
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: var(--font-main);
+      font-size: 0.5rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-decoration: none;
+    }
+
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--accent-gold);
+    }
+
+    /* Main Content */
+    .leaderboards-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-lg);
+    }
+
+    .page-title {
+      font-size: 1.5rem;
+      color: var(--accent-gold);
+      margin-bottom: var(--space-xl);
+      text-align: center;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-md);
+      margin-bottom: var(--space-xl);
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      font-family: var(--font-main);
+      font-size: 0.5rem;
+      padding: var(--space-md) var(--space-lg);
+      background: var(--bg-medium);
+      border: 2px solid var(--bg-light);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border-radius: var(--radius-sm);
+    }
+
+    .tab-btn:hover {
+      border-color: var(--accent-gold);
+      color: var(--text-primary);
+    }
+
+    .tab-btn.active {
+      background: var(--accent-gold);
+      border-color: var(--accent-gold);
+      color: var(--bg-dark);
+    }
+
+    /* Leaderboard Table */
+    .leaderboard-section {
+      display: none;
+    }
+
+    .leaderboard-section.active {
+      display: block;
+    }
+
+    .leaderboard-table {
+      width: 100%;
+      background: var(--bg-medium);
+      border: 2px solid var(--bg-light);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .leaderboard-header {
+      display: grid;
+      grid-template-columns: 60px 1fr 120px 120px;
+      padding: var(--space-md) var(--space-lg);
+      background: var(--bg-light);
+      font-family: var(--font-main);
+      font-size: 0.5rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    .leaderboard-row {
+      display: grid;
+      grid-template-columns: 60px 1fr 120px 120px;
+      padding: var(--space-md) var(--space-lg);
+      border-bottom: 1px solid var(--bg-light);
+      align-items: center;
+      transition: background 0.2s ease;
+    }
+
+    .leaderboard-row:hover {
+      background: var(--bg-light);
+    }
+
+    .leaderboard-row:last-child {
+      border-bottom: none;
+    }
+
+    .leaderboard-row.highlight {
+      background: rgba(255, 215, 0, 0.1);
+      border-left: 3px solid var(--accent-gold);
+    }
+
+    /* Rank */
+    .rank {
+      font-family: var(--font-main);
+      font-size: 1rem;
+      color: var(--text-muted);
+    }
+
+    .rank-1 { color: #FFD700; }
+    .rank-2 { color: #C0C0C0; }
+    .rank-3 { color: #CD7F32; }
+
+    /* Player Info */
+    .player-cell {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+
+    .player-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--bg-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      overflow: hidden;
+    }
+
+    .player-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .player-name {
+      font-family: var(--font-main);
+      font-size: 0.625rem;
+      color: var(--text-primary);
+    }
+
+    .player-tag {
+      font-size: 0.75rem;
+      color: var(--accent-purple);
+    }
+
+    /* School Info */
+    .school-cell {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .school-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .school-name {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    /* Points */
+    .points {
+      font-family: var(--font-main);
+      font-size: 0.875rem;
+      color: var(--accent-gold);
+      text-align: right;
+    }
+
+    /* School Leaderboard */
+    .school-row {
+      grid-template-columns: 60px 1fr 150px 120px;
+    }
+
+    .school-header {
+      grid-template-columns: 60px 1fr 150px 120px;
+    }
+
+    .school-info {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+    }
+
+    .school-color-block {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+    }
+
+    .school-full-name {
+      font-family: var(--font-main);
+      font-size: 0.625rem;
+      color: var(--text-primary);
+    }
+
+    .school-element {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .member-count {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+    }
+
+    /* Community Leaderboard */
+    .community-row {
+      grid-template-columns: 60px 1fr 120px 120px;
+    }
+
+    .community-tag-name {
+      font-family: var(--font-main);
+      font-size: 0.75rem;
+      color: var(--accent-purple);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: var(--space-xl);
+      color: var(--text-muted);
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: var(--space-xl);
+      color: var(--text-muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .leaderboard-header,
+      .leaderboard-row {
+        grid-template-columns: 40px 1fr 80px;
+        font-size: 0.75rem;
+      }
+
+      .school-header,
+      .school-row {
+        grid-template-columns: 40px 1fr 80px;
+      }
+
+      .leaderboard-header > *:nth-child(3),
+      .leaderboard-row > *:nth-child(3) {
+        display: none;
+      }
+
+      .player-name {
+        font-size: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <a href="/" class="nav-logo">Nine Lives Network</a>
+    <ul class="nav-links">
+      <li><a href="/dashboard.html">Dashboard</a></li>
+      <li><a href="/map.html">Map</a></li>
+      <li><a href="/leaderboards.html" class="active">Leaderboards</a></li>
+      <li><a href="#" id="logoutBtn">Logout</a></li>
+    </ul>
+  </nav>
+
+  <main class="leaderboards-container">
+    <div class="leaderboards-content">
+      <h1 class="page-title">🏆 Leaderboards</h1>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="players">Players</button>
+        <button class="tab-btn" data-tab="schools">Schools</button>
+        <button class="tab-btn" data-tab="communities">Communities</button>
+      </div>
+
+      <!-- Players Leaderboard -->
+      <div class="leaderboard-section active" id="players-section">
+        <div class="leaderboard-table">
+          <div class="leaderboard-header">
+            <div>Rank</div>
+            <div>Player</div>
+            <div>School</div>
+            <div style="text-align: right;">Points</div>
+          </div>
+          <div id="players-list" class="loading">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Schools Leaderboard -->
+      <div class="leaderboard-section" id="schools-section">
+        <div class="leaderboard-table">
+          <div class="leaderboard-header school-header">
+            <div>Rank</div>
+            <div>School</div>
+            <div>Members</div>
+            <div style="text-align: right;">Points</div>
+          </div>
+          <div id="schools-list" class="loading">Loading...</div>
+        </div>
+      </div>
+
+      <!-- Communities Leaderboard -->
+      <div class="leaderboard-section" id="communities-section">
+        <div class="leaderboard-table">
+          <div class="leaderboard-header">
+            <div>Rank</div>
+            <div>Community</div>
+            <div>Members</div>
+            <div style="text-align: right;">Points</div>
+          </div>
+          <div id="communities-list" class="loading">Loading...</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // School data
+    const schools = {
+      1: { name: 'Ember Covenant', element: 'Fire', color: '#FF4500' },
+      2: { name: 'Tidal Conclave', element: 'Water', color: '#00BFFF' },
+      3: { name: 'Stone Covenant', element: 'Earth', color: '#8B4513' },
+      4: { name: 'Zephyr Circle', element: 'Air', color: '#98FB98' },
+      5: { name: 'Storm Assembly', element: 'Lightning', color: '#FFD700' },
+      6: { name: 'Umbral Syndicate', element: 'Shadow', color: '#9932CC' },
+      7: { name: 'Radiant Order', element: 'Light', color: '#FFFFE0' },
+      8: { name: 'Arcane Spire', element: 'Arcane', color: '#00FFFF' },
+      9: { name: 'WildCat Path', element: 'Chaos', color: '#FF1493' },
+    };
+
+    const currentPlayerId = localStorage.getItem('player_id');
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      setupTabs();
+      loadPlayersLeaderboard();
+      loadSchoolsLeaderboard();
+      loadCommunitiesLeaderboard();
+    });
+
+    // Tab switching
+    function setupTabs() {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          // Update active tab
+          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          // Show corresponding section
+          const tab = btn.dataset.tab;
+          document.querySelectorAll('.leaderboard-section').forEach(s => s.classList.remove('active'));
+          document.getElementById(`${tab}-section`).classList.add('active');
+        });
+      });
+    }
+
+    // Load players leaderboard
+    async function loadPlayersLeaderboard() {
+      try {
+        const response = await fetch('/api/leaderboards/players');
+        if (!response.ok) throw new Error('Failed to load');
+
+        const players = await response.json();
+        const container = document.getElementById('players-list');
+
+        if (players.length === 0) {
+          container.innerHTML = '<div class="empty-state">No players yet. Be the first to cast a spell!</div>';
+          return;
+        }
+
+        container.innerHTML = players.map((player, index) => {
+          const school = schools[player.school_id];
+          const isCurrentPlayer = player.id == currentPlayerId;
+
+          return `
+            <div class="leaderboard-row ${isCurrentPlayer ? 'highlight' : ''}">
+              <div class="rank rank-${index + 1}">#${index + 1}</div>
+              <div class="player-cell">
+                <div class="player-avatar">
+                  ${player.profile_image 
+                    ? `<img src="${player.profile_image}" alt="">` 
+                    : '🐱'}
+                </div>
+                <div>
+                  <div class="player-name">@${player.twitter_handle}</div>
+                  ${player.community_tag ? `<div class="player-tag">${player.community_tag}</div>` : ''}
+                </div>
+              </div>
+              <div class="school-cell">
+                <div class="school-dot" style="background: ${school.color};"></div>
+                <span class="school-name">${school.name.split(' ')[0]}</span>
+              </div>
+              <div class="points">${player.seasonal_points.toLocaleString()}</div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error('Error loading players:', error);
+        document.getElementById('players-list').innerHTML = '<div class="empty-state">Failed to load leaderboard</div>';
+      }
+    }
+
+    // Load schools leaderboard
+    async function loadSchoolsLeaderboard() {
+      try {
+        const response = await fetch('/api/leaderboards/schools');
+        if (!response.ok) throw new Error('Failed to load');
+
+        const schoolStats = await response.json();
+        const container = document.getElementById('schools-list');
+
+        if (schoolStats.length === 0) {
+          container.innerHTML = '<div class="empty-state">No school data yet</div>';
+          return;
+        }
+
+        container.innerHTML = schoolStats.map((stat, index) => {
+          const school = schools[stat.school_id];
+
+          return `
+            <div class="leaderboard-row school-row">
+              <div class="rank rank-${index + 1}">#${index + 1}</div>
+              <div class="school-info">
+                <div class="school-color-block" style="background: ${school.color};"></div>
+                <div>
+                  <div class="school-full-name">${school.name}</div>
+                  <div class="school-element">${school.element}</div>
+                </div>
+              </div>
+              <div class="member-count">${stat.member_count} wizards</div>
+              <div class="points">${stat.total_points.toLocaleString()}</div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error('Error loading schools:', error);
+        document.getElementById('schools-list').innerHTML = '<div class="empty-state">Failed to load leaderboard</div>';
+      }
+    }
+
+    // Load communities leaderboard
+    async function loadCommunitiesLeaderboard() {
+      try {
+        const response = await fetch('/api/leaderboards/communities');
+        if (!response.ok) throw new Error('Failed to load');
+
+        const communities = await response.json();
+        const container = document.getElementById('communities-list');
+
+        if (communities.length === 0) {
+          container.innerHTML = '<div class="empty-state">No communities yet. Add a community tag to your profile!</div>';
+          return;
+        }
+
+        container.innerHTML = communities.map((community, index) => {
+          return `
+            <div class="leaderboard-row community-row">
+              <div class="rank rank-${index + 1}">#${index + 1}</div>
+              <div class="community-tag-name">${community.community_tag}</div>
+              <div class="member-count">${community.member_count} members</div>
+              <div class="points">${community.total_points.toLocaleString()}</div>
+            </div>
+          `;
+        }).join('');
+
+      } catch (error) {
+        console.error('Error loading communities:', error);
+        document.getElementById('communities-list').innerHTML = '<div class="empty-state">Failed to load leaderboard</div>';
+      }
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('player_id');
+      window.location.href = '/';
+    });
+  </script>
+</body>
+</html>s

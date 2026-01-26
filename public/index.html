@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nine Lives Network | Enter the Realm</title>
+  <meta name="description" content="A social-competitive game where wizard cats compete for territory control in the fantasy world of Avaloris.">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="/assets/images/favicon.png">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <!-- Splash Page Specific Styles -->
+  <style>
+    .splash-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: var(--space-lg);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Magical Background */
+    .magic-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(ellipse at 20% 80%, rgba(138, 43, 226, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(0, 212, 255, 0.05) 0%, transparent 70%),
+        var(--bg-dark);
+      z-index: -2;
+    }
+
+    /* Floating Particles */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .particle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: var(--accent-gold);
+      border-radius: 50%;
+      animation: particleFloat 8s ease-in-out infinite;
+      opacity: 0.6;
+    }
+
+    @keyframes particleFloat {
+      0%, 100% { 
+        transform: translateY(0) translateX(0); 
+        opacity: 0.6;
+      }
+      25% { 
+        transform: translateY(-100px) translateX(20px); 
+        opacity: 1;
+      }
+      50% { 
+        transform: translateY(-200px) translateX(-10px); 
+        opacity: 0.8;
+      }
+      75% { 
+        transform: translateY(-100px) translateX(-20px); 
+        opacity: 0.4;
+      }
+    }
+
+    /* Wizard Cat Video Container */
+    .wizard-cat-container {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+      margin-bottom: var(--space-md);
+      perspective: 1000px;
+    }
+
+    .wizard-cat-wrapper {
+      position: relative;
+      animation: float 4s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .wizard-cat-video {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.15s ease-out;
+      /* Circular/oval mask that fades at edges */
+      -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 45%, black 30%, transparent 70%);
+      mask-image: radial-gradient(ellipse 70% 70% at 50% 45%, black 30%, transparent 70%);
+    }
+
+    .wizard-cat-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      height: 80%;
+      background: radial-gradient(circle, rgba(138, 43, 226, 0.3) 0%, rgba(255, 215, 0, 0.15) 30%, transparent 60%);
+      animation: pulse 3s ease-in-out infinite;
+      z-index: -1;
+      pointer-events: none;
+      border-radius: 50%;
+      filter: blur(20px);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+    }
+
+    /* Title */
+    .splash-title {
+      font-size: 2.5rem;
+      text-align: center;
+      margin-bottom: var(--space-sm);
+      background: linear-gradient(135deg, var(--accent-gold), var(--accent-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-shadow: none;
+    }
+
+    .splash-subtitle {
+      font-family: var(--font-body);
+      font-size: 1.5rem;
+      color: var(--text-secondary);
+      text-align: center;
+      margin-bottom: var(--space-xl);
+    }
+
+    /* CTA Button */
+    .cta-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-md);
+    }
+
+    .btn-enter {
+      font-size: 1rem;
+      padding: var(--space-lg) var(--space-xl);
+      animation: glow 2s ease-in-out infinite;
+    }
+
+    /* Season Info */
+    .season-info {
+      margin-top: var(--space-xl);
+      padding: var(--space-lg);
+      background: rgba(26, 26, 46, 0.8);
+      border: 1px solid var(--bg-light);
+      border-radius: var(--radius-md);
+      text-align: center;
+      max-width: 500px;
+    }
+
+    .season-badge {
+      display: inline-block;
+      font-family: var(--font-main);
+      font-size: 0.625rem;
+      padding: var(--space-xs) var(--space-md);
+      background: var(--accent-purple);
+      color: var(--text-primary);
+      border-radius: var(--radius-sm);
+      margin-bottom: var(--space-md);
+    }
+
+    /* Game Overview */
+    .game-overview {
+      margin-top: var(--space-xl);
+      max-width: 800px;
+      text-align: center;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-lg);
+      margin-top: var(--space-lg);
+    }
+
+    .feature {
+      padding: var(--space-lg);
+      background: var(--bg-medium);
+      border: 1px solid var(--bg-light);
+      border-radius: var(--radius-md);
+      transition: all 0.3s ease;
+    }
+
+    .feature:hover {
+      border-color: var(--accent-gold);
+      transform: translateY(-5px);
+    }
+
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: var(--space-md);
+    }
+
+    .feature h3 {
+      font-size: 0.75rem;
+      color: var(--accent-gold);
+      margin-bottom: var(--space-sm);
+    }
+
+    .feature p {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    /* Footer */
+    .splash-footer {
+      margin-top: var(--space-xl);
+      padding-top: var(--space-lg);
+      border-top: 1px solid var(--bg-light);
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    .social-links {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-lg);
+      margin-bottom: var(--space-md);
+    }
+
+    .social-links a {
+      color: var(--text-secondary);
+      font-size: 1.5rem;
+      transition: color 0.2s ease;
+    }
+
+    .social-links a:hover {
+      color: var(--accent-gold);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .splash-title {
+        font-size: 1.5rem;
+      }
+
+      .splash-subtitle {
+        font-size: 1.125rem;
+      }
+
+      .wizard-cat-container {
+        max-width: 350px;
+      }
+
+      .btn-enter {
+        font-size: 0.75rem;
+        padding: var(--space-md) var(--space-lg);
+      }
+
+      .features {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Magic Background -->
+  <div class="magic-bg"></div>
+
+  <!-- Floating Particles (generated by JS) -->
+  <div class="particles" id="particles"></div>
+
+  <!-- Main Content -->
+  <main class="splash-container">
+
+    <!-- Wizard Cat Video -->
+    <div class="wizard-cat-container">
+      <div class="wizard-cat-glow"></div>
+      <div class="wizard-cat-wrapper" id="wizardCatWrapper">
+        <video 
+          class="wizard-cat-video"
+          id="wizardCatVideo"
+          autoplay 
+          loop 
+          muted 
+          playsinline
+        >
+          <source src="/assets/images/wizard-cat.mp4" type="video/mp4">
+          <!-- Fallback to image if video doesn't load -->
+          <img src="/assets/images/wizard-cat.png" alt="Nine Lives Network Wizard Cat">
+        </video>
+      </div>
+    </div>
+
+    <!-- Title -->
+    <h1 class="splash-title">Nine Lives Network</h1>
+    <p class="splash-subtitle">Cast spells. Control territory. Rule Avaloris.</p>
+
+    <!-- CTA -->
+    <div class="cta-container" id="ctaContainer">
+      <a href="/register.html" class="btn btn-primary btn-enter" id="ctaButton">Enter the Realm</a>
+      <p class="text-muted" style="font-size: 0.875rem;" id="ctaSubtext">Join the battle on Twitter</p>
+      <a href="/how-to-play.html" style="display: block; margin-top: var(--space-md); color: var(--accent-gold); font-size: 0.875rem;">📜 How to Play</a>
+    </div>
+
+    <!-- Season Info -->
+    <div class="season-info">
+      <span class="season-badge">Season 0 - Beta</span>
+      <p style="margin: 0;">
+        Nine magical schools compete for control of Avaloris.<br>
+        <span class="text-gold">Choose your allegiance. Cast your spells. Claim victory.</span>
+      </p>
+    </div>
+
+    <!-- Game Overview -->
+    <section class="game-overview">
+      <h2 class="mb-lg">How It Works</h2>
+      <div class="features">
+        <div class="feature">
+          <div class="feature-icon">🐱</div>
+          <h3>Join a School</h3>
+          <p>Choose from 9 magical schools, each with unique spells and playstyles</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">✨</div>
+          <h3>Cast Spells</h3>
+          <p>Reply to daily objectives on Twitter to cast spells and earn points</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🗺️</div>
+          <h3>Control Territory</h3>
+          <p>Compete with other schools to dominate the map of Avaloris</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🏆</div>
+          <h3>Win Rewards</h3>
+          <p>Climb leaderboards and earn rewards for your school and community</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- World of Avaloris -->
+    <section class="game-overview" style="margin-top: var(--space-xl);">
+      <h2 class="mb-lg">The World of Avaloris</h2>
+      <p style="color: var(--text-secondary); text-align: center; max-width: 600px; margin: 0 auto var(--space-lg);">
+        A realm of floating islands, crystal caverns, and volcanic peaks. Nine schools of magic battle for control of its territories.
+      </p>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-md); max-width: 800px; margin: 0 auto;">
+        <div style="position: relative; border-radius: var(--radius-md); overflow: hidden; aspect-ratio: 16/9;">
+          <img src="/assets/images/env-crystal-cave.jpg" alt="Crystal Caverns" style="width: 100%; height: 100%; object-fit: cover;">
+          <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: var(--space-sm); background: linear-gradient(transparent, rgba(0,0,0,0.8));">
+            <span style="font-family: var(--font-main); font-size: 0.625rem; color: var(--accent-cyan);">Crystal Caverns</span>
+          </div>
+        </div>
+        <div style="position: relative; border-radius: var(--radius-md); overflow: hidden; aspect-ratio: 16/9;">
+          <img src="/assets/images/env-ember-peaks.jpg" alt="Ember Peaks" style="width: 100%; height: 100%; object-fit: cover;">
+          <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: var(--space-sm); background: linear-gradient(transparent, rgba(0,0,0,0.8));">
+            <span style="font-family: var(--font-main); font-size: 0.625rem; color: #FF4500;">Ember Peaks</span>
+          </div>
+        </div>
+        <div style="position: relative; border-radius: var(--radius-md); overflow: hidden; aspect-ratio: 16/9;">
+          <img src="/assets/images/env-storm-citadel.jpg" alt="Storm Citadel" style="width: 100%; height: 100%; object-fit: cover;">
+          <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: var(--space-sm); background: linear-gradient(transparent, rgba(0,0,0,0.8));">
+            <span style="font-family: var(--font-main); font-size: 0.625rem; color: #FFD700;">Storm Citadel</span>
+          </div>
+        </div>
+        <div style="position: relative; border-radius: var(--radius-md); overflow: hidden; aspect-ratio: 16/9;">
+          <img src="/assets/images/env-mystic-valley.jpg" alt="Mystic Valley" style="width: 100%; height: 100%; object-fit: cover;">
+          <div style="position: absolute; bottom: 0; left: 0; right: 0; padding: var(--space-sm); background: linear-gradient(transparent, rgba(0,0,0,0.8));">
+            <span style="font-family: var(--font-main); font-size: 0.625rem; color: #98FB98;">Mystic Valley</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Nerm Section -->
+    <section class="game-overview" style="margin-top: var(--space-xl);">
+      <div style="display: flex; align-items: center; justify-content: center; gap: var(--space-lg); flex-wrap: wrap;">
+        <img src="/assets/images/nerm.jpg" alt="Nerm" style="width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--accent-purple); object-fit: cover;">
+        <div style="max-width: 400px; text-align: left;">
+          <h2 style="color: var(--accent-purple); margin-bottom: var(--space-sm);">Meet Nerm</h2>
+          <p style="color: var(--text-secondary); margin: 0;">
+            A grumpy floating cat head who's been watching wizards fail for 400 years. 
+            He follows players around Avaloris, judging their every spell. 
+            He's not helpful. He's just... there.
+          </p>
+          <a href="https://twitter.com/9LV_Nerm" target="_blank" style="color: var(--accent-purple); font-size: 0.875rem; display: inline-block; margin-top: var(--space-sm);">Follow @9LV_Nerm →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="splash-footer">
+      <div class="social-links">
+        <a href="https://twitter.com/9LVNetwork" target="_blank" title="Follow @9LVNetwork">𝕏</a>
+      </div>
+      <p style="margin-bottom: var(--space-sm);">
+        <a href="https://twitter.com/9LVNetwork" target="_blank" style="color: var(--text-muted);">@9LVNetwork</a> · 
+        <a href="https://twitter.com/9LV_Nerm" target="_blank" style="color: var(--text-muted);">@9LV_Nerm</a>
+      </p>
+      <p>© 2025 Nine Lives Network. All rights reserved.</p>
+    </footer>
+
+  </main>
+
+  <!-- JavaScript -->
+  <script src="/js/splash.js"></script>
+  <script>
+    // Check if user is logged in
+    document.addEventListener('DOMContentLoaded', () => {
+      const playerId = localStorage.getItem('player_id');
+      if (playerId) {
+        // User is logged in - show dashboard button
+        const ctaButton = document.getElementById('ctaButton');
+        const ctaSubtext = document.getElementById('ctaSubtext');
+
+        ctaButton.href = '/dashboard.html';
+        ctaButton.textContent = 'Go to Dashboard';
+        ctaSubtext.textContent = 'Welcome back, wizard!';
+      }
+    });
+  </script>
+</body>
+</html>

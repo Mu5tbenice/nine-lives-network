@@ -1,0 +1,71 @@
+/* =============================================
+   Nine Lives Network - CSS Variables
+   ============================================= */
+
+:root {
+  /* School Colors - Distinct like WoW classes */
+  --ember-primary: #FF4500;      /* Bright Orange-Red (like Warrior) */
+  --ember-secondary: #FF6B35;
+
+  --tidal-primary: #00BFFF;      /* Deep Sky Blue (like Mage) */
+  --tidal-secondary: #1E90FF;
+
+  --stone-primary: #8B4513;      /* Saddle Brown (like Druid) */
+  --stone-secondary: #D2691E;
+
+  --zephyr-primary: #98FB98;     /* Pale Green (like Monk) */
+  --zephyr-secondary: #90EE90;
+
+  --storm-primary: #FFD700;      /* Gold/Yellow (like Paladin) */
+  --storm-secondary: #FFA500;
+
+  --umbral-primary: #9932CC;     /* Dark Orchid Purple (like Warlock) */
+  --umbral-secondary: #8B008B;
+
+  --radiant-primary: #FFFFE0;    /* Light Yellow/White (like Priest) */
+  --radiant-secondary: #FFFACD;
+
+  --arcane-primary: #00FFFF;     /* Cyan (like Shaman) */
+  --arcane-secondary: #40E0D0;
+
+  --wildcat-primary: #FF1493;    /* Deep Pink (like Death Knight) */
+  --wildcat-secondary: #FF69B4;
+
+  /* Theme Colors */
+  --bg-dark: #0a0a0f;
+  --bg-medium: #12121a;
+  --bg-light: #1a1a2e;
+
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-accent: #ffd700;
+  --text-muted: #666680;
+
+  /* UI Colors */
+  --accent-gold: #ffd700;
+  --accent-purple: #8A2BE2;
+  --accent-cyan: #00d4ff;
+  --success: #00ff88;
+  --error: #ff4466;
+  --warning: #ffaa00;
+
+  /* Fonts */
+  --font-main: 'Press Start 2P', monospace;
+  --font-body: 'VT323', monospace;
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 2rem;
+  --space-xl: 4rem;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+
+  /* Shadows */
+  --shadow-glow: 0 0 20px rgba(255, 215, 0, 0.3);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.5);
+}

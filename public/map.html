@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Map of Avaloris | Nine Lives Network</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <style>
+    .map-container {
+      min-height: 100vh;
+      background: var(--bg-dark);
+      padding-top: 80px;
+    }
+
+    /* Navigation */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-md) var(--space-lg);
+      background: var(--bg-medium);
+      border-bottom: 2px solid var(--bg-light);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+    }
+
+    .nav-logo {
+      font-family: var(--font-main);
+      font-size: 0.75rem;
+      color: var(--accent-gold);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: var(--space-lg);
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: var(--font-main);
+      font-size: 0.5rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-decoration: none;
+    }
+
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--accent-gold);
+    }
+
+    /* Map Content */
+    .map-content {
+      display: flex;
+      height: calc(100vh - 80px);
+    }
+
+    /* Map Area */
+    #map {
+      flex: 1;
+      background: var(--bg-dark);
+    }
+
+    /* Override Leaflet styles for dark theme */
+    .leaflet-container {
+      background: var(--bg-dark);
+      font-family: var(--font-body);
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: var(--bg-medium);
+      color: var(--text-primary);
+      border: 2px solid var(--bg-light);
+      border-radius: var(--radius-md);
+    }
+
+    .leaflet-popup-tip {
+      background: var(--bg-medium);
+    }
+
+    .leaflet-popup-content {
+      margin: var(--space-md);
+    }
+
+    /* Side Panel */
+    .side-panel {
+      width: 350px;
+      background: var(--bg-medium);
+      border-left: 2px solid var(--bg-light);
+      padding: var(--space-lg);
+      overflow-y: auto;
+    }
+
+    @media (max-width: 900px) {
+      .map-content {
+        flex-direction: column;
+      }
+
+      .side-panel {
+        width: 100%;
+        height: 300px;
+        border-left: none;
+        border-top: 2px solid var(--bg-light);
+      }
+    }
+
+    /* Objective Banner */
+    .objective-banner {
+      background: linear-gradient(135deg, var(--bg-light), var(--bg-medium));
+      border: 2px solid var(--accent-gold);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      margin-bottom: var(--space-lg);
+      text-align: center;
+    }
+
+    .objective-banner h3 {
+      font-size: 0.5rem;
+      color: var(--accent-gold);
+      margin-bottom: var(--space-sm);
+    }
+
+    .objective-zone-name {
+      font-family: var(--font-main);
+      font-size: 0.75rem;
+      color: var(--text-primary);
+    }
+
+    /* Legend */
+    .legend {
+      margin-bottom: var(--space-lg);
+    }
+
+    .legend h3 {
+      font-size: 0.625rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-md);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-sm);
+      font-size: 0.875rem;
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    /* Zone Details */
+    .zone-details {
+      background: var(--bg-dark);
+      border-radius: var(--radius-md);
+      padding: var(--space-lg);
+    }
+
+    .zone-details h3 {
+      font-size: 0.75rem;
+      color: var(--accent-gold);
+      margin-bottom: var(--space-sm);
+    }
+
+    .zone-type {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: var(--space-md);
+    }
+
+    .zone-description {
+      font-size: 1rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-lg);
+    }
+
+    /* Control Bars */
+    .control-section h4 {
+      font-size: 0.5rem;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-md);
+    }
+
+    .control-bar {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+
+    .control-bar-school {
+      width: 80px;
+      font-size: 0.625rem;
+      color: var(--text-secondary);
+    }
+
+    .control-bar-track {
+      flex: 1;
+      height: 12px;
+      background: var(--bg-light);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .control-bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.5s ease;
+    }
+
+    .control-bar-percent {
+      width: 40px;
+      text-align: right;
+      font-size: 0.75rem;
+      color: var(--text-primary);
+    }
+
+    /* No Zone Selected */
+    .no-zone-selected {
+      text-align: center;
+      color: var(--text-muted);
+      padding: var(--space-xl) 0;
+    }
+
+    .no-zone-selected p {
+      font-size: 0.875rem;
+    }
+
+    /* Zone Popup */
+    .zone-popup h4 {
+      font-family: var(--font-main);
+      font-size: 0.625rem;
+      color: var(--accent-gold);
+      margin-bottom: var(--space-xs);
+    }
+
+    .zone-popup p {
+      font-size: 0.875rem;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    .zone-popup .controller {
+      margin-top: var(--space-sm);
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <a href="/" class="nav-logo">Nine Lives Network</a>
+    <ul class="nav-links">
+      <li><a href="/dashboard.html">Dashboard</a></li>
+      <li><a href="/map.html" class="active">Map</a></li>
+      <li><a href="/leaderboards.html">Leaderboards</a></li>
+      <li><a href="#" id="logoutBtn">Logout</a></li>
+    </ul>
+  </nav>
+
+  <main class="map-container">
+    <div class="map-content">
+      <!-- Map -->
+      <div id="map"></div>
+
+      <!-- Side Panel -->
+      <div class="side-panel">
+        <!-- Today's Objective -->
+        <div class="objective-banner">
+          <h3>⚔️ Today's Objective</h3>
+          <div class="objective-zone-name" id="objectiveZoneName">Crystal Crossroads</div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+          <h3>🏰 Schools</h3>
+          <div id="legendItems">
+            <!-- Filled by JS -->
+          </div>
+        </div>
+
+        <!-- Zone Details -->
+        <div class="zone-details" id="zoneDetails">
+          <div class="no-zone-selected">
+            <p>Click a zone on the map to see details</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // School data with colors
+    const schools = {
+      1: { name: 'Ember', color: '#FF4500' },
+      2: { name: 'Tidal', color: '#00BFFF' },
+      3: { name: 'Stone', color: '#8B4513' },
+      4: { name: 'Zephyr', color: '#98FB98' },
+      5: { name: 'Storm', color: '#FFD700' },
+      6: { name: 'Umbral', color: '#9932CC' },
+      7: { name: 'Radiant', color: '#FFFFE0' },
+      8: { name: 'Arcane', color: '#00FFFF' },
+      9: { name: 'WildCat', color: '#FF1493' },
+    };
+
+    // Zone definitions (coordinates for a simple hex-style map)
+    // Using a coordinate system where the map is 1000x800
+    const zones = [
+      // Home Zones (9)
+      { id: 1, name: 'Ember Sanctum', type: 'home', school_id: 1, coords: [[100, 100], [200, 50], [300, 100], [300, 200], [200, 250], [100, 200]], description: 'The volcanic homeland of the Ember Covenant.' },
+      { id: 2, name: 'Tidal Depths', type: 'home', school_id: 2, coords: [[350, 100], [450, 50], [550, 100], [550, 200], [450, 250], [350, 200]], description: 'Underwater caverns of the Tidal Conclave.' },
+      { id: 3, name: 'Stone Keep', type: 'home', school_id: 3, coords: [[600, 100], [700, 50], [800, 100], [800, 200], [700, 250], [600, 200]], description: 'Mountain fortress of the Stone Covenant.' },
+      { id: 4, name: 'Zephyr Heights', type: 'home', school_id: 4, coords: [[100, 300], [200, 250], [300, 300], [300, 400], [200, 450], [100, 400]], description: 'Floating islands of the Zephyr Circle.' },
+      { id: 5, name: 'Storm Citadel', type: 'home', school_id: 5, coords: [[600, 300], [700, 250], [800, 300], [800, 400], [700, 450], [600, 400]], description: 'Thunder peaks of the Storm Assembly.' },
+      { id: 6, name: 'Umbral Void', type: 'home', school_id: 6, coords: [[100, 500], [200, 450], [300, 500], [300, 600], [200, 650], [100, 600]], description: 'Shadow realm of the Umbral Syndicate.' },
+      { id: 7, name: 'Radiant Spire', type: 'home', school_id: 7, coords: [[350, 500], [450, 450], [550, 500], [550, 600], [450, 650], [350, 600]], description: 'Crystal towers of the Radiant Order.' },
+      { id: 8, name: 'Arcane Nexus', type: 'home', school_id: 8, coords: [[600, 500], [700, 450], [800, 500], [800, 600], [700, 650], [600, 600]], description: 'Mystical library of the Arcane Spire.' },
+      { id: 9, name: 'WildCat Wilds', type: 'home', school_id: 9, coords: [[850, 300], [950, 250], [1000, 300], [1000, 400], [950, 450], [850, 400]], description: 'Chaotic wilderness of the WildCat Path.' },
+
+      // Neutral Zones (5)
+      { id: 10, name: 'Crystal Crossroads', type: 'neutral', school_id: null, coords: [[350, 300], [450, 250], [550, 300], [550, 400], [450, 450], [350, 400]], description: 'The central nexus where all paths meet. Highly contested territory.', bonus: '+50% points' },
+      { id: 11, name: 'Twilight Grove', type: 'neutral', school_id: null, coords: [[225, 375], [275, 350], [325, 375], [325, 425], [275, 450], [225, 425]], description: 'An ancient forest shrouded in eternal dusk.', bonus: '+1 mana regen' },
+      { id: 12, name: 'Dragon\'s Rest', type: 'neutral', school_id: null, coords: [[475, 175], [525, 150], [575, 175], [575, 225], [525, 250], [475, 225]], description: 'Ruins of an ancient dragon lair.', bonus: '2x spell damage' },
+      { id: 13, name: 'Moonwell Oasis', type: 'neutral', school_id: null, coords: [[675, 375], [725, 350], [775, 375], [775, 425], [725, 450], [675, 425]], description: 'A mystical pool that amplifies magic.', bonus: '+25% school points' },
+      { id: 14, name: 'The Shattered Isles', type: 'neutral', school_id: null, coords: [[475, 525], [525, 500], [575, 525], [575, 575], [525, 600], [475, 575]], description: 'Floating fragments of a destroyed realm.', bonus: 'Bounty spawns' },
+    ];
+
+    // Simulated zone control data (will come from API later)
+    let zoneControl = {};
+
+    // Initialize map
+    const map = L.map('map', {
+      crs: L.CRS.Simple,
+      minZoom: -1,
+      maxZoom: 2,
+      zoomControl: true,
+      attributionControl: false
+    });
+
+    // Set bounds for our coordinate system
+    const bounds = [[0, 0], [700, 1000]];
+    map.fitBounds(bounds);
+
+    // Store zone layers for updates
+    const zoneLayers = {};
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      renderLegend();
+      await loadZoneData();
+      renderZones();
+      loadObjective();
+    });
+
+    // Render legend
+    function renderLegend() {
+      const container = document.getElementById('legendItems');
+      container.innerHTML = Object.entries(schools).map(([id, school]) => `
+        <div class="legend-item">
+          <div class="legend-color" style="background: ${school.color};"></div>
+          <span>${school.name}</span>
+        </div>
+      `).join('');
+
+      // Add neutral
+      container.innerHTML += `
+        <div class="legend-item">
+          <div class="legend-color" style="background: #444;"></div>
+          <span>Neutral</span>
+        </div>
+      `;
+    }
+
+    // Load zone data from API
+    async function loadZoneData() {
+      try {
+        const response = await fetch('/api/zones');
+        if (response.ok) {
+          const data = await response.json();
+          // Process zone control data
+          data.forEach(zone => {
+            zoneControl[zone.id] = zone.control || [];
+          });
+        }
+      } catch (error) {
+        console.log('Using default zone data');
+        // Use simulated data for now
+        zones.forEach(zone => {
+          if (zone.type === 'neutral') {
+            // Random control for demo
+            zoneControl[zone.id] = [
+              { school_id: 1, percentage: Math.random() * 30 },
+              { school_id: 2, percentage: Math.random() * 30 },
+              { school_id: 5, percentage: Math.random() * 30 },
+            ];
+          }
+        });
+      }
+    }
+
+    // Render zones on map
+    function renderZones() {
+      zones.forEach(zone => {
+        // Convert coordinates for Leaflet (flip Y axis)
+        const latLngs = zone.coords.map(([x, y]) => [700 - y, x]);
+
+        // Determine zone color
+        let fillColor = '#444'; // neutral default
+        let fillOpacity = 0.6;
+
+        if (zone.school_id) {
+          // Home zone - use school color
+          fillColor = schools[zone.school_id].color;
+          fillOpacity = 0.7;
+        } else if (zoneControl[zone.id]) {
+          // Neutral zone - use dominant school color
+          const dominant = zoneControl[zone.id].sort((a, b) => b.percentage - a.percentage)[0];
+          if (dominant && dominant.percentage > 10) {
+            fillColor = schools[dominant.school_id].color;
+            fillOpacity = 0.4 + (dominant.percentage / 100) * 0.4;
+          }
+        }
+
+        // Create polygon
+        const polygon = L.polygon(latLngs, {
+          color: zone.type === 'neutral' ? '#888' : fillColor,
+          weight: 2,
+          fillColor: fillColor,
+          fillOpacity: fillOpacity,
+          className: zone.id === 10 ? 'objective-zone' : '' // Current objective
+        }).addTo(map);
+
+        // Add label
+        const center = polygon.getBounds().getCenter();
+        const label = L.divIcon({
+          className: 'zone-label',
+          html: `<div style="
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: white;
+            text-shadow: 1px 1px 2px black, -1px -1px 2px black;
+            white-space: nowrap;
+            text-align: center;
+          ">${zone.name}</div>`,
+          iconSize: [100, 20],
+          iconAnchor: [50, 10]
+        });
+        L.marker(center, { icon: label, interactive: false }).addTo(map);
+
+        // Click handler
+        polygon.on('click', () => showZoneDetails(zone));
+
+        // Hover effects
+        polygon.on('mouseover', () => {
+          polygon.setStyle({ weight: 4, fillOpacity: fillOpacity + 0.2 });
+        });
+        polygon.on('mouseout', () => {
+          polygon.setStyle({ weight: 2, fillOpacity: fillOpacity });
+        });
+
+        // Store reference
+        zoneLayers[zone.id] = polygon;
+      });
+    }
+
+    // Show zone details in side panel
+    function showZoneDetails(zone) {
+      const container = document.getElementById('zoneDetails');
+
+      // Get control data
+      const control = zoneControl[zone.id] || [];
+
+      let controlHTML = '';
+      if (zone.type === 'home') {
+        controlHTML = `
+          <div class="control-section">
+            <p style="color: var(--text-muted); font-size: 0.875rem;">
+              This is the home territory of ${schools[zone.school_id].name}.
+            </p>
+          </div>
+        `;
+      } else {
+        // Sort by percentage
+        const sortedControl = [...control].sort((a, b) => b.percentage - a.percentage);
+
+        controlHTML = `
+          <div class="control-section">
+            <h4>Territory Control</h4>
+            ${sortedControl.length > 0 ? sortedControl.map(c => `
+              <div class="control-bar">
+                <span class="control-bar-school">${schools[c.school_id].name}</span>
+                <div class="control-bar-track">
+                  <div class="control-bar-fill" style="width: ${c.percentage}%; background: ${schools[c.school_id].color};"></div>
+                </div>
+                <span class="control-bar-percent">${Math.round(c.percentage)}%</span>
+              </div>
+            `).join('') : '<p style="color: var(--text-muted);">No activity yet</p>'}
+          </div>
+        `;
+      }
+
+      container.innerHTML = `
+        <h3>${zone.name}</h3>
+        <div class="zone-type">${zone.type === 'home' ? '🏠 Home Territory' : '⚔️ Contested Zone'}</div>
+        <p class="zone-description">${zone.description}</p>
+        ${zone.bonus ? `<p style="color: var(--accent-gold); font-size: 0.875rem;">✨ Bonus: ${zone.bonus}</p>` : ''}
+        ${controlHTML}
+      `;
+    }
+
+    // Load current objective
+    async function loadObjective() {
+      try {
+        const response = await fetch('/api/zones/objective');
+        if (response.ok) {
+          const objective = await response.json();
+          document.getElementById('objectiveZoneName').textContent = objective.name;
+          // Highlight objective zone
+          if (zoneLayers[objective.id]) {
+            zoneLayers[objective.id].setStyle({ 
+              color: '#FFD700',
+              weight: 4,
+              dashArray: '10, 5'
+            });
+          }
+        }
+      } catch (error) {
+        // Use default (Crystal Crossroads)
+        document.getElementById('objectiveZoneName').textContent = 'Crystal Crossroads';
+        if (zoneLayers[10]) {
+          zoneLayers[10].setStyle({ 
+            color: '#FFD700',
+            weight: 4,
+            dashArray: '10, 5'
+          });
+        }
+      }
+    }
+
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('player_id');
+      window.location.href = '/';
+    });
+
+    // Auto-refresh zone control every 5 minutes
+    setInterval(async () => {
+      await loadZoneData();
+      // Update zone colors
+      zones.forEach(zone => {
+        if (zone.type === 'neutral' && zoneLayers[zone.id]) {
+          const control = zoneControl[zone.id] || [];
+          const dominant = control.sort((a, b) => b.percentage - a.percentage)[0];
+          if (dominant && dominant.percentage > 10) {
+            zoneLayers[zone.id].setStyle({
+              fillColor: schools[dominant.school_id].color,
+              fillOpacity: 0.4 + (dominant.percentage / 100) * 0.4
+            });
+          }
+        }
+      });
+    }, 5 * 60 * 1000);
+  </script>
+</body>
+</html>
