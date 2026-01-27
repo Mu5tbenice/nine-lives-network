@@ -215,6 +215,13 @@
       align-items: center;
       justify-content: center;
       font-size: 1.5rem;
+      overflow: hidden;
+    }
+
+    .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
 
     .user-handle {
@@ -265,7 +272,7 @@
       <!-- Step 2: Choose School -->
       <div id="step2" class="step">
         <div class="user-info">
-          <div class="user-avatar">🐱</div>
+          <div class="user-avatar" id="userAvatar">🐱</div>
           <div>
             <div class="user-handle" id="displayHandle">@username</div>
             <div style="color: var(--text-muted); font-size: 0.875rem;">Ready to join a school</div>
@@ -284,14 +291,7 @@
           <p class="form-hint">Represent your crypto community on the leaderboards</p>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Profile Image URL (Optional)</label>
-          <input type="text" id="profileImage" class="form-input" placeholder="https://...">
-          <p class="form-hint">Paste a link to your profile picture (NFT, avatar, etc.)</p>
-          <div id="pfpPreview" style="margin-top: var(--space-sm); display: none;">
-            <img id="pfpPreviewImg" style="width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-gold);">
-          </div>
-        </div>
+        <!-- REMOVED: Manual profile image URL input - now uses Twitter PFP automatically! -->
 
         <div style="background: rgba(255, 68, 68, 0.1); border: 1px solid #ff4444; border-radius: var(--radius-sm); padding: var(--space-md); margin-bottom: var(--space-lg);">
           <p style="color: #ff6666; font-size: 0.875rem; margin: 0;">
@@ -355,11 +355,20 @@
         twitterData = {
           twitter_id: params.get('twitter_id'),
           twitter_handle: params.get('twitter_handle'),
+          profile_image: params.get('profile_image') || '',
           access_token: params.get('access_token'),
           refresh_token: params.get('refresh_token')
         };
 
+        // Display handle
         document.getElementById('displayHandle').textContent = '@' + twitterData.twitter_handle;
+
+        // Show Twitter profile image in avatar
+        if (twitterData.profile_image) {
+          const avatar = document.getElementById('userAvatar');
+          avatar.innerHTML = `<img src="${twitterData.profile_image}" alt="@${twitterData.twitter_handle}">`;
+        }
+
         showStep(2);
 
         // Clean up URL
@@ -393,21 +402,6 @@
       document.getElementById('completeBtn').disabled = false;
     }
 
-    // PFP Preview
-    document.getElementById('profileImage').addEventListener('input', (e) => {
-      const url = e.target.value.trim();
-      const preview = document.getElementById('pfpPreview');
-      const img = document.getElementById('pfpPreviewImg');
-
-      if (url) {
-        img.src = url;
-        img.onload = () => { preview.style.display = 'block'; };
-        img.onerror = () => { preview.style.display = 'none'; };
-      } else {
-        preview.style.display = 'none';
-      }
-    });
-
     // Complete registration
     document.getElementById('completeBtn').addEventListener('click', async () => {
       if (!selectedSchool || !twitterData.twitter_id) return;
@@ -425,7 +419,7 @@
             twitter_handle: twitterData.twitter_handle,
             school_id: selectedSchool,
             community_tag: document.getElementById('communityTag').value.trim() || null,
-            profile_image: document.getElementById('profileImage').value.trim() || null
+            profile_image: twitterData.profile_image || null  // Uses Twitter PFP automatically!
           })
         });
 
@@ -477,4 +471,4 @@
     }
   </script>
 </body>
-</html>te
+</html>

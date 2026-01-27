@@ -183,7 +183,7 @@ router.get('/twitter/callback', async (req, res) => {
 
     // Get user info
     const { data: twitterUser } = await userClient.v2.me({
-      'user.fields': ['created_at', 'public_metrics', 'description']
+      'user.fields': ['created_at', 'public_metrics', 'description', 'profile_image_url']
     });
 
     console.log('Got user:', twitterUser.username, twitterUser.id);
@@ -216,6 +216,7 @@ router.get('/twitter/callback', async (req, res) => {
     const params = new URLSearchParams({
       twitter_id: twitterUser.id,
       twitter_handle: twitterUser.username,
+      profile_image: twitterUser.profile_image_url?.replace('_normal', '_400x400') || '',
       access_token: accessToken,
       refresh_token: refreshToken || '',
       step: 'choose_school'

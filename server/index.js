@@ -31,6 +31,7 @@ try {
 try {
   const mapRoutes = require('./routes/map');
   app.use('/api/map', mapRoutes);
+  app.use('/api/zones', mapRoutes);
   console.log('✅ Map routes loaded');
 } catch (e) {
   console.error('❌ Failed to load map routes:', e.message);
