@@ -289,6 +289,19 @@ router.post('/complete-registration', express.json(), async (req, res) => {
       return res.status(500).json({ error: 'Failed to create player' });
     }
 
+    // ========================================
+    // NERM AUTO-FOLLOW: Always watching...
+    // ========================================
+    try {
+      const nermBot = require('../services/nermBot');
+      await nermBot.followPlayer(twitter_id);
+      console.log(`🐱 Nerm is now watching @${twitter_handle}`);
+    } catch (followError) {
+      // Non-critical - don't fail registration if follow fails
+      console.error('🐱 Nerm follow failed:', followError.message);
+    }
+    // ========================================
+
     res.json({ success: true, player });
 
   } catch (error) {
