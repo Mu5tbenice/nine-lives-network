@@ -81,6 +81,224 @@ Reply with your spell to claim territory for your school!
 }
 
 /**
+ * Post midday standings update (12:00 UTC)
+ */
+async function postMiddayStandings() {
+  try {
+    const client = getNineLivesClient();
+
+    // Get today's objective zone
+    const { data: zone } = await supabase
+      .from('zones')
+      .select('*')
+      .eq('is_current_objective', true)
+      .single();
+
+    if (!zone) return null;
+
+    // Get zone control data
+    const { data: control } = await supabase
+      .from('zone_control')
+      .select('school_id, control_percentage')
+      .eq('zone_id', zone.id)
+      .order('control_percentage', { ascending: false })
+      .limit(5);
+
+    // Get cast count for today
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    const { count: castCount } = await supabase
+      .from('casts')
+      .select('*', { count: 'exact', head: true })
+      .eq('zone_id', zone.id)
+      .gte('created_at', today.toISOString());
+
+    let tweet = `📊 MIDDAY STANDINGS: ${zone.name}\n\n`;
+
+    if (control && control.length > 0) {
+      control.slice(0, 3).forEach((c, i) => {
+        const school = schools[c.school_id];
+        const bar = getProgressBar(c.control_percentage);
+        tweet += `${i + 1}. ${school.emoji} ${school.name}\n   ${bar} ${Math.round(c.control_percentage)}%\n`;
+      });
+    } else {
+      tweet += `No spells cast yet! Be the first! 🎯\n`;
+    }
+
+    tweet += `\n⚡ ${castCount || 0} spells cast so far`;
+    tweet += `\n⏰ 12 hours remaining`;
+    tweet += `\n\n#NineLivesNetwork`;
+
+    const { data } = await client.v2.tweet(tweet);
+    console.log('Posted midday standings:', data.id);
+
+    return data;
+
+  } catch (error) {
+    console.error('Error posting midday standings:', error);
+    return null;
+  }
+}
+
+/**
+ * Post afternoon reminder (16:00 UTC)
+ */
+async function postAfternoonReminder() {
+  try {
+    const client = getNineLivesClient();
+
+    // Get today's objective zone
+    const { data: zone } = await supabase
+      .from('zones')
+      .select('*')
+      .eq('is_current_objective', true)
+      .single();
+
+    if (!zone) return null;
+
+    // Get leading school
+    const { data: control } = await supabase
+      .from('zone_control')
+      .select('school_id, control_percentage')
+      .eq('zone_id', zone.id)
+      .order('control_percentage', { ascending: false })
+      .limit(1);
+
+    const templates = [
+      `⏰ 8 HOURS LEFT!\n\nThe battle for ${zone.name} continues...\n\n`,
+      `🔔 AFTERNOON CHECK-IN\n\n${zone.name} is still up for grabs!\n\n`,
+      `⚡ TIME CHECK: 8 hours remaining!\n\nWho will claim ${zone.name}?\n\n`,
+    ];
+
+    let tweet = templates[Math.floor(Math.random() * templates.length)];
+
+    if (control && control.length > 0) {
+      const leader = schools[control[0].school_id];
+      tweet += `${leader.emoji} ${leader.name} leads with ${Math.round(control[0].control_percentage)}%\n\n`;
+      tweet += `Can your school catch up? Cast now! 🎯`;
+    } else {
+      tweet += `No leader yet - every spell counts! 🎯`;
+    }
+
+    tweet += `\n\n#NineLivesNetwork`;
+
+    const { data } = await client.v2.tweet(tweet);
+    console.log('Posted afternoon reminder:', data.id);
+
+    return data;
+
+  } catch (error) {
+    console.error('Error posting afternoon reminder:', error);
+    return null;
+  }
+}
+
+/**
+ * Post final push reminder (20:00 UTC)
+ */
+async function postFinalPush() {
+  try {
+    const client = getNineLivesClient();
+
+    // Get today's objective zone
+    const { data: zone } = await supabase
+      .from('zones')
+      .select('*')
+      .eq('is_current_objective', true)
+      .single();
+
+    if (!zone) return null;
+
+    // Get zone control data
+    const { data: control } = await supabase
+      .from('zone_control')
+      .select('school_id, control_percentage')
+      .eq('zone_id', zone.id)
+      .order('control_percentage', { ascending: false })
+      .limit(3);
+
+    let tweet = `🚨 FINAL PUSH: 4 HOURS LEFT!\n\n`;
+    tweet += `${zone.name} battle ends soon!\n\n`;
+
+    if (control && control.length >= 2) {
+      const first = schools[control[0].school_id];
+      const second = schools[control[1].school_id];
+      const gap = Math.round(control[0].control_percentage - control[1].control_percentage);
+
+      tweet += `${first.emoji} ${first.name}: ${Math.round(control[0].control_percentage)}%\n`;
+      tweet += `${second.emoji} ${second.name}: ${Math.round(control[1].control_percentage)}%\n\n`;
+
+      if (gap <= 10) {
+        tweet += `🔥 Only ${gap}% separates them!\n`;
+      } else {
+        tweet += `Can anyone close the gap?\n`;
+      }
+    } else if (control && control.length === 1) {
+      const leader = schools[control[0].school_id];
+      tweet += `${leader.emoji} ${leader.name} dominates at ${Math.round(control[0].control_percentage)}%\n`;
+      tweet += `Will anyone challenge them?\n`;
+    }
+
+    tweet += `\nLast chance to cast! ⚔️\n#NineLivesNetwork`;
+
+    const { data } = await client.v2.tweet(tweet);
+    console.log('Posted final push:', data.id);
+
+    return data;
+
+  } catch (error) {
+    console.error('Error posting final push:', error);
+    return null;
+  }
+}
+
+/**
+ * Post milestone announcement (first cast, 10th cast, etc.)
+ */
+async function postMilestone(type, data) {
+  try {
+    const client = getNineLivesClient();
+    let tweet = '';
+
+    switch (type) {
+      case 'first_cast':
+        tweet = `⚡ FIRST BLOOD!\n\n@${data.player} opens today's battle with the first spell!\n\n${schools[data.school_id].emoji} ${schools[data.school_id].name} draws first!\n\n#NineLivesNetwork`;
+        break;
+
+      case 'cast_milestone':
+        tweet = `🎯 MILESTONE: ${data.count} spells cast today!\n\nThe wizards are active in ${data.zone}!\n\nKeep the magic flowing! ✨\n\n#NineLivesNetwork`;
+        break;
+
+      case 'lead_change':
+        tweet = `🔄 LEAD CHANGE!\n\n${schools[data.school_id].emoji} ${schools[data.school_id].name} takes the lead in ${data.zone}!\n\nThe battle intensifies! ⚔️\n\n#NineLivesNetwork`;
+        break;
+
+      default:
+        return null;
+    }
+
+    const { data: tweetData } = await client.v2.tweet(tweet);
+    console.log(`Posted milestone (${type}):`, tweetData.id);
+
+    return tweetData;
+
+  } catch (error) {
+    console.error('Error posting milestone:', error);
+    return null;
+  }
+}
+
+/**
+ * Helper: Generate a simple progress bar
+ */
+function getProgressBar(percentage) {
+  const filled = Math.round(percentage / 10);
+  const empty = 10 - filled;
+  return '█'.repeat(filled) + '░'.repeat(empty);
+}
+
+/**
  * Post daily results
  */
 async function postDailyResults() {
@@ -559,6 +777,10 @@ async function testConnection() {
 module.exports = {
   postDailyObjective,
   postDailyResults,
+  postMiddayStandings,
+  postAfternoonReminder,
+  postFinalPush,
+  postMilestone,
   processSpellCasts,
   setDailyObjective,
   rotateObjective,

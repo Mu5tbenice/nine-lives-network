@@ -8,6 +8,21 @@ const supabase = require('../config/supabase');
 /**
  * Scheduled Jobs for Nine Lives Network
  * All times are in UTC
+ * 
+ * @9LVNetwork Schedule (6-8 posts/day):
+ *   08:00 - Daily objective
+ *   12:00 - Midday standings
+ *   16:00 - Afternoon reminder
+ *   20:00 - Final push
+ *   23:00 - Daily results
+ * 
+ * @9LV_Nerm Schedule (5-8 posts/day):
+ *   09:00 - Morning grumpy (100%)
+ *   14:00 - Afternoon observation (100%)
+ *   17:00 - Evening complaint (80%)
+ *   22:00 - Daily roast (100%)
+ *   03:00 - Existential moment (80%)
+ *   + Random reactions to casts (15% chance)
  */
 
 let jobsInitialized = false;
@@ -19,6 +34,10 @@ function initializeScheduledJobs() {
   }
 
   console.log('🕐 Initializing scheduled jobs...');
+
+  // ============================================
+  // SPELL PROCESSING
+  // ============================================
 
   /**
    * Process spell casts every 2 minutes
@@ -37,11 +56,31 @@ function initializeScheduledJobs() {
       const casts = await twitterBot.processSpellCasts();
       if (casts.length > 0) {
         console.log(`✅ Processed ${casts.length} casts`);
+
+        // Random Nerm reaction to casts (15% chance per batch with casts)
+        if (Math.random() < 0.15 && casts.length > 0) {
+          try {
+            const randomCast = casts[Math.floor(Math.random() * casts.length)];
+            const response = await nermBot.generateCustomResponse(
+              `A wizard named @${randomCast.player} just cast "${randomCast.spell}" for ${randomCast.points} points. Make a short sarcastic observation about this. Be grumpy but not mean.`
+            );
+            if (response) {
+              await nermBot.postAsNerm(response);
+              console.log('🐱 Nerm reacted to cast');
+            }
+          } catch (e) {
+            console.error('Nerm reaction error:', e.message);
+          }
+        }
       }
     } catch (error) {
       console.error('❌ Error processing casts:', error.message);
     }
   });
+
+  // ============================================
+  // @9LVNetwork POSTS
+  // ============================================
 
   /**
    * Post daily objective at 8:00 AM UTC
@@ -60,6 +99,51 @@ function initializeScheduledJobs() {
       }
     } catch (error) {
       console.error('❌ Error posting objective:', error.message);
+    }
+  });
+
+  /**
+   * Post midday standings at 12:00 PM UTC
+   */
+  cron.schedule('0 12 * * *', async () => {
+    console.log(`[${new Date().toISOString()}] 📊 Running: Midday standings`);
+    try {
+      const tweet = await twitterBot.postMiddayStandings();
+      if (tweet) {
+        console.log(`✅ Posted midday standings: ${tweet.id}`);
+      }
+    } catch (error) {
+      console.error('❌ Error posting midday standings:', error.message);
+    }
+  });
+
+  /**
+   * Post afternoon reminder at 4:00 PM UTC
+   */
+  cron.schedule('0 16 * * *', async () => {
+    console.log(`[${new Date().toISOString()}] 🔔 Running: Afternoon reminder`);
+    try {
+      const tweet = await twitterBot.postAfternoonReminder();
+      if (tweet) {
+        console.log(`✅ Posted afternoon reminder: ${tweet.id}`);
+      }
+    } catch (error) {
+      console.error('❌ Error posting afternoon reminder:', error.message);
+    }
+  });
+
+  /**
+   * Post final push at 8:00 PM UTC
+   */
+  cron.schedule('0 20 * * *', async () => {
+    console.log(`[${new Date().toISOString()}] 🚨 Running: Final push`);
+    try {
+      const tweet = await twitterBot.postFinalPush();
+      if (tweet) {
+        console.log(`✅ Posted final push: ${tweet.id}`);
+      }
+    } catch (error) {
+      console.error('❌ Error posting final push:', error.message);
     }
   });
 
@@ -90,6 +174,108 @@ function initializeScheduledJobs() {
       console.error('❌ Error in end of day:', error.message);
     }
   });
+
+  // ============================================
+  // @9LV_Nerm POSTS
+  // ============================================
+
+  /**
+   * Nerm morning grumpy post at 9:00 AM UTC (100% chance)
+   */
+  cron.schedule('0 9 * * *', async () => {
+    console.log(`[${new Date().toISOString()}] 🐱 Running: Nerm morning grumpy`);
+    try {
+      const prompts = [
+        "It's morning in the wizard game. You just woke up and are NOT happy about having to watch these wizards cast spells all day. Complain about it briefly.",
+        "Another day of watching wizard cats pretend to be magical. Express your displeasure at being awake.",
+        "The sun is up. The wizards are stirring. You'd rather be sleeping. Share your morning mood.",
+        "You're a floating cat head forced to observe a wizard game at 9am. How do you feel about this?",
+      ];
+      const prompt = prompts[Math.floor(Math.random() * prompts.length)];
+      const response = await nermBot.generateCustomResponse(prompt);
+      if (response) {
+        await nermBot.postAsNerm(response);
+        console.log('✅ Posted Nerm morning grumpy');
+      }
+    } catch (error) {
+      console.error('❌ Error in Nerm morning:', error.message);
+    }
+  });
+
+  /**
+   * Nerm afternoon observation at 2:00 PM UTC (100% chance)
+   */
+  cron.schedule('0 14 * * *', async () => {
+    console.log(`[${new Date().toISOString()}] 🐱 Running: Nerm afternoon observation`);
+    try {
+      const response = await nermBot.generateCustomResponse(
+        "It's the middle of the day in the wizard game. Make a random sarcastic observation about being a cat forced to watch this. Maybe comment on how the battle is going, or just complain about existence. Keep it short."
+      );
+      if (response) {
+        await nermBot.postAsNerm(response);
+        console.log('✅ Posted Nerm afternoon observation');
+      }
+    } catch (error) {
+      console.error('❌ Error in Nerm afternoon:', error.message);
+    }
+  });
+
+  /**
+   * Nerm evening complaint at 5:00 PM UTC (80% chance)
+   */
+  cron.schedule('0 17 * * *', async () => {
+    if (Math.random() < 0.8) {
+      console.log(`[${new Date().toISOString()}] 🐱 Running: Nerm evening complaint`);
+      try {
+        const prompts = [
+          "It's late afternoon. The wizards are still going. Express your fatigue with watching this game.",
+          "You've been watching wizard cats cast spells for hours. Share a tired, sarcastic thought.",
+          "The day is dragging on. Make an observation about time moving slowly when you're a floating cat head.",
+          "Evening approaches. The spells continue. Say something grumpy about the state of things.",
+        ];
+        const prompt = prompts[Math.floor(Math.random() * prompts.length)];
+        const response = await nermBot.generateCustomResponse(prompt);
+        if (response) {
+          await nermBot.postAsNerm(response);
+          console.log('✅ Posted Nerm evening complaint');
+        }
+      } catch (error) {
+        console.error('❌ Error in Nerm evening:', error.message);
+      }
+    }
+  });
+
+  /**
+   * Nerm daily roast at 10:00 PM UTC (100% chance)
+   */
+  cron.schedule('0 22 * * *', async () => {
+    console.log(`[${new Date().toISOString()}] 🐱 Running: Nerm daily roast`);
+    try {
+      await nermBot.postDailyObservation();
+      console.log('✅ Posted Nerm daily roast');
+    } catch (error) {
+      console.error('❌ Error in Nerm roast:', error.message);
+    }
+  });
+
+  /**
+   * Nerm existential moment at 3:00 AM UTC (80% chance)
+   */
+  cron.schedule('0 3 * * *', async () => {
+    if (Math.random() < 0.8) {
+      console.log(`[${new Date().toISOString()}] 🐱 Running: Nerm existential moment`);
+      try {
+        await nermBot.maybeGlitch();
+        console.log('✅ Posted Nerm existential moment');
+      } catch (error) {
+        console.error('❌ Error in Nerm existential:', error.message);
+      }
+    }
+  });
+
+  // ============================================
+  // MAINTENANCE JOBS
+  // ============================================
 
   /**
    * Reset mana at midnight UTC
@@ -128,54 +314,6 @@ function initializeScheduledJobs() {
   });
 
   /**
-   * Nerm daily observation at 10:00 PM UTC
-   * Posts a sarcastic end-of-day summary
-   */
-  cron.schedule('0 22 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 🐱 Running: Nerm daily observation`);
-    try {
-      await nermBot.postDailyObservation();
-    } catch (error) {
-      console.error('❌ Error in Nerm observation:', error.message);
-    }
-  });
-
-  /**
-   * Nerm random existential post at 3:00 AM UTC
-   * 30% chance to post something unhinged
-   */
-  cron.schedule('0 3 * * *', async () => {
-    if (Math.random() < 0.3) {
-      console.log(`[${new Date().toISOString()}] 🐱 Running: Nerm existential moment`);
-      try {
-        await nermBot.maybeGlitch();
-      } catch (error) {
-        console.error('❌ Error in Nerm glitch:', error.message);
-      }
-    }
-  });
-
-  /**
-   * Nerm afternoon check-in at 2:00 PM UTC
-   * 50% chance to post a random observation
-   */
-  cron.schedule('0 14 * * *', async () => {
-    if (Math.random() < 0.5) {
-      console.log(`[${new Date().toISOString()}] 🐱 Running: Nerm afternoon check-in`);
-      try {
-        const response = await nermBot.generateCustomResponse(
-          "It's the middle of the day in the wizard game. Make a random sarcastic observation about being a cat forced to watch this. Keep it short."
-        );
-        if (response) {
-          await nermBot.postAsNerm(response);
-        }
-      } catch (error) {
-        console.error('❌ Error in Nerm afternoon:', error.message);
-      }
-    }
-  });
-
-  /**
    * Update zone control every 5 minutes
    * Keeps the map display current
    */
@@ -192,15 +330,27 @@ function initializeScheduledJobs() {
 
   jobsInitialized = true;
   console.log('✅ Scheduled jobs initialized:');
-  console.log('   - Process casts: every 2 minutes (only when objective active)');
-  console.log('   - Daily objective: 8:00 AM UTC');
-  console.log('   - End of day: 11:00 PM UTC');
-  console.log('   - Mana reset: midnight UTC');
-  console.log('   - Activity decay: 1:00 AM UTC');
-  console.log('   - Zone control update: every 5 minutes (local only)');
-  console.log('   - 🐱 Nerm daily roast: 10:00 PM UTC');
-  console.log('   - 🐱 Nerm afternoon (50%): 2:00 PM UTC');
-  console.log('   - 🐱 Nerm existential (30%): 3:00 AM UTC');
+  console.log('');
+  console.log('📢 @9LVNetwork Schedule:');
+  console.log('   - 08:00 UTC: Daily objective');
+  console.log('   - 12:00 UTC: Midday standings');
+  console.log('   - 16:00 UTC: Afternoon reminder');
+  console.log('   - 20:00 UTC: Final push');
+  console.log('   - 23:00 UTC: Daily results');
+  console.log('');
+  console.log('🐱 @9LV_Nerm Schedule:');
+  console.log('   - 09:00 UTC: Morning grumpy (100%)');
+  console.log('   - 14:00 UTC: Afternoon observation (100%)');
+  console.log('   - 17:00 UTC: Evening complaint (80%)');
+  console.log('   - 22:00 UTC: Daily roast (100%)');
+  console.log('   - 03:00 UTC: Existential moment (80%)');
+  console.log('   - Random: React to casts (15% per batch)');
+  console.log('');
+  console.log('⚙️ Maintenance:');
+  console.log('   - Every 2 min: Process spell casts');
+  console.log('   - Every 5 min: Update zone control');
+  console.log('   - 00:00 UTC: Mana reset');
+  console.log('   - 01:00 UTC: Activity decay');
 }
 
 /**
