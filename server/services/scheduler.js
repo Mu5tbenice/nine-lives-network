@@ -21,10 +21,10 @@ function initializeScheduledJobs() {
   console.log('🕐 Initializing scheduled jobs...');
 
   /**
-   * Process spell casts every 15 minutes (reduced from 2 min to save API credits)
+   * Process spell casts every 2 minutes
    * Only runs if there's an active objective tweet
    */
-  cron.schedule('*/15 * * * *', async () => {
+  cron.schedule('*/2 * * * *', async () => {
     try {
       // Check if there's an active objective first (no API call)
       const zone = await territoryControl.getCurrentObjective();
@@ -192,7 +192,7 @@ function initializeScheduledJobs() {
 
   jobsInitialized = true;
   console.log('✅ Scheduled jobs initialized:');
-  console.log('   - Process casts: every 15 minutes (only when objective active)');
+  console.log('   - Process casts: every 2 minutes (only when objective active)');
   console.log('   - Daily objective: 8:00 AM UTC');
   console.log('   - End of day: 11:00 PM UTC');
   console.log('   - Mana reset: midnight UTC');
