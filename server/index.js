@@ -1,709 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nine Lives Network | Enter the Realm</title>
-  <meta name="description" content="A social-competitive game where wizard cats compete for territory control in the fantasy world of Avaloris.">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/assets/images/favicon.png">
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="/css/styles.css">
-
-  <!-- Three.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html, body {
-      overflow: hidden;
-      width: 100%;
-      height: 100%;
-    }
-
-    /* Magical Background */
-    .magic-bg {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: 
-        radial-gradient(ellipse at 20% 80%, rgba(138, 43, 226, 0.15) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 20%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 50%, rgba(0, 212, 255, 0.05) 0%, transparent 70%),
-        #0a0a14;
-      z-index: -2;
-    }
-
-    /* Three.js Canvas Container */
-    #canvas-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-    }
-
-    /* Portal Effect - Behind the cat head */
-    .portal {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 320px;
-      height: 320px;
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    .portal-ring {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      border: 3px solid transparent;
-      animation: portalSpin 8s linear infinite;
-    }
-
-    .portal-ring-1 {
-      width: 280px;
-      height: 280px;
-      border-color: rgba(138, 43, 226, 0.6);
-      box-shadow: 
-        0 0 30px rgba(138, 43, 226, 0.4),
-        inset 0 0 30px rgba(138, 43, 226, 0.2);
-    }
-
-    .portal-ring-2 {
-      width: 320px;
-      height: 320px;
-      border-color: rgba(255, 215, 0, 0.4);
-      animation-direction: reverse;
-      animation-duration: 12s;
-      box-shadow: 
-        0 0 20px rgba(255, 215, 0, 0.3),
-        inset 0 0 20px rgba(255, 215, 0, 0.1);
-    }
-
-    .portal-ring-3 {
-      width: 360px;
-      height: 360px;
-      border-color: rgba(0, 212, 255, 0.3);
-      animation-duration: 15s;
-      box-shadow: 
-        0 0 15px rgba(0, 212, 255, 0.2),
-        inset 0 0 15px rgba(0, 212, 255, 0.1);
-    }
-
-    @keyframes portalSpin {
-      from { transform: translate(-50%, -50%) rotate(0deg); }
-      to { transform: translate(-50%, -50%) rotate(360deg); }
-    }
-
-    /* Portal Center Glow */
-    .portal-glow {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 250px;
-      height: 250px;
-      background: radial-gradient(circle, 
-        rgba(138, 43, 226, 0.5) 0%, 
-        rgba(75, 0, 130, 0.3) 30%,
-        rgba(0, 212, 255, 0.1) 60%,
-        transparent 70%);
-      animation: portalPulse 3s ease-in-out infinite;
-      border-radius: 50%;
-      filter: blur(20px);
-    }
-
-    @keyframes portalPulse {
-      0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
-      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-    }
-
-    /* Floating Particles */
-    .particles {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 2;
-      pointer-events: none;
-    }
-
-    .particle {
-      position: absolute;
-      width: 4px;
-      height: 4px;
-      background: var(--accent-gold);
-      border-radius: 50%;
-      animation: particleFloat 8s ease-in-out infinite;
-      opacity: 0.6;
-    }
-
-    @keyframes particleFloat {
-      0%, 100% { 
-        transform: translateY(0) translateX(0); 
-        opacity: 0.6;
-      }
-      25% { 
-        transform: translateY(-100px) translateX(20px); 
-        opacity: 1;
-      }
-      50% { 
-        transform: translateY(-200px) translateX(-10px); 
-        opacity: 0.8;
-      }
-      75% { 
-        transform: translateY(-100px) translateX(-20px); 
-        opacity: 0.4;
-      }
-    }
-
-    /* Magic Sparkles around portal */
-    .sparkle {
-      position: absolute;
-      width: 6px;
-      height: 6px;
-      background: white;
-      border-radius: 50%;
-      animation: sparkle 2s ease-in-out infinite;
-    }
-
-    @keyframes sparkle {
-      0%, 100% { opacity: 0; transform: scale(0); }
-      50% { opacity: 1; transform: scale(1); }
-    }
-
-    /* UI Overlay */
-    .ui-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 10;
-      pointer-events: none;
-    }
-
-    /* Title at top */
-    .title-container {
-      position: absolute;
-      top: 5%;
-      left: 50%;
-      transform: translateX(-50%);
-      text-align: center;
-      pointer-events: auto;
-    }
-
-    .splash-title {
-      font-family: var(--font-main);
-      font-size: 1.5rem;
-      background: linear-gradient(135deg, #FFD700, #00D4FF);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      text-transform: uppercase;
-      letter-spacing: 4px;
-      margin-bottom: 0.5rem;
-    }
-
-    .splash-subtitle {
-      font-family: var(--font-body);
-      font-size: 1.25rem;
-      color: #a0a0b0;
-    }
-
-    /* Season Badge */
-    .season-badge {
-      position: absolute;
-      top: 14%;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: var(--font-main);
-      font-size: 0.5rem;
-      padding: 0.5rem 1rem;
-      background: #8A2BE2;
-      color: white;
-      border-radius: 4px;
-      pointer-events: auto;
-    }
-
-    /* Menu Buttons - Orbiting around center */
-    .menu-btn {
-      position: absolute;
-      pointer-events: auto;
-      font-family: var(--font-main);
-      font-size: 0.55rem;
-      width: 150px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(10, 10, 20, 0.95);
-      border: 2px solid #FFD700;
-      color: #FFD700;
-      text-decoration: none;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      transition: all 0.3s ease;
-      z-index: 10;
-    }
-
-    .menu-btn:hover {
-      background: #FFD700;
-      color: #0a0a14;
-      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
-      transform: scale(1.08);
-    }
-
-    /* Button Positions - Around the portal */
-    .btn-play {
-      top: 50%;
-      right: calc(50% - 320px);
-      transform: translateY(-50%);
-      animation: glowPulse 2s ease-in-out infinite;
-    }
-
-    .btn-map {
-      top: 50%;
-      left: calc(50% - 320px);
-      transform: translateY(-50%);
-    }
-
-    .btn-leaderboard {
-      top: calc(50% - 200px);
-      left: 50%;
-      transform: translateX(-50%);
-    }
-
-    .btn-howto {
-      top: calc(50% + 200px);
-      left: 50%;
-      transform: translateX(-50%);
-    }
-
-    @keyframes glowPulse {
-      0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
-      50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.6); }
-    }
-
-    /* Bottom Info */
-    .bottom-info {
-      position: absolute;
-      bottom: 3%;
-      left: 50%;
-      transform: translateX(-50%);
-      text-align: center;
-      pointer-events: auto;
-    }
-
-    .social-links {
-      display: flex;
-      justify-content: center;
-      gap: 1.5rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .social-links a {
-      color: #a0a0b0;
-      font-size: 1.25rem;
-      transition: color 0.2s ease;
-      text-decoration: none;
-    }
-
-    .social-links a:hover {
-      color: #FFD700;
-    }
-
-    .copyright {
-      font-family: var(--font-body);
-      font-size: 0.875rem;
-      color: #606070;
-    }
-
-    /* Loading Screen */
-    .loading-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #0a0a14;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-      transition: opacity 0.5s ease;
-    }
-
-    .loading-screen.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .loading-text {
-      font-family: var(--font-main);
-      font-size: 0.75rem;
-      color: #FFD700;
-      margin-top: 1rem;
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    .loading-spinner {
-      width: 50px;
-      height: 50px;
-      border: 3px solid #2a2a3a;
-      border-top-color: #FFD700;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* Responsive */
-    @media (max-width: 900px) {
-      .btn-play {
-        right: 5%;
-        top: 50%;
-      }
-
-      .btn-map {
-        left: 5%;
-        top: 50%;
-      }
-
-      .btn-leaderboard {
-        top: 20%;
-      }
-
-      .btn-howto {
-        top: auto;
-        bottom: 15%;
-      }
-
-      .portal {
-        width: 250px;
-        height: 250px;
-      }
-
-      .portal-ring-1 { width: 220px; height: 220px; }
-      .portal-ring-2 { width: 260px; height: 260px; }
-      .portal-ring-3 { width: 300px; height: 300px; }
-      .portal-glow { width: 200px; height: 200px; }
-    }
-
-    @media (max-width: 600px) {
-      .splash-title {
-        font-size: 1rem;
-      }
-
-      .splash-subtitle {
-        font-size: 0.9rem;
-      }
-
-      .menu-btn {
-        width: 120px;
-        height: 42px;
-        font-size: 0.45rem;
-      }
-
-      .btn-play {
-        right: 3%;
-      }
-
-      .btn-map {
-        left: 3%;
-      }
-
-      .portal {
-        width: 200px;
-        height: 200px;
-      }
-
-      .portal-ring-1 { width: 180px; height: 180px; }
-      .portal-ring-2 { width: 210px; height: 210px; }
-      .portal-ring-3 { width: 240px; height: 240px; }
-      .portal-glow { width: 160px; height: 160px; }
-    }
-  </style>
-</head>
-<body>
-  <!-- Loading Screen -->
-  <div class="loading-screen" id="loadingScreen">
-    <div class="loading-spinner"></div>
-    <div class="loading-text">Summoning wizard cat...</div>
-  </div>
-
-  <!-- Magic Background -->
-  <div class="magic-bg"></div>
-
-  <!-- Portal Effect -->
-  <div class="portal">
-    <div class="portal-glow"></div>
-    <div class="portal-ring portal-ring-1"></div>
-    <div class="portal-ring portal-ring-2"></div>
-    <div class="portal-ring portal-ring-3"></div>
-  </div>
-
-  <!-- Floating Particles -->
-  <div class="particles" id="particles"></div>
-
-  <!-- Three.js Canvas -->
-  <div id="canvas-container"></div>
-
-  <!-- UI Overlay -->
-  <div class="ui-overlay">
-    <!-- Title -->
-    <div class="title-container">
-      <h1 class="splash-title">Nine Lives Network</h1>
-      <p class="splash-subtitle">Cast spells. Control territory. Rule Avaloris.</p>
-    </div>
-
-    <!-- Season Badge -->
-    <div class="season-badge">Season 0 - Beta</div>
-
-    <!-- Menu Buttons - Orbiting around portal -->
-    <a href="/register.html" class="menu-btn btn-play" id="ctaButton">Enter Realm</a>
-    <a href="/map.html" class="menu-btn btn-map">Map</a>
-    <a href="/leaderboards.html" class="menu-btn btn-leaderboard">Leaderboards</a>
-    <a href="/how-to-play.html" class="menu-btn btn-howto">How to Play</a>
-
-    <!-- Bottom Info -->
-    <div class="bottom-info">
-      <div class="social-links">
-        <a href="https://twitter.com/9LVNetwork" target="_blank" title="@9LVNetwork">𝕏</a>
-        <a href="https://twitter.com/9LV_Nerm" target="_blank" title="@9LV_Nerm">🐱</a>
-      </div>
-      <p class="copyright">© 2025 Nine Lives Network</p>
-    </div>
-  </div>
-
-  <script>
-    // =============================================
-    // Three.js Wizard Cat - Portal Style
-    // Head centered, poking through magical portal
-    // =============================================
-
-    let scene, camera, renderer, wizardCat;
-    let mouseX = 0, mouseY = 0;
-    let targetRotationX = 0, targetRotationY = 0;
-    let windowHalfX = window.innerWidth / 2;
-    let windowHalfY = window.innerHeight / 2;
-
-    init();
-    animate();
-
-    function init() {
-      const container = document.getElementById('canvas-container');
-
-      // Scene
-      scene = new THREE.Scene();
-
-      // Camera - Looking straight at the head
-      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 0, 6);
-      camera.lookAt(0, 0, 0);
-
-      // Renderer
-      renderer = new THREE.WebGLRenderer({ 
-        antialias: true, 
-        alpha: true 
-      });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.setClearColor(0x000000, 0);
-      renderer.outputEncoding = THREE.sRGBEncoding;
-      container.appendChild(renderer.domElement);
-
-      // Lighting
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-      scene.add(ambientLight);
-
-      const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      mainLight.position.set(5, 5, 7);
-      scene.add(mainLight);
-
-      // Purple accent from left
-      const purpleLight = new THREE.PointLight(0x8A2BE2, 0.6, 15);
-      purpleLight.position.set(-4, 0, 3);
-      scene.add(purpleLight);
-
-      // Gold accent from right
-      const goldLight = new THREE.PointLight(0xFFD700, 0.5, 15);
-      goldLight.position.set(4, 0, 3);
-      scene.add(goldLight);
-
-      // Cyan rim from behind
-      const cyanLight = new THREE.PointLight(0x00D4FF, 0.4, 15);
-      cyanLight.position.set(0, 2, -3);
-      scene.add(cyanLight);
-
-      // Load wizard cat model
-      const loader = new THREE.GLTFLoader();
-      loader.load(
-        '/assets/models/wizard-cat.glb',
-        function(gltf) {
-          wizardCat = gltf.scene;
-
-          // Position model so HEAD is centered (move body DOWN and BACK)
-          wizardCat.scale.set(1, 1, 1);
-          wizardCat.position.set(0, -4.5, 0); // Move down so head is at center
-
-          // Hide backdrop
-          wizardCat.traverse((child) => {
-            if (child.name === 'Backdrop' || child.name === 'Plane' || child.name === 'Plane.002') {
-              child.visible = false;
-            }
-          });
-
-          scene.add(wizardCat);
-
-          // Hide loading screen
-          setTimeout(() => {
-            document.getElementById('loadingScreen').classList.add('hidden');
-          }, 500);
-        },
-        function(progress) {
-          const percent = (progress.loaded / progress.total * 100).toFixed(0);
-          console.log('Loading: ' + percent + '%');
-        },
-        function(error) {
-          console.error('Error loading model:', error);
-          document.getElementById('loadingScreen').classList.add('hidden');
-        }
-      );
-
-      // Event listeners
-      document.addEventListener('mousemove', onMouseMove, false);
-      document.addEventListener('touchmove', onTouchMove, { passive: false });
-      window.addEventListener('resize', onWindowResize, false);
-
-      // Create particles
-      createParticles();
-
-      // Create sparkles around portal
-      createSparkles();
-    }
-
-    function onMouseMove(event) {
-      mouseX = (event.clientX - windowHalfX) / windowHalfX;
-      mouseY = (event.clientY - windowHalfY) / windowHalfY;
-    }
-
-    function onTouchMove(event) {
-      if (event.touches.length === 1) {
-        event.preventDefault();
-        mouseX = (event.touches[0].clientX - windowHalfX) / windowHalfX;
-        mouseY = (event.touches[0].clientY - windowHalfY) / windowHalfY;
-      }
-    }
-
-    function onWindowResize() {
-      windowHalfX = window.innerWidth / 2;
-      windowHalfY = window.innerHeight / 2;
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-
-    function animate() {
-      requestAnimationFrame(animate);
-
-      if (wizardCat) {
-        // Smooth rotation following mouse (Mario 64 style)
-        targetRotationY = mouseX * 0.5;
-        targetRotationX = mouseY * 0.2;
-
-        // Smooth interpolation
-        wizardCat.rotation.y += (targetRotationY - wizardCat.rotation.y) * 0.05;
-        wizardCat.rotation.x += (targetRotationX - wizardCat.rotation.x) * 0.05;
-
-        // Very subtle floating
-        wizardCat.position.y = -4.5 + Math.sin(Date.now() * 0.001) * 0.02;
-      }
-
-      renderer.render(scene, camera);
-    }
-
-    // Create floating particles
-    function createParticles() {
-      const particlesContainer = document.getElementById('particles');
-      const particleCount = 25;
-
-      for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.top = Math.random() * 100 + '%';
-        particle.style.animationDelay = Math.random() * 8 + 's';
-        particle.style.animationDuration = (6 + Math.random() * 4) + 's';
-
-        const colors = ['#FFD700', '#8A2BE2', '#00D4FF', '#FF6B35'];
-        particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-
-        particlesContainer.appendChild(particle);
-      }
-    }
-
-    // Create sparkles around the portal
-    function createSparkles() {
-      const portal = document.querySelector('.portal');
-      const sparkleCount = 12;
-
-      for (let i = 0; i < sparkleCount; i++) {
-        const sparkle = document.createElement('div');
-        sparkle.className = 'sparkle';
-
-        // Position around the portal ring
-        const angle = (i / sparkleCount) * Math.PI * 2;
-        const radius = 150 + Math.random() * 30;
-        const x = Math.cos(angle) * radius + 160;
-        const y = Math.sin(angle) * radius + 160;
-
-        sparkle.style.left = x + 'px';
-        sparkle.style.top = y + 'px';
-        sparkle.style.animationDelay = (i * 0.2) + 's';
-
-        const colors = ['#FFD700', '#FFFFFF', '#00D4FF'];
-        sparkle.style.background = colors[Math.floor(Math.random() * colors.length)];
-        sparkle.style.boxShadow = `0 0 10px ${sparkle.style.background}`;
-
-        portal.appendChild(sparkle);
-      }
-    }
-
-    // Check if user is logged in
-    document.addEventListener('DOMContentLoaded', () => {
-      const playerId = localStorage.getItem('player_id');
-      if (playerId) {
-        const ctaButton = document.getElementById('ctaButton');
-        ctaButton.href = '/dashboard.html';
-        ctaButton.textContent = 'Dashboard';
-      }
-    });
-  </script>
-</body>
-</html>
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Load routes with error handling
+try {
+  const authRoutes = require('./routes/auth');
+  app.use('/auth', authRoutes);
+  console.log('✅ Auth routes loaded');
+} catch (e) {
+  console.error('❌ Failed to load auth routes:', e.message);
+}
+
+try {
+  const playerRoutes = require('./routes/players');
+  app.use('/api/players', playerRoutes);
+  console.log('✅ Player routes loaded');
+} catch (e) {
+  console.error('❌ Failed to load player routes:', e.message);
+}
+
+try {
+  const mapRoutes = require('./routes/map');
+  app.use('/api/map', mapRoutes);
+  console.log('✅ Map routes loaded');
+} catch (e) {
+  console.error('❌ Failed to load map routes:', e.message);
+}
+
+try {
+  const leaderboardRoutes = require('./routes/leaderboards');
+  app.use('/api/leaderboards', leaderboardRoutes);
+  console.log('✅ Leaderboard routes loaded');
+} catch (e) {
+  console.error('❌ Failed to load leaderboard routes:', e.message);
+}
+
+try {
+  const adminRoutes = require('./routes/admin');
+  app.use('/api/admin', adminRoutes);
+  console.log('✅ Admin routes loaded');
+} catch (e) {
+  console.error('❌ Failed to load admin routes:', e.message);
+}
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Start scheduler for automated tasks
+try {
+  const scheduler = require('./services/scheduler');
+  console.log('✅ Scheduler loaded');
+} catch (e) {
+  console.error('❌ Failed to load scheduler:', e.message);
+}
+
+// Serve index.html for root
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// Start server
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🐱 Nine Lives Network server running on port ${PORT}`);
+  console.log(`📍 http://localhost:${PORT}`);
+});
+
+module.exports = app;
