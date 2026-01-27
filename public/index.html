@@ -76,7 +76,7 @@
     /* Portal Effect - Behind the cat head */
     .portal {
       position: absolute;
-      top: 35%;
+      top: 45%;
       left: 50%;
       transform: translate(-50%, -50%);
       width: 320px;
@@ -276,26 +276,26 @@
 
     /* Button Positions - Around the head */
     .btn-play {
-      top: 38%;
+      top: 45%;
       right: calc(50% - 280px);
       transform: translateY(-50%);
       animation: glowPulse 2s ease-in-out infinite;
     }
 
     .btn-map {
-      top: 38%;
+      top: 45%;
       left: calc(50% - 280px);
       transform: translateY(-50%);
     }
 
     .btn-leaderboard {
-      top: 20%;
+      top: 25%;
       left: 50%;
       transform: translateX(-50%);
     }
 
     .btn-howto {
-      top: 58%;
+      top: 68%;
       left: 50%;
       transform: translateX(-50%);
     }
@@ -530,8 +530,8 @@
 
       // Camera - Pulled back for smaller head
       camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 1.5, 10);
-      camera.lookAt(0, 1, 0);
+      camera.position.set(0, 2, 18);
+      camera.lookAt(0, 0, 0);
 
       // Renderer
       renderer = new THREE.WebGLRenderer({ 
@@ -576,7 +576,7 @@
 
           // Position model - eyes at ~45% screen height (menu level)
           wizardCat.scale.set(1, 1, 1);
-          wizardCat.position.set(0, -4, 0);
+          wizardCat.position.set(0, -6, 0);
 
           // Hide backdrop
           wizardCat.traverse((child) => {
