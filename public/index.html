@@ -3,19 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nine Lives Network | Enter the Realm</title>
-  <meta name="description" content="A social-competitive game where wizard cats compete for territory control in the fantasy world of Avaloris.">
-
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="/assets/images/favicon.png">
-
-  <!-- Styles -->
+  <title>Nine Lives Network | Cast Spells. Control Territory. Rule Avaloris.</title>
   <link rel="stylesheet" href="/css/styles.css">
-
-  <!-- Three.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-
   <style>
     * {
       margin: 0;
@@ -23,662 +12,536 @@
       box-sizing: border-box;
     }
 
-    html, body {
-      overflow: hidden;
-      width: 100%;
-      height: 100%;
+    body {
+      background: linear-gradient(180deg, #0a1628 0%, #1a2a4a 50%, #0a1628 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-family: 'Press Start 2P', monospace;
     }
 
-    /* Magical Background */
-    .magic-bg {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: 
-        radial-gradient(ellipse at 20% 80%, rgba(138, 43, 226, 0.15) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 20%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 50%, rgba(0, 212, 255, 0.05) 0%, transparent 70%),
-        #0a0a14;
-      z-index: -2;
-    }
-
-    /* Three.js Canvas Container */
-    #canvas-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-    }
-
-    /* Bottom Fade - Hides body below neck */
-    .bottom-fade {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 70%;
-      background: linear-gradient(
-        to bottom,
-        transparent 0%,
-        rgba(10, 10, 20, 0.4) 10%,
-        rgba(10, 10, 20, 0.8) 25%,
-        rgba(10, 10, 20, 1) 40%,
-        rgba(10, 10, 20, 1) 100%
-      );
-      z-index: 2;
-      pointer-events: none;
-    }
-
-    /* Portal Effect - Behind the cat head */
-    .portal {
-      position: absolute;
-      top: 45%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 320px;
-      height: 320px;
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    .portal-ring {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      border: 3px solid transparent;
-      animation: portalSpin 8s linear infinite;
-    }
-
-    .portal-ring-1 {
-      width: 280px;
-      height: 280px;
-      border-color: rgba(138, 43, 226, 0.6);
-      box-shadow: 
-        0 0 30px rgba(138, 43, 226, 0.4),
-        inset 0 0 30px rgba(138, 43, 226, 0.2);
-    }
-
-    .portal-ring-2 {
-      width: 320px;
-      height: 320px;
-      border-color: rgba(255, 215, 0, 0.4);
-      animation-direction: reverse;
-      animation-duration: 12s;
-      box-shadow: 
-        0 0 20px rgba(255, 215, 0, 0.3),
-        inset 0 0 20px rgba(255, 215, 0, 0.1);
-    }
-
-    .portal-ring-3 {
-      width: 360px;
-      height: 360px;
-      border-color: rgba(0, 212, 255, 0.3);
-      animation-duration: 15s;
-      box-shadow: 
-        0 0 15px rgba(0, 212, 255, 0.2),
-        inset 0 0 15px rgba(0, 212, 255, 0.1);
-    }
-
-    @keyframes portalSpin {
-      from { transform: translate(-50%, -50%) rotate(0deg); }
-      to { transform: translate(-50%, -50%) rotate(360deg); }
-    }
-
-    /* Portal Center Glow */
-    .portal-glow {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 250px;
-      height: 250px;
-      background: radial-gradient(circle, 
-        rgba(138, 43, 226, 0.5) 0%, 
-        rgba(75, 0, 130, 0.3) 30%,
-        rgba(0, 212, 255, 0.1) 60%,
-        transparent 70%);
-      animation: portalPulse 3s ease-in-out infinite;
-      border-radius: 50%;
-      filter: blur(20px);
-    }
-
-    @keyframes portalPulse {
-      0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
-      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
-    }
-
-    /* Floating Particles */
+    /* ===== PARTICLES ===== */
     .particles {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: 3;
       pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
     }
 
     .particle {
       position: absolute;
       width: 4px;
       height: 4px;
-      background: #FFD700;
+      background: var(--accent-gold);
       border-radius: 50%;
-      animation: particleFloat 8s ease-in-out infinite;
       opacity: 0.6;
+      animation: float 8s infinite ease-in-out;
     }
 
-    @keyframes particleFloat {
-      0%, 100% { 
-        transform: translateY(0) translateX(0); 
-        opacity: 0.6;
-      }
-      25% { 
-        transform: translateY(-100px) translateX(20px); 
-        opacity: 1;
-      }
-      50% { 
-        transform: translateY(-200px) translateX(-10px); 
-        opacity: 0.8;
-      }
-      75% { 
-        transform: translateY(-100px) translateX(-20px); 
-        opacity: 0.4;
-      }
+    @keyframes float {
+      0%, 100% { transform: translateY(0) translateX(0); opacity: 0.6; }
+      50% { transform: translateY(-30px) translateX(10px); opacity: 0.3; }
     }
 
-    /* UI Overlay */
-    .ui-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 10;
-      pointer-events: none;
+    /* ===== MAIN CONTAINER ===== */
+    .landing-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 30px 20px;
+      position: relative;
+      z-index: 1;
     }
 
-    /* Title at top */
-    .title-container {
-      position: absolute;
-      top: 5%;
-      left: 50%;
-      transform: translateX(-50%);
-      text-align: center;
-      pointer-events: auto;
-    }
-
-    .splash-title {
-      font-family: var(--font-main);
-      font-size: 1.5rem;
-      background: linear-gradient(135deg, #FFD700, #00D4FF);
+    /* ===== TITLE ===== */
+    .game-title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(1.2rem, 5vw, 2.5rem);
+      background: linear-gradient(180deg, #00ffff 0%, #ffcc00 50%, #ff6600 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      text-transform: uppercase;
-      letter-spacing: 4px;
-      margin-bottom: 0.5rem;
+      text-align: center;
+      margin-bottom: 15px;
+      text-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+      letter-spacing: 2px;
     }
 
-    .splash-subtitle {
-      font-family: var(--font-body);
-      font-size: 1.25rem;
+    .game-tagline {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(0.5rem, 2vw, 0.8rem);
       color: #a0a0b0;
+      text-align: center;
+      margin-bottom: 20px;
     }
 
-    /* Season Badge */
+    /* ===== SEASON BADGE ===== */
     .season-badge {
-      position: absolute;
-      top: 14%;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: var(--font-main);
+      background: linear-gradient(135deg, #9932CC, #6B238E);
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-family: 'Press Start 2P', monospace;
       font-size: 0.5rem;
-      padding: 0.5rem 1rem;
-      background: #8A2BE2;
       color: white;
-      border-radius: 4px;
-      pointer-events: auto;
+      margin-bottom: 25px;
+      box-shadow: 0 0 15px rgba(153, 50, 204, 0.5);
     }
 
-    /* Menu Buttons - Orbiting around center */
-    .menu-btn {
-      position: absolute;
-      pointer-events: auto;
-      font-family: var(--font-main);
-      font-size: 0.55rem;
-      width: 150px;
-      height: 48px;
-      display: flex;
+    /* ===== HOW TO PLAY - TOP BUTTON ===== */
+    .how-to-play-btn {
+      display: inline-flex;
       align-items: center;
-      justify-content: center;
-      background: rgba(10, 10, 20, 0.95);
-      border: 2px solid #FFD700;
-      color: #FFD700;
+      gap: 8px;
+      padding: 12px 24px;
+      background: transparent;
+      border: 2px solid var(--accent-gold);
+      color: var(--accent-gold);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.55rem;
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 20px;
+    }
+
+    .how-to-play-btn:hover {
+      background: rgba(255, 215, 0, 0.1);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+
+    /* ===== 3D MODEL CONTAINER ===== */
+    .model-container {
+      width: 100%;
+      max-width: 500px;
+      height: 300px;
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    #wizard-cat-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ===== PLAY NOW - PRIMARY CTA ===== */
+    .play-now-btn {
+      display: inline-block;
+      padding: 18px 50px;
+      background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+      border: none;
+      color: #000;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.8rem;
       text-decoration: none;
       text-transform: uppercase;
       letter-spacing: 2px;
+      cursor: pointer;
       transition: all 0.3s ease;
-      z-index: 10;
+      box-shadow: 0 6px 0 #996600, 0 0 30px rgba(255, 215, 0, 0.4);
+      margin-bottom: 25px;
     }
 
-    .menu-btn:hover {
-      background: #FFD700;
-      color: #0a0a14;
-      box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    .play-now-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 9px 0 #996600, 0 0 50px rgba(255, 215, 0, 0.6);
     }
 
-    /* Button Positions - Around the head */
-    .btn-play {
-      top: 45%;
-      right: calc(50% - 280px);
-      transform: translateY(-50%);
-      animation: glowPulse 2s ease-in-out infinite;
+    .play-now-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 3px 0 #996600, 0 0 20px rgba(255, 215, 0, 0.4);
     }
 
-    .btn-map {
-      top: 45%;
-      left: calc(50% - 280px);
-      transform: translateY(-50%);
-    }
-
-    .btn-leaderboard {
-      top: 25%;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-
-    .btn-howto {
-      top: 68%;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-
-    @keyframes glowPulse {
-      0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
-      50% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.6); }
-    }
-
-    /* Bottom Info */
-    .bottom-info {
-      position: absolute;
-      bottom: 3%;
-      left: 50%;
-      transform: translateX(-50%);
-      text-align: center;
-      pointer-events: auto;
-    }
-
-    .social-links {
+    /* ===== SECONDARY BUTTONS (Map, Leaderboards) ===== */
+    .secondary-buttons {
       display: flex;
+      gap: 15px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
       justify-content: center;
-      gap: 1.5rem;
-      margin-bottom: 0.5rem;
     }
 
-    .social-links a {
-      color: #a0a0b0;
-      font-size: 1.25rem;
-      transition: color 0.2s ease;
+    .secondary-btn {
+      display: inline-block;
+      padding: 14px 30px;
+      background: transparent;
+      border: 2px solid var(--accent-gold);
+      color: var(--accent-gold);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.5rem;
       text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 150px;
+      text-align: center;
     }
 
-    .social-links a:hover {
-      color: #FFD700;
+    .secondary-btn:hover {
+      background: rgba(255, 215, 0, 0.1);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
     }
 
-    .copyright {
-      font-family: var(--font-body);
-      font-size: 0.875rem;
-      color: #606070;
+    /* ===== MOBILE DROPDOWN MENU ===== */
+    .mobile-menu {
+      display: none;
+      position: relative;
+      margin-bottom: 20px;
     }
 
-    /* Loading Screen */
-    .loading-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #0a0a14;
+    .mobile-menu-btn {
       display: flex;
-      flex-direction: column;
-      justify-content: center;
       align-items: center;
-      z-index: 1000;
-      transition: opacity 0.5s ease;
+      justify-content: center;
+      gap: 10px;
+      padding: 12px 24px;
+      background: rgba(20, 30, 50, 0.9);
+      border: 2px solid var(--accent-gold);
+      color: var(--accent-gold);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.45rem;
+      text-transform: uppercase;
+      cursor: pointer;
+      min-width: 200px;
     }
 
-    .loading-screen.hidden {
-      opacity: 0;
-      pointer-events: none;
+    .mobile-menu-btn::after {
+      content: '▼';
+      font-size: 0.4rem;
+      transition: transform 0.3s ease;
     }
 
-    .loading-text {
-      font-family: var(--font-main);
-      font-size: 0.75rem;
-      color: #FFD700;
-      margin-top: 1rem;
-      animation: pulse 1.5s ease-in-out infinite;
+    .mobile-menu.open .mobile-menu-btn::after {
+      transform: rotate(180deg);
     }
 
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
+    .mobile-menu-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: rgba(10, 20, 40, 0.98);
+      border: 2px solid var(--accent-gold);
+      border-top: none;
+      display: none;
+      flex-direction: column;
+      z-index: 100;
     }
 
-    .loading-spinner {
-      width: 50px;
-      height: 50px;
-      border: 3px solid #2a2a3a;
-      border-top-color: #FFD700;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
+    .mobile-menu.open .mobile-menu-dropdown {
+      display: flex;
     }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+    .mobile-menu-dropdown a {
+      padding: 14px 20px;
+      color: var(--text-secondary);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.4rem;
+      text-decoration: none;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+      transition: all 0.2s ease;
     }
 
-    /* Responsive */
-    @media (max-width: 900px) {
-      .btn-play {
-        right: 5%;
-        top: 45%;
+    .mobile-menu-dropdown a:last-child {
+      border-bottom: none;
+    }
+
+    .mobile-menu-dropdown a:hover {
+      background: rgba(255, 215, 0, 0.1);
+      color: var(--accent-gold);
+    }
+
+    /* ===== FOOTER LINKS ===== */
+    .footer-links {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: auto;
+      padding-top: 30px;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      font-size: 0.5rem;
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--accent-gold);
+    }
+
+    /* ===== MOBILE RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .landing-container {
+        padding: 20px 15px;
       }
 
-      .btn-map {
-        left: 5%;
-        top: 45%;
+      .game-title {
+        font-size: 1.2rem;
+        margin-bottom: 10px;
       }
 
-      .btn-leaderboard {
-        top: 22%;
+      .game-tagline {
+        font-size: 0.45rem;
+        margin-bottom: 15px;
       }
 
-      .btn-howto {
-        top: 68%;
+      .season-badge {
+        font-size: 0.4rem;
+        padding: 6px 15px;
+        margin-bottom: 15px;
       }
 
-      .portal {
-        width: 220px;
+      .how-to-play-btn {
+        font-size: 0.5rem;
+        padding: 10px 20px;
+        margin-bottom: 15px;
+      }
+
+      .model-container {
         height: 220px;
-        top: 42%;
+        margin-bottom: 15px;
       }
 
-      .portal-ring-1 { width: 180px; height: 180px; }
-      .portal-ring-2 { width: 220px; height: 220px; }
-      .portal-ring-3 { width: 260px; height: 260px; }
-      .portal-glow { width: 160px; height: 160px; }
+      .play-now-btn {
+        font-size: 0.65rem;
+        padding: 14px 35px;
+        margin-bottom: 20px;
+      }
+
+      /* Hide desktop secondary buttons on mobile */
+      .secondary-buttons {
+        display: none;
+      }
+
+      /* Show mobile dropdown on mobile */
+      .mobile-menu {
+        display: block;
+      }
+
+      .footer-links {
+        padding-top: 20px;
+      }
+
+      .footer-links a {
+        font-size: 0.4rem;
+      }
     }
 
-    @media (max-width: 600px) {
-      .splash-title {
+    /* Very small screens */
+    @media (max-width: 400px) {
+      .game-title {
         font-size: 1rem;
       }
 
-      .splash-subtitle {
-        font-size: 0.9rem;
+      .play-now-btn {
+        padding: 12px 25px;
+        font-size: 0.55rem;
       }
 
-      .menu-btn {
-        width: 120px;
-        height: 42px;
-        font-size: 0.45rem;
-      }
-
-      .btn-play {
-        right: 3%;
-      }
-
-      .btn-map {
-        left: 3%;
-      }
-
-      .portal {
-        width: 180px;
+      .model-container {
         height: 180px;
       }
-
-      .portal-ring-1 { width: 150px; height: 150px; }
-      .portal-ring-2 { width: 180px; height: 180px; }
-      .portal-ring-3 { width: 210px; height: 210px; }
-      .portal-glow { width: 130px; height: 130px; }
     }
   </style>
 </head>
 <body>
-  <!-- Loading Screen -->
-  <div class="loading-screen" id="loadingScreen">
-    <div class="loading-spinner"></div>
-    <div class="loading-text">Summoning wizard cat...</div>
-  </div>
-
-  <!-- Magic Background -->
-  <div class="magic-bg"></div>
-
-  <!-- Portal Effect -->
-  <div class="portal">
-    <div class="portal-glow"></div>
-    <div class="portal-ring portal-ring-1"></div>
-    <div class="portal-ring portal-ring-2"></div>
-    <div class="portal-ring portal-ring-3"></div>
-  </div>
-
-  <!-- Floating Particles -->
+  <!-- Particles Background -->
   <div class="particles" id="particles"></div>
 
-  <!-- Three.js Canvas -->
-  <div id="canvas-container"></div>
-
-  <!-- Bottom Fade - Hides body below neck -->
-  <div class="bottom-fade"></div>
-
-  <!-- UI Overlay -->
-  <div class="ui-overlay">
+  <div class="landing-container">
     <!-- Title -->
-    <div class="title-container">
-      <h1 class="splash-title">Nine Lives Network</h1>
-      <p class="splash-subtitle">Cast spells. Control territory. Rule Avaloris.</p>
-    </div>
+    <h1 class="game-title">NINE LIVES NETWORK</h1>
+    <p class="game-tagline">Cast spells. Control territory. Rule Avaloris.</p>
 
     <!-- Season Badge -->
     <div class="season-badge">Season 0 - Beta</div>
 
-    <!-- Menu Buttons - Orbiting around portal -->
-    <a href="/register.html" class="menu-btn btn-play" id="ctaButton">Enter Realm</a>
-    <a href="/map.html" class="menu-btn btn-map">Map</a>
-    <a href="/leaderboards.html" class="menu-btn btn-leaderboard">Leaderboards</a>
-    <a href="/how-to-play.html" class="menu-btn btn-howto">How to Play</a>
+    <!-- How To Play - TOP (most important for new users) -->
+    <a href="/how-to-play.html" class="how-to-play-btn">
+      <span>❓</span> How To Play
+    </a>
 
-    <!-- Bottom Info -->
-    <div class="bottom-info">
-      <div class="social-links">
-        <a href="https://twitter.com/9LVNetwork" target="_blank" title="@9LVNetwork">𝕏</a>
-        <a href="https://twitter.com/9LV_Nerm" target="_blank" title="@9LV_Nerm">🐱</a>
+    <!-- 3D Wizard Cat Model -->
+    <div class="model-container">
+      <canvas id="wizard-cat-canvas"></canvas>
+    </div>
+
+    <!-- Play Now - PRIMARY CTA (Yellow, stands out) -->
+    <a href="/register.html" class="play-now-btn">▶ Play Now</a>
+
+    <!-- Secondary Buttons (Desktop) -->
+    <div class="secondary-buttons">
+      <a href="/map.html" class="secondary-btn">🗺️ Map</a>
+      <a href="/leaderboards.html" class="secondary-btn">🏆 Leaderboards</a>
+      <a href="/dashboard.html" class="secondary-btn">📊 Dashboard</a>
+    </div>
+
+    <!-- Mobile Dropdown Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
+        Navigate
+      </button>
+      <div class="mobile-menu-dropdown">
+        <a href="/dashboard.html">📊 Dashboard</a>
+        <a href="/map.html">🗺️ Map</a>
+        <a href="/leaderboards.html">🏆 Leaderboards</a>
       </div>
-      <p class="copyright">© 2025 Nine Lives Network</p>
+    </div>
+
+    <!-- Footer Links -->
+    <div class="footer-links">
+      <a href="/terms.html">Terms of Service</a>
+      <a href="/privacy.html">Privacy Policy</a>
+      <a href="https://twitter.com/9LVNetwork" target="_blank">Twitter</a>
     </div>
   </div>
 
+  <!-- Three.js for 3D Model -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
   <script>
-    // =============================================
-    // Three.js Wizard Cat - Portal Style
-    // Smaller head, eyes at menu level, fade below
-    // =============================================
+    // ===== PARTICLES =====
+    function createParticles() {
+      const container = document.getElementById('particles');
+      const colors = ['#FFD700', '#00FFFF', '#FF6600', '#9932CC'];
 
-    let scene, camera, renderer, wizardCat;
+      for (let i = 0; i < 30; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.top = Math.random() * 100 + '%';
+        particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+        particle.style.animationDelay = Math.random() * 8 + 's';
+        particle.style.animationDuration = (6 + Math.random() * 4) + 's';
+        container.appendChild(particle);
+      }
+    }
+
+    // ===== MOBILE MENU =====
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobileMenu');
+      menu.classList.toggle('open');
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+      const menu = document.getElementById('mobileMenu');
+      if (!menu.contains(e.target)) {
+        menu.classList.remove('open');
+      }
+    });
+
+    // ===== THREE.JS 3D MODEL =====
+    let scene, camera, renderer, model;
     let mouseX = 0, mouseY = 0;
-    let targetRotationX = 0, targetRotationY = 0;
-    let windowHalfX = window.innerWidth / 2;
-    let windowHalfY = window.innerHeight / 2;
 
-    init();
-    animate();
-
-    function init() {
-      const container = document.getElementById('canvas-container');
+    function init3D() {
+      const canvas = document.getElementById('wizard-cat-canvas');
+      const container = canvas.parentElement;
 
       // Scene
       scene = new THREE.Scene();
 
-      // Camera - Pulled back for smaller head
-      camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 2, 14);
-      camera.lookAt(0, 1, 0);
+      // Camera
+      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera.position.set(0, 0.5, 3);
 
       // Renderer
-      renderer = new THREE.WebGLRenderer({ 
-        antialias: true, 
-        alpha: true 
-      });
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.setClearColor(0x000000, 0);
-      renderer.outputEncoding = THREE.sRGBEncoding;
-      container.appendChild(renderer.domElement);
 
       // Lighting
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
       scene.add(ambientLight);
 
-      const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      mainLight.position.set(5, 5, 7);
-      scene.add(mainLight);
+      const frontLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      frontLight.position.set(0, 2, 3);
+      scene.add(frontLight);
 
-      // Purple accent from left
-      const purpleLight = new THREE.PointLight(0x8A2BE2, 0.6, 20);
-      purpleLight.position.set(-4, 4, 5);
-      scene.add(purpleLight);
+      const backLight = new THREE.DirectionalLight(0x00ffff, 0.3);
+      backLight.position.set(0, 1, -3);
+      scene.add(backLight);
 
-      // Gold accent from right
-      const goldLight = new THREE.PointLight(0xFFD700, 0.5, 20);
-      goldLight.position.set(4, 4, 5);
-      scene.add(goldLight);
-
-      // Cyan rim from behind
-      const cyanLight = new THREE.PointLight(0x00D4FF, 0.4, 15);
-      cyanLight.position.set(0, 5, -4);
-      scene.add(cyanLight);
-
-      // Load wizard cat model
+      // Load Model
       const loader = new THREE.GLTFLoader();
       loader.load(
         '/assets/models/wizard-cat.glb',
-        function(gltf) {
-          wizardCat = gltf.scene;
-
-          // Position model - eyes at ~45% screen height (menu level)
-          wizardCat.scale.set(1, 1, 1);
-          wizardCat.position.set(0, -4.5, 0);
-
-          // Hide backdrop
-          wizardCat.traverse((child) => {
-            if (child.name === 'Backdrop' || child.name === 'Plane' || child.name === 'Plane.002') {
-              child.visible = false;
-            }
-          });
-
-          scene.add(wizardCat);
-
-          // Hide loading screen
-          setTimeout(() => {
-            document.getElementById('loadingScreen').classList.add('hidden');
-          }, 500);
+        (gltf) => {
+          model = gltf.scene;
+          model.scale.set(1.8, 1.8, 1.8);
+          model.position.set(0, -0.5, 0);
+          scene.add(model);
         },
-        function(progress) {
-          const percent = (progress.loaded / progress.total * 100).toFixed(0);
-          console.log('Loading: ' + percent + '%');
-        },
-        function(error) {
-          console.error('Error loading model:', error);
-          document.getElementById('loadingScreen').classList.add('hidden');
+        undefined,
+        (error) => {
+          console.log('Model load error:', error);
+          // Fallback: show placeholder
+          const geometry = new THREE.SphereGeometry(0.8, 32, 32);
+          const material = new THREE.MeshStandardMaterial({ color: 0x44aa44 });
+          model = new THREE.Mesh(geometry, material);
+          scene.add(model);
         }
       );
 
-      // Event listeners
-      document.addEventListener('mousemove', onMouseMove, false);
-      document.addEventListener('touchmove', onTouchMove, { passive: false });
-      window.addEventListener('resize', onWindowResize, false);
+      // Mouse tracking
+      document.addEventListener('mousemove', (e) => {
+        mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+        mouseY = (e.clientY / window.innerHeight) * 2 - 1;
+      });
 
-      // Create particles
-      createParticles();
-    }
+      // Touch tracking for mobile
+      document.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 0) {
+          mouseX = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
+          mouseY = (e.touches[0].clientY / window.innerHeight) * 2 - 1;
+        }
+      });
 
-    function onMouseMove(event) {
-      mouseX = (event.clientX - windowHalfX) / windowHalfX;
-      mouseY = (event.clientY - windowHalfY) / windowHalfY;
-    }
+      // Resize handler
+      window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+      });
 
-    function onTouchMove(event) {
-      if (event.touches.length === 1) {
-        event.preventDefault();
-        mouseX = (event.touches[0].clientX - windowHalfX) / windowHalfX;
-        mouseY = (event.touches[0].clientY - windowHalfY) / windowHalfY;
-      }
-    }
-
-    function onWindowResize() {
-      windowHalfX = window.innerWidth / 2;
-      windowHalfY = window.innerHeight / 2;
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      animate();
     }
 
     function animate() {
       requestAnimationFrame(animate);
 
-      if (wizardCat) {
+      if (model) {
         // Smooth rotation following mouse (Mario 64 style)
-        targetRotationY = mouseX * 0.8;
-        targetRotationX = mouseY * 0.3;
+        const targetRotationY = mouseX * 0.5;
+        const targetRotationX = mouseY * 0.3;
 
-        // Smooth interpolation - faster response
-        wizardCat.rotation.y += (targetRotationY - wizardCat.rotation.y) * 0.08;
-        wizardCat.rotation.x += (targetRotationX - wizardCat.rotation.x) * 0.08;
+        model.rotation.y += (targetRotationY - model.rotation.y) * 0.05;
+        model.rotation.x += (targetRotationX - model.rotation.x) * 0.05;
 
-        // Very subtle floating
-        wizardCat.position.y = -2 + Math.sin(Date.now() * 0.001) * 0.02;
+        // Subtle idle animation
+        model.position.y = -0.5 + Math.sin(Date.now() * 0.001) * 0.03;
       }
 
       renderer.render(scene, camera);
     }
 
-    // Create floating particles
-    function createParticles() {
-      const particlesContainer = document.getElementById('particles');
-      const particleCount = 25;
-
-      for (let i = 0; i < particleCount; i++) {
-        const particle = document.createElement('div');
-        particle.className = 'particle';
-        particle.style.left = Math.random() * 100 + '%';
-        particle.style.top = Math.random() * 100 + '%';
-        particle.style.animationDelay = Math.random() * 8 + 's';
-        particle.style.animationDuration = (6 + Math.random() * 4) + 's';
-
-        const colors = ['#FFD700', '#8A2BE2', '#00D4FF', '#FF6B35'];
-        particle.style.background = colors[Math.floor(Math.random() * colors.length)];
-
-        particlesContainer.appendChild(particle);
-      }
-    }
-
-    // Check if user is logged in
+    // ===== INIT =====
     document.addEventListener('DOMContentLoaded', () => {
-      const playerId = localStorage.getItem('player_id');
-      if (playerId) {
-        const ctaButton = document.getElementById('ctaButton');
-        ctaButton.href = '/dashboard.html';
-        ctaButton.textContent = 'Dashboard';
-      }
+      createParticles();
+      init3D();
     });
   </script>
 </body>
