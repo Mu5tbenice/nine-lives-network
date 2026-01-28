@@ -596,7 +596,33 @@
 
     /* Mobile */
     @media (max-width: 1100px) {
-      .map-viewport { padding-right: 20px; }
+      .nav {
+        padding: var(--space-xs) var(--space-sm);
+      }
+
+      .nav-logo {
+        font-size: 0.5rem;
+        white-space: nowrap;
+      }
+
+      .nav-links {
+        gap: var(--space-sm);
+      }
+
+      .nav-links a {
+        font-size: 0.35rem;
+      }
+
+      .map-container {
+        padding-top: 55px;
+      }
+
+      .map-viewport { 
+        padding: 10px;
+        padding-bottom: 160px;
+        height: calc(100vh - 55px);
+      }
+
       .map-sidebar {
         position: fixed;
         top: auto;
@@ -604,17 +630,108 @@
         left: 0;
         right: 0;
         width: 100%;
-        max-height: 130px;
+        max-height: 150px;
         flex-direction: row;
         padding: 8px;
         background: rgba(10, 22, 40, 0.98);
         border-top: 2px solid rgba(255, 215, 0, 0.3);
         overflow-x: auto;
         gap: 8px;
+        border-radius: 0;
       }
-      .sidebar-card { flex: 0 0 auto; min-width: 130px; }
-      .sidebar-card:nth-child(n+4) { display: none; }
-      .map-world { width: 100%; min-width: 700px; height: auto; aspect-ratio: 1.79; }
+
+      .sidebar-card { 
+        flex: 0 0 auto; 
+        min-width: 140px;
+        max-width: 160px;
+        padding: var(--space-xs) var(--space-sm);
+      }
+
+      .sidebar-card h4 {
+        font-size: 0.35rem;
+        margin-bottom: 4px;
+      }
+
+      .objective-zone-name {
+        font-size: 0.4rem;
+      }
+
+      .objective-timer {
+        font-size: 0.55rem;
+      }
+
+      #yourSchoolName {
+        font-size: 0.55rem;
+      }
+
+      .pulse-item {
+        font-size: 0.5rem;
+        gap: 5px;
+      }
+
+      .pulse-indicator {
+        width: 10px;
+        height: 10px;
+      }
+
+      /* Hide activity feed on mobile - too cramped */
+      .sidebar-card:nth-child(4) { 
+        display: none; 
+      }
+
+      .map-world { 
+        width: 100%; 
+        min-width: 600px; 
+        height: auto; 
+        aspect-ratio: 1.79; 
+      }
+
+      /* Smaller hexes on mobile */
+      .hex-icon {
+        font-size: 0.6rem;
+      }
+
+      .hex-label {
+        font-size: 0.15rem;
+      }
+    }
+
+    /* Very small screens */
+    @media (max-width: 480px) {
+      .nav-logo {
+        font-size: 0.4rem;
+      }
+
+      .nav-links a {
+        font-size: 0.3rem;
+        letter-spacing: 0;
+      }
+
+      .nav-links {
+        gap: var(--space-xs);
+      }
+
+      .sidebar-card {
+        min-width: 120px;
+        max-width: 140px;
+      }
+
+      .sidebar-card h4 {
+        font-size: 0.3rem;
+      }
+
+      /* Only show objective and school on very small screens */
+      .sidebar-card:nth-child(n+3) {
+        display: none;
+      }
+
+      .map-viewport {
+        padding-bottom: 120px;
+      }
+
+      .map-sidebar {
+        max-height: 110px;
+      }
     }
   </style>
 </head>
