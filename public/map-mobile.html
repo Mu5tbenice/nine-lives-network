@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Territory Map | Nine Lives Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-dark: #0a0a14;
+      --bg-medium: #12121f;
+      --bg-light: #1a1a2e;
+      --bg-card: #16162a;
+      --accent-gold: #FFD700;
+      --accent-cyan: #00D4FF;
+      --accent-green: #00FF88;
+      --accent-red: #FF4444;
+      --accent-purple: #8A2BE2;
+      --text-primary: #ffffff;
+      --text-secondary: #a0a0b0;
+      --text-muted: #606070;
+      --border-color: #2a2a4a;
+    }
+
+    body {
+      font-family: 'Press Start 2P', monospace;
+      background: var(--bg-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding-bottom: 100px;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(180deg, var(--bg-medium) 0%, var(--bg-dark) 100%);
+      padding: 16px;
+      border-bottom: 2px solid var(--accent-gold);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      font-size: 10px;
+      color: var(--accent-gold);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 12px;
+    }
+
+    .nav-links a {
+      font-size: 8px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 8px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: var(--accent-cyan);
+      background: rgba(0, 212, 255, 0.1);
+    }
+
+    /* Main Content */
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    /* Player Info Bar */
+    .player-bar {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .school-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .school-badge {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .school-name {
+      font-size: 8px;
+      color: var(--text-secondary);
+    }
+
+    .mana-display {
+      display: flex;
+      gap: 4px;
+    }
+
+    .mana-orb {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      box-shadow: 0 0 8px var(--accent-cyan);
+    }
+
+    .mana-orb.empty {
+      background: var(--bg-dark);
+      box-shadow: none;
+      border: 1px solid var(--border-color);
+    }
+
+    /* Section Headers */
+    .section-header {
+      font-size: 10px;
+      color: var(--accent-gold);
+      margin: 24px 0 12px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-header::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent-gold), transparent);
+    }
+
+    /* Territory Cards */
+    .territory-card {
+      background: var(--bg-card);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    /* Glow Effects */
+    .territory-card.objective {
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+      animation: pulse-gold 2s infinite;
+    }
+
+    .territory-card.attackable {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 15px rgba(0, 255, 136, 0.2);
+    }
+
+    .territory-card.owned {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.2);
+    }
+
+    .territory-card.contested {
+      border-color: var(--accent-red);
+      box-shadow: 0 0 20px rgba(255, 68, 68, 0.3);
+      animation: pulse-red 1.5s infinite;
+    }
+
+    .territory-card.locked {
+      opacity: 0.6;
+    }
+
+    @keyframes pulse-gold {
+      0%, 100% { box-shadow: 0 0 20px rgba(255, 215, 0, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.5); }
+    }
+
+    @keyframes pulse-red {
+      0%, 100% { box-shadow: 0 0 20px rgba(255, 68, 68, 0.3); }
+      50% { box-shadow: 0 0 30px rgba(255, 68, 68, 0.5); }
+    }
+
+    /* Card Image */
+    .card-image {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      background: var(--bg-medium);
+    }
+
+    .card-image-placeholder {
+      width: 100%;
+      height: 120px;
+      background: linear-gradient(135deg, var(--bg-medium) 0%, var(--bg-light) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+    }
+
+    /* Card Content */
+    .card-content {
+      padding: 16px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .zone-name {
+      font-size: 12px;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .zone-type {
+      font-size: 8px;
+      color: var(--text-muted);
+    }
+
+    .zone-status {
+      font-size: 8px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: var(--bg-dark);
+    }
+
+    .zone-status.objective {
+      background: rgba(255, 215, 0, 0.2);
+      color: var(--accent-gold);
+    }
+
+    .zone-status.contested {
+      background: rgba(255, 68, 68, 0.2);
+      color: var(--accent-red);
+    }
+
+    .zone-status.home {
+      background: rgba(0, 212, 255, 0.2);
+      color: var(--accent-cyan);
+    }
+
+    /* Control Info */
+    .control-info {
+      margin: 12px 0;
+    }
+
+    .control-label {
+      font-size: 8px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .control-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .control-bar {
+      flex: 1;
+      height: 8px;
+      background: var(--bg-dark);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .control-bar-attack {
+      background: linear-gradient(90deg, var(--accent-red), #ff6666);
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .control-bar-defend {
+      background: linear-gradient(90deg, #6666ff, var(--accent-cyan));
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+
+    .control-power {
+      font-size: 8px;
+      color: var(--text-muted);
+      min-width: 30px;
+      text-align: right;
+    }
+
+    /* Countdown */
+    .countdown {
+      font-size: 10px;
+      color: var(--accent-gold);
+      margin: 8px 0;
+    }
+
+    /* Controller Info */
+    .controller-info {
+      font-size: 8px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 8px 0;
+    }
+
+    .controller-badge {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+
+    /* Action Buttons */
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 6px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .btn-attack {
+      background: linear-gradient(180deg, #cc3333 0%, #991111 100%);
+      color: white;
+      border: 2px solid #ff4444;
+    }
+
+    .btn-attack:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 68, 68, 0.4);
+    }
+
+    .btn-defend {
+      background: linear-gradient(180deg, #3333cc 0%, #111199 100%);
+      color: white;
+      border: 2px solid #4444ff;
+    }
+
+    .btn-defend:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(68, 68, 255, 0.4);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-cost {
+      display: block;
+      font-size: 8px;
+      margin-top: 4px;
+      opacity: 0.8;
+    }
+
+    /* Participants */
+    .participants {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .participants-label {
+      font-size: 8px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .participants-avatars {
+      display: flex;
+      gap: -8px;
+    }
+
+    .participant-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid var(--bg-card);
+      margin-left: -8px;
+    }
+
+    .participant-avatar:first-child {
+      margin-left: 0;
+    }
+
+    .participants-more {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--bg-dark);
+      border: 2px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 8px;
+      color: var(--text-muted);
+      margin-left: -8px;
+    }
+
+    .no-activity {
+      font-size: 8px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Collapsible Section */
+    .collapsible-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      padding: 12px 0;
+    }
+
+    .collapsible-header::after {
+      content: '▼';
+      font-size: 8px;
+      color: var(--text-muted);
+      transition: transform 0.3s;
+    }
+
+    .collapsible-header.collapsed::after {
+      transform: rotate(-90deg);
+    }
+
+    .collapsible-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    .collapsible-content.expanded {
+      max-height: 2000px;
+    }
+
+    /* Desktop Link */
+    .desktop-link {
+      text-align: center;
+      margin: 24px 0;
+    }
+
+    .desktop-link a {
+      font-size: 8px;
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+
+    .desktop-link a:hover {
+      color: var(--accent-cyan);
+    }
+
+    /* Loading State */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--text-muted);
+      font-size: 10px;
+    }
+
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border-color);
+      border-top-color: var(--accent-cyan);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--bg-card);
+      border: 2px solid var(--accent-gold);
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 10px;
+      z-index: 1000;
+      transition: transform 0.3s ease;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.success {
+      border-color: var(--accent-green);
+    }
+
+    .toast.error {
+      border-color: var(--accent-red);
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <a href="/" class="logo">Nine Lives Network</a>
+      <nav class="nav-links">
+        <a href="/dashboard.html">Dashboard</a>
+        <a href="/map.html" class="active">Map</a>
+        <a href="/leaderboards.html">Ranks</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container">
+    <!-- Player Info Bar -->
+    <div class="player-bar" id="playerBar">
+      <div class="school-info">
+        <div class="school-badge" id="schoolBadge">✨</div>
+        <div class="school-name" id="schoolName">Loading...</div>
+      </div>
+      <div class="mana-display" id="manaDisplay">
+        <!-- Filled by JS -->
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading" id="loadingState">
+      <div class="loading-spinner"></div>
+      Loading territories...
+    </div>
+
+    <!-- Content (hidden until loaded) -->
+    <div id="mainContent" style="display: none;">
+      <!-- Today's Objective -->
+      <div class="section-header">⚔️ TODAY'S OBJECTIVE</div>
+      <div id="objectiveSection"></div>
+
+      <!-- Available to Attack -->
+      <div class="section-header">🗡️ AVAILABLE TO ATTACK</div>
+      <div id="attackableSection"></div>
+
+      <!-- Your Territory -->
+      <div class="section-header">🛡️ YOUR TERRITORY</div>
+      <div id="ownedSection"></div>
+
+      <!-- Other Territories (Collapsible) -->
+      <div class="section-header collapsible-header collapsed" id="otherHeader">
+        🌐 OTHER TERRITORIES
+      </div>
+      <div class="collapsible-content" id="otherSection"></div>
+
+      <!-- Desktop Link -->
+      <div class="desktop-link">
+        <a href="/map.html?force=desktop">View full map on desktop →</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // School data
+    const schools = {
+      1: { name: 'Ember Covenant', emoji: '🔥', color: '#FF4500' },
+      2: { name: 'Tidal Conclave', emoji: '🌊', color: '#00BFFF' },
+      3: { name: 'Stone Covenant', emoji: '🪨', color: '#8B4513' },
+      4: { name: 'Zephyr Circle', emoji: '💨', color: '#98FB98' },
+      5: { name: 'Storm Assembly', emoji: '⚡', color: '#FFD700' },
+      6: { name: 'Umbral Syndicate', emoji: '🌑', color: '#9932CC' },
+      7: { name: 'Radiant Order', emoji: '✨', color: '#FFFACD' },
+      8: { name: 'Arcane Spire', emoji: '🔮', color: '#00FFFF' },
+      9: { name: 'WildCat Path', emoji: '🐱', color: '#FF1493' }
+    };
+
+    // Zone images (placeholder - replace with actual images)
+    const zoneImages = {
+      'The Nexus': '/assets/images/environments/envi-nexus.png',
+      'Mystic Falls': '/assets/images/environments/envi-rivers.png',
+      'Ancient Ruins': '/assets/images/environments/envi-ruins.png',
+      'Twilight Grove': '/assets/images/environments/envi-forest.png',
+      'Dragon\'s Rest': '/assets/images/environments/envi-ritual.png'
+    };
+
+    // State
+    let player = null;
+    let zones = [];
+    let objective = null;
+    let countdown = null;
+
+    // Get player ID from session/cookie
+    function getPlayerId() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlId = urlParams.get('player_id');
+      if (urlId) {
+        localStorage.setItem('player_id', urlId);
+        return urlId;
+      }
+      return localStorage.getItem('player_id');
+    }
+
+    // Show toast notification
+    function showToast(message, type = 'info') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // Update mana display
+    function updateManaDisplay(mana) {
+      const container = document.getElementById('manaDisplay');
+      container.innerHTML = '';
+      for (let i = 0; i < 5; i++) {
+        const orb = document.createElement('div');
+        orb.className = `mana-orb ${i < mana ? '' : 'empty'}`;
+        container.appendChild(orb);
+      }
+    }
+
+    // Format countdown
+    function formatCountdown(endTime) {
+      const now = new Date();
+      const end = new Date(endTime);
+      const diff = end - now;
+
+      if (diff <= 0) return 'Ended';
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    // Create territory card HTML
+    function createTerritoryCard(zone, type) {
+      const controllingSchool = zone.controlling_school_id ? schools[zone.controlling_school_id] : null;
+      const isObjective = zone.is_current_objective;
+      const isOwned = player && zone.controlling_school_id === player.school_id;
+      const isHome = zone.zone_type === 'home' && zone.school_id === player?.school_id;
+
+      // Determine card class
+      let cardClass = 'territory-card';
+      if (type === 'objective') cardClass += ' objective';
+      else if (type === 'attackable') cardClass += ' attackable';
+      else if (type === 'owned') cardClass += ' owned';
+      else cardClass += ' locked';
+
+      // Get zone image
+      const imageUrl = zoneImages[zone.name] || null;
+
+      // Calculate control bar widths
+      const attackPower = zone.attack_power || 0;
+      const defendPower = zone.defend_power || 0;
+      const totalPower = attackPower + defendPower || 1;
+      const attackWidth = (attackPower / totalPower) * 100;
+      const defendWidth = (defendPower / totalPower) * 100;
+
+      let html = `
+        <div class="${cardClass}" data-zone-id="${zone.id}">
+          ${imageUrl 
+            ? `<img src="${imageUrl}" alt="${zone.name}" class="card-image" onerror="this.style.display='none'">`
+            : `<div class="card-image-placeholder">${controllingSchool?.emoji || '🗺️'}</div>`
+          }
+          <div class="card-content">
+            <div class="card-header">
+              <div>
+                <div class="zone-name">${zone.name}</div>
+                <div class="zone-type">${zone.zone_type === 'home' ? 'Home Territory' : zone.region || 'Neutral Territory'}</div>
+              </div>
+              ${isObjective ? '<span class="zone-status objective">⚔️ OBJECTIVE</span>' : ''}
+              ${isHome ? '<span class="zone-status home">🏠 HOME</span>' : ''}
+            </div>
+      `;
+
+      // Controller info (if not objective)
+      if (controllingSchool && !isObjective) {
+        html += `
+          <div class="controller-info">
+            <div class="controller-badge" style="background: ${controllingSchool.color}">${controllingSchool.emoji}</div>
+            Controlled by ${controllingSchool.name}
+          </div>
+        `;
+      }
+
+      // Countdown (for objective)
+      if (isObjective) {
+        const endTime = new Date();
+        endTime.setUTCHours(23, 0, 0, 0);
+        html += `<div class="countdown" id="countdown">⏰ Ends in ${formatCountdown(endTime)}</div>`;
+      }
+
+      // Control bar (for objective and contested)
+      if (isObjective || zone.is_contested) {
+        html += `
+          <div class="control-info">
+            <div class="control-label">TODAY'S BATTLE</div>
+            <div class="control-bar-container">
+              <span class="control-power">⚔️${attackPower}</span>
+              <div class="control-bar">
+                <div class="control-bar-attack" style="width: ${attackWidth}%"></div>
+                <div class="control-bar-defend" style="width: ${defendWidth}%"></div>
+              </div>
+              <span class="control-power">🛡️${defendPower}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      // Action buttons
+      const canAct = player && player.mana > 0;
+      if (type === 'objective' || type === 'attackable' || type === 'owned') {
+        html += `<div class="card-actions">`;
+
+        if (type !== 'owned') {
+          html += `
+            <button class="btn btn-attack" ${!canAct ? 'disabled' : ''} onclick="performAction(${zone.id}, 'attack')">
+              ⚔️ ATTACK
+              <span class="btn-cost">1 MANA</span>
+            </button>
+          `;
+        }
+
+        html += `
+          <button class="btn btn-defend" ${!canAct ? 'disabled' : ''} onclick="performAction(${zone.id}, 'defend')">
+            🛡️ DEFEND
+            <span class="btn-cost">1 MANA</span>
+          </button>
+        `;
+
+        html += `</div>`;
+      }
+
+      html += `
+          </div>
+        </div>
+      `;
+
+      return html;
+    }
+
+    // Perform attack/defend action
+    async function performAction(zoneId, actionType) {
+      if (!player || player.mana <= 0) {
+        showToast('Not enough mana!', 'error');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/territory/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            player_id: player.id,
+            zone_id: zoneId,
+            action_type: actionType
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showToast(`${actionType === 'attack' ? '⚔️ Attack' : '🛡️ Defend'} successful! +${result.points} points`, 'success');
+          player.mana--;
+          updateManaDisplay(player.mana);
+          loadData(); // Refresh
+        } else {
+          showToast(result.error || 'Action failed', 'error');
+        }
+      } catch (error) {
+        showToast('Network error', 'error');
+        console.error(error);
+      }
+    }
+
+    // Load all data
+    async function loadData() {
+      try {
+        const playerId = getPlayerId();
+
+        // Load player data
+        if (playerId) {
+          const playerRes = await fetch(`/api/players/${playerId}`);
+          if (playerRes.ok) {
+            player = await playerRes.json();
+
+            // Update player bar
+            const school = schools[player.school_id];
+            document.getElementById('schoolBadge').textContent = school.emoji;
+            document.getElementById('schoolBadge').style.background = school.color;
+            document.getElementById('schoolName').textContent = school.name;
+            updateManaDisplay(player.mana);
+          }
+        }
+
+        // Load zones
+        const zonesRes = await fetch('/api/zones');
+        zones = await zonesRes.json();
+
+        // Find objective
+        objective = zones.find(z => z.is_current_objective);
+
+        // Categorize zones
+        const attackable = [];
+        const owned = [];
+        const other = [];
+
+        // Simple adjacency for now - in production this would come from the database
+        // For MVP: all neutral zones are "attackable"
+        zones.forEach(zone => {
+          if (zone.is_current_objective) return; // Skip, shown in objective section
+
+          if (player && zone.controlling_school_id === player.school_id) {
+            owned.push(zone);
+          } else if (zone.zone_type === 'neutral') {
+            attackable.push(zone);
+          } else {
+            other.push(zone);
+          }
+        });
+
+        // Render sections
+        document.getElementById('objectiveSection').innerHTML = objective 
+          ? createTerritoryCard(objective, 'objective')
+          : '<div class="no-activity">No objective set today</div>';
+
+        document.getElementById('attackableSection').innerHTML = attackable.length
+          ? attackable.map(z => createTerritoryCard(z, 'attackable')).join('')
+          : '<div class="no-activity">No territories available to attack</div>';
+
+        document.getElementById('ownedSection').innerHTML = owned.length
+          ? owned.map(z => createTerritoryCard(z, 'owned')).join('')
+          : '<div class="no-activity">Your school doesn\'t control any territories yet</div>';
+
+        document.getElementById('otherSection').innerHTML = other.length
+          ? other.map(z => createTerritoryCard(z, 'other')).join('')
+          : '';
+
+        // Show content
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+
+        // Start countdown timer
+        startCountdown();
+
+      } catch (error) {
+        console.error('Error loading data:', error);
+        document.getElementById('loadingState').innerHTML = `
+          <div style="color: var(--accent-red)">Error loading data</div>
+          <div style="margin-top: 10px; font-size: 8px; color: var(--text-muted)">
+            <a href="/register.html" style="color: var(--accent-cyan)">Register</a> or 
+            <a href="/" style="color: var(--accent-cyan)">return home</a>
+          </div>
+        `;
+      }
+    }
+
+    // Start countdown timer
+    function startCountdown() {
+      if (countdown) clearInterval(countdown);
+
+      countdown = setInterval(() => {
+        const el = document.getElementById('countdown');
+        if (el) {
+          const endTime = new Date();
+          endTime.setUTCHours(23, 0, 0, 0);
+          if (endTime < new Date()) endTime.setDate(endTime.getDate() + 1);
+          el.textContent = `⏰ Ends in ${formatCountdown(endTime)}`;
+        }
+      }, 1000);
+    }
+
+    // Collapsible toggle
+    document.getElementById('otherHeader').addEventListener('click', function() {
+      this.classList.toggle('collapsed');
+      document.getElementById('otherSection').classList.toggle('expanded');
+    });
+
+    // Initialize
+    loadData();
+
+    // Refresh every 30 seconds
+    setInterval(loadData, 30000);
+  </script>
+</body>
+</html>
