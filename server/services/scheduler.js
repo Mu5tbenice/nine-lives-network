@@ -22,7 +22,7 @@ const supabase = require('../config/supabase');
  *   17:00 - Evening complaint (80%)
  *   22:00 - Daily roast (100%)
  *   03:00 - Existential moment (80%)
- *   + Random reactions to casts (15% chance)
+ *   + Replies to ALL casts
  */
 
 let jobsInitialized = false;
@@ -57,19 +57,25 @@ function initializeScheduledJobs() {
       if (casts.length > 0) {
         console.log(`✅ Processed ${casts.length} casts`);
 
-        // Random Nerm reaction to casts (15% chance per batch with casts)
-        if (Math.random() < 0.15 && casts.length > 0) {
+        // Nerm replies to EVERY cast
+        for (const cast of casts) {
           try {
-            const randomCast = casts[Math.floor(Math.random() * casts.length)];
+            // Skip if no tweet_id (shouldn't happen but safety first)
+            if (!cast.tweet_id) continue;
+
             const response = await nermBot.generateCustomResponse(
-              `A wizard named @${randomCast.player} just cast "${randomCast.spell}" for ${randomCast.points} points. Make a short sarcastic observation about this. Be grumpy but not mean.`
+              `A wizard named @${cast.player} from ${cast.schoolName || 'some school'} just cast "${cast.spell}" for ${cast.points} points. ${cast.nermNoticed ? 'It was actually decent.' : 'It was unremarkable.'} Reply with a short, deadpan observation. Max 200 characters.`
             );
+
             if (response) {
-              await nermBot.postAsNerm(response);
-              console.log('🐱 Nerm reacted to cast');
+              await nermBot.replyAsNerm(response, cast.tweet_id);
+              console.log(`🐱 Nerm replied to @${cast.player}'s cast`);
             }
+
+            // Small delay between replies to avoid rate limits
+            await new Promise(resolve => setTimeout(resolve, 2000));
           } catch (e) {
-            console.error('Nerm reaction error:', e.message);
+            console.error(`Nerm reply error for @${cast.player}:`, e.message);
           }
         }
       }
@@ -344,7 +350,7 @@ function initializeScheduledJobs() {
   console.log('   - 17:00 UTC: Evening complaint (80%)');
   console.log('   - 22:00 UTC: Daily roast (100%)');
   console.log('   - 03:00 UTC: Existential moment (80%)');
-  console.log('   - Random: React to casts (15% per batch)');
+  console.log('   - EVERY CAST: Nerm replies to all spells');
   console.log('');
   console.log('⚙️ Maintenance:');
   console.log('   - Every 2 min: Process spell casts');

@@ -9,10 +9,82 @@
   <link rel="stylesheet" href="/css/styles.css">
 
   <style>
+    /* ===== VIDEO BACKGROUND WITH FADE ===== */
+    .video-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -2;
+      overflow: hidden;
+    }
+
+    .video-background video {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      min-width: 100%;
+      min-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: cover;
+    }
+
+    /* Fade/vignette mask - fades edges to dark */
+    .video-background::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, 
+        transparent 0%, 
+        transparent 20%,
+        rgba(10, 10, 20, 0.4) 40%,
+        rgba(10, 10, 20, 0.7) 60%,
+        rgba(10, 10, 20, 0.9) 80%,
+        rgba(10, 10, 20, 1) 100%
+      );
+      pointer-events: none;
+    }
+
+    /* Additional top/bottom gradient for nav and content readability */
+    .video-background::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg,
+        rgba(10, 10, 20, 0.8) 0%,
+        transparent 15%,
+        transparent 85%,
+        rgba(10, 10, 20, 0.8) 100%
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Dark overlay to ensure text readability */
+    .video-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 10, 20, 0.3);
+      z-index: -1;
+    }
+
     .leaderboards-container {
       min-height: 100vh;
-      background: var(--bg-dark);
       padding-top: 80px;
+      position: relative;
+      z-index: 1;
     }
 
     /* Navigation */
@@ -21,13 +93,14 @@
       justify-content: space-between;
       align-items: center;
       padding: var(--space-md) var(--space-lg);
-      background: var(--bg-medium);
+      background: rgba(20, 20, 35, 0.9);
       border-bottom: 2px solid var(--bg-light);
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       z-index: 1000;
+      backdrop-filter: blur(10px);
     }
 
     .nav-logo {
@@ -58,7 +131,7 @@
 
     /* Main Content */
     .leaderboards-content {
-      max-width: 1200px;
+      max-width: 1000px;
       margin: 0 auto;
       padding: var(--space-lg);
     }
@@ -68,6 +141,7 @@
       color: var(--accent-gold);
       margin-bottom: var(--space-xl);
       text-align: center;
+      text-shadow: 0 2px 20px rgba(255, 215, 0, 0.3);
     }
 
     /* Tabs */
@@ -83,12 +157,13 @@
       font-family: var(--font-main);
       font-size: 0.5rem;
       padding: var(--space-md) var(--space-lg);
-      background: var(--bg-medium);
+      background: rgba(30, 30, 50, 0.8);
       border: 2px solid var(--bg-light);
       color: var(--text-secondary);
       cursor: pointer;
       transition: all 0.3s ease;
       border-radius: var(--radius-sm);
+      backdrop-filter: blur(5px);
     }
 
     .tab-btn:hover {
@@ -113,17 +188,19 @@
 
     .leaderboard-table {
       width: 100%;
-      background: var(--bg-medium);
+      background: rgba(20, 20, 35, 0.85);
       border: 2px solid var(--bg-light);
       border-radius: var(--radius-md);
       overflow: hidden;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     }
 
     .leaderboard-header {
       display: grid;
       grid-template-columns: 60px 1fr 120px 120px;
       padding: var(--space-md) var(--space-lg);
-      background: var(--bg-light);
+      background: rgba(40, 40, 60, 0.9);
       font-family: var(--font-main);
       font-size: 0.5rem;
       color: var(--text-secondary);
@@ -134,13 +211,13 @@
       display: grid;
       grid-template-columns: 60px 1fr 120px 120px;
       padding: var(--space-md) var(--space-lg);
-      border-bottom: 1px solid var(--bg-light);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       align-items: center;
       transition: background 0.2s ease;
     }
 
     .leaderboard-row:hover {
-      background: var(--bg-light);
+      background: rgba(255, 215, 0, 0.05);
     }
 
     .leaderboard-row:last-child {
@@ -148,7 +225,7 @@
     }
 
     .leaderboard-row.highlight {
-      background: rgba(255, 215, 0, 0.1);
+      background: rgba(255, 215, 0, 0.15);
       border-left: 3px solid var(--accent-gold);
     }
 
@@ -159,9 +236,9 @@
       color: var(--text-muted);
     }
 
-    .rank-1 { color: #FFD700; }
-    .rank-2 { color: #C0C0C0; }
-    .rank-3 { color: #CD7F32; }
+    .rank-1 { color: #FFD700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
+    .rank-2 { color: #C0C0C0; text-shadow: 0 0 10px rgba(192, 192, 192, 0.5); }
+    .rank-3 { color: #CD7F32; text-shadow: 0 0 10px rgba(205, 127, 50, 0.5); }
 
     /* Player Info */
     .player-cell {
@@ -180,6 +257,7 @@
       justify-content: center;
       font-size: 1.25rem;
       overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.2);
     }
 
     .player-avatar img {
@@ -210,6 +288,7 @@
       width: 12px;
       height: 12px;
       border-radius: 50%;
+      box-shadow: 0 0 8px currentColor;
     }
 
     .school-name {
@@ -244,6 +323,7 @@
       width: 40px;
       height: 40px;
       border-radius: var(--radius-sm);
+      box-shadow: 0 0 15px currentColor;
     }
 
     .school-full-name {
@@ -308,10 +388,22 @@
       .player-name {
         font-size: 0.5rem;
       }
+
+      .video-background video {
+        opacity: 0.5;
+      }
     }
   </style>
 </head>
 <body>
+  <!-- Video Background -->
+  <div class="video-background">
+    <video autoplay muted loop playsinline>
+      <source src="/assets/images/wizard-cat.mp4" type="video/mp4">
+    </video>
+  </div>
+  <div class="video-overlay"></div>
+
   <!-- Navigation -->
   <nav class="nav">
     <a href="/" class="nav-logo">Nine Lives Network</a>
@@ -319,6 +411,7 @@
       <li><a href="/dashboard.html">Dashboard</a></li>
       <li><a href="/map.html">Map</a></li>
       <li><a href="/leaderboards.html" class="active">Leaderboards</a></li>
+      <li><a href="/how-to-play.html">How to Play</a></li>
       <li><a href="#" id="logoutBtn">Logout</a></li>
     </ul>
   </nav>
@@ -449,7 +542,7 @@
                 </div>
               </div>
               <div class="school-cell">
-                <div class="school-dot" style="background: ${school.color};"></div>
+                <div class="school-dot" style="background: ${school.color}; color: ${school.color};"></div>
                 <span class="school-name">${school.name.split(' ')[0]}</span>
               </div>
               <div class="points">${player.seasonal_points.toLocaleString()}</div>
@@ -484,7 +577,7 @@
             <div class="leaderboard-row school-row">
               <div class="rank rank-${index + 1}">#${index + 1}</div>
               <div class="school-info">
-                <div class="school-color-block" style="background: ${school.color};"></div>
+                <div class="school-color-block" style="background: ${school.color}; color: ${school.color};"></div>
                 <div>
                   <div class="school-full-name">${school.name}</div>
                   <div class="school-element">${school.element}</div>
@@ -516,7 +609,7 @@
           return;
         }
 
-        container.innerHTML = communities.map((community, index) => {
+        container.innerHTML = communities.map((community, index) => {   
           return `
             <div class="leaderboard-row community-row">
               <div class="rank rank-${index + 1}">#${index + 1}</div>
@@ -541,4 +634,4 @@
     });
   </script>
 </body>
-</html>s
+</html>
