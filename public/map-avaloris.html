@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Map of Avaloris | Nine Lives Network</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #0a1628;
+    }
+
+    /* ===== SKY/CLOUD BACKGROUND ===== */
+    .sky-layer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, 
+        #1a3a5c 0%, 
+        #0a1628 50%,
+        #0a1628 100%
+      );
+      z-index: 0;
+    }
+
+    .map-container {
+      min-height: 100vh;
+      padding-top: 70px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Navigation */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-sm) var(--space-lg);
+      background: rgba(10, 22, 40, 0.95);
+      border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+    }
+
+    .nav-logo {
+      font-family: var(--font-main);
+      font-size: 0.7rem;
+      color: var(--accent-gold);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: var(--space-lg);
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: var(--font-main);
+      font-size: 0.45rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-decoration: none;
+    }
+
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--accent-gold);
+    }
+
+    /* ===== MAP VIEWPORT ===== */
+    .map-viewport {
+      width: 100%;
+      height: calc(100vh - 70px);
+      overflow: auto;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+      padding-right: 300px;
+    }
+
+    .map-world {
+      position: relative;
+      /* Aspect ratio matches image: 5504 x 3072 ≈ 1.79:1 */
+      width: 1100px;
+      height: 614px;
+      flex-shrink: 0;
+    }
+
+    /* Background Map Image */
+    .map-background {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('/assets/images/map-avaloris.png');
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      border-radius: 8px;
+      box-shadow: 0 0 80px rgba(0, 150, 255, 0.2), 0 0 40px rgba(255, 215, 0, 0.1);
+    }
+
+    /* Hex Overlay Container */
+    .hex-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ===== HEX STYLES ===== */
+    .hex {
+      position: absolute;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      z-index: 1;
+    }
+
+    .hex:hover {
+      z-index: 10;
+    }
+
+    .hex svg {
+      width: 100%;
+      height: 100%;
+      transition: all 0.2s ease;
+    }
+
+    .hex:hover svg {
+      filter: drop-shadow(0 0 12px rgba(255,215,0,0.9));
+      transform: scale(1.12);
+    }
+
+    .hex-fill {
+      transition: fill 0.3s ease, opacity 0.3s ease;
+    }
+
+    .hex-border {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.5);
+      stroke-width: 1.5;
+      transition: stroke 0.3s ease;
+    }
+
+    .hex:hover .hex-border {
+      stroke: var(--accent-gold);
+      stroke-width: 2.5;
+    }
+
+    /* Hex Labels - show on hover */
+    .hex-label {
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-main);
+      font-size: 0.18rem;
+      color: white;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,1);
+      text-align: center;
+      width: 95%;
+      pointer-events: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .hex:hover .hex-label {
+      opacity: 1;
+    }
+
+    .hex-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.8rem;
+      pointer-events: none;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.9));
+      opacity: 0.85;
+    }
+
+    /* Home zone styling */
+    .hex.home-zone .hex-border {
+      stroke: rgba(255, 255, 255, 0.7);
+      stroke-width: 2;
+    }
+
+    .hex.home-zone .hex-icon {
+      font-size: 0.9rem;
+      opacity: 1;
+    }
+
+    /* ===== PULSE EFFECTS ===== */
+    @keyframes objectivePulse {
+      0%, 100% { filter: drop-shadow(0 0 6px #FFD700); }
+      50% { filter: drop-shadow(0 0 20px #FFD700) drop-shadow(0 0 35px #FFD700); }
+    }
+
+    @keyframes contestedPulse {
+      0%, 100% { filter: drop-shadow(0 0 5px #ff4444); }
+      50% { filter: drop-shadow(0 0 18px #ff4444) drop-shadow(0 0 30px #ff4444); }
+    }
+
+    @keyframes canAttackPulse {
+      0%, 100% { stroke: #00ff00; stroke-width: 2; }
+      50% { stroke: #88ff88; stroke-width: 3; }
+    }
+
+    .hex.objective svg { animation: objectivePulse 2s ease-in-out infinite; }
+    .hex.objective .hex-border { stroke: #FFD700; stroke-width: 2.5; }
+    .hex.contested svg { animation: contestedPulse 1.2s ease-in-out infinite; }
+    .hex.can-attack .hex-border { animation: canAttackPulse 1.5s ease-in-out infinite; }
+    .hex.your-territory .hex-border { stroke: var(--accent-cyan); stroke-width: 2.5; }
+
+    /* ===== SIDEBAR ===== */
+    .map-sidebar {
+      position: fixed;
+      top: 90px;
+      right: 15px;
+      width: 270px;
+      max-height: calc(100vh - 110px);
+      overflow-y: auto;
+      z-index: 500;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .sidebar-card {
+      background: rgba(10, 22, 40, 0.95);
+      border: 2px solid rgba(255, 215, 0, 0.3);
+      border-radius: var(--radius-md);
+      padding: var(--space-sm) var(--space-md);
+      backdrop-filter: blur(10px);
+    }
+
+    .sidebar-card h4 {
+      font-family: var(--font-main);
+      font-size: 0.4rem;
+      color: var(--accent-gold);
+      margin-bottom: var(--space-xs);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .objective-card {
+      border-color: var(--accent-gold);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
+    }
+
+    .objective-zone-name {
+      font-family: var(--font-main);
+      font-size: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .objective-timer {
+      font-size: 0.7rem;
+      color: var(--accent-cyan);
+      margin-top: 2px;
+    }
+
+    /* Player Stats */
+    .your-school-badge {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    .school-color-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    #yourSchoolName {
+      font-size: 0.7rem;
+    }
+
+    .mana-display-mini {
+      display: flex;
+      gap: 3px;
+      margin-top: 6px;
+    }
+
+    .mana-orb-mini {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #00d4ff, #0066cc);
+      box-shadow: 0 0 5px rgba(0, 212, 255, 0.5);
+    }
+
+    .mana-orb-mini.empty {
+      background: rgba(30, 40, 60, 0.8);
+      box-shadow: none;
+      opacity: 0.4;
+    }
+
+    /* Map Key */
+    .pulse-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .pulse-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.65rem;
+      color: var(--text-secondary);
+    }
+
+    .pulse-indicator {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+    }
+
+    .pulse-indicator.gold { background: #FFD700; box-shadow: 0 0 6px #FFD700; }
+    .pulse-indicator.red { background: #ff4444; box-shadow: 0 0 6px #ff4444; }
+    .pulse-indicator.green { border: 2px solid #00ff00; box-shadow: 0 0 4px #00ff00; }
+    .pulse-indicator.cyan { border: 2px solid #00d4ff; }
+
+    /* Activity Feed */
+    .activity-feed {
+      max-height: 140px;
+      overflow-y: auto;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.7rem;
+    }
+
+    .activity-item:last-child { border-bottom: none; }
+
+    .activity-avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: rgba(40, 50, 70, 0.8);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+    }
+
+    .activity-text {
+      color: var(--text-secondary);
+      line-height: 1.2;
+      font-size: 0.65rem;
+    }
+
+    .activity-text a { color: var(--accent-cyan); text-decoration: none; }
+    .activity-action.attack { color: #ff4444; }
+    .activity-action.defend { color: #4488ff; }
+    .activity-time { font-size: 0.55rem; color: var(--text-muted); }
+
+    .no-activity {
+      text-align: center;
+      color: var(--text-muted);
+      padding: var(--space-sm);
+      font-style: italic;
+      font-size: 0.7rem;
+    }
+
+    /* ===== ZONE MODAL ===== */
+    .zone-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      padding: var(--space-lg);
+    }
+
+    .zone-modal-overlay.active { display: flex; }
+
+    .zone-modal {
+      background: rgba(15, 25, 45, 0.98);
+      border: 3px solid var(--accent-gold);
+      border-radius: var(--radius-md);
+      max-width: 500px;
+      width: 100%;
+      max-height: 80vh;
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 0 60px rgba(255, 215, 0, 0.2);
+    }
+
+    .zone-modal-close {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(10, 10, 20, 0.8);
+      border: 2px solid var(--accent-gold);
+      color: var(--accent-gold);
+      width: 32px;
+      height: 32px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      border-radius: 4px;
+    }
+
+    .zone-modal-close:hover {
+      background: var(--accent-gold);
+      color: var(--bg-dark);
+    }
+
+    .zone-modal-image-placeholder {
+      width: 100%;
+      height: 140px;
+      background: linear-gradient(135deg, rgba(20,30,50,1) 0%, rgba(40,50,80,1) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      border-bottom: 2px solid var(--accent-gold);
+    }
+
+    .zone-modal-content {
+      padding: var(--space-md);
+      overflow-y: auto;
+      max-height: calc(80vh - 140px);
+    }
+
+    .zone-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: var(--space-md);
+    }
+
+    .zone-modal-title {
+      font-family: var(--font-main);
+      font-size: 0.75rem;
+      color: var(--accent-gold);
+    }
+
+    .zone-modal-subtitle {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .zone-status-badges { display: flex; gap: 6px; }
+
+    .status-badge {
+      font-family: var(--font-main);
+      font-size: 0.3rem;
+      padding: 0.25rem 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-radius: 3px;
+    }
+
+    .badge-objective { background: var(--accent-gold); color: var(--bg-dark); }
+    .badge-contested { background: #ff4444; color: white; }
+    .badge-locked { background: rgba(60,70,90,0.8); color: var(--text-muted); }
+
+    .modal-section { margin-bottom: var(--space-md); }
+
+    .modal-section h4 {
+      font-family: var(--font-main);
+      font-size: 0.45rem;
+      color: var(--accent-cyan);
+      margin-bottom: var(--space-sm);
+      text-transform: uppercase;
+    }
+
+    /* Tug of War */
+    .tug-of-war {
+      height: 26px;
+      background: rgba(20,30,50,0.8);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+      border: 2px solid rgba(255,255,255,0.2);
+      margin-bottom: 6px;
+      position: relative;
+    }
+
+    .tow-bar {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-main);
+      font-size: 0.35rem;
+      color: white;
+      transition: width 0.5s ease;
+    }
+
+    .tow-attack { background: linear-gradient(90deg, #ff4444, #ff6666); }
+    .tow-defend { background: linear-gradient(90deg, #4444ff, #6666ff); }
+    .tow-center-line { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: var(--accent-gold); }
+
+    /* Action Buttons */
+    .action-buttons {
+      display: flex;
+      gap: var(--space-sm);
+      margin-bottom: var(--space-md);
+    }
+
+    .action-btn {
+      flex: 1;
+      padding: 0.6rem;
+      font-family: var(--font-main);
+      font-size: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+      border-radius: 4px;
+    }
+
+    .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-attack {
+      background: linear-gradient(180deg, #ff4444, #cc0000);
+      color: white;
+      box-shadow: 0 3px 0 0 #880000;
+    }
+
+    .btn-defend {
+      background: linear-gradient(180deg, #4444ff, #0000cc);
+      color: white;
+      box-shadow: 0 3px 0 0 #000088;
+    }
+
+    .action-btn:hover:not(:disabled) { transform: translateY(-2px); }
+    .action-cost { font-size: 0.55rem; opacity: 0.8; }
+
+    /* Participants */
+    .participants-list { max-height: 120px; overflow-y: auto; }
+
+    .participant {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      font-size: 0.75rem;
+    }
+
+    .participant-info { display: flex; align-items: center; gap: 8px; }
+    .participant-avatar { width: 24px; height: 24px; border-radius: 50%; background: rgba(40,50,70,0.8); display: flex; align-items: center; justify-content: center; }
+    .participant-action { font-family: var(--font-main); font-size: 0.3rem; padding: 0.15rem 0.4rem; border-radius: 3px; }
+    .participant-action.attack { background: rgba(255,68,68,0.3); color: #ff6666; }
+    .participant-action.defend { background: rgba(68,68,255,0.3); color: #6666ff; }
+
+    .no-participants {
+      text-align: center;
+      color: var(--text-muted);
+      padding: var(--space-md);
+      font-style: italic;
+      font-size: 0.75rem;
+    }
+
+    /* Mobile */
+    @media (max-width: 1100px) {
+      .map-viewport { padding-right: 20px; }
+      .map-sidebar {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-height: 130px;
+        flex-direction: row;
+        padding: 8px;
+        background: rgba(10, 22, 40, 0.98);
+        border-top: 2px solid rgba(255, 215, 0, 0.3);
+        overflow-x: auto;
+        gap: 8px;
+      }
+      .sidebar-card { flex: 0 0 auto; min-width: 130px; }
+      .sidebar-card:nth-child(n+4) { display: none; }
+      .map-world { width: 100%; min-width: 700px; height: auto; aspect-ratio: 1.79; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sky-layer"></div>
+
+  <nav class="nav">
+    <a href="/" class="nav-logo">Nine Lives Network</a>
+    <ul class="nav-links">
+      <li><a href="/dashboard.html">Dashboard</a></li>
+      <li><a href="/map.html" class="active">Map</a></li>
+      <li><a href="/leaderboards.html">Leaderboards</a></li>
+    </ul>
+  </nav>
+
+  <main class="map-container">
+    <div class="map-viewport">
+      <div class="map-world">
+        <div class="map-background"></div>
+        <div class="hex-overlay" id="hexOverlay"></div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="map-sidebar">
+      <div class="sidebar-card objective-card">
+        <h4>⚔️ Today's Objective</h4>
+        <div class="objective-zone-name" id="objectiveZoneName">The Nexus</div>
+        <div class="objective-timer" id="objectiveTimer">Ends in --:--:--</div>
+      </div>
+
+      <div class="sidebar-card">
+        <h4>🐱 Your School</h4>
+        <div class="your-school-badge">
+          <div class="school-color-dot" id="yourSchoolDot"></div>
+          <span id="yourSchoolName">Not logged in</span>
+        </div>
+        <div class="mana-display-mini" id="manaDisplayMini"></div>
+      </div>
+
+      <div class="sidebar-card">
+        <h4>🗺️ Map Key</h4>
+        <div class="pulse-legend">
+          <div class="pulse-item"><div class="pulse-indicator gold"></div><span>Daily Objective</span></div>
+          <div class="pulse-item"><div class="pulse-indicator red"></div><span>Under Attack</span></div>
+          <div class="pulse-item"><div class="pulse-indicator green"></div><span>Can Attack</span></div>
+          <div class="pulse-item"><div class="pulse-indicator cyan"></div><span>Your Territory</span></div>
+        </div>
+      </div>
+
+      <div class="sidebar-card">
+        <h4>📡 Live Activity</h4>
+        <div class="activity-feed" id="activityFeed">
+          <div class="no-activity">No activity yet today...</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Zone Modal -->
+  <div class="zone-modal-overlay" id="zoneModal">
+    <div class="zone-modal">
+      <button class="zone-modal-close" id="closeZoneModal">×</button>
+      <div id="zoneImageContainer">
+        <div class="zone-modal-image-placeholder" id="zoneImagePlaceholder">🗺️</div>
+      </div>
+      <div class="zone-modal-content">
+        <div class="zone-modal-header">
+          <div>
+            <h2 class="zone-modal-title" id="modalZoneName">Zone Name</h2>
+            <div class="zone-modal-subtitle" id="modalZoneSubtitle">Neutral Territory</div>
+          </div>
+          <div class="zone-status-badges" id="modalBadges"></div>
+        </div>
+        <div class="modal-section" id="tugOfWarSection">
+          <h4>⚔️ Today's Battle</h4>
+          <div class="tug-of-war">
+            <div class="tow-bar tow-attack" id="towAttack" style="width: 0%"></div>
+            <div class="tow-bar tow-defend" id="towDefend" style="width: 0%"></div>
+            <div class="tow-center-line"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-muted);">
+            <span>⚔️ <span id="attackPower">0</span></span>
+            <span>🛡️ <span id="defendPower">0</span></span>
+          </div>
+        </div>
+        <div class="action-buttons" id="actionButtons">
+          <button class="action-btn btn-attack" id="btnAttack" onclick="performAction('attack')">
+            <span>⚔️ Attack</span><span class="action-cost">1 Mana</span>
+          </button>
+          <button class="action-btn btn-defend" id="btnDefend" onclick="performAction('defend')">
+            <span>🛡️ Defend</span><span class="action-cost">1 Mana</span>
+          </button>
+        </div>
+        <div class="modal-section">
+          <h4>👥 Today's Participants</h4>
+          <div class="participants-list" id="participantsList">
+            <div class="no-participants">No activity yet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== SCHOOLS =====
+    const schools = {
+      1: { name: 'Ember Covenant', color: '#FF4500', emoji: '🔥' },
+      2: { name: 'Tidal Conclave', color: '#00BFFF', emoji: '🌊' },
+      3: { name: 'Stone Covenant', color: '#8B4513', emoji: '🪨' },
+      4: { name: 'Zephyr Circle', color: '#98FB98', emoji: '💨' },
+      5: { name: 'Storm Assembly', color: '#FFD700', emoji: '⚡' },
+      6: { name: 'Umbral Syndicate', color: '#9932CC', emoji: '🌑' },
+      7: { name: 'Radiant Order', color: '#FFFACD', emoji: '✨' },
+      8: { name: 'Arcane Spire', color: '#00FFFF', emoji: '🔮' },
+      9: { name: 'WildCat Path', color: '#FF1493', emoji: '🐱' }
+    };
+
+    // Map display size (scaled from 5504x3072)
+    const MAP_WIDTH = 1100;
+    const MAP_HEIGHT = 614;
+
+    // Hex size - smaller for more zones
+    const HEX_SIZE = 28;
+    const HEX_WIDTH = Math.sqrt(3) * HEX_SIZE;
+    const HEX_HEIGHT = 2 * HEX_SIZE;
+
+    // ===== 50 ZONES - Positioned for new map =====
+    // Coordinates are percentages of map width/height for responsiveness
+    const hexLayout = [
+      // === TOP LEFT - Floating Castle / Radiant Order ===
+      { id: 1, px: 8, py: 18, school_id: 7, type: 'home', name: 'Radiant Citadel', region: 'sky' },
+      { id: 2, px: 5, py: 30, type: 'neutral', name: 'Cloud Haven', region: 'sky' },
+
+      // === TOP - Purple Forest / Umbral ===
+      { id: 3, px: 18, py: 12, school_id: 6, type: 'home', name: 'Umbral Grove', region: 'dark_forest' },
+      { id: 4, px: 25, py: 18, type: 'neutral', name: 'Shadow Lake', region: 'dark_forest' },
+      { id: 5, px: 22, py: 28, type: 'neutral', name: 'Darkwood Edge', region: 'dark_forest' },
+
+      // === TOP CENTER - Ice/Glacier / Tidal ===
+      { id: 6, px: 38, py: 8, type: 'neutral', name: 'Frozen Cliffs', region: 'ice' },
+      { id: 7, px: 48, py: 12, school_id: 2, type: 'home', name: 'Tidal Glacier', region: 'ice' },
+      { id: 8, px: 42, py: 20, type: 'neutral', name: 'Ice Flow', region: 'ice' },
+      { id: 9, px: 52, py: 22, type: 'neutral', name: 'Permafrost', region: 'ice' },
+
+      // === TOP RIGHT - Storm/Lightning ===
+      { id: 10, px: 68, py: 8, type: 'neutral', name: 'Thunder Peak', region: 'storm' },
+      { id: 11, px: 78, py: 12, school_id: 5, type: 'home', name: 'Storm Spire', region: 'storm' },
+      { id: 12, px: 72, py: 22, type: 'neutral', name: 'Lightning Field', region: 'storm' },
+
+      // === RIGHT - Volcanic / Ember ===
+      { id: 13, px: 85, py: 25, type: 'neutral', name: 'Magma Flow', region: 'volcanic' },
+      { id: 14, px: 80, py: 35, school_id: 1, type: 'home', name: 'Ember Caldera', region: 'volcanic' },
+      { id: 15, px: 88, py: 42, type: 'neutral', name: 'Lava Fields', region: 'volcanic' },
+      { id: 16, px: 82, py: 50, type: 'neutral', name: 'Scorched Basin', region: 'volcanic' },
+
+      // === UPPER CENTER - Green Highlands ===
+      { id: 17, px: 32, py: 25, type: 'neutral', name: 'Highland Pass', region: 'highlands' },
+      { id: 18, px: 35, py: 35, type: 'neutral', name: 'Standing Stones', region: 'highlands' },
+      { id: 19, px: 28, py: 40, type: 'neutral', name: 'Ancient Grove', region: 'highlands' },
+
+      // === CENTER - Zephyr / Green Plains ===
+      { id: 20, px: 45, py: 32, school_id: 4, type: 'home', name: 'Zephyr Meadows', region: 'plains' },
+      { id: 21, px: 52, py: 38, type: 'neutral', name: 'Windswept Field', region: 'plains' },
+      { id: 22, px: 58, py: 32, type: 'neutral', name: 'Grassy Knoll', region: 'plains' },
+
+      // === CENTER-RIGHT - Desert transition ===
+      { id: 23, px: 65, py: 38, type: 'neutral', name: 'Arid Expanse', region: 'desert' },
+      { id: 24, px: 72, py: 45, type: 'neutral', name: 'Red Canyons', region: 'desert' },
+
+      // === LEFT - Whirlpool / Coral ===
+      { id: 25, px: 12, py: 45, type: 'neutral', name: 'Coral Reef', region: 'ocean' },
+      { id: 26, px: 18, py: 52, type: 'neutral', name: 'Maelstrom Edge', region: 'ocean' },
+      { id: 27, px: 8, py: 55, school_id: 2, type: 'neutral', name: 'Abyssal Whirl', region: 'ocean' },
+
+      // === CENTER - Forest / Waterfall ===
+      { id: 28, px: 15, py: 38, type: 'neutral', name: 'Misty Falls', region: 'forest' },
+      { id: 29, px: 22, py: 48, type: 'neutral', name: 'Verdant Woods', region: 'forest' },
+
+      // === CENTER-SOUTH - Desert/Crystals ===
+      { id: 30, px: 38, py: 48, type: 'neutral', name: 'Crystal Oasis', region: 'desert' },
+      { id: 31, px: 45, py: 55, type: 'neutral', name: 'Sand Dunes', region: 'desert' },
+      { id: 32, px: 52, py: 50, type: 'neutral', name: 'Monolith Valley', region: 'desert' },
+
+      // === SOUTH CENTER - Castle / Arcane ===
+      { id: 33, px: 48, py: 65, school_id: 8, type: 'home', name: 'Arcane Citadel', region: 'arcane' },
+      { id: 34, px: 40, py: 62, type: 'neutral', name: 'Crystal Gardens', region: 'arcane' },
+      { id: 35, px: 55, py: 60, type: 'neutral', name: 'Rune Fields', region: 'arcane' },
+
+      // === SOUTH - Energy Beam / Nexus ===
+      { id: 36, px: 62, py: 78, type: 'neutral', name: 'The Nexus', region: 'nexus', isObjective: true },
+      { id: 37, px: 70, py: 72, type: 'neutral', name: 'Power Conduit', region: 'nexus' },
+
+      // === BOTTOM LEFT - Islands / Stone Covenant ===
+      { id: 38, px: 5, py: 72, type: 'neutral', name: 'Northern Isle', region: 'islands' },
+      { id: 39, px: 12, py: 78, school_id: 3, type: 'home', name: 'Stone Hold', region: 'islands' },
+      { id: 40, px: 8, py: 88, type: 'neutral', name: 'Ancient Ruins', region: 'islands' },
+      { id: 41, px: 18, py: 85, type: 'neutral', name: 'Moss Temple', region: 'islands' },
+      { id: 42, px: 25, py: 75, type: 'neutral', name: 'Verdant Isle', region: 'islands' },
+
+      // === BOTTOM CENTER ===
+      { id: 43, px: 35, py: 78, type: 'neutral', name: 'Southern Bay', region: 'coast' },
+      { id: 44, px: 42, py: 85, type: 'neutral', name: 'Shipwreck Cove', region: 'coast' },
+
+      // === BOTTOM RIGHT - Dark Whirlpool / WildCat ===
+      { id: 45, px: 78, py: 65, type: 'neutral', name: 'Ashen Shore', region: 'wildlands' },
+      { id: 46, px: 85, py: 72, school_id: 9, type: 'home', name: 'WildCat Den', region: 'wildlands' },
+      { id: 47, px: 92, py: 78, type: 'neutral', name: 'Chaos Rift', region: 'wildlands' },
+
+      // === FAR BOTTOM RIGHT - Volcano Island ===
+      { id: 48, px: 88, py: 88, type: 'neutral', name: 'Inferno Isle', region: 'volcanic' },
+
+      // === EXTRA OCEAN/TRANSITION ZONES ===
+      { id: 49, px: 30, py: 58, type: 'neutral', name: 'Trade Route', region: 'coast' },
+      { id: 50, px: 60, py: 48, type: 'neutral', name: 'Border March', region: 'plains' },
+    ];
+
+    // Adjacency map
+    const adjacency = {
+      1: [2, 3],
+      2: [1, 25, 28],
+      3: [1, 4, 17],
+      4: [3, 5, 17, 18],
+      5: [4, 18, 19, 29],
+      6: [7, 8, 17],
+      7: [6, 8, 9, 10],
+      8: [6, 7, 9, 17, 18],
+      9: [7, 8, 10, 12, 21, 22],
+      10: [7, 9, 11, 12],
+      11: [10, 12, 13],
+      12: [9, 10, 11, 13, 22, 23],
+      13: [11, 12, 14, 23, 24],
+      14: [13, 15, 16, 24],
+      15: [14, 16, 45],
+      16: [14, 15, 24, 45],
+      17: [3, 4, 6, 8, 18, 20],
+      18: [4, 5, 8, 17, 19, 20, 21],
+      19: [5, 18, 20, 29, 30],
+      20: [17, 18, 19, 21, 30],
+      21: [9, 18, 20, 22, 30, 32],
+      22: [9, 12, 21, 23, 32, 50],
+      23: [12, 13, 22, 24, 50],
+      24: [13, 14, 16, 23, 45, 50],
+      25: [2, 26, 27, 28],
+      26: [25, 27, 29, 38],
+      27: [25, 26, 38],
+      28: [2, 25, 29, 19],
+      29: [5, 19, 26, 28, 30, 49],
+      30: [19, 20, 21, 29, 31, 49],
+      31: [30, 32, 33, 34, 49],
+      32: [21, 22, 31, 33, 35, 50],
+      33: [31, 32, 34, 35, 36],
+      34: [31, 33, 43, 49],
+      35: [32, 33, 36, 37, 50],
+      36: [33, 35, 37, 43, 44], // NEXUS
+      37: [35, 36, 45, 46],
+      38: [26, 27, 39, 40],
+      39: [38, 40, 41, 42],
+      40: [38, 39, 41],
+      41: [39, 40, 42, 43],
+      42: [39, 41, 43, 49],
+      43: [34, 36, 41, 42, 44],
+      44: [36, 43],
+      45: [15, 16, 24, 37, 46],
+      46: [37, 45, 47, 48],
+      47: [46, 48],
+      48: [46, 47],
+      49: [29, 30, 31, 34, 42],
+      50: [22, 23, 24, 32, 35],
+    };
+
+    // ===== STATE =====
+    let currentPlayer = null;
+    let zoneData = {};
+    let controlData = {};
+    let todayActions = {};
+    let allActions = [];
+    let selectedZone = null;
+
+    // ===== HEX RENDERING =====
+    function createHexSVG(zone) {
+      const baseColor = zone.school_id ? schools[zone.school_id].color : '#445566';
+      const controlColor = getZoneControlColor(zone.id) || baseColor;
+
+      const points = [];
+      for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 180 * (60 * i - 30);
+        const px = HEX_WIDTH/2 + HEX_SIZE * Math.cos(angle);
+        const py = HEX_HEIGHT/2 + HEX_SIZE * Math.sin(angle);
+        points.push(`${px.toFixed(1)},${py.toFixed(1)}`);
+      }
+
+      return `
+        <svg viewBox="0 0 ${HEX_WIDTH.toFixed(0)} ${HEX_HEIGHT.toFixed(0)}" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="grad-${zone.id}" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:${controlColor};stop-opacity:0.75" />
+              <stop offset="100%" style="stop-color:${controlColor};stop-opacity:0.45" />
+            </linearGradient>
+          </defs>
+          <polygon class="hex-fill" points="${points.join(' ')}" fill="url(#grad-${zone.id})"/>
+          <polygon class="hex-border" points="${points.join(' ')}"/>
+        </svg>
+      `;
+    }
+
+    function getZoneControlColor(zoneId) {
+      const control = controlData[zoneId];
+      if (!control || control.length === 0) return null;
+      const top = control.sort((a, b) => b.control_percentage - a.control_percentage)[0];
+      if (top && top.control_percentage > 0 && schools[top.school_id]) {
+        return schools[top.school_id].color;
+      }
+      return null;
+    }
+
+    function renderHexMap() {
+      const overlay = document.getElementById('hexOverlay');
+      overlay.innerHTML = '';
+
+      hexLayout.forEach(zone => {
+        const hex = document.createElement('div');
+        hex.className = 'hex';
+        hex.id = `hex-${zone.id}`;
+
+        // Convert percentage to pixels
+        const x = (zone.px / 100) * MAP_WIDTH - HEX_WIDTH / 2;
+        const y = (zone.py / 100) * MAP_HEIGHT - HEX_HEIGHT / 2;
+
+        hex.style.left = `${x}px`;
+        hex.style.top = `${y}px`;
+        hex.style.width = `${HEX_WIDTH}px`;
+        hex.style.height = `${HEX_HEIGHT}px`;
+
+        if (zone.type === 'home') hex.classList.add('home-zone');
+        if (zone.isObjective || zoneData[zone.id]?.is_current_objective) hex.classList.add('objective');
+        if (isZoneContested(zone.id)) hex.classList.add('contested');
+        if (currentPlayer && canAttackZone(zone.id)) hex.classList.add('can-attack');
+        if (currentPlayer && isYourTerritory(zone.id)) hex.classList.add('your-territory');
+
+        hex.innerHTML = createHexSVG(zone);
+
+        const icon = document.createElement('div');
+        icon.className = 'hex-icon';
+        icon.textContent = zone.school_id ? schools[zone.school_id].emoji : '⚔️';
+        hex.appendChild(icon);
+
+        const label = document.createElement('div');
+        label.className = 'hex-label';
+        label.textContent = zone.name;
+        hex.appendChild(label);
+
+        hex.addEventListener('click', () => openZoneModal(zone));
+        overlay.appendChild(hex);
+      });
+    }
+
+    function isZoneContested(zoneId) {
+      const actions = todayActions[zoneId];
+      if (!actions || !Array.isArray(actions)) return false;
+      return actions.some(a => a.action_type === 'attack') && actions.some(a => a.action_type === 'defend');
+    }
+
+    function canAttackZone(zoneId) {
+      if (!currentPlayer) return false;
+      const zone = hexLayout.find(z => z.id === zoneId);
+      if (!zone || zone.type === 'home') return false;
+      if (zone.isObjective || zoneData[zoneId]?.is_current_objective) return true;
+      const adj = adjacency[zoneId] || [];
+      return adj.some(adjId => isYourTerritory(adjId));
+    }
+
+    function isYourTerritory(zoneId) {
+      if (!currentPlayer) return false;
+      const zone = hexLayout.find(z => z.id === zoneId);
+      if (zone?.school_id === currentPlayer.school_id) return true;
+      const control = controlData[zoneId];
+      if (control) {
+        const top = control.sort((a, b) => b.control_percentage - a.control_percentage)[0];
+        if (top && top.school_id === currentPlayer.school_id && top.control_percentage > 50) return true;
+      }
+      return false;
+    }
+
+    // ===== MODAL =====
+    function openZoneModal(zone) {
+      selectedZone = zone;
+      document.getElementById('modalZoneName').textContent = zone.name;
+      document.getElementById('modalZoneSubtitle').textContent = 
+        zone.type === 'home' ? `Home of ${schools[zone.school_id]?.name}` : `${zone.region?.replace('_', ' ')} Territory`;
+
+      const badges = document.getElementById('modalBadges');
+      badges.innerHTML = '';
+      if (zone.isObjective || zoneData[zone.id]?.is_current_objective) badges.innerHTML += '<span class="status-badge badge-objective">⚔️ Objective</span>';
+      if (isZoneContested(zone.id)) badges.innerHTML += '<span class="status-badge badge-contested">🔥 Contested</span>';
+      if (zone.type === 'home') badges.innerHTML += '<span class="status-badge badge-locked">🏰 Home</span>';
+
+      document.getElementById('zoneImagePlaceholder').textContent = zone.school_id ? schools[zone.school_id].emoji : '🗺️';
+
+      updateTugOfWar(zone.id);
+      updateActionButtons(zone);
+      updateParticipantsList(zone.id);
+      document.getElementById('zoneModal').classList.add('active');
+    }
+
+    function updateTugOfWar(zoneId) {
+      const actions = todayActions[zoneId] || [];
+      let attack = 0, defend = 0;
+      if (Array.isArray(actions)) {
+        actions.forEach(a => {
+          if (a.action_type === 'attack') attack += a.power_contributed || 1;
+          if (a.action_type === 'defend') defend += a.power_contributed || 1;
+        });
+      }
+      const total = attack + defend || 1;
+      document.getElementById('towAttack').style.width = `${(attack/total)*50}%`;
+      document.getElementById('towDefend').style.width = `${(defend/total)*50}%`;
+      document.getElementById('attackPower').textContent = attack;
+      document.getElementById('defendPower').textContent = defend;
+    }
+
+    function updateActionButtons(zone) {
+      const section = document.getElementById('actionButtons');
+      if (!currentPlayer) {
+        section.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:0.8rem;width:100%;font-size:0.75rem;"><a href="/register.html" style="color:var(--accent-gold);">Login</a> to participate</div>';
+        return;
+      }
+      if (zone.type === 'home') {
+        section.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:0.8rem;width:100%;font-size:0.75rem;">🏰 Home zones cannot be attacked</div>';
+        return;
+      }
+      section.innerHTML = `
+        <button class="action-btn btn-attack" id="btnAttack" onclick="performAction('attack')"><span>⚔️ Attack</span><span class="action-cost">1 Mana</span></button>
+        <button class="action-btn btn-defend" id="btnDefend" onclick="performAction('defend')"><span>🛡️ Defend</span><span class="action-cost">1 Mana</span></button>
+      `;
+      document.getElementById('btnAttack').disabled = !canAttackZone(zone.id) || currentPlayer.mana < 1;
+      document.getElementById('btnDefend').disabled = currentPlayer.mana < 1;
+    }
+
+    function updateParticipantsList(zoneId) {
+      const list = document.getElementById('participantsList');
+      const actions = todayActions[zoneId] || [];
+      if (!Array.isArray(actions) || actions.length === 0) {
+        list.innerHTML = '<div class="no-participants">No activity yet. Be the first!</div>';
+        return;
+      }
+      list.innerHTML = actions.map(a => {
+        const p = a.player || {};
+        const s = schools[a.school_id] || {};
+        return `<div class="participant"><div class="participant-info"><div class="participant-avatar">${s.emoji||'🐱'}</div><a href="https://twitter.com/${p.twitter_handle}" target="_blank" style="color:var(--accent-cyan);text-decoration:none;font-size:0.7rem;">@${p.twitter_handle||'?'}</a></div><span class="participant-action ${a.action_type}">${a.action_type==='attack'?'⚔️ ATK':'🛡️ DEF'}</span></div>`;
+      }).join('');
+    }
+
+    async function performAction(actionType) {
+      if (!currentPlayer || !selectedZone) return;
+      const btn = document.getElementById(actionType === 'attack' ? 'btnAttack' : 'btnDefend');
+      btn.disabled = true;
+      btn.innerHTML = '<span>...</span>';
+
+      try {
+        const res = await fetch('/api/territory/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ player_id: currentPlayer.id, zone_id: selectedZone.id, action_type: actionType })
+        });
+        if (!res.ok) { const e = await res.json(); alert(e.message || 'Failed'); updateActionButtons(selectedZone); return; }
+        const result = await res.json();
+        currentPlayer.mana = result.mana_remaining;
+
+        if (!todayActions[selectedZone.id]) todayActions[selectedZone.id] = [];
+        const newAction = { action_type: actionType, power_contributed: 1, player: currentPlayer, school_id: currentPlayer.school_id, zone_id: selectedZone.id, created_at: new Date().toISOString() };
+        todayActions[selectedZone.id].push(newAction);
+        allActions.unshift(newAction);
+
+        updateTugOfWar(selectedZone.id);
+        updateActionButtons(selectedZone);
+        updateParticipantsList(selectedZone.id);
+        renderPlayerStats();
+        renderActivityFeed();
+        renderHexMap();
+      } catch (e) { console.error(e); alert('Error'); updateActionButtons(selectedZone); }
+    }
+
+    // ===== SIDEBAR =====
+    function renderPlayerStats() {
+      if (!currentPlayer) {
+        document.getElementById('yourSchoolName').innerHTML = '<a href="/register.html" style="color:var(--accent-cyan);font-size:0.7rem;">Login to play</a>';
+        document.getElementById('yourSchoolDot').style.background = '#444';
+        document.getElementById('manaDisplayMini').innerHTML = '';
+        return;
+      }
+      const school = schools[currentPlayer.school_id];
+      document.getElementById('yourSchoolName').textContent = school.name;
+      document.getElementById('yourSchoolDot').style.background = school.color;
+      const mc = document.getElementById('manaDisplayMini');
+      mc.innerHTML = '';
+      for (let i = 0; i < 5; i++) {
+        const orb = document.createElement('div');
+        orb.className = 'mana-orb-mini' + (i >= currentPlayer.mana ? ' empty' : '');
+        mc.appendChild(orb);
+      }
+    }
+
+    function renderActivityFeed() {
+      const feed = document.getElementById('activityFeed');
+      if (allActions.length === 0) { feed.innerHTML = '<div class="no-activity">No activity yet today...</div>'; return; }
+      const recent = allActions.slice(0, 12);
+      feed.innerHTML = recent.map(a => {
+        const p = a.player || {};
+        const z = hexLayout.find(h => h.id === a.zone_id) || {};
+        return `<div class="activity-item"><div class="activity-avatar">${schools[a.school_id]?.emoji||'🐱'}</div><div class="activity-text"><a href="https://twitter.com/${p.twitter_handle}" target="_blank">@${p.twitter_handle||'?'}</a> <span class="activity-action ${a.action_type}">${a.action_type==='attack'?'⚔️':'🛡️'}</span> <span style="color:var(--accent-gold);cursor:pointer;" onclick="focusZone(${a.zone_id})">${z.name||'?'}</span><div class="activity-time">${getTimeAgo(a.created_at)}</div></div></div>`;
+      }).join('');
+    }
+
+    function getTimeAgo(ts) {
+      const diff = Date.now() - new Date(ts).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return `${mins}m ago`;
+      return `${Math.floor(mins / 60)}h ago`;
+    }
+
+    function focusZone(zoneId) {
+      const zone = hexLayout.find(z => z.id === zoneId);
+      if (zone) openZoneModal(zone);
+    }
+
+    function updateObjectiveTimer() {
+      const now = new Date();
+      const target = new Date(now);
+      target.setUTCHours(23, 0, 0, 0);
+      if (now >= target) target.setUTCDate(target.getUTCDate() + 1);
+      const diff = target - now;
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      document.getElementById('objectiveTimer').textContent = `Ends in ${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+    }
+
+    // ===== DATA LOADING =====
+    async function loadData() {
+      try {
+        const playerId = localStorage.getItem('player_id');
+        if (playerId) {
+          const r = await fetch(`/api/players/${playerId}`);
+          if (r.ok) currentPlayer = await r.json();
+        }
+
+        const zr = await fetch('/api/zones');
+        if (zr.ok) {
+          (await zr.json()).forEach(z => {
+            zoneData[z.id] = z;
+            if (z.is_current_objective) {
+              document.getElementById('objectiveZoneName').textContent = z.name;
+              const h = hexLayout.find(x => x.id === z.id);
+              if (h) h.isObjective = true;
+            }
+          });
+        }
+
+        const cr = await fetch('/api/zones/control');
+        if (cr.ok) {
+          (await cr.json()).forEach(c => {
+            if (!controlData[c.zone_id]) controlData[c.zone_id] = [];
+            controlData[c.zone_id].push(c);
+          });
+        }
+
+        try {
+          const ar = await fetch('/api/territory/actions/today');
+          if (ar.ok) {
+            todayActions = await ar.json();
+            allActions = [];
+            Object.values(todayActions).forEach(za => { if (Array.isArray(za)) allActions.push(...za); });
+            allActions.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            renderActivityFeed();
+          }
+        } catch (e) { console.log('Territory API not ready'); }
+      } catch (e) { console.error('Load error:', e); }
+
+      renderHexMap();
+      renderPlayerStats();
+    }
+
+    // ===== EVENTS =====
+    document.getElementById('closeZoneModal').addEventListener('click', () => document.getElementById('zoneModal').classList.remove('active'));
+    document.getElementById('zoneModal').addEventListener('click', e => { if (e.target.id === 'zoneModal') document.getElementById('zoneModal').classList.remove('active'); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('zoneModal').classList.remove('active'); });
+
+    // ===== INIT =====
+    document.addEventListener('DOMContentLoaded', () => {
+      loadData();
+      updateObjectiveTimer();
+      setInterval(updateObjectiveTimer, 1000);
+      setInterval(loadData, 2 * 60 * 1000);
+    });
+  </script>
+</body>
+</html>
