@@ -120,7 +120,7 @@
     .model-container {
       width: 100%;
       max-width: 500px;
-      height: 300px;
+      height: 350px;
       position: relative;
       margin-bottom: 20px;
     }
@@ -309,7 +309,7 @@
       }
 
       .model-container {
-        height: 220px;
+        height: 280px;
         margin-bottom: 15px;
       }
 
@@ -350,7 +350,7 @@
       }
 
       .model-container {
-        height: 180px;
+        height: 220px;
       }
     }
   </style>
@@ -443,9 +443,11 @@
       }
     });
 
-    // ===== THREE.JS 3D MODEL =====
-    let scene, camera, renderer, model;
+    // ===== THREE.JS 3D MODEL - FIXED =====
+    let scene, camera, renderer, wizardCat;
     let mouseX = 0, mouseY = 0;
+    let windowHalfX = window.innerWidth / 2;
+    let windowHalfY = window.innerHeight / 2;
 
     function init3D() {
       const canvas = document.getElementById('wizard-cat-canvas');
@@ -454,64 +456,84 @@
       // Scene
       scene = new THREE.Scene();
 
-      // Camera
-      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-      camera.position.set(0, 0.5, 3);
+      // Camera - FIXED: Use settings from working version
+      camera = new THREE.PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 1000);
+      camera.position.set(0, 2, 14);
+      camera.lookAt(0, 1, 0);
 
       // Renderer
       renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
       renderer.setSize(container.clientWidth, container.clientHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.outputEncoding = THREE.sRGBEncoding;
 
-      // Lighting
+      // Lighting - FIXED: Use settings from working version
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
       scene.add(ambientLight);
 
-      const frontLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      frontLight.position.set(0, 2, 3);
-      scene.add(frontLight);
+      const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      mainLight.position.set(5, 5, 7);
+      scene.add(mainLight);
 
-      const backLight = new THREE.DirectionalLight(0x00ffff, 0.3);
-      backLight.position.set(0, 1, -3);
-      scene.add(backLight);
+      // Purple accent from left
+      const purpleLight = new THREE.PointLight(0x8A2BE2, 0.6, 20);
+      purpleLight.position.set(-4, 4, 5);
+      scene.add(purpleLight);
+
+      // Gold accent from right
+      const goldLight = new THREE.PointLight(0xFFD700, 0.5, 20);
+      goldLight.position.set(4, 4, 5);
+      scene.add(goldLight);
+
+      // Cyan rim from behind
+      const cyanLight = new THREE.PointLight(0x00D4FF, 0.4, 15);
+      cyanLight.position.set(0, 5, -4);
+      scene.add(cyanLight);
 
       // Load Model
       const loader = new THREE.GLTFLoader();
       loader.load(
         '/assets/models/wizard-cat.glb',
         (gltf) => {
-          model = gltf.scene;
-          model.scale.set(1.8, 1.8, 1.8);
-          model.position.set(0, -0.5, 0);
-          scene.add(model);
+          wizardCat = gltf.scene;
+
+          // FIXED: Use -4.5 position from working version
+          wizardCat.scale.set(1, 1, 1);
+          wizardCat.position.set(0, -4.5, 0);
+
+          // Hide backdrop planes if any
+          wizardCat.traverse((child) => {
+            if (child.name === 'Backdrop' || child.name === 'Plane' || child.name === 'Plane.002') {
+              child.visible = false;
+            }
+          });
+
+          scene.add(wizardCat);
         },
         undefined,
         (error) => {
           console.log('Model load error:', error);
-          // Fallback: show placeholder
-          const geometry = new THREE.SphereGeometry(0.8, 32, 32);
-          const material = new THREE.MeshStandardMaterial({ color: 0x44aa44 });
-          model = new THREE.Mesh(geometry, material);
-          scene.add(model);
         }
       );
 
       // Mouse tracking
       document.addEventListener('mousemove', (e) => {
-        mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-        mouseY = (e.clientY / window.innerHeight) * 2 - 1;
+        mouseX = (e.clientX - windowHalfX) / windowHalfX;
+        mouseY = (e.clientY - windowHalfY) / windowHalfY;
       });
 
       // Touch tracking for mobile
       document.addEventListener('touchmove', (e) => {
         if (e.touches.length > 0) {
-          mouseX = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
-          mouseY = (e.touches[0].clientY / window.innerHeight) * 2 - 1;
+          mouseX = (e.touches[0].clientX - windowHalfX) / windowHalfX;
+          mouseY = (e.touches[0].clientY - windowHalfY) / windowHalfY;
         }
       });
 
       // Resize handler
       window.addEventListener('resize', () => {
+        windowHalfX = window.innerWidth / 2;
+        windowHalfY = window.innerHeight / 2;
         camera.aspect = container.clientWidth / container.clientHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(container.clientWidth, container.clientHeight);
@@ -523,16 +545,16 @@
     function animate() {
       requestAnimationFrame(animate);
 
-      if (model) {
-        // Smooth rotation following mouse (Mario 64 style)
-        const targetRotationY = mouseX * 0.5;
+      if (wizardCat) {
+        // Smooth rotation following mouse (Mario 64 style) - FIXED values
+        const targetRotationY = mouseX * 0.8;
         const targetRotationX = mouseY * 0.3;
 
-        model.rotation.y += (targetRotationY - model.rotation.y) * 0.05;
-        model.rotation.x += (targetRotationX - model.rotation.x) * 0.05;
+        wizardCat.rotation.y += (targetRotationY - wizardCat.rotation.y) * 0.08;
+        wizardCat.rotation.x += (targetRotationX - wizardCat.rotation.x) * 0.08;
 
-        // Subtle idle animation
-        model.position.y = -0.5 + Math.sin(Date.now() * 0.001) * 0.03;
+        // FIXED: Base position -4.5 with subtle float
+        wizardCat.position.y = -4.5 + Math.sin(Date.now() * 0.001) * 0.02;
       }
 
       renderer.render(scene, camera);
