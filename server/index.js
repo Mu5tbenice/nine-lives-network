@@ -28,6 +28,9 @@ try {
   console.error('❌ Failed to load player routes:', e.message);
 }
 
+const territoryRoutes = require('./routes/territory');
+app.use('/api/territory', territoryRoutes);
+
 try {
   const mapRoutes = require('./routes/map');
   app.use('/api/map', mapRoutes);
