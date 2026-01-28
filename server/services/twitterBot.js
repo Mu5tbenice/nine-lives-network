@@ -522,7 +522,9 @@ async function processSpellCasts() {
         points: finalPoints,
         breakdown,
         nermNoticed,
-        isCreative: spell.isCreative
+        isCreative: spell.isCreative,
+        tweet_id: tweet.id,
+        schoolName: schools[player.school_id]?.name || 'Unknown School'
       });
 
       console.log(`✨ Cast processed: @${user.username} cast ${spell.name} for ${finalPoints} points`);

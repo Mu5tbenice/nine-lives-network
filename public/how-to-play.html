@@ -13,6 +13,48 @@
       min-height: 100vh;
       background: var(--bg-dark);
       padding: var(--space-xl) var(--space-lg);
+      padding-top: 100px;
+    }
+
+    /* Navigation */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-md) var(--space-lg);
+      background: var(--bg-medium);
+      border-bottom: 2px solid var(--bg-light);
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+    }
+
+    .nav-logo {
+      font-family: var(--font-main);
+      font-size: 0.75rem;
+      color: var(--accent-gold);
+      text-decoration: none;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: var(--space-lg);
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-family: var(--font-main);
+      font-size: 0.5rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-decoration: none;
+    }
+
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--accent-gold);
     }
 
     .how-to-play-content {
@@ -109,6 +151,18 @@
     .highlight-box p {
       margin: 0;
       color: var(--text-primary);
+    }
+
+    .highlight-box.cyan {
+      border-left-color: var(--accent-cyan);
+    }
+
+    .highlight-box.red {
+      border-left-color: #ff4444;
+    }
+
+    .highlight-box.green {
+      border-left-color: #00ff00;
     }
 
     /* Points Table */
@@ -242,12 +296,102 @@
       color: var(--text-secondary);
       line-height: 1.6;
     }
+
+    /* Map Legend */
+    .map-legend {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-sm);
+      margin: var(--space-md) 0;
+    }
+
+    @media (max-width: 500px) {
+      .map-legend {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-sm);
+      background: var(--bg-dark);
+      border-radius: var(--radius-sm);
+    }
+
+    .legend-indicator {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .legend-indicator.gold {
+      background: #FFD700;
+      box-shadow: 0 0 8px #FFD700;
+    }
+
+    .legend-indicator.red {
+      background: #ff4444;
+      box-shadow: 0 0 8px #ff4444;
+    }
+
+    .legend-indicator.green {
+      border: 2px solid #00ff00;
+      box-shadow: 0 0 6px #00ff00;
+    }
+
+    .legend-indicator.cyan {
+      border: 2px solid #00d4ff;
+    }
+
+    .legend-text {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* Action Buttons Preview */
+    .action-preview {
+      display: flex;
+      gap: var(--space-md);
+      margin: var(--space-md) 0;
+    }
+
+    .preview-btn {
+      flex: 1;
+      padding: var(--space-md);
+      text-align: center;
+      border-radius: var(--radius-sm);
+      font-family: var(--font-main);
+      font-size: 0.6rem;
+    }
+
+    .preview-btn.attack {
+      background: linear-gradient(180deg, #ff4444, #cc0000);
+      color: white;
+    }
+
+    .preview-btn.defend {
+      background: linear-gradient(180deg, #4444ff, #0000cc);
+      color: white;
+    }
   </style>
 </head>
 <body>
+  <!-- Navigation -->
+  <nav class="nav">
+    <a href="/" class="nav-logo">Nine Lives Network</a>
+    <ul class="nav-links">
+      <li><a href="/dashboard.html">Dashboard</a></li>
+      <li><a href="/map.html">Map</a></li>
+      <li><a href="/leaderboards.html">Leaderboards</a></li>
+      <li><a href="/how-to-play.html" class="active">How to Play</a></li>
+    </ul>
+  </nav>
+
   <main class="how-to-play-container">
     <div class="how-to-play-content">
-      <a href="/" class="back-link">← Back to Home</a>
 
       <h1 class="page-title">📜 How to Play</h1>
 
@@ -324,10 +468,64 @@
         </div>
       </div>
 
-      <!-- Step 4: Earn Points -->
+      <!-- Step 4: Territory Map -->
       <div class="section">
         <div class="section-header">
           <div class="section-number">4</div>
+          <h2 class="section-title">Battle on the Territory Map</h2>
+        </div>
+        <div class="section-content">
+          <p>Visit the <a href="/map.html" style="color: var(--accent-gold);">Territory Map</a> to attack and defend zones across Avaloris!</p>
+
+          <div class="highlight-box cyan">
+            <p>🗺️ The map shows 50 zones across the realm. Each school has a home zone that cannot be attacked.</p>
+          </div>
+
+          <p><strong>How Territory Battles Work:</strong></p>
+          <ul style="margin: var(--space-md) 0; padding-left: var(--space-lg);">
+            <li style="margin-bottom: var(--space-sm);">Click any zone to see details and take action</li>
+            <li style="margin-bottom: var(--space-sm);"><strong>Attack</strong> - Push to flip a zone to your school's control</li>
+            <li style="margin-bottom: var(--space-sm);"><strong>Defend</strong> - Protect a zone from enemy attacks</li>
+            <li style="margin-bottom: var(--space-sm);">Each action costs <strong>1 mana</strong> and earns <strong>5 points</strong></li>
+            <li style="margin-bottom: var(--space-sm);">You can only attack zones adjacent to territory your school controls</li>
+            <li>The daily objective zone can be attacked by anyone!</li>
+          </ul>
+
+          <div class="action-preview">
+            <div class="preview-btn attack">⚔️ Attack</div>
+            <div class="preview-btn defend">🛡️ Defend</div>
+          </div>
+
+          <p><strong>Map Legend:</strong></p>
+          <div class="map-legend">
+            <div class="legend-item">
+              <div class="legend-indicator gold"></div>
+              <span class="legend-text">Daily Objective</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-indicator red"></div>
+              <span class="legend-text">Under Attack (Contested)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-indicator green"></div>
+              <span class="legend-text">Can Attack (Adjacent)</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-indicator cyan"></div>
+              <span class="legend-text">Your Territory</span>
+            </div>
+          </div>
+
+          <div class="highlight-box red">
+            <p>⚔️ At the end of each day, zones are resolved! If attackers outnumber defenders, control shifts.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Earn Points -->
+      <div class="section">
+        <div class="section-header">
+          <div class="section-number">5</div>
           <h2 class="section-title">Earn Points</h2>
         </div>
         <div class="section-content">
@@ -342,8 +540,12 @@
             </thead>
             <tbody>
               <tr>
-                <td>Any spell cast</td>
+                <td>Any spell cast (Twitter)</td>
                 <td class="points">+10</td>
+              </tr>
+              <tr>
+                <td>Territory action (Map)</td>
+                <td class="points">+5</td>
               </tr>
               <tr>
                 <td>Using school keywords (fire, shadow, etc.)</td>
@@ -376,10 +578,10 @@
         </div>
       </div>
 
-      <!-- Step 5: Win Territory -->
+      <!-- Step 6: Win Territory -->
       <div class="section">
         <div class="section-header">
-          <div class="section-number">5</div>
+          <div class="section-number">6</div>
           <h2 class="section-title">Control Territory</h2>
         </div>
         <div class="section-content">
@@ -413,6 +615,11 @@
           <div class="faq-item">
             <div class="faq-question">Do I need to use specific spell words?</div>
             <div class="faq-answer">No! Any reply to the objective tweet counts. But using school-themed words earns bonus points.</div>
+          </div>
+
+          <div class="faq-item">
+            <div class="faq-question">What's the difference between Twitter casts and Map actions?</div>
+            <div class="faq-answer">Twitter casts earn more points (+10) and help control the daily objective. Map actions (+5 points) let you strategically expand your school's territory across all 50 zones.</div>
           </div>
 
           <div class="faq-item">
