@@ -4,838 +4,116 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard | Nine Lives Network</title>
-
-  <!-- Styles -->
   <link rel="stylesheet" href="/css/styles.css">
-
   <style>
-    .dashboard-container {
-      min-height: 100vh;
-      background: var(--bg-dark);
-      padding-top: 80px;
-    }
-
-    /* Navigation */
-    .nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: var(--space-md) var(--space-lg);
-      background: var(--bg-medium);
-      border-bottom: 2px solid var(--bg-light);
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-    }
-
-    .nav-logo {
-      font-family: var(--font-main);
-      font-size: 0.75rem;
-      color: var(--accent-gold);
-      text-decoration: none;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: var(--space-lg);
-      list-style: none;
-    }
-
-    .nav-links a {
-      font-family: var(--font-main);
-      font-size: 0.5rem;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      text-decoration: none;
-    }
-
-    .nav-links a:hover, .nav-links a.active {
-      color: var(--accent-gold);
-    }
-
-    /* Main Content */
-    .dashboard-content {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: var(--space-lg);
-    }
-
-    /* Welcome Header */
-    .welcome-header {
-      display: flex;
-      align-items: center;
-      gap: var(--space-lg);
-      margin-bottom: var(--space-xl);
-    }
-
-    .player-avatar {
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: var(--bg-light);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.5rem;
-      border: 3px solid var(--accent-gold);
-    }
-
-    .player-info h1 {
-      font-size: 1.25rem;
-      margin-bottom: var(--space-xs);
-    }
-
-    .player-handle {
-      color: var(--accent-cyan);
-      font-size: 1.125rem;
-    }
-
-    .player-school {
-      display: inline-flex;
-      align-items: center;
-      gap: var(--space-sm);
-      margin-top: var(--space-sm);
-      padding: var(--space-xs) var(--space-md);
-      background: var(--bg-medium);
-      border-radius: var(--radius-sm);
-    }
-
-    .school-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-    }
-
-    /* Stats Grid */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: var(--space-lg);
-      margin-bottom: var(--space-xl);
-    }
-
-    /* ===== PIXEL ALERT BANNER ===== */
-    .pixel-alert {
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      padding: 1rem 1.25rem;
-      margin-bottom: var(--space-lg);
-      background: linear-gradient(180deg, #1a1a2e 0%, #16162a 100%);
-      border: 3px solid;
-      border-image: linear-gradient(180deg, #FFD700 0%, #B8860B 100%) 1;
-      box-shadow: 
-        inset 0 0 0 1px rgba(255, 215, 0, 0.1),
-        0 4px 0 0 rgba(0, 0, 0, 0.3),
-        0 0 20px rgba(255, 215, 0, 0.1);
-    }
-
-    .pixel-alert::before {
-      content: '';
-      position: absolute;
-      top: -3px;
-      left: -3px;
-      right: -3px;
-      bottom: -3px;
-      background: linear-gradient(45deg, #FFD700, #FFA500, #FFD700);
-      z-index: -1;
-      opacity: 0.3;
-      filter: blur(8px);
-    }
-
-    .pixel-alert-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 48px;
-      height: 48px;
-      background: rgba(255, 215, 0, 0.15);
-      border: 2px solid rgba(255, 215, 0, 0.4);
-      flex-shrink: 0;
-    }
-
-    .pixel-alert-icon svg {
-      width: 28px;
-      height: 28px;
-    }
-
-    .pixel-alert-content {
-      flex: 1;
-    }
-
-    .pixel-alert-title {
-      font-family: var(--font-main);
-      font-size: 0.6rem;
-      color: #FFD700;
-      margin-bottom: 0.25rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .pixel-alert-text {
-      font-size: 0.9rem;
-      color: #c0c0d0;
-      line-height: 1.4;
-    }
-
-    .pixel-alert-action {
-      flex-shrink: 0;
-    }
-
-    /* Pixel Button Styles */
-    .pixel-btn {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.25rem;
-      font-family: var(--font-main);
-      font-size: 0.5rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #0a0a14;
-      background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
-      border: none;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      box-shadow: 
-        0 4px 0 0 #B8860B,
-        0 6px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    .pixel-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 
-        0 6px 0 0 #B8860B,
-        0 8px 12px rgba(0, 0, 0, 0.4);
-    }
-
-    .pixel-btn:active {
-      transform: translateY(2px);
-      box-shadow: 
-        0 2px 0 0 #B8860B,
-        0 3px 4px rgba(0, 0, 0, 0.3);
-    }
-
-    .pixel-btn-secondary {
-      background: linear-gradient(180deg, #8A2BE2 0%, #6B238E 100%);
-      color: white;
-      box-shadow: 
-        0 4px 0 0 #4B0082,
-        0 6px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    .pixel-btn-secondary:hover {
-      box-shadow: 
-        0 6px 0 0 #4B0082,
-        0 8px 12px rgba(0, 0, 0, 0.4);
-    }
-
-    .pixel-btn-secondary:active {
-      box-shadow: 
-        0 2px 0 0 #4B0082,
-        0 3px 4px rgba(0, 0, 0, 0.3);
-    }
-
-    .pixel-btn-cyan {
-      background: linear-gradient(180deg, #00D4FF 0%, #0099CC 100%);
-      color: #0a0a14;
-      box-shadow: 
-        0 4px 0 0 #006688,
-        0 6px 8px rgba(0, 0, 0, 0.3);
-    }
-
-    .pixel-btn-cyan:hover {
-      box-shadow: 
-        0 6px 0 0 #006688,
-        0 8px 12px rgba(0, 0, 0, 0.4);
-    }
-
-    /* Pixel Info Box in Stat Cards */
-    .pixel-info-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      padding: 0.5rem 0.75rem;
-      margin-top: var(--space-md);
-      font-family: var(--font-main);
-      font-size: 0.4rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: #FFD700;
-      background: rgba(255, 215, 0, 0.1);
-      border: 2px solid rgba(255, 215, 0, 0.3);
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .pixel-info-btn:hover {
-      background: rgba(255, 215, 0, 0.2);
-      border-color: #FFD700;
-      box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-    }
-
-    .pixel-info-btn svg {
-      width: 14px;
-      height: 14px;
-    }
-
-    /* Pixel Chip/Badge */
-    .pixel-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
-      padding: 0.3rem 0.6rem;
-      font-family: var(--font-main);
-      font-size: 0.4rem;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      border: 2px solid;
-    }
-
-    .pixel-chip-gold {
-      color: #FFD700;
-      background: rgba(255, 215, 0, 0.1);
-      border-color: rgba(255, 215, 0, 0.4);
-    }
-
-    .pixel-chip-purple {
-      color: #8A2BE2;
-      background: rgba(138, 43, 226, 0.1);
-      border-color: rgba(138, 43, 226, 0.4);
-    }
-
-    .pixel-chip-cyan {
-      color: #00D4FF;
-      background: rgba(0, 212, 255, 0.1);
-      border-color: rgba(0, 212, 255, 0.4);
-    }
-
-    /* Pixel Divider */
-    .pixel-divider {
-      height: 4px;
-      margin: var(--space-md) 0;
-      background: repeating-linear-gradient(
-        90deg,
-        var(--accent-gold) 0px,
-        var(--accent-gold) 4px,
-        transparent 4px,
-        transparent 8px
-      );
-      opacity: 0.3;
-    }
-
-    .stat-card {
-      background: var(--bg-medium);
-      border: 2px solid var(--bg-light);
-      border-radius: var(--radius-md);
-      padding: var(--space-lg);
-    }
-
-    .stat-card h3 {
-      font-size: 0.625rem;
-      color: var(--text-secondary);
-      margin-bottom: var(--space-md);
-    }
-
-    .stat-value {
-      font-family: var(--font-main);
-      font-size: 2rem;
-      color: var(--accent-gold);
-    }
-
-    .stat-label {
-      color: var(--text-muted);
-      font-size: 0.875rem;
-      margin-top: var(--space-xs);
-    }
-
-    /* Mana Display */
-    .mana-display {
-      display: flex;
-      gap: var(--space-sm);
-      margin: var(--space-md) 0;
-    }
-
-    .mana-orb {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #00d4ff, #0066cc);
-      box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
-      border: 2px solid rgba(255, 255, 255, 0.3);
-    }
-
-    .mana-orb.empty {
-      background: var(--bg-dark);
-      box-shadow: none;
-      opacity: 0.3;
-    }
-
-    .mana-timer {
-      color: var(--text-muted);
-      font-size: 0.875rem;
-      margin-top: var(--space-sm);
-    }
-
-    /* Objective Card */
-    .objective-card {
-      background: linear-gradient(135deg, var(--bg-medium), var(--bg-light));
-      border: 2px solid var(--accent-gold);
-      border-radius: var(--radius-md);
-      padding: var(--space-lg);
-      margin-bottom: var(--space-xl);
-      box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
-    }
-
-    .objective-card h3 {
-      font-size: 0.75rem;
-      color: var(--accent-gold);
-      margin-bottom: var(--space-md);
-    }
-
-    .objective-zone {
-      font-family: var(--font-main);
-      font-size: 1.25rem;
-      color: var(--text-primary);
-      margin-bottom: var(--space-sm);
-    }
-
-    .objective-timer {
-      color: var(--accent-cyan);
-      font-size: 1rem;
-    }
-
-    /* ===== HOURGLASS TIMERS ===== */
-    .timers-container {
-      display: flex;
-      gap: 2rem;
-      justify-content: center;
-      flex-wrap: wrap;
-      padding: 1.5rem;
-      background: rgba(10, 10, 20, 0.8);
-      border-radius: 8px;
-      border: 1px solid rgba(255, 215, 0, 0.2);
-      margin-top: var(--space-lg);
-    }
-
-    .timer-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .timer-label {
-      font-family: var(--font-main);
-      font-size: 0.45rem;
-      color: #a0a0b0;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .timer-countdown {
-      font-family: var(--font-main);
-      font-size: 0.55rem;
-      color: #fff;
-    }
-
-    /* Hourglass Container */
-    .hourglass-pixel {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    /* Small hourglass - Spell Scan (2 min) */
-    .hourglass-small {
-      width: 28px;
-      height: 42px;
-    }
-
-    /* Medium hourglass - Objective Ends */
-    .hourglass-medium {
-      width: 36px;
-      height: 54px;
-    }
-
-    /* Large hourglass - Mana Reset */
-    .hourglass-large {
-      width: 44px;
-      height: 66px;
-    }
-
-    .hourglass-pixel svg {
-      width: 100%;
-      height: 100%;
-    }
-
-    /* Color themes */
-    .hourglass-cyan .sand-top,
-    .hourglass-cyan .sand-stream,
-    .hourglass-cyan .sand-bottom-fill {
-      fill: #00D4FF;
-    }
-
-    .hourglass-cyan .hourglass-glass {
-      stroke: #00D4FF;
-      fill: rgba(0, 212, 255, 0.1);
-    }
-
-    .hourglass-cyan .timer-countdown {
-      color: #00D4FF;
-    }
-
-    .hourglass-purple .sand-top,
-    .hourglass-purple .sand-stream,
-    .hourglass-purple .sand-bottom-fill {
-      fill: #8A2BE2;
-    }
-
-    .hourglass-purple .hourglass-glass {
-      stroke: #8A2BE2;
-      fill: rgba(138, 43, 226, 0.1);
-    }
-
-    .hourglass-purple .timer-countdown {
-      color: #8A2BE2;
-    }
-
-    .hourglass-gold .sand-top,
-    .hourglass-gold .sand-stream,
-    .hourglass-gold .sand-bottom-fill {
-      fill: #FFD700;
-    }
-
-    .hourglass-gold .hourglass-glass {
-      stroke: #FFD700;
-      fill: rgba(255, 215, 0, 0.1);
-    }
-
-    .hourglass-gold .timer-countdown {
-      color: #FFD700;
-    }
-
-    /* Sand grain animations - different speeds */
-    @keyframes sandFallFast {
-      0% { transform: translateY(0); opacity: 1; }
-      100% { transform: translateY(6px); opacity: 0; }
-    }
-
-    @keyframes sandFallMedium {
-      0% { transform: translateY(0); opacity: 1; }
-      100% { transform: translateY(6px); opacity: 0; }
-    }
-
-    @keyframes sandFallSlow {
-      0% { transform: translateY(0); opacity: 1; }
-      100% { transform: translateY(6px); opacity: 0; }
-    }
-
-    .hourglass-small .sand-grain {
-      animation: sandFallFast 0.3s linear infinite;
-    }
-
-    .hourglass-medium .sand-grain {
-      animation: sandFallMedium 0.6s linear infinite;
-    }
-
-    .hourglass-large .sand-grain {
-      animation: sandFallSlow 1s linear infinite;
-    }
-
-    /* Flip animation when timer resets */
-    @keyframes hourglassFlip {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(180deg); }
-    }
-
-    .hourglass-pixel.flipping svg {
-      animation: hourglassFlip 0.6s ease-in-out;
-    }
-
-    /* Cast History */
-    .history-section {
-      background: var(--bg-medium);
-      border: 2px solid var(--bg-light);
-      border-radius: var(--radius-md);
-      padding: var(--space-lg);
-    }
-
-    .history-section h3 {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      margin-bottom: var(--space-lg);
-    }
-
-    .cast-list {
-      list-style: none;
-    }
-
-    .cast-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: var(--space-md);
-      border-bottom: 1px solid var(--bg-light);
-    }
-
-    .cast-item:last-child {
-      border-bottom: none;
-    }
-
-    .cast-spell {
-      font-family: var(--font-main);
-      font-size: 0.625rem;
-      color: var(--accent-gold);
-    }
-
-    .cast-time {
-      color: var(--text-muted);
-      font-size: 0.875rem;
-    }
-
-    .cast-points {
-      color: var(--success);
-      font-weight: bold;
-    }
-
-    .empty-history {
-      text-align: center;
-      color: var(--text-muted);
-      padding: var(--space-xl);
-    }
-
-    /* Ranks */
-    .ranks-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: var(--space-md);
-      margin-top: var(--space-md);
-    }
-
-    @media (max-width: 600px) {
-      .ranks-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .timers-container {
-        gap: 1rem;
-      }
-
-      .timer-label {
-        font-size: 0.4rem;
-      }
-    }
-
-    .rank-item {
-      text-align: center;
-      padding: var(--space-md);
-      background: var(--bg-dark);
-      border-radius: var(--radius-sm);
-    }
-
-    .rank-position {
-      font-family: var(--font-main);
-      font-size: 1.5rem;
-      color: var(--accent-gold);
-    }
-
-    .rank-label {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: var(--space-xs);
-    }
-
-    /* Loading */
-    .loading {
-      text-align: center;
-      padding: var(--space-xl);
-      color: var(--text-muted);
-    }
-
-    /* Community Tag */
-    .community-tag {
-      display: inline-block;
-      padding: var(--space-xs) var(--space-sm);
-      background: var(--accent-purple);
-      color: white;
-      border-radius: var(--radius-sm);
-      font-size: 0.875rem;
-      margin-left: var(--space-sm);
-    }
-
-    /* How To Play Button */
-    .help-btn {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: var(--accent-gold);
-      color: var(--bg-dark);
-      font-size: 1.5rem;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
-      transition: all 0.3s ease;
-      z-index: 999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .help-btn:hover {
-      transform: scale(1.1);
-      box-shadow: 0 6px 30px rgba(255, 215, 0, 0.6);
-    }
-
-    /* Modal */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      display: none;
-      justify-content: center;
-      align-items: center;
-      z-index: 2000;
-      padding: var(--space-lg);
-    }
-
-    .modal-overlay.active {
-      display: flex;
-    }
-
-    .modal {
-      background: var(--bg-medium);
-      border: 2px solid var(--accent-gold);
-      border-radius: var(--radius-md);
-      max-width: 600px;
-      width: 100%;
-      max-height: 80vh;
-      overflow-y: auto;
-      position: relative;
-    }
-
-    .modal-header {
-      padding: var(--space-lg);
-      border-bottom: 1px solid var(--bg-light);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .modal-header h2 {
-      font-size: 1rem;
-      color: var(--accent-gold);
-    }
-
-    .modal-close {
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      font-size: 1.5rem;
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-    }
-
-    .modal-close:hover {
-      color: var(--accent-gold);
-    }
-
-    .modal-body {
-      padding: var(--space-lg);
-    }
-
-    .modal-section {
-      margin-bottom: var(--space-lg);
-    }
-
-    .modal-section:last-child {
-      margin-bottom: 0;
-    }
-
-    .modal-section h3 {
-      font-size: 0.75rem;
-      color: var(--accent-cyan);
-      margin-bottom: var(--space-md);
-    }
-
-    .modal-section p {
-      color: var(--text-secondary);
-      margin-bottom: var(--space-sm);
-    }
-
-    .points-breakdown {
-      background: var(--bg-dark);
-      border-radius: var(--radius-sm);
-      padding: var(--space-md);
-    }
-
-    .points-row {
-      display: flex;
-      justify-content: space-between;
-      padding: var(--space-sm) 0;
-      border-bottom: 1px solid var(--bg-light);
-    }
-
-    .points-row:last-child {
-      border-bottom: none;
-    }
-
-    .points-row .label {
-      color: var(--text-secondary);
-    }
-
-    .points-row .value {
-      color: var(--accent-gold);
-      font-family: var(--font-main);
-      font-size: 0.875rem;
-    }
-
-    .step-list {
-      list-style: none;
-      counter-reset: steps;
-    }
-
-    .step-list li {
-      counter-increment: steps;
-      padding: var(--space-sm) 0;
-      padding-left: 2.5rem;
-      position: relative;
-      color: var(--text-secondary);
-    }
-
-    .step-list li::before {
-      content: counter(steps);
-      position: absolute;
-      left: 0;
-      top: var(--space-sm);
-      width: 1.75rem;
-      height: 1.75rem;
-      background: var(--accent-gold);
-      color: var(--bg-dark);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--font-main);
-      font-size: 0.625rem;
-    }
+    .dashboard-container { min-height: 100vh; background: var(--bg-dark); padding-top: 80px; }
+    .nav { display: flex; justify-content: space-between; align-items: center; padding: var(--space-md) var(--space-lg); background: var(--bg-medium); border-bottom: 2px solid var(--bg-light); position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
+    .nav-logo { font-family: var(--font-main); font-size: 0.75rem; color: var(--accent-gold); text-decoration: none; }
+    .nav-links { display: flex; gap: var(--space-lg); list-style: none; }
+    .nav-links a { font-family: var(--font-main); font-size: 0.5rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px; text-decoration: none; }
+    .nav-links a:hover, .nav-links a.active { color: var(--accent-gold); }
+    .dashboard-content { max-width: 1200px; margin: 0 auto; padding: var(--space-lg); }
+    .welcome-header { display: flex; align-items: center; gap: var(--space-lg); margin-bottom: var(--space-xl); }
+    .player-avatar { width: 80px; height: 80px; border-radius: 50%; background: var(--bg-light); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; border: 3px solid var(--accent-gold); }
+    .player-info h1 { font-size: 1.25rem; margin-bottom: var(--space-xs); }
+    .player-handle { color: var(--accent-cyan); font-size: 1.125rem; }
+    .player-school { display: inline-flex; align-items: center; gap: var(--space-sm); margin-top: var(--space-sm); padding: var(--space-xs) var(--space-md); background: var(--bg-medium); border-radius: var(--radius-sm); }
+    .school-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--space-lg); margin-bottom: var(--space-xl); }
+    .pixel-alert { position: relative; display: flex; align-items: center; gap: 1rem; padding: 1rem 1.25rem; margin-bottom: var(--space-lg); background: linear-gradient(180deg, #1a1a2e 0%, #16162a 100%); border: 3px solid; border-image: linear-gradient(180deg, #FFD700 0%, #B8860B 100%) 1; box-shadow: inset 0 0 0 1px rgba(255, 215, 0, 0.1), 0 4px 0 0 rgba(0, 0, 0, 0.3), 0 0 20px rgba(255, 215, 0, 0.1); }
+    .pixel-alert::before { content: ''; position: absolute; top: -3px; left: -3px; right: -3px; bottom: -3px; background: linear-gradient(45deg, #FFD700, #FFA500, #FFD700); z-index: -1; opacity: 0.3; filter: blur(8px); }
+    .pixel-alert-icon { display: flex; align-items: center; justify-content: center; width: 48px; height: 48px; background: rgba(255, 215, 0, 0.15); border: 2px solid rgba(255, 215, 0, 0.4); flex-shrink: 0; }
+    .pixel-alert-icon svg { width: 28px; height: 28px; }
+    .pixel-alert-content { flex: 1; }
+    .pixel-alert-title { font-family: var(--font-main); font-size: 0.6rem; color: #FFD700; margin-bottom: 0.25rem; text-transform: uppercase; letter-spacing: 1px; }
+    .pixel-alert-text { font-size: 0.9rem; color: #c0c0d0; line-height: 1.4; }
+    .pixel-alert-action { flex-shrink: 0; }
+    .pixel-btn { position: relative; display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.25rem; font-family: var(--font-main); font-size: 0.5rem; text-transform: uppercase; letter-spacing: 1px; color: #0a0a14; background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%); border: none; cursor: pointer; transition: all 0.15s ease; box-shadow: 0 4px 0 0 #B8860B, 0 6px 8px rgba(0, 0, 0, 0.3); }
+    .pixel-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 0 #B8860B, 0 8px 12px rgba(0, 0, 0, 0.4); }
+    .pixel-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 0 #B8860B, 0 3px 4px rgba(0, 0, 0, 0.3); }
+    .pixel-info-btn { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.75rem; margin-top: var(--space-md); font-family: var(--font-main); font-size: 0.4rem; text-transform: uppercase; letter-spacing: 1px; color: #FFD700; background: rgba(255, 215, 0, 0.1); border: 2px solid rgba(255, 215, 0, 0.3); cursor: pointer; transition: all 0.2s ease; }
+    .pixel-info-btn:hover { background: rgba(255, 215, 0, 0.2); border-color: #FFD700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.3); }
+    .pixel-info-btn svg { width: 14px; height: 14px; }
+    .pixel-divider { height: 4px; margin: var(--space-md) 0; background: repeating-linear-gradient(90deg, var(--accent-gold) 0px, var(--accent-gold) 4px, transparent 4px, transparent 8px); opacity: 0.3; }
+    .stat-card { background: var(--bg-medium); border: 2px solid var(--bg-light); border-radius: var(--radius-md); padding: var(--space-lg); }
+    .stat-card h3 { font-size: 0.625rem; color: var(--text-secondary); margin-bottom: var(--space-md); }
+    .stat-value { font-family: var(--font-main); font-size: 2rem; color: var(--accent-gold); }
+    .stat-label { color: var(--text-muted); font-size: 0.875rem; margin-top: var(--space-xs); }
+    .mana-display { display: flex; gap: var(--space-sm); margin: var(--space-md) 0; }
+    .mana-orb { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #00d4ff, #0066cc); box-shadow: 0 0 15px rgba(0, 212, 255, 0.5); border: 2px solid rgba(255, 255, 255, 0.3); }
+    .mana-orb.empty { background: var(--bg-dark); box-shadow: none; opacity: 0.3; }
+    .mana-timer { color: var(--text-muted); font-size: 0.875rem; margin-top: var(--space-sm); }
+    .objective-card { background: linear-gradient(135deg, var(--bg-medium), var(--bg-light)); border: 2px solid var(--accent-gold); border-radius: var(--radius-md); padding: var(--space-lg); margin-bottom: var(--space-xl); box-shadow: 0 0 30px rgba(255, 215, 0, 0.1); }
+    .objective-card h3 { font-size: 0.75rem; color: var(--accent-gold); margin-bottom: var(--space-md); }
+    .objective-zone { font-family: var(--font-main); font-size: 1.25rem; color: var(--text-primary); margin-bottom: var(--space-sm); }
+    .objective-timer { color: var(--accent-cyan); font-size: 1rem; }
+    .timers-container { display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; padding: 1.5rem; background: rgba(10, 10, 20, 0.8); border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.2); margin-top: var(--space-lg); }
+    .timer-item { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+    .timer-label { font-family: var(--font-main); font-size: 0.45rem; color: #a0a0b0; text-transform: uppercase; letter-spacing: 1px; }
+    .timer-countdown { font-family: var(--font-main); font-size: 0.55rem; color: #fff; }
+    .hourglass-pixel { position: relative; display: flex; flex-direction: column; align-items: center; }
+    .hourglass-small { width: 28px; height: 42px; }
+    .hourglass-medium { width: 36px; height: 54px; }
+    .hourglass-large { width: 44px; height: 66px; }
+    .hourglass-pixel svg { width: 100%; height: 100%; }
+    .hourglass-cyan .sand-top, .hourglass-cyan .sand-stream, .hourglass-cyan .sand-bottom-fill { fill: #00D4FF; }
+    .hourglass-cyan .hourglass-glass { stroke: #00D4FF; fill: rgba(0, 212, 255, 0.1); }
+    .hourglass-cyan .timer-countdown { color: #00D4FF; }
+    .hourglass-purple .sand-top, .hourglass-purple .sand-stream, .hourglass-purple .sand-bottom-fill { fill: #8A2BE2; }
+    .hourglass-purple .hourglass-glass { stroke: #8A2BE2; fill: rgba(138, 43, 226, 0.1); }
+    .hourglass-purple .timer-countdown { color: #8A2BE2; }
+    .hourglass-gold .sand-top, .hourglass-gold .sand-stream, .hourglass-gold .sand-bottom-fill { fill: #FFD700; }
+    .hourglass-gold .hourglass-glass { stroke: #FFD700; fill: rgba(255, 215, 0, 0.1); }
+    .hourglass-gold .timer-countdown { color: #FFD700; }
+    @keyframes sandFallFast { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(6px); opacity: 0; } }
+    @keyframes sandFallMedium { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(6px); opacity: 0; } }
+    @keyframes sandFallSlow { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(6px); opacity: 0; } }
+    .hourglass-small .sand-grain { animation: sandFallFast 0.3s linear infinite; }
+    .hourglass-medium .sand-grain { animation: sandFallMedium 0.6s linear infinite; }
+    .hourglass-large .sand-grain { animation: sandFallSlow 1s linear infinite; }
+    @keyframes hourglassFlip { 0% { transform: rotate(0deg); } 100% { transform: rotate(180deg); } }
+    .hourglass-pixel.flipping svg { animation: hourglassFlip 0.6s ease-in-out; }
+    .history-section { background: var(--bg-medium); border: 2px solid var(--bg-light); border-radius: var(--radius-md); padding: var(--space-lg); }
+    .history-section h3 { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: var(--space-lg); }
+    .cast-list { list-style: none; }
+    .cast-item { display: flex; justify-content: space-between; align-items: center; padding: var(--space-md); border-bottom: 1px solid var(--bg-light); }
+    .cast-item:last-child { border-bottom: none; }
+    .cast-spell { font-family: var(--font-main); font-size: 0.625rem; color: var(--accent-gold); }
+    .cast-time { color: var(--text-muted); font-size: 0.875rem; }
+    .cast-points { color: var(--success); font-weight: bold; }
+    .empty-history { text-align: center; color: var(--text-muted); padding: var(--space-xl); }
+    .ranks-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-md); margin-top: var(--space-md); }
+    @media (max-width: 600px) { .ranks-grid { grid-template-columns: 1fr; } .timers-container { gap: 1rem; } .timer-label { font-size: 0.4rem; } }
+    .rank-item { text-align: center; padding: var(--space-md); background: var(--bg-dark); border-radius: var(--radius-sm); }
+    .rank-position { font-family: var(--font-main); font-size: 1.5rem; color: var(--accent-gold); }
+    .rank-label { font-size: 0.75rem; color: var(--text-muted); margin-top: var(--space-xs); }
+    .loading { text-align: center; padding: var(--space-xl); color: var(--text-muted); }
+    .community-tag { display: inline-block; padding: var(--space-xs) var(--space-sm); background: var(--accent-purple); color: white; border-radius: var(--radius-sm); font-size: 0.875rem; margin-left: var(--space-sm); }
+    .help-btn { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--accent-gold); color: var(--bg-dark); font-size: 1.5rem; border: none; cursor: pointer; box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4); transition: all 0.3s ease; z-index: 999; display: flex; align-items: center; justify-content: center; }
+    .help-btn:hover { transform: scale(1.1); box-shadow: 0 6px 30px rgba(255, 215, 0, 0.6); }
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); display: none; justify-content: center; align-items: center; z-index: 2000; padding: var(--space-lg); }
+    .modal-overlay.active { display: flex; }
+    .modal { background: var(--bg-medium); border: 2px solid var(--accent-gold); border-radius: var(--radius-md); max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto; position: relative; }
+    .modal-header { padding: var(--space-lg); border-bottom: 1px solid var(--bg-light); display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h2 { font-size: 1rem; color: var(--accent-gold); }
+    .modal-close { background: none; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: 0; line-height: 1; }
+    .modal-close:hover { color: var(--accent-gold); }
+    .modal-body { padding: var(--space-lg); }
+    .modal-section { margin-bottom: var(--space-lg); }
+    .modal-section:last-child { margin-bottom: 0; }
+    .modal-section h3 { font-size: 0.75rem; color: var(--accent-cyan); margin-bottom: var(--space-md); }
+    .modal-section p { color: var(--text-secondary); margin-bottom: var(--space-sm); }
+    .points-breakdown { background: var(--bg-dark); border-radius: var(--radius-sm); padding: var(--space-md); }
+    .points-row { display: flex; justify-content: space-between; padding: var(--space-sm) 0; border-bottom: 1px solid var(--bg-light); }
+    .points-row:last-child { border-bottom: none; }
+    .points-row .label { color: var(--text-secondary); }
+    .points-row .value { color: var(--accent-gold); font-family: var(--font-main); font-size: 0.875rem; }
+    .step-list { list-style: none; counter-reset: steps; }
+    .step-list li { counter-increment: steps; padding: var(--space-sm) 0; padding-left: 2.5rem; position: relative; color: var(--text-secondary); }
+    .step-list li::before { content: counter(steps); position: absolute; left: 0; top: var(--space-sm); width: 1.75rem; height: 1.75rem; background: var(--accent-gold); color: var(--bg-dark); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: var(--font-main); font-size: 0.625rem; }
   </style>
 </head>
 <body>
-  <!-- Navigation -->
   <nav class="nav">
     <a href="/" class="nav-logo">Nine Lives Network</a>
     <ul class="nav-links">
@@ -849,16 +127,8 @@
 
   <main class="dashboard-container">
     <div class="dashboard-content">
-
-      <!-- Loading State -->
-      <div id="loading" class="loading">
-        <p>Loading your dashboard...</p>
-      </div>
-
-      <!-- Dashboard Content (hidden until loaded) -->
+      <div id="loading" class="loading"><p>Loading your dashboard...</p></div>
       <div id="dashboardContent" style="display: none;">
-
-        <!-- Welcome Header -->
         <div class="welcome-header">
           <div class="player-avatar" id="playerAvatar">🐱</div>
           <div class="player-info">
@@ -872,33 +142,24 @@
           </div>
         </div>
 
-        <!-- Current Objective -->
         <div class="objective-card">
           <h3>⚔️ Today's Objective</h3>
           <div class="objective-zone" id="objectiveZone">Loading...</div>
           <div class="objective-timer" id="objectiveTimer"></div>
-          <a href="https://twitter.com/9LVNetwork" target="_blank" class="pixel-btn" style="margin-top: var(--space-md); text-decoration: none;">
+          <a id="objectiveTweetLink" href="https://twitter.com/9LVNetwork" target="_blank" class="pixel-btn" style="margin-top: var(--space-md); text-decoration: none;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
             </svg>
             Cast Spell on X
           </a>
-
-          <!-- Pixel Hourglass Timers -->
           <div class="timers-container">
-            <!-- Spell Scan Timer (2 min) - Small, Cyan -->
             <div class="timer-item">
               <div class="hourglass-pixel hourglass-small hourglass-cyan" id="spellScanHourglass">
                 <svg viewBox="0 0 28 42" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <!-- Glass frame -->
                   <path class="hourglass-glass" d="M4 2 L24 2 L24 5 L16 19 L16 23 L24 37 L24 40 L4 40 L4 37 L12 23 L12 19 L4 5 Z" stroke-width="2"/>
-                  <!-- Top sand -->
-                  <polygon class="sand-top" id="spellSandTop" points="6,5 22,5 15,17 13,17"/>
-                  <!-- Sand stream -->
+                  <polygon class="sand-top" points="6,5 22,5 15,17 13,17"/>
                   <rect class="sand-stream" x="13" y="17" width="2" height="6" opacity="0.9"/>
-                  <!-- Bottom sand -->
-                  <polygon class="sand-bottom-fill" id="spellSandBottom" points="6,38 22,38 16,26 12,26"/>
-                  <!-- Falling grains -->
+                  <polygon class="sand-bottom-fill" points="6,38 22,38 16,26 12,26"/>
                   <rect class="sand-grain" x="13" y="18" width="2" height="2" fill="#00D4FF"/>
                   <rect class="sand-grain" x="13" y="20" width="2" height="2" fill="#00D4FF" style="animation-delay: 0.15s"/>
                 </svg>
@@ -906,20 +167,13 @@
               <span class="timer-label">Next Scan</span>
               <span class="timer-countdown" id="spellScanCountdown">--:--</span>
             </div>
-
-            <!-- Objective Ends Timer - Medium, Purple -->
             <div class="timer-item">
               <div class="hourglass-pixel hourglass-medium hourglass-purple" id="objectiveHourglass">
                 <svg viewBox="0 0 36 54" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <!-- Glass frame -->
                   <path class="hourglass-glass" d="M4 2 L32 2 L32 6 L20 25 L20 29 L32 48 L32 52 L4 52 L4 48 L16 29 L16 25 L4 6 Z" stroke-width="2"/>
-                  <!-- Top sand -->
-                  <polygon class="sand-top" id="objectiveSandTop" points="6,6 30,6 19,23 17,23"/>
-                  <!-- Sand stream -->
+                  <polygon class="sand-top" points="6,6 30,6 19,23 17,23"/>
                   <rect class="sand-stream" x="17" y="23" width="2" height="6" opacity="0.9"/>
-                  <!-- Bottom sand -->
-                  <polygon class="sand-bottom-fill" id="objectiveSandBottom" points="6,50 30,50 20,32 16,32"/>
-                  <!-- Falling grains -->
+                  <polygon class="sand-bottom-fill" points="6,50 30,50 20,32 16,32"/>
                   <rect class="sand-grain" x="17" y="24" width="2" height="2" fill="#8A2BE2"/>
                   <rect class="sand-grain" x="17" y="26" width="2" height="2" fill="#8A2BE2" style="animation-delay: 0.3s"/>
                   <rect class="sand-grain" x="17" y="28" width="2" height="2" fill="#8A2BE2" style="animation-delay: 0.6s"/>
@@ -928,20 +182,13 @@
               <span class="timer-label">Objective Ends</span>
               <span class="timer-countdown" id="objectiveCountdown">--:--:--</span>
             </div>
-
-            <!-- Mana Reset Timer - Large, Gold -->
             <div class="timer-item">
               <div class="hourglass-pixel hourglass-large hourglass-gold" id="manaHourglass">
                 <svg viewBox="0 0 44 66" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <!-- Glass frame -->
                   <path class="hourglass-glass" d="M4 2 L40 2 L40 8 L24 31 L24 35 L40 58 L40 64 L4 64 L4 58 L20 35 L20 31 L4 8 Z" stroke-width="2"/>
-                  <!-- Top sand -->
-                  <polygon class="sand-top" id="manaSandTop" points="6,8 38,8 23,29 21,29"/>
-                  <!-- Sand stream -->
+                  <polygon class="sand-top" points="6,8 38,8 23,29 21,29"/>
                   <rect class="sand-stream" x="21" y="29" width="2" height="6" opacity="0.9"/>
-                  <!-- Bottom sand -->
-                  <polygon class="sand-bottom-fill" id="manaSandBottom" points="6,62 38,62 24,40 20,40"/>
-                  <!-- Falling grains -->
+                  <polygon class="sand-bottom-fill" points="6,62 38,62 24,40 20,40"/>
                   <rect class="sand-grain" x="21" y="30" width="2" height="2" fill="#FFD700"/>
                   <rect class="sand-grain" x="21" y="32" width="2" height="2" fill="#FFD700" style="animation-delay: 0.25s"/>
                   <rect class="sand-grain" x="21" y="34" width="2" height="2" fill="#FFD700" style="animation-delay: 0.5s"/>
@@ -954,9 +201,6 @@
           </div>
         </div>
 
-        <!-- Stats Grid -->
-
-        <!-- Pixel Alert Banner -->
         <div class="pixel-alert" id="newPlayerAlert">
           <div class="pixel-alert-icon">
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -980,70 +224,44 @@
         </div>
 
         <div class="stats-grid">
-
-          <!-- Mana -->
           <div class="stat-card">
             <h3>🔮 Mana</h3>
-            <div class="mana-display" id="manaDisplay">
-              <!-- Filled by JS -->
-            </div>
+            <div class="mana-display" id="manaDisplay"></div>
             <div class="mana-timer" id="manaTimer">Resets at midnight UTC</div>
           </div>
-
-          <!-- Points -->
           <div class="stat-card">
             <h3>⭐ Points</h3>
             <div class="stat-value" id="seasonalPoints">0</div>
             <div class="stat-label">This Season</div>
-            <div style="margin-top: var(--space-md); color: var(--text-muted);">
-              <span id="lifetimePoints">0</span> lifetime
-            </div>
+            <div style="margin-top: var(--space-md); color: var(--text-muted);"><span id="lifetimePoints">0</span> lifetime</div>
             <div class="pixel-divider"></div>
             <button class="pixel-info-btn" onclick="document.getElementById('helpModal').classList.add('active')">
-              <svg viewBox="0 0 16 16" fill="currentColor">
-                <path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 12a1 1 0 110-2 1 1 0 010 2zm1-4.5V10H7V8h1V6.5a1.5 1.5 0 113 0V7H9V6.5a.5.5 0 10-1 0v2z"/>
-              </svg>
+              <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 12a1 1 0 110-2 1 1 0 010 2zm1-4.5V10H7V8h1V6.5a1.5 1.5 0 113 0V7H9V6.5a.5.5 0 10-1 0v2z"/></svg>
               How to Score
             </button>
           </div>
-
-          <!-- Ranks -->
           <div class="stat-card">
             <h3>🏆 Your Ranks</h3>
             <div class="ranks-grid">
-              <div class="rank-item">
-                <div class="rank-position" id="individualRank">-</div>
-                <div class="rank-label">Individual</div>
-              </div>
-              <div class="rank-item">
-                <div class="rank-position" id="schoolRank">-</div>
-                <div class="rank-label">School</div>
-              </div>
-              <div class="rank-item">
-                <div class="rank-position" id="communityRank">-</div>
-                <div class="rank-label">Community</div>
-              </div>
+              <div class="rank-item"><div class="rank-position" id="individualRank">-</div><div class="rank-label">Individual</div></div>
+              <div class="rank-item"><div class="rank-position" id="schoolRank">-</div><div class="rank-label">School</div></div>
+              <div class="rank-item"><div class="rank-position" id="communityRank">-</div><div class="rank-label">Community</div></div>
             </div>
           </div>
-
         </div>
 
-        <!-- Cast History -->
         <div class="history-section">
           <h3>📜 Recent Casts</h3>
           <ul class="cast-list" id="castList">
             <li class="empty-history">No spells cast yet. Visit Twitter to cast your first spell!</li>
           </ul>
         </div>
-
       </div>
     </div>
   </main>
 
-  <!-- How To Play Button -->
   <button class="help-btn" id="helpBtn" title="How To Play">❓</button>
 
-  <!-- How To Play Modal -->
   <div class="modal-overlay" id="helpModal">
     <div class="modal">
       <div class="modal-header">
@@ -1051,7 +269,6 @@
         <button class="modal-close" id="closeModal">×</button>
       </div>
       <div class="modal-body">
-
         <div class="modal-section">
           <h3>🎯 How to Score Points</h3>
           <ol class="step-list">
@@ -1061,59 +278,33 @@
             <li>Wait for scores to update (every 2 mins)</li>
           </ol>
         </div>
-
         <div class="modal-section">
           <h3>⭐ Points Breakdown</h3>
           <div class="points-breakdown">
-            <div class="points-row">
-              <span class="label">Base cast (any reply)</span>
-              <span class="value">+10</span>
-            </div>
-            <div class="points-row">
-              <span class="label">School flair (use spell keywords)</span>
-              <span class="value">+2</span>
-            </div>
-            <div class="points-row">
-              <span class="label">Descriptive cast (10-30 words)</span>
-              <span class="value">+3</span>
-            </div>
-            <div class="points-row">
-              <span class="label">Detailed cast (30+ words)</span>
-              <span class="value">+5</span>
-            </div>
-            <div class="points-row">
-              <span class="label">Home zone bonus</span>
-              <span class="value">+20%</span>
-            </div>
-            <div class="points-row">
-              <span class="label">Nerm noticed (random 10%)</span>
-              <span class="value">+20</span>
-            </div>
-            <div class="points-row">
-              <span class="label">Spell of the Day (manual award)</span>
-              <span class="value">+50</span>
-            </div>
+            <div class="points-row"><span class="label">Base cast (any reply)</span><span class="value">+10</span></div>
+            <div class="points-row"><span class="label">School flair (use spell keywords)</span><span class="value">+2</span></div>
+            <div class="points-row"><span class="label">Descriptive cast (10-30 words)</span><span class="value">+3</span></div>
+            <div class="points-row"><span class="label">Detailed cast (30+ words)</span><span class="value">+5</span></div>
+            <div class="points-row"><span class="label">Home zone bonus</span><span class="value">+20%</span></div>
+            <div class="points-row"><span class="label">Nerm noticed (random 10%)</span><span class="value">+20</span></div>
+            <div class="points-row"><span class="label">Spell of the Day (manual award)</span><span class="value">+50</span></div>
           </div>
         </div>
-
         <div class="modal-section">
           <h3>🔮 Mana System</h3>
           <p>You have 5 mana per day. Each spell cast costs 1 mana.</p>
           <p>Mana resets at midnight UTC.</p>
         </div>
-
         <div class="modal-section">
           <h3>🏆 Winning</h3>
           <p>The school with the most control % at end of day wins the zone!</p>
           <p>Winners get +5 bonus points. Help your school dominate!</p>
         </div>
-
       </div>
     </div>
   </div>
 
   <script>
-    // School data for colors - WoW-style distinct colors
     const schools = {
       1: { name: 'Ember Covenant', color: '#FF4500' },
       2: { name: 'Tidal Conclave', color: '#00BFFF' },
@@ -1128,9 +319,6 @@
 
     let currentPlayer = null;
 
-    // ===== HOURGLASS TIMER LOGIC =====
-
-    // Get next 2-minute mark (spell scan)
     function getNextSpellScan() {
       const now = new Date();
       const minutes = now.getMinutes();
@@ -1140,18 +328,14 @@
       return target;
     }
 
-    // Get 11 PM UTC today (or tomorrow if past)
     function getObjectiveEnd() {
       const now = new Date();
       const target = new Date(now);
       target.setUTCHours(23, 0, 0, 0);
-      if (now >= target) {
-        target.setUTCDate(target.getUTCDate() + 1);
-      }
+      if (now >= target) target.setUTCDate(target.getUTCDate() + 1);
       return target;
     }
 
-    // Get midnight UTC (mana reset)
     function getManaReset() {
       const now = new Date();
       const target = new Date(now);
@@ -1159,12 +343,11 @@
       return target;
     }
 
-    // Format time displays
     function formatShort(ms) {
       if (ms <= 0) return "0:00";
       const seconds = Math.floor(ms / 1000) % 60;
       const minutes = Math.floor(ms / 60000);
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      return minutes + ':' + seconds.toString().padStart(2, '0');
     }
 
     function formatLong(ms) {
@@ -1172,125 +355,73 @@
       const seconds = Math.floor(ms / 1000) % 60;
       const minutes = Math.floor(ms / 60000) % 60;
       const hours = Math.floor(ms / 3600000);
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      return hours + ':' + minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
     }
 
-    // Update all timers
     function updateTimers() {
       const now = new Date();
-
-      // Spell scan timer
       const spellTarget = getNextSpellScan();
       const spellDiff = spellTarget - now;
       document.getElementById('spellScanCountdown').textContent = formatShort(spellDiff);
-
-      // Flip animation when hitting zero
       if (spellDiff <= 1000 && spellDiff > 0) {
         document.getElementById('spellScanHourglass').classList.add('flipping');
-        setTimeout(() => {
-          document.getElementById('spellScanHourglass').classList.remove('flipping');
-        }, 600);
+        setTimeout(() => document.getElementById('spellScanHourglass').classList.remove('flipping'), 600);
       }
-
-      // Objective timer
       const objTarget = getObjectiveEnd();
-      const objDiff = objTarget - now;
-      document.getElementById('objectiveCountdown').textContent = formatLong(objDiff);
-
-      // Mana timer
+      document.getElementById('objectiveCountdown').textContent = formatLong(objTarget - now);
       const manaTarget = getManaReset();
-      const manaDiff = manaTarget - now;
-      document.getElementById('manaCountdown').textContent = formatLong(manaDiff);
+      document.getElementById('manaCountdown').textContent = formatLong(manaTarget - now);
     }
 
-    // Initialize
     document.addEventListener('DOMContentLoaded', () => {
       loadDashboard();
       initModal();
-
-      // Start hourglass timers
       updateTimers();
       setInterval(updateTimers, 1000);
     });
 
-    // Modal functionality
     function initModal() {
       const helpBtn = document.getElementById('helpBtn');
       const modal = document.getElementById('helpModal');
       const closeBtn = document.getElementById('closeModal');
-
-      helpBtn.addEventListener('click', () => {
-        modal.classList.add('active');
-      });
-
-      closeBtn.addEventListener('click', () => {
-        modal.classList.remove('active');
-      });
-
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          modal.classList.remove('active');
-        }
-      });
-
-      // ESC key to close
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modal.classList.contains('active')) {
-          modal.classList.remove('active');
-        }
-      });
+      helpBtn.addEventListener('click', () => modal.classList.add('active'));
+      closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+      modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('active')) modal.classList.remove('active'); });
     }
 
-    // Load dashboard data
     async function loadDashboard() {
       const params = new URLSearchParams(window.location.search);
       const playerId = params.get('player_id') || localStorage.getItem('player_id');
-
-      if (!playerId) {
-        window.location.href = '/register.html';
-        return;
-      }
-
+      if (!playerId) { window.location.href = '/register.html'; return; }
       localStorage.setItem('player_id', playerId);
-
       try {
-        const response = await fetch(`/api/players/${playerId}`);
+        const response = await fetch('/api/players/' + playerId);
         if (!response.ok) throw new Error('Failed to load player');
-
         currentPlayer = await response.json();
-
         displayPlayerInfo(currentPlayer);
         displayMana(currentPlayer.mana);
         displayPoints(currentPlayer);
-
         loadCastHistory(playerId);
         loadRanks(playerId);
         loadObjective();
-
         document.getElementById('loading').style.display = 'none';
         document.getElementById('dashboardContent').style.display = 'block';
-
         window.history.replaceState({}, '', '/dashboard.html');
-
       } catch (error) {
         console.error('Error loading dashboard:', error);
-        document.getElementById('loading').innerHTML = `
-          <p>Failed to load dashboard. <a href="/register.html">Try logging in again</a></p>
-        `;
+        document.getElementById('loading').innerHTML = '<p>Failed to load dashboard. <a href="/register.html">Try logging in again</a></p>';
       }
     }
 
     function displayPlayerInfo(player) {
       document.getElementById('playerHandle').textContent = '@' + player.twitter_handle;
-
       const school = schools[player.school_id];
       document.getElementById('schoolName').textContent = school.name;
       document.getElementById('schoolDot').style.background = school.color;
-
       if (player.profile_image) {
-        document.getElementById('playerAvatar').innerHTML = `<img src="${player.profile_image}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+        document.getElementById('playerAvatar').innerHTML = '<img src="' + player.profile_image + '" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">';
       }
-
       if (player.community_tag) {
         const tagEl = document.getElementById('communityTag');
         tagEl.textContent = player.community_tag;
@@ -1302,20 +433,17 @@
       const maxMana = 5;
       const container = document.getElementById('manaDisplay');
       container.innerHTML = '';
-
       for (let i = 0; i < maxMana; i++) {
         const orb = document.createElement('div');
         orb.className = 'mana-orb' + (i >= mana ? ' empty' : '');
         container.appendChild(orb);
       }
-
       const now = new Date();
       const midnight = new Date(now);
       midnight.setUTCHours(24, 0, 0, 0);
       const hoursLeft = Math.floor((midnight - now) / (1000 * 60 * 60));
       const minsLeft = Math.floor(((midnight - now) % (1000 * 60 * 60)) / (1000 * 60));
-
-      document.getElementById('manaTimer').textContent = `Resets in ${hoursLeft}h ${minsLeft}m`;
+      document.getElementById('manaTimer').textContent = 'Resets in ' + hoursLeft + 'h ' + minsLeft + 'm';
     }
 
     function displayPoints(player) {
@@ -1325,27 +453,15 @@
 
     async function loadCastHistory(playerId) {
       try {
-        const response = await fetch(`/api/players/${playerId}/casts`);
+        const response = await fetch('/api/players/' + playerId + '/casts');
         if (!response.ok) return;
-
         const casts = await response.json();
         const list = document.getElementById('castList');
-
         if (casts.length === 0) {
           list.innerHTML = '<li class="empty-history">No spells cast yet. Visit Twitter to cast your first spell!</li>';
           return;
         }
-
-        list.innerHTML = casts.map(cast => `
-          <li class="cast-item">
-            <div>
-              <div class="cast-spell">${cast.spell_name}</div>
-              <div class="cast-time">${formatTime(cast.created_at)}</div>
-            </div>
-            <div class="cast-points">+${cast.points_earned}</div>
-          </li>
-        `).join('');
-
+        list.innerHTML = casts.map(cast => '<li class="cast-item"><div><div class="cast-spell">' + cast.spell_name + '</div><div class="cast-time">' + formatTime(cast.created_at) + '</div></div><div class="cast-points">+' + cast.points_earned + '</div></li>').join('');
       } catch (error) {
         console.error('Error loading cast history:', error);
       }
@@ -1361,27 +477,26 @@
       const date = new Date(dateString);
       const now = new Date();
       const diff = now - date;
-
       const mins = Math.floor(diff / (1000 * 60));
-      if (mins < 60) return `${mins}m ago`;
-
+      if (mins < 60) return mins + 'm ago';
       const hours = Math.floor(mins / 60);
-      if (hours < 24) return `${hours}h ago`;
-
+      if (hours < 24) return hours + 'h ago';
       const days = Math.floor(hours / 24);
-      return `${days}d ago`;
+      return days + 'd ago';
     }
 
     async function loadObjective() {
       try {
         const response = await fetch('/api/zones');
         const zones = await response.json();
-
         const objective = zones.find(z => z.is_current_objective);
-
         if (objective) {
           document.getElementById('objectiveZone').textContent = objective.name;
           document.getElementById('objectiveTimer').textContent = objective.bonus_effect || 'Battle for control!';
+          if (objective.objective_tweet_id) {
+            const tweetUrl = 'https://twitter.com/9LVNetwork/status/' + objective.objective_tweet_id;
+            document.getElementById('objectiveTweetLink').href = tweetUrl;
+          }
         } else {
           document.getElementById('objectiveZone').textContent = 'No objective set';
           document.getElementById('objectiveTimer').textContent = 'Check back soon!';
