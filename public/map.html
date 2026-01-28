@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Map of Avaloris | Nine Lives Network</title>
   <link rel="stylesheet" href="/css/styles.css">
-  
+
   <script>
     // Redirect mobile users to mobile map (unless they force desktop)
     (function() {
@@ -18,7 +18,7 @@
       }
     })();
   </script>
-  
+
   <style>
     * { box-sizing: border-box; }
 
@@ -100,15 +100,15 @@
       position: relative;
       display: flex;
       justify-content: center;
+      align-items: flex-start;
       padding: 20px;
       padding-right: 300px;
     }
 
     .map-world {
       position: relative;
-      /* Aspect ratio matches image: 5504 x 3072 ≈ 1.79:1 */
-      width: 1100px;
-      height: 614px;
+      width: 1200px;
+      height: 670px;
       flex-shrink: 0;
     }
 
@@ -155,8 +155,8 @@
     }
 
     .hex:hover svg {
-      filter: drop-shadow(0 0 12px rgba(255,215,0,0.9));
-      transform: scale(1.12);
+      filter: drop-shadow(0 0 15px rgba(255,215,0,0.9));
+      transform: scale(1.15);
     }
 
     .hex-fill {
@@ -165,83 +165,76 @@
 
     .hex-border {
       fill: none;
-      stroke: rgba(255, 255, 255, 0.5);
-      stroke-width: 1.5;
+      stroke: rgba(255, 255, 255, 0.6);
+      stroke-width: 2;
       transition: stroke 0.3s ease;
     }
 
     .hex:hover .hex-border {
       stroke: var(--accent-gold);
-      stroke-width: 2.5;
-    }
-
-    /* Hex Labels - show on hover */
-    .hex-label {
-      position: absolute;
-      bottom: 4px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: var(--font-main);
-      font-size: 0.18rem;
-      color: white;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.95), 0 0 4px rgba(0,0,0,1);
-      text-align: center;
-      width: 95%;
-      pointer-events: none;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-
-    .hex:hover .hex-label {
-      opacity: 1;
-    }
-
-    .hex-icon {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      font-size: 0.8rem;
-      pointer-events: none;
-      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.9));
-      opacity: 0.85;
+      stroke-width: 3;
     }
 
     /* Home zone styling */
     .hex.home-zone .hex-border {
-      stroke: rgba(255, 255, 255, 0.7);
-      stroke-width: 2;
-    }
-
-    .hex.home-zone .hex-icon {
-      font-size: 0.9rem;
-      opacity: 1;
+      stroke: rgba(255, 255, 255, 0.8);
+      stroke-width: 2.5;
     }
 
     /* ===== PULSE EFFECTS ===== */
     @keyframes objectivePulse {
-      0%, 100% { filter: drop-shadow(0 0 6px #FFD700); }
-      50% { filter: drop-shadow(0 0 20px #FFD700) drop-shadow(0 0 35px #FFD700); }
+      0%, 100% { filter: drop-shadow(0 0 8px #FFD700); }
+      50% { filter: drop-shadow(0 0 25px #FFD700) drop-shadow(0 0 40px #FFD700); }
     }
 
     @keyframes contestedPulse {
-      0%, 100% { filter: drop-shadow(0 0 5px #ff4444); }
-      50% { filter: drop-shadow(0 0 18px #ff4444) drop-shadow(0 0 30px #ff4444); }
+      0%, 100% { filter: drop-shadow(0 0 6px #ff4444); }
+      50% { filter: drop-shadow(0 0 20px #ff4444) drop-shadow(0 0 35px #ff4444); }
     }
 
     @keyframes canAttackPulse {
-      0%, 100% { stroke: #00ff00; stroke-width: 2; }
-      50% { stroke: #88ff88; stroke-width: 3; }
+      0%, 100% { stroke: #00ff00; stroke-width: 2.5; }
+      50% { stroke: #88ff88; stroke-width: 3.5; }
     }
 
     .hex.objective svg { animation: objectivePulse 2s ease-in-out infinite; }
-    .hex.objective .hex-border { stroke: #FFD700; stroke-width: 2.5; }
+    .hex.objective .hex-border { stroke: #FFD700; stroke-width: 3; }
     .hex.contested svg { animation: contestedPulse 1.2s ease-in-out infinite; }
     .hex.can-attack .hex-border { animation: canAttackPulse 1.5s ease-in-out infinite; }
-    .hex.your-territory .hex-border { stroke: var(--accent-cyan); stroke-width: 2.5; }
+    .hex.your-territory .hex-border { stroke: var(--accent-cyan); stroke-width: 3; }
+
+    /* ===== HOVER TOOLTIP ===== */
+    .hex-tooltip {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10, 20, 40, 0.95);
+      border: 2px solid var(--accent-gold);
+      border-radius: 6px;
+      padding: 8px 12px;
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      z-index: 100;
+      font-family: var(--font-main);
+    }
+
+    .hex:hover .hex-tooltip {
+      opacity: 1;
+    }
+
+    .hex-tooltip-name {
+      font-size: 0.5rem;
+      color: var(--accent-gold);
+      margin-bottom: 4px;
+    }
+
+    .hex-tooltip-info {
+      font-size: 0.4rem;
+      color: var(--text-secondary);
+    }
 
     /* ===== SIDEBAR ===== */
     .map-sidebar {
@@ -610,31 +603,10 @@
 
     /* Mobile */
     @media (max-width: 1100px) {
-      .nav {
-        padding: var(--space-xs) var(--space-sm);
-      }
-
-      .nav-logo {
-        font-size: 0.5rem;
-        white-space: nowrap;
-      }
-
-      .nav-links {
-        gap: var(--space-sm);
-      }
-
-      .nav-links a {
-        font-size: 0.35rem;
-      }
-
-      .map-container {
-        padding-top: 55px;
-      }
-
       .map-viewport { 
         padding: 10px;
         padding-bottom: 160px;
-        height: calc(100vh - 55px);
+        padding-right: 10px;
       }
 
       .map-sidebar {
@@ -658,93 +630,15 @@
         flex: 0 0 auto; 
         min-width: 140px;
         max-width: 160px;
-        padding: var(--space-xs) var(--space-sm);
       }
 
-      .sidebar-card h4 {
-        font-size: 0.35rem;
-        margin-bottom: 4px;
-      }
-
-      .objective-zone-name {
-        font-size: 0.4rem;
-      }
-
-      .objective-timer {
-        font-size: 0.55rem;
-      }
-
-      #yourSchoolName {
-        font-size: 0.55rem;
-      }
-
-      .pulse-item {
-        font-size: 0.5rem;
-        gap: 5px;
-      }
-
-      .pulse-indicator {
-        width: 10px;
-        height: 10px;
-      }
-
-      /* Hide activity feed on mobile - too cramped */
-      .sidebar-card:nth-child(4) { 
-        display: none; 
-      }
+      .sidebar-card:nth-child(4) { display: none; }
 
       .map-world { 
         width: 100%; 
         min-width: 600px; 
         height: auto; 
         aspect-ratio: 1.79; 
-      }
-
-      /* Smaller hexes on mobile */
-      .hex-icon {
-        font-size: 0.6rem;
-      }
-
-      .hex-label {
-        font-size: 0.15rem;
-      }
-    }
-
-    /* Very small screens */
-    @media (max-width: 480px) {
-      .nav-logo {
-        font-size: 0.4rem;
-      }
-
-      .nav-links a {
-        font-size: 0.3rem;
-        letter-spacing: 0;
-      }
-
-      .nav-links {
-        gap: var(--space-xs);
-      }
-
-      .sidebar-card {
-        min-width: 120px;
-        max-width: 140px;
-      }
-
-      .sidebar-card h4 {
-        font-size: 0.3rem;
-      }
-
-      /* Only show objective and school on very small screens */
-      .sidebar-card:nth-child(n+3) {
-        display: none;
-      }
-
-      .map-viewport {
-        padding-bottom: 120px;
-      }
-
-      .map-sidebar {
-        max-height: 110px;
       }
     }
   </style>
@@ -773,7 +667,7 @@
     <div class="map-sidebar">
       <div class="sidebar-card objective-card">
         <h4>⚔️ Today's Objective</h4>
-        <div class="objective-zone-name" id="objectiveZoneName">The Nexus</div>
+        <div class="objective-zone-name" id="objectiveZoneName">Loading...</div>
         <div class="objective-timer" id="objectiveTimer">Ends in --:--:--</div>
       </div>
 
@@ -864,157 +758,127 @@
       9: { name: 'WildCat Path', color: '#FF1493', emoji: '🐱' }
     };
 
-    // Map display size (scaled from 5504x3072)
-    const MAP_WIDTH = 1100;
-    const MAP_HEIGHT = 614;
+    // Map display size
+    const MAP_WIDTH = 1200;
+    const MAP_HEIGHT = 670;
 
-    // Hex size - smaller for more zones
-    const HEX_SIZE = 28;
+    // Hex size
+    const HEX_SIZE = 24;
     const HEX_WIDTH = Math.sqrt(3) * HEX_SIZE;
     const HEX_HEIGHT = 2 * HEX_SIZE;
 
-    // ===== 50 ZONES - Positioned for new map =====
-    // Coordinates are percentages of map width/height for responsiveness
+    // ===== 41 ZONES - Positioned from annotated map =====
+    // Coordinates are percentages of map dimensions
     const hexLayout = [
-      // === TOP LEFT - Floating Castle / Radiant Order ===
-      { id: 1, px: 8, py: 18, school_id: 7, type: 'home', name: 'Radiant Citadel', region: 'sky' },
-      { id: 2, px: 5, py: 30, type: 'neutral', name: 'Cloud Haven', region: 'sky' },
+      // === TOP LEFT - Floating Islands / Radiant Order (Cream/Yellow) ===
+      { id: 7, px: 7.5, py: 28, school_id: 7, type: 'home', name: 'Radiant Sanctum' },
+      { id: 20, px: 11, py: 39, school_id: 4, type: 'home', name: 'Zephyr Meadows' },
 
-      // === TOP - Purple Forest / Umbral ===
-      { id: 3, px: 18, py: 12, school_id: 6, type: 'home', name: 'Umbral Grove', region: 'dark_forest' },
-      { id: 4, px: 25, py: 18, type: 'neutral', name: 'Shadow Lake', region: 'dark_forest' },
-      { id: 5, px: 22, py: 28, type: 'neutral', name: 'Darkwood Edge', region: 'dark_forest' },
+      // === TOP - Purple Forest / Umbral Syndicate ===
+      { id: 6, px: 30, py: 11, school_id: 6, type: 'home', name: 'Umbral Void' },
+      { id: 19, px: 14, py: 18, type: 'neutral', name: 'Ancient Grove' },
+      { id: 28, px: 22, py: 18, type: 'neutral', name: 'Misty Falls' },
+      { id: 29, px: 18, py: 28, type: 'neutral', name: 'Verdant Woods' },
+      { id: 13, px: 26, py: 28, type: 'neutral', name: 'Twilight Grove' },
 
-      // === TOP CENTER - Ice/Glacier / Tidal ===
-      { id: 6, px: 38, py: 8, type: 'neutral', name: 'Frozen Cliffs', region: 'ice' },
-      { id: 7, px: 48, py: 12, school_id: 2, type: 'home', name: 'Tidal Glacier', region: 'ice' },
-      { id: 8, px: 42, py: 20, type: 'neutral', name: 'Ice Flow', region: 'ice' },
-      { id: 9, px: 52, py: 22, type: 'neutral', name: 'Permafrost', region: 'ice' },
+      // === TOP CENTER - Ice Region / Tidal ===
+      { id: 2, px: 42, py: 16, school_id: 2, type: 'home', name: 'Tidal Depths' },
+      { id: 15, px: 36, py: 22, type: 'neutral', name: 'Frozen Peaks' },
+      { id: 11, px: 48, py: 24, type: 'neutral', name: 'Mystic Falls' },
 
-      // === TOP RIGHT - Storm/Lightning ===
-      { id: 10, px: 68, py: 8, type: 'neutral', name: 'Thunder Peak', region: 'storm' },
-      { id: 11, px: 78, py: 12, school_id: 5, type: 'home', name: 'Storm Spire', region: 'storm' },
-      { id: 12, px: 72, py: 22, type: 'neutral', name: 'Lightning Field', region: 'storm' },
+      // === TOP RIGHT - Storm / Lightning ===
+      { id: 5, px: 85, py: 11, school_id: 5, type: 'home', name: 'Storm Citadel' },
+      { id: 17, px: 75, py: 18, type: 'neutral', name: 'Thunder Spire' },
 
       // === RIGHT - Volcanic / Ember ===
-      { id: 13, px: 85, py: 25, type: 'neutral', name: 'Magma Flow', region: 'volcanic' },
-      { id: 14, px: 80, py: 35, school_id: 1, type: 'home', name: 'Ember Caldera', region: 'volcanic' },
-      { id: 15, px: 88, py: 42, type: 'neutral', name: 'Lava Fields', region: 'volcanic' },
-      { id: 16, px: 82, py: 50, type: 'neutral', name: 'Scorched Basin', region: 'volcanic' },
+      { id: 1, px: 78, py: 28, school_id: 1, type: 'home', name: 'Ember Peaks' },
+      { id: 16, px: 70, py: 35, type: 'neutral', name: 'Scorched Plains' },
+      { id: 48, px: 85, py: 42, type: 'neutral', name: 'Inferno Isle' },
 
-      // === UPPER CENTER - Green Highlands ===
-      { id: 17, px: 32, py: 25, type: 'neutral', name: 'Highland Pass', region: 'highlands' },
-      { id: 18, px: 35, py: 35, type: 'neutral', name: 'Standing Stones', region: 'highlands' },
-      { id: 19, px: 28, py: 40, type: 'neutral', name: 'Ancient Grove', region: 'highlands' },
+      // === CENTER - Plains/Highlands ===
+      { id: 21, px: 34, py: 35, type: 'neutral', name: 'Windswept Field' },
+      { id: 22, px: 42, py: 35, type: 'neutral', name: 'Grassy Knoll' },
+      { id: 50, px: 50, py: 42, type: 'neutral', name: 'Border March' },
+      { id: 18, px: 26, py: 42, type: 'neutral', name: 'Standing Stones' },
+      { id: 10, px: 38, py: 46, type: 'neutral', name: 'Crystal Crossroads' },
 
-      // === CENTER - Zephyr / Green Plains ===
-      { id: 20, px: 45, py: 32, school_id: 4, type: 'home', name: 'Zephyr Meadows', region: 'plains' },
-      { id: 21, px: 52, py: 38, type: 'neutral', name: 'Windswept Field', region: 'plains' },
-      { id: 22, px: 58, py: 32, type: 'neutral', name: 'Grassy Knoll', region: 'plains' },
+      // === CENTER RIGHT - Desert/Red Canyons ===
+      { id: 24, px: 58, py: 35, type: 'neutral', name: 'Red Canyons' },
+      { id: 23, px: 66, py: 42, type: 'neutral', name: 'Arid Expanse' },
+      { id: 32, px: 62, py: 52, type: 'neutral', name: 'Monolith Valley' },
+      { id: 45, px: 74, py: 52, type: 'neutral', name: 'Ashen Shore' },
 
-      // === CENTER-RIGHT - Desert transition ===
-      { id: 23, px: 65, py: 38, type: 'neutral', name: 'Arid Expanse', region: 'desert' },
-      { id: 24, px: 72, py: 45, type: 'neutral', name: 'Red Canyons', region: 'desert' },
+      // === LEFT - Ocean/Whirlpool ===
+      { id: 25, px: 8, py: 52, type: 'neutral', name: 'Coral Reef' },
+      { id: 27, px: 16, py: 48, type: 'neutral', name: 'Abyssal Whirl' },
+      { id: 26, px: 22, py: 55, type: 'neutral', name: 'Maelstrom Edge' },
 
-      // === LEFT - Whirlpool / Coral ===
-      { id: 25, px: 12, py: 45, type: 'neutral', name: 'Coral Reef', region: 'ocean' },
-      { id: 26, px: 18, py: 52, type: 'neutral', name: 'Maelstrom Edge', region: 'ocean' },
-      { id: 27, px: 8, py: 55, school_id: 2, type: 'neutral', name: 'Abyssal Whirl', region: 'ocean' },
+      // === CENTER - Crystal/Arcane ===
+      { id: 30, px: 34, py: 58, type: 'neutral', name: 'Crystal Oasis' },
+      { id: 34, px: 44, py: 56, type: 'neutral', name: 'Crystal Gardens' },
 
-      // === CENTER - Forest / Waterfall ===
-      { id: 28, px: 15, py: 38, type: 'neutral', name: 'Misty Falls', region: 'forest' },
-      { id: 29, px: 22, py: 48, type: 'neutral', name: 'Verdant Woods', region: 'forest' },
+      // === BOTTOM CENTER - Arcane Castle ===
+      { id: 8, px: 46, py: 68, school_id: 8, type: 'home', name: 'Arcane Nexus' },
+      { id: 35, px: 54, py: 62, type: 'neutral', name: 'Rune Fields' },
 
-      // === CENTER-SOUTH - Desert/Crystals ===
-      { id: 30, px: 38, py: 48, type: 'neutral', name: 'Crystal Oasis', region: 'desert' },
-      { id: 31, px: 45, py: 55, type: 'neutral', name: 'Sand Dunes', region: 'desert' },
-      { id: 32, px: 52, py: 50, type: 'neutral', name: 'Monolith Valley', region: 'desert' },
+      // === BOTTOM LEFT - Islands / Stone ===
+      { id: 3, px: 6, py: 72, school_id: 3, type: 'home', name: 'Stone Hollows' },
+      { id: 38, px: 14, py: 68, type: 'neutral', name: 'Northern Isle' },
+      { id: 40, px: 6, py: 85, type: 'neutral', name: 'Forgotten Tombs' },
+      { id: 41, px: 16, py: 80, type: 'neutral', name: 'Moss Temple' },
+      { id: 42, px: 24, py: 72, type: 'neutral', name: 'Verdant Isle' },
 
-      // === SOUTH CENTER - Castle / Arcane ===
-      { id: 33, px: 48, py: 65, school_id: 8, type: 'home', name: 'Arcane Citadel', region: 'arcane' },
-      { id: 34, px: 40, py: 62, type: 'neutral', name: 'Crystal Gardens', region: 'arcane' },
-      { id: 35, px: 55, py: 60, type: 'neutral', name: 'Rune Fields', region: 'arcane' },
+      // === BOTTOM RIGHT - Chaos/WildCat ===
+      { id: 9, px: 82, py: 68, school_id: 9, type: 'home', name: 'WildCat Wilds' },
+      { id: 47, px: 90, py: 75, type: 'neutral', name: 'Void Tear' },
+      { id: 37, px: 68, py: 72, type: 'neutral', name: 'Power Conduit' },
 
-      // === SOUTH - Energy Beam / Nexus ===
-      { id: 36, px: 62, py: 78, type: 'neutral', name: 'The Nexus', region: 'nexus', isObjective: true },
-      { id: 37, px: 70, py: 72, type: 'neutral', name: 'Power Conduit', region: 'nexus' },
-
-      // === BOTTOM LEFT - Islands / Stone Covenant ===
-      { id: 38, px: 5, py: 72, type: 'neutral', name: 'Northern Isle', region: 'islands' },
-      { id: 39, px: 12, py: 78, school_id: 3, type: 'home', name: 'Stone Hold', region: 'islands' },
-      { id: 40, px: 8, py: 88, type: 'neutral', name: 'Ancient Ruins', region: 'islands' },
-      { id: 41, px: 18, py: 85, type: 'neutral', name: 'Moss Temple', region: 'islands' },
-      { id: 42, px: 25, py: 75, type: 'neutral', name: 'Verdant Isle', region: 'islands' },
-
-      // === BOTTOM CENTER ===
-      { id: 43, px: 35, py: 78, type: 'neutral', name: 'Southern Bay', region: 'coast' },
-      { id: 44, px: 42, py: 85, type: 'neutral', name: 'Shipwreck Cove', region: 'coast' },
-
-      // === BOTTOM RIGHT - Dark Whirlpool / WildCat ===
-      { id: 45, px: 78, py: 65, type: 'neutral', name: 'Ashen Shore', region: 'wildlands' },
-      { id: 46, px: 85, py: 72, school_id: 9, type: 'home', name: 'WildCat Den', region: 'wildlands' },
-      { id: 47, px: 92, py: 78, type: 'neutral', name: 'Chaos Rift', region: 'wildlands' },
-
-      // === FAR BOTTOM RIGHT - Volcano Island ===
-      { id: 48, px: 88, py: 88, type: 'neutral', name: 'Inferno Isle', region: 'volcanic' },
-
-      // === EXTRA OCEAN/TRANSITION ZONES ===
-      { id: 49, px: 30, py: 58, type: 'neutral', name: 'Trade Route', region: 'coast' },
-      { id: 50, px: 60, py: 48, type: 'neutral', name: 'Border March', region: 'plains' },
+      // === BOTTOM CENTER - Nexus (Objective) ===
+      { id: 36, px: 58, py: 78, type: 'neutral', name: 'The Nexus', isObjective: true },
     ];
 
-    // Adjacency map
+    // Adjacency map (simplified for 41 zones)
     const adjacency = {
-      1: [2, 3],
-      2: [1, 25, 28],
-      3: [1, 4, 17],
-      4: [3, 5, 17, 18],
-      5: [4, 18, 19, 29],
-      6: [7, 8, 17],
-      7: [6, 8, 9, 10],
-      8: [6, 7, 9, 17, 18],
-      9: [7, 8, 10, 12, 21, 22],
-      10: [7, 9, 11, 12],
-      11: [10, 12, 13],
-      12: [9, 10, 11, 13, 22, 23],
-      13: [11, 12, 14, 23, 24],
-      14: [13, 15, 16, 24],
-      15: [14, 16, 45],
-      16: [14, 15, 24, 45],
-      17: [3, 4, 6, 8, 18, 20],
-      18: [4, 5, 8, 17, 19, 20, 21],
-      19: [5, 18, 20, 29, 30],
-      20: [17, 18, 19, 21, 30],
-      21: [9, 18, 20, 22, 30, 32],
-      22: [9, 12, 21, 23, 32, 50],
-      23: [12, 13, 22, 24, 50],
-      24: [13, 14, 16, 23, 45, 50],
-      25: [2, 26, 27, 28],
-      26: [25, 27, 29, 38],
-      27: [25, 26, 38],
-      28: [2, 25, 29, 19],
-      29: [5, 19, 26, 28, 30, 49],
-      30: [19, 20, 21, 29, 31, 49],
-      31: [30, 32, 33, 34, 49],
-      32: [21, 22, 31, 33, 35, 50],
-      33: [31, 32, 34, 35, 36],
-      34: [31, 33, 43, 49],
-      35: [32, 33, 36, 37, 50],
-      36: [33, 35, 37, 43, 44], // NEXUS
-      37: [35, 36, 45, 46],
-      38: [26, 27, 39, 40],
-      39: [38, 40, 41, 42],
-      40: [38, 39, 41],
-      41: [39, 40, 42, 43],
-      42: [39, 41, 43, 49],
-      43: [34, 36, 41, 42, 44],
-      44: [36, 43],
-      45: [15, 16, 24, 37, 46],
-      46: [37, 45, 47, 48],
-      47: [46, 48],
-      48: [46, 47],
-      49: [29, 30, 31, 34, 42],
-      50: [22, 23, 24, 32, 35],
+      1: [16, 17, 48],
+      2: [11, 15],
+      3: [38, 40, 41],
+      5: [17],
+      6: [19, 28],
+      7: [20],
+      8: [34, 35, 36],
+      9: [37, 47],
+      10: [18, 21, 22, 30],
+      11: [2, 15, 22],
+      13: [28, 29],
+      15: [2, 11, 21],
+      16: [1, 23, 24, 48],
+      17: [1, 5],
+      18: [10, 21, 26, 27, 29],
+      19: [6, 28, 29],
+      20: [7, 27],
+      21: [10, 15, 18, 22],
+      22: [10, 11, 21, 24, 50],
+      23: [16, 24, 32, 45],
+      24: [16, 22, 23, 50],
+      25: [27],
+      26: [18, 27, 42],
+      27: [18, 20, 25, 26],
+      28: [6, 13, 19, 29],
+      29: [13, 18, 19, 28],
+      30: [10, 34, 42],
+      32: [23, 35, 45],
+      34: [8, 30, 35],
+      35: [8, 32, 34, 36],
+      36: [8, 35, 37],
+      37: [9, 36, 47],
+      38: [3, 41, 42],
+      40: [3, 41],
+      41: [3, 38, 40, 42],
+      42: [26, 30, 38, 41],
+      45: [23, 32, 48],
+      47: [9, 37],
+      48: [1, 16, 45],
+      50: [22, 24, 32],
     };
 
     // ===== STATE =====
@@ -1024,6 +888,7 @@
     let todayActions = {};
     let allActions = [];
     let selectedZone = null;
+    let hoverTimeout = null;
 
     // ===== HEX RENDERING =====
     function createHexSVG(zone) {
@@ -1042,8 +907,8 @@
         <svg viewBox="0 0 ${HEX_WIDTH.toFixed(0)} ${HEX_HEIGHT.toFixed(0)}" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="grad-${zone.id}" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" style="stop-color:${controlColor};stop-opacity:0.75" />
-              <stop offset="100%" style="stop-color:${controlColor};stop-opacity:0.45" />
+              <stop offset="0%" style="stop-color:${controlColor};stop-opacity:0.8" />
+              <stop offset="100%" style="stop-color:${controlColor};stop-opacity:0.5" />
             </linearGradient>
           </defs>
           <polygon class="hex-fill" points="${points.join(' ')}" fill="url(#grad-${zone.id})"/>
@@ -1053,6 +918,9 @@
     }
 
     function getZoneControlColor(zoneId) {
+      const zone = hexLayout.find(z => z.id === zoneId);
+      if (zone?.school_id) return schools[zone.school_id].color;
+
       const control = controlData[zoneId];
       if (!control || control.length === 0) return null;
       const top = control.sort((a, b) => b.control_percentage - a.control_percentage)[0];
@@ -1088,17 +956,35 @@
 
         hex.innerHTML = createHexSVG(zone);
 
-        const icon = document.createElement('div');
-        icon.className = 'hex-icon';
-        icon.textContent = zone.school_id ? schools[zone.school_id].emoji : '⚔️';
-        hex.appendChild(icon);
+        // Tooltip on hover (shows zone name)
+        const tooltip = document.createElement('div');
+        tooltip.className = 'hex-tooltip';
+        tooltip.innerHTML = `
+          <div class="hex-tooltip-name">${zone.name}</div>
+          <div class="hex-tooltip-info">${zone.type === 'home' ? schools[zone.school_id]?.name + ' Home' : 'Neutral Territory'}</div>
+        `;
+        hex.appendChild(tooltip);
 
-        const label = document.createElement('div');
-        label.className = 'hex-label';
-        label.textContent = zone.name;
-        hex.appendChild(label);
+        // Hover to open modal (with small delay)
+        hex.addEventListener('mouseenter', () => {
+          hoverTimeout = setTimeout(() => {
+            openZoneModal(zone);
+          }, 400); // 400ms delay before opening modal
+        });
 
-        hex.addEventListener('click', () => openZoneModal(zone));
+        hex.addEventListener('mouseleave', () => {
+          if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+            hoverTimeout = null;
+          }
+        });
+
+        // Click also opens modal (for accessibility)
+        hex.addEventListener('click', () => {
+          if (hoverTimeout) clearTimeout(hoverTimeout);
+          openZoneModal(zone);
+        });
+
         overlay.appendChild(hex);
       });
     }
@@ -1135,7 +1021,7 @@
       selectedZone = zone;
       document.getElementById('modalZoneName').textContent = zone.name;
       document.getElementById('modalZoneSubtitle').textContent = 
-        zone.type === 'home' ? `Home of ${schools[zone.school_id]?.name}` : `${zone.region?.replace('_', ' ')} Territory`;
+        zone.type === 'home' ? `Home of ${schools[zone.school_id]?.name}` : 'Neutral Territory';
 
       const badges = document.getElementById('modalBadges');
       badges.innerHTML = '';
@@ -1143,7 +1029,12 @@
       if (isZoneContested(zone.id)) badges.innerHTML += '<span class="status-badge badge-contested">🔥 Contested</span>';
       if (zone.type === 'home') badges.innerHTML += '<span class="status-badge badge-locked">🏰 Home</span>';
 
-      document.getElementById('zoneImagePlaceholder').textContent = zone.school_id ? schools[zone.school_id].emoji : '🗺️';
+      // Set placeholder icon based on zone type
+      const iconEl = document.getElementById('zoneImagePlaceholder');
+      iconEl.textContent = zone.school_id ? schools[zone.school_id].emoji : '🗺️';
+      iconEl.style.background = zone.school_id 
+        ? `linear-gradient(135deg, ${schools[zone.school_id].color}44, ${schools[zone.school_id].color}22)`
+        : 'linear-gradient(135deg, rgba(20,30,50,1) 0%, rgba(40,50,80,1) 100%)';
 
       updateTugOfWar(zone.id);
       updateActionButtons(zone);
@@ -1195,7 +1086,7 @@
       list.innerHTML = actions.map(a => {
         const p = a.player || {};
         const s = schools[a.school_id] || {};
-        return `<div class="participant"><div class="participant-info"><div class="participant-avatar">${s.emoji||'🐱'}</div><a href="https://twitter.com/${p.twitter_handle}" target="_blank" style="color:var(--accent-cyan);text-decoration:none;font-size:0.7rem;">@${p.twitter_handle||'?'}</a></div><span class="participant-action ${a.action_type}">${a.action_type==='attack'?'⚔️ ATK':'🛡️ DEF'}</span></div>`;
+        return `<div class="participant"><div class="participant-info"><div class="participant-avatar" style="background:${s.color || '#444'};font-size:0.6rem;">${s.emoji||'🐱'}</div><a href="https://twitter.com/${p.twitter_handle}" target="_blank" style="color:var(--accent-cyan);text-decoration:none;font-size:0.7rem;">@${p.twitter_handle||'?'}</a></div><span class="participant-action ${a.action_type}">${a.action_type==='attack'?'⚔️ ATK':'🛡️ DEF'}</span></div>`;
       }).join('');
     }
 
@@ -1256,7 +1147,8 @@
       feed.innerHTML = recent.map(a => {
         const p = a.player || {};
         const z = hexLayout.find(h => h.id === a.zone_id) || {};
-        return `<div class="activity-item"><div class="activity-avatar">${schools[a.school_id]?.emoji||'🐱'}</div><div class="activity-text"><a href="https://twitter.com/${p.twitter_handle}" target="_blank">@${p.twitter_handle||'?'}</a> <span class="activity-action ${a.action_type}">${a.action_type==='attack'?'⚔️':'🛡️'}</span> <span style="color:var(--accent-gold);cursor:pointer;" onclick="focusZone(${a.zone_id})">${z.name||'?'}</span><div class="activity-time">${getTimeAgo(a.created_at)}</div></div></div>`;
+        const s = schools[a.school_id] || {};
+        return `<div class="activity-item"><div class="activity-avatar" style="background:${s.color || '#444'};font-size:0.6rem;">${s.emoji||'🐱'}</div><div class="activity-text"><a href="https://twitter.com/${p.twitter_handle}" target="_blank">@${p.twitter_handle||'?'}</a> <span class="activity-action ${a.action_type}">${a.action_type==='attack'?'⚔️':'🛡️'}</span> <span style="color:var(--accent-gold);cursor:pointer;" onclick="focusZone(${a.zone_id})">${z.name||'?'}</span><div class="activity-time">${getTimeAgo(a.created_at)}</div></div></div>`;
       }).join('');
     }
 
