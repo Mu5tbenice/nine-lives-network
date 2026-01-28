@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Map of Avaloris | Nine Lives Network</title>
   <link rel="stylesheet" href="/css/styles.css">
+  
+  <script>
+    // Redirect mobile users to mobile map (unless they force desktop)
+    (function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const forceDesktop = urlParams.get('force') === 'desktop';
+      const isMobile = window.innerWidth <= 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+      if (isMobile && !forceDesktop) {
+        window.location.href = '/map-mobile.html' + window.location.search;
+      }
+    })();
+  </script>
+  
   <style>
     * { box-sizing: border-box; }
 
