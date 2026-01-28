@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Nine Lives Network | Cast Spells. Control Territory. Rule Avaloris.</title>
   <link rel="stylesheet" href="/css/styles.css">
 
@@ -11,16 +14,19 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
   <style>
+    /* ===== CSS RESET & BASE ===== */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
     }
 
     html, body {
       overflow-x: hidden;
       width: 100%;
       min-height: 100vh;
+      min-height: -webkit-fill-available;
     }
 
     body {
@@ -28,7 +34,7 @@
       font-family: 'Press Start 2P', monospace;
     }
 
-    /* ===== FULL SCREEN 3D CANVAS (Behind everything) ===== */
+    /* ===== FULL SCREEN 3D CANVAS ===== */
     #canvas-container {
       position: fixed;
       top: 0;
@@ -39,7 +45,7 @@
       pointer-events: none;
     }
 
-    /* ===== BOTTOM FADE - Hides body/arms ===== */
+    /* ===== BOTTOM FADE ===== */
     .bottom-fade {
       position: fixed;
       bottom: 0;
@@ -74,7 +80,7 @@
       position: absolute;
       width: 4px;
       height: 4px;
-      background: var(--accent-gold);
+      background: var(--accent-gold, #FFD700);
       border-radius: 50%;
       opacity: 0.6;
       animation: float 8s infinite ease-in-out;
@@ -85,294 +91,304 @@
       50% { transform: translateY(-30px) translateX(10px); opacity: 0.3; }
     }
 
-    /* ===== UI OVERLAY (Above everything) ===== */
+    /* ===== UI OVERLAY ===== */
     .landing-container {
       position: relative;
       min-height: 100vh;
+      min-height: -webkit-fill-available;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      padding: 30px 20px;
+      padding: 20px 15px;
       z-index: 10;
       pointer-events: none;
     }
 
-    /* Make interactive elements clickable */
     .landing-container a,
     .landing-container button {
       pointer-events: auto;
     }
 
-    /* ===== TITLE ===== */
+    /* ===== TITLE - MOBILE FIRST ===== */
     .game-title {
       font-family: 'Press Start 2P', monospace;
-      font-size: clamp(1.2rem, 5vw, 2.5rem);
+      font-size: 1.1rem;
       background: linear-gradient(180deg, #00ffff 0%, #ffcc00 50%, #ff6600 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
       text-align: center;
-      margin-bottom: 15px;
-      text-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
-      letter-spacing: 2px;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
     }
 
     .game-tagline {
       font-family: 'Press Start 2P', monospace;
-      font-size: clamp(0.5rem, 2vw, 0.8rem);
+      font-size: 0.4rem;
       color: #a0a0b0;
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
+      line-height: 1.6;
     }
 
     /* ===== SEASON BADGE ===== */
     .season-badge {
       background: linear-gradient(135deg, #9932CC, #6B238E);
-      padding: 8px 20px;
-      border-radius: 20px;
+      padding: 6px 14px;
+      border-radius: 16px;
       font-family: 'Press Start 2P', monospace;
-      font-size: 0.5rem;
+      font-size: 0.35rem;
       color: white;
-      margin-bottom: 25px;
+      margin-bottom: 15px;
       box-shadow: 0 0 15px rgba(153, 50, 204, 0.5);
     }
 
-    /* ===== HOW TO PLAY - TOP BUTTON ===== */
+    /* ===== HOW TO PLAY BUTTON ===== */
     .how-to-play-btn {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
-      padding: 12px 24px;
+      padding: 14px 24px;
+      min-height: 48px; /* Touch target */
       background: rgba(10, 22, 40, 0.8);
-      border: 2px solid var(--accent-gold);
-      color: var(--accent-gold);
+      border: 2px solid var(--accent-gold, #FFD700);
+      color: var(--accent-gold, #FFD700);
       font-family: 'Press Start 2P', monospace;
-      font-size: 0.55rem;
+      font-size: 0.45rem;
       text-decoration: none;
       text-transform: uppercase;
       letter-spacing: 1px;
       cursor: pointer;
       transition: all 0.3s ease;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
+      border-radius: 4px;
     }
 
-    .how-to-play-btn:hover {
+    .how-to-play-btn:hover,
+    .how-to-play-btn:active {
       background: rgba(255, 215, 0, 0.2);
       box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
     }
 
-    /* ===== SPACER FOR 3D MODEL ===== */
+    /* ===== MODEL SPACER ===== */
     .model-spacer {
       flex: 1;
-      min-height: 250px;
+      min-height: 180px;
     }
 
-    /* ===== PLAY NOW - PRIMARY CTA ===== */
+    /* ===== PLAY NOW BUTTON ===== */
     .play-now-btn {
-      display: inline-block;
-      padding: 18px 50px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 40px;
+      min-height: 56px; /* Large touch target */
       background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
       border: none;
       color: #000;
       font-family: 'Press Start 2P', monospace;
-      font-size: 0.8rem;
+      font-size: 0.65rem;
       text-decoration: none;
       text-transform: uppercase;
       letter-spacing: 2px;
       cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 6px 0 #996600, 0 0 30px rgba(255, 215, 0, 0.4);
-      margin-bottom: 25px;
-      position: relative;
-      z-index: 20;
-    }
-
-    .play-now-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 9px 0 #996600, 0 0 50px rgba(255, 215, 0, 0.6);
+      transition: all 0.2s ease;
+      box-shadow: 0 5px 0 #996600, 0 0 25px rgba(255, 215, 0, 0.4);
+      margin-bottom: 20px;
+      border-radius: 4px;
     }
 
     .play-now-btn:active {
       transform: translateY(3px);
-      box-shadow: 0 3px 0 #996600, 0 0 20px rgba(255, 215, 0, 0.4);
+      box-shadow: 0 2px 0 #996600, 0 0 15px rgba(255, 215, 0, 0.4);
     }
 
-    /* ===== SECONDARY BUTTONS ===== */
-    .secondary-buttons {
+    /* ===== MOBILE NAV BUTTONS ===== */
+    .mobile-nav {
       display: flex;
-      gap: 15px;
-      margin-bottom: 30px;
+      gap: 10px;
       flex-wrap: wrap;
       justify-content: center;
-      position: relative;
-      z-index: 20;
+      margin-bottom: 20px;
+      width: 100%;
+      max-width: 360px;
     }
 
-    .secondary-btn {
-      display: inline-block;
-      padding: 14px 30px;
+    .mobile-nav-btn {
+      flex: 1;
+      min-width: 100px;
+      padding: 12px 8px;
+      min-height: 48px;
       background: rgba(10, 22, 40, 0.9);
-      border: 2px solid var(--accent-gold);
-      color: var(--accent-gold);
+      border: 2px solid var(--accent-gold, #FFD700);
+      color: var(--accent-gold, #FFD700);
       font-family: 'Press Start 2P', monospace;
-      font-size: 0.5rem;
+      font-size: 0.35rem;
       text-decoration: none;
       text-transform: uppercase;
-      letter-spacing: 1px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      min-width: 150px;
       text-align: center;
-    }
-
-    .secondary-btn:hover {
-      background: rgba(255, 215, 0, 0.2);
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-    }
-
-    /* ===== MOBILE DROPDOWN MENU ===== */
-    .mobile-menu {
-      display: none;
-      position: relative;
-      margin-bottom: 20px;
-      z-index: 20;
-    }
-
-    .mobile-menu-btn {
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-radius: 4px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      padding: 12px 24px;
-      background: rgba(20, 30, 50, 0.9);
-      border: 2px solid var(--accent-gold);
-      color: var(--accent-gold);
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.45rem;
-      text-transform: uppercase;
-      cursor: pointer;
-      min-width: 200px;
+      gap: 4px;
     }
 
-    .mobile-menu-btn::after {
-      content: '▼';
-      font-size: 0.4rem;
-      transition: transform 0.3s ease;
+    .mobile-nav-btn:active {
+      background: rgba(255, 215, 0, 0.2);
     }
 
-    .mobile-menu.open .mobile-menu-btn::after {
-      transform: rotate(180deg);
+    .mobile-nav-btn .icon {
+      font-size: 1rem;
     }
 
-    .mobile-menu-dropdown {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      background: rgba(10, 20, 40, 0.98);
-      border: 2px solid var(--accent-gold);
-      border-top: none;
-      display: none;
-      flex-direction: column;
-      z-index: 100;
-    }
-
-    .mobile-menu.open .mobile-menu-dropdown {
-      display: flex;
-    }
-
-    .mobile-menu-dropdown a {
-      padding: 14px 20px;
-      color: var(--text-secondary);
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
-      text-decoration: none;
-      text-transform: uppercase;
-      border-bottom: 1px solid rgba(255, 215, 0, 0.2);
-      transition: all 0.2s ease;
-    }
-
-    .mobile-menu-dropdown a:last-child {
-      border-bottom: none;
-    }
-
-    .mobile-menu-dropdown a:hover {
-      background: rgba(255, 215, 0, 0.1);
-      color: var(--accent-gold);
-    }
-
-    /* ===== FOOTER LINKS ===== */
+    /* ===== FOOTER ===== */
     .footer-links {
       display: flex;
-      gap: 20px;
+      gap: 15px;
       flex-wrap: wrap;
       justify-content: center;
-      padding-top: 20px;
+      padding-top: 15px;
       position: relative;
       z-index: 20;
     }
 
     .footer-links a {
-      color: var(--text-muted);
-      font-size: 0.5rem;
+      color: #606070;
+      font-size: 0.35rem;
       text-decoration: none;
-      transition: color 0.2s ease;
+      padding: 8px;
       pointer-events: auto;
     }
 
-    .footer-links a:hover {
-      color: var(--accent-gold);
+    .footer-links a:active {
+      color: var(--accent-gold, #FFD700);
     }
 
-    /* ===== MOBILE RESPONSIVE ===== */
-    @media (max-width: 768px) {
+    /* =============================================
+       TABLET & DESKTOP STYLES (min-width: 768px)
+       ============================================= */
+    @media (min-width: 768px) {
       .landing-container {
-        padding: 20px 15px;
+        padding: 30px 20px;
       }
 
       .game-title {
-        font-size: 1.2rem;
-        margin-bottom: 10px;
+        font-size: 2rem;
+        margin-bottom: 15px;
+        letter-spacing: 2px;
       }
 
       .game-tagline {
-        font-size: 0.45rem;
-        margin-bottom: 15px;
-      }
-
-      .season-badge {
-        font-size: 0.4rem;
-        padding: 6px 15px;
-        margin-bottom: 15px;
-      }
-
-      .how-to-play-btn {
-        font-size: 0.5rem;
-        padding: 10px 20px;
-        margin-bottom: 15px;
-      }
-
-      .model-spacer {
-        min-height: 200px;
-      }
-
-      .play-now-btn {
-        font-size: 0.65rem;
-        padding: 14px 35px;
+        font-size: 0.7rem;
         margin-bottom: 20px;
       }
 
-      .secondary-buttons {
-        display: none;
+      .season-badge {
+        font-size: 0.5rem;
+        padding: 8px 20px;
+        margin-bottom: 25px;
       }
 
-      .mobile-menu {
-        display: block;
+      .how-to-play-btn {
+        font-size: 0.55rem;
+        padding: 14px 28px;
+        margin-bottom: 20px;
+      }
+
+      .model-spacer {
+        min-height: 250px;
+      }
+
+      .play-now-btn {
+        font-size: 0.8rem;
+        padding: 18px 50px;
+        margin-bottom: 25px;
+      }
+
+      /* Desktop: horizontal nav row */
+      .mobile-nav {
+        max-width: 600px;
+        gap: 15px;
+      }
+
+      .mobile-nav-btn {
+        flex-direction: row;
+        font-size: 0.45rem;
+        padding: 14px 24px;
+        gap: 8px;
       }
 
       .footer-links a {
-        font-size: 0.4rem;
+        font-size: 0.45rem;
+      }
+    }
+
+    /* =============================================
+       LARGE DESKTOP (min-width: 1024px)
+       ============================================= */
+    @media (min-width: 1024px) {
+      .game-title {
+        font-size: 2.5rem;
+      }
+
+      .game-tagline {
+        font-size: 0.8rem;
+      }
+
+      .model-spacer {
+        min-height: 280px;
+      }
+
+      .mobile-nav-btn {
+        font-size: 0.5rem;
+        padding: 14px 30px;
+      }
+
+      .play-now-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 0 #996600, 0 0 40px rgba(255, 215, 0, 0.6);
+      }
+
+      .mobile-nav-btn:hover {
+        background: rgba(255, 215, 0, 0.15);
+        box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+      }
+
+      .how-to-play-btn:hover {
+        background: rgba(255, 215, 0, 0.2);
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+      }
+    }
+
+    /* =============================================
+       SMALL MOBILE (max-width: 380px)
+       ============================================= */
+    @media (max-width: 380px) {
+      .game-title {
+        font-size: 0.9rem;
+      }
+
+      .game-tagline {
+        font-size: 0.35rem;
+      }
+
+      .model-spacer {
+        min-height: 150px;
+      }
+
+      .play-now-btn {
+        font-size: 0.55rem;
+        padding: 14px 30px;
+      }
+
+      .mobile-nav-btn {
+        font-size: 0.3rem;
       }
 
       .bottom-fade {
@@ -380,27 +396,58 @@
       }
     }
 
-    @media (max-width: 400px) {
-      .game-title {
-        font-size: 1rem;
+    /* =============================================
+       LANDSCAPE MOBILE
+       ============================================= */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .landing-container {
+        padding: 10px 15px;
       }
 
-      .play-now-btn {
-        padding: 12px 25px;
-        font-size: 0.55rem;
+      .game-title {
+        font-size: 1rem;
+        margin-bottom: 5px;
+      }
+
+      .game-tagline {
+        display: none;
+      }
+
+      .season-badge {
+        margin-bottom: 10px;
+      }
+
+      .how-to-play-btn {
+        margin-bottom: 10px;
+        padding: 10px 20px;
+        min-height: 40px;
       }
 
       .model-spacer {
-        min-height: 150px;
+        min-height: 80px;
+      }
+
+      .play-now-btn {
+        padding: 12px 30px;
+        min-height: 44px;
+        margin-bottom: 10px;
+      }
+
+      .mobile-nav {
+        margin-bottom: 10px;
+      }
+
+      .bottom-fade {
+        height: 45%;
       }
     }
   </style>
 </head>
 <body>
-  <!-- Full Screen 3D Canvas (Behind everything) -->
+  <!-- Full Screen 3D Canvas -->
   <div id="canvas-container"></div>
 
-  <!-- Bottom Fade - Hides body/arms -->
+  <!-- Bottom Fade -->
   <div class="bottom-fade"></div>
 
   <!-- Particles -->
@@ -408,58 +455,55 @@
 
   <!-- UI Overlay -->
   <div class="landing-container">
-    <!-- Title -->
     <h1 class="game-title">NINE LIVES NETWORK</h1>
     <p class="game-tagline">Cast spells. Control territory. Rule Avaloris.</p>
 
-    <!-- Season Badge -->
     <div class="season-badge">Season 0 - Beta</div>
 
-    <!-- How To Play - TOP -->
     <a href="/how-to-play.html" class="how-to-play-btn">
       <span>❓</span> How To Play
     </a>
 
-    <!-- Spacer for 3D Model -->
     <div class="model-spacer"></div>
 
-    <!-- Play Now - PRIMARY CTA -->
     <a href="/register.html" class="play-now-btn" id="ctaButton">▶ Play Now</a>
 
-    <!-- Secondary Buttons (Desktop) -->
-    <div class="secondary-buttons">
-      <a href="/map.html" class="secondary-btn">🗺️ Map</a>
-      <a href="/leaderboards.html" class="secondary-btn">🏆 Leaderboards</a>
-      <a href="/dashboard.html" class="secondary-btn">📊 Dashboard</a>
+    <!-- Unified nav for mobile & desktop -->
+    <div class="mobile-nav">
+      <a href="/map.html" class="mobile-nav-btn">
+        <span class="icon">🗺️</span>
+        <span>Map</span>
+      </a>
+      <a href="/leaderboards.html" class="mobile-nav-btn">
+        <span class="icon">🏆</span>
+        <span>Ranks</span>
+      </a>
+      <a href="/dashboard.html" class="mobile-nav-btn">
+        <span class="icon">📊</span>
+        <span>Dashboard</span>
+      </a>
     </div>
 
-    <!-- Mobile Dropdown Menu -->
-    <div class="mobile-menu" id="mobileMenu">
-      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
-        Navigate
-      </button>
-      <div class="mobile-menu-dropdown">
-        <a href="/dashboard.html">📊 Dashboard</a>
-        <a href="/map.html">🗺️ Map</a>
-        <a href="/leaderboards.html">🏆 Leaderboards</a>
-      </div>
-    </div>
-
-    <!-- Footer Links -->
     <div class="footer-links">
-      <a href="/terms.html">Terms of Service</a>
-      <a href="/privacy.html">Privacy Policy</a>
+      <a href="/terms.html">Terms</a>
+      <a href="/privacy.html">Privacy</a>
       <a href="https://twitter.com/9LVNetwork" target="_blank">Twitter</a>
     </div>
   </div>
 
   <script>
-    // ===== PARTICLES =====
+    // ===== DEVICE DETECTION =====
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isSmallScreen = window.innerWidth < 768;
+    const isLandscape = window.innerWidth > window.innerHeight;
+
+    // ===== PARTICLES (fewer on mobile for performance) =====
     function createParticles() {
       const container = document.getElementById('particles');
       const colors = ['#FFD700', '#00FFFF', '#FF6600', '#9932CC'];
+      const count = isMobile ? 15 : 30;
 
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < count; i++) {
         const particle = document.createElement('div');
         particle.className = 'particle';
         particle.style.left = Math.random() * 100 + '%';
@@ -471,40 +515,47 @@
       }
     }
 
-    // ===== MOBILE MENU =====
-    function toggleMobileMenu() {
-      const menu = document.getElementById('mobileMenu');
-      menu.classList.toggle('open');
-    }
-
-    document.addEventListener('click', (e) => {
-      const menu = document.getElementById('mobileMenu');
-      if (!menu.contains(e.target)) {
-        menu.classList.remove('open');
-      }
-    });
-
-    // ===== THREE.JS 3D MODEL - FULL SCREEN =====
+    // ===== THREE.JS - RESPONSIVE 3D MODEL =====
     let scene, camera, renderer, wizardCat;
     let mouseX = 0, mouseY = 0;
     let windowHalfX = window.innerWidth / 2;
     let windowHalfY = window.innerHeight / 2;
 
+    function getCameraSettings() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const isLandscape = width > height;
+
+      if (width < 480) {
+        // Small mobile
+        return { z: 6, modelY: -1.8, fade: 50 };
+      } else if (width < 768) {
+        // Mobile
+        return { z: 6.5, modelY: -1.9, fade: 52 };
+      } else if (width < 1024) {
+        // Tablet
+        return { z: 7, modelY: -2, fade: 55 };
+      } else {
+        // Desktop
+        return { z: 7, modelY: -2, fade: 55 };
+      }
+    }
+
     function init3D() {
       const container = document.getElementById('canvas-container');
+      const settings = getCameraSettings();
 
-      // Scene
       scene = new THREE.Scene();
 
-      // Camera - EVEN CLOSER (z: 10 -> 7)
+      // Responsive camera
       camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 2, 7);
+      camera.position.set(0, 2, settings.z);
       camera.lookAt(0, 1, 0);
 
-      // Renderer - Full screen
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: !isMobile, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 2 : 3));
       renderer.setClearColor(0x000000, 0);
       renderer.outputEncoding = THREE.sRGBEncoding;
       container.appendChild(renderer.domElement);
@@ -535,12 +586,9 @@
         '/assets/models/wizard-cat.glb',
         (gltf) => {
           wizardCat = gltf.scene;
-
-          // Position adjusted for closer zoom
           wizardCat.scale.set(1, 1, 1);
-          wizardCat.position.set(0, -2, 0);
+          wizardCat.position.set(0, settings.modelY, 0);
 
-          // Hide backdrop
           wizardCat.traverse((child) => {
             if (child.name === 'Backdrop' || child.name === 'Plane' || child.name === 'Plane.002') {
               child.visible = false;
@@ -550,30 +598,50 @@
           scene.add(wizardCat);
         },
         undefined,
-        (error) => {
-          console.log('Model load error:', error);
-        }
+        (error) => console.log('Model load error:', error)
       );
 
-      // Mouse tracking
-      document.addEventListener('mousemove', (e) => {
-        mouseX = (e.clientX - windowHalfX) / windowHalfX;
-        mouseY = (e.clientY - windowHalfY) / windowHalfY;
-      });
+      // Mouse/touch tracking
+      if (isMobile) {
+        document.addEventListener('touchmove', (e) => {
+          if (e.touches.length > 0) {
+            mouseX = (e.touches[0].clientX - windowHalfX) / windowHalfX;
+            mouseY = (e.touches[0].clientY - windowHalfY) / windowHalfY;
+          }
+        }, { passive: true });
 
-      document.addEventListener('touchmove', (e) => {
-        if (e.touches.length > 0) {
-          mouseX = (e.touches[0].clientX - windowHalfX) / windowHalfX;
-          mouseY = (e.touches[0].clientY - windowHalfY) / windowHalfY;
+        // Also track device orientation for tilt effect
+        if (window.DeviceOrientationEvent) {
+          window.addEventListener('deviceorientation', (e) => {
+            if (e.gamma !== null && e.beta !== null) {
+              mouseX = Math.max(-1, Math.min(1, e.gamma / 30));
+              mouseY = Math.max(-1, Math.min(1, (e.beta - 45) / 30));
+            }
+          });
         }
-      });
+      } else {
+        document.addEventListener('mousemove', (e) => {
+          mouseX = (e.clientX - windowHalfX) / windowHalfX;
+          mouseY = (e.clientY - windowHalfY) / windowHalfY;
+        });
+      }
 
+      // Resize handler
       window.addEventListener('resize', () => {
+        const newSettings = getCameraSettings();
         windowHalfX = window.innerWidth / 2;
         windowHalfY = window.innerHeight / 2;
         camera.aspect = window.innerWidth / window.innerHeight;
+        camera.position.z = newSettings.z;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
+
+        if (wizardCat) {
+          wizardCat.position.y = newSettings.modelY;
+        }
+
+        // Update fade
+        document.querySelector('.bottom-fade').style.height = newSettings.fade + '%';
       });
 
       animate();
@@ -583,25 +651,24 @@
       requestAnimationFrame(animate);
 
       if (wizardCat) {
-        // Mario 64 style head tracking
+        const settings = getCameraSettings();
         const targetRotationY = mouseX * 0.8;
         const targetRotationX = mouseY * 0.3;
 
         wizardCat.rotation.y += (targetRotationY - wizardCat.rotation.y) * 0.08;
         wizardCat.rotation.x += (targetRotationX - wizardCat.rotation.x) * 0.08;
-
-        // Subtle float
-        wizardCat.position.y = -2 + Math.sin(Date.now() * 0.001) * 0.02;
+        wizardCat.position.y = settings.modelY + Math.sin(Date.now() * 0.001) * 0.02;
       }
 
       renderer.render(scene, camera);
     }
 
-    // ===== CHECK LOGIN =====
+    // ===== INIT =====
     document.addEventListener('DOMContentLoaded', () => {
       createParticles();
       init3D();
 
+      // Check login
       const playerId = localStorage.getItem('player_id');
       if (playerId) {
         const ctaButton = document.getElementById('ctaButton');
