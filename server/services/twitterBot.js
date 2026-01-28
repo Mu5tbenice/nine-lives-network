@@ -31,6 +31,80 @@ const schools = {
   9: { name: 'WildCat Path', emoji: '🐱' },
 };
 
+// First Blood bonuses - first 5 from each school get bonus points
+const firstBloodBonuses = {
+  1: { points: 25, title: '🩸 First Blood!' },
+  2: { points: 15, title: '⚔️ Swift Strike!' },
+  3: { points: 10, title: '🗡️ Quick Draw!' },
+  4: { points: 7, title: '💨 Fast Cast!' },
+  5: { points: 5, title: '⚡ Early Bird!' }
+};
+
+/**
+ * Check and award First Blood bonus
+ * Returns position (1-5) and bonus points, or null if not eligible
+ */
+async function checkFirstBlood(playerId, schoolId, zoneId) {
+  try {
+    // Get today's start time
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    // Count how many players from this school have already cast today on this zone
+    // We need to join with players to get school_id
+    const { data: todaysCasts } = await supabase
+      .from('casts')
+      .select('id, player_id, created_at')
+      .eq('zone_id', zoneId)
+      .gte('created_at', today.toISOString())
+      .order('created_at', { ascending: true });
+
+    if (!todaysCasts) {
+      return { position: 1, points: 25, title: '🩸 First Blood!' };
+    }
+
+    // Get player IDs and fetch their schools
+    const playerIds = todaysCasts.map(c => c.player_id);
+
+    // Get schools for all players who cast today
+    const { data: players } = await supabase
+      .from('players')
+      .select('id, school_id')
+      .in('id', playerIds);
+
+    // Count how many from THIS school have cast
+    const schoolCasts = todaysCasts.filter(cast => {
+      const player = players?.find(p => p.id === cast.player_id);
+      return player?.school_id === schoolId;
+    });
+
+    // Check if this player already cast today (no double bonus)
+    const alreadyCast = schoolCasts.some(c => c.player_id === playerId);
+    if (alreadyCast) {
+      return null;
+    }
+
+    // Position is count + 1 (this will be their position)
+    const position = schoolCasts.length + 1;
+
+    // Only positions 1-5 get bonuses
+    if (position > 5) {
+      return null;
+    }
+
+    const bonus = firstBloodBonuses[position];
+    return {
+      position,
+      points: bonus.points,
+      title: bonus.title
+    };
+
+  } catch (error) {
+    console.error('Error checking first blood:', error);
+    return null;
+  }
+}
+
 /**
  * Post the daily objective tweet
  */
@@ -54,6 +128,7 @@ async function postDailyObjective() {
 
 Reply with your spell to claim territory for your school!
 
+🩸 First 5 from each school get bonus points!
 🎯 Zone bonus: ${zone.bonus_effect || 'Standard points'}
 ⏰ Ends at midnight UTC
 
@@ -474,6 +549,16 @@ async function processSpellCasts() {
       const { points: basePoints, breakdown } = calculatePoints(spell, zone, player);
       let finalPoints = basePoints;
 
+      // Check First Blood bonus (silent - no Nerm tweet)
+      let firstBlood = null;
+      const firstBloodResult = await checkFirstBlood(player.id, player.school_id, zone.id);
+      if (firstBloodResult) {
+        finalPoints += firstBloodResult.points;
+        breakdown.push(`${firstBloodResult.title}: +${firstBloodResult.points}`);
+        firstBlood = firstBloodResult;
+        console.log(`🩸 First Blood #${firstBloodResult.position} for ${schools[player.school_id].name}: @${user.username} (+${firstBloodResult.points})`);
+      }
+
       // Random Nerm notice bonus (roughly 10% chance, max 3 per batch)
       let nermNoticed = false;
       if (nermNoticeCount < 3 && Math.random() < 0.1) {
@@ -492,7 +577,9 @@ async function processSpellCasts() {
           zone_id: zone.id,
           tweet_id: tweet.id,
           mana_cost: spell.mana_cost,
-          points_earned: finalPoints
+          points_earned: finalPoints,
+          school_position: firstBlood?.position || null,
+          first_blood_bonus: firstBlood?.points || 0
         })
         .select()
         .single();
@@ -522,6 +609,7 @@ async function processSpellCasts() {
         points: finalPoints,
         breakdown,
         nermNoticed,
+        firstBlood,
         isCreative: spell.isCreative,
         tweet_id: tweet.id,
         schoolName: schools[player.school_id]?.name || 'Unknown School'
@@ -787,5 +875,6 @@ module.exports = {
   setDailyObjective,
   rotateObjective,
   testConnection,
-  getNineLivesClient
+  getNineLivesClient,
+  checkFirstBlood
 };
