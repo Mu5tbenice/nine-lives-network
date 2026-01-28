@@ -3,7 +3,7 @@ const router = express.Router();
 const supabase = require('../config/supabase');
 
 // Get all zones
-router.get('/zones', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('zones')
@@ -19,7 +19,7 @@ router.get('/zones', async (req, res) => {
 });
 
 // Get zone control data
-router.get('/zones/control', async (req, res) => {
+router.get('/control', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('zone_control')
@@ -34,7 +34,7 @@ router.get('/zones/control', async (req, res) => {
 });
 
 // Get single zone
-router.get('/zones/:id', async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('zones')
