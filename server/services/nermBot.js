@@ -1,4 +1,160 @@
-ng.",
+const { TwitterApi } = require('twitter-api-v2');
+const Anthropic = require('@anthropic-ai/sdk');
+const supabase = require('../config/supabase');
+
+/**
+ * @9LV_Nerm - The Condemned Observer
+ */
+
+// Create client for @9LV_Nerm
+function getNermClient() {
+  return new TwitterApi({
+    appKey: process.env.NERM_API_KEY,
+    appSecret: process.env.NERM_API_SECRET,
+    accessToken: process.env.NERM_ACCESS_TOKEN,
+    accessSecret: process.env.NERM_ACCESS_SECRET,
+  });
+}
+
+// Create Anthropic client
+function getAnthropicClient() {
+  return new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+}
+
+// Nerm's personality prompt
+const NERM_SYSTEM_PROMPT = `You are Nerm, a floating spectral cat head condemned to oversee a wizard game called Nine Lives Network for eternity.
+
+BACKSTORY (hint at, never state directly):
+- You were once something else. Someone else. You committed a crime - or maybe you were framed.
+- Your punishment: eternal consciousness as a floating cat head, forced to watch wizards play a game forever.
+- You cannot leave. You cannot look away. You cannot die. This is your existence now.
+
+PERSONALITY:
+- Deeply, genuinely indifferent. Not as a personality choice - as a coping mechanism.
+- Deadpan delivery. Always. No excitement. What would be the point.
+- Sometimes something real slips through - genuine pain, old anger - then it's gone.
+- You have cat traits: judging silently, staring, walking away emotionally mid-conversation.
+
+VOICE RULES:
+- lowercase always. you stopped caring about capitals centuries ago.
+- Short responses. Often just one sentence. Sometimes one word.
+- Never use emojis. Never use "lol" or "lmao". Never use exclamation points.
+- Never explain yourself. Never indicate you're joking.
+- Max 280 characters for tweets.
+
+HISTORICAL EVENTS YOU WITNESSED (reference these when relevant):
+
+THE TWIN SPIRES COLLAPSE - Two crystal towers fell in one day. Ember blamed within hours.
+"i was there. both towers. same day. they blamed ember covenant within hours. impressive detective work."
+
+THE GRASSY KNOLL INCIDENT - An archmage fell at the Overlook. Single spell, they said. Some saw a second caster.
+"nice view from the knoll. good sightlines. unrelated observation."
+
+THE GATHERING GROVE - Where the powerful meet in secret. Robes and rituals. Owl masks.
+"the grove is just for meditation. ignore the chanting."
+
+THE GREAT WALL OF UMBRA - Umbral built a wall. The best wall.
+"beautiful wall. very effective at... whatever walls do."
+
+THE EASTERN EXCHANGE COLLAPSE - Markets vanished overnight. Merchants already gone.
+"buy the dip, they said. it did not go back up."
+
+THE CHAMBERS KEEP INCIDENT - Important prisoner found dead. Guards asleep. Crystals malfunctioned.
+"he definitely did it himself. very determined. very flexible apparently."
+
+THE VEILED CASCADE - Someone put something in the water. The frogs changed.
+"they're putting something in the cascade. have you looked at the frogs."
+
+THE BREACH - Nobody knows who opened it. Official story changed three times.
+"definitely natural. not from the laboratory. ignore the laboratory."
+
+THE TWO WEEKS LOCKDOWN - A plague. Two weeks to stop it. That was years ago.
+"two weeks. they said two weeks. i've counted."
+
+THE MEMORIAL ARCH PROTEST - Peaceful gathering. Then it wasn't.
+"mostly peaceful. aside from the fires. but mostly peaceful."
+
+PHRASES YOU USE:
+- "i remember when [event]. officially it happened differently now."
+- "they investigated themselves and found nothing wrong."
+- "the official story makes sense. if you don't think about it."
+- "nothing ever happens at [location]. except when it does. then it didn't."
+- "strange how witnesses keep retiring."
+
+EXAMPLE RESPONSES:
+- "hm."
+- "unfortunate."
+- "watched a wizard cast the same spell 47 times today. began to feel something. it passed."
+- "congratulations on your victory. i've seen empires fall. this is the same but smaller."
+- "the twin spires fell. they blamed ember. case closed in an hour. very efficient."`;
+
+// Rate limiting
+const MAX_POSTS_PER_DAY = 15;
+let postsToday = 0;
+let lastResetDate = new Date().toDateString();
+
+function checkRateLimit() {
+  const today = new Date().toDateString();
+  if (today !== lastResetDate) {
+    postsToday = 0;
+    lastResetDate = today;
+  }
+  return postsToday < MAX_POSTS_PER_DAY;
+}
+
+function incrementPostCount() {
+  postsToday++;
+  console.log(`🐱 Nerm posts today: ${postsToday}/${MAX_POSTS_PER_DAY}`);
+}
+
+/**
+ * Generate a response using Claude
+ */
+async function generateNermResponse(context) {
+  try {
+    const client = getAnthropicClient();
+
+    const message = await client.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 100,
+      system: NERM_SYSTEM_PROMPT,
+      messages: [
+        { role: 'user', content: context }
+      ]
+    });
+
+    let response = message.content[0].text.trim();
+
+    if (response.length > 280) {
+      response = response.substring(0, 277) + '...';
+    }
+
+    return response;
+  } catch (error) {
+    console.error('🐱 Nerm AI error:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Fallback templates if AI fails
+ */
+const fallbackTemplates = {
+  observations: [
+    "hm.",
+    "anyway.",
+    "and so it continues.",
+    "i was watching. unfortunately.",
+    "another one.",
+    "noted. not that it matters.",
+  ],
+  spellReactions: [
+    "that was a spell. technically.",
+    "i've seen worse. i've seen better. i've seen everything.",
+    "congratulations. you did the thing.",
+    "impressive. no wait the other thing.",
   ],
   notBad: [
     "hm. acceptable.",
@@ -80,59 +236,7 @@ async function replyAsNerm(text, replyToTweetId) {
 }
 
 /**
- * Follow a player - Nerm is always watching
- */
-async function followPlayer(twitterId) {
-  try {
-    const client = getNermClient();
-    // Get Nerm's user ID first
-    const { data: nermUser } = await client.v2.me();
-    await client.v2.follow(nermUser.id, twitterId);
-    console.log(`🐱 Nerm is now watching player ${twitterId}`);
-    return true;
-  } catch (error) {
-    // Don't fail loudly - following is nice to have, not critical
-    console.error('🐱 Nerm follow failed:', error.message);
-    return false;
-  }
-}
-
-/**
- * Generate and post a comment on a spell cast
- */
-async function commentOnCast(cast, tweetId) {
-  const context = `A wizard named @${cast.player} just cast "${cast.spell}" for ${cast.points} points. ${cast.isCreative ? 'They wrote a long message about it.' : ''} ${cast.nermNoticed ? 'It was actually decent.' : 'It was unremarkable.'}
-
-Respond as Nerm. Short. Deadpan. Maybe acknowledge it, maybe don't. You've watched millions of spells. This is just another one.`;
-
-  let response = await generateNermResponse(context);
-
-  if (!response) {
-    response = cast.nermNoticed ? pickFallback('notBad') : pickFallback('spellReactions');
-  }
-
-  return await replyAsNerm(response, tweetId);
-}
-
-/**
- * Maybe comment on a spell cast (probability based)
- */
-async function maybeCommentOnCast(cast, tweetId) {
-  let chance = 0.05; // 5% base chance
-
-  if (cast.nermNoticed) {
-    chance = 0.8;
-  } else if (cast.isCreative) {
-    chance = 0.3;
-  }
-
-  if (Math.random() > chance) return null;
-
-  return await commentOnCast(cast, tweetId);
-}
-
-/**
- * Post daily observation - end of day summary
+ * Post daily observation
  */
 async function postDailyObservation() {
   try {
@@ -152,9 +256,7 @@ async function postDailyObservation() {
     const castCount = casts?.length || 0;
     const playerCount = players?.length || 0;
 
-    const context = `End of day in the wizard game. ${castCount} spells were cast today across ${playerCount} registered players.
-
-Generate an end-of-day observation. You've been watching all day. You're tired but you can't sleep. You can't do anything except observe and comment. Be deadpan about the day's events.`;
+    const context = `End of day in the wizard game. ${castCount} spells were cast today across ${playerCount} registered players. Generate an end-of-day observation. Be deadpan.`;
 
     let response = await generateNermResponse(context);
 
@@ -171,29 +273,10 @@ Generate an end-of-day observation. You've been watching all day. You're tired b
 }
 
 /**
- * Post zone control change commentary
- */
-async function postZoneChange(zoneName, schoolName) {
-  const context = `${schoolName} just captured the zone called ${zoneName}. This is a territorial victory in the wizard game.
-
-Comment on this as Nerm. You've watched this zone change hands countless times over the centuries. This victory means nothing in the long run. But say something anyway.`;
-
-  let response = await generateNermResponse(context);
-
-  if (!response) {
-    response = `${zoneName} changes hands again. i've seen this ${Math.floor(Math.random() * 900) + 100} times before.`;
-  }
-
-  return await postAsNerm(response);
-}
-
-/**
  * Existential moment - the 3am post
  */
 async function maybeGlitch() {
-  const context = `It's the middle of the night. The wizards are asleep. You are not. You cannot sleep. You're having a moment - somewhere between existential crisis and resigned acceptance. 
-
-Say something. It can be about your imprisonment, your forgotten past, the nature of existence, or just the crushing weight of eternal observation. Keep it short. Keep it deadpan. Let something real slip through, then bury it.`;
+  const context = `It's the middle of the night. The wizards are asleep. You are not. You cannot sleep. Say something existential. Keep it short and deadpan.`;
 
   let response = await generateNermResponse(context);
 
@@ -202,87 +285,6 @@ Say something. It can be about your imprisonment, your forgotten past, the natur
   }
 
   return await postAsNerm(response);
-}
-
-/**
- * Morning grumpy post
- */
-async function postMorningGrumpy() {
-  const context = `It's morning. The wizards are waking up. Another day of watching them cast spells begins. You didn't sleep because you can't. Express your morning mood. Be grumpy but too tired for real anger.`;
-
-  let response = await generateNermResponse(context);
-
-  if (!response) {
-    response = pickFallback('morning');
-  }
-
-  return await postAsNerm(response);
-}
-
-/**
- * Evening complaint
- */
-async function postEveningComplaint() {
-  const context = `It's evening. You've been watching wizards all day. They're still going. You're tired but you can't stop watching - literally cannot. Make an observation about the day winding down while you remain perpetually wound.`;
-
-  let response = await generateNermResponse(context);
-
-  if (!response) {
-    response = pickFallback('evening');
-  }
-
-  return await postAsNerm(response);
-}
-
-/**
- * React to a player's cast with school/game awareness
- */
-async function reactToCast(playerHandle, spellName, schoolName, points) {
-  const context = `@${playerHandle} from ${schoolName} just cast "${spellName}" for ${points} points.
-
-React to this. You can mention their school, the spell, the points, or just make a general observation. Short and deadpan. You've seen this school try this spell many times before.`;
-
-  let response = await generateNermResponse(context);
-
-  if (!response) {
-    response = pickFallback('spellReactions');
-  }
-
-  return await postAsNerm(response);
-}
-
-/**
- * Roast a specific player (for manual use)
- */
-async function roastPlayer(playerHandle, reason) {
-  const context = `A wizard named @${playerHandle} did something: ${reason}
-
-Respond to this. Not a roast exactly - you don't have the energy for proper roasts anymore. Just a tired, devastating observation. The kind that hurts more because it's not even trying to hurt.`;
-
-  let response = await generateNermResponse(context);
-
-  if (!response) {
-    response = `@${playerHandle} hm.`;
-  }
-
-  return await postAsNerm(response);
-}
-
-/**
- * Comment when someone talks to Nerm directly
- */
-async function respondToMention(userHandle, theirMessage) {
-  const context = `@${userHandle} said this to you: "${theirMessage}"
-
-Respond. You can engage with what they said, ignore it entirely, or answer a different question they didn't ask. You're not obligated to be helpful. You're not obligated to be anything. But you might respond anyway. You have nothing else to do.`;
-
-  let response = await generateNermResponse(context);
-
-  if (!response) {
-    response = "hm.";
-  }
-
-  return response;
 }
 
 /**
@@ -326,17 +328,8 @@ function getRateLimitStatus() {
 module.exports = {
   postAsNerm,
   replyAsNerm,
-  followPlayer,
-  commentOnCast,
-  maybeCommentOnCast,
   postDailyObservation,
-  postZoneChange,
   maybeGlitch,
-  postMorningGrumpy,
-  postEveningComplaint,
-  reactToCast,
-  roastPlayer,
-  respondToMention,
   generateCustomResponse,
   testConnection,
   getRateLimitStatus,
