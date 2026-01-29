@@ -5,564 +5,134 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Leaderboards | Nine Lives Network</title>
   <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/nav.css">
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a14; color: #fff; min-height: 100vh; }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0a0a14;
-      color: #fff;
-      min-height: 100vh;
-    }
+    .video-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden; }
+    .video-background video { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); min-width: 100%; min-height: 100%; object-fit: cover; }
+    .video-background::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at center, transparent 0%, transparent 20%, rgba(10, 10, 20, 0.4) 40%, rgba(10, 10, 20, 0.7) 60%, rgba(10, 10, 20, 0.9) 80%, rgba(10, 10, 20, 1) 100%); }
+    .video-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 20, 0.3); z-index: -1; }
 
-    /* ===== VIDEO BACKGROUND ===== */
-    .video-background {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -2;
-      overflow: hidden;
-    }
+    .leaderboards-container { min-height: 100vh; padding-top: 76px; padding-bottom: 40px; position: relative; z-index: 1; }
+    .leaderboards-content { max-width: 800px; margin: 0 auto; padding: 20px 15px; }
+    .page-title { font-family: 'Press Start 2P', monospace; font-size: 1rem; color: #FFD700; margin-bottom: 24px; text-align: center; text-shadow: 0 2px 20px rgba(255, 215, 0, 0.3); }
 
-    .video-background video {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      min-width: 100%;
-      min-height: 100%;
-      width: auto;
-      height: auto;
-      object-fit: cover;
-    }
+    .tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+    .tab-btn { font-family: 'Press Start 2P', monospace; font-size: 0.4rem; padding: 12px 20px; background: rgba(30, 30, 50, 0.8); border: 2px solid #2a2a4a; color: #a0a0b0; cursor: pointer; border-radius: 6px; backdrop-filter: blur(5px); transition: all 0.3s; }
+    .tab-btn:hover { border-color: #FFD700; color: #fff; }
+    .tab-btn.active { background: #FFD700; border-color: #FFD700; color: #0a0a14; }
 
-    .video-background::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: radial-gradient(ellipse at center, 
-        transparent 0%, 
-        transparent 20%,
-        rgba(10, 10, 20, 0.4) 40%,
-        rgba(10, 10, 20, 0.7) 60%,
-        rgba(10, 10, 20, 0.9) 80%,
-        rgba(10, 10, 20, 1) 100%
-      );
-      pointer-events: none;
-    }
+    .leaderboard-section { display: none; }
+    .leaderboard-section.active { display: block; }
 
-    .video-background::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(180deg,
-        rgba(10, 10, 20, 0.8) 0%,
-        transparent 15%,
-        transparent 85%,
-        rgba(10, 10, 20, 0.8) 100%
-      );
-      pointer-events: none;
-      z-index: 1;
-    }
+    .leaderboard-table { width: 100%; background: rgba(20, 20, 35, 0.85); border: 2px solid #2a2a4a; border-radius: 12px; overflow: hidden; backdrop-filter: blur(10px); }
+    .leaderboard-header { display: grid; grid-template-columns: 50px 1fr 90px; padding: 12px 16px; background: rgba(40, 40, 60, 0.9); font-family: 'Press Start 2P', monospace; font-size: 0.35rem; color: #a0a0b0; text-transform: uppercase; }
+    .leaderboard-row { display: grid; grid-template-columns: 50px 1fr 90px; padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); align-items: center; transition: background 0.2s; }
+    .leaderboard-row:hover { background: rgba(255, 215, 0, 0.05); }
+    .leaderboard-row:last-child { border-bottom: none; }
+    .leaderboard-row.highlight { background: rgba(255, 215, 0, 0.15); border-left: 3px solid #FFD700; }
 
-    .video-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(10, 10, 20, 0.3);
-      z-index: -1;
-    }
-
-    /* ===== TOP NAV BAR ===== */
-    .top-nav {
-      background: rgba(10, 22, 40, 0.95);
-      border-bottom: 2px solid rgba(255, 215, 0, 0.3);
-      padding: 0 15px;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-      backdrop-filter: blur(10px);
-    }
-
-    .top-nav-content {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      max-width: 1200px;
-      margin: 0 auto;
-      height: 56px;
-    }
-
-    .nav-logo {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.5rem;
-      color: #FFD700;
-      text-decoration: none;
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      list-style: none;
-    }
-
-    .nav-links a {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
-      color: #a0a0b0;
-      text-decoration: none;
-      padding: 8px 12px;
-      border-radius: 4px;
-      transition: all 0.2s;
-    }
-
-    .nav-links a:hover,
-    .nav-links a.active {
-      color: #FFD700;
-      background: rgba(255, 215, 0, 0.1);
-    }
-
-    .nav-links a.logout-btn {
-      color: #ff6b6b;
-    }
-
-    .nav-links a.logout-btn:hover {
-      background: rgba(255, 107, 107, 0.1);
-    }
-
-    /* ===== MAIN CONTAINER ===== */
-    .leaderboards-container {
-      min-height: 100vh;
-      padding-top: 76px;
-      padding-bottom: 40px;
-      position: relative;
-      z-index: 1;
-    }
-
-    .leaderboards-content {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px 15px;
-    }
-
-    .page-title {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 1rem;
-      color: #FFD700;
-      margin-bottom: 24px;
-      text-align: center;
-      text-shadow: 0 2px 20px rgba(255, 215, 0, 0.3);
-    }
-
-    /* ===== TABS ===== */
-    .tabs {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-    }
-
-    .tab-btn {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
-      padding: 12px 20px;
-      background: rgba(30, 30, 50, 0.8);
-      border: 2px solid #2a2a4a;
-      color: #a0a0b0;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      border-radius: 6px;
-      backdrop-filter: blur(5px);
-    }
-
-    .tab-btn:hover {
-      border-color: #FFD700;
-      color: #fff;
-    }
-
-    .tab-btn.active {
-      background: #FFD700;
-      border-color: #FFD700;
-      color: #0a0a14;
-    }
-
-    /* ===== LEADERBOARD TABLE ===== */
-    .leaderboard-section {
-      display: none;
-    }
-
-    .leaderboard-section.active {
-      display: block;
-    }
-
-    .leaderboard-table {
-      width: 100%;
-      background: rgba(20, 20, 35, 0.85);
-      border: 2px solid #2a2a4a;
-      border-radius: 12px;
-      overflow: hidden;
-      backdrop-filter: blur(10px);
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-    }
-
-    .leaderboard-header {
-      display: grid;
-      grid-template-columns: 50px 1fr 100px;
-      padding: 12px 16px;
-      background: rgba(40, 40, 60, 0.9);
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.35rem;
-      color: #a0a0b0;
-      text-transform: uppercase;
-    }
-
-    .leaderboard-row {
-      display: grid;
-      grid-template-columns: 50px 1fr 100px;
-      padding: 12px 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      align-items: center;
-      transition: background 0.2s ease;
-    }
-
-    .leaderboard-row:hover {
-      background: rgba(255, 215, 0, 0.05);
-    }
-
-    .leaderboard-row:last-child {
-      border-bottom: none;
-    }
-
-    .leaderboard-row.highlight {
-      background: rgba(255, 215, 0, 0.15);
-      border-left: 3px solid #FFD700;
-    }
-
-    /* Rank */
-    .rank {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.6rem;
-      color: #606070;
-    }
-
+    .rank { font-family: 'Press Start 2P', monospace; font-size: 0.6rem; color: #606070; }
     .rank-1 { color: #FFD700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
-    .rank-2 { color: #C0C0C0; text-shadow: 0 0 10px rgba(192, 192, 192, 0.5); }
-    .rank-3 { color: #CD7F32; text-shadow: 0 0 10px rgba(205, 127, 50, 0.5); }
+    .rank-2 { color: #C0C0C0; }
+    .rank-3 { color: #CD7F32; }
 
-    /* Player Info */
-    .player-cell {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
+    .player-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .player-avatar { width: 36px; height: 36px; border-radius: 50%; background: #2a2a4a; display: flex; align-items: center; justify-content: center; font-size: 1rem; overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.2); flex-shrink: 0; }
+    .player-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .player-info { min-width: 0; overflow: hidden; }
+    .player-name { font-family: 'Press Start 2P', monospace; font-size: 0.4rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-school { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+    .school-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .school-name { font-family: 'Press Start 2P', monospace; font-size: 0.3rem; color: #a0a0b0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-tag { font-family: 'Press Start 2P', monospace; font-size: 0.3rem; color: #8A2BE2; margin-top: 2px; }
 
-    .player-avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: #2a2a4a;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      overflow: hidden;
-      border: 2px solid rgba(255, 255, 255, 0.2);
-      flex-shrink: 0;
-    }
+    .points { font-family: 'Press Start 2P', monospace; font-size: 0.45rem; color: #FFD700; text-align: right; white-space: nowrap; }
 
-    .player-avatar img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
+    .school-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .school-color-block { width: 36px; height: 36px; border-radius: 6px; flex-shrink: 0; }
+    .school-info { min-width: 0; overflow: hidden; }
+    .school-full-name { font-family: 'Press Start 2P', monospace; font-size: 0.4rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .school-element { font-family: 'Press Start 2P', monospace; font-size: 0.3rem; color: #606070; margin-top: 2px; }
 
-    .player-info {
-      min-width: 0;
-      overflow: hidden;
-    }
+    .community-tag-name { font-family: 'Press Start 2P', monospace; font-size: 0.5rem; color: #8A2BE2; }
 
-    .player-name {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    .empty-state, .loading { text-align: center; padding: 40px 20px; color: #606070; font-family: 'Press Start 2P', monospace; font-size: 0.4rem; }
 
-    .player-school {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      margin-top: 2px;
-    }
-
-    .school-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .school-name {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.3rem;
-      color: #a0a0b0;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .player-tag {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.3rem;
-      color: #8A2BE2;
-      margin-top: 2px;
-    }
-
-    /* Points */
-    .points {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.5rem;
-      color: #FFD700;
-      text-align: right;
-      white-space: nowrap;
-    }
-
-    /* ===== SCHOOL LEADERBOARD ===== */
-    .school-cell {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
-
-    .school-color-block {
-      width: 36px;
-      height: 36px;
-      border-radius: 6px;
-      flex-shrink: 0;
-    }
-
-    .school-info {
-      min-width: 0;
-      overflow: hidden;
-    }
-
-    .school-full-name {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
-      color: #fff;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .school-element {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.3rem;
-      color: #606070;
-      margin-top: 2px;
-    }
-
-    .member-count {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.35rem;
-      color: #a0a0b0;
-      text-align: right;
-    }
-
-    /* ===== COMMUNITY LEADERBOARD ===== */
-    .community-tag-name {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.5rem;
-      color: #8A2BE2;
-    }
-
-    /* ===== EMPTY STATE ===== */
-    .empty-state {
-      text-align: center;
-      padding: 40px 20px;
-      color: #606070;
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
-    }
-
-    /* ===== LOADING ===== */
-    .loading {
-      text-align: center;
-      padding: 40px 20px;
-      color: #606070;
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
-    }
-
-    /* ===== RESPONSIVE ===== */
     @media (max-width: 600px) {
-      .leaderboard-header {
-        grid-template-columns: 40px 1fr 70px;
-        padding: 10px 12px;
-        font-size: 0.3rem;
-      }
-
-      .leaderboard-row {
-        grid-template-columns: 40px 1fr 70px;
-        padding: 10px 12px;
-      }
-
-      .player-avatar,
-      .school-color-block {
-        width: 28px;
-        height: 28px;
-      }
-
-      .player-name,
-      .school-full-name {
-        font-size: 0.35rem;
-      }
-
-      .points {
-        font-size: 0.4rem;
-      }
-
-      .rank {
-        font-size: 0.5rem;
-      }
-
-      .video-background video {
-        opacity: 0.5;
-      }
-
-      .page-title {
-        font-size: 0.8rem;
-      }
-
-      .tab-btn {
-        font-size: 0.35rem;
-        padding: 10px 14px;
-      }
-    }
-
-    @media (max-width: 380px) {
-      .nav-logo {
-        font-size: 0.4rem;
-      }
-
-      .nav-links a {
-        font-size: 0.3rem;
-        padding: 6px 8px;
-      }
-
-      .leaderboard-header {
-        grid-template-columns: 35px 1fr 60px;
-      }
-
-      .leaderboard-row {
-        grid-template-columns: 35px 1fr 60px;
-      }
-
-      .points {
-        font-size: 0.35rem;
-      }
+      .leaderboard-header, .leaderboard-row { grid-template-columns: 40px 1fr 70px; padding: 10px 12px; font-size: 0.3rem; }
+      .player-avatar, .school-color-block { width: 28px; height: 28px; }
+      .player-name, .school-full-name { font-size: 0.35rem; }
+      .points { font-size: 0.4rem; }
+      .page-title { font-size: 0.8rem; }
+      .tab-btn { font-size: 0.35rem; padding: 10px 14px; }
     }
   </style>
 </head>
 <body>
-  <!-- Video Background -->
   <div class="video-background">
-    <video autoplay muted loop playsinline>
-      <source src="/assets/images/wizard-cat.mp4" type="video/mp4">
-    </video>
+    <video autoplay muted loop playsinline><source src="/assets/images/wizard-cat.mp4" type="video/mp4"></video>
   </div>
   <div class="video-overlay"></div>
 
-  <!-- Top Navigation -->
   <nav class="top-nav">
     <div class="top-nav-content">
       <a href="/" class="nav-logo">Nine Lives Network</a>
       <ul class="nav-links">
         <li><a href="/dashboard.html">Dashboard</a></li>
-        <li><a href="/map.html">Map</a></li>
+        <li><a href="/world.html">World</a></li>
         <li><a href="/leaderboards.html" class="active">Leaderboards</a></li>
         <li><a href="/how-to-play.html">Help</a></li>
         <li><a href="#" class="logout-btn" id="logoutBtn">Logout</a></li>
       </ul>
+      <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
     </div>
   </nav>
+
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="/dashboard.html"><span class="menu-icon">📊</span> Dashboard</a>
+    <a href="/world.html"><span class="menu-icon">🌍</span> World</a>
+    <a href="/leaderboards.html" class="active"><span class="menu-icon">🏆</span> Leaderboards</a>
+    <a href="/how-to-play.html"><span class="menu-icon">❓</span> Help</a>
+    <a href="#" class="logout-btn" id="mobileLogoutBtn"><span class="menu-icon">🚪</span> Logout</a>
+  </div>
 
   <main class="leaderboards-container">
     <div class="leaderboards-content">
       <h1 class="page-title">🏆 Leaderboards</h1>
-
-      <!-- Tabs -->
       <div class="tabs">
         <button class="tab-btn active" data-tab="players">Players</button>
         <button class="tab-btn" data-tab="schools">Schools</button>
         <button class="tab-btn" data-tab="communities">Communities</button>
       </div>
 
-      <!-- Players Leaderboard -->
       <div class="leaderboard-section active" id="players-section">
         <div class="leaderboard-table">
-          <div class="leaderboard-header">
-            <div>Rank</div>
-            <div>Player</div>
-            <div style="text-align: right;">Points</div>
-          </div>
+          <div class="leaderboard-header"><div>Rank</div><div>Player</div><div style="text-align:right;">Points</div></div>
           <div id="players-list" class="loading">Loading...</div>
         </div>
       </div>
 
-      <!-- Schools Leaderboard -->
       <div class="leaderboard-section" id="schools-section">
         <div class="leaderboard-table">
-          <div class="leaderboard-header">
-            <div>Rank</div>
-            <div>School</div>
-            <div style="text-align: right;">Points</div>
-          </div>
+          <div class="leaderboard-header"><div>Rank</div><div>School</div><div style="text-align:right;">Points</div></div>
           <div id="schools-list" class="loading">Loading...</div>
         </div>
       </div>
 
-      <!-- Communities Leaderboard -->
       <div class="leaderboard-section" id="communities-section">
         <div class="leaderboard-table">
-          <div class="leaderboard-header">
-            <div>Rank</div>
-            <div>Community</div>
-            <div style="text-align: right;">Points</div>
-          </div>
+          <div class="leaderboard-header"><div>Rank</div><div>Community</div><div style="text-align:right;">Points</div></div>
           <div id="communities-list" class="loading">Loading...</div>
         </div>
       </div>
-
     </div>
   </main>
 
   <script>
-    // School data
     const schools = {
       1: { name: 'Ember Covenant', element: 'Fire', color: '#FF4500' },
       2: { name: 'Tidal Conclave', element: 'Water', color: '#00BFFF' },
@@ -574,154 +144,81 @@
       8: { name: 'Arcane Spire', element: 'Arcane', color: '#00FFFF' },
       9: { name: 'WildCat Path', element: 'Chaos', color: '#FF1493' },
     };
-
     const currentPlayerId = localStorage.getItem('player_id');
 
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', (e) => {
-      e.preventDefault();
-      localStorage.removeItem('player_id');
-      window.location.href = '/';
-    });
+    document.getElementById('hamburger').addEventListener('click', () => { document.getElementById('hamburger').classList.toggle('active'); document.getElementById('mobileMenu').classList.toggle('active'); });
+    document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('player_id'); window.location.href = '/'; });
+    document.getElementById('mobileLogoutBtn').addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('player_id'); window.location.href = '/'; });
 
-    // Initialize
-    document.addEventListener('DOMContentLoaded', () => {
-      setupTabs();
-      loadPlayersLeaderboard();
-      loadSchoolsLeaderboard();
-      loadCommunitiesLeaderboard();
-    });
+    document.addEventListener('DOMContentLoaded', () => { setupTabs(); loadPlayersLeaderboard(); loadSchoolsLeaderboard(); loadCommunitiesLeaderboard(); });
 
-    // Tab switching
     function setupTabs() {
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
-
-          const tab = btn.dataset.tab;
           document.querySelectorAll('.leaderboard-section').forEach(s => s.classList.remove('active'));
-          document.getElementById(`${tab}-section`).classList.add('active');
+          document.getElementById(`${btn.dataset.tab}-section`).classList.add('active');
         });
       });
     }
 
-    // Load players leaderboard
     async function loadPlayersLeaderboard() {
       try {
-        const response = await fetch('/api/leaderboards/players');
-        if (!response.ok) throw new Error('Failed to load');
-
-        const players = await response.json();
-        const container = document.getElementById('players-list');
-
-        if (players.length === 0) {
-          container.innerHTML = '<div class="empty-state">No players yet. Be the first to cast a spell!</div>';
-          return;
-        }
-
-        container.innerHTML = players.map((player, index) => {
-          const school = schools[player.school_id];
-          const isCurrentPlayer = player.id == currentPlayerId;
-
-          return `
-            <div class="leaderboard-row ${isCurrentPlayer ? 'highlight' : ''}">
-              <div class="rank rank-${index + 1}">#${index + 1}</div>
-              <div class="player-cell">
-                <div class="player-avatar">
-                  ${player.profile_image 
-                    ? `<img src="${player.profile_image}" alt="">` 
-                    : '🐱'}
-                </div>
-                <div class="player-info">
-                  <div class="player-name">@${player.twitter_handle}</div>
-                  <div class="player-school">
-                    <div class="school-dot" style="background: ${school.color};"></div>
-                    <span class="school-name">${school.name.split(' ')[0]}</span>
-                  </div>
-                  ${player.community_tag ? `<div class="player-tag">${player.community_tag}</div>` : ''}
-                </div>
+        const res = await fetch('/api/leaderboards/players');
+        const players = await res.json();
+        const c = document.getElementById('players-list');
+        if (!players.length) { c.innerHTML = '<div class="empty-state">No players yet!</div>'; return; }
+        c.innerHTML = players.map((p, i) => {
+          const s = schools[p.school_id];
+          return `<div class="leaderboard-row ${p.id == currentPlayerId ? 'highlight' : ''}">
+            <div class="rank rank-${i+1}">#${i+1}</div>
+            <div class="player-cell">
+              <div class="player-avatar">${p.profile_image ? `<img src="${p.profile_image}">` : '🐱'}</div>
+              <div class="player-info">
+                <div class="player-name">@${p.twitter_handle}</div>
+                <div class="player-school"><div class="school-dot" style="background:${s.color}"></div><span class="school-name">${s.name.split(' ')[0]}</span></div>
+                ${p.community_tag ? `<div class="player-tag">${p.community_tag}</div>` : ''}
               </div>
-              <div class="points">${player.seasonal_points.toLocaleString()}</div>
             </div>
-          `;
+            <div class="points">${p.seasonal_points.toLocaleString()}</div>
+          </div>`;
         }).join('');
-
-      } catch (error) {
-        console.error('Error loading players:', error);
-        document.getElementById('players-list').innerHTML = '<div class="empty-state">Failed to load leaderboard</div>';
-      }
+      } catch (e) { document.getElementById('players-list').innerHTML = '<div class="empty-state">Failed to load</div>'; }
     }
 
-    // Load schools leaderboard
     async function loadSchoolsLeaderboard() {
       try {
-        const response = await fetch('/api/leaderboards/schools');
-        if (!response.ok) throw new Error('Failed to load');
-
-        const schoolStats = await response.json();
-        const container = document.getElementById('schools-list');
-
-        if (schoolStats.length === 0) {
-          container.innerHTML = '<div class="empty-state">No school data yet</div>';
-          return;
-        }
-
-        container.innerHTML = schoolStats.map((stat, index) => {
-          const school = schools[stat.school_id];
-
-          return `
-            <div class="leaderboard-row">
-              <div class="rank rank-${index + 1}">#${index + 1}</div>
-              <div class="school-cell">
-                <div class="school-color-block" style="background: ${school.color};"></div>
-                <div class="school-info">
-                  <div class="school-full-name">${school.name}</div>
-                  <div class="school-element">${school.element} • ${stat.member_count} wizards</div>
-                </div>
-              </div>
-              <div class="points">${stat.total_points.toLocaleString()}</div>
+        const res = await fetch('/api/leaderboards/schools');
+        const stats = await res.json();
+        const c = document.getElementById('schools-list');
+        if (!stats.length) { c.innerHTML = '<div class="empty-state">No data</div>'; return; }
+        c.innerHTML = stats.map((st, i) => {
+          const s = schools[st.school_id];
+          return `<div class="leaderboard-row">
+            <div class="rank rank-${i+1}">#${i+1}</div>
+            <div class="school-cell">
+              <div class="school-color-block" style="background:${s.color}"></div>
+              <div class="school-info"><div class="school-full-name">${s.name}</div><div class="school-element">${s.element} • ${st.member_count} wizards</div></div>
             </div>
-          `;
+            <div class="points">${st.total_points.toLocaleString()}</div>
+          </div>`;
         }).join('');
-
-      } catch (error) {
-        console.error('Error loading schools:', error);
-        document.getElementById('schools-list').innerHTML = '<div class="empty-state">Failed to load leaderboard</div>';
-      }
+      } catch (e) { document.getElementById('schools-list').innerHTML = '<div class="empty-state">Failed to load</div>'; }
     }
 
-    // Load communities leaderboard
     async function loadCommunitiesLeaderboard() {
       try {
-        const response = await fetch('/api/leaderboards/communities');
-        if (!response.ok) throw new Error('Failed to load');
-
-        const communities = await response.json();
-        const container = document.getElementById('communities-list');
-
-        if (communities.length === 0) {
-          container.innerHTML = '<div class="empty-state">No communities yet. Add a community tag to your profile!</div>';
-          return;
-        }
-
-        container.innerHTML = communities.map((community, index) => {   
-          return `
-            <div class="leaderboard-row">
-              <div class="rank rank-${index + 1}">#${index + 1}</div>
-              <div class="player-info">
-                <div class="community-tag-name">${community.community_tag}</div>
-                <div class="school-name">${community.member_count} members</div>
-              </div>
-              <div class="points">${community.total_points.toLocaleString()}</div>
-            </div>
-          `;
-        }).join('');
-
-      } catch (error) {
-        console.error('Error loading communities:', error);
-        document.getElementById('communities-list').innerHTML = '<div class="empty-state">Failed to load leaderboard</div>';
-      }
+        const res = await fetch('/api/leaderboards/communities');
+        const communities = await res.json();
+        const c = document.getElementById('communities-list');
+        if (!communities.length) { c.innerHTML = '<div class="empty-state">No communities yet!</div>'; return; }
+        c.innerHTML = communities.map((cm, i) => `<div class="leaderboard-row">
+          <div class="rank rank-${i+1}">#${i+1}</div>
+          <div class="player-info"><div class="community-tag-name">${cm.community_tag}</div><div class="school-name">${cm.member_count} members</div></div>
+          <div class="points">${cm.total_points.toLocaleString()}</div>
+        </div>`).join('');
+      } catch (e) { document.getElementById('communities-list').innerHTML = '<div class="empty-state">Failed to load</div>'; }
     }
   </script>
 </body>

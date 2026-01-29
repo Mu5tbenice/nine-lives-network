@@ -7,1079 +7,292 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Dashboard | Nine Lives Network</title>
   <link rel="stylesheet" href="/css/styles.css">
+  <link rel="stylesheet" href="/css/nav.css">
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
   <style>
-    /* ===== RESET & BASE ===== */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    html {
-      font-size: 16px;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     body {
       background: linear-gradient(180deg, #0a1628 0%, #0d1a2d 100%);
       min-height: 100vh;
-      min-height: -webkit-fill-available;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       color: #fff;
       padding-bottom: env(safe-area-inset-bottom);
     }
 
-    /* ===== TOP NAV BAR ===== */
-    .top-nav {
-      background: rgba(10, 22, 40, 0.95);
-      border-bottom: 2px solid rgba(255, 215, 0, 0.3);
-      padding: 0 15px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      backdrop-filter: blur(10px);
-    }
-
-    .top-nav-content {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      max-width: 1200px;
-      margin: 0 auto;
-      height: 56px;
-    }
-
-    .nav-logo {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.5rem;
-      color: var(--accent-gold, #FFD700);
-      text-decoration: none;
-    }
-
-    .nav-links {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      list-style: none;
-    }
-
-    .nav-links a {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
-      color: #a0a0b0;
-      text-decoration: none;
-      padding: 8px 12px;
-      border-radius: 4px;
-      transition: all 0.2s;
-    }
-
-    .nav-links a:hover,
-    .nav-links a.active {
-      color: var(--accent-gold, #FFD700);
-      background: rgba(255, 215, 0, 0.1);
-    }
-
-    .nav-links a.logout-btn {
-      color: #ff6b6b;
-    }
-
-    .nav-links a.logout-btn:hover {
-      background: rgba(255, 107, 107, 0.1);
-    }
-
-    /* ===== HEADER (Player Info) ===== */
     .header {
       background: rgba(10, 22, 40, 0.8);
       border-bottom: 1px solid rgba(255, 215, 0, 0.2);
       padding: 12px 15px;
-    }
-
-    .header-content {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    .player-info {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .player-avatar {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      border: 2px solid var(--accent-gold, #FFD700);
-      object-fit: cover;
-    }
-
-    .player-details {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .player-name {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.5rem;
-      color: #fff;
-    }
-
-    .player-school {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
-      color: var(--school-color, #FFD700);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .header-btn {
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-      background: rgba(255, 215, 0, 0.1);
-      border: 1px solid rgba(255, 215, 0, 0.3);
-      color: var(--accent-gold, #FFD700);
-      font-size: 1.1rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      text-decoration: none;
-    }
-
-    .header-btn:active {
-      background: rgba(255, 215, 0, 0.2);
-    }
-
-    /* ===== MAIN CONTAINER ===== */
-    .main-container {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 15px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
-    /* ===== CARD STYLES ===== */
-    .card {
-      background: rgba(20, 35, 60, 0.8);
-      border: 1px solid rgba(255, 215, 0, 0.2);
-      border-radius: 12px;
-      padding: 15px;
-    }
-
-    .card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-    }
-
-    .card-title {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.5rem;
-      color: var(--accent-gold, #FFD700);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .card-badge {
-      font-family: 'Press Start 2P', monospace;
-      background: rgba(255, 215, 0, 0.2);
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 0.4rem;
-      color: var(--accent-gold, #FFD700);
-    }
-
-    /* ===== CAST SPELL CARD (PRIMARY) ===== */
-    .cast-card {
-      background: linear-gradient(135deg, rgba(30, 50, 80, 0.9), rgba(20, 35, 60, 0.9));
-      border: 2px solid var(--accent-gold, #FFD700);
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
-    }
-
-    .objective-zone {
-      text-align: center;
-      margin-bottom: 15px;
-    }
-
-    .objective-label {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
-      color: #a0a0b0;
-      margin-bottom: 5px;
-    }
-
-    .objective-name {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.6rem;
-      color: #fff;
-      margin-bottom: 8px;
-    }
-
-    .objective-timer {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(255, 100, 100, 0.2);
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
-      color: #ff9999;
-    }
-
-    /* ===== TWEET PREVIEW ===== */
-    .tweet-preview {
-      background: #15202b;
-      border: 1px solid #38444d;
-      border-radius: 12px;
-      padding: 12px;
-      margin-bottom: 15px;
-    }
-
-    .tweet-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 10px;
-    }
-
-    .tweet-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-    }
-
-    .tweet-user {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .tweet-name {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-weight: 600;
-      font-size: 0.85rem;
-      color: #fff;
-    }
-
-    .tweet-handle {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 0.75rem;
-      color: #8899a6;
-    }
-
-    .tweet-content {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 0.9rem;
-      line-height: 1.4;
-      color: #fff;
-      margin-bottom: 10px;
-      word-break: break-word;
-    }
-
-    .tweet-content .highlight {
-      color: #1da1f2;
-    }
-
-    .tweet-content .school-flair {
-      color: var(--school-color, #FFD700);
-      font-weight: 600;
-    }
-
-    .tweet-replying {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 0.75rem;
-      color: #8899a6;
-      margin-bottom: 8px;
-    }
-
-    .tweet-replying a {
-      color: #1da1f2;
-      text-decoration: none;
-    }
-
-    /* ===== SPELL SUGGESTIONS ===== */
-    .spell-suggestions {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-
-    .spell-chip {
-      font-family: 'Press Start 2P', monospace;
-      background: rgba(255, 215, 0, 0.1);
-      border: 1px solid rgba(255, 215, 0, 0.3);
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 0.35rem;
-      color: var(--accent-gold, #FFD700);
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .spell-chip:active {
-      background: rgba(255, 215, 0, 0.3);
-    }
-
-    .spell-chip.selected {
-      background: var(--accent-gold, #FFD700);
-      color: #000;
-    }
-
-    /* ===== ACTION BUTTONS ===== */
-    .cast-actions {
-      display: flex;
-      gap: 10px;
-    }
-
-    .btn-copy {
-      flex: 1;
-      padding: 14px;
-      min-height: 50px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 2px solid rgba(255, 255, 255, 0.3);
-      border-radius: 8px;
-      color: #fff;
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.35rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-    }
-
-    .btn-copy:active {
-      background: rgba(255, 255, 255, 0.2);
-    }
-
-    .btn-copy.copied {
-      background: rgba(0, 200, 100, 0.3);
-      border-color: #00c864;
-    }
-
-    .btn-tweet {
-      flex: 2;
-      padding: 14px 20px;
-      min-height: 50px;
-      background: linear-gradient(180deg, #1da1f2 0%, #0d8ddb 100%);
-      border: none;
-      border-radius: 8px;
-      color: #fff;
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.35rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      text-decoration: none;
-      box-shadow: 0 4px 0 #0a6da8;
-    }
-
-    .btn-tweet:active {
-      transform: translateY(2px);
-      box-shadow: 0 2px 0 #0a6da8;
-    }
-
-    /* ===== MANA & STATS ROW ===== */
-    .stats-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .stat-card {
-      background: rgba(20, 35, 60, 0.8);
-      border: 1px solid rgba(255, 215, 0, 0.2);
-      border-radius: 10px;
-      padding: 12px;
-      text-align: center;
-    }
-
-    .stat-label {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.35rem;
-      color: #8899a6;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-    }
-
-    .mana-orbs {
-      display: flex;
-      justify-content: center;
-      gap: 6px;
-    }
-
-    .mana-orb {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border: 2px solid #00D4FF;
-      background: transparent;
-    }
-
-    .mana-orb.filled {
-      background: linear-gradient(180deg, #00D4FF 0%, #0099cc 100%);
-      box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
-    }
-
-    .stat-value {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.7rem;
-      color: #fff;
-    }
-
-    .stat-sub {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.35rem;
-      color: #8899a6;
-      margin-top: 4px;
-    }
-
-    /* ===== QUICK ACTIONS ===== */
-    .quick-actions {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
-
-    .quick-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 15px 10px;
-      min-height: 70px;
-      background: rgba(20, 35, 60, 0.8);
-      border: 1px solid rgba(255, 215, 0, 0.2);
-      border-radius: 10px;
-      color: #fff;
-      text-decoration: none;
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.35rem;
-      transition: all 0.2s;
-    }
-
-    .quick-btn:active {
-      background: rgba(255, 215, 0, 0.1);
-      border-color: rgba(255, 215, 0, 0.4);
-    }
-
-    .quick-btn .icon {
-      font-size: 1.4rem;
-    }
-
-    /* ===== CAST HISTORY ===== */
-    .history-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .history-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px;
-      background: rgba(0, 0, 0, 0.2);
-      border-radius: 8px;
-    }
-
-    .history-spell {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
-      color: #fff;
-    }
-
-    .history-zone {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.35rem;
-      color: #8899a6;
-    }
-
-    .history-points {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
-      color: #00c864;
-    }
-
-    .history-time {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.3rem;
-      color: #8899a6;
-    }
-
-    /* ===== LOADING STATE ===== */
-    .loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 200px;
-      color: #8899a6;
-    }
-
-    .spinner {
-      width: 30px;
-      height: 30px;
-      border: 3px solid rgba(255, 215, 0, 0.2);
-      border-top-color: var(--accent-gold, #FFD700);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* ===== TOAST NOTIFICATION ===== */
-    .toast {
-      position: fixed;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      background: #00c864;
-      color: #fff;
-      padding: 12px 24px;
-      border-radius: 8px;
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
-      opacity: 0;
-      transition: all 0.3s ease;
-      z-index: 1000;
-    }
-
-    .toast.show {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-    }
-
-    /* ===== TABLET+ STYLES ===== */
-    @media (min-width: 768px) {
-      .nav-links a {
-        font-size: 0.45rem;
-        padding: 10px 16px;
-      }
-
-      .player-avatar {
-        width: 48px;
-        height: 48px;
-      }
-
-      .player-name {
-        font-size: 0.6rem;
-      }
-
-      .main-container {
-        padding: 20px;
-        gap: 20px;
-      }
-
-      .card {
-        padding: 20px;
-      }
-
-      .stats-row {
-        grid-template-columns: repeat(4, 1fr);
-      }
-
-      .quick-actions {
-        grid-template-columns: repeat(4, 1fr);
-      }
-
-      .cast-actions {
-        max-width: 400px;
-        margin: 0 auto;
-      }
-
-      .mana-orb {
-        width: 30px;
-        height: 30px;
-      }
-
-      .tweet-preview {
-        max-width: 500px;
-        margin: 0 auto 15px;
-      }
-    }
-
-    /* ===== DESKTOP HOVER EFFECTS ===== */
-    @media (min-width: 1024px) {
-      .nav-links a:hover {
-        color: var(--accent-gold, #FFD700);
-        background: rgba(255, 215, 0, 0.1);
-      }
-
-      .header-btn:hover {
-        background: rgba(255, 215, 0, 0.2);
-      }
-
-      .spell-chip:hover {
-        background: rgba(255, 215, 0, 0.2);
-      }
-
-      .quick-btn:hover {
-        background: rgba(255, 215, 0, 0.1);
-        border-color: rgba(255, 215, 0, 0.4);
-        transform: translateY(-2px);
-      }
-
-      .btn-tweet:hover {
-        background: linear-gradient(180deg, #2db1ff 0%, #1da1f2 100%);
-      }
-
-      .btn-copy:hover {
-        background: rgba(255, 255, 255, 0.15);
-      }
-    }
-
-    /* ===== SMALL MOBILE ===== */
-    @media (max-width: 380px) {
-      .nav-logo {
-        font-size: 0.4rem;
-      }
-
-      .nav-links a {
-        font-size: 0.3rem;
-        padding: 6px 8px;
-      }
-
-      .player-name {
-        font-size: 0.4rem;
-      }
-
-      .card-title {
-        font-size: 0.4rem;
-      }
-
-      .objective-name {
-        font-size: 0.5rem;
-      }
-
-      .btn-tweet {
-        font-size: 0.3rem;
-      }
-
-      .mana-orb {
-        width: 20px;
-        height: 20px;
-      }
-    }
+      margin-top: 56px;
+    }
+
+    .header-content { display: flex; align-items: center; justify-content: space-between; max-width: 800px; margin: 0 auto; }
+    .player-info { display: flex; align-items: center; gap: 10px; }
+    .player-avatar { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--accent-gold, #FFD700); object-fit: cover; }
+    .player-details { display: flex; flex-direction: column; gap: 2px; }
+    .player-name { font-family: 'Press Start 2P', monospace; font-size: 0.5rem; color: #fff; }
+    .player-school { font-family: 'Press Start 2P', monospace; font-size: 0.35rem; color: var(--school-color, #FFD700); display: flex; align-items: center; gap: 4px; }
+    .duel-record { font-family: 'Press Start 2P', monospace; font-size: 0.3rem; color: #a0a0b0; margin-top: 2px; }
+    .duel-record .wins { color: #00ff88; }
+    .duel-record .losses { color: #ff4444; }
+
+    .main-container { max-width: 800px; margin: 0 auto; padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+
+    .card { background: rgba(20, 35, 60, 0.8); border: 1px solid rgba(255, 215, 0, 0.2); border-radius: 12px; padding: 15px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .card-title { font-family: 'Press Start 2P', monospace; font-size: 0.45rem; color: var(--accent-gold, #FFD700); display: flex; align-items: center; gap: 8px; }
+    .card-badge { font-family: 'Press Start 2P', monospace; background: rgba(255, 215, 0, 0.2); padding: 4px 8px; border-radius: 4px; font-size: 0.35rem; color: var(--accent-gold, #FFD700); }
+
+    .cast-card { background: linear-gradient(135deg, rgba(30, 50, 80, 0.9), rgba(20, 35, 60, 0.9)); border: 2px solid var(--accent-gold, #FFD700); box-shadow: 0 0 20px rgba(255, 215, 0, 0.15); }
+
+    .objective-zone { text-align: center; margin-bottom: 15px; }
+    .objective-label { font-family: 'Press Start 2P', monospace; font-size: 0.35rem; color: #a0a0b0; margin-bottom: 5px; }
+    .objective-name { font-family: 'Press Start 2P', monospace; font-size: 0.55rem; color: #fff; margin-bottom: 8px; }
+    .objective-timer { display: inline-flex; align-items: center; gap: 6px; background: rgba(255, 100, 100, 0.2); padding: 6px 12px; border-radius: 20px; font-family: 'Press Start 2P', monospace; font-size: 0.35rem; color: #ff9999; }
+
+    .tweet-preview { background: #15202b; border: 1px solid #38444d; border-radius: 12px; padding: 12px; margin-bottom: 15px; }
+    .tweet-replying { font-size: 0.75rem; color: #8899a6; margin-bottom: 8px; }
+    .tweet-replying a { color: #1da1f2; text-decoration: none; }
+    .tweet-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .tweet-avatar { width: 32px; height: 32px; border-radius: 50%; }
+    .tweet-user { display: flex; flex-direction: column; }
+    .tweet-name { font-weight: 600; font-size: 0.85rem; color: #fff; }
+    .tweet-handle { font-size: 0.75rem; color: #8899a6; }
+    .tweet-content { font-size: 0.9rem; line-height: 1.4; color: #fff; margin-bottom: 10px; word-break: break-word; white-space: pre-wrap; }
+    .tweet-content .school-flair { color: var(--school-color, #FFD700); font-weight: 600; }
+
+    .spell-suggestions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .spell-chip { font-family: 'Press Start 2P', monospace; background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); padding: 6px 12px; border-radius: 20px; font-size: 0.3rem; color: var(--accent-gold, #FFD700); cursor: pointer; transition: all 0.2s; }
+    .spell-chip:active, .spell-chip.selected { background: var(--accent-gold, #FFD700); color: #000; }
+
+    .ascii-section { margin-bottom: 12px; }
+    .ascii-toggle { font-family: 'Press Start 2P', monospace; font-size: 0.3rem; color: #a0a0b0; background: none; border: 1px dashed rgba(255, 215, 0, 0.3); padding: 8px 12px; border-radius: 6px; cursor: pointer; width: 100%; text-align: center; }
+    .ascii-toggle:hover { border-color: var(--accent-gold, #FFD700); color: var(--accent-gold, #FFD700); }
+    .ascii-templates { display: none; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .ascii-templates.active { display: flex; }
+    .ascii-btn { font-family: monospace; font-size: 0.7rem; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 215, 0, 0.2); padding: 8px 12px; border-radius: 6px; color: #fff; cursor: pointer; white-space: pre; line-height: 1; }
+    .ascii-btn:hover { border-color: var(--accent-gold, #FFD700); background: rgba(255, 215, 0, 0.1); }
+
+    .cast-actions { display: flex; gap: 10px; }
+    .btn-copy { flex: 1; padding: 14px; min-height: 50px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 8px; color: #fff; font-family: 'Press Start 2P', monospace; font-size: 0.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-copy.copied { background: rgba(0, 200, 100, 0.3); border-color: #00c864; }
+    .btn-tweet { flex: 2; padding: 14px 20px; min-height: 50px; background: linear-gradient(180deg, #1da1f2 0%, #0d8ddb 100%); border: none; border-radius: 8px; color: #fff; font-family: 'Press Start 2P', monospace; font-size: 0.3rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; box-shadow: 0 4px 0 #0a6da8; }
+    .btn-tweet:active { transform: translateY(2px); box-shadow: 0 2px 0 #0a6da8; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .stat-card { background: rgba(20, 35, 60, 0.8); border: 1px solid rgba(255, 215, 0, 0.2); border-radius: 10px; padding: 12px; text-align: center; }
+    .stat-label { font-family: 'Press Start 2P', monospace; font-size: 0.3rem; color: #8899a6; margin-bottom: 8px; text-transform: uppercase; }
+    .resource-display { display: flex; justify-content: center; gap: 4px; }
+    .mana-orb { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #00D4FF; background: transparent; }
+    .mana-orb.filled { background: linear-gradient(180deg, #00D4FF 0%, #0099cc 100%); box-shadow: 0 0 8px rgba(0, 212, 255, 0.5); }
+    .life-heart { font-size: 1.1rem; line-height: 20px; }
+    .life-heart.empty { opacity: 0.3; }
+    .stat-value { font-family: 'Press Start 2P', monospace; font-size: 0.6rem; color: #fff; }
+    .stat-sub { font-family: 'Press Start 2P', monospace; font-size: 0.3rem; color: #8899a6; margin-top: 4px; }
+
+    .quick-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .quick-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 15px 10px; min-height: 70px; background: rgba(20, 35, 60, 0.8); border: 1px solid rgba(255, 215, 0, 0.2); border-radius: 10px; color: #fff; text-decoration: none; font-family: 'Press Start 2P', monospace; font-size: 0.3rem; transition: all 0.2s; }
+    .quick-btn:active { background: rgba(255, 215, 0, 0.1); border-color: rgba(255, 215, 0, 0.4); }
+    .quick-btn .icon { font-size: 1.4rem; }
+
+    .history-list { display: flex; flex-direction: column; gap: 8px; }
+    .history-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; background: rgba(0, 0, 0, 0.2); border-radius: 8px; }
+    .history-spell { font-family: 'Press Start 2P', monospace; font-size: 0.35rem; color: #fff; }
+    .history-zone { font-family: 'Press Start 2P', monospace; font-size: 0.3rem; color: #8899a6; }
+    .history-points { font-family: 'Press Start 2P', monospace; font-size: 0.35rem; color: #00c864; }
+    .history-time { font-family: 'Press Start 2P', monospace; font-size: 0.25rem; color: #8899a6; }
+
+    .loading { display: flex; align-items: center; justify-content: center; min-height: 100px; color: #8899a6; }
+    .spinner { width: 30px; height: 30px; border: 3px solid rgba(255, 215, 0, 0.2); border-top-color: var(--accent-gold, #FFD700); border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(100px); background: #00c864; color: #fff; padding: 12px 24px; border-radius: 8px; font-family: 'Press Start 2P', monospace; font-size: 0.35rem; opacity: 0; transition: all 0.3s ease; z-index: 1000; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    @media (min-width: 768px) { .stats-row { grid-template-columns: repeat(4, 1fr); } .quick-actions { grid-template-columns: repeat(4, 1fr); } .cast-actions { max-width: 400px; margin: 0 auto; } }
+    @media (max-width: 380px) { .player-name { font-size: 0.4rem; } .stats-row { grid-template-columns: repeat(2, 1fr); } }
   </style>
 </head>
 <body>
-  <!-- Top Navigation -->
   <nav class="top-nav">
     <div class="top-nav-content">
       <a href="/" class="nav-logo">Nine Lives Network</a>
       <ul class="nav-links">
         <li><a href="/dashboard.html" class="active">Dashboard</a></li>
-        <li><a href="/map.html">Map</a></li>
+        <li><a href="/world.html">World</a></li>
         <li><a href="/leaderboards.html">Leaderboards</a></li>
         <li><a href="/how-to-play.html">Help</a></li>
         <li><a href="#" class="logout-btn" id="logoutBtn">Logout</a></li>
       </ul>
+      <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
     </div>
   </nav>
 
-  <!-- Header (Player Info) -->
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="/dashboard.html" class="active"><span class="menu-icon">📊</span> Dashboard</a>
+    <a href="/world.html"><span class="menu-icon">🌍</span> World</a>
+    <a href="/leaderboards.html"><span class="menu-icon">🏆</span> Leaderboards</a>
+    <a href="/how-to-play.html"><span class="menu-icon">❓</span> Help</a>
+    <a href="#" class="logout-btn" id="mobileLogoutBtn"><span class="menu-icon">🚪</span> Logout</a>
+  </div>
+
   <header class="header">
     <div class="header-content">
       <div class="player-info">
         <img src="/assets/images/default-avatar.png" alt="Avatar" class="player-avatar" id="playerAvatar">
         <div class="player-details">
           <div class="player-name" id="playerName">Loading...</div>
-          <div class="player-school" id="playerSchool">
-            <span class="school-emoji">🔮</span>
-            <span class="school-name">-</span>
-          </div>
+          <div class="player-school" id="playerSchool"><span class="school-emoji">🔮</span><span class="school-name">-</span></div>
+          <div class="duel-record" id="duelRecord">Duels: <span class="wins">0W</span> / <span class="losses">0L</span></div>
         </div>
       </div>
     </div>
   </header>
 
-  <!-- Main Content -->
   <main class="main-container">
-    <!-- Cast Spell Card (PRIMARY ACTION) -->
     <div class="card cast-card">
       <div class="card-header">
-        <div class="card-title">
-          <span>⚔️</span> Cast Your Spell
-        </div>
+        <div class="card-title"><span>⚔️</span> Cast Your Spell</div>
         <div class="card-badge" id="manaBadge">5 Mana</div>
       </div>
-
       <div class="objective-zone">
-        <div class="objective-label">Today's Objective</div>
+        <div class="objective-label">Active Bounty</div>
         <div class="objective-name" id="objectiveName">Loading...</div>
-        <div class="objective-timer">
-          <span>⏰</span>
-          <span id="objectiveTimer">--:--:--</span>
-        </div>
+        <div class="objective-timer"><span>⏰</span><span id="objectiveTimer">--:--:--</span></div>
       </div>
-
-      <!-- Tweet Preview -->
       <div class="tweet-preview">
-        <div class="tweet-replying">
-          Replying to <a href="https://twitter.com/9LVNetwork" target="_blank">@9LVNetwork</a>
-        </div>
+        <div class="tweet-replying">Replying to <a href="https://twitter.com/9LVNetwork" target="_blank">@9LVNetwork</a></div>
         <div class="tweet-header">
           <img src="/assets/images/default-avatar.png" alt="" class="tweet-avatar" id="tweetAvatar">
-          <div class="tweet-user">
-            <div class="tweet-name" id="tweetName">You</div>
-            <div class="tweet-handle" id="tweetHandle">@username</div>
-          </div>
+          <div class="tweet-user"><div class="tweet-name" id="tweetName">You</div><div class="tweet-handle" id="tweetHandle">@username</div></div>
         </div>
-        <div class="tweet-content" id="tweetContent">
-          <span class="school-flair">🔮 Arcane Spire</span> I cast <strong>Mystic Bolt</strong> upon The Nexus! ✨
-        </div>
+        <div class="tweet-content" id="tweetContent"><span class="school-flair">🔮 Arcane Spire</span> I cast Mystic Bolt upon The Nexus! ✨</div>
       </div>
-
-      <!-- Spell Suggestions -->
       <div class="spell-suggestions" id="spellSuggestions">
         <button class="spell-chip selected" data-spell="Mystic Bolt">✨ Mystic Bolt</button>
         <button class="spell-chip" data-spell="Shadow Strike">🌑 Shadow Strike</button>
         <button class="spell-chip" data-spell="Fire Blast">🔥 Fire Blast</button>
         <button class="spell-chip" data-spell="Custom...">✏️ Custom</button>
       </div>
-
-      <!-- Action Buttons -->
+      <div class="ascii-section">
+        <button class="ascii-toggle" id="asciiToggle">🎨 Add ASCII Art (Bonus Points!)</button>
+        <div class="ascii-templates" id="asciiTemplates">
+          <button class="ascii-btn"> /\_/\
+( o.o )
+ > ^ <</button>
+          <button class="ascii-btn">  |
+ /|\
+/ | \
+  |
+ ===</button>
+          <button class="ascii-btn">/\\  /\\
+\  \/  /
+ \🔥/</button>
+          <button class="ascii-btn">  ★
+ /|\
+/_|_\</button>
+          <button class="ascii-btn"> /\
+|🧙|
+/||\</button>
+        </div>
+      </div>
       <div class="cast-actions">
-        <button class="btn-copy" id="btnCopy">
-          <span>📋</span> Copy
-        </button>
-        <a href="#" class="btn-tweet" id="btnTweet" target="_blank">
-          <span>𝕏</span> Tweet Spell
-        </a>
+        <button class="btn-copy" id="btnCopy"><span>📋</span> Copy</button>
+        <a href="#" class="btn-tweet" id="btnTweet" target="_blank"><span>𝕏</span> Tweet Spell</a>
       </div>
     </div>
 
-    <!-- Stats Row -->
     <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-label">Mana</div>
-        <div class="mana-orbs" id="manaOrbs">
-          <div class="mana-orb filled"></div>
-          <div class="mana-orb filled"></div>
-          <div class="mana-orb filled"></div>
-          <div class="mana-orb filled"></div>
-          <div class="mana-orb filled"></div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-label">Points</div>
-        <div class="stat-value" id="playerPoints">0</div>
-        <div class="stat-sub">Season 0</div>
-      </div>
+      <div class="stat-card"><div class="stat-label">Mana</div><div class="resource-display" id="manaOrbs"></div></div>
+      <div class="stat-card"><div class="stat-label">Lives</div><div class="resource-display" id="livesDisplay"></div></div>
+      <div class="stat-card"><div class="stat-label">Points</div><div class="stat-value" id="playerPoints">0</div><div class="stat-sub">Season 0</div></div>
     </div>
 
-    <!-- Quick Actions -->
     <div class="quick-actions">
-      <a href="/map.html" class="quick-btn">
-        <span class="icon">🗺️</span>
-        <span>Map</span>
-      </a>
-      <a href="/leaderboards.html" class="quick-btn">
-        <span class="icon">🏆</span>
-        <span>Leaderboards</span>
-      </a>
-      <a href="https://twitter.com/9LVNetwork" target="_blank" class="quick-btn">
-        <span class="icon">𝕏</span>
-        <span>@9LVNetwork</span>
-      </a>
+      <a href="/world.html" class="quick-btn"><span class="icon">🌍</span><span>World</span></a>
+      <a href="/leaderboards.html" class="quick-btn"><span class="icon">🏆</span><span>Leaderboards</span></a>
+      <a href="https://twitter.com/9LVNetwork" target="_blank" class="quick-btn"><span class="icon">𝕏</span><span>@9LVNetwork</span></a>
     </div>
 
-    <!-- Cast History -->
     <div class="card">
-      <div class="card-header">
-        <div class="card-title">
-          <span>📜</span> Recent Casts
-        </div>
-      </div>
-      <div class="history-list" id="historyList">
-        <div class="loading">
-          <div class="spinner"></div>
-        </div>
-      </div>
+      <div class="card-header"><div class="card-title"><span>📜</span> Recent Casts</div></div>
+      <div class="history-list" id="historyList"><div class="loading"><div class="spinner"></div></div></div>
     </div>
   </main>
 
-  <!-- Toast Notification -->
   <div class="toast" id="toast">Copied to clipboard!</div>
 
   <script>
-    // ===== GLOBALS =====
-    let playerData = null;
-    let objectiveData = null;
-    let selectedSpell = 'Mystic Bolt';
+    let playerData = null, objectiveData = null, selectedSpell = 'Mystic Bolt', selectedAscii = '';
+    const schoolEmojis = { 1: '🔥', 2: '🌊', 3: '🪨', 4: '💨', 5: '⚡', 6: '🌑', 7: '✨', 8: '🔮', 9: '🐱' };
+    const schoolNames = { 1: 'Ember Covenant', 2: 'Tidal Conclave', 3: 'Stone Covenant', 4: 'Zephyr Circle', 5: 'Storm Assembly', 6: 'Umbral Syndicate', 7: 'Radiant Order', 8: 'Arcane Spire', 9: 'WildCat Path' };
+    const schoolColors = { 1: '#FF4500', 2: '#00BFFF', 3: '#8B4513', 4: '#98FB98', 5: '#FFD700', 6: '#9932CC', 7: '#FFFACD', 8: '#00FFFF', 9: '#FF1493' };
 
-    const schoolEmojis = {
-      1: '🔥', 2: '🌊', 3: '🪨', 4: '💨',
-      5: '⚡', 6: '🌑', 7: '✨', 8: '🔮', 9: '🐱'
-    };
+    document.getElementById('hamburger').addEventListener('click', () => { document.getElementById('hamburger').classList.toggle('active'); document.getElementById('mobileMenu').classList.toggle('active'); });
+    document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('player_id'); window.location.href = '/'; });
+    document.getElementById('mobileLogoutBtn').addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('player_id'); window.location.href = '/'; });
 
-    const schoolNames = {
-      1: 'Ember Covenant', 2: 'Tidal Conclave', 3: 'Stone Covenant',
-      4: 'Zephyr Circle', 5: 'Storm Assembly', 6: 'Umbral Syndicate',
-      7: 'Radiant Order', 8: 'Arcane Spire', 9: 'WildCat Path'
-    };
-
-    const schoolColors = {
-      1: '#FF4500', 2: '#00BFFF', 3: '#8B4513', 4: '#98FB98',
-      5: '#FFD700', 6: '#9932CC', 7: '#FFFACD', 8: '#00FFFF', 9: '#FF1493'
-    };
-
-    // ===== LOGOUT =====
-    document.getElementById('logoutBtn').addEventListener('click', (e) => {
-      e.preventDefault();
-      localStorage.removeItem('player_id');
-      window.location.href = '/';
-    });
-
-    // ===== LOAD DATA =====
-    async function loadDashboard() {
-      const playerId = localStorage.getItem('player_id');
-
-      if (!playerId) {
-        window.location.href = '/register.html';
-        return;
-      }
-
-      try {
-        // Load player data
-        const playerRes = await fetch(`/api/players/${playerId}`);
-        playerData = await playerRes.json();
-
-        // Load objective
-        const objectiveRes = await fetch('/api/zones/objective');
-        objectiveData = await objectiveRes.json();
-
-        // Load cast history
-        const castsRes = await fetch(`/api/players/${playerId}/casts`);
-        const casts = await castsRes.json();
-
-        renderPlayer(playerData);
-        renderObjective(objectiveData);
-        renderHistory(casts);
-        updateTweetPreview();
-        startTimer();
-
-      } catch (error) {
-        console.error('Error loading dashboard:', error);
-      }
-    }
-
-    // ===== RENDER FUNCTIONS =====
-    function renderPlayer(player) {
-      const schoolId = player.school_id;
-      const color = schoolColors[schoolId] || '#FFD700';
-
-      document.documentElement.style.setProperty('--school-color', color);
-
-      document.getElementById('playerAvatar').src = player.profile_image || '/assets/images/default-avatar.png';
-      document.getElementById('playerName').textContent = `@${player.twitter_handle}`;
-      document.getElementById('playerSchool').innerHTML = `
-        <span class="school-emoji">${schoolEmojis[schoolId]}</span>
-        <span class="school-name">${schoolNames[schoolId]}</span>
-      `;
-
-      document.getElementById('tweetAvatar').src = player.profile_image || '/assets/images/default-avatar.png';
-      document.getElementById('tweetName').textContent = player.twitter_handle;
-      document.getElementById('tweetHandle').textContent = `@${player.twitter_handle}`;
-
-      document.getElementById('playerPoints').textContent = player.seasonal_points || 0;
-      document.getElementById('manaBadge').textContent = `${player.mana || 0} Mana`;
-
-      // Render mana orbs
-      const manaOrbs = document.getElementById('manaOrbs');
-      manaOrbs.innerHTML = '';
-      for (let i = 0; i < 5; i++) {
-        const orb = document.createElement('div');
-        orb.className = `mana-orb ${i < (player.mana || 0) ? 'filled' : ''}`;
-        manaOrbs.appendChild(orb);
-      }
-    }
-
-    function renderObjective(objective) {
-      if (objective && objective.zone) {
-        document.getElementById('objectiveName').textContent = objective.zone.name || 'The Nexus';
-      } else {
-        document.getElementById('objectiveName').textContent = 'No active objective';
-      }
-    }
-
-    function renderHistory(casts) {
-      const list = document.getElementById('historyList');
-
-      if (!casts || casts.length === 0) {
-        list.innerHTML = '<div style="text-align:center;color:#8899a6;padding:20px;font-family:\'Press Start 2P\',monospace;font-size:0.35rem;">No casts yet. Cast your first spell!</div>';
-        return;
-      }
-
-      list.innerHTML = casts.slice(0, 5).map(cast => `
-        <div class="history-item">
-          <div>
-            <div class="history-spell">${cast.spell_name || 'Spell Cast'}</div>
-            <div class="history-zone">${cast.zone_name || 'Unknown Zone'}</div>
-          </div>
-          <div style="text-align:right">
-            <div class="history-points">+${cast.points_earned || 0}</div>
-            <div class="history-time">${formatTime(cast.created_at)}</div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    function formatTime(timestamp) {
-      if (!timestamp) return '';
-      const date = new Date(timestamp);
-      const now = new Date();
-      const diff = now - date;
-
-      if (diff < 60000) return 'Just now';
-      if (diff < 3600000) return `${Math.floor(diff/60000)}m ago`;
-      if (diff < 86400000) return `${Math.floor(diff/3600000)}h ago`;
-      return date.toLocaleDateString();
-    }
-
-    // ===== TWEET FUNCTIONS =====
-    function updateTweetPreview() {
-      if (!playerData) return;
-
-      const schoolId = playerData.school_id;
-      const emoji = schoolEmojis[schoolId];
-      const schoolName = schoolNames[schoolId];
-      const zoneName = objectiveData?.zone?.name || 'The Nexus';
-
-      const tweetText = `${emoji} ${schoolName} I cast ${selectedSpell} upon ${zoneName}! ✨`;
-
-      document.getElementById('tweetContent').innerHTML = `
-        <span class="school-flair">${emoji} ${schoolName}</span> I cast <strong>${selectedSpell}</strong> upon ${zoneName}! ✨
-      `;
-
-      // Update tweet button link
-      const tweetUrl = objectiveData?.tweet_url || 'https://twitter.com/9LVNetwork';
-      const replyUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&in_reply_to=${objectiveData?.tweet_id || ''}`;
-      document.getElementById('btnTweet').href = replyUrl;
-    }
-
-    function getTweetText() {
-      if (!playerData) return '';
-
-      const schoolId = playerData.school_id;
-      const emoji = schoolEmojis[schoolId];
-      const schoolName = schoolNames[schoolId];
-      const zoneName = objectiveData?.zone?.name || 'The Nexus';
-
-      return `${emoji} ${schoolName} I cast ${selectedSpell} upon ${zoneName}! ✨`;
-    }
-
-    // ===== SPELL SELECTION =====
-    document.getElementById('spellSuggestions').addEventListener('click', (e) => {
-      const chip = e.target.closest('.spell-chip');
-      if (!chip) return;
-
-      const spell = chip.dataset.spell;
-
-      if (spell === 'Custom...') {
-        const custom = prompt('Enter your spell name:');
-        if (custom) {
-          selectedSpell = custom;
-        }
-      } else {
-        selectedSpell = spell;
-      }
-
-      // Update selected state
-      document.querySelectorAll('.spell-chip').forEach(c => c.classList.remove('selected'));
-      chip.classList.add('selected');
-
+    document.getElementById('asciiToggle').addEventListener('click', () => { document.getElementById('asciiTemplates').classList.toggle('active'); });
+    document.getElementById('asciiTemplates').addEventListener('click', (e) => {
+      const btn = e.target.closest('.ascii-btn'); if (!btn) return;
+      const ascii = btn.textContent;
+      if (selectedAscii === ascii) { selectedAscii = ''; btn.style.borderColor = 'rgba(255, 215, 0, 0.2)'; }
+      else { document.querySelectorAll('.ascii-btn').forEach(b => b.style.borderColor = 'rgba(255, 215, 0, 0.2)'); selectedAscii = ascii; btn.style.borderColor = '#FFD700'; }
       updateTweetPreview();
     });
 
-    // ===== COPY BUTTON =====
-    document.getElementById('btnCopy').addEventListener('click', async () => {
-      const text = getTweetText();
-
-      try {
-        await navigator.clipboard.writeText(text);
-
-        const btn = document.getElementById('btnCopy');
-        btn.classList.add('copied');
-        btn.innerHTML = '<span>✓</span> Copied!';
-
-        showToast('Copied to clipboard!');
-
-        setTimeout(() => {
-          btn.classList.remove('copied');
-          btn.innerHTML = '<span>📋</span> Copy';
-        }, 2000);
-      } catch (err) {
-        // Fallback for older browsers
-        const textarea = document.createElement('textarea');
-        textarea.value = text;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-        showToast('Copied!');
-      }
+    document.getElementById('spellSuggestions').addEventListener('click', (e) => {
+      const chip = e.target.closest('.spell-chip'); if (!chip) return;
+      const spell = chip.dataset.spell;
+      if (spell === 'Custom...') { const custom = prompt('Enter your spell name:'); if (custom) selectedSpell = custom; } else { selectedSpell = spell; }
+      document.querySelectorAll('.spell-chip').forEach(c => c.classList.remove('selected')); chip.classList.add('selected');
+      updateTweetPreview();
     });
 
-    // ===== TOAST =====
-    function showToast(message) {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.classList.add('show');
+    document.getElementById('btnCopy').addEventListener('click', async () => {
+      const text = getTweetText();
+      try { await navigator.clipboard.writeText(text); } catch (err) { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
+      const btn = document.getElementById('btnCopy'); btn.classList.add('copied'); btn.innerHTML = '<span>✓</span> Copied!'; showToast('Copied to clipboard!');
+      setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '<span>📋</span> Copy'; }, 2000);
+    });
 
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 2000);
+    function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
+    function getTweetText() { if (!playerData) return ''; const e = schoolEmojis[playerData.school_id], n = schoolNames[playerData.school_id], z = objectiveData?.zone?.name || 'The Nexus'; let t = `${e} ${n} I cast ${selectedSpell} upon ${z}! ✨`; if (selectedAscii) t += '\n\n' + selectedAscii; return t; }
+    function updateTweetPreview() { if (!playerData) return; const e = schoolEmojis[playerData.school_id], n = schoolNames[playerData.school_id], z = objectiveData?.zone?.name || 'The Nexus'; let c = `<span class="school-flair">${e} ${n}</span> I cast <strong>${selectedSpell}</strong> upon ${z}! ✨`; if (selectedAscii) c += '\n\n' + selectedAscii; document.getElementById('tweetContent').innerHTML = c; document.getElementById('btnTweet').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(getTweetText())}&in_reply_to=${objectiveData?.tweet_id || ''}`; }
+
+    async function loadDashboard() {
+      const pid = localStorage.getItem('player_id'); if (!pid) { window.location.href = '/register.html'; return; }
+      try {
+        playerData = await (await fetch(`/api/players/${pid}`)).json();
+        objectiveData = await (await fetch('/api/zones/objective')).json();
+        const casts = await (await fetch(`/api/players/${pid}/casts`)).json();
+        renderPlayer(playerData); renderObjective(objectiveData); renderHistory(casts); updateTweetPreview(); startTimer();
+      } catch (e) { console.error('Error:', e); }
     }
 
-    // ===== TIMER =====
-    function startTimer() {
-      function updateTimer() {
-        const now = new Date();
-        const endOfDay = new Date(now);
-        endOfDay.setUTCHours(23, 0, 0, 0);
-
-        if (now > endOfDay) {
-          endOfDay.setDate(endOfDay.getDate() + 1);
-        }
-
-        const diff = endOfDay - now;
-        const hours = Math.floor(diff / 3600000);
-        const minutes = Math.floor((diff % 3600000) / 60000);
-        const seconds = Math.floor((diff % 60000) / 1000);
-
-        document.getElementById('objectiveTimer').textContent = 
-          `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      }
-
-      updateTimer();
-      setInterval(updateTimer, 1000);
+    function renderPlayer(p) {
+      const sid = p.school_id, c = schoolColors[sid] || '#FFD700';
+      document.documentElement.style.setProperty('--school-color', c);
+      document.getElementById('playerAvatar').src = p.profile_image || '/assets/images/default-avatar.png';
+      document.getElementById('playerName').textContent = `@${p.twitter_handle}`;
+      document.getElementById('playerSchool').innerHTML = `<span class="school-emoji">${schoolEmojis[sid]}</span><span class="school-name">${schoolNames[sid]}</span>`;
+      document.getElementById('duelRecord').innerHTML = `Duels: <span class="wins">${p.duel_wins||0}W</span> / <span class="losses">${p.duel_losses||0}L</span>`;
+      document.getElementById('tweetAvatar').src = p.profile_image || '/assets/images/default-avatar.png';
+      document.getElementById('tweetName').textContent = p.twitter_handle;
+      document.getElementById('tweetHandle').textContent = `@${p.twitter_handle}`;
+      document.getElementById('playerPoints').textContent = p.seasonal_points || 0;
+      document.getElementById('manaBadge').textContent = `${p.mana||0} Mana`;
+      const mo = document.getElementById('manaOrbs'); mo.innerHTML = ''; for (let i=0;i<5;i++) { const o = document.createElement('div'); o.className = `mana-orb ${i<(p.mana||0)?'filled':''}`; mo.appendChild(o); }
+      const lives = p.lives !== undefined ? p.lives : 3, ld = document.getElementById('livesDisplay'); ld.innerHTML = ''; for (let i=0;i<3;i++) { const h = document.createElement('div'); h.className = `life-heart ${i<lives?'':'empty'}`; h.textContent = '❤️'; ld.appendChild(h); }
     }
 
-    // ===== INIT =====
+    function renderObjective(o) { document.getElementById('objectiveName').textContent = o?.zone?.name || 'No active bounty'; }
+    function renderHistory(casts) { const l = document.getElementById('historyList'); if (!casts?.length) { l.innerHTML = '<div style="text-align:center;color:#8899a6;padding:20px;font-family:\'Press Start 2P\',monospace;font-size:0.3rem;">No casts yet!</div>'; return; } l.innerHTML = casts.slice(0,5).map(c => `<div class="history-item"><div><div class="history-spell">${c.spell_name||'Spell'}</div><div class="history-zone">${c.zone_name||'Zone'}</div></div><div style="text-align:right"><div class="history-points">+${c.points_earned||0}</div><div class="history-time">${formatTime(c.created_at)}</div></div></div>`).join(''); }
+    function formatTime(ts) { if (!ts) return ''; const d = new Date(ts), diff = Date.now() - d; if (diff < 60000) return 'Just now'; if (diff < 3600000) return `${Math.floor(diff/60000)}m ago`; if (diff < 86400000) return `${Math.floor(diff/3600000)}h ago`; return d.toLocaleDateString(); }
+    function startTimer() { const update = () => { const n = new Date(), e = new Date(n); e.setUTCHours(23,0,0,0); if (n>e) e.setDate(e.getDate()+1); const diff = e-n, h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000); document.getElementById('objectiveTimer').textContent = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`; }; update(); setInterval(update, 1000); }
+
     document.addEventListener('DOMContentLoaded', loadDashboard);
   </script>
 </body>
