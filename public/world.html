@@ -1244,6 +1244,37 @@
       });
     }
 
+    function renderBounty() {
+      const section = document.getElementById('bountySection');
+
+      // Find the current objective zone
+      const objective = zones.find(z => z.is_current_objective);
+
+      if (!objective || !objective.objective_tweet_id) {
+        section.innerHTML = '<div class="no-bounty">No active bounty right now. Check @9LVNetwork for announcements!</div>';
+        return;
+      }
+
+      const tweetUrl = `https://twitter.com/9LVNetwork/status/${objective.objective_tweet_id}`;
+      const zoneImage = zoneImages[objective.id] || '/assets/images/environments/the-breach.png';
+
+      section.innerHTML = `
+        <div class="bounty-banner" style="background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.85)), url('${zoneImage}')">
+          <div class="bounty-info">
+            <div class="bounty-icon">⚔️</div>
+            <div class="bounty-details">
+              <h3>TODAY'S BOUNTY</h3>
+              <div class="bounty-zone">${objective.name}</div>
+              <div class="bounty-timer">Cast spells to claim territory</div>
+            </div>
+          </div>
+          <a href="${tweetUrl}" target="_blank" class="bounty-btn">
+            🐦 Join Battle on X
+          </a>
+        </div>
+      `;
+    }
+
     function renderZones() {
       const grid = document.getElementById('zonesGrid');
 
@@ -1540,6 +1571,7 @@
 
         // Render everything
         renderPlayerStatus();
+        renderBounty();
         renderCrystalTower();
         renderZones();
         renderActivity();
