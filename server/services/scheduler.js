@@ -372,3 +372,11 @@ module.exports = {
   initializeScheduledJobs,
   stopAllJobs
 };
+
+const { resetAllLives, expirePendingDuels } = require('./livesReset');
+
+// At midnight UTC - reset lives
+cron.schedule('0 0 * * *', async () => {
+  await resetAllLives();
+  await expirePendingDuels();
+});
