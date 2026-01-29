@@ -74,6 +74,9 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Redirect old map.html to world.html
+app.get('/map.html', (req, res) => res.redirect('/world.html'));
+
 // Start scheduler for automated tasks
 try {
   const scheduler = require('./services/scheduler');
