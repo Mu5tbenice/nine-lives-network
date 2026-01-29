@@ -356,6 +356,26 @@
       justify-content: space-between;
       align-items: flex-start;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      min-height: 80px;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .zone-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.7) 100%);
+      border-radius: 12px 12px 0 0;
+    }
+
+    .zone-header > * {
+      position: relative;
+      z-index: 1;
     }
 
     .zone-name {
@@ -1046,6 +1066,63 @@
       9: { name: 'WildCat Path', emoji: '🐱', color: '#FF1493' }
     };
 
+    // ===== ZONE IMAGES =====
+    const zoneImages = {
+      // School Home Zones (1-9)
+      1: '/assets/images/environments/ashen-approach.jpg',           // Ember Peaks
+      2: '/assets/images/environments/the-drowning-spiral.png',      // Tidal Depths
+      3: '/assets/images/environments/crimson-overlook.jpg',         // Stone Hollows
+      4: '/assets/images/environments/the-floating-citadel.png',     // Zephyr Heights
+      5: '/assets/images/environments/violet-storm.png',             // Storm Citadel
+      6: '/assets/images/environments/the-lone-spire.png',           // Umbral Void
+      7: '/assets/images/environments/azure-expanse.png',            // Radiant Sanctum
+      8: '/assets/images/environments/shattered-stream.png',         // Arcane Nexus
+      9: '/assets/images/environments/the-quiet-woods.png',          // WildCat Wilds
+
+      // Neutral Zones (10-50)
+      10: '/assets/images/environments/the-twin-spires.png',         // Crystal Crossroads
+      11: '/assets/images/environments/the-veiled-cascade.png',      // Mystic Falls
+      12: '/assets/images/environments/the-sunken-archives.png',     // Ancient Ruins
+      13: '/assets/images/environments/the-whispering-woods.png',    // Twilight Grove
+      14: '/assets/images/environments/the-fallen-wyrm.jpg',         // Dragon's Rest
+      15: '/assets/images/environments/the-eternal-wastes.png',      // Frozen Peaks
+      16: '/assets/images/environments/ashen-approach.jpg',          // Scorched Plains
+      17: '/assets/images/environments/violet-storm.png',            // Thunder Spire
+      18: '/assets/images/environments/the-breach.png',              // Chaos Rift
+      19: '/assets/images/environments/the-gathering-grove.png',     // Ancient Grove
+      20: '/assets/images/environments/the-grassy-knoll.png',        // Zephyr Meadows
+      21: '/assets/images/environments/the-silent-valley.png',       // Windswept Field
+      22: '/assets/images/environments/the-grassy-knoll.png',        // Grassy Knoll
+      23: '/assets/images/environments/the-eternal-wastes.png',      // Arid Expanse
+      24: '/assets/images/environments/crimson-overlook.jpg',        // Red Canyons
+      25: '/assets/images/environments/the-drowning-spiral.png',     // Coral Reef
+      26: '/assets/images/environments/the-drowning-spiral.png',     // Maelstrom Edge
+      27: '/assets/images/environments/the-drowning-spiral.png',     // Abyssal Whirl
+      28: '/assets/images/environments/the-veiled-cascade.png',      // Misty Falls
+      29: '/assets/images/environments/the-whispering-woods.png',    // Verdant Woods
+      30: '/assets/images/environments/shattered-stream.png',        // Crystal Oasis
+      31: '/assets/images/environments/the-eternal-wastes.png',      // Sand Dunes
+      32: '/assets/images/environments/the-divide.png',              // Monolith Valley
+      33: '/assets/images/environments/the-watchers-keep.png',       // Arcane Citadel
+      34: '/assets/images/environments/shattered-stream.png',        // Crystal Gardens
+      35: '/assets/images/environments/the-memorial-arch.png',       // Rune Fields
+      36: '/assets/images/environments/the-twin-spires.png',         // The Nexus
+      37: '/assets/images/environments/violet-storm.png',            // Power Conduit
+      38: '/assets/images/environments/the-eternal-wastes.png',      // Northern Isle
+      39: '/assets/images/environments/the-chambers-keep.png',       // Stone Hold
+      40: '/assets/images/environments/the-sunken-archives.png',     // Forgotten Tombs
+      41: '/assets/images/environments/the-gathering-grove.png',     // Moss Temple
+      42: '/assets/images/environments/emerald-depths.png',          // Verdant Isle
+      43: '/assets/images/environments/the-drowning-spiral.png',     // Southern Bay
+      44: '/assets/images/environments/the-sunken-archives.png',     // Shipwreck Cove
+      45: '/assets/images/environments/ashen-approach.jpg',          // Ashen Shore
+      46: '/assets/images/environments/the-quiet-woods.png',         // WildCat Den
+      47: '/assets/images/environments/the-breach.png',              // Void Tear
+      48: '/assets/images/environments/ashen-approach.jpg',          // Inferno Isle
+      49: '/assets/images/environments/the-eastern-exchange.png',    // Trade Route
+      50: '/assets/images/environments/the-great-divide.png',        // Border March
+    };
+
     // ===== STATE =====
     let player = null;
     let zones = [];
@@ -1194,9 +1271,12 @@
         if (isYours) cardClass += ' controlled-by-you';
         if (isContested) cardClass += ' contested';
 
+        // Get zone image
+        const zoneImage = zoneImages[zone.id] || '/assets/images/environments/the-breach.png';
+
         return `
           <div class="${cardClass}" data-zone-id="${zone.id}">
-            <div class="zone-header">
+            <div class="zone-header" style="background-image: url('${zoneImage}')">
               <div>
                 <div class="zone-name">${zone.name}</div>
                 <div class="zone-controller">
