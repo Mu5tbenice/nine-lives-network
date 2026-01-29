@@ -180,11 +180,6 @@
       border-radius: 4px;
     }
 
-    /* ===== SPACER - PUSHES BUTTONS DOWN ===== */
-    .model-spacer {
-      flex: 1;
-    }
-
     /* ===== PLAY NOW BUTTON ===== */
     .play-now-btn {
       display: inline-flex;
@@ -212,45 +207,6 @@
     .play-now-btn:active {
       transform: translateY(3px);
       box-shadow: 0 2px 0 #996600;
-    }
-
-    /* ===== NAV BUTTONS ===== */
-    .nav-buttons {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
-      margin-bottom: 15px;
-      width: 100%;
-      max-width: 360px;
-      position: relative;
-      z-index: 20;
-    }
-
-    .nav-btn {
-      flex: 1;
-      min-width: 90px;
-      padding: 12px 8px;
-      min-height: 48px;
-      background: rgba(10, 22, 40, 0.9);
-      border: 2px solid var(--accent-gold, #FFD700);
-      color: var(--accent-gold, #FFD700);
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.3rem;
-      text-decoration: none;
-      text-transform: uppercase;
-      text-align: center;
-      cursor: pointer;
-      border-radius: 4px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-    }
-
-    .nav-btn .icon {
-      font-size: 1.1rem;
     }
 
     /* ===== FOOTER ===== */
@@ -295,18 +251,6 @@
         padding: 18px 50px;
       }
 
-      .nav-buttons {
-        max-width: 500px;
-        gap: 15px;
-      }
-
-      .nav-btn {
-        font-size: 0.4rem;
-        flex-direction: row;
-        gap: 8px;
-        padding: 14px 20px;
-      }
-
       .footer-links a {
         font-size: 0.45rem;
       }
@@ -327,10 +271,6 @@
         box-shadow: 0 8px 0 #996600, 0 0 40px rgba(255, 215, 0, 0.6);
       }
 
-      .nav-btn:hover {
-        background: rgba(255, 215, 0, 0.15);
-      }
-
       .how-to-play-btn:hover {
         background: rgba(255, 215, 0, 0.2);
       }
@@ -340,11 +280,6 @@
     @media (max-width: 380px) {
       .game-title {
         font-size: 0.9rem;
-      }
-
-      .nav-btn {
-        font-size: 0.25rem;
-        min-width: 80px;
       }
     }
   </style>
@@ -409,30 +344,26 @@
     let windowHalfX = window.innerWidth / 2;
     let windowHalfY = window.innerHeight / 2;
 
-    // ========================================
-    // 🔒 MODEL SETTINGS - FROM WORKING VERSION
-    // Camera close, model positioned to show face in center
-    // ========================================
+    // TWEAK THIS VALUE TO MOVE FACE:
+    // Higher cameraY = face appears LOWER on screen
+    // Lower cameraY = face appears HIGHER on screen
     const MODEL_SETTINGS = {
-      cameraZ: 7,         // Close to model (zoomed in)
-      cameraY: 3,         // Camera UP to see face
-      lookAtY: 1,         // Look at face level
-      modelY: -3.2,       // Model position
-      modelScale: 1       // Model scale
+      cameraZ: 7,
+      cameraY: 2.5,    // <-- CHANGE THIS: was 1.5, try 2.5, 3, 3.5 etc
+      lookAtY: 0.5,
+      modelY: -3.2,
+      modelScale: 1
     };
-    // ========================================
 
     function init3D() {
       const container = document.getElementById('canvas-container');
 
       scene = new THREE.Scene();
 
-      // Camera
       camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
       camera.position.set(0, MODEL_SETTINGS.cameraY, MODEL_SETTINGS.cameraZ);
       camera.lookAt(0, MODEL_SETTINGS.lookAtY, 0);
 
-      // Renderer
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -440,7 +371,6 @@
       renderer.outputEncoding = THREE.sRGBEncoding;
       container.appendChild(renderer.domElement);
 
-      // Lighting
       const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
       scene.add(ambientLight);
 
@@ -460,17 +390,14 @@
       cyanLight.position.set(0, 5, -4);
       scene.add(cyanLight);
 
-      // Load Model
       const loader = new THREE.GLTFLoader();
       loader.load(
         '/assets/models/wizard-cat.glb',
         (gltf) => {
           wizardCat = gltf.scene;
-
           wizardCat.scale.set(MODEL_SETTINGS.modelScale, MODEL_SETTINGS.modelScale, MODEL_SETTINGS.modelScale);
           wizardCat.position.set(0, MODEL_SETTINGS.modelY, 0);
 
-          // Hide backdrop planes
           wizardCat.traverse((child) => {
             if (child.name === 'Backdrop' || child.name === 'Plane' || child.name === 'Plane.002') {
               child.visible = false;
@@ -478,19 +405,16 @@
           });
 
           scene.add(wizardCat);
-          console.log('🐱 Model loaded:', MODEL_SETTINGS);
         },
         undefined,
         (error) => console.log('Model load error:', error)
       );
 
-      // Mouse tracking
       document.addEventListener('mousemove', (e) => {
         mouseX = (e.clientX - windowHalfX) / windowHalfX;
         mouseY = (e.clientY - windowHalfY) / windowHalfY;
       });
 
-      // Touch tracking
       document.addEventListener('touchmove', (e) => {
         if (e.touches.length > 0) {
           mouseX = (e.touches[0].clientX - windowHalfX) / windowHalfX;
@@ -498,7 +422,6 @@
         }
       }, { passive: true });
 
-      // Resize
       window.addEventListener('resize', () => {
         windowHalfX = window.innerWidth / 2;
         windowHalfY = window.innerHeight / 2;
@@ -514,26 +437,22 @@
       requestAnimationFrame(animate);
 
       if (wizardCat) {
-        // Head tracking (Mario 64 style)
         const targetRotationY = mouseX * 0.5;
         const targetRotationX = mouseY * 0.2;
 
         wizardCat.rotation.y += (targetRotationY - wizardCat.rotation.y) * 0.08;
         wizardCat.rotation.x += (targetRotationX - wizardCat.rotation.x) * 0.08;
 
-        // Subtle float animation
         wizardCat.position.y = MODEL_SETTINGS.modelY + Math.sin(Date.now() * 0.001) * 0.05;
       }
 
       renderer.render(scene, camera);
     }
 
-    // ===== INIT =====
     document.addEventListener('DOMContentLoaded', () => {
       createParticles();
       init3D();
 
-      // Check if logged in
       const playerId = localStorage.getItem('player_id');
       if (playerId) {
         const ctaButton = document.getElementById('ctaButton');
