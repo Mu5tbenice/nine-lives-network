@@ -263,7 +263,17 @@
     function updateTweetPreview() { if (!playerData) return; const e = schoolEmojis[playerData.school_id], n = schoolNames[playerData.school_id], z = objectiveData?.zone?.name || 'The Nexus'; let c = `<span class="school-flair">${e} ${n}</span> I cast <strong>${selectedSpell}</strong> upon ${z}! ✨`; if (selectedAscii) c += '\n\n' + selectedAscii; document.getElementById('tweetContent').innerHTML = c; document.getElementById('btnTweet').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(getTweetText())}&in_reply_to=${objectiveData?.tweet_id || ''}`; }
 
     async function loadDashboard() {
-      const pid = localStorage.getItem('player_id'); if (!pid) { window.location.href = '/register.html'; return; }
+      // Check URL for player_id first (from auth redirect)
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlPlayerId = urlParams.get('player_id');
+      if (urlPlayerId) {
+        localStorage.setItem('player_id', urlPlayerId);
+        window.history.replaceState({}, '', '/dashboard.html');
+      }
+
+      const pid = localStorage.getItem('player_id'); 
+      if (!pid) { window.location.href = '/register.html'; return; }
+
       try {
         playerData = await (await fetch(`/api/players/${pid}`)).json();
         objectiveData = await (await fetch('/api/zones/objective')).json();
