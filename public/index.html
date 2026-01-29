@@ -44,18 +44,19 @@
       pointer-events: none;
     }
 
-    /* ===== BOTTOM FADE ===== */
+    /* ===== BOTTOM FADE - 50% height ===== */
     .bottom-fade {
       position: fixed;
       bottom: 0;
       left: 0;
       width: 100%;
-      height: 45%;
+      height: 50%;
       background: linear-gradient(
         to bottom,
         transparent 0%,
-        rgba(10, 22, 40, 0.7) 30%,
-        rgba(10, 22, 40, 1) 60%,
+        rgba(10, 22, 40, 0.5) 20%,
+        rgba(10, 22, 40, 0.9) 40%,
+        rgba(10, 22, 40, 1) 55%,
         rgba(10, 22, 40, 1) 100%
       );
       z-index: 2;
@@ -293,7 +294,7 @@
       }
 
       .bottom-fade {
-        height: 40%;
+        height: 45%;
       }
     }
 
@@ -404,13 +405,15 @@
     let windowHalfY = window.innerHeight / 2;
 
     // ========================================
-    // 🔒 LOCKED MODEL SETTINGS - DO NOT CHANGE!
+    // 🔒 LOCKED MODEL SETTINGS - WORKING VERSION
+    // From conversation: "camera closer (z: 14 to 10)"
+    // and "Model position adjusted: y: -3 → y: -2.5"
     // ========================================
     const MODEL_SETTINGS = {
-      cameraZ: 14,        // Distance from model (higher = further/smaller)
+      cameraZ: 10,        // Zoomed in (was 14)
       cameraY: 2,         // Camera height
       lookAtY: 1,         // Where camera looks
-      modelY: -4.5,       // Model vertical position (lower = model moves down)
+      modelY: -2.5,       // Model position (was -4.5, then -3, now -2.5)
       modelScale: 1       // Model scale
     };
     // ========================================
@@ -472,7 +475,7 @@
           });
 
           scene.add(wizardCat);
-          console.log('🐱 Model loaded with LOCKED settings:', MODEL_SETTINGS);
+          console.log('🐱 Model loaded with settings:', MODEL_SETTINGS);
         },
         undefined,
         (error) => console.log('Model load error:', error)
