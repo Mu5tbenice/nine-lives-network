@@ -1,5 +1,6 @@
 const { TwitterApi } = require('twitter-api-v2');
 const { createClient } = require('@supabase/supabase-js');
+const Anthropic = require('@anthropic-ai/sdk');
 const supabase = require('../config/supabase');
 
 // Admin client for writes (using service role to bypass RLS)
@@ -18,20 +19,39 @@ function getNineLivesClient() {
   });
 }
 
+// Create Anthropic client for flavor text
+function getAnthropicClient() {
+  return new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+}
+
 // School data for messages
 const schools = {
-  1: { name: 'Ember Covenant', emoji: '🔥' },
-  2: { name: 'Tidal Conclave', emoji: '🌊' },
-  3: { name: 'Stone Covenant', emoji: '🪨' },
-  4: { name: 'Zephyr Circle', emoji: '💨' },
-  5: { name: 'Storm Assembly', emoji: '⚡' },
-  6: { name: 'Umbral Syndicate', emoji: '🌑' },
-  7: { name: 'Radiant Order', emoji: '✨' },
-  8: { name: 'Arcane Spire', emoji: '🔮' },
-  9: { name: 'WildCat Path', emoji: '🐱' },
+  1: { name: 'Ember Covenant', emoji: '🔥', element: 'fire' },
+  2: { name: 'Tidal Conclave', emoji: '🌊', element: 'water' },
+  3: { name: 'Stone Covenant', emoji: '🪨', element: 'earth' },
+  4: { name: 'Zephyr Circle', emoji: '💨', element: 'air' },
+  5: { name: 'Storm Assembly', emoji: '⚡', element: 'lightning' },
+  6: { name: 'Umbral Syndicate', emoji: '🌑', element: 'shadow' },
+  7: { name: 'Radiant Order', emoji: '✨', element: 'light' },
+  8: { name: 'Arcane Spire', emoji: '🔮', element: 'arcane' },
+  9: { name: 'WildCat Path', emoji: '🐱', element: 'chaos' },
 };
 
-// First Blood bonuses - first 5 from each school get bonus points
+// Zone lore for AI context
+const zoneLore = {
+  'Crystal Crossroads': 'A nexus of ley lines where magical energy converges. Ancient crystals hum with power.',
+  'Mystic Falls': 'Waterfalls that flow upward, defying gravity. The mist carries whispered prophecies.',
+  'Ancient Ruins': 'Remnants of a civilization that mastered magic before the schools existed. Secrets lie buried.',
+  'Twilight Grove': 'A forest where day and night exist simultaneously. Time moves strangely here.',
+  'Dragons Rest': 'Where the last dragon fell. Its bones still radiate magical energy.',
+  'The Nexus': 'The heart of Avaloris. All magical paths lead here eventually.',
+  'Shadowmere': 'A realm of perpetual dusk. Light spells flicker and fade.',
+  'Stormspire': 'A mountain peak where lightning strikes constantly. Only the bold venture here.',
+};
+
+// First Blood bonuses
 const firstBloodBonuses = {
   1: { points: 25, title: '🩸 First Blood!' },
   2: { points: 15, title: '⚔️ Swift Strike!' },
@@ -41,17 +61,53 @@ const firstBloodBonuses = {
 };
 
 /**
+ * Generate AI flavor text for objectives
+ */
+async function generateFlavorText(zone, type = 'objective') {
+  try {
+    const client = getAnthropicClient();
+    const lore = zoneLore[zone.name] || 'A contested territory in the realm of Avaloris.';
+
+    let prompt = '';
+
+    if (type === 'objective') {
+      prompt = `You are writing a brief, dramatic announcement for a fantasy wizard game. The zone "${zone.name}" is today's battle objective.
+
+Zone lore: ${lore}
+
+Write 1-2 sentences of dramatic fantasy flavor text announcing this zone is under contest. Be evocative but concise. No hashtags. No emojis. Channel the tone of a war correspondent reporting from a magical battlefield.
+
+Examples of good tone:
+- "The ley lines at Crystal Crossroads surge with unstable energy. The schools converge."
+- "Dawn breaks over the Ancient Ruins. Today, history will be written in spell-fire."
+- "The mists of Mystic Falls part to reveal armies of wizards. Battle is inevitable."`;
+    } else if (type === 'midday') {
+      prompt = `Write a brief 1-sentence dramatic update about an ongoing magical battle at "${zone.name}". Something like a war correspondent's field report. No hashtags. No emojis. Tense and immediate.`;
+    } else if (type === 'final') {
+      prompt = `Write a brief 1-sentence urgent announcement that the battle for "${zone.name}" ends in 4 hours. Dramatic, tense, like a final call to arms. No hashtags. No emojis.`;
+    }
+
+    const message = await client.messages.create({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 100,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    return message.content[0].text.trim();
+  } catch (error) {
+    console.error('AI flavor text error:', error.message);
+    return null;
+  }
+}
+
+/**
  * Check and award First Blood bonus
- * Returns position (1-5) and bonus points, or null if not eligible
  */
 async function checkFirstBlood(playerId, schoolId, zoneId) {
   try {
-    // Get today's start time
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
-    // Count how many players from this school have already cast today on this zone
-    // We need to join with players to get school_id
     const { data: todaysCasts } = await supabase
       .from('casts')
       .select('id, player_id, created_at')
@@ -63,41 +119,25 @@ async function checkFirstBlood(playerId, schoolId, zoneId) {
       return { position: 1, points: 25, title: '🩸 First Blood!' };
     }
 
-    // Get player IDs and fetch their schools
     const playerIds = todaysCasts.map(c => c.player_id);
-
-    // Get schools for all players who cast today
     const { data: players } = await supabase
       .from('players')
       .select('id, school_id')
       .in('id', playerIds);
 
-    // Count how many from THIS school have cast
     const schoolCasts = todaysCasts.filter(cast => {
       const player = players?.find(p => p.id === cast.player_id);
       return player?.school_id === schoolId;
     });
 
-    // Check if this player already cast today (no double bonus)
     const alreadyCast = schoolCasts.some(c => c.player_id === playerId);
-    if (alreadyCast) {
-      return null;
-    }
+    if (alreadyCast) return null;
 
-    // Position is count + 1 (this will be their position)
     const position = schoolCasts.length + 1;
-
-    // Only positions 1-5 get bonuses
-    if (position > 5) {
-      return null;
-    }
+    if (position > 5) return null;
 
     const bonus = firstBloodBonuses[position];
-    return {
-      position,
-      points: bonus.points,
-      title: bonus.title
-    };
+    return { position, points: bonus.points, title: bonus.title };
 
   } catch (error) {
     console.error('Error checking first blood:', error);
@@ -106,13 +146,12 @@ async function checkFirstBlood(playerId, schoolId, zoneId) {
 }
 
 /**
- * Post the daily objective tweet
+ * Post the daily objective tweet - WITH AI FLAVOR TEXT
  */
 async function postDailyObjective() {
   try {
     const client = getNineLivesClient();
 
-    // Get today's objective zone
     const { data: zone } = await supabase
       .from('zones')
       .select('*')
@@ -124,21 +163,23 @@ async function postDailyObjective() {
       return null;
     }
 
-    const tweet = `⚔️ TODAY'S OBJECTIVE: ${zone.name.toUpperCase()}
+    // Generate AI flavor text
+    const flavorText = await generateFlavorText(zone, 'objective');
 
-Reply with your spell to claim territory for your school!
+    // Build tweet WITHOUT hashtags
+    let tweet = `⚔️ TODAY'S BOUNTY: ${zone.name.toUpperCase()}\n\n`;
 
-🩸 First 5 from each school get bonus points!
-🎯 Zone bonus: ${zone.bonus_effect || 'Standard points'}
-⏰ Ends at midnight UTC
+    if (flavorText) {
+      tweet += `${flavorText}\n\n`;
+    }
 
-#NineLivesNetwork #9LN`;
+    tweet += `Reply to claim territory for your school.\n`;
+    tweet += `🩸 First 5 from each school get bonus points\n`;
+    tweet += `⏰ Ends at midnight UTC`;
 
     const { data } = await client.v2.tweet(tweet);
-
     console.log('Posted daily objective:', data.id);
 
-    // Store the tweet ID for tracking replies
     await supabaseAdmin
       .from('zones')
       .update({ 
@@ -156,13 +197,12 @@ Reply with your spell to claim territory for your school!
 }
 
 /**
- * Post midday standings update (12:00 UTC)
+ * Post midday standings update - WITH AI FLAVOR
  */
 async function postMiddayStandings() {
   try {
     const client = getNineLivesClient();
 
-    // Get today's objective zone
     const { data: zone } = await supabase
       .from('zones')
       .select('*')
@@ -171,7 +211,6 @@ async function postMiddayStandings() {
 
     if (!zone) return null;
 
-    // Get zone control data
     const { data: control } = await supabase
       .from('zone_control')
       .select('school_id, control_percentage')
@@ -179,7 +218,6 @@ async function postMiddayStandings() {
       .order('control_percentage', { ascending: false })
       .limit(5);
 
-    // Get cast count for today
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
@@ -189,21 +227,27 @@ async function postMiddayStandings() {
       .eq('zone_id', zone.id)
       .gte('created_at', today.toISOString());
 
-    let tweet = `📊 MIDDAY STANDINGS: ${zone.name}\n\n`;
+    // Generate AI flavor
+    const flavorText = await generateFlavorText(zone, 'midday');
+
+    let tweet = `📊 MIDDAY REPORT: ${zone.name}\n\n`;
+
+    if (flavorText) {
+      tweet += `${flavorText}\n\n`;
+    }
 
     if (control && control.length > 0) {
       control.slice(0, 3).forEach((c, i) => {
         const school = schools[c.school_id];
         const bar = getProgressBar(c.control_percentage);
-        tweet += `${i + 1}. ${school.emoji} ${school.name}\n   ${bar} ${Math.round(c.control_percentage)}%\n`;
+        tweet += `${i + 1}. ${school.emoji} ${school.name.split(' ')[0]}: ${Math.round(c.control_percentage)}%\n`;
       });
     } else {
-      tweet += `No spells cast yet! Be the first! 🎯\n`;
+      tweet += `No spells cast yet. Be the first.\n`;
     }
 
-    tweet += `\n⚡ ${castCount || 0} spells cast so far`;
+    tweet += `\n⚡ ${castCount || 0} spells cast`;
     tweet += `\n⏰ 12 hours remaining`;
-    tweet += `\n\n#NineLivesNetwork`;
 
     const { data } = await client.v2.tweet(tweet);
     console.log('Posted midday standings:', data.id);
@@ -217,13 +261,12 @@ async function postMiddayStandings() {
 }
 
 /**
- * Post afternoon reminder (16:00 UTC)
+ * Post afternoon reminder
  */
 async function postAfternoonReminder() {
   try {
     const client = getNineLivesClient();
 
-    // Get today's objective zone
     const { data: zone } = await supabase
       .from('zones')
       .select('*')
@@ -232,7 +275,6 @@ async function postAfternoonReminder() {
 
     if (!zone) return null;
 
-    // Get leading school
     const { data: control } = await supabase
       .from('zone_control')
       .select('school_id, control_percentage')
@@ -240,23 +282,16 @@ async function postAfternoonReminder() {
       .order('control_percentage', { ascending: false })
       .limit(1);
 
-    const templates = [
-      `⏰ 8 HOURS LEFT!\n\nThe battle for ${zone.name} continues...\n\n`,
-      `🔔 AFTERNOON CHECK-IN\n\n${zone.name} is still up for grabs!\n\n`,
-      `⚡ TIME CHECK: 8 hours remaining!\n\nWho will claim ${zone.name}?\n\n`,
-    ];
-
-    let tweet = templates[Math.floor(Math.random() * templates.length)];
+    let tweet = `⏰ 8 HOURS REMAIN\n\n`;
+    tweet += `The battle for ${zone.name} continues.\n\n`;
 
     if (control && control.length > 0) {
       const leader = schools[control[0].school_id];
-      tweet += `${leader.emoji} ${leader.name} leads with ${Math.round(control[0].control_percentage)}%\n\n`;
-      tweet += `Can your school catch up? Cast now! 🎯`;
+      tweet += `${leader.emoji} ${leader.name} leads at ${Math.round(control[0].control_percentage)}%\n\n`;
+      tweet += `Will your school answer the call?`;
     } else {
-      tweet += `No leader yet - every spell counts! 🎯`;
+      tweet += `No clear leader. Every spell matters.`;
     }
-
-    tweet += `\n\n#NineLivesNetwork`;
 
     const { data } = await client.v2.tweet(tweet);
     console.log('Posted afternoon reminder:', data.id);
@@ -270,13 +305,12 @@ async function postAfternoonReminder() {
 }
 
 /**
- * Post final push reminder (20:00 UTC)
+ * Post final push reminder - WITH AI FLAVOR
  */
 async function postFinalPush() {
   try {
     const client = getNineLivesClient();
 
-    // Get today's objective zone
     const { data: zone } = await supabase
       .from('zones')
       .select('*')
@@ -285,7 +319,6 @@ async function postFinalPush() {
 
     if (!zone) return null;
 
-    // Get zone control data
     const { data: control } = await supabase
       .from('zone_control')
       .select('school_id, control_percentage')
@@ -293,29 +326,29 @@ async function postFinalPush() {
       .order('control_percentage', { ascending: false })
       .limit(3);
 
-    let tweet = `🚨 FINAL PUSH: 4 HOURS LEFT!\n\n`;
-    tweet += `${zone.name} battle ends soon!\n\n`;
+    // Generate AI flavor
+    const flavorText = await generateFlavorText(zone, 'final');
+
+    let tweet = `🚨 FINAL HOURS: ${zone.name}\n\n`;
+
+    if (flavorText) {
+      tweet += `${flavorText}\n\n`;
+    }
 
     if (control && control.length >= 2) {
       const first = schools[control[0].school_id];
       const second = schools[control[1].school_id];
       const gap = Math.round(control[0].control_percentage - control[1].control_percentage);
 
-      tweet += `${first.emoji} ${first.name}: ${Math.round(control[0].control_percentage)}%\n`;
-      tweet += `${second.emoji} ${second.name}: ${Math.round(control[1].control_percentage)}%\n\n`;
+      tweet += `${first.emoji} ${first.name.split(' ')[0]}: ${Math.round(control[0].control_percentage)}%\n`;
+      tweet += `${second.emoji} ${second.name.split(' ')[0]}: ${Math.round(control[1].control_percentage)}%\n\n`;
 
       if (gap <= 10) {
-        tweet += `🔥 Only ${gap}% separates them!\n`;
+        tweet += `${gap}% separates victory from defeat.`;
       } else {
-        tweet += `Can anyone close the gap?\n`;
+        tweet += `The gap widens. Can anyone close it?`;
       }
-    } else if (control && control.length === 1) {
-      const leader = schools[control[0].school_id];
-      tweet += `${leader.emoji} ${leader.name} dominates at ${Math.round(control[0].control_percentage)}%\n`;
-      tweet += `Will anyone challenge them?\n`;
     }
-
-    tweet += `\nLast chance to cast! ⚔️\n#NineLivesNetwork`;
 
     const { data } = await client.v2.tweet(tweet);
     console.log('Posted final push:', data.id);
@@ -324,42 +357,6 @@ async function postFinalPush() {
 
   } catch (error) {
     console.error('Error posting final push:', error);
-    return null;
-  }
-}
-
-/**
- * Post milestone announcement (first cast, 10th cast, etc.)
- */
-async function postMilestone(type, data) {
-  try {
-    const client = getNineLivesClient();
-    let tweet = '';
-
-    switch (type) {
-      case 'first_cast':
-        tweet = `⚡ FIRST BLOOD!\n\n@${data.player} opens today's battle with the first spell!\n\n${schools[data.school_id].emoji} ${schools[data.school_id].name} draws first!\n\n#NineLivesNetwork`;
-        break;
-
-      case 'cast_milestone':
-        tweet = `🎯 MILESTONE: ${data.count} spells cast today!\n\nThe wizards are active in ${data.zone}!\n\nKeep the magic flowing! ✨\n\n#NineLivesNetwork`;
-        break;
-
-      case 'lead_change':
-        tweet = `🔄 LEAD CHANGE!\n\n${schools[data.school_id].emoji} ${schools[data.school_id].name} takes the lead in ${data.zone}!\n\nThe battle intensifies! ⚔️\n\n#NineLivesNetwork`;
-        break;
-
-      default:
-        return null;
-    }
-
-    const { data: tweetData } = await client.v2.tweet(tweet);
-    console.log(`Posted milestone (${type}):`, tweetData.id);
-
-    return tweetData;
-
-  } catch (error) {
-    console.error('Error posting milestone:', error);
     return null;
   }
 }
@@ -374,13 +371,12 @@ function getProgressBar(percentage) {
 }
 
 /**
- * Post daily results
+ * Post daily results - NO HASHTAGS
  */
 async function postDailyResults() {
   try {
     const client = getNineLivesClient();
 
-    // Get today's objective zone
     const { data: zone } = await supabase
       .from('zones')
       .select('*')
@@ -389,14 +385,12 @@ async function postDailyResults() {
 
     if (!zone) return null;
 
-    // Get zone control data
     const { data: control } = await supabase
       .from('zone_control')
       .select('school_id, control_percentage')
       .eq('zone_id', zone.id)
       .order('control_percentage', { ascending: false });
 
-    // Get top casters for the day
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
@@ -408,24 +402,22 @@ async function postDailyResults() {
       .order('points_earned', { ascending: false })
       .limit(3);
 
-    // Get player details separately to avoid ambiguous relationship
     const playerIds = topCasters?.map(c => c.player_id) || [];
     const { data: players } = await supabase
       .from('players')
       .select('id, twitter_handle')
       .in('id', playerIds);
 
-    // Build results tweet
-    let tweet = `🏆 DAILY RESULTS: ${zone.name}\n\n`;
+    let tweet = `🏆 VICTORY: ${zone.name}\n\n`;
 
     if (control && control.length > 0) {
       const winner = control[0];
       const school = schools[winner.school_id];
-      tweet += `${school.emoji} ${school.name} claims victory with ${Math.round(winner.control_percentage)}% control!\n\n`;
+      tweet += `${school.emoji} ${school.name} claims the territory with ${Math.round(winner.control_percentage)}% control.\n\n`;
     }
 
     if (topCasters && topCasters.length > 0 && players) {
-      tweet += `⭐ Top Casters:\n`;
+      tweet += `Top Casters:\n`;
       topCasters.forEach((cast, i) => {
         const medal = ['🥇', '🥈', '🥉'][i];
         const player = players.find(p => p.id === cast.player_id);
@@ -435,7 +427,7 @@ async function postDailyResults() {
       });
     }
 
-    tweet += `\n#NineLivesNetwork #9LN`;
+    tweet += `\nThe battle continues tomorrow.`;
 
     const { data } = await client.v2.tweet(tweet);
     console.log('Posted daily results:', data.id);
@@ -450,13 +442,11 @@ async function postDailyResults() {
 
 /**
  * Read replies to the objective tweet and process spell casts
- * ANY reply is a valid cast!
  */
 async function processSpellCasts() {
   try {
     const client = getNineLivesClient();
 
-    // Get the current objective zone with its tweet ID
     const { data: zone } = await supabase
       .from('zones')
       .select('*')
@@ -468,8 +458,6 @@ async function processSpellCasts() {
       return [];
     }
 
-    // Search for replies to our objective tweet
-    // Using search instead of mentions for better reply detection
     const searchQuery = `conversation_id:${zone.objective_tweet_id} -from:9LVNetwork`;
 
     let mentions;
@@ -482,10 +470,9 @@ async function processSpellCasts() {
       });
       mentions = searchResult;
     } catch (searchError) {
-      // Fallback to mentions timeline if search fails
       console.log('Search failed, trying mentions timeline...');
       mentions = await client.v2.userMentionTimeline(
-        '2015058106443513856', // @9LVNetwork user ID
+        '2015058106443513856',
         {
           'tweet.fields': ['created_at', 'author_id', 'conversation_id', 'in_reply_to_user_id'],
           'user.fields': ['username'],
@@ -505,14 +492,12 @@ async function processSpellCasts() {
     const users = mentions.includes?.users || mentions.data.includes?.users || [];
 
     const processedCasts = [];
-    let nermNoticeCount = 0; // Track random Nerm bonuses
+    let nermNoticeCount = 0;
 
     for (const tweet of tweets) {
-      // Find the user
       const user = users.find(u => u.id === tweet.author_id);
       if (!user) continue;
 
-      // Check if user is registered
       const { data: player } = await supabase
         .from('players')
         .select('*')
@@ -524,13 +509,11 @@ async function processSpellCasts() {
         continue;
       }
 
-      // Check if player has mana
       if (player.mana <= 0) {
         console.log(`Player @${user.username} has no mana`);
         continue;
       }
 
-      // Check if already processed this tweet
       const { data: existingCast } = await supabase
         .from('casts')
         .select('id')
@@ -542,14 +525,10 @@ async function processSpellCasts() {
         continue;
       }
 
-      // Parse the spell - ANY reply is valid now!
       const spell = parseSpell(tweet.text, player.school_id);
-
-      // Calculate points
       const { points: basePoints, breakdown } = calculatePoints(spell, zone, player);
       let finalPoints = basePoints;
 
-      // Check First Blood bonus (silent - no Nerm tweet)
       let firstBlood = null;
       const firstBloodResult = await checkFirstBlood(player.id, player.school_id, zone.id);
       if (firstBloodResult) {
@@ -559,7 +538,6 @@ async function processSpellCasts() {
         console.log(`🩸 First Blood #${firstBloodResult.position} for ${schools[player.school_id].name}: @${user.username} (+${firstBloodResult.points})`);
       }
 
-      // Random Nerm notice bonus (roughly 10% chance, max 3 per batch)
       let nermNoticed = false;
       if (nermNoticeCount < 3 && Math.random() < 0.1) {
         finalPoints += 20;
@@ -568,7 +546,6 @@ async function processSpellCasts() {
         nermNoticeCount++;
       }
 
-      // Record the cast using ADMIN client to bypass RLS
       const { data: cast, error } = await supabaseAdmin
         .from('casts')
         .insert({
@@ -589,7 +566,6 @@ async function processSpellCasts() {
         continue;
       }
 
-      // Deduct mana and update points using ADMIN client
       await supabaseAdmin
         .from('players')
         .update({ 
@@ -600,7 +576,6 @@ async function processSpellCasts() {
         })
         .eq('id', player.id);
 
-      // Update zone control
       await updateZoneControl(zone.id, player.school_id, finalPoints);
 
       processedCasts.push({
@@ -618,7 +593,6 @@ async function processSpellCasts() {
       console.log(`✨ Cast processed: @${user.username} cast ${spell.name} for ${finalPoints} points`);
     }
 
-    // Update last processed tweet ID using ADMIN client
     if (tweets.length > 0) {
       const latestId = tweets[0].id;
       await supabaseAdmin
@@ -638,12 +612,10 @@ async function processSpellCasts() {
 
 /**
  * Parse a spell from tweet text
- * ANY reply is a valid cast - we just detect if there's extra flair
  */
 function parseSpell(text, schoolId) {
   const textLower = text.toLowerCase();
 
-  // School spell names for flavor detection
   const schoolSpells = {
     1: ['ember bolt', 'flame shield', 'inferno', 'fire', 'burn', 'blaze'],
     2: ['tidal wave', 'ice barrier', 'tsunami', 'water', 'freeze', 'flood'],
@@ -658,8 +630,7 @@ function parseSpell(text, schoolId) {
 
   const spells = schoolSpells[schoolId] || [];
 
-  // Check for school-specific spell keywords (bonus flair)
-  let spellName = 'magical strike'; // default
+  let spellName = 'magical strike';
   let hasSchoolFlair = false;
 
   for (const spell of spells) {
@@ -670,41 +641,30 @@ function parseSpell(text, schoolId) {
     }
   }
 
-  // Check for generic cast keywords
-  const castKeywords = ['cast', 'spell', 'attack', 'defend', 'magic', '🔮', '⚔️', '✨', '🔥', '💧', '⚡', '🌑', '✨'];
-  let hasCastKeyword = castKeywords.some(kw => textLower.includes(kw));
-
-  // Word count for creativity detection
   const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
 
-  // ANY reply is valid - return spell info
   return {
     name: spellName,
     mana_cost: 1,
     type: 'offensive',
     hasSchoolFlair,
-    hasCastKeyword,
     wordCount,
-    isCreative: wordCount >= 10 // potential creativity bonus
+    isCreative: wordCount >= 10
   };
 }
 
 /**
  * Calculate points for a spell cast
- * Base: 10 points
- * Bonuses: school flair, word count, zone bonuses
  */
 function calculatePoints(spell, zone, player) {
-  let points = 10; // Base points for ANY cast
+  let points = 10;
   let breakdown = ['Base: 10'];
 
-  // School flair bonus (+2)
   if (spell.hasSchoolFlair) {
     points += 2;
     breakdown.push('School flair: +2');
   }
 
-  // Effort bonus for longer messages (+3 for 10-30 words, +5 for 30+)
   if (spell.wordCount >= 30) {
     points += 5;
     breakdown.push('Detailed cast: +5');
@@ -713,7 +673,6 @@ function calculatePoints(spell, zone, player) {
     breakdown.push('Descriptive cast: +3');
   }
 
-  // Zone bonus
   if (zone.bonus_effect === '+50% points') {
     const bonus = Math.floor(points * 0.5);
     points += bonus;
@@ -724,7 +683,6 @@ function calculatePoints(spell, zone, player) {
     breakdown.push(`Zone bonus: +${bonus}`);
   }
 
-  // Home zone bonus (+20%)
   if (zone.school_id === player.school_id) {
     const bonus = Math.floor(points * 0.2);
     points += bonus;
@@ -739,7 +697,6 @@ function calculatePoints(spell, zone, player) {
  */
 async function updateZoneControl(zoneId, schoolId, points) {
   try {
-    // Get current control
     const { data: existing } = await supabase
       .from('zone_control')
       .select('*')
@@ -748,14 +705,12 @@ async function updateZoneControl(zoneId, schoolId, points) {
       .single();
 
     if (existing) {
-      // Update existing control using ADMIN client
       const newPercentage = Math.min(100, existing.control_percentage + (points / 10));
       await supabaseAdmin
         .from('zone_control')
         .update({ control_percentage: newPercentage })
         .eq('id', existing.id);
     } else {
-      // Create new control record using ADMIN client
       await supabaseAdmin
         .from('zone_control')
         .insert({
@@ -765,7 +720,6 @@ async function updateZoneControl(zoneId, schoolId, points) {
         });
     }
 
-    // Normalize percentages so they don't exceed 100% total
     await normalizeZoneControl(zoneId);
 
   } catch (error) {
@@ -787,7 +741,6 @@ async function normalizeZoneControl(zoneId) {
   const total = controls.reduce((sum, c) => sum + c.control_percentage, 0);
 
   if (total > 100) {
-    // Normalize using ADMIN client
     for (const control of controls) {
       const normalized = (control.control_percentage / total) * 100;
       await supabaseAdmin
@@ -803,13 +756,11 @@ async function normalizeZoneControl(zoneId) {
  */
 async function setDailyObjective(zoneId) {
   try {
-    // Clear current objective using ADMIN client
     await supabaseAdmin
       .from('zones')
       .update({ is_current_objective: false })
       .eq('is_current_objective', true);
 
-    // Set new objective using ADMIN client
     await supabaseAdmin
       .from('zones')
       .update({ is_current_objective: true })
@@ -839,7 +790,6 @@ async function rotateObjective() {
       return false;
     }
 
-    // Pick a random zone
     const randomZone = neutralZones[Math.floor(Math.random() * neutralZones.length)];
     return await setDailyObjective(randomZone.id);
 
@@ -870,11 +820,11 @@ module.exports = {
   postMiddayStandings,
   postAfternoonReminder,
   postFinalPush,
-  postMilestone,
   processSpellCasts,
   setDailyObjective,
   rotateObjective,
   testConnection,
   getNineLivesClient,
-  checkFirstBlood
+  checkFirstBlood,
+  generateFlavorText
 };
