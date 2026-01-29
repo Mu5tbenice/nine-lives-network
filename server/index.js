@@ -28,8 +28,21 @@ try {
   console.error('❌ Failed to load player routes:', e.message);
 }
 
-const territoryRoutes = require('./routes/territory');
-app.use('/api/territory', territoryRoutes);
+try {
+  const territoryRoutes = require('./routes/territory');
+  app.use('/api/territory', territoryRoutes);
+  console.log('✅ Territory routes loaded');
+} catch (e) {
+  console.error('❌ Failed to load territory routes:', e.message);
+}
+
+try {
+  const duelRoutes = require('./routes/duels');
+  app.use('/api/duels', duelRoutes);
+  console.log('✅ Duel routes loaded');
+} catch (e) {
+  console.error('❌ Failed to load duel routes:', e.message);
+}
 
 try {
   const mapRoutes = require('./routes/map');
@@ -74,10 +87,20 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
+// Catch-all for SPA routing (serve index.html for unmatched routes)
+app.get('*', (req, res) => {
+  // Only serve HTML for non-API routes
+  if (!req.path.startsWith('/api/')) {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+  } else {
+    res.status(404).json({ error: 'Not found' });
+  }
+});
+
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🐱 Nine Lives Network server running on port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
 });
 
-module.exports = app;// force rebuild Wed Jan 28 11:15:40 AM UTC 2026
+module.exports = app;
