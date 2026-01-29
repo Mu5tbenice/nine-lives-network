@@ -188,6 +188,19 @@ async function postDailyObjective() {
       })
       .eq('id', zone.id);
 
+    // Trigger Nerm to comment
+    try {
+      const nermBot = require('./nermBot');
+      const nermComment = await nermBot.generateCustomResponse(
+        `A new battle has begun at ${zone.name}. Make a brief, deadpan observation about this location or the wizards about to fight over it. Reference your historical knowledge if relevant.`
+      );
+      if (nermComment) {
+        await nermBot.replyAsNerm(nermComment, data.id);
+      }
+    } catch (nermError) {
+      console.log('Nerm comment skipped:', nermError.message);
+    }
+
     return data;
 
   } catch (error) {
