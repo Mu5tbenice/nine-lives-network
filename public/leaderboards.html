@@ -4,12 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Leaderboards | Nine Lives Network</title>
-
-  <!-- Styles -->
   <link rel="stylesheet" href="/css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
   <style>
-    /* ===== VIDEO BACKGROUND WITH FADE ===== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a14;
+      color: #fff;
+      min-height: 100vh;
+    }
+
+    /* ===== VIDEO BACKGROUND ===== */
     .video-background {
       position: fixed;
       top: 0;
@@ -32,7 +44,6 @@
       object-fit: cover;
     }
 
-    /* Fade/vignette mask - fades edges to dark */
     .video-background::after {
       content: '';
       position: absolute;
@@ -51,7 +62,6 @@
       pointer-events: none;
     }
 
-    /* Additional top/bottom gradient for nav and content readability */
     .video-background::before {
       content: '';
       position: absolute;
@@ -69,7 +79,6 @@
       z-index: 1;
     }
 
-    /* Dark overlay to ensure text readability */
     .video-overlay {
       position: fixed;
       top: 0;
@@ -80,21 +89,11 @@
       z-index: -1;
     }
 
-    .leaderboards-container {
-      min-height: 100vh;
-      padding-top: 80px;
-      position: relative;
-      z-index: 1;
-    }
-
-    /* Navigation */
-    .nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: var(--space-md) var(--space-lg);
-      background: rgba(20, 20, 35, 0.9);
-      border-bottom: 2px solid var(--bg-light);
+    /* ===== TOP NAV BAR ===== */
+    .top-nav {
+      background: rgba(10, 22, 40, 0.95);
+      border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+      padding: 0 15px;
       position: fixed;
       top: 0;
       left: 0;
@@ -103,81 +102,111 @@
       backdrop-filter: blur(10px);
     }
 
+    .top-nav-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 56px;
+    }
+
     .nav-logo {
-      font-family: var(--font-main);
-      font-size: 0.75rem;
-      color: var(--accent-gold);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.5rem;
+      color: #FFD700;
       text-decoration: none;
     }
 
     .nav-links {
       display: flex;
-      gap: var(--space-lg);
+      align-items: center;
+      gap: 8px;
       list-style: none;
     }
 
     .nav-links a {
-      font-family: var(--font-main);
-      font-size: 0.5rem;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.4rem;
+      color: #a0a0b0;
       text-decoration: none;
+      padding: 8px 12px;
+      border-radius: 4px;
+      transition: all 0.2s;
     }
 
-    .nav-links a:hover, .nav-links a.active {
-      color: var(--accent-gold);
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: #FFD700;
+      background: rgba(255, 215, 0, 0.1);
     }
 
-    /* Main Content */
+    .nav-links a.logout-btn {
+      color: #ff6b6b;
+    }
+
+    .nav-links a.logout-btn:hover {
+      background: rgba(255, 107, 107, 0.1);
+    }
+
+    /* ===== MAIN CONTAINER ===== */
+    .leaderboards-container {
+      min-height: 100vh;
+      padding-top: 76px;
+      padding-bottom: 40px;
+      position: relative;
+      z-index: 1;
+    }
+
     .leaderboards-content {
-      max-width: 1000px;
+      max-width: 800px;
       margin: 0 auto;
-      padding: var(--space-lg);
+      padding: 20px 15px;
     }
 
     .page-title {
-      font-size: 1.5rem;
-      color: var(--accent-gold);
-      margin-bottom: var(--space-xl);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 1rem;
+      color: #FFD700;
+      margin-bottom: 24px;
       text-align: center;
       text-shadow: 0 2px 20px rgba(255, 215, 0, 0.3);
     }
 
-    /* Tabs */
+    /* ===== TABS ===== */
     .tabs {
       display: flex;
       justify-content: center;
-      gap: var(--space-md);
-      margin-bottom: var(--space-xl);
+      gap: 8px;
+      margin-bottom: 24px;
       flex-wrap: wrap;
     }
 
     .tab-btn {
-      font-family: var(--font-main);
-      font-size: 0.5rem;
-      padding: var(--space-md) var(--space-lg);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.4rem;
+      padding: 12px 20px;
       background: rgba(30, 30, 50, 0.8);
-      border: 2px solid var(--bg-light);
-      color: var(--text-secondary);
+      border: 2px solid #2a2a4a;
+      color: #a0a0b0;
       cursor: pointer;
       transition: all 0.3s ease;
-      border-radius: var(--radius-sm);
+      border-radius: 6px;
       backdrop-filter: blur(5px);
     }
 
     .tab-btn:hover {
-      border-color: var(--accent-gold);
-      color: var(--text-primary);
+      border-color: #FFD700;
+      color: #fff;
     }
 
     .tab-btn.active {
-      background: var(--accent-gold);
-      border-color: var(--accent-gold);
-      color: var(--bg-dark);
+      background: #FFD700;
+      border-color: #FFD700;
+      color: #0a0a14;
     }
 
-    /* Leaderboard Table */
+    /* ===== LEADERBOARD TABLE ===== */
     .leaderboard-section {
       display: none;
     }
@@ -189,8 +218,8 @@
     .leaderboard-table {
       width: 100%;
       background: rgba(20, 20, 35, 0.85);
-      border: 2px solid var(--bg-light);
-      border-radius: var(--radius-md);
+      border: 2px solid #2a2a4a;
+      border-radius: 12px;
       overflow: hidden;
       backdrop-filter: blur(10px);
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
@@ -198,19 +227,19 @@
 
     .leaderboard-header {
       display: grid;
-      grid-template-columns: 60px 1fr 120px 120px;
-      padding: var(--space-md) var(--space-lg);
+      grid-template-columns: 50px 1fr 100px;
+      padding: 12px 16px;
       background: rgba(40, 40, 60, 0.9);
-      font-family: var(--font-main);
-      font-size: 0.5rem;
-      color: var(--text-secondary);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.35rem;
+      color: #a0a0b0;
       text-transform: uppercase;
     }
 
     .leaderboard-row {
       display: grid;
-      grid-template-columns: 60px 1fr 120px 120px;
-      padding: var(--space-md) var(--space-lg);
+      grid-template-columns: 50px 1fr 100px;
+      padding: 12px 16px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       align-items: center;
       transition: background 0.2s ease;
@@ -226,14 +255,14 @@
 
     .leaderboard-row.highlight {
       background: rgba(255, 215, 0, 0.15);
-      border-left: 3px solid var(--accent-gold);
+      border-left: 3px solid #FFD700;
     }
 
     /* Rank */
     .rank {
-      font-family: var(--font-main);
-      font-size: 1rem;
-      color: var(--text-muted);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.6rem;
+      color: #606070;
     }
 
     .rank-1 { color: #FFD700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
@@ -244,20 +273,22 @@
     .player-cell {
       display: flex;
       align-items: center;
-      gap: var(--space-md);
+      gap: 10px;
+      min-width: 0;
     }
 
     .player-avatar {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
-      background: var(--bg-light);
+      background: #2a2a4a;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.25rem;
+      font-size: 1rem;
       overflow: hidden;
       border: 2px solid rgba(255, 255, 255, 0.2);
+      flex-shrink: 0;
     }
 
     .player-avatar img {
@@ -266,131 +297,193 @@
       object-fit: cover;
     }
 
+    .player-info {
+      min-width: 0;
+      overflow: hidden;
+    }
+
     .player-name {
-      font-family: var(--font-main);
-      font-size: 0.625rem;
-      color: var(--text-primary);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.4rem;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    .player-tag {
-      font-size: 0.75rem;
-      color: var(--accent-purple);
-    }
-
-    /* School Info */
-    .school-cell {
+    .player-school {
       display: flex;
       align-items: center;
-      gap: var(--space-sm);
+      gap: 4px;
+      margin-top: 2px;
     }
 
     .school-dot {
-      width: 12px;
-      height: 12px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
-      box-shadow: 0 0 8px currentColor;
+      flex-shrink: 0;
     }
 
     .school-name {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.3rem;
+      color: #a0a0b0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .player-tag {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.3rem;
+      color: #8A2BE2;
+      margin-top: 2px;
     }
 
     /* Points */
     .points {
-      font-family: var(--font-main);
-      font-size: 0.875rem;
-      color: var(--accent-gold);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.5rem;
+      color: #FFD700;
       text-align: right;
+      white-space: nowrap;
     }
 
-    /* School Leaderboard */
-    .school-row {
-      grid-template-columns: 60px 1fr 150px 120px;
-    }
-
-    .school-header {
-      grid-template-columns: 60px 1fr 150px 120px;
-    }
-
-    .school-info {
+    /* ===== SCHOOL LEADERBOARD ===== */
+    .school-cell {
       display: flex;
       align-items: center;
-      gap: var(--space-md);
+      gap: 10px;
+      min-width: 0;
     }
 
     .school-color-block {
-      width: 40px;
-      height: 40px;
-      border-radius: var(--radius-sm);
-      box-shadow: 0 0 15px currentColor;
+      width: 36px;
+      height: 36px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    .school-info {
+      min-width: 0;
+      overflow: hidden;
     }
 
     .school-full-name {
-      font-family: var(--font-main);
-      font-size: 0.625rem;
-      color: var(--text-primary);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.4rem;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .school-element {
-      font-size: 0.75rem;
-      color: var(--text-muted);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.3rem;
+      color: #606070;
+      margin-top: 2px;
     }
 
     .member-count {
-      font-size: 0.875rem;
-      color: var(--text-secondary);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.35rem;
+      color: #a0a0b0;
+      text-align: right;
     }
 
-    /* Community Leaderboard */
-    .community-row {
-      grid-template-columns: 60px 1fr 120px 120px;
-    }
-
+    /* ===== COMMUNITY LEADERBOARD ===== */
     .community-tag-name {
-      font-family: var(--font-main);
-      font-size: 0.75rem;
-      color: var(--accent-purple);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.5rem;
+      color: #8A2BE2;
     }
 
-    /* Empty State */
+    /* ===== EMPTY STATE ===== */
     .empty-state {
       text-align: center;
-      padding: var(--space-xl);
-      color: var(--text-muted);
+      padding: 40px 20px;
+      color: #606070;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.4rem;
     }
 
-    /* Loading */
+    /* ===== LOADING ===== */
     .loading {
       text-align: center;
-      padding: var(--space-xl);
-      color: var(--text-muted);
+      padding: 40px 20px;
+      color: #606070;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 0.4rem;
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-      .leaderboard-header,
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 600px) {
+      .leaderboard-header {
+        grid-template-columns: 40px 1fr 70px;
+        padding: 10px 12px;
+        font-size: 0.3rem;
+      }
+
       .leaderboard-row {
-        grid-template-columns: 40px 1fr 80px;
-        font-size: 0.75rem;
+        grid-template-columns: 40px 1fr 70px;
+        padding: 10px 12px;
       }
 
-      .school-header,
-      .school-row {
-        grid-template-columns: 40px 1fr 80px;
+      .player-avatar,
+      .school-color-block {
+        width: 28px;
+        height: 28px;
       }
 
-      .leaderboard-header > *:nth-child(3),
-      .leaderboard-row > *:nth-child(3) {
-        display: none;
+      .player-name,
+      .school-full-name {
+        font-size: 0.35rem;
       }
 
-      .player-name {
+      .points {
+        font-size: 0.4rem;
+      }
+
+      .rank {
         font-size: 0.5rem;
       }
 
       .video-background video {
         opacity: 0.5;
+      }
+
+      .page-title {
+        font-size: 0.8rem;
+      }
+
+      .tab-btn {
+        font-size: 0.35rem;
+        padding: 10px 14px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .nav-logo {
+        font-size: 0.4rem;
+      }
+
+      .nav-links a {
+        font-size: 0.3rem;
+        padding: 6px 8px;
+      }
+
+      .leaderboard-header {
+        grid-template-columns: 35px 1fr 60px;
+      }
+
+      .leaderboard-row {
+        grid-template-columns: 35px 1fr 60px;
+      }
+
+      .points {
+        font-size: 0.35rem;
       }
     }
   </style>
@@ -404,16 +497,18 @@
   </div>
   <div class="video-overlay"></div>
 
-  <!-- Navigation -->
-  <nav class="nav">
-    <a href="/" class="nav-logo">Nine Lives Network</a>
-    <ul class="nav-links">
-      <li><a href="/dashboard.html">Dashboard</a></li>
-      <li><a href="/map.html">Map</a></li>
-      <li><a href="/leaderboards.html" class="active">Leaderboards</a></li>
-      <li><a href="/how-to-play.html">How to Play</a></li>
-      <li><a href="#" id="logoutBtn">Logout</a></li>
-    </ul>
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <div class="top-nav-content">
+      <a href="/" class="nav-logo">Nine Lives Network</a>
+      <ul class="nav-links">
+        <li><a href="/dashboard.html">Dashboard</a></li>
+        <li><a href="/map.html">Map</a></li>
+        <li><a href="/leaderboards.html" class="active">Leaderboards</a></li>
+        <li><a href="/how-to-play.html">Help</a></li>
+        <li><a href="#" class="logout-btn" id="logoutBtn">Logout</a></li>
+      </ul>
+    </div>
   </nav>
 
   <main class="leaderboards-container">
@@ -433,7 +528,6 @@
           <div class="leaderboard-header">
             <div>Rank</div>
             <div>Player</div>
-            <div>School</div>
             <div style="text-align: right;">Points</div>
           </div>
           <div id="players-list" class="loading">Loading...</div>
@@ -443,10 +537,9 @@
       <!-- Schools Leaderboard -->
       <div class="leaderboard-section" id="schools-section">
         <div class="leaderboard-table">
-          <div class="leaderboard-header school-header">
+          <div class="leaderboard-header">
             <div>Rank</div>
             <div>School</div>
-            <div>Members</div>
             <div style="text-align: right;">Points</div>
           </div>
           <div id="schools-list" class="loading">Loading...</div>
@@ -459,7 +552,6 @@
           <div class="leaderboard-header">
             <div>Rank</div>
             <div>Community</div>
-            <div>Members</div>
             <div style="text-align: right;">Points</div>
           </div>
           <div id="communities-list" class="loading">Loading...</div>
@@ -485,6 +577,13 @@
 
     const currentPlayerId = localStorage.getItem('player_id');
 
+    // Logout
+    document.getElementById('logoutBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      localStorage.removeItem('player_id');
+      window.location.href = '/';
+    });
+
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
       setupTabs();
@@ -497,11 +596,9 @@
     function setupTabs() {
       document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          // Update active tab
           document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
 
-          // Show corresponding section
           const tab = btn.dataset.tab;
           document.querySelectorAll('.leaderboard-section').forEach(s => s.classList.remove('active'));
           document.getElementById(`${tab}-section`).classList.add('active');
@@ -536,14 +633,14 @@
                     ? `<img src="${player.profile_image}" alt="">` 
                     : '🐱'}
                 </div>
-                <div>
+                <div class="player-info">
                   <div class="player-name">@${player.twitter_handle}</div>
+                  <div class="player-school">
+                    <div class="school-dot" style="background: ${school.color};"></div>
+                    <span class="school-name">${school.name.split(' ')[0]}</span>
+                  </div>
                   ${player.community_tag ? `<div class="player-tag">${player.community_tag}</div>` : ''}
                 </div>
-              </div>
-              <div class="school-cell">
-                <div class="school-dot" style="background: ${school.color}; color: ${school.color};"></div>
-                <span class="school-name">${school.name.split(' ')[0]}</span>
               </div>
               <div class="points">${player.seasonal_points.toLocaleString()}</div>
             </div>
@@ -574,16 +671,15 @@
           const school = schools[stat.school_id];
 
           return `
-            <div class="leaderboard-row school-row">
+            <div class="leaderboard-row">
               <div class="rank rank-${index + 1}">#${index + 1}</div>
-              <div class="school-info">
-                <div class="school-color-block" style="background: ${school.color}; color: ${school.color};"></div>
-                <div>
+              <div class="school-cell">
+                <div class="school-color-block" style="background: ${school.color};"></div>
+                <div class="school-info">
                   <div class="school-full-name">${school.name}</div>
-                  <div class="school-element">${school.element}</div>
+                  <div class="school-element">${school.element} • ${stat.member_count} wizards</div>
                 </div>
               </div>
-              <div class="member-count">${stat.member_count} wizards</div>
               <div class="points">${stat.total_points.toLocaleString()}</div>
             </div>
           `;
@@ -611,10 +707,12 @@
 
         container.innerHTML = communities.map((community, index) => {   
           return `
-            <div class="leaderboard-row community-row">
+            <div class="leaderboard-row">
               <div class="rank rank-${index + 1}">#${index + 1}</div>
-              <div class="community-tag-name">${community.community_tag}</div>
-              <div class="member-count">${community.member_count} members</div>
+              <div class="player-info">
+                <div class="community-tag-name">${community.community_tag}</div>
+                <div class="school-name">${community.member_count} members</div>
+              </div>
               <div class="points">${community.total_points.toLocaleString()}</div>
             </div>
           `;
@@ -625,13 +723,6 @@
         document.getElementById('communities-list').innerHTML = '<div class="empty-state">Failed to load leaderboard</div>';
       }
     }
-
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', (e) => {
-      e.preventDefault();
-      localStorage.removeItem('player_id');
-      window.location.href = '/';
-    });
   </script>
 </body>
 </html>
