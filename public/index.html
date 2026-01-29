@@ -93,8 +93,8 @@
     /* ===== UI OVERLAY ===== */
     .landing-container {
       position: relative;
-      min-height: 100vh;
-      min-height: -webkit-fill-available;
+      height: 100vh;
+      height: -webkit-fill-available;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -105,6 +105,24 @@
 
     .landing-container a,
     .landing-container button {
+      pointer-events: auto;
+    }
+
+    /* ===== SPACER ===== */
+    .model-spacer {
+      flex: 1;
+    }
+
+    /* ===== BOTTOM SECTION - Play button + footer ===== */
+    .bottom-section {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 20;
       pointer-events: auto;
     }
 
@@ -354,14 +372,14 @@
 
     <div class="model-spacer"></div>
 
-    <a href="/register.html" class="play-now-btn" id="ctaButton">▶ PLAY NOW</a>
+    <div class="bottom-section">
+      <a href="/register.html" class="play-now-btn" id="ctaButton">▶ PLAY NOW</a>
 
-    <div class="model-spacer"></div>
-
-    <div class="footer-links">
-      <a href="/terms.html">Terms</a>
-      <a href="/privacy.html">Privacy</a>
-      <a href="https://twitter.com/9LVNetwork" target="_blank">Twitter</a>
+      <div class="footer-links">
+        <a href="/terms.html">Terms</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="https://twitter.com/9LVNetwork" target="_blank">Twitter</a>
+      </div>
     </div>
   </div>
 
