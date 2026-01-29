@@ -175,7 +175,7 @@ async function postDailyObjective() {
 
     tweet += `Reply to claim territory for your school.\n`;
     tweet += `🩸 First 5 from each school get bonus points\n`;
-    tweet += `⏰ Ends at midnight UTC`;
+    tweet += `⏡ The portal won't stay open forever.`;
 
     const { data } = await client.v2.tweet(tweet);
     console.log('Posted daily objective:', data.id);
@@ -239,7 +239,6 @@ async function postMiddayStandings() {
     if (control && control.length > 0) {
       control.slice(0, 3).forEach((c, i) => {
         const school = schools[c.school_id];
-        const bar = getProgressBar(c.control_percentage);
         tweet += `${i + 1}. ${school.emoji} ${school.name.split(' ')[0]}: ${Math.round(c.control_percentage)}%\n`;
       });
     } else {
@@ -247,9 +246,15 @@ async function postMiddayStandings() {
     }
 
     tweet += `\n⚡ ${castCount || 0} spells cast`;
-    tweet += `\n⏰ 12 hours remaining`;
+    tweet += `\nThe battle rages on.`;
 
-    const { data } = await client.v2.tweet(tweet);
+    // Reply to original objective tweet to create thread
+    const tweetOptions = {};
+    if (zone.objective_tweet_id) {
+      tweetOptions.reply = { in_reply_to_tweet_id: zone.objective_tweet_id };
+    }
+
+    const { data } = await client.v2.tweet(tweet, tweetOptions);
     console.log('Posted midday standings:', data.id);
 
     return data;
@@ -282,18 +287,24 @@ async function postAfternoonReminder() {
       .order('control_percentage', { ascending: false })
       .limit(1);
 
-    let tweet = `⏰ 8 HOURS REMAIN\n\n`;
-    tweet += `The battle for ${zone.name} continues.\n\n`;
+    let tweet = `⏰ THE BATTLE CONTINUES\n\n`;
+    tweet += `${zone.name} remains contested.\n\n`;
 
     if (control && control.length > 0) {
       const leader = schools[control[0].school_id];
       tweet += `${leader.emoji} ${leader.name} leads at ${Math.round(control[0].control_percentage)}%\n\n`;
-      tweet += `Will your school answer the call?`;
+      tweet += `Cast now before the portal closes.`;
     } else {
       tweet += `No clear leader. Every spell matters.`;
     }
 
-    const { data } = await client.v2.tweet(tweet);
+    // Reply to original objective tweet to create thread
+    const tweetOptions = {};
+    if (zone.objective_tweet_id) {
+      tweetOptions.reply = { in_reply_to_tweet_id: zone.objective_tweet_id };
+    }
+
+    const { data } = await client.v2.tweet(tweet, tweetOptions);
     console.log('Posted afternoon reminder:', data.id);
 
     return data;
@@ -344,13 +355,19 @@ async function postFinalPush() {
       tweet += `${second.emoji} ${second.name.split(' ')[0]}: ${Math.round(control[1].control_percentage)}%\n\n`;
 
       if (gap <= 10) {
-        tweet += `${gap}% separates victory from defeat.`;
-      } else {
-        tweet += `The gap widens. Can anyone close it?`;
+        tweet += `${gap}% separates victory from defeat.\n`;
       }
+
+      tweet += `The portal flickers. Act now.`;
     }
 
-    const { data } = await client.v2.tweet(tweet);
+    // Reply to original objective tweet to create thread
+    const tweetOptions = {};
+    if (zone.objective_tweet_id) {
+      tweetOptions.reply = { in_reply_to_tweet_id: zone.objective_tweet_id };
+    }
+
+    const { data } = await client.v2.tweet(tweet, tweetOptions);
     console.log('Posted final push:', data.id);
 
     return data;
@@ -427,9 +444,15 @@ async function postDailyResults() {
       });
     }
 
-    tweet += `\nThe battle continues tomorrow.`;
+    tweet += `\nThe portal closes. A new battle awaits.`;
 
-    const { data } = await client.v2.tweet(tweet);
+    // Reply to original objective tweet to create thread
+    const tweetOptions = {};
+    if (zone.objective_tweet_id) {
+      tweetOptions.reply = { in_reply_to_tweet_id: zone.objective_tweet_id };
+    }
+
+    const { data } = await client.v2.tweet(tweet, tweetOptions);
     console.log('Posted daily results:', data.id);
 
     return data;
