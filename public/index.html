@@ -415,8 +415,8 @@
     // ========================================
     const MODEL_SETTINGS = {
       cameraZ: 7,         // Close to model (zoomed in)
-      cameraY: -1,        // Camera MUCH lower
-      lookAtY: -2,        // Look at lower point
+      cameraY: 3,         // Camera UP to see face
+      lookAtY: 1,         // Look at face level
       modelY: -3.2,       // Model position
       modelScale: 1       // Model scale
     };
@@ -479,7 +479,6 @@
 
           scene.add(wizardCat);
           console.log('🐱 Model loaded:', MODEL_SETTINGS);
-          alert('cameraY=' + MODEL_SETTINGS.cameraY + ' modelY=' + MODEL_SETTINGS.modelY);
         },
         undefined,
         (error) => console.log('Model load error:', error)
