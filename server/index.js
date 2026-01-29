@@ -87,11 +87,6 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// 404 handler for API routes
-app.use('/api/*', (req, res) => {
-  res.status(404).json({ error: 'Not found' });
-});
-
 // Start server
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🐱 Nine Lives Network server running on port ${PORT}`);
