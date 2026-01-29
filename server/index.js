@@ -87,14 +87,9 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
-// Catch-all for SPA routing (serve index.html for unmatched routes)
-app.get('*', (req, res) => {
-  // Only serve HTML for non-API routes
-  if (!req.path.startsWith('/api/')) {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
-  } else {
-    res.status(404).json({ error: 'Not found' });
-  }
+// 404 handler for API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: 'Not found' });
 });
 
 // Start server
