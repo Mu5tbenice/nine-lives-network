@@ -82,72 +82,79 @@ Keep it under 200 characters. Be deadpan. One sentence max.`
   });
 
   // ============================================
-  // @9LVNetwork POSTS
+  // @9LVNetwork POSTS - BOUNTIES
   // ============================================
+  // 3 bounties per day: Morning, Afternoon, Evening
+  // Each bounty runs for ~5-6 hours before results
 
-  // 08:00 UTC - Daily objective
+  // 08:00 UTC - MORNING BOUNTY
   cron.schedule('0 8 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 🌅 Posting daily objective`);
+    console.log(`[${new Date().toISOString()}] 🌅 Posting MORNING bounty`);
     try {
       await twitterBot.rotateObjective();
       const tweet = await twitterBot.postDailyObjective();
-      if (tweet) console.log(`✅ Posted objective tweet: ${tweet.id}`);
+      if (tweet) console.log(`✅ Posted morning bounty: ${tweet.id}`);
     } catch (error) {
-      console.error('❌ Error posting objective:', error.message);
+      console.error('❌ Error posting morning bounty:', error.message);
     }
   });
 
-  // 12:00 UTC - Midday standings
-  cron.schedule('0 12 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 📊 Posting midday standings`);
+  // 13:00 UTC - Close morning bounty, post results
+  cron.schedule('0 13 * * *', async () => {
+    console.log(`[${new Date().toISOString()}] 🏆 Closing MORNING bounty`);
     try {
-      const tweet = await twitterBot.postMiddayStandings();
-      if (tweet) console.log(`✅ Posted midday standings: ${tweet.id}`);
-    } catch (error) {
-      console.error('❌ Error posting midday standings:', error.message);
-    }
-  });
-
-  // 16:00 UTC - Afternoon reminder
-  cron.schedule('0 16 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 🔔 Posting afternoon reminder`);
-    try {
-      const tweet = await twitterBot.postAfternoonReminder();
-      if (tweet) console.log(`✅ Posted afternoon reminder: ${tweet.id}`);
-    } catch (error) {
-      console.error('❌ Error posting afternoon reminder:', error.message);
-    }
-  });
-
-  // 20:00 UTC - Final push
-  cron.schedule('0 20 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 🚨 Posting final push`);
-    try {
-      const tweet = await twitterBot.postFinalPush();
-      if (tweet) console.log(`✅ Posted final push: ${tweet.id}`);
-    } catch (error) {
-      console.error('❌ Error posting final push:', error.message);
-    }
-  });
-
-  // 23:00 UTC - End of day processing & results
-  cron.schedule('0 23 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 🌙 End of day processing`);
-    try {
-      const zone = await territoryControl.getCurrentObjective();
-      if (!zone) {
-        console.log('⚠️ No objective zone set');
-        return;
-      }
-
-      const result = await territoryControl.endOfDayProcessing(zone.id);
-      console.log('📊 End of day result:', result);
-
       const tweet = await twitterBot.postDailyResults();
-      if (tweet) console.log(`✅ Posted results tweet: ${tweet.id}`);
+      if (tweet) console.log(`✅ Posted morning results: ${tweet.id}`);
     } catch (error) {
-      console.error('❌ Error in end of day:', error.message);
+      console.error('❌ Error posting morning results:', error.message);
     }
+  });
+
+  // 14:00 UTC - AFTERNOON BOUNTY
+  cron.schedule('0 14 * * *', async () => {
+    console.log(`[${new Date().toISOString()}] ☀️ Posting AFTERNOON bounty`);
+    try {
+      await twitterBot.rotateObjective();
+      const tweet = await twitterBot.postDailyObjective();
+      if (tweet) console.log(`✅ Posted afternoon bounty: ${tweet.id}`);
+    } catch (error) {
+      console.error('❌ Error posting afternoon bounty:', error.message);
+    }
+  });
+
+  // 19:00 UTC - Close afternoon bounty, post results
+  cron.schedule('0 19 * * *', async () => {
+    console.log(`[${new Date().toISOString()}] 🏆 Closing AFTERNOON bounty`);
+    try {
+      const tweet = await twitterBot.postDailyResults();
+      if (tweet) console.log(`✅ Posted afternoon results: ${tweet.id}`);
+    } catch (error) {
+      console.error('❌ Error posting afternoon results:', error.message);
+    }
+  });
+
+  // 20:00 UTC - EVENING BOUNTY
+  cron.schedule('0 20 * * *', async () => {
+    console.log(`[${new Date().toISOString()}] 🌙 Posting EVENING bounty`);
+    try {
+      await twitterBot.rotateObjective();
+      const tweet = await twitterBot.postDailyObjective();
+      if (tweet) console.log(`✅ Posted evening bounty: ${tweet.id}`);
+    } catch (error) {
+      console.error('❌ Error posting evening bounty:', error.message);
+    }
+  });
+
+  // 01:00 UTC (next day) - Close evening bounty, post results
+  cron.schedule('0 1 * * *', async () => {
+    console.log(`[${new Date().toISOString()}] 🏆 Closing EVENING bounty`);
+    try {
+      const tweet = await twitterBot.postDailyResults();
+      if (tweet) console.log(`✅ Posted evening results: ${tweet.id}`);
+    } catch (error) {
+      console.error('❌ Error posting evening results:', error.message);
+    }
+  });
   });
 
   // ============================================
