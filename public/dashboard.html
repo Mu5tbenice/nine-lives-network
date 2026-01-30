@@ -355,14 +355,6 @@
       updateTweetPreview();
     });
 
-    document.getElementById('spellSuggestions').addEventListener('click', (e) => {
-      const chip = e.target.closest('.spell-chip'); if (!chip) return;
-      const spell = chip.dataset.spell;
-      if (spell === 'Custom...') { const custom = prompt('Enter your spell name:'); if (custom) selectedSpell = custom; } else { selectedSpell = spell; }
-      document.querySelectorAll('.spell-chip').forEach(c => c.classList.remove('selected')); chip.classList.add('selected');
-      updateTweetPreview();
-    });
-
     document.getElementById('btnCopy').addEventListener('click', async () => {
       const text = getTweetText();
       try { await navigator.clipboard.writeText(text); } catch (err) { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
