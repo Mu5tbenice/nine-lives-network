@@ -51,6 +51,8 @@
     .objective-label { font-family: 'Press Start 2P', monospace; font-size: 0.35rem; color: #a0a0b0; margin-bottom: 5px; }
     .objective-name { font-family: 'Press Start 2P', monospace; font-size: 0.55rem; color: #fff; margin-bottom: 8px; }
     .objective-timer { display: inline-flex; align-items: center; gap: 6px; background: rgba(255, 100, 100, 0.2); padding: 6px 12px; border-radius: 20px; font-family: 'Press Start 2P', monospace; font-size: 0.35rem; color: #ff9999; }
+    .objective-status { font-family: 'Press Start 2P', monospace; font-size: 0.3rem; color: #8899a6; margin-top: 8px; }
+    .objective-status a { color: #1da1f2; text-decoration: none; }
 
     .tweet-preview { background: #15202b; border: 1px solid #38444d; border-radius: 12px; padding: 12px; margin-bottom: 15px; }
     .tweet-replying { font-size: 0.75rem; color: #8899a6; margin-bottom: 8px; }
@@ -66,6 +68,38 @@
     .spell-suggestions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
     .spell-chip { font-family: 'Press Start 2P', monospace; background: rgba(255, 215, 0, 0.1); border: 1px solid rgba(255, 215, 0, 0.3); padding: 6px 12px; border-radius: 20px; font-size: 0.3rem; color: var(--accent-gold, #FFD700); cursor: pointer; transition: all 0.2s; }
     .spell-chip:active, .spell-chip.selected { background: var(--accent-gold, #FFD700); color: #000; }
+
+    /* Spellbook */
+    .spellbook-btn { width: 100%; padding: 12px; background: linear-gradient(135deg, rgba(139, 69, 19, 0.8), rgba(101, 67, 33, 0.9)); border: 2px solid #8B4513; border-radius: 8px; color: #FFD700; font-family: 'Press Start 2P', monospace; font-size: 0.35rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px; box-shadow: 0 4px 0 #5D4037; }
+    .spellbook-btn:hover { background: linear-gradient(135deg, rgba(160, 82, 45, 0.9), rgba(120, 80, 40, 0.95)); }
+    .spellbook-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #5D4037; }
+    .selected-spell-display { text-align: center; margin-bottom: 8px; padding: 8px; background: rgba(0,0,0,0.3); border-radius: 6px; }
+    .selected-spell-name { font-family: 'Press Start 2P', monospace; font-size: 0.4rem; color: #FFD700; }
+    .selected-spell-effect { font-size: 0.7rem; color: #8899a6; margin-top: 4px; }
+
+    /* Spellbook Modal */
+    .spellbook-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 1000; overflow-y: auto; padding: 20px; }
+    .spellbook-modal.active { display: flex; flex-direction: column; align-items: center; }
+    .spellbook-content { width: 100%; max-width: 500px; background: linear-gradient(180deg, #1a1a2e 0%, #0d1a2d 100%); border: 3px solid #8B4513; border-radius: 12px; overflow: hidden; }
+    .spellbook-header { background: linear-gradient(135deg, #8B4513, #654321); padding: 15px; text-align: center; border-bottom: 2px solid #A0522D; }
+    .spellbook-title { font-family: 'Press Start 2P', monospace; font-size: 0.5rem; color: #FFD700; margin: 0; }
+    .spellbook-subtitle { font-size: 0.7rem; color: #D2B48C; margin-top: 5px; }
+    .spellbook-close { position: absolute; top: 15px; right: 20px; background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer; }
+    .spell-list { padding: 15px; display: flex; flex-direction: column; gap: 10px; }
+    .spell-card { background: rgba(20, 35, 60, 0.8); border: 2px solid rgba(255, 215, 0, 0.2); border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.2s; position: relative; }
+    .spell-card:hover { border-color: #FFD700; background: rgba(30, 50, 80, 0.9); }
+    .spell-card.selected { border-color: #00ff88; background: rgba(0, 255, 136, 0.1); }
+    .spell-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .spell-name { font-family: 'Press Start 2P', monospace; font-size: 0.35rem; color: #fff; }
+    .spell-type { font-family: 'Press Start 2P', monospace; font-size: 0.25rem; padding: 3px 8px; border-radius: 10px; }
+    .spell-type.attack { background: rgba(255, 68, 68, 0.3); color: #ff6b6b; }
+    .spell-type.defend { background: rgba(68, 170, 255, 0.3); color: #44aaff; }
+    .spell-type.surge { background: rgba(255, 215, 0, 0.3); color: #FFD700; }
+    .spell-type.rally { background: rgba(0, 255, 136, 0.3); color: #00ff88; }
+    .spell-effect { font-size: 0.75rem; color: #a0a0b0; line-height: 1.4; }
+    .spell-points { font-family: 'Press Start 2P', monospace; font-size: 0.3rem; color: #00ff88; margin-top: 6px; }
+    .spell-tooltip { display: none; position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); background: #000; border: 1px solid #FFD700; padding: 8px 12px; border-radius: 6px; font-size: 0.7rem; color: #fff; white-space: nowrap; z-index: 10; }
+    .spell-card:hover .spell-tooltip { display: block; }
 
     .ascii-section { margin-bottom: 12px; }
     .ascii-toggle { font-family: 'Press Start 2P', monospace; font-size: 0.3rem; color: #a0a0b0; background: none; border: 1px dashed rgba(255, 215, 0, 0.3); padding: 8px 12px; border-radius: 6px; cursor: pointer; width: 100%; text-align: center; }
@@ -160,7 +194,7 @@
       <div class="objective-zone">
         <div class="objective-label">Active Bounty</div>
         <div class="objective-name" id="objectiveName">Loading...</div>
-        <div class="objective-timer"><span>⏰</span><span id="objectiveTimer">--:--:--</span></div>
+        <div class="objective-status" id="objectiveStatus"></div>
       </div>
       <div class="tweet-preview">
         <div class="tweet-replying">Replying to <a href="https://twitter.com/9LVNetwork" target="_blank">@9LVNetwork</a></div>
@@ -170,12 +204,13 @@
         </div>
         <div class="tweet-content" id="tweetContent"><span class="school-flair">🔮 Arcane Spire</span> I cast Mystic Bolt upon The Nexus! ✨</div>
       </div>
-      <div class="spell-suggestions" id="spellSuggestions">
-        <button class="spell-chip selected" data-spell="Mystic Bolt">✨ Mystic Bolt</button>
-        <button class="spell-chip" data-spell="Shadow Strike">🌑 Shadow Strike</button>
-        <button class="spell-chip" data-spell="Fire Blast">🔥 Fire Blast</button>
-        <button class="spell-chip" data-spell="Custom...">✏️ Custom</button>
+      <div class="selected-spell-display">
+        <div class="selected-spell-name" id="selectedSpellName">📖 No spell selected</div>
+        <div class="selected-spell-effect" id="selectedSpellEffect">Open your spellbook to choose a spell</div>
       </div>
+      <button class="spellbook-btn" id="openSpellbook">
+        <span>📚</span> Open Spellbook
+      </button>
       <div class="ascii-section">
         <button class="ascii-toggle" id="asciiToggle">🎨 Add ASCII Art (Bonus Points!)</button>
         <div class="ascii-templates" id="asciiTemplates">
@@ -224,15 +259,92 @@
 
   <div class="toast" id="toast">Copied to clipboard!</div>
 
+  <!-- Spellbook Modal -->
+  <div class="spellbook-modal" id="spellbookModal">
+    <div class="spellbook-content">
+      <div class="spellbook-header">
+        <h2 class="spellbook-title">📚 Spellbook</h2>
+        <div class="spellbook-subtitle" id="spellbookSubtitle">Choose your spell wisely</div>
+      </div>
+      <div class="spell-list" id="spellList">
+        <!-- Spells populated by JS -->
+      </div>
+      <div style="padding: 15px; text-align: center;">
+        <button class="spellbook-btn" id="closeSpellbook" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3);">
+          Close Spellbook
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    let playerData = null, objectiveData = null, selectedSpell = 'Mystic Bolt', selectedAscii = '';
+    let playerData = null, objectiveData = null, selectedSpell = null, selectedSpellData = null, selectedAscii = '';
     const schoolEmojis = { 1: '🔥', 2: '🌊', 3: '🪨', 4: '💨', 5: '⚡', 6: '🌑', 7: '✨', 8: '🔮', 9: '🐱' };
     const schoolNames = { 1: 'Ember Covenant', 2: 'Tidal Conclave', 3: 'Stone Covenant', 4: 'Zephyr Circle', 5: 'Storm Assembly', 6: 'Umbral Syndicate', 7: 'Radiant Order', 8: 'Arcane Spire', 9: 'WildCat Path' };
     const schoolColors = { 1: '#FF4500', 2: '#00BFFF', 3: '#8B4513', 4: '#98FB98', 5: '#FFD700', 6: '#9932CC', 7: '#FFFACD', 8: '#00FFFF', 9: '#FF1493' };
 
+    // Spellbook data - universal spells for all clans (effects coming soon)
+    const universalSpells = [
+      { name: 'Strike', type: 'attack', effect: 'Standard attack spell. Reliable damage.', points: '+10 points', keyword: 'STRIKE' },
+      { name: 'Defend', type: 'defend', effect: 'Defensive stance. Hold the line.', points: '+10 points', keyword: 'DEFEND' },
+      { name: 'Surge', type: 'surge', effect: 'Channel raw power. Risk it all.', points: '+10 points', keyword: 'SURGE' },
+      { name: 'Rally', type: 'rally', effect: 'Call your clan to action.', points: '+10 points', keyword: 'RALLY' }
+    ];
+
     document.getElementById('hamburger').addEventListener('click', () => { document.getElementById('hamburger').classList.toggle('active'); document.getElementById('mobileMenu').classList.toggle('active'); });
     document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('player_id'); window.location.href = '/'; });
     document.getElementById('mobileLogoutBtn').addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('player_id'); window.location.href = '/'; });
+
+    // Spellbook handlers
+    document.getElementById('openSpellbook').addEventListener('click', () => {
+      if (!playerData) return;
+      renderSpellbook();
+      document.getElementById('spellbookModal').classList.add('active');
+    });
+    document.getElementById('closeSpellbook').addEventListener('click', () => {
+      document.getElementById('spellbookModal').classList.remove('active');
+    });
+    document.getElementById('spellbookModal').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('spellbookModal')) {
+        document.getElementById('spellbookModal').classList.remove('active');
+      }
+    });
+
+    function renderSpellbook() {
+      if (!playerData) return;
+
+      document.getElementById('spellbookSubtitle').textContent = `${schoolEmojis[playerData.school_id]} ${schoolNames[playerData.school_id]} Spells`;
+
+      const listEl = document.getElementById('spellList');
+      listEl.innerHTML = universalSpells.map((spell, i) => `
+        <div class="spell-card ${selectedSpellData?.keyword === spell.keyword ? 'selected' : ''}" data-spell-index="${i}">
+          <div class="spell-card-header">
+            <span class="spell-name">${spell.name}</span>
+            <span class="spell-type ${spell.type}">${spell.type.toUpperCase()}</span>
+          </div>
+          <div class="spell-effect">${spell.effect}</div>
+          <div class="spell-points">${spell.points}</div>
+        </div>
+      `).join('');
+
+      // Add click handlers
+      listEl.querySelectorAll('.spell-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const index = parseInt(card.dataset.spellIndex);
+          const spell = universalSpells[index];
+          selectSpell(spell);
+          document.getElementById('spellbookModal').classList.remove('active');
+        });
+      });
+    }
+
+    function selectSpell(spell) {
+      selectedSpell = spell.name;
+      selectedSpellData = spell;
+      document.getElementById('selectedSpellName').textContent = `✨ ${spell.name}`;
+      document.getElementById('selectedSpellEffect').textContent = spell.effect;
+      updateTweetPreview();
+    }
 
     document.getElementById('asciiToggle').addEventListener('click', () => { document.getElementById('asciiTemplates').classList.toggle('active'); });
     document.getElementById('asciiTemplates').addEventListener('click', (e) => {
@@ -259,8 +371,27 @@
     });
 
     function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2000); }
-    function getTweetText() { if (!playerData) return ''; const e = schoolEmojis[playerData.school_id], n = schoolNames[playerData.school_id], z = objectiveData?.zone?.name || 'The Nexus'; let t = `${e} ${n} I cast ${selectedSpell} upon ${z}! ✨`; if (selectedAscii) t += '\n\n' + selectedAscii; return t; }
-    function updateTweetPreview() { if (!playerData) return; const e = schoolEmojis[playerData.school_id], n = schoolNames[playerData.school_id], z = objectiveData?.zone?.name || 'The Nexus'; let c = `<span class="school-flair">${e} ${n}</span> I cast <strong>${selectedSpell}</strong> upon ${z}! ✨`; if (selectedAscii) c += '\n\n' + selectedAscii; document.getElementById('tweetContent').innerHTML = c; document.getElementById('btnTweet').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(getTweetText())}&in_reply_to=${objectiveData?.tweet_id || ''}`; }
+    function getTweetText() { 
+      if (!playerData) return ''; 
+      const e = schoolEmojis[playerData.school_id];
+      const n = schoolNames[playerData.school_id];
+      const z = objectiveData?.zone?.name || 'The Nexus'; 
+      const spellName = selectedSpellData?.keyword || selectedSpell || 'attacks';
+      let t = `${e} ${n} I cast ${spellName} upon ${z}! ✨`; 
+      if (selectedAscii) t += '\n\n' + selectedAscii; 
+      return t; 
+    }
+    function updateTweetPreview() { 
+      if (!playerData) return; 
+      const e = schoolEmojis[playerData.school_id];
+      const n = schoolNames[playerData.school_id];
+      const z = objectiveData?.zone?.name || 'The Nexus'; 
+      const spellName = selectedSpellData?.name || selectedSpell || 'attacks';
+      let c = `<span class="school-flair">${e} ${n}</span> I cast <strong>${spellName}</strong> upon ${z}! ✨`; 
+      if (selectedAscii) c += '\n\n' + selectedAscii; 
+      document.getElementById('tweetContent').innerHTML = c; 
+      document.getElementById('btnTweet').href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(getTweetText())}&in_reply_to=${objectiveData?.tweet_id || ''}`; 
+    }
 
     async function loadDashboard() {
       // Check URL for player_id first (from auth redirect)
@@ -278,7 +409,7 @@
         playerData = await (await fetch(`/api/players/${pid}`)).json();
         objectiveData = await (await fetch('/api/zones/objective')).json();
         const casts = await (await fetch(`/api/players/${pid}/casts`)).json();
-        renderPlayer(playerData); renderObjective(objectiveData); renderHistory(casts); updateTweetPreview(); startTimer();
+        renderPlayer(playerData); renderObjective(objectiveData); renderHistory(casts); updateTweetPreview();
       } catch (e) { console.error('Error:', e); }
     }
 
@@ -298,10 +429,20 @@
       const lives = p.lives !== undefined ? p.lives : 3, ld = document.getElementById('livesDisplay'); ld.innerHTML = ''; for (let i=0;i<3;i++) { const h = document.createElement('div'); h.className = `life-heart ${i<lives?'':'empty'}`; h.textContent = '❤️'; ld.appendChild(h); }
     }
 
-    function renderObjective(o) { document.getElementById('objectiveName').textContent = o?.zone?.name || 'No active bounty'; }
+    function renderObjective(o) { 
+      const hasActiveBounty = o?.zone?.name;
+      document.getElementById('objectiveName').textContent = hasActiveBounty ? o.zone.name : 'No active bounty';
+      const statusEl = document.getElementById('objectiveStatus');
+      if (hasActiveBounty) {
+        statusEl.innerHTML = '🔥 Bounty is LIVE - cast now!';
+        statusEl.style.color = '#00ff88';
+      } else {
+        statusEl.innerHTML = '🔔 <a href="https://twitter.com/9LVNetwork" target="_blank">Turn on notifications for @9LVNetwork</a>';
+        statusEl.style.color = '#8899a6';
+      }
+    }
     function renderHistory(casts) { const l = document.getElementById('historyList'); if (!casts?.length) { l.innerHTML = '<div style="text-align:center;color:#8899a6;padding:20px;font-family:\'Press Start 2P\',monospace;font-size:0.3rem;">No casts yet!</div>'; return; } l.innerHTML = casts.slice(0,5).map(c => `<div class="history-item"><div><div class="history-spell">${c.spell_name||'Spell'}</div><div class="history-zone">${c.zone_name||'Zone'}</div></div><div style="text-align:right"><div class="history-points">+${c.points_earned||0}</div><div class="history-time">${formatTime(c.created_at)}</div></div></div>`).join(''); }
     function formatTime(ts) { if (!ts) return ''; const d = new Date(ts), diff = Date.now() - d; if (diff < 60000) return 'Just now'; if (diff < 3600000) return `${Math.floor(diff/60000)}m ago`; if (diff < 86400000) return `${Math.floor(diff/3600000)}h ago`; return d.toLocaleDateString(); }
-    function startTimer() { const update = () => { const n = new Date(), e = new Date(n); e.setUTCHours(23,0,0,0); if (n>e) e.setDate(e.getDate()+1); const diff = e-n, h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000); document.getElementById('objectiveTimer').textContent = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`; }; update(); setInterval(update, 1000); }
 
     document.addEventListener('DOMContentLoaded', loadDashboard);
   </script>
