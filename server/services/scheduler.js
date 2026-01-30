@@ -4,6 +4,7 @@ const territoryControl = require('./territoryControl');
 const activityDecay = require('./activityDecay');
 const nermBot = require('./nermBot');
 const supabase = require('../config/supabase');
+const { supabaseAdmin } = require('../config/supabase');
 
 // Try to load livesReset, but don't fail if it doesn't exist
 let livesReset = null;
@@ -42,24 +43,37 @@ function initializeScheduledJobs() {
       if (casts.length > 0) {
         console.log(`✅ Processed ${casts.length} casts`);
 
-        // Nerm replies to casts
-        for (const cast of casts) {
+        // Nerm only replies to casts he "noticed" (10% chance, set in processSpellCasts)
+        const noticedCasts = casts.filter(c => c.nermNoticed);
+
+        for (const cast of noticedCasts) {
           try {
             if (!cast.tweet_id) continue;
 
             const response = await nermBot.generateCustomResponse(
-              `A wizard named @${cast.player} from ${cast.schoolName || 'some school'} just cast "${cast.spell}" for ${cast.points} points. Reply with a short, deadpan observation. Max 200 characters.`
+              `You just noticed @${cast.player} from ${cast.schoolName} cast "${cast.spell}" and earned ${cast.points} points. 
+
+React specifically to:
+- Their school (${cast.schoolName}) - maybe judge their faction
+- Their spell name ("${cast.spell}") - comment on the spell choice
+- Their point total (${cast.points}) - impressive or pathetic?
+
+Keep it under 200 characters. Be deadpan. One sentence max.`
             );
 
             if (response) {
               await nermBot.replyAsNerm(response, cast.tweet_id);
-              console.log(`🐱 Nerm replied to @${cast.player}'s cast`);
+              console.log(`🐱 Nerm noticed @${cast.player}'s cast and replied`);
             }
 
             await new Promise(resolve => setTimeout(resolve, 2000));
           } catch (e) {
             console.error(`Nerm reply error for @${cast.player}:`, e.message);
           }
+        }
+
+        if (noticedCasts.length > 0) {
+          console.log(`🐱 Nerm noticed ${noticedCasts.length}/${casts.length} casts`);
         }
       }
     } catch (error) {
@@ -226,11 +240,11 @@ function initializeScheduledJobs() {
   cron.schedule('0 0 * * *', async () => {
     console.log(`[${new Date().toISOString()}] 🔮 Midnight reset: mana + lives`);
     try {
-      // Reset mana
-      const { error: manaError } = await supabase
+      // Reset mana (use admin client to bypass RLS)
+      const { error: manaError } = await supabaseAdmin
         .from('players')
         .update({ mana: 5 })
-        .eq('is_active', true);
+        .gte('id', 0); // Update all players
 
       if (manaError) {
         console.error('❌ Error resetting mana:', manaError);
@@ -243,8 +257,8 @@ function initializeScheduledJobs() {
         await livesReset.resetAllLives();
         await livesReset.expirePendingDuels();
       } else {
-        // Inline lives reset if module not available
-        const { error: livesError } = await supabase
+        // Inline lives reset if module not available (use admin client)
+        const { error: livesError } = await supabaseAdmin
           .from('players')
           .update({ lives: 3 })
           .lt('lives', 3);

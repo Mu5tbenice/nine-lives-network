@@ -415,46 +415,61 @@ async function postDailyResults() {
 
     if (!zone) return null;
 
-    const { data: control } = await supabase
-      .from('zone_control')
-      .select('school_id, control_percentage')
-      .eq('zone_id', zone.id)
-      .order('control_percentage', { ascending: false });
-
+    // Get school control totals from today's casts
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
-    const { data: topCasters } = await supabase
+    const { data: todaysCasts } = await supabase
       .from('casts')
       .select('player_id, points_earned')
       .eq('zone_id', zone.id)
-      .gte('created_at', today.toISOString())
-      .order('points_earned', { ascending: false })
-      .limit(3);
+      .gte('created_at', today.toISOString());
 
-    const playerIds = topCasters?.map(c => c.player_id) || [];
+    // Get player school mappings
+    const playerIds = [...new Set(todaysCasts?.map(c => c.player_id) || [])];
     const { data: players } = await supabase
       .from('players')
-      .select('id, twitter_handle')
+      .select('id, school_id')
       .in('id', playerIds);
 
-    let tweet = `🏆 VICTORY: ${zone.name}\n\n`;
+    // Calculate total points per school
+    const schoolPoints = {};
+    todaysCasts?.forEach(cast => {
+      const player = players?.find(p => p.id === cast.player_id);
+      if (player) {
+        schoolPoints[player.school_id] = (schoolPoints[player.school_id] || 0) + cast.points_earned;
+      }
+    });
 
-    if (control && control.length > 0) {
-      const winner = control[0];
-      const school = schools[winner.school_id];
-      tweet += `${school.emoji} ${school.name} claims the territory with ${Math.round(winner.control_percentage)}% control.\n\n`;
-    }
+    // Find winning school
+    let winningSchoolId = null;
+    let winningPoints = 0;
+    Object.entries(schoolPoints).forEach(([schoolId, points]) => {
+      if (points > winningPoints) {
+        winningSchoolId = parseInt(schoolId);
+        winningPoints = points;
+      }
+    });
 
-    if (topCasters && topCasters.length > 0 && players) {
-      tweet += `Top Casters:\n`;
-      topCasters.forEach((cast, i) => {
-        const medal = ['🥇', '🥈', '🥉'][i];
-        const player = players.find(p => p.id === cast.player_id);
-        if (player) {
-          tweet += `${medal} @${player.twitter_handle}\n`;
-        }
-      });
+    let tweet = `🏆 ${zone.name.toUpperCase()} CAPTURED!\n\n`;
+
+    if (winningSchoolId && schools[winningSchoolId]) {
+      const school = schools[winningSchoolId];
+      tweet += `${school.emoji} ${school.name} claims victory with ${winningPoints} power!\n\n`;
+
+      // Show runner-ups
+      const sortedSchools = Object.entries(schoolPoints)
+        .sort((a, b) => b[1] - a[1])
+        .slice(1, 3);
+
+      if (sortedSchools.length > 0) {
+        sortedSchools.forEach(([schoolId, points]) => {
+          const s = schools[parseInt(schoolId)];
+          if (s) tweet += `${s.emoji} ${s.name}: ${points}\n`;
+        });
+      }
+    } else {
+      tweet += `No faction claimed this territory.\n`;
     }
 
     tweet += `\nThe portal closes. A new battle awaits.`;
@@ -467,6 +482,18 @@ async function postDailyResults() {
 
     const { data } = await client.v2.tweet(tweet, tweetOptions);
     console.log('Posted daily results:', data.id);
+
+    // IMPORTANT: Clear the objective flag so dashboard shows no active bounty
+    await supabaseAdmin
+      .from('zones')
+      .update({ 
+        is_current_objective: false,
+        objective_tweet_id: null,
+        objective_posted_at: null
+      })
+      .eq('id', zone.id);
+
+    console.log('Cleared objective flag for zone:', zone.name);
 
     return data;
 
@@ -494,7 +521,7 @@ async function processSpellCasts() {
       return [];
     }
 
-    const searchQuery = `conversation_id:${zone.objective_tweet_id} -from:9LVNetwork`;
+    const searchQuery = `conversation_id:${zone.objective_tweet_id} -from:9LVNetwork -from:9LV_Nerm`;
 
     let mentions;
     try {
@@ -545,8 +572,30 @@ async function processSpellCasts() {
         continue;
       }
 
+      // Exclude bot accounts from earning points
+      const botAccounts = ['9lv_nerm', '9lvnetwork', '9lv_network'];
+      if (botAccounts.includes(user.username.toLowerCase())) {
+        console.log(`Skipping bot account: @${user.username}`);
+        continue;
+      }
+
       if (player.mana <= 0) {
         console.log(`Player @${user.username} has no mana`);
+        continue;
+      }
+
+      // Check if player already cast on this bounty today (1 cast per player per bounty)
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      const { data: alreadyCast } = await supabase
+        .from('casts')
+        .select('id')
+        .eq('player_id', player.id)
+        .eq('zone_id', zone.id)
+        .gte('created_at', today)
+        .single();
+
+      if (alreadyCast) {
+        console.log(`Player @${user.username} already cast on this bounty today`);
         continue;
       }
 
