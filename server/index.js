@@ -28,8 +28,21 @@ try {
   console.error('❌ Failed to load player routes:', e.message);
 }
 
-const territoryRoutes = require('./routes/territory');
-app.use('/api/territory', territoryRoutes);
+try {
+  const territoryRoutes = require('./routes/territory');
+  app.use('/api/territory', territoryRoutes);
+  console.log('✅ Territory routes loaded');
+} catch (e) {
+  console.error('❌ Failed to load territory routes:', e.message);
+}
+
+try {
+  const duelRoutes = require('./routes/duels');
+  app.use('/api/duels', duelRoutes);
+  console.log('✅ Duel routes loaded');
+} catch (e) {
+  console.error('❌ Failed to load duel routes:', e.message);
+}
 
 try {
   const mapRoutes = require('./routes/map');
@@ -61,6 +74,9 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Redirect old map.html to world.html
+app.get('/map.html', (req, res) => res.redirect('/world.html'));
+
 // Start scheduler for automated tasks
 try {
   const scheduler = require('./services/scheduler');
@@ -80,4 +96,4 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📍 http://localhost:${PORT}`);
 });
 
-module.exports = app;// force rebuild Wed Jan 28 11:15:40 AM UTC 2026
+module.exports = app;
