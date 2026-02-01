@@ -1304,8 +1304,21 @@
     }
 
     .profile-card-banner {
-      height: 80px;
+      height: 100px;
       position: relative;
+      overflow: hidden;
+    }
+
+    .profile-card-crest-bg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 120px;
+      height: 120px;
+      opacity: 0.35;
+      object-fit: contain;
+      filter: blur(1px);
     }
 
     .profile-card-banner::after {
@@ -1314,8 +1327,8 @@
       bottom: 0;
       left: 0;
       right: 0;
-      height: 40px;
-      background: linear-gradient(transparent, rgba(0,0,0,0.8));
+      height: 60px;
+      background: linear-gradient(transparent, rgba(0,0,0,0.9));
     }
 
     .profile-card-close {
@@ -1365,9 +1378,22 @@
     }
 
     .profile-card-body {
-      background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, #0d1a2d 100%);
+      background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, #0d1a2d 100%);
       padding: 50px 20px 20px;
       text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .profile-card-body-crest {
+      position: absolute;
+      bottom: -20px;
+      right: -20px;
+      width: 180px;
+      height: 180px;
+      opacity: 0.06;
+      object-fit: contain;
+      pointer-events: none;
     }
 
     .profile-card-name {
@@ -1649,16 +1675,19 @@
   <!-- Profile Card Modal -->
   <div class="profile-modal-overlay" id="profileModalOverlay">
     <div class="profile-card" id="profileCard">
-      <div class="profile-card-banner" id="profileBanner"></div>
+      <div class="profile-card-banner" id="profileBanner">
+        <img src="" alt="" class="profile-card-crest-bg" id="profileCrestBg">
+      </div>
       <button class="profile-card-close" onclick="closeProfileModal()">✕</button>
       <div class="profile-card-avatar-wrapper">
         <img src="/assets/images/default-avatar.png" alt="" class="profile-card-avatar" id="profileAvatar">
-        <div class="profile-card-clan-badge" id="profileClanBadge">🐱</div>
+        <img src="" alt="" class="profile-card-clan-badge" id="profileClanBadge" style="width:32px;height:32px;border-radius:0;border:none;background:transparent;object-fit:contain;">
       </div>
       <div class="profile-card-body">
+        <img src="" alt="" class="profile-card-body-crest" id="profileBodyCrest">
         <div class="profile-card-name" id="profileName">Player Name</div>
         <div class="profile-card-handle" id="profileHandle">@username</div>
-        <div class="profile-card-clan" id="profileClan">Unknown Clan</div>
+        <div class="profile-card-clan" id="profileClan">Unknown House</div>
         <div class="profile-card-community" id="profileCommunity"></div>
 
         <div class="profile-card-stats">
@@ -1747,15 +1776,15 @@
   <script>
     // ===== SCHOOL DATA =====
     const schools = {
-      1: { name: 'House Smoulders', emoji: '🔥', color: '#FF4500' },
-      2: { name: 'House Darktide', emoji: '🌊', color: '#00BFFF' },
-      3: { name: 'House Ironbark', emoji: '🪨', color: '#8B4513' },
-      4: { name: 'House Ashenvale', emoji: '💨', color: '#98FB98' },
-      5: { name: 'House Stormrage', emoji: '⚡', color: '#FFD700' },
-      6: { name: 'House Darkhollow', emoji: '🌑', color: '#9932CC' },
-      7: { name: 'House Dawnbringer', emoji: '✨', color: '#FFFACD' },
-      8: { name: 'House Manastorm', emoji: '🔮', color: '#00FFFF' },
-      9: { name: 'House Plaguemire', emoji: '🐱', color: '#FF1493' }
+      1: { name: 'House Smoulders', emoji: '🔥', color: '#E8550D', crest: '/assets/images/houses/House-Smoulders.png' },
+      2: { name: 'House Darktide', emoji: '🌊', color: '#2BA5B5', crest: '/assets/images/houses/House-darktide.png' },
+      3: { name: 'House Ironbark', emoji: '🪨', color: '#4A8C3F', crest: '/assets/images/houses/House-ironbark.png' },
+      4: { name: 'House Ashenvale', emoji: '💨', color: '#6B8CC7', crest: '/assets/images/houses/House-ashenvale.png' },
+      5: { name: 'House Stormrage', emoji: '⚡', color: '#5B7FD6', crest: '/assets/images/houses/House-stormrage.png' },
+      6: { name: 'House Darkhollow', emoji: '🌑', color: '#7B3FA0', crest: '/assets/images/houses/House-darkhollow.png' },
+      7: { name: 'House Dawnbringer', emoji: '✨', color: '#D4A843', crest: '/assets/images/houses/House-dawnbringer.png' },
+      8: { name: 'House Manastorm', emoji: '🔮', color: '#5E4FA0', crest: '/assets/images/houses/House-manastorm.png' },
+      9: { name: 'House Plaguemire', emoji: '🐱', color: '#4A7A3A', crest: '/assets/images/houses/House-plaguemire.png' }
     };
 
     // ===== ZONE IMAGES =====
@@ -2177,20 +2206,22 @@
 
       const school = schools[profileData.school_id] || {};
       const color = school.color || '#666';
+      const crest = school.crest || '';
 
-      // Set card styling based on clan
+      // Set card styling based on house
       const card = document.getElementById('profileCard');
       card.style.border = `3px solid ${color}`;
 
-      document.getElementById('profileBanner').style.background = `linear-gradient(135deg, ${color}44, ${color}22)`;
+      document.getElementById('profileBanner').style.background = `linear-gradient(135deg, ${color}55, ${color}22, #000)`;
+      document.getElementById('profileCrestBg').src = crest;
+      document.getElementById('profileBodyCrest').src = crest;
       document.getElementById('profileAvatar').src = profileData.profile_image || '/assets/images/default-avatar.png';
       document.getElementById('profileAvatar').style.borderColor = color;
-      document.getElementById('profileClanBadge').textContent = school.emoji || '🐱';
-      document.getElementById('profileClanBadge').style.background = color;
+      document.getElementById('profileClanBadge').src = crest;
 
       document.getElementById('profileName').textContent = profileData.twitter_handle || 'Unknown';
       document.getElementById('profileHandle').textContent = `@${profileData.twitter_handle || 'unknown'}`;
-      document.getElementById('profileClan').textContent = school.name || 'Unknown Clan';
+      document.getElementById('profileClan').textContent = school.name || 'Unknown House';
       document.getElementById('profileClan').style.color = color;
 
       const community = profileData.community_tag;
