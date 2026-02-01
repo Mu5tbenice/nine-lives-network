@@ -82,10 +82,8 @@ Keep it under 200 characters. Be deadpan. One sentence max.`
   });
 
   // ============================================
-  // @9LVNetwork POSTS - BOUNTIES
+  // @9LVNetwork POSTS - 3 BOUNTIES PER DAY
   // ============================================
-  // 3 bounties per day: Morning, Afternoon, Evening
-  // Each bounty runs for ~5-6 hours before results
 
   // 08:00 UTC - MORNING BOUNTY
   cron.schedule('0 8 * * *', async () => {
@@ -154,7 +152,6 @@ Keep it under 200 characters. Be deadpan. One sentence max.`
     } catch (error) {
       console.error('❌ Error posting evening results:', error.message);
     }
-  });
   });
 
   // ============================================
@@ -279,8 +276,8 @@ Keep it under 200 characters. Be deadpan. One sentence max.`
     }
   });
 
-  // 01:00 UTC - Activity decay
-  cron.schedule('0 1 * * *', async () => {
+  // 01:30 UTC - Activity decay (moved to 01:30 to not clash with evening results at 01:00)
+  cron.schedule('30 1 * * *', async () => {
     console.log(`[${new Date().toISOString()}] 📉 Activity decay`);
     try {
       const result = await activityDecay.processActivityDecay();
@@ -307,12 +304,13 @@ Keep it under 200 characters. Be deadpan. One sentence max.`
   console.log('');
   console.log('✅ Scheduled jobs initialized:');
   console.log('');
-  console.log('📢 @9LVNetwork:');
-  console.log('   08:00 - Daily objective (AI flavor)');
-  console.log('   12:00 - Midday standings');
-  console.log('   16:00 - Afternoon reminder');
-  console.log('   20:00 - Final push');
-  console.log('   23:00 - Daily results');
+  console.log('📢 @9LVNetwork (3 bounties/day):');
+  console.log('   08:00 - Morning bounty');
+  console.log('   13:00 - Morning results');
+  console.log('   14:00 - Afternoon bounty');
+  console.log('   19:00 - Afternoon results');
+  console.log('   20:00 - Evening bounty');
+  console.log('   01:00 - Evening results');
   console.log('');
   console.log('🐱 @9LV_Nerm:');
   console.log('   09:00 - Morning (100%)');
@@ -320,13 +318,13 @@ Keep it under 200 characters. Be deadpan. One sentence max.`
   console.log('   17:00 - Evening (80%)');
   console.log('   22:00 - Daily roast (100%)');
   console.log('   03:00 - Existential (80%)');
-  console.log('   + Replies to all casts');
+  console.log('   + Replies to noticed casts');
   console.log('');
   console.log('⚙️ Maintenance:');
   console.log('   */2 min - Process casts');
   console.log('   */5 min - Update zone control');
   console.log('   00:00 - Reset mana + lives');
-  console.log('   01:00 - Activity decay');
+  console.log('   01:30 - Activity decay');
   console.log('');
 }
 
