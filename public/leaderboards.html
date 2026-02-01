@@ -134,15 +134,15 @@
 
   <script>
     const schools = {
-      1: { name: 'House Smoulders', element: 'Fire', color: '#FF4500' },
-      2: { name: 'House Darktide', element: 'Water', color: '#00BFFF' },
-      3: { name: 'House Ironbark', element: 'Earth', color: '#8B4513' },
-      4: { name: 'House Ashenvale', element: 'Air', color: '#98FB98' },
-      5: { name: 'House Stormrage', element: 'Lightning', color: '#FFD700' },
-      6: { name: 'House Darkhollow', element: 'Shadow', color: '#9932CC' },
-      7: { name: 'House Dawnbringer', element: 'Light', color: '#FFFFE0' },
-      8: { name: 'House Manastorm', element: 'Arcane', color: '#00FFFF' },
-      9: { name: 'House Plaguemire', element: 'Chaos', color: '#FF1493' },
+      1: { name: 'House Smoulders', element: 'Fire', color: '#E8550D', crest: '/assets/images/houses/House-Smoulders.png' },
+      2: { name: 'House Darktide', element: 'Water', color: '#2BA5B5', crest: '/assets/images/houses/House-darktide.png' },
+      3: { name: 'House Ironbark', element: 'Earth', color: '#4A8C3F', crest: '/assets/images/houses/House-ironbark.png' },
+      4: { name: 'House Ashenvale', element: 'Air', color: '#6B8CC7', crest: '/assets/images/houses/House-ashenvale.png' },
+      5: { name: 'House Stormrage', element: 'Lightning', color: '#5B7FD6', crest: '/assets/images/houses/House-stormrage.png' },
+      6: { name: 'House Darkhollow', element: 'Shadow', color: '#7B3FA0', crest: '/assets/images/houses/House-darkhollow.png' },
+      7: { name: 'House Dawnbringer', element: 'Light', color: '#D4A843', crest: '/assets/images/houses/House-dawnbringer.png' },
+      8: { name: 'House Manastorm', element: 'Arcane', color: '#5E4FA0', crest: '/assets/images/houses/House-manastorm.png' },
+      9: { name: 'House Plaguemire', element: 'Chaos', color: '#4A7A3A', crest: '/assets/images/houses/House-plaguemire.png' },
     };
     const currentPlayerId = localStorage.getItem('player_id');
 
@@ -177,7 +177,7 @@
               <div class="player-avatar">${p.profile_image ? `<img src="${p.profile_image}">` : '🐱'}</div>
               <div class="player-info">
                 <div class="player-name">@${p.twitter_handle}</div>
-                <div class="player-school"><div class="school-dot" style="background:${s.color}"></div><span class="school-name">${s.name.split(' ')[0]}</span></div>
+                <div class="player-school"><img src="${s.crest}" alt="" style="width:10px;height:10px;object-fit:contain;"><span class="school-name" style="color:${s.color}">${s.name.replace('House ','')}</span></div>
                 ${p.community_tag ? `<div class="player-tag">${p.community_tag}</div>` : ''}
               </div>
             </div>
@@ -198,8 +198,8 @@
           return `<div class="leaderboard-row">
             <div class="rank rank-${i+1}">#${i+1}</div>
             <div class="school-cell">
-              <div class="school-color-block" style="background:${s.color}"></div>
-              <div class="school-info"><div class="school-full-name">${s.name}</div><div class="school-element">${s.element} • ${st.member_count} wizards</div></div>
+              <img src="${s.crest}" alt="${s.name}" class="school-color-block" style="object-fit:contain;background:transparent;border-radius:0;">
+              <div class="school-info"><div class="school-full-name" style="color:${s.color}">${s.name}</div><div class="school-element">${s.element} • ${st.member_count} wizards</div></div>
             </div>
             <div class="points">${st.total_points.toLocaleString()}</div>
           </div>`;

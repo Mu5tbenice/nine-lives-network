@@ -178,7 +178,7 @@
         <img src="/assets/images/default-avatar.png" alt="Avatar" class="player-avatar" id="playerAvatar">
         <div class="player-details">
           <div class="player-name" id="playerName">Loading...</div>
-          <div class="player-school" id="playerSchool"><span class="school-emoji">🔮</span><span class="school-name">-</span></div>
+          <div class="player-school" id="playerSchool"><img src="" alt="" class="school-crest-icon" id="schoolCrestIcon" style="width:18px;height:18px;object-fit:contain;display:none;"><span class="school-emoji">🔮</span><span class="school-name">-</span></div>
           <div class="duel-record" id="duelRecord">Duels: <span class="wins">0W</span> / <span class="losses">0L</span></div>
         </div>
       </div>
@@ -281,7 +281,8 @@
     let playerData = null, objectiveData = null, selectedSpell = null, selectedSpellData = null, selectedAscii = '';
     const schoolEmojis = { 1: '🔥', 2: '🌊', 3: '🪨', 4: '💨', 5: '⚡', 6: '🌑', 7: '✨', 8: '🔮', 9: '🐱' };
     const schoolNames = { 1: 'House Smoulders', 2: 'House Darktide', 3: 'House Ironbark', 4: 'House Ashenvale', 5: 'House Stormrage', 6: 'House Darkhollow', 7: 'House Dawnbringer', 8: 'House Manastorm', 9: 'House Plaguemire' };
-    const schoolColors = { 1: '#FF4500', 2: '#00BFFF', 3: '#8B4513', 4: '#98FB98', 5: '#FFD700', 6: '#9932CC', 7: '#FFFACD', 8: '#00FFFF', 9: '#FF1493' };
+    const schoolColors = { 1: '#E8550D', 2: '#2BA5B5', 3: '#4A8C3F', 4: '#6B8CC7', 5: '#5B7FD6', 6: '#7B3FA0', 7: '#D4A843', 8: '#5E4FA0', 9: '#4A7A3A' };
+    const schoolCrests = { 1: '/assets/images/houses/House-Smoulders.png', 2: '/assets/images/houses/House-darktide.png', 3: '/assets/images/houses/House-ironbark.png', 4: '/assets/images/houses/House-ashenvale.png', 5: '/assets/images/houses/House-stormrage.png', 6: '/assets/images/houses/House-darkhollow.png', 7: '/assets/images/houses/House-dawnbringer.png', 8: '/assets/images/houses/House-manastorm.png', 9: '/assets/images/houses/House-plaguemire.png' };
 
     // Spellbook data - universal spells for all clans (effects coming soon)
     const universalSpells = [
@@ -406,11 +407,16 @@
     }
 
     function renderPlayer(p) {
-      const sid = p.school_id, c = schoolColors[sid] || '#FFD700';
+      const sid = p.school_id, c = schoolColors[sid] || '#FFD700', crest = schoolCrests[sid] || '';
       document.documentElement.style.setProperty('--school-color', c);
       document.getElementById('playerAvatar').src = p.profile_image || '/assets/images/default-avatar.png';
+      document.getElementById('playerAvatar').style.borderColor = c;
       document.getElementById('playerName').textContent = `@${p.twitter_handle}`;
-      document.getElementById('playerSchool').innerHTML = `<span class="school-emoji">${schoolEmojis[sid]}</span><span class="school-name">${schoolNames[sid]}</span>`;
+      if (crest) {
+        document.getElementById('playerSchool').innerHTML = `<img src="${crest}" alt="" style="width:18px;height:18px;object-fit:contain;"><span class="school-name">${schoolNames[sid]}</span>`;
+      } else {
+        document.getElementById('playerSchool').innerHTML = `<span class="school-emoji">${schoolEmojis[sid]}</span><span class="school-name">${schoolNames[sid]}</span>`;
+      }
       document.getElementById('duelRecord').innerHTML = `Duels: <span class="wins">${p.duel_wins||0}W</span> / <span class="losses">${p.duel_losses||0}L</span>`;
       document.getElementById('tweetAvatar').src = p.profile_image || '/assets/images/default-avatar.png';
       document.getElementById('tweetName').textContent = p.twitter_handle;
