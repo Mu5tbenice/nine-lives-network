@@ -4,643 +4,156 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>How to Play | Nine Lives Network</title>
-
-  <!-- Styles -->
   <link rel="stylesheet" href="/css/styles.css">
-
+  <link rel="stylesheet" href="/css/nav.css">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
-    .how-to-play-container {
-      min-height: 100vh;
-      background: var(--bg-dark);
-      padding: var(--space-xl) var(--space-lg);
-      padding-top: 100px;
-    }
-
-    /* Navigation */
-    .nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: var(--space-md) var(--space-lg);
-      background: var(--bg-medium);
-      border-bottom: 2px solid var(--bg-light);
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1000;
-    }
-
-    .nav-logo {
-      font-family: var(--font-main);
-      font-size: 0.75rem;
-      color: var(--accent-gold);
-      text-decoration: none;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: var(--space-lg);
-      list-style: none;
-    }
-
-    .nav-links a {
-      font-family: var(--font-main);
-      font-size: 0.5rem;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      text-decoration: none;
-    }
-
-    .nav-links a:hover, .nav-links a.active {
-      color: var(--accent-gold);
-    }
-
-    .how-to-play-content {
-      max-width: 800px;
-      margin: 0 auto;
-    }
-
-    .back-link {
-      display: inline-block;
-      color: var(--text-muted);
-      text-decoration: none;
-      margin-bottom: var(--space-lg);
-      font-size: 0.875rem;
-    }
-
-    .back-link:hover {
-      color: var(--accent-gold);
-    }
-
-    .page-title {
-      font-size: 1.5rem;
-      color: var(--accent-gold);
-      margin-bottom: var(--space-lg);
-      text-align: center;
-    }
-
-    .intro-text {
-      text-align: center;
-      font-size: 1.125rem;
-      color: var(--text-secondary);
-      margin-bottom: var(--space-xl);
-      line-height: 1.6;
-    }
-
-    /* Section Styling */
-    .section {
-      background: var(--bg-medium);
-      border: 2px solid var(--bg-light);
-      border-radius: var(--radius-md);
-      padding: var(--space-lg);
-      margin-bottom: var(--space-lg);
-    }
-
-    .section-header {
-      display: flex;
-      align-items: center;
-      gap: var(--space-md);
-      margin-bottom: var(--space-md);
-    }
-
-    .section-number {
-      width: 40px;
-      height: 40px;
-      background: var(--accent-gold);
-      color: var(--bg-dark);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--font-main);
-      font-size: 1rem;
-      flex-shrink: 0;
-    }
-
-    .section-title {
-      font-family: var(--font-main);
-      font-size: 0.875rem;
-      color: var(--text-primary);
-    }
-
-    .section-content {
-      color: var(--text-secondary);
-      line-height: 1.8;
-      font-size: 1rem;
-    }
-
-    .section-content p {
-      margin-bottom: var(--space-md);
-    }
-
-    .section-content p:last-child {
-      margin-bottom: 0;
-    }
-
-    /* Highlight Box */
-    .highlight-box {
-      background: var(--bg-light);
-      border-left: 4px solid var(--accent-gold);
-      padding: var(--space-md);
-      margin: var(--space-md) 0;
-      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    }
-
-    .highlight-box p {
-      margin: 0;
-      color: var(--text-primary);
-    }
-
-    .highlight-box.cyan {
-      border-left-color: var(--accent-cyan);
-    }
-
-    .highlight-box.red {
-      border-left-color: #ff4444;
-    }
-
-    .highlight-box.green {
-      border-left-color: #00ff00;
-    }
-
-    /* Points Table */
-    .points-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: var(--space-md) 0;
-    }
-
-    .points-table th,
-    .points-table td {
-      padding: var(--space-sm) var(--space-md);
-      text-align: left;
-      border-bottom: 1px solid var(--bg-light);
-    }
-
-    .points-table th {
-      font-family: var(--font-main);
-      font-size: 0.625rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
-
-    .points-table td {
-      color: var(--text-secondary);
-    }
-
-    .points-table .points {
-      color: var(--accent-gold);
-      font-family: var(--font-main);
-      font-size: 0.875rem;
-    }
-
-    /* Schools Grid */
-    .schools-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: var(--space-sm);
-      margin: var(--space-md) 0;
-    }
-
-    @media (max-width: 600px) {
-      .schools-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    .school-badge {
-      display: flex;
-      align-items: center;
-      gap: var(--space-sm);
-      padding: var(--space-sm);
-      background: var(--bg-dark);
-      border-radius: var(--radius-sm);
-    }
-
-    .school-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-
-    .school-badge span {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-    }
-
-    /* CTA Section */
-    .cta-section {
-      text-align: center;
-      padding: var(--space-xl) 0;
-    }
-
-    .cta-section p {
-      color: var(--text-secondary);
-      margin-bottom: var(--space-lg);
-      font-size: 1.125rem;
-    }
-
-    .btn-cta {
-      display: inline-block;
-      font-family: var(--font-main);
-      font-size: 0.75rem;
-      padding: var(--space-md) var(--space-xl);
-      background: var(--accent-gold);
-      color: var(--bg-dark);
-      text-decoration: none;
-      border-radius: var(--radius-sm);
-      transition: all 0.3s ease;
-    }
-
-    .btn-cta:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
-    }
-
-    /* Example Tweet */
-    .example-tweet {
-      background: var(--bg-dark);
-      border: 1px solid var(--bg-light);
-      border-radius: var(--radius-md);
-      padding: var(--space-md);
-      margin: var(--space-md) 0;
-    }
-
-    .example-tweet-header {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-bottom: var(--space-sm);
-    }
-
-    .example-tweet-content {
-      color: var(--text-primary);
-      font-style: italic;
-    }
-
-    /* FAQ */
-    .faq-item {
-      margin-bottom: var(--space-md);
-    }
-
-    .faq-question {
-      font-family: var(--font-main);
-      font-size: 0.625rem;
-      color: var(--accent-gold);
-      margin-bottom: var(--space-xs);
-    }
-
-    .faq-answer {
-      color: var(--text-secondary);
-      line-height: 1.6;
-    }
-
-    /* Map Legend */
-    .map-legend {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: var(--space-sm);
-      margin: var(--space-md) 0;
-    }
-
-    @media (max-width: 500px) {
-      .map-legend {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: var(--space-sm);
-      padding: var(--space-sm);
-      background: var(--bg-dark);
-      border-radius: var(--radius-sm);
-    }
-
-    .legend-indicator {
-      width: 20px;
-      height: 20px;
-      border-radius: 4px;
-      flex-shrink: 0;
-    }
-
-    .legend-indicator.gold {
-      background: #FFD700;
-      box-shadow: 0 0 8px #FFD700;
-    }
-
-    .legend-indicator.red {
-      background: #ff4444;
-      box-shadow: 0 0 8px #ff4444;
-    }
-
-    .legend-indicator.green {
-      border: 2px solid #00ff00;
-      box-shadow: 0 0 6px #00ff00;
-    }
-
-    .legend-indicator.cyan {
-      border: 2px solid #00d4ff;
-    }
-
-    .legend-text {
-      font-size: 0.85rem;
-      color: var(--text-secondary);
-    }
-
-    /* Action Buttons Preview */
-    .action-preview {
-      display: flex;
-      gap: var(--space-md);
-      margin: var(--space-md) 0;
-    }
-
-    .preview-btn {
-      flex: 1;
-      padding: var(--space-md);
-      text-align: center;
-      border-radius: var(--radius-sm);
-      font-family: var(--font-main);
-      font-size: 0.6rem;
-    }
-
-    .preview-btn.attack {
-      background: linear-gradient(180deg, #ff4444, #cc0000);
-      color: white;
-    }
-
-    .preview-btn.defend {
-      background: linear-gradient(180deg, #4444ff, #0000cc);
-      color: white;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a14; color: #fff; min-height: 100vh; }
+    .container { min-height: 100vh; padding: 76px 15px 40px; }
+    .content { max-width: 800px; margin: 0 auto; }
+    .page-title { font-family: 'Press Start 2P', monospace; font-size: 1rem; color: #FFD700; margin-bottom: 16px; text-align: center; }
+    .intro-text { text-align: center; font-size: 1rem; color: #a0a0b0; margin-bottom: 32px; line-height: 1.6; }
+    .section { background: #12121f; border: 2px solid #2a2a4a; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+    .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .section-number { width: 36px; height: 36px; background: #FFD700; color: #0a0a14; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Press Start 2P', monospace; font-size: 0.7rem; flex-shrink: 0; }
+    .section-title { font-family: 'Press Start 2P', monospace; font-size: 0.5rem; color: #fff; }
+    .section-content { color: #a0a0b0; line-height: 1.8; font-size: 0.9rem; }
+    .section-content p { margin-bottom: 12px; }
+    .highlight-box { background: #1a1a2e; border-left: 4px solid #FFD700; padding: 12px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; }
+    .highlight-box p { margin: 0; color: #fff; font-size: 0.85rem; }
+    .points-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    .points-table th, .points-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #2a2a4a; }
+    .points-table th { font-family: 'Press Start 2P', monospace; font-size: 0.35rem; color: #606070; text-transform: uppercase; }
+    .points-table td { color: #a0a0b0; font-size: 0.85rem; }
+    .points-table .points { color: #FFD700; font-family: 'Press Start 2P', monospace; font-size: 0.5rem; }
+    .schools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
+    .school-badge { display: flex; align-items: center; gap: 8px; padding: 8px; background: #0a0a14; border-radius: 6px; }
+    .school-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .school-badge span { font-family: 'Press Start 2P', monospace; font-size: 0.35rem; color: #a0a0b0; }
+    .faq-item { margin-bottom: 16px; }
+    .faq-question { font-family: 'Press Start 2P', monospace; font-size: 0.4rem; color: #FFD700; margin-bottom: 6px; }
+    .faq-answer { color: #a0a0b0; line-height: 1.6; font-size: 0.85rem; }
+    .cta-section { text-align: center; padding: 32px 0; }
+    .cta-section p { color: #a0a0b0; margin-bottom: 16px; font-size: 1rem; }
+    .btn-cta { display: inline-block; font-family: 'Press Start 2P', monospace; font-size: 0.5rem; padding: 16px 32px; background: #FFD700; color: #0a0a14; text-decoration: none; border-radius: 6px; transition: all 0.3s; }
+    .btn-cta:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4); }
+    @media (max-width: 600px) { .schools-grid { grid-template-columns: repeat(2, 1fr); } .section-title { font-size: 0.4rem; } .page-title { font-size: 0.8rem; } }
   </style>
 </head>
 <body>
-  <!-- Navigation -->
-  <nav class="nav">
-    <a href="/" class="nav-logo">Nine Lives Network</a>
-    <ul class="nav-links">
-      <li><a href="/dashboard.html">Dashboard</a></li>
-      <li><a href="/map.html">Map</a></li>
-      <li><a href="/leaderboards.html">Leaderboards</a></li>
-      <li><a href="/how-to-play.html" class="active">How to Play</a></li>
-    </ul>
+  <nav class="top-nav">
+    <div class="top-nav-content">
+      <a href="/" class="nav-logo">Nine Lives Network</a>
+      <ul class="nav-links">
+        <li><a href="/dashboard.html">Dashboard</a></li>
+        <li><a href="/world.html">World</a></li>
+        <li><a href="/leaderboards.html">Leaderboards</a></li>
+        <li><a href="/how-to-play.html" class="active">Help</a></li>
+        <li><a href="#" class="logout-btn" id="logoutBtn">Logout</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+    </div>
   </nav>
 
-  <main class="how-to-play-container">
-    <div class="how-to-play-content">
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="/dashboard.html"><span class="menu-icon">📊</span> Dashboard</a>
+    <a href="/world.html"><span class="menu-icon">🌍</span> World</a>
+    <a href="/leaderboards.html"><span class="menu-icon">🏆</span> Leaderboards</a>
+    <a href="/how-to-play.html" class="active"><span class="menu-icon">❓</span> Help</a>
+    <a href="#" class="logout-btn" id="mobileLogoutBtn"><span class="menu-icon">🚪</span> Logout</a>
+  </div>
 
+  <main class="container">
+    <div class="content">
       <h1 class="page-title">📜 How to Play</h1>
+      <p class="intro-text">Nine Lives Network is a social strategy game played on Twitter/X. Join a magical school, cast spells by tweeting, and fight for territory in Avaloris.</p>
 
-      <p class="intro-text">
-        Nine Lives Network is a social strategy game played on Twitter/X. 
-        Join a magical school, cast spells by tweeting, and fight for territory in the realm of Avaloris.
-      </p>
-
-      <!-- Step 1: Register -->
       <div class="section">
-        <div class="section-header">
-          <div class="section-number">1</div>
-          <h2 class="section-title">Register & Choose Your School</h2>
-        </div>
+        <div class="section-header"><div class="section-number">1</div><h2 class="section-title">Register & Choose Your School</h2></div>
         <div class="section-content">
-          <p>Sign in with your Twitter/X account and pledge allegiance to one of nine magical schools. Each school has its own identity and community.</p>
-
+          <p>Sign in with Twitter and pledge allegiance to one of nine magical schools:</p>
           <div class="schools-grid">
-            <div class="school-badge"><div class="school-dot" style="background: #FF4500;"></div><span>Ember</span></div>
-            <div class="school-badge"><div class="school-dot" style="background: #00BFFF;"></div><span>Tidal</span></div>
-            <div class="school-badge"><div class="school-dot" style="background: #8B4513;"></div><span>Stone</span></div>
-            <div class="school-badge"><div class="school-dot" style="background: #98FB98;"></div><span>Zephyr</span></div>
-            <div class="school-badge"><div class="school-dot" style="background: #FFD700;"></div><span>Storm</span></div>
-            <div class="school-badge"><div class="school-dot" style="background: #9932CC;"></div><span>Umbral</span></div>
-            <div class="school-badge"><div class="school-dot" style="background: #FFFFE0;"></div><span>Radiant</span></div>
-            <div class="school-badge"><div class="school-dot" style="background: #00FFFF;"></div><span>Arcane</span></div>
-            <div class="school-badge"><div class="school-dot" style="background: #FF1493;"></div><span>WildCat</span></div>
+            <div class="school-badge"><div class="school-dot" style="background:#FF4500"></div><span>Ember</span></div>
+            <div class="school-badge"><div class="school-dot" style="background:#00BFFF"></div><span>Tidal</span></div>
+            <div class="school-badge"><div class="school-dot" style="background:#8B4513"></div><span>Stone</span></div>
+            <div class="school-badge"><div class="school-dot" style="background:#98FB98"></div><span>Zephyr</span></div>
+            <div class="school-badge"><div class="school-dot" style="background:#FFD700"></div><span>Storm</span></div>
+            <div class="school-badge"><div class="school-dot" style="background:#9932CC"></div><span>Umbral</span></div>
+            <div class="school-badge"><div class="school-dot" style="background:#FFFFE0"></div><span>Radiant</span></div>
+            <div class="school-badge"><div class="school-dot" style="background:#00FFFF"></div><span>Arcane</span></div>
+            <div class="school-badge"><div class="school-dot" style="background:#FF1493"></div><span>WildCat</span></div>
           </div>
-
-          <p>You can also add a community tag (like $BONK or $WIF) to represent your crypto community on the leaderboards!</p>
+          <p>Add a community tag (like $BONK) to represent your crypto community!</p>
         </div>
       </div>
 
-      <!-- Step 2: Daily Objectives -->
       <div class="section">
-        <div class="section-header">
-          <div class="section-number">2</div>
-          <h2 class="section-title">Watch for Daily Objectives</h2>
-        </div>
+        <div class="section-header"><div class="section-number">2</div><h2 class="section-title">Twitter Bounties (Free Points!)</h2></div>
         <div class="section-content">
-          <p>Every day, <a href="https://twitter.com/9LVNetwork" target="_blank" style="color: var(--accent-gold);">@9LVNetwork</a> posts a daily objective announcing which territory is up for grabs.</p>
-
-          <div class="highlight-box">
-            <p>🔔 Follow @9LVNetwork and turn on notifications so you never miss an objective!</p>
-          </div>
-
-          <p>The objective zone changes daily, and different zones have different bonuses.</p>
+          <p><strong>Bounties</strong> are special tweets from <a href="https://twitter.com/9LVNetwork" style="color:#FFD700">@9LVNetwork</a> that appear 2-3 times per day. Simply reply to earn points!</p>
+          <div class="highlight-box"><p>🎯 Bounties are FREE - no mana required. Reply once per bounty. Roleplay and ASCII art earn bonus points!</p></div>
+          <p>The school with the most participation wins the zone shown in the bounty tweet.</p>
         </div>
       </div>
 
-      <!-- Step 3: Cast Spells -->
       <div class="section">
-        <div class="section-header">
-          <div class="section-number">3</div>
-          <h2 class="section-title">Cast Spells by Replying</h2>
-        </div>
+        <div class="section-header"><div class="section-number">3</div><h2 class="section-title">Territory Control (Costs Mana)</h2></div>
         <div class="section-content">
-          <p><strong>To cast a spell, simply reply to the daily objective tweet.</strong> That's it! Any reply counts as a spell cast.</p>
-
-          <div class="example-tweet">
-            <div class="example-tweet-header">Example replies:</div>
-            <div class="example-tweet-content">
-              "🔥 Ember bolt! The Covenant claims this territory!"<br><br>
-              "Casting my vote for Radiant Order ✨"<br><br>
-              "shadows consume all who oppose us 🌑"
-            </div>
-          </div>
-
-          <p>Get creative! Roleplay your spell, trash talk rival schools, or just show up for your team. Every cast helps your school claim territory.</p>
-
-          <div class="highlight-box">
-            <p>💡 You have 5 mana per day. Each cast costs 1 mana. Mana resets at midnight UTC.</p>
-          </div>
+          <p>On the <strong>World</strong> page, you can attack or defend any territory. Each action costs 1 mana.</p>
+          <p><strong>Attack</strong> = Try to flip a zone to your school's control<br><strong>Defend</strong> = Protect zones your school controls</p>
+          <div class="highlight-box"><p>💧 You have 5 mana per day. Use wisely! Coordinate with your school to take key zones.</p></div>
         </div>
       </div>
 
-      <!-- Step 4: Territory Map -->
       <div class="section">
-        <div class="section-header">
-          <div class="section-number">4</div>
-          <h2 class="section-title">Battle on the Territory Map</h2>
-        </div>
+        <div class="section-header"><div class="section-number">4</div><h2 class="section-title">Duels (Costs Lives)</h2></div>
         <div class="section-content">
-          <p>Visit the <a href="/map.html" style="color: var(--accent-gold);">Territory Map</a> to attack and defend zones across Avaloris!</p>
-
-          <div class="highlight-box cyan">
-            <p>🗺️ The map shows 50 zones across the realm. Each school has a home zone that cannot be attacked.</p>
-          </div>
-
-          <p><strong>How Territory Battles Work:</strong></p>
-          <ul style="margin: var(--space-md) 0; padding-left: var(--space-lg);">
-            <li style="margin-bottom: var(--space-sm);">Click any zone to see details and take action</li>
-            <li style="margin-bottom: var(--space-sm);"><strong>Attack</strong> - Push to flip a zone to your school's control</li>
-            <li style="margin-bottom: var(--space-sm);"><strong>Defend</strong> - Protect a zone from enemy attacks</li>
-            <li style="margin-bottom: var(--space-sm);">Each action costs <strong>1 mana</strong> and earns <strong>5 points</strong></li>
-            <li style="margin-bottom: var(--space-sm);">You can only attack zones adjacent to territory your school controls</li>
-            <li>The daily objective zone can be attacked by anyone!</li>
-          </ul>
-
-          <div class="action-preview">
-            <div class="preview-btn attack">⚔️ Attack</div>
-            <div class="preview-btn defend">🛡️ Defend</div>
-          </div>
-
-          <p><strong>Map Legend:</strong></p>
-          <div class="map-legend">
-            <div class="legend-item">
-              <div class="legend-indicator gold"></div>
-              <span class="legend-text">Daily Objective</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-indicator red"></div>
-              <span class="legend-text">Under Attack (Contested)</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-indicator green"></div>
-              <span class="legend-text">Can Attack (Adjacent)</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-indicator cyan"></div>
-              <span class="legend-text">Your Territory</span>
-            </div>
-          </div>
-
-          <div class="highlight-box red">
-            <p>⚔️ At the end of each day, zones are resolved! If attackers outnumber defenders, control shifts.</p>
-          </div>
+          <p>Challenge other players to 1v1 duels! Each duel costs 1 life (3 lives per day).</p>
+          <p><strong>Win:</strong> +10 points | <strong>Lose:</strong> -10 points</p>
+          <p>Duels are currently 50/50 random. Future NFT holders will have stat-weighted odds!</p>
         </div>
       </div>
 
-      <!-- Step 5: Earn Points -->
       <div class="section">
-        <div class="section-header">
-          <div class="section-number">5</div>
-          <h2 class="section-title">Earn Points</h2>
-        </div>
+        <div class="section-header"><div class="section-number">5</div><h2 class="section-title">Earn Points</h2></div>
         <div class="section-content">
-          <p>Every spell cast earns you points. More creative and detailed casts earn bonus points!</p>
-
           <table class="points-table">
-            <thead>
-              <tr>
-                <th>Action</th>
-                <th>Points</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Action</th><th>Points</th></tr></thead>
             <tbody>
-              <tr>
-                <td>Any spell cast (Twitter)</td>
-                <td class="points">+10</td>
-              </tr>
-              <tr>
-                <td>Territory action (Map)</td>
-                <td class="points">+5</td>
-              </tr>
-              <tr>
-                <td>Using school keywords (fire, shadow, etc.)</td>
-                <td class="points">+2</td>
-              </tr>
-              <tr>
-                <td>Descriptive cast (10-30 words)</td>
-                <td class="points">+3</td>
-              </tr>
-              <tr>
-                <td>Detailed cast (30+ words)</td>
-                <td class="points">+5</td>
-              </tr>
-              <tr>
-                <td>Casting in your home zone</td>
-                <td class="points">+20%</td>
-              </tr>
-              <tr>
-                <td>Nerm notices your spell (random!)</td>
-                <td class="points">+20</td>
-              </tr>
-              <tr>
-                <td>Spell of the Day award</td>
-                <td class="points">+50</td>
-              </tr>
+              <tr><td>Reply to bounty tweet</td><td class="points">+10</td></tr>
+              <tr><td>Use school keywords</td><td class="points">+2</td></tr>
+              <tr><td>Descriptive reply (10-30 words)</td><td class="points">+3</td></tr>
+              <tr><td>ASCII art or roleplay</td><td class="points">+5</td></tr>
+              <tr><td>Territory attack/defend</td><td class="points">+5</td></tr>
+              <tr><td>Win a duel</td><td class="points">+10</td></tr>
+              <tr><td>Lose a duel</td><td class="points">-10</td></tr>
             </tbody>
           </table>
-
-          <p>Points contribute to three leaderboards: Individual, School, and Community.</p>
         </div>
       </div>
 
-      <!-- Step 6: Win Territory -->
       <div class="section">
-        <div class="section-header">
-          <div class="section-number">6</div>
-          <h2 class="section-title">Control Territory</h2>
-        </div>
+        <div class="section-header"><div class="section-number">?</div><h2 class="section-title">FAQ</h2></div>
         <div class="section-content">
-          <p>When you cast a spell, you're fighting for territory on the map of Avaloris. The more your school casts, the more control you gain.</p>
-
-          <p>At the end of each day, the school with the most control over the objective zone wins! Check the <a href="/map.html" style="color: var(--accent-gold);">Map</a> to see current control percentages.</p>
-
-          <div class="highlight-box">
-            <p>🏆 Winning schools earn bonus points and bragging rights!</p>
-          </div>
+          <div class="faq-item"><div class="faq-question">Can I change my school?</div><div class="faq-answer">No, once you pledge, you're locked in for the season.</div></div>
+          <div class="faq-item"><div class="faq-question">When do mana and lives reset?</div><div class="faq-answer">Midnight UTC every day.</div></div>
+          <div class="faq-item"><div class="faq-question">What's the Crystal Tower?</div><div class="faq-answer">A visual showing faction power. The winning school at season end gets exclusive rewards!</div></div>
+          <div class="faq-item"><div class="faq-question">Is this free to play?</div><div class="faq-answer">Yes! Just need a Twitter account. NFTs are optional and coming later.</div></div>
         </div>
       </div>
 
-      <!-- FAQ -->
-      <div class="section">
-        <div class="section-header">
-          <div class="section-number">?</div>
-          <h2 class="section-title">FAQ</h2>
-        </div>
-        <div class="section-content">
-          <div class="faq-item">
-            <div class="faq-question">Can I change my school?</div>
-            <div class="faq-answer">No, once you pledge to a school, you're locked in for the season. Choose wisely!</div>
-          </div>
-
-          <div class="faq-item">
-            <div class="faq-question">What if I run out of mana?</div>
-            <div class="faq-answer">Wait until midnight UTC when your mana resets to 5. Plan your casts strategically!</div>
-          </div>
-
-          <div class="faq-item">
-            <div class="faq-question">Do I need to use specific spell words?</div>
-            <div class="faq-answer">No! Any reply to the objective tweet counts. But using school-themed words earns bonus points.</div>
-          </div>
-
-          <div class="faq-item">
-            <div class="faq-question">What's the difference between Twitter casts and Map actions?</div>
-            <div class="faq-answer">Twitter casts earn more points (+10) and help control the daily objective. Map actions (+5 points) let you strategically expand your school's territory across all 50 zones.</div>
-          </div>
-
-          <div class="faq-item">
-            <div class="faq-question">What's a community tag?</div>
-            <div class="faq-answer">Optional tag (like $BONK) that lets crypto communities compete on a separate leaderboard.</div>
-          </div>
-
-          <div class="faq-item">
-            <div class="faq-question">Is this free to play?</div>
-            <div class="faq-answer">Yes! Just need a Twitter account. No wallet required for Season 0.</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CTA -->
       <div class="cta-section">
         <p>Ready to join the battle for Avaloris?</p>
         <a href="/register.html" class="btn-cta">Join Now</a>
       </div>
-
     </div>
   </main>
+
+  <script>
+    document.getElementById('hamburger').addEventListener('click', () => { document.getElementById('hamburger').classList.toggle('active'); document.getElementById('mobileMenu').classList.toggle('active'); });
+    document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('player_id'); window.location.href = '/'; });
+    document.getElementById('mobileLogoutBtn').addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('player_id'); window.location.href = '/'; });
+  </script>
 </body>
 </html>
