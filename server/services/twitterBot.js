@@ -2,6 +2,7 @@ const { TwitterApi } = require('twitter-api-v2');
 const { createClient } = require('@supabase/supabase-js');
 const Anthropic = require('@anthropic-ai/sdk');
 const supabase = require('../config/supabase');
+const { houses, getRandomNarrative, getNarrativeById, getNermHook, buildEscalation, buildResolution } = require('./narratives');
 
 // Admin client for writes (using service role to bypass RLS)
 const supabaseAdmin = createClient(
@@ -26,30 +27,9 @@ function getAnthropicClient() {
   });
 }
 
-// School data for messages
-const schools = {
-  1: { name: 'Ember Covenant', emoji: '🔥', element: 'fire' },
-  2: { name: 'Tidal Conclave', emoji: '🌊', element: 'water' },
-  3: { name: 'Stone Covenant', emoji: '🪨', element: 'earth' },
-  4: { name: 'Zephyr Circle', emoji: '💨', element: 'air' },
-  5: { name: 'Storm Assembly', emoji: '⚡', element: 'lightning' },
-  6: { name: 'Umbral Syndicate', emoji: '🌑', element: 'shadow' },
-  7: { name: 'Radiant Order', emoji: '✨', element: 'light' },
-  8: { name: 'Arcane Spire', emoji: '🔮', element: 'arcane' },
-  9: { name: 'WildCat Path', emoji: '🐱', element: 'chaos' },
-};
-
-// Zone lore for AI context
-const zoneLore = {
-  'Crystal Crossroads': 'A nexus of ley lines where magical energy converges. Ancient crystals hum with power.',
-  'Mystic Falls': 'Waterfalls that flow upward, defying gravity. The mist carries whispered prophecies.',
-  'Ancient Ruins': 'Remnants of a civilization that mastered magic before the schools existed. Secrets lie buried.',
-  'Twilight Grove': 'A forest where day and night exist simultaneously. Time moves strangely here.',
-  'Dragons Rest': 'Where the last dragon fell. Its bones still radiate magical energy.',
-  'The Nexus': 'The heart of Avaloris. All magical paths lead here eventually.',
-  'Shadowmere': 'A realm of perpetual dusk. Light spells flicker and fade.',
-  'Stormspire': 'A mountain peak where lightning strikes constantly. Only the bold venture here.',
-};
+// Track today's narrative (persists during runtime)
+let todaysNarrative = null;
+let recentNarrativeIds = [];
 
 // First Blood bonuses
 const firstBloodBonuses = {
@@ -60,45 +40,386 @@ const firstBloodBonuses = {
   5: { points: 5, title: '⚡ Early Bird!' }
 };
 
+// ============================================
+// NARRATIVE POST SYSTEM (3 posts per bounty)
+// ============================================
+
 /**
- * Generate AI flavor text for objectives
+ * POST 1 — "The Situation" (Morning post)
+ * Sets the scene with the narrative, easy prompt to engage with
  */
-async function generateFlavorText(zone, type = 'objective') {
+async function postMorningSituation() {
   try {
-    const client = getAnthropicClient();
-    const lore = zoneLore[zone.name] || 'A contested territory in the realm of Avaloris.';
+    const client = getNineLivesClient();
 
-    let prompt = '';
+    // Get current objective zone
+    const { data: zone } = await supabase
+      .from('zones')
+      .select('*')
+      .eq('is_current_objective', true)
+      .single();
 
-    if (type === 'objective') {
-      prompt = `You are writing a brief, dramatic announcement for a fantasy wizard game. The zone "${zone.name}" is today's battle objective.
-
-Zone lore: ${lore}
-
-Write 1-2 sentences of dramatic fantasy flavor text announcing this zone is under contest. Be evocative but concise. No hashtags. No emojis. Channel the tone of a war correspondent reporting from a magical battlefield.
-
-Examples of good tone:
-- "The ley lines at Crystal Crossroads surge with unstable energy. The schools converge."
-- "Dawn breaks over the Ancient Ruins. Today, history will be written in spell-fire."
-- "The mists of Mystic Falls part to reveal armies of wizards. Battle is inevitable."`;
-    } else if (type === 'midday') {
-      prompt = `Write a brief 1-sentence dramatic update about an ongoing magical battle at "${zone.name}". Something like a war correspondent's field report. No hashtags. No emojis. Tense and immediate.`;
-    } else if (type === 'final') {
-      prompt = `Write a brief 1-sentence urgent announcement that the battle for "${zone.name}" ends in 4 hours. Dramatic, tense, like a final call to arms. No hashtags. No emojis.`;
+    if (!zone) {
+      console.error('No objective zone set!');
+      return null;
     }
 
-    const message = await client.messages.create({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 100,
-      messages: [{ role: 'user', content: prompt }]
-    });
+    // Pick today's narrative (avoid recent ones)
+    todaysNarrative = getRandomNarrative(recentNarrativeIds);
+    recentNarrativeIds.push(todaysNarrative.id);
+    if (recentNarrativeIds.length > 5) recentNarrativeIds.shift();
 
-    return message.content[0].text.trim();
+    console.log(`📖 Today's narrative: ${todaysNarrative.title} (${todaysNarrative.id})`);
+
+    // Build the tweet
+    let tweet = `📍 ${todaysNarrative.title}\n\n`;
+    tweet += `${todaysNarrative.morning.text}\n\n`;
+    tweet += `${todaysNarrative.morning.prompt}\n\n`;
+    tweet += `🏠 Rep your House\n`;
+    tweet += `💰 Rep your Community ($TAG)\n`;
+    tweet += `✨ Best replies earn bonus points`;
+
+    // Trim to 280 chars if needed (Twitter limit)
+    if (tweet.length > 280) {
+      // Shorten the narrative text to fit
+      const maxNarrativeLen = 280 - todaysNarrative.morning.prompt.length - 80;
+      const shortText = todaysNarrative.morning.text.substring(0, maxNarrativeLen) + '...';
+      tweet = `📍 ${todaysNarrative.title}\n\n`;
+      tweet += `${shortText}\n\n`;
+      tweet += `${todaysNarrative.morning.prompt}\n\n`;
+      tweet += `🏠 Rep your House\n`;
+      tweet += `✨ Best replies earn bonus points`;
+    }
+
+    const { data } = await client.v2.tweet(tweet);
+    console.log('📖 Posted morning situation:', data.id);
+
+    // Store the tweet ID on the zone
+    await supabaseAdmin
+      .from('zones')
+      .update({
+        objective_tweet_id: data.id,
+        objective_posted_at: new Date().toISOString()
+      })
+      .eq('id', zone.id);
+
+    // Nerm reacts to the narrative
+    try {
+      const nermBot = require('./nermBot');
+      const nermHook = getNermHook(todaysNarrative.id, 'morning');
+      if (nermHook) {
+        // Small delay so it looks natural
+        setTimeout(async () => {
+          await nermBot.replyAsNerm(nermHook, data.id);
+          console.log(`🐱 Nerm commented on the situation`);
+        }, 30000 + Math.random() * 60000); // 30-90 seconds later
+      }
+    } catch (nermError) {
+      console.log('Nerm comment skipped:', nermError.message);
+    }
+
+    return data;
+
   } catch (error) {
-    console.error('AI flavor text error:', error.message);
+    console.error('Error posting morning situation:', error);
     return null;
   }
 }
+
+/**
+ * POST 2 — "The Escalation" (Midday post)
+ * Uses real participation data + highlights top replies
+ */
+async function postEscalation() {
+  try {
+    const client = getNineLivesClient();
+
+    const { data: zone } = await supabase
+      .from('zones')
+      .select('*')
+      .eq('is_current_objective', true)
+      .single();
+
+    if (!zone) return null;
+
+    // Use current narrative or fall back
+    const narrative = todaysNarrative || getRandomNarrative();
+
+    // Get today's cast data
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    const { data: todaysCasts } = await supabase
+      .from('casts')
+      .select('player_id, points_earned')
+      .eq('zone_id', zone.id)
+      .gte('created_at', today.toISOString());
+
+    // Get player data for house counts
+    const playerIds = [...new Set(todaysCasts?.map(c => c.player_id) || [])];
+    let houseCounts = {};
+    let totalWizards = 0;
+
+    if (playerIds.length > 0) {
+      const { data: players } = await supabase
+        .from('players')
+        .select('id, school_id')
+        .in('id', playerIds);
+
+      players?.forEach(p => {
+        const house = houses[p.school_id];
+        if (house) {
+          houseCounts[p.school_id] = (houseCounts[p.school_id] || 0) + 1;
+          totalWizards++;
+        }
+      });
+    }
+
+    // Build house participation string
+    const sortedHouses = Object.entries(houseCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+
+    let houseStats = '';
+    if (sortedHouses.length > 0) {
+      houseStats = sortedHouses.map(([id, count]) => {
+        const h = houses[parseInt(id)];
+        return `${h.short}: ${count}`;
+      }).join(' | ');
+    }
+
+    // Get top reply (placeholder - we'll use escalation template)
+    const escalationData = {
+      topReplies: [], // TODO: pull actual top replies by engagement
+    };
+
+    // Build the tweet
+    let tweetText = buildEscalation(narrative, escalationData);
+
+    // Add stats footer
+    let tweet = `📍 ${narrative.title} — ESCALATION\n\n`;
+
+    // We need to fit within limits, so trim the narrative part
+    const statsFooter = `\n\n⚔️ ${totalWizards} wizards deployed\n🏆 ${houseStats || 'No casts yet'}\n⏰ Resolution coming soon`;
+
+    const maxNarrativeLen = 280 - tweet.length - statsFooter.length;
+    if (tweetText.length > maxNarrativeLen) {
+      tweetText = tweetText.substring(0, maxNarrativeLen - 3) + '...';
+    }
+
+    tweet += tweetText + statsFooter;
+
+    // Reply to original objective tweet to create thread
+    const tweetOptions = {};
+    if (zone.objective_tweet_id) {
+      tweetOptions.reply = { in_reply_to_tweet_id: zone.objective_tweet_id };
+    }
+
+    const { data } = await client.v2.tweet(tweet, tweetOptions);
+    console.log('📖 Posted escalation:', data.id);
+
+    // Nerm escalation comment
+    try {
+      const nermBot = require('./nermBot');
+      const nermHook = getNermHook(narrative.id, 'escalation');
+      if (nermHook) {
+        setTimeout(async () => {
+          await nermBot.replyAsNerm(nermHook, data.id);
+        }, 30000 + Math.random() * 60000);
+      }
+    } catch (e) {
+      console.log('Nerm escalation comment skipped');
+    }
+
+    return data;
+
+  } catch (error) {
+    console.error('Error posting escalation:', error);
+    return null;
+  }
+}
+
+/**
+ * POST 3 — "The Resolution" (Results post)
+ * Wraps up the story, crowns winners, spotlights players
+ */
+async function postResolution() {
+  try {
+    const client = getNineLivesClient();
+
+    const { data: zone } = await supabase
+      .from('zones')
+      .select('*')
+      .eq('is_current_objective', true)
+      .single();
+
+    if (!zone) return null;
+
+    const narrative = todaysNarrative || getRandomNarrative();
+
+    // Get today's cast data
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    const { data: todaysCasts } = await supabase
+      .from('casts')
+      .select('player_id, points_earned')
+      .eq('zone_id', zone.id)
+      .gte('created_at', today.toISOString());
+
+    // Calculate winner
+    const playerIds = [...new Set(todaysCasts?.map(c => c.player_id) || [])];
+    const schoolPoints = {};
+
+    if (playerIds.length > 0) {
+      const { data: players } = await supabase
+        .from('players')
+        .select('id, school_id')
+        .in('id', playerIds);
+
+      todaysCasts?.forEach(cast => {
+        const player = players?.find(p => p.id === cast.player_id);
+        if (player) {
+          schoolPoints[player.school_id] = (schoolPoints[player.school_id] || 0) + cast.points_earned;
+        }
+      });
+    }
+
+    // Find winner
+    let winnerSchoolId = null;
+    let winnerPoints = 0;
+    Object.entries(schoolPoints).forEach(([schoolId, points]) => {
+      if (points > winnerPoints) {
+        winnerSchoolId = parseInt(schoolId);
+        winnerPoints = points;
+      }
+    });
+
+    const winnerHouse = winnerSchoolId ? houses[winnerSchoolId]?.name : 'No house';
+
+    // Build resolution from narrative
+    const resolutionText = buildResolution(narrative, { winnerHouse });
+
+    let tweet = `📍 ${narrative.title} — RESOLVED\n\n`;
+    tweet += `${resolutionText}\n\n`;
+
+    // Results section
+    tweet += `🏆 RESULTS:\n`;
+
+    const sortedSchools = Object.entries(schoolPoints)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+
+    const medals = ['🥇', '🥈', '🥉'];
+    sortedSchools.forEach(([schoolId, points], i) => {
+      const h = houses[parseInt(schoolId)];
+      if (h) {
+        tweet += `${medals[i]} ${h.name} — ${points} pts\n`;
+      }
+    });
+
+    if (sortedSchools.length === 0) {
+      tweet += `No faction claimed this territory.\n`;
+    }
+
+    // Trim if over 280
+    if (tweet.length > 280) {
+      // Remove the narrative text and just keep results
+      tweet = `📍 ${narrative.title} — RESOLVED\n\n🏆 RESULTS:\n`;
+      sortedSchools.forEach(([schoolId, points], i) => {
+        const h = houses[parseInt(schoolId)];
+        if (h) {
+          tweet += `${medals[i]} ${h.short} — ${points} pts\n`;
+        }
+      });
+      tweet += `\nThe story continues tomorrow.`;
+    }
+
+    // Reply to thread
+    const tweetOptions = {};
+    if (zone.objective_tweet_id) {
+      tweetOptions.reply = { in_reply_to_tweet_id: zone.objective_tweet_id };
+    }
+
+    const { data } = await client.v2.tweet(tweet, tweetOptions);
+    console.log('📖 Posted resolution:', data.id);
+
+    // Clear objective
+    await supabaseAdmin
+      .from('zones')
+      .update({
+        is_current_objective: false,
+        objective_tweet_id: null,
+        objective_posted_at: null
+      })
+      .eq('id', zone.id);
+
+    // Nerm resolution comment
+    try {
+      const nermBot = require('./nermBot');
+      const nermHook = getNermHook(narrative.id, 'resolution');
+      if (nermHook) {
+        setTimeout(async () => {
+          await nermBot.postAsNerm(nermHook);
+        }, 60000 + Math.random() * 120000); // 1-3 min after results
+      }
+    } catch (e) {
+      console.log('Nerm resolution comment skipped');
+    }
+
+    // Reset narrative for next bounty
+    todaysNarrative = null;
+
+    return data;
+
+  } catch (error) {
+    console.error('Error posting resolution:', error);
+    return null;
+  }
+}
+
+// ============================================
+// LEGACY FUNCTIONS (kept for backward compat)
+// ============================================
+
+/**
+ * Post daily objective - now calls postMorningSituation
+ */
+async function postDailyObjective() {
+  return await postMorningSituation();
+}
+
+/**
+ * Post daily results - now calls postResolution
+ */
+async function postDailyResults() {
+  return await postResolution();
+}
+
+/**
+ * Post midday standings - now calls postEscalation
+ */
+async function postMiddayStandings() {
+  return await postEscalation();
+}
+
+/**
+ * Post afternoon reminder - also calls postEscalation with different framing
+ */
+async function postAfternoonReminder() {
+  return await postEscalation();
+}
+
+/**
+ * Post final push - calls postEscalation as final push
+ */
+async function postFinalPush() {
+  return await postEscalation();
+}
+
+// ============================================
+// SPELL CASTING (unchanged core logic)
+// ============================================
 
 /**
  * Check and award First Blood bonus
@@ -141,364 +462,6 @@ async function checkFirstBlood(playerId, schoolId, zoneId) {
 
   } catch (error) {
     console.error('Error checking first blood:', error);
-    return null;
-  }
-}
-
-/**
- * Post the daily objective tweet - WITH AI FLAVOR TEXT
- */
-async function postDailyObjective() {
-  try {
-    const client = getNineLivesClient();
-
-    const { data: zone } = await supabase
-      .from('zones')
-      .select('*')
-      .eq('is_current_objective', true)
-      .single();
-
-    if (!zone) {
-      console.error('No objective zone set!');
-      return null;
-    }
-
-    // Generate AI flavor text
-    const flavorText = await generateFlavorText(zone, 'objective');
-
-    // Build tweet WITHOUT hashtags
-    let tweet = `⚔️ TODAY'S BOUNTY: ${zone.name.toUpperCase()}\n\n`;
-
-    if (flavorText) {
-      tweet += `${flavorText}\n\n`;
-    }
-
-    tweet += `Reply to claim territory for your school.\n`;
-    tweet += `🩸 First 5 from each school get bonus points\n`;
-    tweet += `⏡ The portal won't stay open forever.`;
-
-    const { data } = await client.v2.tweet(tweet);
-    console.log('Posted daily objective:', data.id);
-
-    await supabaseAdmin
-      .from('zones')
-      .update({ 
-        objective_tweet_id: data.id,
-        objective_posted_at: new Date().toISOString()
-      })
-      .eq('id', zone.id);
-
-    // Trigger Nerm to comment
-    try {
-      const nermBot = require('./nermBot');
-      const nermComment = await nermBot.generateCustomResponse(
-        `A new battle has begun at ${zone.name}. Make a brief, deadpan observation about this location or the wizards about to fight over it. Reference your historical knowledge if relevant.`
-      );
-      if (nermComment) {
-        await nermBot.replyAsNerm(nermComment, data.id);
-      }
-    } catch (nermError) {
-      console.log('Nerm comment skipped:', nermError.message);
-    }
-
-    return data;
-
-  } catch (error) {
-    console.error('Error posting daily objective:', error);
-    return null;
-  }
-}
-
-/**
- * Post midday standings update - WITH AI FLAVOR
- */
-async function postMiddayStandings() {
-  try {
-    const client = getNineLivesClient();
-
-    const { data: zone } = await supabase
-      .from('zones')
-      .select('*')
-      .eq('is_current_objective', true)
-      .single();
-
-    if (!zone) return null;
-
-    const { data: control } = await supabase
-      .from('zone_control')
-      .select('school_id, control_percentage')
-      .eq('zone_id', zone.id)
-      .order('control_percentage', { ascending: false })
-      .limit(5);
-
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-
-    const { count: castCount } = await supabase
-      .from('casts')
-      .select('*', { count: 'exact', head: true })
-      .eq('zone_id', zone.id)
-      .gte('created_at', today.toISOString());
-
-    // Generate AI flavor
-    const flavorText = await generateFlavorText(zone, 'midday');
-
-    let tweet = `📊 MIDDAY REPORT: ${zone.name}\n\n`;
-
-    if (flavorText) {
-      tweet += `${flavorText}\n\n`;
-    }
-
-    if (control && control.length > 0) {
-      control.slice(0, 3).forEach((c, i) => {
-        const school = schools[c.school_id];
-        tweet += `${i + 1}. ${school.emoji} ${school.name.split(' ')[0]}: ${Math.round(c.control_percentage)}%\n`;
-      });
-    } else {
-      tweet += `No spells cast yet. Be the first.\n`;
-    }
-
-    tweet += `\n⚡ ${castCount || 0} spells cast`;
-    tweet += `\nThe battle rages on.`;
-
-    // Reply to original objective tweet to create thread
-    const tweetOptions = {};
-    if (zone.objective_tweet_id) {
-      tweetOptions.reply = { in_reply_to_tweet_id: zone.objective_tweet_id };
-    }
-
-    const { data } = await client.v2.tweet(tweet, tweetOptions);
-    console.log('Posted midday standings:', data.id);
-
-    return data;
-
-  } catch (error) {
-    console.error('Error posting midday standings:', error);
-    return null;
-  }
-}
-
-/**
- * Post afternoon reminder
- */
-async function postAfternoonReminder() {
-  try {
-    const client = getNineLivesClient();
-
-    const { data: zone } = await supabase
-      .from('zones')
-      .select('*')
-      .eq('is_current_objective', true)
-      .single();
-
-    if (!zone) return null;
-
-    const { data: control } = await supabase
-      .from('zone_control')
-      .select('school_id, control_percentage')
-      .eq('zone_id', zone.id)
-      .order('control_percentage', { ascending: false })
-      .limit(1);
-
-    let tweet = `⏰ THE BATTLE CONTINUES\n\n`;
-    tweet += `${zone.name} remains contested.\n\n`;
-
-    if (control && control.length > 0) {
-      const leader = schools[control[0].school_id];
-      tweet += `${leader.emoji} ${leader.name} leads at ${Math.round(control[0].control_percentage)}%\n\n`;
-      tweet += `Cast now before the portal closes.`;
-    } else {
-      tweet += `No clear leader. Every spell matters.`;
-    }
-
-    // Reply to original objective tweet to create thread
-    const tweetOptions = {};
-    if (zone.objective_tweet_id) {
-      tweetOptions.reply = { in_reply_to_tweet_id: zone.objective_tweet_id };
-    }
-
-    const { data } = await client.v2.tweet(tweet, tweetOptions);
-    console.log('Posted afternoon reminder:', data.id);
-
-    return data;
-
-  } catch (error) {
-    console.error('Error posting afternoon reminder:', error);
-    return null;
-  }
-}
-
-/**
- * Post final push reminder - WITH AI FLAVOR
- */
-async function postFinalPush() {
-  try {
-    const client = getNineLivesClient();
-
-    const { data: zone } = await supabase
-      .from('zones')
-      .select('*')
-      .eq('is_current_objective', true)
-      .single();
-
-    if (!zone) return null;
-
-    const { data: control } = await supabase
-      .from('zone_control')
-      .select('school_id, control_percentage')
-      .eq('zone_id', zone.id)
-      .order('control_percentage', { ascending: false })
-      .limit(3);
-
-    // Generate AI flavor
-    const flavorText = await generateFlavorText(zone, 'final');
-
-    let tweet = `🚨 FINAL HOURS: ${zone.name}\n\n`;
-
-    if (flavorText) {
-      tweet += `${flavorText}\n\n`;
-    }
-
-    if (control && control.length >= 2) {
-      const first = schools[control[0].school_id];
-      const second = schools[control[1].school_id];
-      const gap = Math.round(control[0].control_percentage - control[1].control_percentage);
-
-      tweet += `${first.emoji} ${first.name.split(' ')[0]}: ${Math.round(control[0].control_percentage)}%\n`;
-      tweet += `${second.emoji} ${second.name.split(' ')[0]}: ${Math.round(control[1].control_percentage)}%\n\n`;
-
-      if (gap <= 10) {
-        tweet += `${gap}% separates victory from defeat.\n`;
-      }
-
-      tweet += `The portal flickers. Act now.`;
-    }
-
-    // Reply to original objective tweet to create thread
-    const tweetOptions = {};
-    if (zone.objective_tweet_id) {
-      tweetOptions.reply = { in_reply_to_tweet_id: zone.objective_tweet_id };
-    }
-
-    const { data } = await client.v2.tweet(tweet, tweetOptions);
-    console.log('Posted final push:', data.id);
-
-    return data;
-
-  } catch (error) {
-    console.error('Error posting final push:', error);
-    return null;
-  }
-}
-
-/**
- * Helper: Generate a simple progress bar
- */
-function getProgressBar(percentage) {
-  const filled = Math.round(percentage / 10);
-  const empty = 10 - filled;
-  return '█'.repeat(filled) + '░'.repeat(empty);
-}
-
-/**
- * Post daily results - NO HASHTAGS
- */
-async function postDailyResults() {
-  try {
-    const client = getNineLivesClient();
-
-    const { data: zone } = await supabase
-      .from('zones')
-      .select('*')
-      .eq('is_current_objective', true)
-      .single();
-
-    if (!zone) return null;
-
-    // Get school control totals from today's casts
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-
-    const { data: todaysCasts } = await supabase
-      .from('casts')
-      .select('player_id, points_earned')
-      .eq('zone_id', zone.id)
-      .gte('created_at', today.toISOString());
-
-    // Get player school mappings
-    const playerIds = [...new Set(todaysCasts?.map(c => c.player_id) || [])];
-    const { data: players } = await supabase
-      .from('players')
-      .select('id, school_id')
-      .in('id', playerIds);
-
-    // Calculate total points per school
-    const schoolPoints = {};
-    todaysCasts?.forEach(cast => {
-      const player = players?.find(p => p.id === cast.player_id);
-      if (player) {
-        schoolPoints[player.school_id] = (schoolPoints[player.school_id] || 0) + cast.points_earned;
-      }
-    });
-
-    // Find winning school
-    let winningSchoolId = null;
-    let winningPoints = 0;
-    Object.entries(schoolPoints).forEach(([schoolId, points]) => {
-      if (points > winningPoints) {
-        winningSchoolId = parseInt(schoolId);
-        winningPoints = points;
-      }
-    });
-
-    let tweet = `🏆 ${zone.name.toUpperCase()} CAPTURED!\n\n`;
-
-    if (winningSchoolId && schools[winningSchoolId]) {
-      const school = schools[winningSchoolId];
-      tweet += `${school.emoji} ${school.name} claims victory with ${winningPoints} power!\n\n`;
-
-      // Show runner-ups
-      const sortedSchools = Object.entries(schoolPoints)
-        .sort((a, b) => b[1] - a[1])
-        .slice(1, 3);
-
-      if (sortedSchools.length > 0) {
-        sortedSchools.forEach(([schoolId, points]) => {
-          const s = schools[parseInt(schoolId)];
-          if (s) tweet += `${s.emoji} ${s.name}: ${points}\n`;
-        });
-      }
-    } else {
-      tweet += `No faction claimed this territory.\n`;
-    }
-
-    tweet += `\nThe portal closes. A new battle awaits.`;
-
-    // Reply to original objective tweet to create thread
-    const tweetOptions = {};
-    if (zone.objective_tweet_id) {
-      tweetOptions.reply = { in_reply_to_tweet_id: zone.objective_tweet_id };
-    }
-
-    const { data } = await client.v2.tweet(tweet, tweetOptions);
-    console.log('Posted daily results:', data.id);
-
-    // IMPORTANT: Clear the objective flag so dashboard shows no active bounty
-    await supabaseAdmin
-      .from('zones')
-      .update({ 
-        is_current_objective: false,
-        objective_tweet_id: null,
-        objective_posted_at: null
-      })
-      .eq('id', zone.id);
-
-    console.log('Cleared objective flag for zone:', zone.name);
-
-    return data;
-
-  } catch (error) {
-    console.error('Error posting daily results:', error);
     return null;
   }
 }
@@ -572,7 +535,7 @@ async function processSpellCasts() {
         continue;
       }
 
-      // Exclude bot accounts from earning points
+      // Exclude bot accounts
       const botAccounts = ['9lv_nerm', '9lvnetwork', '9lv_network'];
       if (botAccounts.includes(user.username.toLowerCase())) {
         console.log(`Skipping bot account: @${user.username}`);
@@ -584,14 +547,14 @@ async function processSpellCasts() {
         continue;
       }
 
-      // Check if player already cast on this bounty today (1 cast per player per bounty)
-      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+      // Check if already cast on this bounty today
+      const todayStr = new Date().toISOString().split('T')[0];
       const { data: alreadyCast } = await supabase
         .from('casts')
         .select('id')
         .eq('player_id', player.id)
         .eq('zone_id', zone.id)
-        .gte('created_at', today)
+        .gte('created_at', todayStr)
         .single();
 
       if (alreadyCast) {
@@ -614,15 +577,18 @@ async function processSpellCasts() {
       const { points: basePoints, breakdown } = calculatePoints(spell, zone, player);
       let finalPoints = basePoints;
 
+      // First blood check
       let firstBlood = null;
       const firstBloodResult = await checkFirstBlood(player.id, player.school_id, zone.id);
       if (firstBloodResult) {
         finalPoints += firstBloodResult.points;
         breakdown.push(`${firstBloodResult.title}: +${firstBloodResult.points}`);
         firstBlood = firstBloodResult;
-        console.log(`🩸 First Blood #${firstBloodResult.position} for ${schools[player.school_id].name}: @${user.username} (+${firstBloodResult.points})`);
+        const houseName = houses[player.school_id]?.name || 'Unknown';
+        console.log(`🩸 First Blood #${firstBloodResult.position} for ${houseName}: @${user.username} (+${firstBloodResult.points})`);
       }
 
+      // Nerm notice (10% chance, max 3 per processing cycle)
       let nermNoticed = false;
       if (nermNoticeCount < 3 && Math.random() < 0.1) {
         finalPoints += 20;
@@ -631,6 +597,7 @@ async function processSpellCasts() {
         nermNoticeCount++;
       }
 
+      // Record the cast
       const { data: cast, error } = await supabaseAdmin
         .from('casts')
         .insert({
@@ -651,9 +618,10 @@ async function processSpellCasts() {
         continue;
       }
 
+      // Update player stats
       await supabaseAdmin
         .from('players')
-        .update({ 
+        .update({
           mana: player.mana - spell.mana_cost,
           last_cast_at: new Date().toISOString(),
           seasonal_points: (player.seasonal_points || 0) + finalPoints,
@@ -661,8 +629,10 @@ async function processSpellCasts() {
         })
         .eq('id', player.id);
 
+      // Update zone control
       await updateZoneControl(zone.id, player.school_id, finalPoints);
 
+      const houseName = houses[player.school_id]?.name || 'Unknown House';
       processedCasts.push({
         player: user.username,
         spell: spell.name,
@@ -672,12 +642,13 @@ async function processSpellCasts() {
         firstBlood,
         isCreative: spell.isCreative,
         tweet_id: tweet.id,
-        schoolName: schools[player.school_id]?.name || 'Unknown School'
+        schoolName: houseName
       });
 
       console.log(`✨ Cast processed: @${user.username} cast ${spell.name} for ${finalPoints} points`);
     }
 
+    // Update last processed tweet
     if (tweets.length > 0) {
       const latestId = tweets[0].id;
       await supabaseAdmin
@@ -701,16 +672,17 @@ async function processSpellCasts() {
 function parseSpell(text, schoolId) {
   const textLower = text.toLowerCase();
 
+  // Updated with House names for flair detection
   const schoolSpells = {
-    1: ['ember bolt', 'flame shield', 'inferno', 'fire', 'burn', 'blaze'],
-    2: ['tidal wave', 'ice barrier', 'tsunami', 'water', 'freeze', 'flood'],
-    3: ['rock throw', 'stone wall', 'earthquake', 'earth', 'boulder', 'quake'],
-    4: ['wind slash', 'air shield', 'cyclone', 'air', 'gust', 'breeze'],
-    5: ['lightning bolt', 'static field', 'thunderstorm', 'lightning', 'thunder', 'shock'],
-    6: ['shadow strike', 'dark veil', 'void blast', 'shadow', 'darkness', 'void'],
-    7: ['light beam', 'holy shield', 'radiant burst', 'light', 'radiant', 'holy'],
-    8: ['arcane missile', 'mana shield', 'arcane explosion', 'arcane', 'magic', 'mystic'],
-    9: ['chaos bolt', 'wild magic', 'catastrophe', 'chaos', 'wild', 'random'],
+    1: ['ember bolt', 'flame shield', 'inferno', 'fire', 'burn', 'blaze', 'smoulders', 'smolder'],
+    2: ['tidal wave', 'ice barrier', 'tsunami', 'water', 'freeze', 'flood', 'darktide', 'tide'],
+    3: ['rock throw', 'stone wall', 'earthquake', 'earth', 'boulder', 'quake', 'ironbark', 'bark'],
+    4: ['wind slash', 'air shield', 'cyclone', 'air', 'gust', 'breeze', 'ashenvale', 'ashen'],
+    5: ['lightning bolt', 'static field', 'thunderstorm', 'lightning', 'thunder', 'shock', 'stormrage', 'storm'],
+    6: ['shadow strike', 'dark veil', 'void blast', 'shadow', 'darkness', 'void', 'nighthollow', 'hollow'],
+    7: ['light beam', 'holy shield', 'radiant burst', 'light', 'radiant', 'holy', 'dawnbringer', 'dawn'],
+    8: ['arcane missile', 'mana shield', 'arcane explosion', 'arcane', 'magic', 'mystic', 'manastorm', 'mana'],
+    9: ['chaos bolt', 'wild magic', 'catastrophe', 'chaos', 'wild', 'random', 'plaguemire', 'plague'],
   };
 
   const spells = schoolSpells[schoolId] || [];
@@ -900,16 +872,21 @@ async function testConnection() {
 }
 
 module.exports = {
+  // New narrative system
+  postMorningSituation,
+  postEscalation,
+  postResolution,
+  // Legacy names (point to new functions)
   postDailyObjective,
   postDailyResults,
   postMiddayStandings,
   postAfternoonReminder,
   postFinalPush,
+  // Core gameplay
   processSpellCasts,
   setDailyObjective,
   rotateObjective,
   testConnection,
   getNineLivesClient,
   checkFirstBlood,
-  generateFlavorText
 };
