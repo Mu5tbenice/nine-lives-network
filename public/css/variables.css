@@ -3,33 +3,33 @@
    ============================================= */
 
 :root {
-  /* School Colors - Distinct like WoW classes */
-  --ember-primary: #FF4500;      /* Bright Orange-Red (like Warrior) */
-  --ember-secondary: #FF6B35;
+  /* House Colors - Final Palette */
+  --smoulders-primary: #E03C31;    /* Crimson Red */
+  --smoulders-secondary: #FF5A4F;
 
-  --tidal-primary: #00BFFF;      /* Deep Sky Blue (like Mage) */
-  --tidal-secondary: #1E90FF;
+  --darktide-primary: #00B4D8;     /* Vivid Cyan */
+  --darktide-secondary: #48CAE4;
 
-  --stone-primary: #8B4513;      /* Saddle Brown (like Druid) */
-  --stone-secondary: #D2691E;
+  --stonebark-primary: #5CB338;    /* Nature Green */
+  --stonebark-secondary: #76C950;
 
-  --zephyr-primary: #98FB98;     /* Pale Green (like Monk) */
-  --zephyr-secondary: #90EE90;
+  --ashenvale-primary: #90E0EF;    /* Ice Blue */
+  --ashenvale-secondary: #ADE8F4;
 
-  --storm-primary: #FFD700;      /* Gold/Yellow (like Paladin) */
-  --storm-secondary: #FFA500;
+  --stormrage-primary: #FFC800;    /* Electric Gold */
+  --stormrage-secondary: #FFD740;
 
-  --umbral-primary: #9932CC;     /* Dark Orchid Purple (like Warlock) */
-  --umbral-secondary: #8B008B;
+  --nighthollow-primary: #7B2D8E;  /* Void Purple */
+  --nighthollow-secondary: #9B4DCA;
 
-  --radiant-primary: #FFFFE0;    /* Light Yellow/White (like Priest) */
-  --radiant-secondary: #FFFACD;
+  --dawnbringer-primary: #FF8C00;  /* Sunrise Orange */
+  --dawnbringer-secondary: #FFA940;
 
-  --arcane-primary: #00FFFF;     /* Cyan (like Shaman) */
-  --arcane-secondary: #40E0D0;
+  --manastorm-primary: #5B8FE0;    /* Royal Blue */
+  --manastorm-secondary: #7BA7E8;
 
-  --wildcat-primary: #FF1493;    /* Deep Pink (like Death Knight) */
-  --wildcat-secondary: #FF69B4;
+  --plaguemire-primary: #E84393;   /* Hot Magenta */
+  --plaguemire-secondary: #F06AAF;
 
   /* Theme Colors */
   --bg-dark: #0a0a0f;
@@ -43,8 +43,8 @@
 
   /* UI Colors */
   --accent-gold: #ffd700;
-  --accent-purple: #8A2BE2;
-  --accent-cyan: #00d4ff;
+  --accent-purple: #7B2D8E;
+  --accent-cyan: #00B4D8;
   --success: #00ff88;
   --error: #ff4466;
   --warning: #ffaa00;
