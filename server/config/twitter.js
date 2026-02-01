@@ -30,10 +30,10 @@ function getAnthropicClient() {
 const schools = {
   1: { name: 'House Smoulders', emoji: '🔥', element: 'fire' },
   2: { name: 'House Darktide', emoji: '🌊', element: 'water' },
-  3: { name: 'House Ironbark', emoji: '🪨', element: 'earth' },
+  3: { name: 'House Stonebark', emoji: '🪨', element: 'earth' },
   4: { name: 'House Ashenvale', emoji: '💨', element: 'air' },
   5: { name: 'House Stormrage', emoji: '⚡', element: 'lightning' },
-  6: { name: 'House Darkhollow', emoji: '🌑', element: 'shadow' },
+  6: { name: 'House Nighthollow', emoji: '🌑', element: 'shadow' },
   7: { name: 'House Dawnbringer', emoji: '✨', element: 'light' },
   8: { name: 'House Manastorm', emoji: '🔮', element: 'arcane' },
   9: { name: 'House Plaguemire', emoji: '🐱', element: 'chaos' },
