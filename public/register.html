@@ -682,103 +682,103 @@
     // ===== HOUSE DATA =====
     const houses = {
       1: {
-        name: 'House Smoulders', element: 'Fire', color: '#E8550D',
-        crest: '/assets/images/houses/House-Smoulders.png',
+        name: 'House Smoulders', element: 'Fire', color: '#E03C31',
+        crest: '/assets/images/houses/House-smoulders.png',
         desc: 'Born of ash and ember, House Smoulders burns brightest in the heart of battle. Their fury is unmatched, their resolve unbreakable.',
         bonuses: [
-          { icon: '🔥', text: '<strong>+15% Attack Power</strong> on offensive territory actions' },
-          { icon: '⚔️', text: '<strong>Ignite</strong> — Chance to deal bonus damage in duels' },
-          { icon: '🏠', text: '<strong>Home Zone:</strong> Ember Peaks' }
+          { icon: '🔥', text: '<strong>Firestarter</strong> — +2 bonus points when your reply is in the top 10 earliest' },
+          { icon: '⚔️', text: '<strong>Aggression</strong> — Built for players who charge in first' },
+          { icon: '🎯', text: '<strong>Playstyle:</strong> Aggressive, fast, competitive' }
         ],
-        shortBonus: '+15% Attack Power'
+        shortBonus: 'Early bird bonus points'
       },
       2: {
-        name: 'House Darktide', element: 'Water', color: '#2BA5B5',
+        name: 'House Darktide', element: 'Water', color: '#00B4D8',
         crest: '/assets/images/houses/House-darktide.png',
-        desc: 'From the crushing depths they rise. House Darktide commands the currents of war, eroding defenses like waves upon stone.',
+        desc: 'From the crushing depths they rise. House Darktide commands the currents of war, building momentum that becomes unstoppable.',
         bonuses: [
-          { icon: '🌊', text: '<strong>+15% Defense Power</strong> on defensive territory actions' },
-          { icon: '🛡️', text: '<strong>Undertow</strong> — Chance to reduce enemy attack power' },
-          { icon: '🏠', text: '<strong>Home Zone:</strong> Tidal Depths' }
+          { icon: '🌊', text: '<strong>Rising Tide</strong> — +2 bonus points on the Escalation post (Post 2)' },
+          { icon: '📈', text: '<strong>Momentum</strong> — Gets stronger as the day progresses' },
+          { icon: '🎯', text: '<strong>Playstyle:</strong> Strategic, patient, builds over time' }
         ],
-        shortBonus: '+15% Defense Power'
+        shortBonus: 'Escalation post bonus'
       },
       3: {
-        name: 'House Ironbark', element: 'Earth · Life', color: '#4A8C3F',
-        crest: '/assets/images/houses/House-ironbark.png',
-        desc: 'Rooted deep in the ancient soil, House Ironbark endures what others cannot. Their shields are living wood, their walls grown from the earth itself.',
+        name: 'House Stonebark', element: 'Earth', color: '#5CB338',
+        crest: '/assets/images/houses/House-stonebark.png',
+        desc: 'Rooted deep in the ancient soil, House Stonebark endures what others cannot. Their shields are living wood, their walls grown from the earth itself.',
         bonuses: [
-          { icon: '🪨', text: '<strong>+20% Home Territory Defense</strong> bonus' },
-          { icon: '🌿', text: '<strong>Regrowth</strong> — +1 bonus mana on first cast each day' },
-          { icon: '🏠', text: '<strong>Home Zone:</strong> Stone Hollows' }
+          { icon: '🌿', text: '<strong>Deep Roots</strong> — No activity decay penalty (3-day / 7-day)' },
+          { icon: '🛡️', text: '<strong>Endurance</strong> — Perfect for casual players who can\'t play every day' },
+          { icon: '🎯', text: '<strong>Playstyle:</strong> Casual-friendly, resilient, steady' }
         ],
-        shortBonus: '+20% Home Defense'
+        shortBonus: 'No activity decay'
       },
       4: {
-        name: 'House Ashenvale', element: 'Air · Spirit', color: '#6B8CC7',
-        crest: '/assets/images/houses/House-ashenvale.png',
+        name: 'House Ashenvale', element: 'Air', color: '#90E0EF',
+        crest: '/assets/images/houses/House-Ashenvale.png',
         desc: 'Whispered into being from the winds between worlds, House Ashenvale moves unseen. They strike where least expected.',
         bonuses: [
-          { icon: '💨', text: '<strong>+10% Points</strong> from all spell casts' },
-          { icon: '👻', text: '<strong>Windwalk</strong> — Reduced cooldown between casts' },
-          { icon: '🏠', text: '<strong>Home Zone:</strong> Zephyr Heights' }
+          { icon: '💨', text: '<strong>Windborne</strong> — See tomorrow\'s zone 2 hours early on dashboard' },
+          { icon: '🧠', text: '<strong>Intel</strong> — Plan your roleplay and strategy ahead of time' },
+          { icon: '🎯', text: '<strong>Playstyle:</strong> Strategic, informed, planners' }
         ],
-        shortBonus: '+10% Cast Points'
+        shortBonus: 'Early zone intel'
       },
       5: {
-        name: 'House Stormrage', element: 'Storm · Lightning', color: '#5B7FD6',
+        name: 'House Stormrage', element: 'Lightning', color: '#FFC800',
         crest: '/assets/images/houses/House-stormrage.png',
         desc: 'When the sky cracks and thunder speaks, House Stormrage answers. Raw power channeled into devastating strikes.',
         bonuses: [
-          { icon: '⚡', text: '<strong>+25% Bounty Damage</strong> during rift events' },
-          { icon: '💥', text: '<strong>Chain Lightning</strong> — Attacks can affect adjacent zones' },
-          { icon: '🏠', text: '<strong>Home Zone:</strong> Storm Citadel' }
+          { icon: '⚡', text: '<strong>Lightning Rod</strong> — Nerm notice chance 15% instead of 10%' },
+          { icon: '🌟', text: '<strong>Spotlight</strong> — More chances to get highlighted and earn bonus points' },
+          { icon: '🎯', text: '<strong>Playstyle:</strong> Flashy, attention-seeking, high reward' }
         ],
-        shortBonus: '+25% Bounty Damage'
+        shortBonus: '+50% Nerm notice chance'
       },
       6: {
-        name: 'House Darkhollow', element: 'Shadow · Void', color: '#7B3FA0',
-        crest: '/assets/images/houses/House-darkhollow.png',
-        desc: 'What light cannot reach, House Darkhollow commands. Masters of misdirection, they thrive where others fear to tread.',
+        name: 'House Nighthollow', element: 'Shadow', color: '#7B2D8E',
+        crest: '/assets/images/houses/House-nighthollow.png',
+        desc: 'What light cannot reach, House Nighthollow commands. Masters of misdirection, they thrive where others fear to tread.',
         bonuses: [
-          { icon: '🌑', text: '<strong>+15% Duel Win Rate</strong> from shadow advantage' },
-          { icon: '🕳️', text: '<strong>Void Step</strong> — Can attack non-adjacent zones (1/day)' },
-          { icon: '🏠', text: '<strong>Home Zone:</strong> Umbral Void' }
+          { icon: '🌑', text: '<strong>Unseen</strong> — Your replies are hidden from Escalation post counts' },
+          { icon: '🕳️', text: '<strong>Mind Games</strong> — Other houses can\'t see your true numbers' },
+          { icon: '🎯', text: '<strong>Playstyle:</strong> Sneaky, deceptive, chaos agent' }
         ],
-        shortBonus: '+15% Duel Power'
+        shortBonus: 'Hidden participation'
       },
       7: {
-        name: 'House Dawnbringer', element: 'Light · Holy', color: '#D4A843',
+        name: 'House Dawnbringer', element: 'Light', color: '#FF8C00',
         crest: '/assets/images/houses/House-dawnbringer.png',
         desc: 'The first light of morning given form. House Dawnbringer stands as a beacon, strengthening all who fight alongside them.',
         bonuses: [
-          { icon: '✨', text: '<strong>+10% Team Bonus</strong> — Allies in same zone get bonus points' },
-          { icon: '🛡️', text: '<strong>Radiance</strong> — Defending earns bonus points for all House members' },
-          { icon: '🏠', text: '<strong>Home Zone:</strong> Radiant Sanctum' }
+          { icon: '✨', text: '<strong>Guiding Light</strong> — When you reply, a random housemate gets +2 points' },
+          { icon: '🤝', text: '<strong>Team Player</strong> — Your participation lifts your entire house' },
+          { icon: '🎯', text: '<strong>Playstyle:</strong> Supportive, social, team-oriented' }
         ],
-        shortBonus: '+10% Team Bonus'
+        shortBonus: 'Buff your housemates'
       },
       8: {
-        name: 'House Manastorm', element: 'Arcane · Magic', color: '#5E4FA0',
+        name: 'House Manastorm', element: 'Arcane', color: '#5B8FE0',
         crest: '/assets/images/houses/House-manastorm.png',
         desc: 'Knowledge is the ultimate weapon. House Manastorm bends the rules of magic itself, wielding power others can only dream of.',
         bonuses: [
-          { icon: '🔮', text: '<strong>+1 Max Mana</strong> (6 instead of 5 per day)' },
-          { icon: '📖', text: '<strong>Arcane Mastery</strong> — Spell flair bonus doubled (+4 instead of +2)' },
-          { icon: '🏠', text: '<strong>Home Zone:</strong> Arcane Nexus' }
+          { icon: '🔮', text: '<strong>Overflow</strong> — +1 max mana (6 instead of 5) for World map actions' },
+          { icon: '📖', text: '<strong>Arcane Edge</strong> — More strategic actions on the territory map' },
+          { icon: '🎯', text: '<strong>Playstyle:</strong> Strategic, map-focused, resource advantage' }
         ],
-        shortBonus: '+1 Max Mana (6/day)'
+        shortBonus: '+1 max mana (6/day)'
       },
       9: {
-        name: 'House Plaguemire', element: 'Undeath · Decay', color: '#4A7A3A',
+        name: 'House Plaguemire', element: 'Chaos', color: '#E84393',
         crest: '/assets/images/houses/House-plaguemire.png',
         desc: 'From rot comes renewal. House Plaguemire understands that true power lies in persistence — what is dead may never die.',
         bonuses: [
-          { icon: '💀', text: '<strong>No Activity Decay</strong> — Points never decrease from inactivity' },
-          { icon: '🧟', text: '<strong>Undying</strong> — Recover 1 life per week instead of per season' },
-          { icon: '🏠', text: '<strong>Home Zone:</strong> Blighted Mire' }
+          { icon: '💀', text: '<strong>Persistent</strong> — Full day streak bonus is +15 instead of +10' },
+          { icon: '🧟', text: '<strong>Undying</strong> — Rewards consistent daily engagement' },
+          { icon: '🎯', text: '<strong>Playstyle:</strong> Consistent, grinder, daily dedication' }
         ],
-        shortBonus: 'No Activity Decay'
+        shortBonus: 'Bigger streak bonus'
       }
     };
 

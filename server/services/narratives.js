@@ -15,15 +15,15 @@
 // HOUSE DATA
 // ============================================
 const houses = {
-  1: { name: 'House Smoulders', short: 'Smoulders', element: 'fire', color: '#FF4500', logo: 'house-smoulders.png' },
-  2: { name: 'House Darktide', short: 'Darktide', element: 'water', color: '#00BFFF', logo: 'house-darktide.png' },
-  3: { name: 'House Ironbark', short: 'Ironbark', element: 'earth', color: '#8B4513', logo: 'house-ironbark.png' },
-  4: { name: 'House Ashenvale', short: 'Ashenvale', element: 'air', color: '#98FB98', logo: 'house-ashenvale.png' },
-  5: { name: 'House Stormrage', short: 'Stormrage', element: 'lightning', color: '#FFD700', logo: 'house-stormrage.png' },
-  6: { name: 'House Nighthollow', short: 'Nighthollow', element: 'shadow', color: '#9932CC', logo: 'house-nighthollow.png' },
-  7: { name: 'House Dawnbringer', short: 'Dawnbringer', element: 'light', color: '#FFFACD', logo: 'house-dawnbringer.png' },
-  8: { name: 'House Manastorm', short: 'Manastorm', element: 'arcane', color: '#00FFFF', logo: 'house-manastorm.png' },
-  9: { name: 'House Plaguemire', short: 'Plaguemire', element: 'chaos', color: '#FF1493', logo: 'house-plaguemire.png' },
+  1: { name: 'House Smoulders', short: 'Smoulders', element: 'fire', color: '#E03C31', logo: 'House-smoulders.png' },
+  2: { name: 'House Darktide', short: 'Darktide', element: 'water', color: '#00B4D8', logo: 'House-darktide.png' },
+  3: { name: 'House Stonebark', short: 'Stonebark', element: 'earth', color: '#5CB338', logo: 'House-stonebark.png' },
+  4: { name: 'House Ashenvale', short: 'Ashenvale', element: 'air', color: '#90E0EF', logo: 'House-Ashenvale.png' },
+  5: { name: 'House Stormrage', short: 'Stormrage', element: 'lightning', color: '#FFC800', logo: 'House-stormrage.png' },
+  6: { name: 'House Nighthollow', short: 'Nighthollow', element: 'shadow', color: '#7B2D8E', logo: 'House-nighthollow.png' },
+  7: { name: 'House Dawnbringer', short: 'Dawnbringer', element: 'light', color: '#FF8C00', logo: 'House-dawnbringer.png' },
+  8: { name: 'House Manastorm', short: 'Manastorm', element: 'arcane', color: '#5B8FE0', logo: 'House-manastorm.png' },
+  9: { name: 'House Plaguemire', short: 'Plaguemire', element: 'chaos', color: '#E84393', logo: 'House-plaguemire.png' },
 };
 
 // ============================================
@@ -292,7 +292,7 @@ const narratives = [
     theme: 'conspiracy',
     player_hook: 'A wizard claims Avaloris has an edge — and there\'s treasure falling off it. He\'s hiring expedition members. Even if he\'s wrong, the uncharted lands he\'s crossing are full of unclaimed resources.',
     morning: {
-      text: `A wizard from House Ironbark has gathered a following. He says Avaloris is flat and he can prove it. He's organised an expedition to "the edge." The Academy says there is no edge. He says the Academy is lying. He has charts. The charts are very confident.`,
+      text: `A wizard from House Stonebark has gathered a following. He says Avaloris is flat and he can prove it. He's organised an expedition to "the edge." The Academy says there is no edge. He says the Academy is lying. He has charts. The charts are very confident.`,
       prompt: `The expedition is leaving at noon. Do you join? Mock from a distance? Or quietly follow to see what they find?`
     },
     escalation_template: `The expedition has been walking for six hours. They haven't found an edge. The wizard says they need to walk further. His followers are starting to blister.\n\n{top_replies}\n\nA cartographer following at a safe distance has been documenting new terrain features nobody has mapped before. Accidentally useful expedition.\n\nAre they close to the edge or close to giving up?`,
@@ -799,7 +799,7 @@ const narratives = [
       text: `The Broken Tankard is hosting its annual roast — every house sends their sharpest tongue. Last year's champion told a joke so devastating about House Manastorm that three members temporarily defected. The crowd wants blood. Metaphorical blood. Probably.`,
       prompt: `You're at the roast. The crowd is waiting. What's your best shot at the house sitting across from you?`
     },
-    escalation_template: `The roasts are flying. A Smoulders wizard made a joke about Ironbark's intelligence that was so simple it circled back to being devastating. A Nighthollow wizard just stood in silence for thirty seconds. Somehow this was the funniest thing all night.\n\n{top_replies}\n\nThe crowd is choosing sides. The tavern owner is running out of mead. This is getting personal.\n\nBring your best or sit down.`,
+    escalation_template: `The roasts are flying. A Smoulders wizard made a joke about Stonebark's intelligence that was so simple it circled back to being devastating. A Nighthollow wizard just stood in silence for thirty seconds. Somehow this was the funniest thing all night.\n\n{top_replies}\n\nThe crowd is choosing sides. The tavern owner is running out of mead. This is getting personal.\n\nBring your best or sit down.`,
     resolution_template: `The roast is over. Several reputations are in tatters. {winner} delivered the most crowd-approved devastation.\n\nTwo houses aren't speaking to each other. This will last approximately one bounty.`,
     nerm_hooks: {
       morning: [
@@ -1083,7 +1083,7 @@ const narratives = [
     theme: 'absurdist',
     player_hook: 'The gnomes\' headquarters has blueprints for every building in the zone. Steal the blueprints and your house knows every secret passage and weakness in the district.',
     morning: {
-      text: `Tiny creatures have been raiding storerooms across Ironbark territory. Their operation has three phases. Phase 1: Steal supplies. Phase 2: ??? Phase 3: Profit. When questioned, they produced a very confident diagram. Phase 2 remains blank. They seem completely unbothered by this gap.`,
+      text: `Tiny creatures have been raiding storerooms across Stonebark territory. Their operation has three phases. Phase 1: Steal supplies. Phase 2: ??? Phase 3: Profit. When questioned, they produced a very confident diagram. Phase 2 remains blank. They seem completely unbothered by this gap.`,
       prompt: `You've captured a gnome. It's holding a blueprint. What is Phase 2, and do the blueprints show anything useful?`
     },
     escalation_template: `The gnomes now have a headquarters, a mission statement, and a round of investor funding. Phase 2 is still blank. Investors are "excited about the potential."\n\n{top_replies}\n\nA consultant was hired to define Phase 2. He also doesn't know. He charges by the hour. The gnomes consider this Phase 2.\n\nThe blueprints show every building in the district. Worth raiding the HQ.`,
