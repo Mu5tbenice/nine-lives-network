@@ -3,6 +3,12 @@ const { createClient } = require('@supabase/supabase-js');
 const Anthropic = require('@anthropic-ai/sdk');
 const supabase = require('../config/supabase');
 
+// OAuth 2.0 client for user authentication
+const authClient = new TwitterApi({
+  clientId: process.env.TWITTER_CLIENT_ID,
+  clientSecret: process.env.TWITTER_CLIENT_SECRET,
+});
+
 // Admin client for writes (using service role to bypass RLS)
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
@@ -900,6 +906,7 @@ async function testConnection() {
 }
 
 module.exports = {
+  authClient,
   postDailyObjective,
   postDailyResults,
   postMiddayStandings,
