@@ -1,4 +1,4 @@
-# Nine Lives Network 🐱✨
+# Nine Lives Network
 
 A social-competitive game on Twitter where wizard cats compete for territory control in the fantasy world of Avaloris.
 
