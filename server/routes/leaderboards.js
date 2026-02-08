@@ -207,16 +207,16 @@ router.get('/today', async (req, res) => {
 
 /**
  * GET /api/leaderboards/history
- * House points per day for the last N days (for line chart)
+ * House AND community points per day for the last N days (for line charts)
  */
 router.get('/history', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 14;
 
-    // Get all territory actions
+    // Get all territory actions with player community tag
     const { data: actions, error } = await supabase
       .from('territory_actions')
-      .select('game_day, school_id')
+      .select('game_day, school_id, player:players(community_tag)')
       .order('game_day', { ascending: true });
 
     if (error) {
@@ -224,14 +224,23 @@ router.get('/history', async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch history' });
     }
 
-    // Group by day and school
+    // Group by day — houses and communities
     const dayData = {};
     if (actions) {
       actions.forEach(a => {
         if (!a.game_day) return;
-        if (!dayData[a.game_day]) dayData[a.game_day] = {};
-        if (!dayData[a.game_day][a.school_id]) dayData[a.game_day][a.school_id] = 0;
-        dayData[a.game_day][a.school_id] += 8; // 8 pts per action
+        if (!dayData[a.game_day]) dayData[a.game_day] = { houses: {}, communities: {} };
+
+        // House points
+        if (!dayData[a.game_day].houses[a.school_id]) dayData[a.game_day].houses[a.school_id] = 0;
+        dayData[a.game_day].houses[a.school_id] += 8;
+
+        // Community points
+        const tag = a.player && a.player.community_tag ? a.player.community_tag.toUpperCase() : null;
+        if (tag) {
+          if (!dayData[a.game_day].communities[tag]) dayData[a.game_day].communities[tag] = 0;
+          dayData[a.game_day].communities[tag] += 8;
+        }
       });
     }
 
@@ -241,7 +250,8 @@ router.get('/history', async (req, res) => {
       .slice(-days)
       .map(day => ({
         date: day,
-        houses: dayData[day]
+        houses: dayData[day].houses,
+        communities: dayData[day].communities
       }));
 
     res.json(history);

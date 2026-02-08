@@ -1,368 +1,379 @@
 const supabase = require('../config/supabase');
+const { createClient } = require('@supabase/supabase-js');
+
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 /**
  * Territory Control System
- * Handles zone control calculations, daily winners, and snapshots
+ * Reads from territory_actions table (website attacks/defends)
+ * Determines daily winners and updates zone ownership
  */
 
 /**
- * Calculate control percentage for a zone based on casts today
- * Uses percentage of participating players per school (not raw points)
+ * Calculate influence for a zone based on today's territory_actions
+ * Returns { schoolId: { power, percentage, playerCount } }
  */
-async function calculateZoneControl(zoneId) {
+async function calculateZoneInfluence(zoneId, gameDay) {
   try {
-    // Get today's start time (UTC)
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    var day = gameDay || new Date().toISOString().split('T')[0];
 
-    // Get all casts for this zone today
-    const { data: casts, error: castsError } = await supabase
-      .from('casts')
-      .select('player_id, points_earned')
+    var { data: actions, error } = await supabase
+      .from('territory_actions')
+      .select('player_id, school_id, action_type')
       .eq('zone_id', zoneId)
-      .gte('created_at', today.toISOString());
+      .eq('game_day', day);
 
-    if (castsError) {
-      console.error('Error fetching casts:', castsError);
-      return null;
-    }
-
-    if (!casts || casts.length === 0) {
-      console.log('No casts today for zone', zoneId);
+    if (error) {
+      console.error('Error fetching actions for zone', zoneId, error);
       return {};
     }
 
-    // Get player school IDs separately
-    const playerIds = [...new Set(casts.map(c => c.player_id))];
-    const { data: players } = await supabase
-      .from('players')
-      .select('id, school_id')
-      .in('id', playerIds);
-
-    const playerSchoolMap = {};
-    players?.forEach(p => { playerSchoolMap[p.id] = p.school_id; });
-
-    // Aggregate points by school
-    const schoolPoints = {};
-    const schoolCasters = {}; // Track unique casters per school
-
-    casts.forEach(cast => {
-      const schoolId = playerSchoolMap[cast.player_id];
-      if (!schoolId) return;
-
-      if (!schoolPoints[schoolId]) {
-        schoolPoints[schoolId] = 0;
-        schoolCasters[schoolId] = new Set();
-      }
-
-      schoolPoints[schoolId] += cast.points_earned || 0;
-      schoolCasters[schoolId].add(cast.player_id);
-    });
-
-    // Calculate total points
-    const totalPoints = Object.values(schoolPoints).reduce((sum, p) => sum + p, 0);
-
-    if (totalPoints === 0) return {};
-
-    // Calculate percentage for each school
-    const controlPercentages = {};
-    for (const [schoolId, points] of Object.entries(schoolPoints)) {
-      controlPercentages[schoolId] = {
-        percentage: (points / totalPoints) * 100,
-        points: points,
-        casterCount: schoolCasters[schoolId].size
-      };
+    if (!actions || actions.length === 0) {
+      return {};
     }
 
-    return controlPercentages;
+    // Aggregate power by school (attack=2, defend=1)
+    var schools = {};
+    actions.forEach(function(a) {
+      if (!schools[a.school_id]) {
+        schools[a.school_id] = { power: 0, players: {} };
+      }
+      schools[a.school_id].power += (a.action_type === 'attack' ? 2 : 1);
+      schools[a.school_id].players[a.player_id] = true;
+    });
+
+    // Calculate total power
+    var totalPower = 0;
+    Object.values(schools).forEach(function(s) { totalPower += s.power; });
+
+    if (totalPower === 0) return {};
+
+    // Calculate percentages
+    var result = {};
+    Object.keys(schools).forEach(function(sid) {
+      result[sid] = {
+        power: schools[sid].power,
+        percentage: Math.round((schools[sid].power / totalPower) * 100),
+        playerCount: Object.keys(schools[sid].players).length
+      };
+    });
+
+    return result;
 
   } catch (error) {
-    console.error('Error calculating zone control:', error);
-    return null;
+    console.error('Error calculating zone influence:', error);
+    return {};
   }
 }
 
 /**
- * Update zone_control table with current percentages
+ * Update zone_control table for a specific zone
  */
 async function updateZoneControlTable(zoneId) {
   try {
-    const controlData = await calculateZoneControl(zoneId);
+    var influence = await calculateZoneInfluence(zoneId);
 
-    if (!controlData || Object.keys(controlData).length === 0) {
-      return { updated: false, reason: 'No casts today' };
+    if (Object.keys(influence).length === 0) {
+      return { updated: false, reason: 'No actions today' };
     }
 
     // Clear existing control for this zone
-    await supabase
+    await supabaseAdmin
       .from('zone_control')
       .delete()
       .eq('zone_id', zoneId);
 
     // Insert new control data
-    const insertData = Object.entries(controlData).map(([schoolId, data]) => ({
-      zone_id: zoneId,
-      school_id: parseInt(schoolId),
-      control_percentage: data.percentage,
-      updated_at: new Date().toISOString()
-    }));
+    var insertData = [];
+    Object.keys(influence).forEach(function(sid) {
+      insertData.push({
+        zone_id: zoneId,
+        school_id: parseInt(sid),
+        control_percentage: influence[sid].percentage,
+        updated_at: new Date().toISOString()
+      });
+    });
 
-    const { error } = await supabase
+    var { error } = await supabaseAdmin
       .from('zone_control')
       .insert(insertData);
 
     if (error) {
       console.error('Error updating zone control:', error);
-      return { updated: false, error };
+      return { updated: false, error: error };
     }
 
-    console.log(`Updated zone ${zoneId} control:`, controlData);
-    return { updated: true, data: controlData };
+    return { updated: true, influence: influence };
 
   } catch (error) {
     console.error('Error in updateZoneControlTable:', error);
-    return { updated: false, error };
+    return { updated: false, error: error };
   }
 }
 
 /**
- * Determine the daily winner for a zone
+ * Update zone control for ALL zones with activity today
  */
-async function determineDailyWinner(zoneId) {
+async function updateAllZoneControl() {
   try {
-    const controlData = await calculateZoneControl(zoneId);
+    var today = new Date().toISOString().split('T')[0];
 
-    if (!controlData || Object.keys(controlData).length === 0) {
+    // Get all zones that have actions today
+    var { data: activeZones, error } = await supabase
+      .from('territory_actions')
+      .select('zone_id')
+      .eq('game_day', today);
+
+    if (error || !activeZones) return;
+
+    // Get unique zone IDs
+    var zoneIds = {};
+    activeZones.forEach(function(a) { zoneIds[a.zone_id] = true; });
+
+    var updated = 0;
+    for (var zoneId of Object.keys(zoneIds)) {
+      var result = await updateZoneControlTable(parseInt(zoneId));
+      if (result.updated) updated++;
+    }
+
+    console.log('Updated zone control for ' + updated + ' zones');
+    return updated;
+
+  } catch (error) {
+    console.error('Error updating all zone control:', error);
+    return 0;
+  }
+}
+
+/**
+ * Determine winner for a zone on a given day
+ * Winner = school with highest influence percentage
+ */
+async function determineDailyWinner(zoneId, gameDay) {
+  try {
+    var influence = await calculateZoneInfluence(zoneId, gameDay);
+
+    if (Object.keys(influence).length === 0) {
       return { winner: null, reason: 'No participation' };
     }
 
     // Find school with highest percentage
-    let winnerId = null;
-    let highestPercentage = 0;
+    var winnerId = null;
+    var highestPct = 0;
 
-    for (const [schoolId, data] of Object.entries(controlData)) {
-      if (data.percentage > highestPercentage) {
-        highestPercentage = data.percentage;
-        winnerId = parseInt(schoolId);
+    Object.keys(influence).forEach(function(sid) {
+      if (influence[sid].percentage > highestPct) {
+        highestPct = influence[sid].percentage;
+        winnerId = parseInt(sid);
       }
-    }
-
-    // Get school name
-    const { data: school } = await supabase
-      .from('schools')
-      .select('name')
-      .eq('id', winnerId)
-      .single();
+    });
 
     return {
       winner: {
         school_id: winnerId,
-        school_name: school?.name || 'Unknown',
-        percentage: highestPercentage
+        percentage: highestPct,
+        power: influence[winnerId] ? influence[winnerId].power : 0,
+        playerCount: influence[winnerId] ? influence[winnerId].playerCount : 0
       },
-      allResults: controlData
+      allResults: influence
     };
 
   } catch (error) {
     console.error('Error determining winner:', error);
-    return { winner: null, error };
+    return { winner: null, error: error };
   }
 }
 
 /**
- * Take a daily snapshot of zone control for history
+ * Award bonus points to winning school's participants
  */
-async function takeDailySnapshot(zoneId) {
+async function awardWinnerBonuses(zoneId, gameDay) {
   try {
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+    var day = gameDay || new Date().toISOString().split('T')[0];
+    var result = await determineDailyWinner(zoneId, day);
 
-    const controlData = await calculateZoneControl(zoneId);
-    const winner = await determineDailyWinner(zoneId);
-
-    // Check if zone_history table exists, if not we'll just log
-    const snapshot = {
-      zone_id: zoneId,
-      date: today.toISOString().split('T')[0],
-      winner_school_id: winner.winner?.school_id || null,
-      winner_percentage: winner.winner?.percentage || 0,
-      control_data: controlData,
-      total_casts: Object.values(controlData).reduce((sum, d) => sum + (d.casterCount || 0), 0)
-    };
-
-    console.log('Daily snapshot:', snapshot);
-
-    // Try to insert into zone_history if it exists
-    try {
-      await supabase
-        .from('zone_history')
-        .insert(snapshot);
-    } catch (e) {
-      // Table might not exist, that's ok
-      console.log('zone_history table not available, snapshot logged only');
-    }
-
-    return snapshot;
-
-  } catch (error) {
-    console.error('Error taking snapshot:', error);
-    return null;
-  }
-}
-
-/**
- * Get zone control history
- */
-async function getZoneHistory(zoneId, days = 7) {
-  try {
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-
-    const { data, error } = await supabase
-      .from('zone_history')
-      .select('*')
-      .eq('zone_id', zoneId)
-      .gte('date', startDate.toISOString().split('T')[0])
-      .order('date', { ascending: false });
-
-    if (error) {
-      // Table might not exist
-      return [];
-    }
-
-    return data || [];
-
-  } catch (error) {
-    console.error('Error getting zone history:', error);
-    return [];
-  }
-}
-
-/**
- * Award bonus points to winning school members
- */
-async function awardWinnerBonuses(zoneId) {
-  try {
-    const winner = await determineDailyWinner(zoneId);
-
-    if (!winner.winner) {
-      console.log('No winner to award bonuses');
+    if (!result.winner) {
       return { awarded: false, reason: 'No winner' };
     }
 
-    const winningSchoolId = winner.winner.school_id;
-    const bonusPoints = 5; // +5 points to each participating member
+    var winningSchoolId = result.winner.school_id;
+    var bonusPoints = 10; // +10 to each participant from winning school
 
-    // Get today's start
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-
-    // Get all players from winning school who cast today
-    const { data: casts } = await supabase
-      .from('casts')
-      .select('player_id, players(school_id)')
+    // Get all actions from winning school on this zone today
+    var { data: actions } = await supabase
+      .from('territory_actions')
+      .select('player_id')
       .eq('zone_id', zoneId)
-      .gte('created_at', today.toISOString());
+      .eq('school_id', winningSchoolId)
+      .eq('game_day', day);
 
-    const winningCasters = new Set();
-    casts?.forEach(cast => {
-      if (cast.players?.school_id === winningSchoolId) {
-        winningCasters.add(cast.player_id);
-      }
-    });
-
-    if (winningCasters.size === 0) {
-      return { awarded: false, reason: 'No casters from winning school' };
+    if (!actions || actions.length === 0) {
+      return { awarded: false, reason: 'No winning casters found' };
     }
 
-    // Award bonus to each caster
-    for (const playerId of winningCasters) {
-      const { data: player } = await supabase
+    // Get unique player IDs
+    var playerIds = {};
+    actions.forEach(function(a) { playerIds[a.player_id] = true; });
+    var uniqueIds = Object.keys(playerIds).map(Number);
+
+    // Award bonus to each player
+    for (var i = 0; i < uniqueIds.length; i++) {
+      var pid = uniqueIds[i];
+      var { data: player } = await supabase
         .from('players')
         .select('seasonal_points, lifetime_points')
-        .eq('id', playerId)
+        .eq('id', pid)
         .single();
 
       if (player) {
-        await supabase
+        await supabaseAdmin
           .from('players')
           .update({
             seasonal_points: (player.seasonal_points || 0) + bonusPoints,
             lifetime_points: (player.lifetime_points || 0) + bonusPoints
           })
-          .eq('id', playerId);
+          .eq('id', pid);
       }
     }
 
-    console.log(`Awarded ${bonusPoints} bonus points to ${winningCasters.size} players from school ${winningSchoolId}`);
+    console.log('Awarded ' + bonusPoints + ' bonus pts to ' + uniqueIds.length + ' players from school ' + winningSchoolId + ' on zone ' + zoneId);
 
     return {
       awarded: true,
       school_id: winningSchoolId,
-      school_name: winner.winner.school_name,
-      players_awarded: winningCasters.size,
+      players_awarded: uniqueIds.length,
       points_each: bonusPoints
     };
 
   } catch (error) {
     console.error('Error awarding bonuses:', error);
-    return { awarded: false, error };
+    return { awarded: false, error: error };
   }
 }
 
 /**
- * Run end-of-day processing for a zone
- * - Calculate final control
- * - Determine winner
- * - Take snapshot
- * - Award bonuses
+ * END OF DAY PROCESSING
+ * Called at midnight UTC
+ * 1. Find all zones with activity today
+ * 2. Determine winner for each
+ * 3. Update controlling_school_id on zones table
+ * 4. Award bonus points to winners
+ * 5. Clear zone_control table for fresh start
  */
-async function endOfDayProcessing(zoneId) {
-  console.log(`\n=== End of Day Processing for Zone ${zoneId} ===`);
+async function endOfDayProcessing() {
+  console.log('\n=== END OF DAY TERRITORY PROCESSING ===');
+  console.log('Time: ' + new Date().toISOString());
 
-  // Update final control percentages
-  const controlUpdate = await updateZoneControlTable(zoneId);
-  console.log('Control update:', controlUpdate);
+  try {
+    var today = new Date().toISOString().split('T')[0];
 
-  // Determine winner
-  const winner = await determineDailyWinner(zoneId);
-  console.log('Winner:', winner);
+    // Get all zones with actions today
+    var { data: activeActions, error } = await supabase
+      .from('territory_actions')
+      .select('zone_id')
+      .eq('game_day', today);
 
-  // Take snapshot
-  const snapshot = await takeDailySnapshot(zoneId);
-  console.log('Snapshot:', snapshot);
+    if (error || !activeActions || activeActions.length === 0) {
+      console.log('No territory actions today. Nothing to process.');
+      return { processed: 0 };
+    }
 
-  // Award bonuses
-  const bonuses = await awardWinnerBonuses(zoneId);
-  console.log('Bonuses:', bonuses);
+    // Get unique zone IDs
+    var zoneIds = {};
+    activeActions.forEach(function(a) { zoneIds[a.zone_id] = true; });
+    var uniqueZones = Object.keys(zoneIds).map(Number);
 
-  return {
-    controlUpdate,
-    winner,
-    snapshot,
-    bonuses
-  };
+    console.log('Processing ' + uniqueZones.length + ' zones with activity');
+
+    var results = [];
+
+    for (var i = 0; i < uniqueZones.length; i++) {
+      var zoneId = uniqueZones[i];
+      console.log('\n--- Zone ' + zoneId + ' ---');
+
+      // Determine winner
+      var winnerResult = await determineDailyWinner(zoneId, today);
+      console.log('Winner:', JSON.stringify(winnerResult.winner));
+
+      if (winnerResult.winner) {
+        // Update controlling_school_id on zones table
+        var { error: updateError } = await supabaseAdmin
+          .from('zones')
+          .update({
+            controlling_school_id: winnerResult.winner.school_id,
+            last_captured_at: new Date().toISOString()
+          })
+          .eq('id', zoneId);
+
+        if (updateError) {
+          console.error('Error updating zone control:', updateError);
+        } else {
+          console.log('Zone ' + zoneId + ' now controlled by school ' + winnerResult.winner.school_id);
+        }
+
+        // Award bonuses
+        var bonusResult = await awardWinnerBonuses(zoneId, today);
+        console.log('Bonuses:', JSON.stringify(bonusResult));
+
+        results.push({
+          zone_id: zoneId,
+          winner: winnerResult.winner,
+          bonuses: bonusResult
+        });
+      } else {
+        console.log('No winner for zone ' + zoneId);
+        results.push({ zone_id: zoneId, winner: null });
+      }
+    }
+
+    // Clear zone_control table for fresh start tomorrow
+    var { error: clearError } = await supabaseAdmin
+      .from('zone_control')
+      .delete()
+      .gte('zone_id', 0);
+
+    if (clearError) {
+      console.error('Error clearing zone_control:', clearError);
+    } else {
+      console.log('\nCleared zone_control table for new day');
+    }
+
+    console.log('\n=== END OF DAY COMPLETE ===');
+    console.log('Processed ' + results.length + ' zones');
+
+    return { processed: results.length, results: results };
+
+  } catch (error) {
+    console.error('Error in end of day processing:', error);
+    return { processed: 0, error: error.message };
+  }
 }
 
 /**
  * Get current objective zone
  */
 async function getCurrentObjective() {
-  const { data: zone } = await supabase
-    .from('zones')
-    .select('*')
-    .eq('is_current_objective', true)
-    .single();
+  try {
+    var { data: zone } = await supabase
+      .from('zones')
+      .select('*')
+      .eq('is_current_objective', true)
+      .single();
 
-  return zone;
+    return zone;
+  } catch (error) {
+    return null;
+  }
 }
 
 module.exports = {
-  calculateZoneControl,
+  calculateZoneInfluence,
   updateZoneControlTable,
+  updateAllZoneControl,
   determineDailyWinner,
-  takeDailySnapshot,
-  getZoneHistory,
   awardWinnerBonuses,
   endOfDayProcessing,
   getCurrentObjective

@@ -239,7 +239,18 @@ Keep it under 200 characters. Be deadpan. One sentence max.`
   // ============================================
   // MAINTENANCE JOBS
   // ============================================
-
+  // 23:55 UTC - End of day territory processing
+  cron.schedule('55 23 * * *', async () => {
+    console.log(`[${new Date().toISOString()}] 🏰 End of day territory processing`);
+    try {
+      const result = await territoryControl.endOfDayProcessing();
+      console.log('✅ Territory processing complete:', result);
+    } catch (error) {
+      console.error('❌ Error in territory processing:', error.message);
+      console.log('   23:55 - Territory end-of-day processing');
+    }
+  });
+  
   // 00:00 UTC - Reset mana AND lives
   cron.schedule('0 0 * * *', async () => {
     console.log(`[${new Date().toISOString()}] 🔮 Midnight reset: mana + lives`);
@@ -287,13 +298,10 @@ Keep it under 200 characters. Be deadpan. One sentence max.`
     }
   });
 
-  // Every 5 minutes - Update zone control
+  // Every 5 minutes - Update zone control for ALL active zones
   cron.schedule('*/5 * * * *', async () => {
     try {
-      const zone = await territoryControl.getCurrentObjective();
-      if (zone) {
-        await territoryControl.updateZoneControlTable(zone.id);
-      }
+      await territoryControl.updateAllZoneControl();
     } catch (error) {
       console.error('❌ Error updating zone control:', error.message);
     }

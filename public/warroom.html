@@ -196,6 +196,15 @@
         <div class="race-card" id="communityRace"></div>
       </div>
 
+      <!-- Community Trend Chart -->
+      <div class="section fade-up fade-up-1">
+        <div class="section-label">COMMUNITY TREND</div>
+        <div class="chart-card">
+          <div class="chart-canvas-wrap"><canvas id="communityChart"></canvas></div>
+          <div class="chart-legend" id="communityChartLegend"></div>
+        </div>
+      </div>
+
       <!-- House Trend Chart -->
       <div class="section fade-up fade-up-2">
         <div class="section-label">HOUSE MOMENTUM</div>
@@ -429,6 +438,110 @@
       legendEl.innerHTML = legendHTML;
     }
 
+    // ═══ RENDER COMMUNITY CHART ═══
+    function renderCommunityChart(history) {
+      var canvas = document.getElementById('communityChart');
+      var ctx = canvas.getContext('2d');
+      var wrap = canvas.parentElement;
+      canvas.width = wrap.offsetWidth * 2;
+      canvas.height = 400;
+      var W = canvas.width;
+      var H = canvas.height;
+      var pad = { top: 20, right: 20, bottom: 40, left: 50 };
+
+      // Collect all community tags that appear
+      var tagSet = {};
+      history.forEach(function(d) {
+        Object.keys(d.communities || {}).forEach(function(tag) { tagSet[tag] = true; });
+      });
+      var tags = Object.keys(tagSet);
+
+      if (history.length < 2 || tags.length === 0) {
+        ctx.fillStyle = '#606070';
+        ctx.font = '24px Crimson Text';
+        ctx.textAlign = 'center';
+        ctx.fillText('More data needed for community trend', W / 2, H / 2);
+        return;
+      }
+
+      // Community colors — bright distinct palette
+      var COMMUNITY_COLORS = ['#FFD700', '#00BFFF', '#FF6B6B', '#50FA7B', '#BD93F9', '#FFB86C', '#FF79C6', '#8BE9FD', '#F1FA8C', '#FF5555'];
+
+      // Find max value
+      var maxVal = 0;
+      history.forEach(function(d) {
+        tags.forEach(function(tag) {
+          var v = (d.communities || {})[tag] || 0;
+          if (v > maxVal) maxVal = v;
+        });
+      });
+      maxVal = Math.max(maxVal, 10);
+
+      var plotW = W - pad.left - pad.right;
+      var plotH = H - pad.top - pad.bottom;
+
+      // Draw grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      for (var i = 0; i <= 4; i++) {
+        var y = pad.top + (plotH / 4) * i;
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+        ctx.fillStyle = '#606070';
+        ctx.font = '18px JetBrains Mono';
+        ctx.textAlign = 'right';
+        ctx.fillText(Math.round(maxVal - (maxVal / 4) * i), pad.left - 8, y + 6);
+      }
+
+      // Draw date labels
+      ctx.fillStyle = '#606070';
+      ctx.font = '18px JetBrains Mono';
+      ctx.textAlign = 'center';
+      history.forEach(function(d, i) {
+        var x = pad.left + (plotW / (history.length - 1)) * i;
+        var label = d.date.slice(5);
+        ctx.fillText(label, x, H - 10);
+      });
+
+      // Draw lines for each community
+      tags.forEach(function(tag, ti) {
+        var color = COMMUNITY_COLORS[ti % COMMUNITY_COLORS.length];
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+
+        history.forEach(function(d, i) {
+          var x = pad.left + (plotW / (history.length - 1)) * i;
+          var v = (d.communities || {})[tag] || 0;
+          var y = pad.top + plotH - (v / maxVal) * plotH;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Draw dots
+        ctx.fillStyle = color;
+        history.forEach(function(d, i) {
+          var x = pad.left + (plotW / (history.length - 1)) * i;
+          var v = (d.communities || {})[tag] || 0;
+          var y = pad.top + plotH - (v / maxVal) * plotH;
+          ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
+        });
+      });
+
+      // Legend
+      var legendEl = document.getElementById('communityChartLegend');
+      var legendHTML = '';
+      tags.forEach(function(tag, ti) {
+        var color = COMMUNITY_COLORS[ti % COMMUNITY_COLORS.length];
+        legendHTML += '<div class="chart-legend-item">'
+          + '<div class="chart-legend-dot" style="background:' + color + ';"></div>'
+          + ' ' + tag
+          + '</div>';
+      });
+      legendEl.innerHTML = legendHTML;
+    }
+
     // ═══ RENDER TOP PLAYERS ═══
     function renderTopPlayers(players) {
       var el = document.getElementById('topPlayers');
@@ -530,6 +643,7 @@
 
         if (player) renderYourStats(todayData);
         renderCommunityRace(todayData.communities || []);
+        renderCommunityChart(historyData);
         renderHouseChart(historyData);
         renderTopPlayers(todayData.players || []);
         renderFeed(actionsData);

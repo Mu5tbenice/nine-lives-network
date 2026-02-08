@@ -488,7 +488,7 @@
         var maxPts = schoolsList[0].total_points || 1;
         for (var i = 0; i < schoolsList.length; i++) {
           var school = schoolsList[i];
-          var h = HOUSES[school.school_id] || { name: 'Unknown', emoji: '?', color: '#888' };
+          var h = HOUSES[school.school_id] || { name: 'Unknown', color: '#888', img: '' };
           var isMyHouse = school.school_id === player.school_id;
           var pct = Math.max(5, (school.total_points / maxPts) * 100);
           var rowStyle = isMyHouse
@@ -499,7 +499,7 @@
           standingsHTML += ''
             + '<div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:6px; margin-bottom:4px; ' + rowStyle + '">'
             + '  <span style="font-family:var(--font-data); font-size:9px; color:' + rankColor + '; width:18px; text-align:center;">' + (i + 1) + '</span>'
-            + '  <span style="font-size:16px;">' + h.emoji + '</span>'
+            + '  <img src="' + (h.img || '') + '" style="width:20px;height:20px;object-fit:contain;" onerror="this.style.display=\'none\'">'
             + '  <span style="font-family:var(--font-title); font-size:12px; font-weight:600; color:var(--text-bright); width:85px; letter-spacing:0.5px;">' + h.name + '</span>'
             + '  <div style="flex:1; height:7px; border-radius:4px; background:rgba(255,255,255,0.04); overflow:hidden;">'
             + '    <div style="height:100%; width:' + pct + '%; border-radius:4px; background:linear-gradient(90deg, ' + h.color + ', ' + h.color + '88);"></div>'
@@ -533,7 +533,7 @@
       // Avatar HTML
       var avatarHTML = player.profile_image
         ? '<img src="' + player.profile_image + '" alt="" class="dash-header__avatar">'
-        : '<div class="dash-header__avatar--placeholder">' + house.emoji + '</div>';
+        : '<div class="dash-header__avatar--placeholder"><img src="' + (house.img || '') + '" style="width:32px;height:32px;object-fit:contain;"></div>';
 
       // ── Put it all together ──
       var container = document.getElementById('dashContent');
