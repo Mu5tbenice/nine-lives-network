@@ -1,0 +1,197 @@
+/* ═══════════════════════════════════════════════════════════
+   Nine Lives Network — Navigation v2
+   Top nav bar + mobile hamburger + mobile menu
+
+   Import AFTER variables-v2.css:
+   <link rel="stylesheet" href="/css/variables-v2.css">
+   <link rel="stylesheet" href="/css/nav-v2.css">
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Top Nav ── */
+.top-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(10, 8, 18, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-subtle);
+  height: 52px;
+}
+
+.top-nav-content {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 100%;
+}
+
+/* ── Logo ── */
+.nav-logo {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--gold);
+  text-decoration: none;
+  letter-spacing: 1.5px;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.nav-logo:hover {
+  opacity: 0.85;
+}
+
+/* ── Desktop Links ── */
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.nav-links li {
+  display: flex;
+}
+
+.nav-links a {
+  font-family: var(--font-title);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.nav-links a:hover {
+  color: var(--gold);
+  background: var(--gold-dim);
+}
+
+.nav-links a.active {
+  color: var(--gold);
+  background: var(--gold-dim);
+}
+
+.nav-links a.logout-btn {
+  color: #cc4444;
+}
+
+.nav-links a.logout-btn:hover {
+  background: rgba(200, 50, 50, 0.1);
+}
+
+/* ── Hamburger Button (mobile only) ── */
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hamburger span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--text-muted);
+  border-radius: 1px;
+  transition: all 0.3s ease;
+}
+
+.hamburger.active span:nth-child(1) {
+  transform: rotate(45deg) translate(4px, 4px);
+}
+
+.hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+  transform: rotate(-45deg) translate(4px, -4px);
+}
+
+/* ── Mobile Menu ── */
+.mobile-menu {
+  display: none;
+  position: fixed;
+  top: 52px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 8, 18, 0.97);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 99;
+  flex-direction: column;
+  padding: 20px 20px;
+  overflow-y: auto;
+}
+
+.mobile-menu.active {
+  display: flex;
+}
+
+.mobile-menu a {
+  font-family: var(--font-title);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-body);
+  text-decoration: none;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  letter-spacing: 0.5px;
+  transition: color 0.2s;
+}
+
+.mobile-menu a:last-child {
+  border-bottom: none;
+}
+
+.mobile-menu a:hover,
+.mobile-menu a.active {
+  color: var(--gold);
+}
+
+.mobile-menu a.logout-btn {
+  color: #cc4444;
+  margin-top: auto;
+  padding-top: 20px;
+}
+
+.mobile-menu .menu-icon {
+  font-size: 1.1rem;
+  width: 24px;
+  text-align: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-menu {
+    display: none !important;
+  }
+}

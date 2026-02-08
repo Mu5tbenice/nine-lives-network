@@ -1,0 +1,89 @@
+/* ═══════════════════════════════════════════════════════════
+   Nine Lives Network — Design System v2
+   Variables, tokens, and shared values
+
+   Import this FIRST in every page:
+   <link rel="stylesheet" href="/css/variables-v2.css">
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Google Fonts (add to <head> of every page) ──
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+*/
+
+:root {
+  /* ── Core Backgrounds ── */
+  --bg-deep:        #0a0812;
+  --bg-mid:         #0d0a14;
+  --bg-card:        rgba(255, 255, 255, 0.035);
+  --bg-card-hover:  rgba(255, 255, 255, 0.055);
+  --bg-card-active: rgba(255, 255, 255, 0.07);
+  --bg-inset:       rgba(0, 0, 0, 0.15);
+  --bg-inset-alt:   rgba(0, 0, 0, 0.1);
+
+  /* ── Borders ── */
+  --border-subtle:  rgba(255, 255, 255, 0.07);
+  --border-medium:  rgba(255, 255, 255, 0.12);
+  --border-strong:  rgba(255, 255, 255, 0.18);
+
+  /* ── Gold System (primary accent) ── */
+  --gold:           #D4A64B;
+  --gold-light:     #E8C675;
+  --gold-dim:       rgba(212, 166, 75, 0.15);
+  --gold-glow:      rgba(212, 166, 75, 0.25);
+  --gold-border:    rgba(212, 166, 75, 0.35);
+  --gold-solid-bg:  linear-gradient(180deg, #D4A64B 0%, #b8903d 100%);
+  --gold-btn-shadow: 0 4px 0 #8a6d2f;
+  --gold-btn-glow:  0 6px 20px rgba(212, 166, 75, 0.3);
+
+  /* ── Text Hierarchy ── */
+  --text-bright:    #F0ECF8;
+  --text-body:      #CCC5DB;
+  --text-muted:     #847C98;
+  --text-faint:     #554E68;
+
+  /* ── Accent Colors ── */
+  --cyan:           #00D4FF;
+  --cyan-glow:      rgba(0, 212, 255, 0.4);
+  --cyan-dim:       rgba(0, 212, 255, 0.08);
+  --green:          #00c864;
+  --green-bg:       rgba(0, 200, 100, 0.08);
+  --red:            #ff4444;
+  --red-bg:         rgba(255, 68, 68, 0.08);
+  --live:           #00ff88;
+  --orange:         #FF8C00;
+  --orange-dim:     rgba(255, 140, 0, 0.1);
+
+  /* ── Typography ── */
+  --font-title:     'Cinzel', serif;
+  --font-body:      'Crimson Text', serif;
+  --font-data:      'Press Start 2P', monospace;
+  --font-mono:      'JetBrains Mono', monospace;
+
+  /* ── Spacing ── */
+  --gap-xs:   4px;
+  --gap-sm:   8px;
+  --gap-md:   14px;
+  --gap-lg:   20px;
+  --gap-xl:   28px;
+
+  /* ── Radii ── */
+  --radius:    12px;
+  --radius-sm: 8px;
+  --radius-xs: 4px;
+
+  /* ── School Color (overridden by JS per player) ── */
+  --school-color: #D4A64B;
+
+  /* ── House Colors (for direct reference) ── */
+  --house-smoulders:   #E03C31;
+  --house-darktide:    #00B4D8;
+  --house-stonebark:   #5CB338;
+  --house-ashenvale:   #90E0EF;
+  --house-stormrage:   #FFC800;
+  --house-nighthollow: #7B2D8E;
+  --house-dawnbringer: #FF8C00;
+  --house-manastorm:   #5B8FE0;
+  --house-plaguemire:  #E84393;
+}
