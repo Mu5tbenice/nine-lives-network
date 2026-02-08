@@ -2,158 +2,817 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>How to Play | Nine Lives Network</title>
-  <link rel="stylesheet" href="/css/styles.css">
-  <link rel="stylesheet" href="/css/nav.css">
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/variables-v2.css">
+  <link rel="stylesheet" href="/css/components-v2.css">
+  <link rel="stylesheet" href="/css/nav-v2.css">
+
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a14; color: #fff; min-height: 100vh; }
-    .container { min-height: 100vh; padding: 76px 15px 40px; }
-    .content { max-width: 800px; margin: 0 auto; }
-    .page-title { font-family: 'Press Start 2P', monospace; font-size: 1rem; color: #FFD700; margin-bottom: 16px; text-align: center; }
-    .intro-text { text-align: center; font-size: 1rem; color: #a0a0b0; margin-bottom: 32px; line-height: 1.6; }
-    .section { background: #12121f; border: 2px solid #2a2a4a; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-    .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-    .section-number { width: 36px; height: 36px; background: #FFD700; color: #0a0a14; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Press Start 2P', monospace; font-size: 0.7rem; flex-shrink: 0; }
-    .section-title { font-family: 'Press Start 2P', monospace; font-size: 0.5rem; color: #fff; }
-    .section-content { color: #a0a0b0; line-height: 1.8; font-size: 0.9rem; }
-    .section-content p { margin-bottom: 12px; }
-    .highlight-box { background: #1a1a2e; border-left: 4px solid #FFD700; padding: 12px 16px; margin: 12px 0; border-radius: 0 6px 6px 0; }
-    .highlight-box p { margin: 0; color: #fff; font-size: 0.85rem; }
-    .points-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-    .points-table th, .points-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #2a2a4a; }
-    .points-table th { font-family: 'Press Start 2P', monospace; font-size: 0.35rem; color: #606070; text-transform: uppercase; }
-    .points-table td { color: #a0a0b0; font-size: 0.85rem; }
-    .points-table .points { color: #FFD700; font-family: 'Press Start 2P', monospace; font-size: 0.5rem; }
-    .schools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 12px 0; }
-    .school-badge { display: flex; align-items: center; gap: 8px; padding: 8px; background: #0a0a14; border-radius: 6px; }
-    .school-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .school-badge span { font-family: 'Press Start 2P', monospace; font-size: 0.35rem; color: #a0a0b0; }
-    .faq-item { margin-bottom: 16px; }
-    .faq-question { font-family: 'Press Start 2P', monospace; font-size: 0.4rem; color: #FFD700; margin-bottom: 6px; }
-    .faq-answer { color: #a0a0b0; line-height: 1.6; font-size: 0.85rem; }
-    .cta-section { text-align: center; padding: 32px 0; }
-    .cta-section p { color: #a0a0b0; margin-bottom: 16px; font-size: 1rem; }
-    .btn-cta { display: inline-block; font-family: 'Press Start 2P', monospace; font-size: 0.5rem; padding: 16px 32px; background: #FFD700; color: #0a0a14; text-decoration: none; border-radius: 6px; transition: all 0.3s; }
-    .btn-cta:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4); }
-    @media (max-width: 600px) { .schools-grid { grid-template-columns: repeat(2, 1fr); } .section-title { font-size: 0.4rem; } .page-title { font-size: 0.8rem; } }
+    /* ══ How to Play specific styles ══ */
+
+    .hero-section {
+      text-align: center;
+      padding: 20px 0 10px;
+    }
+    .hero-section__icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    .hero-section__title {
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 26px;
+      color: var(--gold);
+      letter-spacing: 3px;
+      margin-bottom: 6px;
+    }
+    .hero-section__sub {
+      font-family: var(--font-body);
+      font-size: 16px;
+      font-style: italic;
+      color: var(--text-muted);
+    }
+
+    /* Tab switcher */
+    .tab-bar {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 4px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px 8px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: var(--font-title);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      background: var(--gold-dim);
+      color: var(--gold);
+      border: 1px solid var(--gold-border);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Steps section */
+    .step {
+      display: flex;
+      gap: 14px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .step:last-child { border-bottom: none; }
+    .step__number {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-data);
+      font-size: 10px;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+    .step__content { flex: 1; }
+    .step__title {
+      font-family: var(--font-title);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-bright);
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .step__desc {
+      font-family: var(--font-body);
+      font-size: 15px;
+      color: var(--text-body);
+      line-height: 1.5;
+    }
+    .step__desc a {
+      color: var(--gold);
+      text-decoration: underline;
+    }
+
+    /* Tier cards */
+    .tier-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 12px;
+    }
+    .tier-card--x { border-color: rgba(29, 161, 242, 0.25); }
+    .tier-card--territory { border-color: rgba(255, 68, 68, 0.2); }
+    .tier-card--streak { border-color: rgba(255, 140, 0, 0.25); }
+
+    .tier-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .tier-header__left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .tier-header__icon { font-size: 24px; }
+    .tier-header__name {
+      font-family: var(--font-title);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-bright);
+      letter-spacing: 1px;
+    }
+    .tier-header__pct {
+      font-family: var(--font-data);
+      font-size: 10px;
+      color: var(--text-muted);
+      padding: 3px 8px;
+      background: var(--bg-inset);
+      border-radius: 4px;
+    }
+
+    /* Points rows */
+    .pts-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: var(--bg-inset);
+      border-radius: 8px;
+      margin-bottom: 5px;
+    }
+    .pts-row__action {
+      font-family: var(--font-body);
+      font-size: 15px;
+      color: var(--text-body);
+      flex: 1;
+    }
+    .pts-row__limit {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-faint);
+      margin: 0 10px;
+    }
+    .pts-row__value {
+      font-family: var(--font-data);
+      font-size: 11px;
+      color: var(--green);
+      min-width: 55px;
+      text-align: right;
+    }
+    .pts-row__value--special {
+      color: var(--gold);
+    }
+    .pts-row__value--mult {
+      color: var(--orange);
+    }
+
+    .tier-max {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      padding: 8px 12px;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .tier-max__label {
+      font-family: var(--font-data);
+      font-size: 8px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .tier-max__value {
+      font-family: var(--font-data);
+      font-size: 12px;
+      color: var(--text-bright);
+    }
+
+    /* Daily example cards */
+    .example-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 10px;
+    }
+    .example-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .example-header__left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .example-header__icon { font-size: 24px; }
+    .example-header__name {
+      font-family: var(--font-title);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-bright);
+      letter-spacing: 0.5px;
+    }
+    .example-header__sub {
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-style: italic;
+      color: var(--text-muted);
+    }
+    .example-header__pts {
+      text-align: right;
+    }
+    .example-header__pts-val {
+      font-family: var(--font-data);
+      font-size: 16px;
+      color: var(--gold);
+    }
+    .example-header__pts-label {
+      font-family: var(--font-data);
+      font-size: 7px;
+      color: var(--text-faint);
+    }
+    .example-breakdown {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .example-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: var(--bg-inset);
+      border-radius: 6px;
+    }
+    .example-line__action {
+      font-family: var(--font-body);
+      font-size: 14px;
+      color: var(--text-body);
+    }
+    .example-line__pts {
+      font-family: var(--font-data);
+      font-size: 9px;
+      color: var(--green);
+    }
+    .example-line__pts--mult {
+      color: var(--orange);
+    }
+    .example-divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 6px 0;
+    }
+
+    /* Weekly projection */
+    .weekly-card {
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .weekly-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(212, 166, 75, 0.15);
+    }
+    .weekly-row:last-child { border-bottom: none; }
+    .weekly-row__label {
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-bright);
+    }
+    .weekly-row__value {
+      font-family: var(--font-data);
+      font-size: 11px;
+      color: var(--gold);
+    }
+
+    /* FAQ */
+    .faq-item {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .faq-item:last-child { border-bottom: none; }
+    .faq-q {
+      font-family: var(--font-title);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-bright);
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .faq-q::before {
+      content: '▸';
+      color: var(--gold);
+      font-size: 12px;
+    }
+    .faq-a {
+      font-family: var(--font-body);
+      font-size: 15px;
+      color: var(--text-body);
+      line-height: 1.6;
+      padding-left: 20px;
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .hero-section__title { font-size: 22px; }
+      .tab-btn { font-size: 9px; padding: 8px 4px; }
+      .pts-row { padding: 8px 10px; }
+      .pts-row__action { font-size: 14px; }
+    }
   </style>
 </head>
 <body>
+
+  <!-- ══ NAVIGATION ══ -->
   <nav class="top-nav">
     <div class="top-nav-content">
       <a href="/" class="nav-logo">Nine Lives Network</a>
       <ul class="nav-links">
         <li><a href="/dashboard.html">Dashboard</a></li>
-        <li><a href="/world.html">World</a></li>
+        <li><a href="/map.html">World</a></li>
         <li><a href="/leaderboards.html">Leaderboards</a></li>
+        <li><a href="/warroom.html">War Room</a></li>
+        <li><a href="/arena.html">Arena</a></li>
         <li><a href="/how-to-play.html" class="active">Help</a></li>
-        <li><a href="#" class="logout-btn" id="logoutBtn">Logout</a></li>
       </ul>
-      <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
+      <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </nav>
-
   <div class="mobile-menu" id="mobileMenu">
     <a href="/dashboard.html"><span class="menu-icon">📊</span> Dashboard</a>
-    <a href="/world.html"><span class="menu-icon">🌍</span> World</a>
+    <a href="/map.html"><span class="menu-icon">🌍</span> World</a>
     <a href="/leaderboards.html"><span class="menu-icon">🏆</span> Leaderboards</a>
+    <a href="/warroom.html"><span class="menu-icon">📈</span> War Room</a>
+    <a href="/arena.html"><span class="menu-icon">⚔️</span> Arena</a>
     <a href="/how-to-play.html" class="active"><span class="menu-icon">❓</span> Help</a>
-    <a href="#" class="logout-btn" id="mobileLogoutBtn"><span class="menu-icon">🚪</span> Logout</a>
   </div>
 
-  <main class="container">
-    <div class="content">
-      <h1 class="page-title">📜 How to Play</h1>
-      <p class="intro-text">Nine Lives Network is a social strategy game played on Twitter/X. Join a magical school, cast spells by tweeting, and fight for territory in Avaloris.</p>
+  <!-- ══ MAIN CONTENT ══ -->
+  <div class="main-container">
 
-      <div class="section">
-        <div class="section-header"><div class="section-number">1</div><h2 class="section-title">Register & Choose Your School</h2></div>
-        <div class="section-content">
-          <p>Sign in with Twitter and pledge allegiance to one of nine magical schools:</p>
-          <div class="schools-grid">
-            <div class="school-badge"><div class="school-dot" style="background:#FF4500"></div><span>Ember</span></div>
-            <div class="school-badge"><div class="school-dot" style="background:#00BFFF"></div><span>Tidal</span></div>
-            <div class="school-badge"><div class="school-dot" style="background:#8B4513"></div><span>Stone</span></div>
-            <div class="school-badge"><div class="school-dot" style="background:#98FB98"></div><span>Zephyr</span></div>
-            <div class="school-badge"><div class="school-dot" style="background:#FFD700"></div><span>Storm</span></div>
-            <div class="school-badge"><div class="school-dot" style="background:#9932CC"></div><span>Umbral</span></div>
-            <div class="school-badge"><div class="school-dot" style="background:#FFFFE0"></div><span>Radiant</span></div>
-            <div class="school-badge"><div class="school-dot" style="background:#00FFFF"></div><span>Arcane</span></div>
-            <div class="school-badge"><div class="school-dot" style="background:#FF1493"></div><span>WildCat</span></div>
+    <!-- Hero -->
+    <div class="hero-section fade-up">
+      <div class="hero-section__icon">🧙</div>
+      <h1 class="hero-section__title">How to Play</h1>
+      <p class="hero-section__sub">Become part of the story. Earn your place in Avaloris.</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar fade-up fade-up-1">
+      <button class="tab-btn active" onclick="switchTab('overview')">Getting Started</button>
+      <button class="tab-btn" onclick="switchTab('points')">Points</button>
+      <button class="tab-btn" onclick="switchTab('examples')">Daily Examples</button>
+      <button class="tab-btn" onclick="switchTab('faq')">FAQ</button>
+    </div>
+
+    <!-- ═══ TAB 1: GETTING STARTED ═══ -->
+    <div class="tab-content active" id="tab-overview">
+      <div class="card fade-up fade-up-2">
+
+        <div class="step">
+          <div class="step__number">1</div>
+          <div class="step__content">
+            <div class="step__title">Connect Your 𝕏 Account</div>
+            <div class="step__desc"><a href="/register.html">Register here</a> by connecting your 𝕏 (Twitter) account. This is how you'll cast spells and earn points.</div>
           </div>
-          <p>Add a community tag (like $BONK) to represent your crypto community!</p>
         </div>
-      </div>
 
-      <div class="section">
-        <div class="section-header"><div class="section-number">2</div><h2 class="section-title">Twitter Bounties (Free Points!)</h2></div>
-        <div class="section-content">
-          <p><strong>Bounties</strong> are special tweets from <a href="https://twitter.com/9LVNetwork" style="color:#FFD700">@9LVNetwork</a> that appear 2-3 times per day. Simply reply to earn points!</p>
-          <div class="highlight-box"><p>🎯 Bounties are FREE - no mana required. Reply once per bounty. Roleplay and ASCII art earn bonus points!</p></div>
-          <p>The school with the most participation wins the zone shown in the bounty tweet.</p>
+        <div class="step">
+          <div class="step__number">2</div>
+          <div class="step__content">
+            <div class="step__title">Choose Your House</div>
+            <div class="step__desc">Pick one of 9 magical houses. Each has its own identity, emblem, and community. This is permanent — choose wisely!</div>
+          </div>
         </div>
-      </div>
 
-      <div class="section">
-        <div class="section-header"><div class="section-number">3</div><h2 class="section-title">Territory Control (Costs Mana)</h2></div>
-        <div class="section-content">
-          <p>On the <strong>World</strong> page, you can attack or defend any territory. Each action costs 1 mana.</p>
-          <p><strong>Attack</strong> = Try to flip a zone to your school's control<br><strong>Defend</strong> = Protect zones your school controls</p>
-          <div class="highlight-box"><p>💧 You have 5 mana per day. Use wisely! Coordinate with your school to take key zones.</p></div>
+        <div class="step">
+          <div class="step__number">3</div>
+          <div class="step__content">
+            <div class="step__title">Rep Your Community</div>
+            <div class="step__desc">Optionally add your community tag (like $BONK or $WIF) by pasting the contract address. Your community competes on the War Room leaderboard.</div>
+          </div>
         </div>
-      </div>
 
-      <div class="section">
-        <div class="section-header"><div class="section-number">4</div><h2 class="section-title">Duels (Costs Lives)</h2></div>
-        <div class="section-content">
-          <p>Challenge other players to 1v1 duels! Each duel costs 1 life (3 lives per day).</p>
-          <p><strong>Win:</strong> +10 points | <strong>Lose:</strong> -10 points</p>
-          <p>Duels are currently 50/50 random. Future NFT holders will have stat-weighted odds!</p>
+        <div class="step">
+          <div class="step__number">4</div>
+          <div class="step__content">
+            <div class="step__title">Join the Daily Story</div>
+            <div class="step__desc">Every day at 8 AM UTC, <a href="https://twitter.com/9LVNetwork" target="_blank">@9LVNetwork</a> posts a new story chapter. Reply to the tweet to participate and earn points.</div>
+          </div>
         </div>
-      </div>
 
-      <div class="section">
-        <div class="section-header"><div class="section-number">5</div><h2 class="section-title">Earn Points</h2></div>
-        <div class="section-content">
-          <table class="points-table">
-            <thead><tr><th>Action</th><th>Points</th></tr></thead>
-            <tbody>
-              <tr><td>Reply to bounty tweet</td><td class="points">+10</td></tr>
-              <tr><td>Use school keywords</td><td class="points">+2</td></tr>
-              <tr><td>Descriptive reply (10-30 words)</td><td class="points">+3</td></tr>
-              <tr><td>ASCII art or roleplay</td><td class="points">+5</td></tr>
-              <tr><td>Territory attack/defend</td><td class="points">+5</td></tr>
-              <tr><td>Win a duel</td><td class="points">+10</td></tr>
-              <tr><td>Lose a duel</td><td class="points">-10</td></tr>
-            </tbody>
-          </table>
+        <div class="step">
+          <div class="step__number">5</div>
+          <div class="step__content">
+            <div class="step__title">Control Territory</div>
+            <div class="step__desc">Visit the <a href="/map.html">World map</a> to attack or defend zones. Each action costs 1 mana. Help your house control more territory for bonus points.</div>
+          </div>
         </div>
-      </div>
 
-      <div class="section">
-        <div class="section-header"><div class="section-number">?</div><h2 class="section-title">FAQ</h2></div>
-        <div class="section-content">
-          <div class="faq-item"><div class="faq-question">Can I change my school?</div><div class="faq-answer">No, once you pledge, you're locked in for the season.</div></div>
-          <div class="faq-item"><div class="faq-question">When do mana and lives reset?</div><div class="faq-answer">Midnight UTC every day.</div></div>
-          <div class="faq-item"><div class="faq-question">What's the Crystal Tower?</div><div class="faq-answer">A visual showing faction power. The winning school at season end gets exclusive rewards!</div></div>
-          <div class="faq-item"><div class="faq-question">Is this free to play?</div><div class="faq-answer">Yes! Just need a Twitter account. NFTs are optional and coming later.</div></div>
+        <div class="step">
+          <div class="step__number">6</div>
+          <div class="step__content">
+            <div class="step__title">Climb the Ranks</div>
+            <div class="step__desc">Build streaks, earn Nerm's Pick bonus, and grind the leaderboards. Top players, houses, and communities earn glory each season.</div>
+          </div>
         </div>
-      </div>
 
-      <div class="cta-section">
-        <p>Ready to join the battle for Avaloris?</p>
-        <a href="/register.html" class="btn-cta">Join Now</a>
       </div>
     </div>
-  </main>
 
+    <!-- ═══ TAB 2: POINTS ═══ -->
+    <div class="tab-content" id="tab-points">
+
+      <!-- Tier 1: X Battlefield -->
+      <div class="tier-card tier-card--x fade-up fade-up-1">
+        <div class="tier-header">
+          <div class="tier-header__left">
+            <span class="tier-header__icon">𝕏</span>
+            <span class="tier-header__name">𝕏 Battlefield</span>
+          </div>
+          <span class="tier-header__pct">~60% OF DAILY PTS</span>
+        </div>
+
+        <div class="pts-row">
+          <span class="pts-row__action">Reply to daily story</span>
+          <span class="pts-row__limit">1/day</span>
+          <span class="pts-row__value">+20 pts</span>
+        </div>
+        <div class="pts-row">
+          <span class="pts-row__action">Like story post</span>
+          <span class="pts-row__limit">1/day</span>
+          <span class="pts-row__value">+5 pts</span>
+        </div>
+        <div class="pts-row">
+          <span class="pts-row__action">Retweet</span>
+          <span class="pts-row__limit">1/day</span>
+          <span class="pts-row__value">+10 pts</span>
+        </div>
+        <div class="pts-row">
+          <span class="pts-row__action">Quote tweet</span>
+          <span class="pts-row__limit">1/day</span>
+          <span class="pts-row__value">+15 pts</span>
+        </div>
+        <div class="pts-row">
+          <span class="pts-row__action">Short reply bonus (10-30 words)</span>
+          <span class="pts-row__limit"></span>
+          <span class="pts-row__value">+5 pts</span>
+        </div>
+        <div class="pts-row">
+          <span class="pts-row__action">Detailed reply (30+ words)</span>
+          <span class="pts-row__limit"></span>
+          <span class="pts-row__value">+10 pts</span>
+        </div>
+        <div class="pts-row">
+          <span class="pts-row__action">🎰 Nerm's Pick (AI selects best)</span>
+          <span class="pts-row__limit">1-3/day</span>
+          <span class="pts-row__value pts-row__value--special">+25 pts</span>
+        </div>
+
+        <div class="tier-max">
+          <span class="tier-max__label">Max daily from 𝕏</span>
+          <span class="tier-max__value">~80 pts</span>
+        </div>
+      </div>
+
+      <!-- Tier 2: Territory -->
+      <div class="tier-card tier-card--territory fade-up fade-up-2">
+        <div class="tier-header">
+          <div class="tier-header__left">
+            <span class="tier-header__icon">⚔️</span>
+            <span class="tier-header__name">War Room / Territory</span>
+          </div>
+          <span class="tier-header__pct">~30% OF DAILY PTS</span>
+        </div>
+
+        <div class="pts-row">
+          <span class="pts-row__action">Attack a zone</span>
+          <span class="pts-row__limit">costs 1 mana</span>
+          <span class="pts-row__value">+8 pts</span>
+        </div>
+        <div class="pts-row">
+          <span class="pts-row__action">Defend a zone</span>
+          <span class="pts-row__limit">costs 1 mana</span>
+          <span class="pts-row__value">+8 pts</span>
+        </div>
+        <div class="pts-row">
+          <span class="pts-row__action">All mana spent bonus</span>
+          <span class="pts-row__limit">1/day</span>
+          <span class="pts-row__value">+5 pts</span>
+        </div>
+        <div class="pts-row">
+          <span class="pts-row__action">Zone captured (house wins)</span>
+          <span class="pts-row__limit">end of day</span>
+          <span class="pts-row__value">+10 pts</span>
+        </div>
+        <div class="pts-row">
+          <span class="pts-row__action">Zone held 3+ days</span>
+          <span class="pts-row__limit">passive</span>
+          <span class="pts-row__value">+3 pts/day</span>
+        </div>
+        <div class="pts-row">
+          <span class="pts-row__action">Objective zone multiplier</span>
+          <span class="pts-row__limit"></span>
+          <span class="pts-row__value pts-row__value--mult">×1.5</span>
+        </div>
+
+        <div class="tier-max">
+          <span class="tier-max__label">Max daily from territory</span>
+          <span class="tier-max__value">~58 pts</span>
+        </div>
+      </div>
+
+      <!-- Tier 3: Streaks -->
+      <div class="tier-card tier-card--streak fade-up fade-up-3">
+        <div class="tier-header">
+          <div class="tier-header__left">
+            <span class="tier-header__icon">🔥</span>
+            <span class="tier-header__name">Streak Multipliers</span>
+          </div>
+          <span class="tier-header__pct">~10% BONUS</span>
+        </div>
+
+        <div class="pts-row">
+          <span class="pts-row__action">First activity of the day</span>
+          <span class="pts-row__limit">1/day</span>
+          <span class="pts-row__value">+5 pts</span>
+        </div>
+        <div class="pts-row">
+          <span class="pts-row__action">3-6 day streak</span>
+          <span class="pts-row__limit">all earnings</span>
+          <span class="pts-row__value pts-row__value--mult">×1.1</span>
+        </div>
+        <div class="pts-row">
+          <span class="pts-row__action">7-13 day streak</span>
+          <span class="pts-row__limit">all earnings</span>
+          <span class="pts-row__value pts-row__value--mult">×1.2</span>
+        </div>
+        <div class="pts-row">
+          <span class="pts-row__action">14+ day streak</span>
+          <span class="pts-row__limit">all earnings</span>
+          <span class="pts-row__value pts-row__value--mult">×1.3</span>
+        </div>
+
+        <div class="tier-max">
+          <span class="tier-max__label">Multiplied across all tiers</span>
+          <span class="tier-max__value">up to ×1.3</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══ TAB 3: DAILY EXAMPLES ═══ -->
+    <div class="tab-content" id="tab-examples">
+
+      <!-- Casual -->
+      <div class="example-card fade-up fade-up-1">
+        <div class="example-header">
+          <div class="example-header__left">
+            <span class="example-header__icon">🌙</span>
+            <div>
+              <div class="example-header__name">Casual Wizard</div>
+              <div class="example-header__sub">~2 minutes per day</div>
+            </div>
+          </div>
+          <div class="example-header__pts">
+            <div class="example-header__pts-val">~30</div>
+            <div class="example-header__pts-label">PTS/DAY</div>
+          </div>
+        </div>
+        <div class="example-breakdown">
+          <div class="example-line">
+            <span class="example-line__action">Reply to daily story</span>
+            <span class="example-line__pts">+20</span>
+          </div>
+          <div class="example-line">
+            <span class="example-line__action">Like the post</span>
+            <span class="example-line__pts">+5</span>
+          </div>
+          <div class="example-line">
+            <span class="example-line__action">First activity bonus</span>
+            <span class="example-line__pts">+5</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active -->
+      <div class="example-card fade-up fade-up-2">
+        <div class="example-header">
+          <div class="example-header__left">
+            <span class="example-header__icon">⚡</span>
+            <div>
+              <div class="example-header__name">Active Player</div>
+              <div class="example-header__sub">~10 minutes per day</div>
+            </div>
+          </div>
+          <div class="example-header__pts">
+            <div class="example-header__pts-val">~100</div>
+            <div class="example-header__pts-label">PTS/DAY</div>
+          </div>
+        </div>
+        <div class="example-breakdown">
+          <div class="example-line">
+            <span class="example-line__action">Reply to daily story (detailed)</span>
+            <span class="example-line__pts">+30</span>
+          </div>
+          <div class="example-line">
+            <span class="example-line__action">Like + Retweet</span>
+            <span class="example-line__pts">+15</span>
+          </div>
+          <div class="example-line">
+            <span class="example-line__action">Attack 3 zones</span>
+            <span class="example-line__pts">+24</span>
+          </div>
+          <div class="example-line">
+            <span class="example-line__action">Defend 2 zones</span>
+            <span class="example-line__pts">+16</span>
+          </div>
+          <div class="example-line">
+            <span class="example-line__action">All mana spent bonus</span>
+            <span class="example-line__pts">+5</span>
+          </div>
+          <div class="example-line">
+            <span class="example-line__action">First activity + 3-day streak (×1.1)</span>
+            <span class="example-line__pts example-line__pts--mult">+~10</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grinder -->
+      <div class="example-card fade-up fade-up-3" style="border-color: var(--gold-border);">
+        <div class="example-header">
+          <div class="example-header__left">
+            <span class="example-header__icon">💎</span>
+            <div>
+              <div class="example-header__name">Daily Grinder</div>
+              <div class="example-header__sub">~15 minutes per day</div>
+            </div>
+          </div>
+          <div class="example-header__pts">
+            <div class="example-header__pts-val">~140+</div>
+            <div class="example-header__pts-label">PTS/DAY</div>
+          </div>
+        </div>
+        <div class="example-breakdown">
+          <div class="example-line">
+            <span class="example-line__action">Reply to daily story (detailed)</span>
+            <span class="example-line__pts">+30</span>
+          </div>
+          <div class="example-line">
+            <span class="example-line__action">Like + RT + Quote tweet</span>
+            <span class="example-line__pts">+30</span>
+          </div>
+          <div class="example-line">
+            <span class="example-line__action">Nerm's Pick (if selected)</span>
+            <span class="example-line__pts" style="color:var(--gold);">+25</span>
+          </div>
+          <div class="example-line">
+            <span class="example-line__action">Attack 3 + Defend 2 zones</span>
+            <span class="example-line__pts">+40</span>
+          </div>
+          <div class="example-line">
+            <span class="example-line__action">All mana spent + zone capture</span>
+            <span class="example-line__pts">+15</span>
+          </div>
+          <div class="example-line">
+            <span class="example-line__action">14-day streak (×1.3 all earnings)</span>
+            <span class="example-line__pts example-line__pts--mult">×1.3</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weekly projection -->
+      <div class="weekly-card fade-up fade-up-4">
+        <div class="card-header">
+          <span class="label">📅 Weekly Projection</span>
+        </div>
+        <div class="weekly-row">
+          <span class="weekly-row__label">🌙 Casual (7 days)</span>
+          <span class="weekly-row__value">~210 pts</span>
+        </div>
+        <div class="weekly-row">
+          <span class="weekly-row__label">⚡ Active (7 days)</span>
+          <span class="weekly-row__value">~700 pts</span>
+        </div>
+        <div class="weekly-row">
+          <span class="weekly-row__label">💎 Grinder (7 days)</span>
+          <span class="weekly-row__value">~1,100+ pts</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ═══ TAB 4: FAQ ═══ -->
+    <div class="tab-content" id="tab-faq">
+      <div class="card fade-up fade-up-1">
+
+        <div class="faq-item">
+          <div class="faq-q">What is mana?</div>
+          <div class="faq-a">Mana is your daily energy. You get 5 mana per day. Each spell cast on 𝕏 or territory action on the map costs 1 mana. It resets at midnight UTC.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Can I change my house?</div>
+          <div class="faq-a">No — your house choice is permanent. Choose carefully! Each house has its own community and identity.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">What is Nerm's Pick?</div>
+          <div class="faq-a">Each day, the AI bot Nerm selects 1-3 outstanding replies for a +25 point bonus. Write thoughtful, creative, or engaging replies to increase your chances.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">How do streaks work?</div>
+          <div class="faq-a">Do any activity (reply, attack, defend) for consecutive days to build a streak. At 3 days you get ×1.1 on all points, 7 days gives ×1.2, and 14+ days gives ×1.3. Missing a day resets your streak to 0.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">What is the War Room?</div>
+          <div class="faq-a">The War Room shows community competition. If you added a community tag (like $BONK), your points contribute to your community's total. Communities compete for rankings and bragging rights.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">When does the daily story go live?</div>
+          <div class="faq-a">Every day at 8 AM UTC, @9LVNetwork posts a new story chapter. The story resolves at 11 PM UTC with results posted. Mana resets at midnight UTC.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">What are lives?</div>
+          <div class="faq-a">Lives are used in the Arena (PvP duels). Losing a duel costs 1 life. Lives regenerate over time. The Arena is coming soon!</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">Is this free to play?</div>
+          <div class="faq-a">Yes! Nine Lives Network is completely free to play. You only need a 𝕏 account. NFTs and tokens are optional future features.</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ JAVASCRIPT ══ -->
   <script>
-    document.getElementById('hamburger').addEventListener('click', () => { document.getElementById('hamburger').classList.toggle('active'); document.getElementById('mobileMenu').classList.toggle('active'); });
-    document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('player_id'); window.location.href = '/'; });
-    document.getElementById('mobileLogoutBtn').addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('player_id'); window.location.href = '/'; });
+    function toggleMobileMenu() {
+      document.getElementById('hamburger').classList.toggle('active');
+      document.getElementById('mobileMenu').classList.toggle('active');
+    }
+
+    function switchTab(tabName) {
+      // Hide all tabs
+      var tabs = document.querySelectorAll('.tab-content');
+      for (var i = 0; i < tabs.length; i++) {
+        tabs[i].classList.remove('active');
+      }
+      // Deactivate all buttons
+      var btns = document.querySelectorAll('.tab-btn');
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.remove('active');
+      }
+      // Show selected tab
+      var target = document.getElementById('tab-' + tabName);
+      if (target) target.classList.add('active');
+      // Activate clicked button
+      event.target.classList.add('active');
+    }
   </script>
+
 </body>
 </html>
