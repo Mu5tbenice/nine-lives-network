@@ -371,7 +371,6 @@
     async function loadDashboard() {
       const playerId = getPlayerId();
       if (!playerId) {
-        document.getElementById('loadingState').style.display = 'none';
         document.getElementById('dashContent').style.display = 'none';
         document.getElementById('errorState').style.display = 'block';
         return;
@@ -380,8 +379,8 @@
       try {
         // Fetch all data in parallel
         const [playerRes, castsRes, zonesRes, schoolsRes] = await Promise.all([
-          fetch(`/api/players/${playerId}`),
-          fetch(`/api/players/${playerId}/casts`),
+          fetch('/api/players/' + playerId),
+          fetch('/api/players/' + playerId + '/casts'),
           fetch('/api/zones'),
           fetch('/api/leaderboards/schools'),
         ]);
@@ -392,17 +391,17 @@
         const schools = await schoolsRes.json();
 
         if (!player || player.error) {
-          document.getElementById('loadingState').style.display = 'none';
+          document.getElementById('dashContent').style.display = 'none';
           document.getElementById('errorState').style.display = 'block';
           return;
         }
 
         // Build the dashboard
-        renderDashboard(player, casts, zones, schools);
+        renderDashboard(player, casts || [], zones || [], schools || []);
 
       } catch (err) {
         console.error('Dashboard load error:', err);
-        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('dashContent').style.display = 'none';
         document.getElementById('errorState').style.display = 'block';
       }
     }
@@ -410,178 +409,190 @@
     // ── Render the entire dashboard ──
     function renderDashboard(player, casts, zones, schools) {
       const house = HOUSES[player.school_id] || HOUSES[1];
-      const objective = Array.isArray(zones) ? zones.find(z => z.is_current_objective) : null;
+      const objective = Array.isArray(zones) ? zones.find(function(z) { return z.is_current_objective; }) : null;
       const streak = player.streak || 0;
-      const mana = player.mana ?? 5;
+      const mana = (player.mana != null) ? player.mana : 5;
       const maxMana = 5;
-      const lives = player.lives ?? 3;
+      const lives = (player.lives != null) ? player.lives : 3;
       const maxLives = 5;
       const points = player.seasonal_points || 0;
 
       // Day of year for rotating story images
-      const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
-      const storyImg = STORY_IMAGES[dayOfYear % STORY_IMAGES.length];
+      var now = new Date();
+      var start = new Date(now.getFullYear(), 0, 0);
+      var dayOfYear = Math.floor((now - start) / 86400000);
+      var storyImg = STORY_IMAGES[dayOfYear % STORY_IMAGES.length];
 
       // Recent casts (up to 5)
-      const recentCasts = Array.isArray(casts) ? casts.slice(0, 5) : [];
+      var recentCasts = Array.isArray(casts) ? casts.slice(0, 5) : [];
 
       // Schools for house standings
-      const schoolsList = Array.isArray(schools) ? schools : [];
+      var schoolsList = Array.isArray(schools) ? schools : [];
 
-      const container = document.getElementById('dashContent');
-      container.innerHTML = `
+      // Build mana orbs HTML
+      var manaHTML = '';
+      for (var i = 0; i < maxMana; i++) {
+        manaHTML += '<div class="mana-orb ' + (i < mana ? 'mana-orb--filled' : '') + '"></div>';
+      }
 
-        <!-- ── HEADER ── -->
-        <div class="dash-header fade-up">
-          <div class="dash-header__left">
-            ${player.profile_image
-              ? `<img src="${player.profile_image}" alt="" class="dash-header__avatar">`
-              : `<div class="dash-header__avatar--placeholder">${house.emoji}</div>`
-            }
-            <div>
-              <div class="dash-header__house">House ${house.name}</div>
-              <div class="dash-header__element" style="color:${house.color}">${house.element}</div>
-              <div class="dash-header__meta">@${player.twitter_handle || 'Unknown'}${player.community_tag ? ' · ' + player.community_tag : ''}</div>
-            </div>
-          </div>
-          <span class="badge--season">S0</span>
-        </div>
+      // Build lives HTML
+      var livesHTML = '';
+      for (var i = 0; i < maxLives; i++) {
+        livesHTML += '<span class="life-heart ' + (i >= lives ? 'life-heart--empty' : '') + '">❤️</span>';
+      }
 
-        <!-- ── STORY CARD ── -->
-        ${objective ? `
-        <div class="story-card fade-up fade-up-1">
-          <div class="story-card__bg">
-            <img src="${storyImg}" alt="">
-            <div class="story-card__overlay"></div>
-          </div>
-          <div class="story-card__content">
-            <div class="story-card__top">
-              <span class="label">Today's Story</span>
-              <span class="badge badge--live">● LIVE</span>
-            </div>
-            <div class="story-card__body">
-              <span class="label">Daily Narrative</span>
-              <h2 class="story-card__zone">${objective.name || 'Unknown Zone'}</h2>
-              <p class="story-card__desc">${objective.description || 'A new chapter unfolds in the world of Avaloris. Show up and become part of the story.'}</p>
-              <div class="story-card__cta-text">Show up. Represent. Become part of the story.</div>
-              ${objective.objective_tweet_id
-                ? `<a href="https://twitter.com/9LVNetwork/status/${objective.objective_tweet_id}" target="_blank" class="btn-gold">𝕏 Join the Story</a>`
-                : `<a href="https://twitter.com/9LVNetwork" target="_blank" class="btn-gold">𝕏 Join the Story</a>`
-              }
-            </div>
-          </div>
-        </div>
-        ` : `
-        <div class="no-story fade-up fade-up-1">
-          <span class="label">Today's Story</span>
-          <p style="font-size:32px; margin:12px 0;">🌙</p>
-          <p style="font-family:var(--font-title); font-size:16px; color:var(--text-body); font-style:italic;">No active story right now. Check back at 8 AM UTC.</p>
-        </div>
-        `}
+      // Build streak dots HTML
+      var streakHTML = '';
+      for (var i = 0; i < 7; i++) {
+        streakHTML += '<div class="streak-dot ' + (i < streak ? 'streak-dot--filled' : '') + '"></div>';
+      }
 
-        <!-- ── STATS ROW ── -->
-        <div class="stats-row fade-up fade-up-2">
-          <div class="stat-card">
-            <span class="label">Mana</span>
-            <div class="mana-row">
-              ${Array.from({length: maxMana}).map((_, i) =>
-                `<div class="mana-orb ${i < mana ? 'mana-orb--filled' : ''}"></div>`
-              ).join('')}
-            </div>
-          </div>
-          <div class="stat-card">
-            <span class="label">Lives</span>
-            <div class="lives-row">
-              ${Array.from({length: maxLives}).map((_, i) =>
-                `<span class="life-heart ${i >= lives ? 'life-heart--empty' : ''}">❤️</span>`
-              ).join('')}
-            </div>
-          </div>
-          <div class="stat-card">
-            <span class="label">Points</span>
-            <div class="data-value">${points}</div>
-            <div class="data-sub">Season 0</div>
-          </div>
-        </div>
+      // Build story card HTML
+      var storyCardHTML = '';
+      if (objective) {
+        var tweetLink = objective.objective_tweet_id
+          ? 'https://twitter.com/9LVNetwork/status/' + objective.objective_tweet_id
+          : 'https://twitter.com/9LVNetwork';
+        storyCardHTML = ''
+          + '<div class="story-card fade-up fade-up-1">'
+          + '  <div class="story-card__bg">'
+          + '    <img src="' + storyImg + '" alt="">'
+          + '    <div class="story-card__overlay"></div>'
+          + '  </div>'
+          + '  <div class="story-card__content">'
+          + '    <div class="story-card__top">'
+          + '      <span class="label">Today\'s Story</span>'
+          + '      <span class="badge badge--live">● LIVE</span>'
+          + '    </div>'
+          + '    <div class="story-card__body">'
+          + '      <span class="label">Daily Narrative</span>'
+          + '      <h2 class="story-card__zone">' + (objective.name || 'Unknown Zone') + '</h2>'
+          + '      <p class="story-card__desc">' + (objective.description || 'A new chapter unfolds in the world of Avaloris.') + '</p>'
+          + '      <div class="story-card__cta-text">Show up. Represent. Become part of the story.</div>'
+          + '      <a href="' + tweetLink + '" target="_blank" class="btn-gold">𝕏 Join the Story</a>'
+          + '    </div>'
+          + '  </div>'
+          + '</div>';
+      } else {
+        storyCardHTML = ''
+          + '<div class="no-story fade-up fade-up-1">'
+          + '  <span class="label">Today\'s Story</span>'
+          + '  <p style="font-size:32px; margin:12px 0;">🌙</p>'
+          + '  <p style="font-family:var(--font-title); font-size:16px; color:var(--text-body); font-style:italic;">No active story right now. Check back at 8 AM UTC.</p>'
+          + '</div>';
+      }
 
-        <!-- ── STREAK ── -->
-        <div class="card fade-up fade-up-3">
-          <div class="streak-bar">
-            <span class="streak-bar__icon">${streak >= 7 ? '💎' : streak >= 1 ? '🔥' : '🌑'}</span>
-            <div class="streak-bar__info">
-              <div class="streak-bar__count">${streak} <span>DAY STREAK</span></div>
-              <div class="streak-bar__sub">${streak < 7 ? (7 - streak) + ' more for Week Warrior 💎' : 'Week Warrior achieved! 💎'}</div>
-            </div>
-            <div class="streak-dots">
-              ${Array.from({length: 7}).map((_, i) =>
-                `<div class="streak-dot ${i < streak ? 'streak-dot--filled' : ''}"></div>`
-              ).join('')}
-            </div>
-          </div>
-        </div>
+      // Build house standings HTML
+      var standingsHTML = '';
+      if (schoolsList.length > 0) {
+        var maxPts = schoolsList[0].total_points || 1;
+        for (var i = 0; i < schoolsList.length; i++) {
+          var school = schoolsList[i];
+          var h = HOUSES[school.school_id] || { name: 'Unknown', emoji: '?', color: '#888' };
+          var isMyHouse = school.school_id === player.school_id;
+          var pct = Math.max(5, (school.total_points / maxPts) * 100);
+          var rowStyle = isMyHouse
+            ? 'background:rgba(212,166,75,0.06); border:1px solid var(--gold-border);'
+            : 'border:1px solid transparent;';
+          var rankColor = i < 3 ? 'var(--gold)' : 'var(--text-faint)';
 
-        <!-- ── QUICK ACTIONS ── -->
-        <div class="quick-actions fade-up fade-up-3">
-          <a href="/map.html" class="quick-btn">
-            <span class="quick-btn__icon">🌍</span>
-            <span class="quick-btn__label">World</span>
-          </a>
-          <a href="/leaderboards.html" class="quick-btn">
-            <span class="quick-btn__icon">🏆</span>
-            <span class="quick-btn__label">Leaderboards</span>
-          </a>
-          <a href="/warroom.html" class="quick-btn">
-            <span class="quick-btn__icon">📈</span>
-            <span class="quick-btn__label">War Room</span>
-          </a>
-        </div>
+          standingsHTML += ''
+            + '<div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:6px; margin-bottom:4px; ' + rowStyle + '">'
+            + '  <span style="font-family:var(--font-data); font-size:9px; color:' + rankColor + '; width:18px; text-align:center;">' + (i + 1) + '</span>'
+            + '  <span style="font-size:16px;">' + h.emoji + '</span>'
+            + '  <span style="font-family:var(--font-title); font-size:12px; font-weight:600; color:var(--text-bright); width:85px; letter-spacing:0.5px;">' + h.name + '</span>'
+            + '  <div style="flex:1; height:7px; border-radius:4px; background:rgba(255,255,255,0.04); overflow:hidden;">'
+            + '    <div style="height:100%; width:' + pct + '%; border-radius:4px; background:linear-gradient(90deg, ' + h.color + ', ' + h.color + '88);"></div>'
+            + '  </div>'
+            + '  <span style="font-family:var(--font-data); font-size:7px; color:var(--text-faint); width:50px; text-align:right;">' + (school.total_points || 0) + ' pts</span>'
+            + '</div>';
+        }
+      } else {
+        standingsHTML = '<p class="label" style="text-align:center; padding:16px 0;">No data yet</p>';
+      }
 
-        <!-- ── HOUSE STANDINGS ── -->
-        <div class="card fade-up fade-up-4">
-          <div class="card-header">
-            <span class="label">🏰 House Standings</span>
-          </div>
-          ${schoolsList.length > 0 ? schoolsList.map((school, i) => {
-            const h = HOUSES[school.school_id] || { name: school.name, emoji: '?', color: '#888' };
-            const isMyHouse = school.school_id === player.school_id;
-            const maxPts = schoolsList[0]?.total_points || 1;
-            const pct = Math.max(5, (school.total_points / maxPts) * 100);
-            return `
-              <div style="display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:6px; margin-bottom:4px; ${isMyHouse ? 'background:rgba(212,166,75,0.06); border:1px solid var(--gold-border);' : 'border:1px solid transparent;'}">
-                <span style="font-family:var(--font-data); font-size:9px; color:${i < 3 ? 'var(--gold)' : 'var(--text-faint)'}; width:18px; text-align:center;">${i + 1}</span>
-                <span style="font-size:16px;">${h.emoji}</span>
-                <span style="font-family:var(--font-title); font-size:12px; font-weight:600; color:var(--text-bright); width:85px; letter-spacing:0.5px;">${h.name}</span>
-                <div style="flex:1; height:7px; border-radius:4px; background:rgba(255,255,255,0.04); overflow:hidden;">
-                  <div style="height:100%; width:${pct}%; border-radius:4px; background:linear-gradient(90deg, ${h.color}, ${h.color}88);"></div>
-                </div>
-                <span style="font-family:var(--font-data); font-size:7px; color:var(--text-faint); width:50px; text-align:right;">${school.total_points || 0} pts</span>
-              </div>
-            `;
-          }).join('') : '<p class="label" style="text-align:center; padding:16px 0;">No data yet</p>'}
-        </div>
+      // Build recent activity HTML
+      var activityHTML = '';
+      if (recentCasts.length > 0) {
+        for (var i = 0; i < recentCasts.length; i++) {
+          var cast = recentCasts[i];
+          activityHTML += ''
+            + '<div class="activity-item">'
+            + '  <div class="activity-dot" style="background:' + house.color + '"></div>'
+            + '  <div class="activity-info">'
+            + '    <div class="activity-zone">' + (cast.spell_name || cast.zone_name || 'Spell Cast') + '</div>'
+            + '    <div class="activity-meta">' + (cast.created_at ? timeAgo(cast.created_at) : '') + '</div>'
+            + '  </div>'
+            + '  <span class="activity-points">+' + (cast.points_earned || 0) + '</span>'
+            + '</div>';
+        }
+      } else {
+        activityHTML = '<p style="text-align:center; color:var(--text-faint); font-style:italic; padding:16px 0;">No activity yet. Join today\'s story!</p>';
+      }
 
-        <!-- ── RECENT ACTIVITY ── -->
-        <div class="card fade-up fade-up-4">
-          <div class="card-header">
-            <span class="label">Recent Activity</span>
-          </div>
-          ${recentCasts.length > 0 ? recentCasts.map((cast, i) => `
-            <div class="activity-item">
-              <div class="activity-dot" style="background:${house.color}"></div>
-              <div class="activity-info">
-                <div class="activity-zone">${cast.spell_name || cast.zone_name || 'Spell Cast'}</div>
-                <div class="activity-meta">
-                  ${cast.created_at ? timeAgo(cast.created_at) : ''}
-                </div>
-              </div>
-              <span class="activity-points">+${cast.points_earned || 0}</span>
-            </div>
-          `).join('') : '<p style="text-align:center; color:var(--text-faint); font-style:italic; padding:16px 0;">No activity yet. Join today\'s story!</p>'}
-        </div>
+      // Avatar HTML
+      var avatarHTML = player.profile_image
+        ? '<img src="' + player.profile_image + '" alt="" class="dash-header__avatar">'
+        : '<div class="dash-header__avatar--placeholder">' + house.emoji + '</div>';
 
-      `;
+      // ── Put it all together ──
+      var container = document.getElementById('dashContent');
+      container.innerHTML = ''
+        // HEADER
+        + '<div class="dash-header fade-up">'
+        + '  <div class="dash-header__left">'
+        + '    ' + avatarHTML
+        + '    <div>'
+        + '      <div class="dash-header__house">House ' + house.name + '</div>'
+        + '      <div class="dash-header__element" style="color:' + house.color + '">' + house.element + '</div>'
+        + '      <div class="dash-header__meta">@' + (player.twitter_handle || 'Unknown') + (player.community_tag ? ' · ' + player.community_tag : '') + '</div>'
+        + '    </div>'
+        + '  </div>'
+        + '  <span class="badge--season">S0</span>'
+        + '</div>'
 
-      // Show the dashboard, hide loading
+        // STORY
+        + storyCardHTML
+
+        // STATS ROW
+        + '<div class="stats-row fade-up fade-up-2">'
+        + '  <div class="stat-card"><span class="label">Mana</span><div class="mana-row">' + manaHTML + '</div></div>'
+        + '  <div class="stat-card"><span class="label">Lives</span><div class="lives-row">' + livesHTML + '</div></div>'
+        + '  <div class="stat-card"><span class="label">Points</span><div class="data-value">' + points + '</div><div class="data-sub">Season 0</div></div>'
+        + '</div>'
+
+        // STREAK
+        + '<div class="card fade-up fade-up-3">'
+        + '  <div class="streak-bar">'
+        + '    <span class="streak-bar__icon">' + (streak >= 7 ? '💎' : streak >= 1 ? '🔥' : '🌑') + '</span>'
+        + '    <div class="streak-bar__info">'
+        + '      <div class="streak-bar__count">' + streak + ' <span>DAY STREAK</span></div>'
+        + '      <div class="streak-bar__sub">' + (streak < 7 ? (7 - streak) + ' more for Week Warrior 💎' : 'Week Warrior achieved! 💎') + '</div>'
+        + '    </div>'
+        + '    <div class="streak-dots">' + streakHTML + '</div>'
+        + '  </div>'
+        + '</div>'
+
+        // QUICK ACTIONS
+        + '<div class="quick-actions fade-up fade-up-3">'
+        + '  <a href="/map.html" class="quick-btn"><span class="quick-btn__icon">🌍</span><span class="quick-btn__label">World</span></a>'
+        + '  <a href="/leaderboards.html" class="quick-btn"><span class="quick-btn__icon">🏆</span><span class="quick-btn__label">Leaderboards</span></a>'
+        + '  <a href="/warroom.html" class="quick-btn"><span class="quick-btn__icon">📈</span><span class="quick-btn__label">War Room</span></a>'
+        + '</div>'
+
+        // HOUSE STANDINGS
+        + '<div class="card fade-up fade-up-4">'
+        + '  <div class="card-header"><span class="label">🏰 House Standings</span></div>'
+        + standingsHTML
+        + '</div>'
+
+        // RECENT ACTIVITY
+        + '<div class="card fade-up fade-up-4">'
+        + '  <div class="card-header"><span class="label">Recent Activity</span></div>'
+        + activityHTML
+        + '</div>';
+
+      // Show dashboard, hide loading
       document.getElementById('loadingState').style.display = 'none';
       container.style.display = 'flex';
     }
