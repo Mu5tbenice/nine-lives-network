@@ -2,224 +2,156 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Leaderboards | Nine Lives Network</title>
-  <link rel="stylesheet" href="/css/styles.css">
-  <link rel="stylesheet" href="/css/nav.css">
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/variables-v2.css">
+  <link rel="stylesheet" href="/css/components-v2.css">
+  <link rel="stylesheet" href="/css/nav-v2.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a14; color: #fff; min-height: 100vh; }
-
-    .video-background { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden; }
-    .video-background video { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); min-width: 100%; min-height: 100%; object-fit: cover; }
-    .video-background::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at center, transparent 0%, transparent 20%, rgba(10, 10, 20, 0.4) 40%, rgba(10, 10, 20, 0.7) 60%, rgba(10, 10, 20, 0.9) 80%, rgba(10, 10, 20, 1) 100%); }
-    .video-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(10, 10, 20, 0.3); z-index: -1; }
-
-    .leaderboards-container { min-height: 100vh; padding-top: 76px; padding-bottom: 40px; position: relative; z-index: 1; }
-    .leaderboards-content { max-width: 800px; margin: 0 auto; padding: 20px 15px; }
-    .page-title { font-family: 'Press Start 2P', monospace; font-size: 1rem; color: #FFD700; margin-bottom: 24px; text-align: center; text-shadow: 0 2px 20px rgba(255, 215, 0, 0.3); }
-
-    .tabs { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
-    .tab-btn { font-family: 'Press Start 2P', monospace; font-size: 0.4rem; padding: 12px 20px; background: rgba(30, 30, 50, 0.8); border: 2px solid #2a2a4a; color: #a0a0b0; cursor: pointer; border-radius: 6px; backdrop-filter: blur(5px); transition: all 0.3s; }
-    .tab-btn:hover { border-color: #FFD700; color: #fff; }
-    .tab-btn.active { background: #FFD700; border-color: #FFD700; color: #0a0a14; }
-
-    .leaderboard-section { display: none; }
-    .leaderboard-section.active { display: block; }
-
-    .leaderboard-table { width: 100%; background: rgba(20, 20, 35, 0.85); border: 2px solid #2a2a4a; border-radius: 12px; overflow: hidden; backdrop-filter: blur(10px); }
-    .leaderboard-header { display: grid; grid-template-columns: 50px 1fr 90px; padding: 12px 16px; background: rgba(40, 40, 60, 0.9); font-family: 'Press Start 2P', monospace; font-size: 0.35rem; color: #a0a0b0; text-transform: uppercase; }
-    .leaderboard-row { display: grid; grid-template-columns: 50px 1fr 90px; padding: 12px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); align-items: center; transition: background 0.2s; }
-    .leaderboard-row:hover { background: rgba(255, 215, 0, 0.05); }
-    .leaderboard-row:last-child { border-bottom: none; }
-    .leaderboard-row.highlight { background: rgba(255, 215, 0, 0.15); border-left: 3px solid #FFD700; }
-
-    .rank { font-family: 'Press Start 2P', monospace; font-size: 0.6rem; color: #606070; }
-    .rank-1 { color: #FFD700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
-    .rank-2 { color: #C0C0C0; }
-    .rank-3 { color: #CD7F32; }
-
-    .player-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .player-avatar { width: 36px; height: 36px; border-radius: 50%; background: #2a2a4a; display: flex; align-items: center; justify-content: center; font-size: 1rem; overflow: hidden; border: 2px solid rgba(255, 255, 255, 0.2); flex-shrink: 0; }
-    .player-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .player-info { min-width: 0; overflow: hidden; }
-    .player-name { font-family: 'Press Start 2P', monospace; font-size: 0.4rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .player-school { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
-    .school-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .school-name { font-family: 'Press Start 2P', monospace; font-size: 0.3rem; color: #a0a0b0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .player-tag { font-family: 'Press Start 2P', monospace; font-size: 0.3rem; color: #8A2BE2; margin-top: 2px; }
-
-    .points { font-family: 'Press Start 2P', monospace; font-size: 0.45rem; color: #FFD700; text-align: right; white-space: nowrap; }
-
-    .school-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .school-color-block { width: 36px; height: 36px; border-radius: 6px; flex-shrink: 0; }
-    .school-info { min-width: 0; overflow: hidden; }
-    .school-full-name { font-family: 'Press Start 2P', monospace; font-size: 0.4rem; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .school-element { font-family: 'Press Start 2P', monospace; font-size: 0.3rem; color: #606070; margin-top: 2px; }
-
-    .community-tag-name { font-family: 'Press Start 2P', monospace; font-size: 0.5rem; color: #8A2BE2; }
-
-    .empty-state, .loading { text-align: center; padding: 40px 20px; color: #606070; font-family: 'Press Start 2P', monospace; font-size: 0.4rem; }
-
-    @media (max-width: 600px) {
-      .leaderboard-header, .leaderboard-row { grid-template-columns: 40px 1fr 70px; padding: 10px 12px; font-size: 0.3rem; }
-      .player-avatar, .school-color-block { width: 28px; height: 28px; }
-      .player-name, .school-full-name { font-size: 0.35rem; }
-      .points { font-size: 0.4rem; }
-      .page-title { font-size: 0.8rem; }
-      .tab-btn { font-size: 0.35rem; padding: 10px 14px; }
-    }
+    .lb-hero{text-align:center;padding:16px 0 8px}
+    .lb-hero__title{font-family:var(--font-title);font-weight:700;font-size:24px;color:var(--gold);letter-spacing:3px}
+    .lb-hero__sub{font-family:var(--font-body);font-size:15px;font-style:italic;color:var(--text-muted);margin-top:4px}
+    .lb-tabs{display:flex;gap:4px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:10px;padding:4px}
+    .lb-tab{flex:1;padding:10px 8px;border:none;border-radius:8px;background:transparent;color:var(--text-muted);font-family:var(--font-title);font-size:12px;font-weight:600;letter-spacing:.5px;cursor:pointer;transition:all .2s;text-align:center}
+    .lb-tab.active{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border)}
+    .lb-content{display:none}.lb-content.active{display:block}
+    .lb-season{display:flex;align-items:center;justify-content:center;gap:8px;padding:8px 0}
+    .podium{display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:16px 0 20px}
+    .podium-slot{display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none}
+    .podium-slot--1{order:2}.podium-slot--2{order:1}.podium-slot--3{order:3}
+    .podium-avatar{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2.5px solid var(--text-faint)}
+    .podium-slot--1 .podium-avatar{width:64px;height:64px;border-color:var(--gold);box-shadow:0 0 15px var(--gold-glow)}
+    .podium-slot--2 .podium-avatar{width:56px;height:56px;border-color:#C0C0C0}
+    .podium-slot--3 .podium-avatar{border-color:#CD7F32}
+    .podium-avatar--placeholder{display:flex;align-items:center;justify-content:center;background:var(--bg-card)}
+    .podium-avatar--placeholder img{width:60%;height:60%;object-fit:contain}
+    .podium-medal{font-family:var(--font-data);font-size:10px;color:var(--gold);margin-bottom:-2px}
+    .podium-slot--2 .podium-medal{color:#C0C0C0}.podium-slot--3 .podium-medal{color:#CD7F32}
+    .podium-name{font-family:var(--font-title);font-size:11px;font-weight:600;color:var(--text-bright);letter-spacing:.5px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+    .podium-pts{font-family:var(--font-data);font-size:9px;color:var(--gold)}
+    .podium-bar{width:70px;border-radius:6px 6px 0 0;background:var(--bg-card);border:1px solid var(--border-subtle);border-bottom:none}
+    .podium-slot--1 .podium-bar{height:60px;width:80px;border-color:var(--gold-border);background:var(--gold-dim)}
+    .podium-slot--2 .podium-bar{height:44px}.podium-slot--3 .podium-bar{height:32px}
+    .lb-list{display:flex;flex-direction:column;gap:4px}
+    .lb-row{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:10px;text-decoration:none;transition:all .2s}
+    .lb-row:hover{background:var(--bg-card-hover);border-color:var(--border-medium)}
+    .lb-row--you{background:rgba(212,166,75,.06);border-color:var(--gold-border)}
+    .lb-rank{font-family:var(--font-data);font-size:10px;color:var(--text-faint);width:24px;text-align:center;flex-shrink:0}
+    .lb-rank--gold{color:var(--gold)}
+    .lb-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--border-subtle);flex-shrink:0}
+    .lb-avatar--placeholder{width:36px;height:36px;border-radius:50%;border:2px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;background:var(--bg-inset);flex-shrink:0}
+    .lb-avatar--placeholder img{width:22px;height:22px;object-fit:contain}
+    .lb-info{flex:1;min-width:0}
+    .lb-name{font-family:var(--font-title);font-size:14px;font-weight:600;color:var(--text-bright);letter-spacing:.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .lb-meta{font-family:var(--font-mono);font-size:10px;color:var(--text-faint);display:flex;align-items:center;gap:6px;margin-top:2px}
+    .lb-house-img{width:16px;height:16px;object-fit:contain}
+    .lb-tag-badge{font-family:var(--font-data);font-size:7px;color:var(--gold);background:var(--gold-dim);border:1px solid var(--gold-border);padding:2px 6px;border-radius:3px;margin-left:4px}
+    .lb-points{text-align:right;flex-shrink:0}
+    .lb-points__val{font-family:var(--font-data);font-size:12px;color:var(--text-bright)}
+    .lb-points__label{font-family:var(--font-data);font-size:7px;color:var(--text-faint)}
+    .lb-house-icon-lg{width:32px;height:32px;object-fit:contain;flex-shrink:0}
+    .lb-members{font-family:var(--font-data);font-size:8px;color:var(--text-faint)}
+    .lb-tag{font-family:var(--font-title);font-size:15px;font-weight:700;color:var(--text-bright);letter-spacing:.5px}
+    .lb-empty{text-align:center;padding:30px 16px;color:var(--text-faint);font-family:var(--font-body);font-style:italic;font-size:15px}
+    .lb-community-icon{width:36px;height:36px;border-radius:50%;border:2px solid var(--gold-border);display:flex;align-items:center;justify-content:center;background:var(--gold-dim);flex-shrink:0;font-family:var(--font-data);font-size:8px;color:var(--gold)}
+    @media(max-width:480px){.lb-hero__title{font-size:20px}.lb-tab{font-size:10px;padding:8px 4px}.podium{gap:6px}.podium-slot--1 .podium-avatar{width:56px;height:56px}.podium-slot--2 .podium-avatar{width:48px;height:48px}.podium-avatar{width:44px;height:44px}.podium-bar{width:60px}.podium-slot--1 .podium-bar{width:70px}.podium-name{font-size:9px;max-width:70px}.lb-row{padding:10px 12px;gap:8px}.lb-name{font-size:13px}}
   </style>
 </head>
 <body>
-  <div class="video-background">
-    <video autoplay muted loop playsinline><source src="/assets/images/wizard-cat.mp4" type="video/mp4"></video>
+  <nav class="top-nav"><div class="top-nav-content"><a href="/" class="nav-logo">Nine Lives Network</a><ul class="nav-links"><li><a href="/dashboard.html">Dashboard</a></li><li><a href="/map.html">World</a></li><li><a href="/leaderboards.html" class="active">Leaderboards</a></li><li><a href="/warroom.html">War Room</a></li><li><a href="/arena.html">Arena</a></li><li><a href="/how-to-play.html">Help</a></li></ul><button class="hamburger" id="hamburger" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button></div></nav>
+  <div class="mobile-menu" id="mobileMenu"><a href="/dashboard.html">Dashboard</a><a href="/map.html">World</a><a href="/leaderboards.html" class="active">Leaderboards</a><a href="/warroom.html">War Room</a><a href="/arena.html">Arena</a><a href="/how-to-play.html">Help</a></div>
+
+  <div class="main-container">
+    <div class="lb-hero fade-up"><h1 class="lb-hero__title">Leaderboards</h1><p class="lb-hero__sub">Who stands tallest in Avaloris?</p></div>
+    <div class="lb-season fade-up"><span class="badge--season">Season 0</span></div>
+    <div class="lb-tabs fade-up fade-up-1"><button class="lb-tab active" onclick="switchTab('players')">Players</button><button class="lb-tab" onclick="switchTab('houses')">Houses</button><button class="lb-tab" onclick="switchTab('communities')">Communities</button></div>
+    <div class="loading" id="loadingState"><div class="spinner"></div></div>
+    <div class="lb-content active" id="tab-players"></div>
+    <div class="lb-content" id="tab-houses"></div>
+    <div class="lb-content" id="tab-communities"></div>
   </div>
-  <div class="video-overlay"></div>
-
-  <nav class="top-nav">
-    <div class="top-nav-content">
-      <a href="/" class="nav-logo">Nine Lives Network</a>
-      <ul class="nav-links">
-        <li><a href="/dashboard.html">Dashboard</a></li>
-        <li><a href="/world.html">World</a></li>
-        <li><a href="/leaderboards.html" class="active">Leaderboards</a></li>
-        <li><a href="/how-to-play.html">Help</a></li>
-        <li><a href="#" class="logout-btn" id="logoutBtn">Logout</a></li>
-      </ul>
-      <button class="hamburger" id="hamburger"><span></span><span></span><span></span></button>
-    </div>
-  </nav>
-
-  <div class="mobile-menu" id="mobileMenu">
-    <a href="/dashboard.html"><span class="menu-icon">📊</span> Dashboard</a>
-    <a href="/world.html"><span class="menu-icon">🌍</span> World</a>
-    <a href="/leaderboards.html" class="active"><span class="menu-icon">🏆</span> Leaderboards</a>
-    <a href="/how-to-play.html"><span class="menu-icon">❓</span> Help</a>
-    <a href="#" class="logout-btn" id="mobileLogoutBtn"><span class="menu-icon">🚪</span> Logout</a>
-  </div>
-
-  <main class="leaderboards-container">
-    <div class="leaderboards-content">
-      <h1 class="page-title">🏆 Leaderboards</h1>
-      <div class="tabs">
-        <button class="tab-btn active" data-tab="players">Players</button>
-        <button class="tab-btn" data-tab="schools">Schools</button>
-        <button class="tab-btn" data-tab="communities">Communities</button>
-      </div>
-
-      <div class="leaderboard-section active" id="players-section">
-        <div class="leaderboard-table">
-          <div class="leaderboard-header"><div>Rank</div><div>Player</div><div style="text-align:right;">Points</div></div>
-          <div id="players-list" class="loading">Loading...</div>
-        </div>
-      </div>
-
-      <div class="leaderboard-section" id="schools-section">
-        <div class="leaderboard-table">
-          <div class="leaderboard-header"><div>Rank</div><div>School</div><div style="text-align:right;">Points</div></div>
-          <div id="schools-list" class="loading">Loading...</div>
-        </div>
-      </div>
-
-      <div class="leaderboard-section" id="communities-section">
-        <div class="leaderboard-table">
-          <div class="leaderboard-header"><div>Rank</div><div>Community</div><div style="text-align:right;">Points</div></div>
-          <div id="communities-list" class="loading">Loading...</div>
-        </div>
-      </div>
-    </div>
-  </main>
 
   <script>
-    const schools = {
-      1: { name: 'House Smoulders', element: 'Fire', color: '#E03C31', crest: '/assets/images/houses/House-smoulders.png' },
-      2: { name: 'House Darktide', element: 'Water', color: '#00B4D8', crest: '/assets/images/houses/House-darktide.png' },
-      3: { name: 'House Stonebark', element: 'Earth', color: '#5CB338', crest: '/assets/images/houses/House-stonebark.png' },
-      4: { name: 'House Ashenvale', element: 'Air', color: '#90E0EF', crest: '/assets/images/houses/House-Ashenvale.png' },
-      5: { name: 'House Stormrage', element: 'Lightning', color: '#FFC800', crest: '/assets/images/houses/House-stormrage.png' },
-      6: { name: 'House Nighthollow', element: 'Shadow', color: '#7B2D8E', crest: '/assets/images/houses/House-nighthollow.png' },
-      7: { name: 'House Dawnbringer', element: 'Light', color: '#FF8C00', crest: '/assets/images/houses/House-dawnbringer.png' },
-      8: { name: 'House Manastorm', element: 'Arcane', color: '#5B8FE0', crest: '/assets/images/houses/House-manastorm.png' },
-      9: { name: 'House Plaguemire', element: 'Chaos', color: '#E84393', crest: '/assets/images/houses/House-plaguemire.png' },
-    };
-    const currentPlayerId = localStorage.getItem('player_id');
+    var HOUSES={1:{name:'Smoulders',color:'#E03C31',img:'Housesmoulders.png'},2:{name:'Darktide',color:'#00B4D8',img:'Housedarktide.png'},3:{name:'Stonebark',color:'#5CB338',img:'Housestonebark.png'},4:{name:'Ashenvale',color:'#90E0EF',img:'HouseAshenvale.png'},5:{name:'Stormrage',color:'#FFC800',img:'Housestormrage.png'},6:{name:'Nighthollow',color:'#7B2D8E',img:'Housenighthollow.png'},7:{name:'Dawnbringer',color:'#FF8C00',img:'HouseDwnbringer.png'},8:{name:'Manastorm',color:'#5B8FE0',img:'Housemanastorm.png'},9:{name:'Plaguemire',color:'#E84393',img:'Houseplaguemire.png'}};
+    var myPlayerId=localStorage.getItem('player_id');
+    function toggleMobileMenu(){document.getElementById('hamburger').classList.toggle('active');document.getElementById('mobileMenu').classList.toggle('active')}
+    function switchTab(t){var c=document.querySelectorAll('.lb-content');for(var i=0;i<c.length;i++)c[i].classList.remove('active');var b=document.querySelectorAll('.lb-tab');for(var i=0;i<b.length;i++)b[i].classList.remove('active');var el=document.getElementById('tab-'+t);if(el)el.classList.add('active');event.target.classList.add('active')}
+    function hImg(f,s){return '<img src="/assets/images/houses/'+f+'" style="width:'+s+'px;height:'+s+'px;object-fit:contain;" onerror="this.style.display=\'none\'">'}
 
-    document.getElementById('hamburger').addEventListener('click', () => { document.getElementById('hamburger').classList.toggle('active'); document.getElementById('mobileMenu').classList.toggle('active'); });
-    document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('player_id'); window.location.href = '/'; });
-    document.getElementById('mobileLogoutBtn').addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem('player_id'); window.location.href = '/'; });
+    function renderPlayers(players){
+      var c=document.getElementById('tab-players');
+      if(!players||players.length===0){c.innerHTML='<div class="lb-empty">No players yet. Be the first!</div>';return}
+      var html='';
+      if(players.length>=3){
+        var ml=['1ST','2ND','3RD'];
+        html+='<div class="podium fade-up fade-up-1">';
+        for(var i=0;i<3;i++){var p=players[i];var h=HOUSES[p.school_id]||{name:'?',color:'#888',img:''};
+          var av=p.profile_image?'<img src="'+p.profile_image+'" alt="" class="podium-avatar">':'<div class="podium-avatar podium-avatar--placeholder">'+hImg(h.img,28)+'</div>';
+          html+='<a href="https://x.com/'+p.twitter_handle+'" target="_blank" class="podium-slot podium-slot--'+(i+1)+'">'
+            +'<span class="podium-medal">'+ml[i]+'</span>'+av
+            +'<span class="podium-name">'+p.twitter_handle+'</span>'
+            +hImg(h.img,18)
+            +'<span class="podium-pts">'+p.seasonal_points+' pts</span>'
+            +'<div class="podium-bar"></div></a>'}
+        html+='</div>'}
+      html+='<div class="lb-list">';
+      for(var i=0;i<players.length;i++){var p=players[i];var h=HOUSES[p.school_id]||{name:'Unknown',color:'#888',img:''};
+        var isYou=myPlayerId&&(String(p.id)===String(myPlayerId));
+        var rc=i<3?'lb-rank--gold':'';var rowC=isYou?'lb-row lb-row--you':'lb-row';
+        var av=p.profile_image?'<img src="'+p.profile_image+'" alt="" class="lb-avatar">':'<div class="lb-avatar--placeholder">'+hImg(h.img,22)+'</div>';
+        var tag=p.community_tag?'<span class="lb-tag-badge">'+p.community_tag+'</span>':'';
+        html+='<a href="https://x.com/'+p.twitter_handle+'" target="_blank" class="'+rowC+' fade-up">'
+          +'<span class="lb-rank '+rc+'">'+(i+1)+'</span>'+av
+          +'<div class="lb-info"><div class="lb-name">@'+p.twitter_handle+(isYou?' (you)':'')+'</div>'
+          +'<div class="lb-meta">'+hImg(h.img,16)+' '+h.name+' '+tag+'</div></div>'
+          +'<div class="lb-points"><div class="lb-points__val">'+p.seasonal_points+'</div><div class="lb-points__label">PTS</div></div></a>'}
+      html+='</div>';c.innerHTML=html}
 
-    document.addEventListener('DOMContentLoaded', () => { setupTabs(); loadPlayersLeaderboard(); loadSchoolsLeaderboard(); loadCommunitiesLeaderboard(); });
+    function renderHouses(schools){
+      var c=document.getElementById('tab-houses');
+      if(!schools||schools.length===0){c.innerHTML='<div class="lb-empty">No house data yet.</div>';return}
+      var mx=schools[0].total_points||1;var html='<div class="lb-list" style="margin-top:8px;">';
+      for(var i=0;i<schools.length;i++){var s=schools[i];var h=HOUSES[s.school_id]||{name:'Unknown',color:'#888',img:''};
+        var rc=i<3?'lb-rank--gold':'';var pct=Math.max(5,(s.total_points/mx)*100);
+        html+='<div class="lb-row fade-up"><span class="lb-rank '+rc+'">'+(i+1)+'</span>'
+          +'<img src="/assets/images/houses/'+h.img+'" class="lb-house-icon-lg" onerror="this.style.display=\'none\'">'
+          +'<div class="lb-info"><div class="lb-name">'+h.name+'</div>'
+          +'<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">'
+          +'<div style="flex:1;height:7px;border-radius:4px;background:rgba(255,255,255,0.04);overflow:hidden;">'
+          +'<div style="height:100%;width:'+pct+'%;border-radius:4px;background:linear-gradient(90deg,'+h.color+','+h.color+'88);"></div></div>'
+          +'<span class="lb-members">'+(s.member_count||0)+' wizards</span></div></div>'
+          +'<div class="lb-points"><div class="lb-points__val">'+(s.total_points||0)+'</div><div class="lb-points__label">PTS</div></div></div>'}
+      var shown={};for(var i=0;i<schools.length;i++)shown[schools[i].school_id]=true;
+      for(var id=1;id<=9;id++){if(!shown[id]){var h=HOUSES[id];
+        html+='<div class="lb-row fade-up" style="opacity:0.5;"><span class="lb-rank">-</span>'
+          +'<img src="/assets/images/houses/'+h.img+'" class="lb-house-icon-lg" onerror="this.style.display=\'none\'">'
+          +'<div class="lb-info"><div class="lb-name">'+h.name+'</div><div class="lb-meta">No wizards yet</div></div>'
+          +'<div class="lb-points"><div class="lb-points__val">0</div><div class="lb-points__label">PTS</div></div></div>'}}
+      html+='</div>';c.innerHTML=html}
 
-    function setupTabs() {
-      document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          document.querySelectorAll('.leaderboard-section').forEach(s => s.classList.remove('active'));
-          document.getElementById(`${btn.dataset.tab}-section`).classList.add('active');
-        });
-      });
-    }
+    function renderCommunities(communities){
+      var c=document.getElementById('tab-communities');
+      if(!communities||communities.length===0){c.innerHTML='<div class="lb-empty">No communities yet. Add a community tag in your profile!</div>';return}
+      var html='<div class="lb-list" style="margin-top:8px;">';
+      for(var i=0;i<communities.length;i++){var cm=communities[i];var rc=i<3?'lb-rank--gold':'';
+        var initials=cm.community_tag.replace('$','').substring(0,3);
+        html+='<div class="lb-row fade-up"><span class="lb-rank '+rc+'">'+(i+1)+'</span>'
+          +'<div class="lb-community-icon">'+initials+'</div>'
+          +'<div class="lb-info"><div class="lb-tag">'+cm.community_tag+'</div>'
+          +'<div class="lb-meta">'+(cm.member_count||0)+' members</div></div>'
+          +'<div class="lb-points"><div class="lb-points__val">'+(cm.total_points||0)+'</div><div class="lb-points__label">PTS</div></div></div>'}
+      html+='</div>';c.innerHTML=html}
 
-    async function loadPlayersLeaderboard() {
-      try {
-        const res = await fetch('/api/leaderboards/players');
-        const players = await res.json();
-        const c = document.getElementById('players-list');
-        if (!players.length) { c.innerHTML = '<div class="empty-state">No players yet!</div>'; return; }
-        c.innerHTML = players.map((p, i) => {
-          const s = schools[p.school_id];
-          return `<div class="leaderboard-row ${p.id == currentPlayerId ? 'highlight' : ''}">
-            <div class="rank rank-${i+1}">#${i+1}</div>
-            <div class="player-cell">
-              <div class="player-avatar">${p.profile_image ? `<img src="${p.profile_image}">` : '🐱'}</div>
-              <div class="player-info">
-                <div class="player-name">@${p.twitter_handle}</div>
-                <div class="player-school"><img src="${s.crest}" alt="" style="width:10px;height:10px;object-fit:contain;"><span class="school-name" style="color:${s.color}">${s.name.replace('House ','')}</span></div>
-                ${p.community_tag ? `<div class="player-tag">${p.community_tag}</div>` : ''}
-              </div>
-            </div>
-            <div class="points">${p.seasonal_points.toLocaleString()}</div>
-          </div>`;
-        }).join('');
-      } catch (e) { document.getElementById('players-list').innerHTML = '<div class="empty-state">Failed to load</div>'; }
-    }
-
-    async function loadSchoolsLeaderboard() {
-      try {
-        const res = await fetch('/api/leaderboards/schools');
-        const stats = await res.json();
-        const c = document.getElementById('schools-list');
-        if (!stats.length) { c.innerHTML = '<div class="empty-state">No data</div>'; return; }
-        c.innerHTML = stats.map((st, i) => {
-          const s = schools[st.school_id];
-          return `<div class="leaderboard-row">
-            <div class="rank rank-${i+1}">#${i+1}</div>
-            <div class="school-cell">
-              <img src="${s.crest}" alt="${s.name}" class="school-color-block" style="object-fit:contain;background:transparent;border-radius:0;">
-              <div class="school-info"><div class="school-full-name" style="color:${s.color}">${s.name}</div><div class="school-element">${s.element} • ${st.member_count} wizards</div></div>
-            </div>
-            <div class="points">${st.total_points.toLocaleString()}</div>
-          </div>`;
-        }).join('');
-      } catch (e) { document.getElementById('schools-list').innerHTML = '<div class="empty-state">Failed to load</div>'; }
-    }
-
-    async function loadCommunitiesLeaderboard() {
-      try {
-        const res = await fetch('/api/leaderboards/communities');
-        const communities = await res.json();
-        const c = document.getElementById('communities-list');
-        if (!communities.length) { c.innerHTML = '<div class="empty-state">No communities yet!</div>'; return; }
-        c.innerHTML = communities.map((cm, i) => `<div class="leaderboard-row">
-          <div class="rank rank-${i+1}">#${i+1}</div>
-          <div class="player-info"><div class="community-tag-name">${cm.community_tag}</div><div class="school-name">${cm.member_count} members</div></div>
-          <div class="points">${cm.total_points.toLocaleString()}</div>
-        </div>`).join('');
-      } catch (e) { document.getElementById('communities-list').innerHTML = '<div class="empty-state">Failed to load</div>'; }
-    }
+    async function loadLeaderboards(){
+      try{var r=await Promise.all([fetch('/api/leaderboards/players').then(function(r){return r.json()}),fetch('/api/leaderboards/schools').then(function(r){return r.json()}),fetch('/api/leaderboards/communities').then(function(r){return r.json()})]);
+        renderPlayers(r[0]||[]);renderHouses(r[1]||[]);renderCommunities(r[2]||[]);
+        var l=document.getElementById('loadingState');if(l)l.style.display='none';
+      }catch(e){console.error('Leaderboards error:',e);var l=document.getElementById('loadingState');if(l)l.style.display='none';
+        document.getElementById('tab-players').innerHTML='<div class="lb-empty">Error loading leaderboards.</div>'}}
+    loadLeaderboards();
   </script>
 </body>
 </html>
