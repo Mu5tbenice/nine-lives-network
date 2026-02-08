@@ -542,8 +542,8 @@
             <span class="label">🏰 House Standings</span>
           </div>
           ${schoolsList.length > 0 ? schoolsList.map((school, i) => {
-            const h = HOUSES[school.id] || { name: school.name, emoji: '?', color: '#888' };
-            const isMyHouse = school.id === player.school_id;
+            const h = HOUSES[school.school_id] || { name: school.name, emoji: '?', color: '#888' };
+            const isMyHouse = school.school_id === player.school_id;
             const maxPts = schoolsList[0]?.total_points || 1;
             const pct = Math.max(5, (school.total_points / maxPts) * 100);
             return `
