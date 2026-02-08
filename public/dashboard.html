@@ -593,7 +593,7 @@
         + '</div>';
 
       // Show dashboard, hide loading
-      document.getElementById('loadingState').style.display = 'none';
+      var loader = document.getElementById('loadingState'); if (loader) loader.style.display = 'none';
       container.style.display = 'flex';
     }
 
