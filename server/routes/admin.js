@@ -15,6 +15,12 @@ const checkAdminKey = (req, res, next) => {
   next();
 };
 
+const { createClient } = require('@supabase/supabase-js');
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
 /**
  * GET /api/admin/test-bot
  * Test the Twitter bot connection
@@ -488,4 +494,42 @@ router.post('/nerm-generate', checkAdminKey, async (req, res) => {
   }
 });
 
+router.put('/zone/:id', async (req, res) => {
+  try {
+    const adminKey = req.headers['x-admin-key'];
+    if (adminKey !== process.env.ADMIN_KEY) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const zoneId = parseInt(req.params.id);
+    const { name, description, image_url } = req.body;
+
+    const updates = {};
+    if (name !== undefined) updates.name = name;
+    if (description !== undefined) updates.description = description;
+    if (image_url !== undefined) updates.image_url = image_url;
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('zones')
+      .update(updates)
+      .eq('id', zoneId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating zone:', error);
+      return res.status(500).json({ error: 'Failed to update zone' });
+    }
+
+    console.log(`Updated zone ${zoneId}:`, updates);
+    res.json(data);
+  } catch (error) {
+    console.error('Error in zone update:', error);
+    res.status(500).json({ error: 'Failed to update zone' });
+  }
+});
 module.exports = router;

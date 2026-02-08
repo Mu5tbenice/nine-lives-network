@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zone Admin | Nine Lives Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/variables-v2.css">
+  <link rel="stylesheet" href="/css/components-v2.css">
+  <style>
+    body { background: var(--bg-deep); color: var(--text-bright); }
+    .admin-wrap { max-width: 900px; margin: 0 auto; padding: 20px 15px; }
+    h1 { font-family: var(--font-title); color: var(--gold); font-size: 24px; letter-spacing: 3px; margin-bottom: 6px; }
+    .sub { font-family: var(--font-body); color: var(--text-muted); font-style: italic; margin-bottom: 20px; }
+
+    /* Auth */
+    .auth-box { text-align: center; padding: 40px; }
+    .auth-box input { background: var(--bg-inset); border: 1px solid var(--border-subtle); color: var(--text-bright); padding: 10px 16px; border-radius: 6px; font-size: 14px; width: 250px; font-family: var(--font-body); }
+    .auth-box button { margin-left: 8px; }
+
+    /* Zone card */
+    .zone-card {
+      background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px;
+      padding: 16px; margin-bottom: 10px; display: flex; gap: 14px; align-items: flex-start;
+      transition: border-color 0.3s;
+    }
+    .zone-card.changed { border-color: var(--gold-border); }
+    .zone-card.saved { border-color: #44cc44; }
+
+    /* Image area */
+    .zone-img-area {
+      width: 100px; height: 70px; border-radius: 8px; overflow: hidden;
+      background: var(--bg-inset); border: 1px dashed var(--border-subtle);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0; position: relative;
+    }
+    .zone-img-area img { width: 100%; height: 100%; object-fit: cover; }
+    .zone-img-area:hover { border-color: var(--gold); }
+    .zone-img-area .placeholder { font-family: var(--font-data); font-size: 7px; color: var(--text-faint); text-align: center; letter-spacing: 0.5px; }
+
+    /* Fields */
+    .zone-fields { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+    .zone-id { font-family: var(--font-data); font-size: 8px; color: var(--text-faint); letter-spacing: 1px; }
+    .zone-input {
+      background: var(--bg-inset); border: 1px solid var(--border-subtle); color: var(--text-bright);
+      padding: 7px 10px; border-radius: 6px; font-family: var(--font-body); font-size: 14px;
+      width: 100%; transition: border-color 0.2s;
+    }
+    .zone-input:focus { outline: none; border-color: var(--gold); }
+    .zone-input--name { font-family: var(--font-title); font-weight: 600; font-size: 15px; }
+    .zone-input--desc { font-size: 13px; color: var(--text-body); }
+    .zone-input--img { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+
+    /* Bonus badge */
+    .zone-bonus {
+      font-family: var(--font-data); font-size: 8px; color: var(--cyan);
+      background: rgba(0,212,255,0.08); padding: 3px 8px; border-radius: 4px;
+      display: inline-block; margin-top: 2px;
+    }
+
+    /* Actions */
+    .zone-actions { display: flex; flex-direction: column; gap: 6px; align-self: center; }
+    .btn-save {
+      background: linear-gradient(180deg, #D4A64B, #b8903d); color: var(--bg-deep);
+      border: none; padding: 7px 14px; border-radius: 6px; cursor: pointer;
+      font-family: var(--font-title); font-size: 11px; font-weight: 600; letter-spacing: 1px;
+    }
+    .btn-save:disabled { opacity: 0.3; cursor: default; }
+    .status { font-family: var(--font-data); font-size: 7px; color: #44cc44; text-align: center; }
+
+    /* Toolbar */
+    .toolbar { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
+    .toolbar .count { font-family: var(--font-data); font-size: 9px; color: var(--text-faint); letter-spacing: 1px; }
+    .btn-save-all {
+      background: linear-gradient(180deg, #D4A64B, #b8903d); color: var(--bg-deep);
+      border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;
+      font-family: var(--font-title); font-size: 13px; font-weight: 700; letter-spacing: 2px;
+    }
+    .btn-save-all:disabled { opacity: 0.3; cursor: default; }
+
+    /* Image list hint */
+    .img-hint {
+      background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 10px;
+      padding: 14px; margin-bottom: 16px; font-family: var(--font-body); font-size: 13px; color: var(--text-body);
+    }
+    .img-hint code { font-family: var(--font-mono); font-size: 12px; color: var(--gold); background: var(--bg-inset); padding: 1px 5px; border-radius: 3px; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: #44cc44; color: #000; padding: 10px 24px; border-radius: 8px;
+      font-family: var(--font-title); font-size: 13px; font-weight: 600;
+      display: none; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .toast.active { display: block; animation: fadeUp 0.3s ease; }
+
+    @media (max-width: 600px) {
+      .zone-card { flex-direction: column; }
+      .zone-img-area { width: 100%; height: 80px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Auth screen -->
+  <div class="admin-wrap" id="authScreen">
+    <div class="auth-box">
+      <h1>Zone Admin</h1>
+      <p class="sub">Enter admin key to manage zones</p>
+      <input type="password" id="adminKeyInput" placeholder="Admin key...">
+      <button class="btn-gold" onclick="authenticate()" style="font-size:12px; padding:10px 18px;">Enter</button>
+    </div>
+  </div>
+
+  <!-- Admin panel -->
+  <div class="admin-wrap" id="adminPanel" style="display:none;">
+    <h1>Zone Manager</h1>
+    <p class="sub">Rename zones, update descriptions, assign environment images</p>
+
+    <div class="img-hint">
+      <strong>Images:</strong> Upload zone images to <code>/public/assets/images/zones/</code> in Replit, then type the filename here (e.g. <code>crystal-crossroads.jpg</code>). The path <code>/assets/images/zones/</code> is added automatically.
+    </div>
+
+    <div class="toolbar">
+      <span class="count" id="zoneCount"></span>
+      <span style="flex:1;"></span>
+      <button class="btn-save-all" id="btnSaveAll" onclick="saveAll()" disabled>Save All Changes</button>
+    </div>
+
+    <div id="zoneList"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    var ADMIN_KEY = '';
+    var zones = [];
+    var changes = {}; // { zoneId: { name, description, image_url } }
+
+    function authenticate() {
+      ADMIN_KEY = document.getElementById('adminKeyInput').value;
+      loadZones();
+    }
+
+    async function loadZones() {
+      try {
+        var res = await fetch('/api/zones', {
+          headers: { 'x-admin-key': ADMIN_KEY }
+        });
+        zones = await res.json();
+
+        if (!Array.isArray(zones) || zones.length === 0) {
+          showToast('Invalid admin key or no zones found');
+          return;
+        }
+
+        document.getElementById('authScreen').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        renderZones();
+      } catch (e) {
+        showToast('Error loading zones');
+      }
+    }
+
+    function renderZones() {
+      var el = document.getElementById('zoneList');
+      document.getElementById('zoneCount').textContent = zones.length + ' ZONES';
+
+      var html = '';
+      zones.forEach(function(z) {
+        var imgPath = z.image_url || '';
+        var imgSrc = imgPath ? '/assets/images/zones/' + imgPath : '';
+        var imgPreview = imgSrc
+          ? '<img src="' + imgSrc + '" onerror="this.parentElement.innerHTML=\'<div class=placeholder>NO IMAGE</div>\'">'
+          : '<div class="placeholder">CLICK TO<br>SET IMAGE</div>';
+
+        html += '<div class="zone-card" id="zcard-' + z.id + '">'
+          + '  <div class="zone-img-area" onclick="document.getElementById(\'img-' + z.id + '\').focus()">'
+          + '    ' + imgPreview
+          + '  </div>'
+          + '  <div class="zone-fields">'
+          + '    <div class="zone-id">ZONE #' + z.id + (z.bonus_effect ? ' &middot; <span class="zone-bonus">' + z.bonus_effect + '</span>' : '') + '</div>'
+          + '    <input class="zone-input zone-input--name" value="' + escHtml(z.name) + '" onchange="markChanged(' + z.id + ', \'name\', this.value)" placeholder="Zone name...">'
+          + '    <input class="zone-input zone-input--desc" value="' + escHtml(z.description || '') + '" onchange="markChanged(' + z.id + ', \'description\', this.value)" placeholder="Short description...">'
+          + '    <input class="zone-input zone-input--img" id="img-' + z.id + '" value="' + escHtml(imgPath) + '" onchange="markChanged(' + z.id + ', \'image_url\', this.value); updatePreview(' + z.id + ', this.value)" placeholder="image-filename.jpg">'
+          + '  </div>'
+          + '  <div class="zone-actions">'
+          + '    <button class="btn-save" id="btn-' + z.id + '" onclick="saveZone(' + z.id + ')" disabled>Save</button>'
+          + '    <div class="status" id="status-' + z.id + '"></div>'
+          + '  </div>'
+          + '</div>';
+      });
+
+      el.innerHTML = html;
+    }
+
+    function escHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function markChanged(zoneId, field, value) {
+      if (!changes[zoneId]) changes[zoneId] = {};
+      changes[zoneId][field] = value;
+
+      // Highlight card
+      var card = document.getElementById('zcard-' + zoneId);
+      if (card) { card.classList.add('changed'); card.classList.remove('saved'); }
+
+      // Enable buttons
+      document.getElementById('btn-' + zoneId).disabled = false;
+      document.getElementById('btnSaveAll').disabled = false;
+    }
+
+    function updatePreview(zoneId, filename) {
+      var card = document.getElementById('zcard-' + zoneId);
+      var imgArea = card.querySelector('.zone-img-area');
+      if (filename) {
+        imgArea.innerHTML = '<img src="/assets/images/zones/' + filename + '" onerror="this.parentElement.innerHTML=\'<div class=placeholder>NOT FOUND</div>\'">';
+      } else {
+        imgArea.innerHTML = '<div class="placeholder">NO IMAGE</div>';
+      }
+    }
+
+    async function saveZone(zoneId) {
+      if (!changes[zoneId]) return;
+
+      var btn = document.getElementById('btn-' + zoneId);
+      var status = document.getElementById('status-' + zoneId);
+      btn.disabled = true;
+      btn.textContent = '...';
+
+      try {
+        var res = await fetch('/api/admin/zone/' + zoneId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
+          body: JSON.stringify(changes[zoneId])
+        });
+
+        var result = await res.json();
+        if (result.error) throw new Error(result.error);
+
+        var card = document.getElementById('zcard-' + zoneId);
+        card.classList.remove('changed');
+        card.classList.add('saved');
+        status.textContent = 'SAVED';
+        delete changes[zoneId];
+
+        // Check if any changes left
+        if (Object.keys(changes).length === 0) {
+          document.getElementById('btnSaveAll').disabled = true;
+        }
+
+        setTimeout(function() { status.textContent = ''; }, 2000);
+      } catch (e) {
+        status.textContent = 'ERROR';
+        status.style.color = '#cc4444';
+      }
+
+      btn.textContent = 'Save';
+      btn.disabled = !changes[zoneId];
+    }
+
+    async function saveAll() {
+      var ids = Object.keys(changes);
+      for (var i = 0; i < ids.length; i++) {
+        await saveZone(parseInt(ids[i]));
+      }
+      showToast('All changes saved!');
+    }
+
+    function showToast(msg) {
+      var t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('active');
+      setTimeout(function() { t.classList.remove('active'); }, 2500);
+    }
+  </script>
+</body>
+</html>
