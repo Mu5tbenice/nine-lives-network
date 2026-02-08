@@ -6,20 +6,16 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Nine Lives Network | Cast Spells. Control Territory. Rule Avaloris.</title>
-  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&display=swap" rel="stylesheet">
 
   <!-- Three.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
   <style>
-    /* ===== RESET ===== */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     html, body {
       overflow-x: hidden;
@@ -29,262 +25,173 @@
     }
 
     body {
-      background: linear-gradient(180deg, #0a1628 0%, #1a2a4a 50%, #0a1628 100%);
-      font-family: 'Press Start 2P', monospace;
+      background: linear-gradient(180deg, #080810 0%, #0e1020 50%, #080810 100%);
+      font-family: 'Cinzel', serif;
     }
 
-    /* ===== 3D CANVAS - FIXED POSITION ===== */
+    /* ═══ 3D Canvas ═══ */
     #canvas-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-      pointer-events: none;
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 1; pointer-events: none;
     }
 
-    /* ===== BOTTOM FADE - hides body/arms ===== */
+    /* ═══ Bottom fade ═══ */
     .bottom-fade {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 50%;
-      background: linear-gradient(
-        to bottom,
+      position: fixed; bottom: 0; left: 0;
+      width: 100%; height: 50%;
+      background: linear-gradient(to bottom,
         transparent 0%,
-        rgba(10, 22, 40, 0.5) 20%,
-        rgba(10, 22, 40, 0.9) 50%,
-        rgba(10, 22, 40, 1) 70%,
-        rgba(10, 22, 40, 1) 100%
+        rgba(8, 8, 16, 0.5) 20%,
+        rgba(8, 8, 16, 0.9) 50%,
+        rgba(8, 8, 16, 1) 70%,
+        rgba(8, 8, 16, 1) 100%
       );
-      z-index: 2;
-      pointer-events: none;
+      z-index: 2; pointer-events: none;
     }
 
-    /* ===== PARTICLES ===== */
+    /* ═══ Particles ═══ */
     .particles {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      overflow: hidden;
-      z-index: 3;
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none; overflow: hidden; z-index: 3;
     }
-
     .particle {
-      position: absolute;
-      width: 4px;
-      height: 4px;
-      background: var(--accent-gold, #FFD700);
-      border-radius: 50%;
-      opacity: 0.6;
+      position: absolute; width: 3px; height: 3px;
+      border-radius: 50%; opacity: 0.5;
       animation: float 8s infinite ease-in-out;
     }
-
     @keyframes float {
-      0%, 100% { transform: translateY(0) translateX(0); opacity: 0.6; }
-      50% { transform: translateY(-30px) translateX(10px); opacity: 0.3; }
+      0%, 100% { transform: translateY(0) translateX(0); opacity: 0.5; }
+      50% { transform: translateY(-25px) translateX(8px); opacity: 0.2; }
     }
 
-    /* ===== UI OVERLAY ===== */
+    /* ═══ UI Overlay ═══ */
     .landing-container {
-      position: relative;
-      height: 100vh;
-      height: -webkit-fill-available;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px 15px;
-      z-index: 10;
-      pointer-events: none;
+      position: relative; height: 100vh; height: -webkit-fill-available;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 24px 15px; z-index: 10; pointer-events: none;
     }
+    .landing-container a, .landing-container button { pointer-events: auto; }
 
-    .landing-container a,
-    .landing-container button {
-      pointer-events: auto;
-    }
+    .model-spacer { flex: 1; }
 
-    /* ===== SPACER ===== */
-    .model-spacer {
-      flex: 1;
-    }
-
-    /* ===== BOTTOM SECTION - Play button + footer ===== */
-    .bottom-section {
-      position: fixed;
-      bottom: 40px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      z-index: 20;
-      pointer-events: auto;
-    }
-
-    /* ===== TITLE ===== */
+    /* ═══ Title ═══ */
     .game-title {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 1.1rem;
-      background: linear-gradient(180deg, #00ffff 0%, #ffcc00 50%, #ff6600 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+      font-family: 'Cinzel', serif;
+      font-weight: 700;
+      font-size: 1.4rem;
+      color: #D4A64B;
       text-align: center;
-      margin-bottom: 8px;
-      letter-spacing: 1px;
+      letter-spacing: 5px;
+      text-shadow: 0 0 30px rgba(212, 166, 75, 0.3);
     }
 
     .game-tagline {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.35rem;
-      color: #a0a0b0;
+      font-family: 'Crimson Text', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: #7a7668;
       text-align: center;
-      margin-bottom: 10px;
-      line-height: 1.5;
+      margin-top: 6px;
+      letter-spacing: 1px;
     }
 
-    /* ===== SEASON BADGE ===== */
+    /* ═══ Season badge ═══ */
     .season-badge {
-      background: linear-gradient(135deg, #9932CC, #6B238E);
-      padding: 6px 14px;
-      border-radius: 16px;
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(212, 166, 75, 0.08);
+      border: 1px solid rgba(212, 166, 75, 0.2);
+      padding: 6px 14px; border-radius: 6px;
       font-family: 'Press Start 2P', monospace;
-      font-size: 0.35rem;
-      color: white;
-      margin-bottom: 12px;
-      box-shadow: 0 0 15px rgba(153, 50, 204, 0.5);
+      font-size: 7px; color: #D4A64B;
+      letter-spacing: 1px; margin-top: 12px;
+    }
+    .season-badge__dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: #44cc44; animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* ═══ How to play link ═══ */
+    .how-link {
+      font-family: 'Cinzel', serif;
+      font-size: 12px; font-weight: 600;
+      color: #7a7668; text-decoration: none;
+      letter-spacing: 2px; margin-top: 14px;
+      padding: 8px 16px; border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.06);
+      transition: all 0.3s;
+    }
+    .how-link:hover { color: #D4A64B; border-color: rgba(212,166,75,0.2); }
+
+    /* ═══ Bottom section ═══ */
+    .bottom-section {
+      position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center;
+      z-index: 20; pointer-events: auto;
     }
 
-    /* ===== HOW TO PLAY BUTTON ===== */
-    .how-to-play-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 12px 20px;
-      min-height: 44px;
-      background: rgba(10, 22, 40, 0.8);
-      border: 2px solid var(--accent-gold, #FFD700);
-      color: var(--accent-gold, #FFD700);
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
-      text-decoration: none;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      border-radius: 4px;
+    /* ═══ Play button ═══ */
+    .play-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 16px 44px; min-height: 52px;
+      background: linear-gradient(180deg, #D4A64B 0%, #b8903d 100%);
+      border: none; color: #080810;
+      font-family: 'Cinzel', serif;
+      font-weight: 700; font-size: 15px;
+      text-decoration: none; text-transform: uppercase;
+      letter-spacing: 3px; cursor: pointer;
+      border-radius: 8px;
+      box-shadow: 0 4px 0 #8a6d2f, 0 0 30px rgba(212, 166, 75, 0.3);
+      transition: all 0.15s;
+      margin-bottom: 16px;
     }
-
-    /* ===== PLAY NOW BUTTON ===== */
-    .play-now-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px 40px;
-      min-height: 56px;
-      background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
-      border: none;
-      color: #000;
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.6rem;
-      text-decoration: none;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      box-shadow: 0 5px 0 #996600, 0 0 25px rgba(255, 215, 0, 0.4);
-      margin-bottom: 15px;
-      border-radius: 4px;
-      position: relative;
-      z-index: 20;
-    }
-
-    .play-now-btn:active {
+    .play-btn:active {
       transform: translateY(3px);
-      box-shadow: 0 2px 0 #996600;
+      box-shadow: 0 1px 0 #8a6d2f;
     }
 
-    /* ===== FOOTER ===== */
+    /* ═══ Footer ═══ */
     .footer-links {
-      display: flex;
-      gap: 15px;
-      justify-content: center;
-      position: relative;
-      z-index: 20;
+      display: flex; gap: 16px; justify-content: center;
     }
-
     .footer-links a {
-      color: #606070;
-      font-size: 0.35rem;
-      text-decoration: none;
-      padding: 8px;
-      pointer-events: auto;
+      color: #4a4840; font-family: 'Crimson Text', serif;
+      font-size: 12px; text-decoration: none; padding: 6px;
+      transition: color 0.3s; pointer-events: auto;
     }
+    .footer-links a:hover { color: #7a7668; }
 
-    /* ===== TABLET (768px+) ===== */
+    /* ═══ Tablet ═══ */
     @media (min-width: 768px) {
-      .game-title {
-        font-size: 2rem;
-      }
-
-      .game-tagline {
-        font-size: 0.6rem;
-      }
-
-      .season-badge {
-        font-size: 0.45rem;
-        padding: 8px 18px;
-      }
-
-      .how-to-play-btn {
-        font-size: 0.5rem;
-        padding: 14px 28px;
-      }
-
-      .play-now-btn {
-        font-size: 0.8rem;
-        padding: 18px 50px;
-      }
-
-      .footer-links a {
-        font-size: 0.45rem;
-      }
-
-      .bottom-fade {
-        height: 40%;
-      }
+      .game-title { font-size: 2.2rem; letter-spacing: 8px; }
+      .game-tagline { font-size: 16px; }
+      .season-badge { font-size: 8px; padding: 7px 18px; }
+      .how-link { font-size: 13px; }
+      .play-btn { font-size: 17px; padding: 18px 52px; }
+      .footer-links a { font-size: 13px; }
+      .bottom-fade { height: 40%; }
     }
 
-    /* ===== DESKTOP (1024px+) ===== */
+    /* ═══ Desktop ═══ */
     @media (min-width: 1024px) {
-      .game-title {
-        font-size: 2.5rem;
-      }
-
-      .play-now-btn:hover {
+      .game-title { font-size: 2.8rem; }
+      .play-btn:hover {
         transform: translateY(-3px);
-        box-shadow: 0 8px 0 #996600, 0 0 40px rgba(255, 215, 0, 0.6);
+        box-shadow: 0 7px 0 #8a6d2f, 0 0 40px rgba(212, 166, 75, 0.5);
       }
-
-      .how-to-play-btn:hover {
-        background: rgba(255, 215, 0, 0.2);
-      }
+      .how-link:hover { background: rgba(212,166,75,0.06); }
     }
 
-    /* ===== SMALL MOBILE (380px and below) ===== */
+    /* ═══ Small mobile ═══ */
     @media (max-width: 380px) {
-      .game-title {
-        font-size: 0.9rem;
-      }
+      .game-title { font-size: 1.1rem; letter-spacing: 3px; }
     }
   </style>
 </head>
 <body>
+
   <!-- 3D Canvas -->
   <div id="canvas-container"></div>
 
@@ -296,38 +203,39 @@
 
   <!-- UI -->
   <div class="landing-container">
-    <h1 class="game-title">NINE LIVES NETWORK</h1>
+    <h1 class="game-title">Nine Lives Network</h1>
     <p class="game-tagline">Cast spells. Control territory. Rule Avaloris.</p>
 
-    <div class="season-badge">Season 0 - Beta</div>
+    <div class="season-badge">
+      <div class="season-badge__dot"></div>
+      SEASON 0 LIVE
+    </div>
 
-    <a href="/how-to-play.html" class="how-to-play-btn">
-     How To Play
-    </a>
+    <a href="/how-to-play.html" class="how-link">How To Play</a>
 
     <div class="model-spacer"></div>
 
     <div class="bottom-section">
-      <a href="/register.html" class="play-now-btn" id="ctaButton">▶ PLAY NOW</a>
+      <a href="/register.html" class="play-btn" id="ctaButton">Enter the Realm</a>
 
       <div class="footer-links">
         <a href="/terms.html">Terms</a>
         <a href="/privacy.html">Privacy</a>
-        <a href="https://twitter.com/9LVNetwork" target="_blank">X</a>
+        <a href="https://twitter.com/9LVNetwork" target="_blank">@9LVNetwork</a>
       </div>
     </div>
   </div>
 
   <script>
-    // ===== PARTICLES =====
+    // ═══ PARTICLES ═══
     function createParticles() {
-      const container = document.getElementById('particles');
-      const colors = ['#FFD700', '#00FFFF', '#FF6600', '#9932CC'];
-      const isMobile = window.innerWidth < 768;
-      const count = isMobile ? 15 : 30;
+      var container = document.getElementById('particles');
+      var colors = ['#D4A64B', '#b8903d', '#8a6d2f', '#4a4840'];
+      var isMobile = window.innerWidth < 768;
+      var count = isMobile ? 12 : 25;
 
-      for (let i = 0; i < count; i++) {
-        const particle = document.createElement('div');
+      for (var i = 0; i < count; i++) {
+        var particle = document.createElement('div');
         particle.className = 'particle';
         particle.style.left = Math.random() * 100 + '%';
         particle.style.top = Math.random() * 100 + '%';
@@ -338,25 +246,22 @@
       }
     }
 
-    // ===== THREE.JS =====
-    let scene, camera, renderer, wizardCat;
-    let mouseX = 0, mouseY = 0;
-    let windowHalfX = window.innerWidth / 2;
-    let windowHalfY = window.innerHeight / 2;
+    // ═══ THREE.JS (unchanged) ═══
+    var scene, camera, renderer, wizardCat;
+    var mouseX = 0, mouseY = 0;
+    var windowHalfX = window.innerWidth / 2;
+    var windowHalfY = window.innerHeight / 2;
 
-    // TWEAK THIS VALUE TO MOVE FACE:
-    // Higher cameraY = face appears LOWER on screen
-    // Lower cameraY = face appears HIGHER on screen
-    const MODEL_SETTINGS = {
+    var MODEL_SETTINGS = {
       cameraZ: 7,
-      cameraY: 2.5,    // <-- CHANGE THIS: was 1.5, try 2.5, 3, 3.5 etc
+      cameraY: 2.5,
       lookAtY: 0.5,
       modelY: -3.2,
       modelScale: 1
     };
 
     function init3D() {
-      const container = document.getElementById('canvas-container');
+      var container = document.getElementById('canvas-container');
 
       scene = new THREE.Scene();
 
@@ -371,34 +276,34 @@
       renderer.outputEncoding = THREE.sRGBEncoding;
       container.appendChild(renderer.domElement);
 
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      var ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
       scene.add(ambientLight);
 
-      const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      var mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
       mainLight.position.set(5, 5, 7);
       scene.add(mainLight);
 
-      const purpleLight = new THREE.PointLight(0x8A2BE2, 0.6, 20);
+      var purpleLight = new THREE.PointLight(0x8A2BE2, 0.6, 20);
       purpleLight.position.set(-4, 4, 5);
       scene.add(purpleLight);
 
-      const goldLight = new THREE.PointLight(0xFFD700, 0.5, 20);
+      var goldLight = new THREE.PointLight(0xD4A64B, 0.5, 20);
       goldLight.position.set(4, 4, 5);
       scene.add(goldLight);
 
-      const cyanLight = new THREE.PointLight(0x00D4FF, 0.4, 15);
+      var cyanLight = new THREE.PointLight(0x00D4FF, 0.3, 15);
       cyanLight.position.set(0, 5, -4);
       scene.add(cyanLight);
 
-      const loader = new THREE.GLTFLoader();
+      var loader = new THREE.GLTFLoader();
       loader.load(
         '/assets/models/wizard-cat.glb',
-        (gltf) => {
+        function(gltf) {
           wizardCat = gltf.scene;
           wizardCat.scale.set(MODEL_SETTINGS.modelScale, MODEL_SETTINGS.modelScale, MODEL_SETTINGS.modelScale);
           wizardCat.position.set(0, MODEL_SETTINGS.modelY, 0);
 
-          wizardCat.traverse((child) => {
+          wizardCat.traverse(function(child) {
             if (child.name === 'Backdrop' || child.name === 'Plane' || child.name === 'Plane.002') {
               child.visible = false;
             }
@@ -407,22 +312,22 @@
           scene.add(wizardCat);
         },
         undefined,
-        (error) => console.log('Model load error:', error)
+        function(error) { console.log('Model load error:', error); }
       );
 
-      document.addEventListener('mousemove', (e) => {
+      document.addEventListener('mousemove', function(e) {
         mouseX = (e.clientX - windowHalfX) / windowHalfX;
         mouseY = (e.clientY - windowHalfY) / windowHalfY;
       });
 
-      document.addEventListener('touchmove', (e) => {
+      document.addEventListener('touchmove', function(e) {
         if (e.touches.length > 0) {
           mouseX = (e.touches[0].clientX - windowHalfX) / windowHalfX;
           mouseY = (e.touches[0].clientY - windowHalfY) / windowHalfY;
         }
       }, { passive: true });
 
-      window.addEventListener('resize', () => {
+      window.addEventListener('resize', function() {
         windowHalfX = window.innerWidth / 2;
         windowHalfY = window.innerHeight / 2;
         camera.aspect = window.innerWidth / window.innerHeight;
@@ -437,8 +342,8 @@
       requestAnimationFrame(animate);
 
       if (wizardCat) {
-        const targetRotationY = mouseX * 0.5;
-        const targetRotationX = mouseY * 0.2;
+        var targetRotationY = mouseX * 0.5;
+        var targetRotationX = mouseY * 0.2;
 
         wizardCat.rotation.y += (targetRotationY - wizardCat.rotation.y) * 0.08;
         wizardCat.rotation.x += (targetRotationX - wizardCat.rotation.x) * 0.08;
@@ -449,15 +354,15 @@
       renderer.render(scene, camera);
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', function() {
       createParticles();
       init3D();
 
-      const playerId = localStorage.getItem('player_id');
+      var playerId = localStorage.getItem('player_id');
       if (playerId) {
-        const ctaButton = document.getElementById('ctaButton');
+        var ctaButton = document.getElementById('ctaButton');
         ctaButton.href = '/dashboard.html';
-        ctaButton.textContent = 'DASHBOARD';
+        ctaButton.textContent = 'Dashboard';
       }
     });
   </script>
