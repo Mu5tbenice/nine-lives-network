@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>War Room | Nine Lives Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/variables-v2.css">
+  <link rel="stylesheet" href="/css/components-v2.css">
+  <link rel="stylesheet" href="/css/nav-v2.css">
+  <style>
+    .wr-hero { text-align: center; padding: 14px 0 6px; }
+    .wr-hero__title { font-family: var(--font-title); font-weight: 700; font-size: 24px; color: var(--gold); letter-spacing: 3px; }
+    .wr-hero__sub { font-family: var(--font-body); font-size: 15px; font-style: italic; color: var(--text-muted); margin-top: 4px; }
+    .wr-hero__live { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; font-family: var(--font-data); font-size: 8px; color: #44cc44; letter-spacing: 1px; }
+    .wr-hero__live-dot { width: 6px; height: 6px; border-radius: 50%; background: #44cc44; animation: pulse-live 2s infinite; }
+    @keyframes pulse-live { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    /* Section headers */
+    .section { margin-bottom: 10px; }
+    .section-label {
+      font-family: var(--font-data); font-size: 8px; color: var(--text-muted);
+      letter-spacing: 1.5px; margin-bottom: 10px; padding-left: 2px;
+    }
+
+    /* ═══ COMMUNITY RACE ═══ */
+    .race-card {
+      background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px;
+      padding: 18px; overflow: hidden;
+    }
+    .race-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+      position: relative;
+    }
+    .race-row:last-child { margin-bottom: 0; }
+    .race-rank {
+      font-family: var(--font-data); font-size: 14px; font-weight: 700;
+      min-width: 22px; text-align: center;
+    }
+    .race-rank--1 { color: var(--gold); }
+    .race-rank--2 { color: #c0c0c0; }
+    .race-rank--3 { color: #cd7f32; }
+    .race-rank--other { color: var(--text-faint); font-size: 10px; }
+    .race-tag {
+      font-family: var(--font-data); font-size: 11px; font-weight: 700;
+      color: var(--gold); min-width: 70px; letter-spacing: 0.5px;
+    }
+    .race-bar-wrap { flex: 1; height: 24px; border-radius: 4px; background: rgba(255,255,255,0.03); overflow: hidden; position: relative; }
+    .race-bar {
+      height: 100%; border-radius: 4px;
+      background: linear-gradient(90deg, var(--gold) 0%, #b8903d 100%);
+      transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+      min-width: 2px;
+    }
+    .race-bar--2 { background: linear-gradient(90deg, #c0c0c0, #888); }
+    .race-bar--3 { background: linear-gradient(90deg, #cd7f32, #8a5520); }
+    .race-bar--other { background: linear-gradient(90deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05)); }
+    .race-pts {
+      font-family: var(--font-data); font-size: 9px; color: var(--text-bright);
+      min-width: 50px; text-align: right; letter-spacing: 0.5px;
+    }
+    .race-members {
+      font-family: var(--font-mono); font-size: 10px; color: var(--text-faint);
+      min-width: 40px; text-align: right;
+    }
+    .race-empty {
+      text-align: center; padding: 24px 0;
+      font-family: var(--font-body); font-size: 14px; font-style: italic; color: var(--text-faint);
+    }
+
+    /* ═══ HOUSE TREND CHART ═══ */
+    .chart-card {
+      background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px;
+      padding: 18px;
+    }
+    .chart-canvas-wrap { position: relative; width: 100%; height: 200px; }
+    .chart-canvas-wrap canvas { width: 100%; height: 100%; }
+    .chart-legend {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; justify-content: center;
+    }
+    .chart-legend-item {
+      display: flex; align-items: center; gap: 4px;
+      font-family: var(--font-data); font-size: 7px; color: var(--text-faint); letter-spacing: 0.5px;
+    }
+    .chart-legend-dot { width: 8px; height: 8px; border-radius: 2px; }
+    .chart-legend-item img { width: 12px; height: 12px; object-fit: contain; }
+
+    /* ═══ TOP PLAYERS TODAY ═══ */
+    .tp-card {
+      background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px;
+      padding: 16px; overflow: hidden;
+    }
+    .tp-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 8px; border-radius: 8px; margin-bottom: 2px;
+      transition: background 0.2s;
+    }
+    .tp-row:hover { background: var(--bg-inset); }
+    .tp-row--you { background: rgba(212,166,75,0.06); border: 1px solid var(--gold-border); }
+    .tp-rank { font-family: var(--font-data); font-size: 10px; min-width: 18px; text-align: center; }
+    .tp-rank--1 { color: var(--gold); font-size: 14px; font-weight: 700; }
+    .tp-rank--2 { color: #c0c0c0; font-size: 12px; font-weight: 700; }
+    .tp-rank--3 { color: #cd7f32; font-size: 12px; font-weight: 700; }
+    .tp-rank--other { color: var(--text-faint); }
+    .tp-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-subtle); }
+    .tp-info { flex: 1; }
+    .tp-handle { font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--text-bright); }
+    .tp-meta { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+    .tp-meta img { width: 12px; height: 12px; object-fit: contain; }
+    .tp-meta-tag { font-family: var(--font-data); font-size: 7px; color: var(--gold); background: var(--gold-dim); padding: 1px 5px; border-radius: 3px; }
+    .tp-pts { font-family: var(--font-data); font-size: 11px; font-weight: 700; color: var(--gold); letter-spacing: 0.5px; }
+    .tp-bar-wrap { width: 60px; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.04); overflow: hidden; }
+    .tp-bar { height: 100%; border-radius: 3px; background: var(--gold); transition: width 1s ease; }
+
+    /* ═══ LIVE ACTIVITY FEED ═══ */
+    .feed-card {
+      background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px;
+      padding: 16px; max-height: 360px; overflow-y: auto;
+    }
+    .feed-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 8px; border-radius: 8px; margin-bottom: 2px;
+      animation: feedSlideIn 0.4s ease;
+      border-left: 3px solid transparent;
+    }
+    @keyframes feedSlideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    .feed-item--attack { border-left-color: #cc3333; }
+    .feed-item--defend { border-left-color: #3366cc; }
+    .feed-item--cast { border-left-color: var(--gold); }
+    .feed-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--border-subtle); flex-shrink: 0; }
+    .feed-content { flex: 1; }
+    .feed-handle { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--text-bright); }
+    .feed-action { font-family: var(--font-body); font-size: 13px; color: var(--text-body); margin-top: 1px; }
+    .feed-action strong { color: var(--text-bright); }
+    .feed-time { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); flex-shrink: 0; }
+    .feed-empty { text-align: center; padding: 24px 0; font-family: var(--font-body); font-size: 14px; font-style: italic; color: var(--text-faint); }
+
+    /* ═══ YOUR STATS ═══ */
+    .your-stats {
+      background: var(--bg-card); border: 1px solid var(--gold-border); border-radius: 12px;
+      padding: 16px; display: none;
+    }
+    .your-stats.active { display: block; }
+    .your-stats__header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .your-stats__avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold-border); }
+    .your-stats__name { font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--text-bright); }
+    .your-stats__sub { font-family: var(--font-body); font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+    .your-stats__grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .your-stat {
+      text-align: center; padding: 10px 6px; background: var(--bg-inset); border-radius: 8px;
+    }
+    .your-stat__val { font-family: var(--font-data); font-size: 16px; font-weight: 700; color: var(--gold); }
+    .your-stat__label { font-family: var(--font-data); font-size: 7px; color: var(--text-faint); letter-spacing: 1px; margin-top: 4px; }
+
+    .loading { display: flex; justify-content: center; padding: 40px 0; }
+    .spinner { width: 28px; height: 28px; border: 3px solid var(--border-subtle); border-top: 3px solid var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 480px) {
+      .wr-hero__title { font-size: 20px; }
+      .your-stats__grid { grid-template-columns: repeat(2, 1fr); }
+      .race-tag { font-size: 10px; min-width: 55px; }
+      .race-members { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="top-nav"><div class="top-nav-content"><a href="/" class="nav-logo">Nine Lives Network</a><ul class="nav-links"><li><a href="/dashboard.html">Dashboard</a></li><li><a href="/map.html">World</a></li><li><a href="/leaderboards.html">Leaderboards</a></li><li><a href="/warroom.html" class="active">War Room</a></li><li><a href="/arena.html">Arena</a></li><li><a href="/how-to-play.html">Help</a></li></ul><button class="hamburger" id="hamburger" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button></div></nav>
+  <div class="mobile-menu" id="mobileMenu"><a href="/dashboard.html">Dashboard</a><a href="/map.html">World</a><a href="/leaderboards.html">Leaderboards</a><a href="/warroom.html" class="active">War Room</a><a href="/arena.html">Arena</a><a href="/how-to-play.html">Help</a></div>
+
+  <div class="main-container">
+
+    <div class="wr-hero fade-up">
+      <h1 class="wr-hero__title">War Room</h1>
+      <p class="wr-hero__sub">Live battlefield intelligence</p>
+      <div class="wr-hero__live"><div class="wr-hero__live-dot"></div> LIVE DATA</div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loadingState"><div class="spinner"></div></div>
+
+    <div id="wrContent" style="display:none;">
+
+      <!-- Your Stats -->
+      <div class="section fade-up">
+        <div class="your-stats" id="yourStats"></div>
+      </div>
+
+      <!-- Community Race -->
+      <div class="section fade-up fade-up-1">
+        <div class="section-label">COMMUNITY RACE — TODAY</div>
+        <div class="race-card" id="communityRace"></div>
+      </div>
+
+      <!-- House Trend Chart -->
+      <div class="section fade-up fade-up-2">
+        <div class="section-label">HOUSE MOMENTUM</div>
+        <div class="chart-card">
+          <div class="chart-canvas-wrap"><canvas id="houseChart"></canvas></div>
+          <div class="chart-legend" id="chartLegend"></div>
+        </div>
+      </div>
+
+      <!-- Top Players Today -->
+      <div class="section fade-up fade-up-3">
+        <div class="section-label">TOP PLAYERS — TODAY</div>
+        <div class="tp-card" id="topPlayers"></div>
+      </div>
+
+      <!-- Live Activity Feed -->
+      <div class="section fade-up fade-up-4">
+        <div class="section-label">LIVE ACTIVITY</div>
+        <div class="feed-card" id="activityFeed"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    var HOUSES = {
+      1: { name: 'Smoulders', color: '#E03C31', img: 'Housesmoulders.png' },
+      2: { name: 'Darktide', color: '#00B4D8', img: 'Housedarktide.png' },
+      3: { name: 'Stonebark', color: '#5CB338', img: 'Housestonebark.png' },
+      4: { name: 'Ashenvale', color: '#90E0EF', img: 'HouseAshenvale.png' },
+      5: { name: 'Stormrage', color: '#FFC800', img: 'Housestormrage.png' },
+      6: { name: 'Nighthollow', color: '#7B2D8E', img: 'Housenighthollow.png' },
+      7: { name: 'Dawnbringer', color: '#FF8C00', img: 'HouseDwnbringer.png' },
+      8: { name: 'Manastorm', color: '#5B8FE0', img: 'Housemanastorm.png' },
+      9: { name: 'Plaguemire', color: '#E84393', img: 'Houseplaguemire.png' }
+    };
+
+    var player = null;
+
+    function toggleMobileMenu() {
+      document.getElementById('hamburger').classList.toggle('active');
+      document.getElementById('mobileMenu').classList.toggle('active');
+    }
+
+    function hImg(filename, size) {
+      return '<img src="/assets/images/houses/' + filename + '" style="width:' + size + 'px;height:' + size + 'px;object-fit:contain;" onerror="this.style.display=\'none\'">';
+    }
+
+    function timeAgo(dateStr) {
+      if (!dateStr) return '';
+      var diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+      if (diff < 60) return Math.floor(diff) + 's ago';
+      if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+      if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+      return Math.floor(diff / 86400) + 'd ago';
+    }
+
+    function getPlayerId() {
+      var params = new URLSearchParams(window.location.search);
+      return params.get('player_id') || localStorage.getItem('player_id');
+    }
+
+    // ═══ RENDER YOUR STATS ═══
+    function renderYourStats(todayData) {
+      if (!player) return;
+      var el = document.getElementById('yourStats');
+      var h = HOUSES[player.school_id] || { name: '?', img: '' };
+
+      // Find player in today's data
+      var todayPts = 0;
+      var todayRank = '-';
+      if (todayData && todayData.players) {
+        for (var i = 0; i < todayData.players.length; i++) {
+          if (todayData.players[i].player_id === player.id) {
+            todayPts = todayData.players[i].today_points;
+            todayRank = '#' + (i + 1);
+            break;
+          }
+        }
+      }
+
+      el.innerHTML = ''
+        + '<div class="your-stats__header">'
+        + (player.profile_image ? '<img src="' + player.profile_image + '" class="your-stats__avatar">' : '')
+        + '<div>'
+        + '<div class="your-stats__name">@' + player.twitter_handle + '</div>'
+        + '<div class="your-stats__sub">House ' + h.name + (player.community_tag ? ' &middot; ' + player.community_tag : '') + '</div>'
+        + '</div></div>'
+        + '<div class="your-stats__grid">'
+        + '<div class="your-stat"><div class="your-stat__val">' + todayPts + '</div><div class="your-stat__label">TODAY PTS</div></div>'
+        + '<div class="your-stat"><div class="your-stat__val">' + (player.seasonal_points || 0) + '</div><div class="your-stat__label">SEASON</div></div>'
+        + '<div class="your-stat"><div class="your-stat__val">' + todayRank + '</div><div class="your-stat__label">TODAY RANK</div></div>'
+        + '<div class="your-stat"><div class="your-stat__val">' + (player.mana != null ? player.mana : 5) + '/5</div><div class="your-stat__label">MANA</div></div>'
+        + '</div>';
+      el.classList.add('active');
+    }
+
+    // ═══ RENDER COMMUNITY RACE ═══
+    function renderCommunityRace(communities) {
+      var el = document.getElementById('communityRace');
+      if (!communities || communities.length === 0) {
+        el.innerHTML = '<div class="race-empty">No community activity today yet. Rep your tag and be first!</div>';
+        return;
+      }
+
+      var maxPts = communities[0].today_points || 1;
+      var html = '';
+
+      communities.forEach(function(c, i) {
+        var rankClass = i === 0 ? 'race-rank--1' : i === 1 ? 'race-rank--2' : i === 2 ? 'race-rank--3' : 'race-rank--other';
+        var barClass = i === 0 ? '' : i === 1 ? 'race-bar--2' : i === 2 ? 'race-bar--3' : 'race-bar--other';
+        var pct = Math.max(3, (c.today_points / maxPts) * 100);
+
+        html += '<div class="race-row">'
+          + '<div class="race-rank ' + rankClass + '">' + (i + 1) + '</div>'
+          + '<div class="race-tag">' + c.community_tag + '</div>'
+          + '<div class="race-bar-wrap"><div class="race-bar ' + barClass + '" style="width:' + pct + '%;"></div></div>'
+          + '<div class="race-pts">' + c.today_points + ' PTS</div>'
+          + '<div class="race-members">' + c.member_count + ' wiz</div>'
+          + '</div>';
+      });
+
+      el.innerHTML = html;
+
+      // Animate bars in
+      setTimeout(function() {
+        var bars = el.querySelectorAll('.race-bar');
+        bars.forEach(function(b) { b.style.width = b.style.width; });
+      }, 100);
+    }
+
+    // ═══ RENDER HOUSE CHART ═══
+    function renderHouseChart(history) {
+      var canvas = document.getElementById('houseChart');
+      var ctx = canvas.getContext('2d');
+      var wrap = canvas.parentElement;
+      canvas.width = wrap.offsetWidth * 2;
+      canvas.height = 400;
+      var W = canvas.width;
+      var H = canvas.height;
+      var pad = { top: 20, right: 20, bottom: 40, left: 50 };
+
+      // Collect all house IDs that appear
+      var houseIds = {};
+      history.forEach(function(d) {
+        Object.keys(d.houses || {}).forEach(function(sid) { houseIds[sid] = true; });
+      });
+      var ids = Object.keys(houseIds).map(Number);
+
+      if (history.length < 2 || ids.length === 0) {
+        ctx.fillStyle = '#606070';
+        ctx.font = '24px Crimson Text';
+        ctx.textAlign = 'center';
+        ctx.fillText('More data needed for trend chart', W / 2, H / 2);
+        return;
+      }
+
+      // Find max value
+      var maxVal = 0;
+      history.forEach(function(d) {
+        ids.forEach(function(sid) {
+          var v = (d.houses || {})[sid] || 0;
+          if (v > maxVal) maxVal = v;
+        });
+      });
+      maxVal = Math.max(maxVal, 10);
+
+      var plotW = W - pad.left - pad.right;
+      var plotH = H - pad.top - pad.bottom;
+
+      // Draw grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      for (var i = 0; i <= 4; i++) {
+        var y = pad.top + (plotH / 4) * i;
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+        ctx.fillStyle = '#606070';
+        ctx.font = '18px JetBrains Mono';
+        ctx.textAlign = 'right';
+        ctx.fillText(Math.round(maxVal - (maxVal / 4) * i), pad.left - 8, y + 6);
+      }
+
+      // Draw date labels
+      ctx.fillStyle = '#606070';
+      ctx.font = '18px JetBrains Mono';
+      ctx.textAlign = 'center';
+      history.forEach(function(d, i) {
+        var x = pad.left + (plotW / (history.length - 1)) * i;
+        var label = d.date.slice(5); // MM-DD
+        ctx.fillText(label, x, H - 10);
+      });
+
+      // Draw lines for each house
+      ids.forEach(function(sid) {
+        var h = HOUSES[sid] || { color: '#888' };
+        ctx.strokeStyle = h.color;
+        ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+
+        history.forEach(function(d, i) {
+          var x = pad.left + (plotW / (history.length - 1)) * i;
+          var v = (d.houses || {})[sid] || 0;
+          var y = pad.top + plotH - (v / maxVal) * plotH;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Draw dots
+        ctx.fillStyle = h.color;
+        history.forEach(function(d, i) {
+          var x = pad.left + (plotW / (history.length - 1)) * i;
+          var v = (d.houses || {})[sid] || 0;
+          var y = pad.top + plotH - (v / maxVal) * plotH;
+          ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill();
+        });
+      });
+
+      // Legend
+      var legendEl = document.getElementById('chartLegend');
+      var legendHTML = '';
+      ids.forEach(function(sid) {
+        var h = HOUSES[sid] || { name: '?', color: '#888', img: '' };
+        legendHTML += '<div class="chart-legend-item">'
+          + '<div class="chart-legend-dot" style="background:' + h.color + ';"></div>'
+          + hImg(h.img, 12)
+          + ' ' + h.name
+          + '</div>';
+      });
+      legendEl.innerHTML = legendHTML;
+    }
+
+    // ═══ RENDER TOP PLAYERS ═══
+    function renderTopPlayers(players) {
+      var el = document.getElementById('topPlayers');
+      if (!players || players.length === 0) {
+        el.innerHTML = '<div class="feed-empty">No player activity today yet</div>';
+        return;
+      }
+
+      var maxPts = players[0].today_points || 1;
+      var myId = player ? player.id : null;
+      var html = '';
+
+      players.slice(0, 10).forEach(function(p, i) {
+        var h = HOUSES[p.school_id] || { img: '', name: '?' };
+        var rankClass = i === 0 ? 'tp-rank--1' : i === 1 ? 'tp-rank--2' : i === 2 ? 'tp-rank--3' : 'tp-rank--other';
+        var isYou = p.player_id === myId;
+        var rowClass = 'tp-row' + (isYou ? ' tp-row--you' : '');
+        var pct = Math.max(5, (p.today_points / maxPts) * 100);
+
+        html += '<div class="' + rowClass + '">'
+          + '<div class="tp-rank ' + rankClass + '">' + (i + 1) + '</div>'
+          + (p.profile_image ? '<img src="' + p.profile_image + '" class="tp-avatar">' : '<div class="tp-avatar" style="background:var(--bg-inset);display:flex;align-items:center;justify-content:center;">' + hImg(h.img, 18) + '</div>')
+          + '<div class="tp-info">'
+          + '  <div class="tp-handle">@' + (p.twitter_handle || 'anon') + (isYou ? ' (you)' : '') + '</div>'
+          + '  <div class="tp-meta">' + hImg(h.img, 12) + (p.community_tag ? '<span class="tp-meta-tag">' + p.community_tag + '</span>' : '') + '</div>'
+          + '</div>'
+          + '<div class="tp-bar-wrap"><div class="tp-bar" style="width:' + pct + '%;"></div></div>'
+          + '<div class="tp-pts">' + p.today_points + '</div>'
+          + '</div>';
+      });
+
+      el.innerHTML = html;
+    }
+
+    // ═══ RENDER LIVE FEED ═══
+    function renderFeed(actionsData) {
+      var el = document.getElementById('activityFeed');
+      if (!actionsData || Object.keys(actionsData).length === 0) {
+        el.innerHTML = '<div class="feed-empty">No activity today yet. Be the first to make a move.</div>';
+        return;
+      }
+
+      // Flatten all actions across zones
+      var allActions = [];
+      Object.keys(actionsData).forEach(function(zoneId) {
+        actionsData[zoneId].forEach(function(a) {
+          a._zone_id = parseInt(zoneId);
+          allActions.push(a);
+        });
+      });
+
+      // Sort by newest first
+      allActions.sort(function(a, b) {
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+
+      var html = '';
+      allActions.slice(0, 20).forEach(function(a) {
+        var p = a.player || {};
+        var h = HOUSES[p.school_id] || { img: '', name: '?' };
+        var itemClass = a.action_type === 'attack' ? 'feed-item--attack' : 'feed-item--defend';
+        var verb = a.action_type === 'attack' ? 'attacked' : 'defended';
+
+        html += '<div class="feed-item ' + itemClass + '">'
+          + (p.profile_image ? '<img src="' + p.profile_image + '" class="feed-avatar">' : '<div class="feed-avatar" style="background:var(--bg-inset);display:flex;align-items:center;justify-content:center;">' + hImg(h.img, 16) + '</div>')
+          + '<div class="feed-content">'
+          + '  <div class="feed-handle">@' + (p.twitter_handle || 'anon') + '</div>'
+          + '  <div class="feed-action">' + verb + ' a territory</div>'
+          + '</div>'
+          + '<span class="feed-time">' + timeAgo(a.created_at) + '</span>'
+          + '</div>';
+      });
+
+      el.innerHTML = html;
+    }
+
+    // ═══ LOAD ALL DATA ═══
+    async function loadWarRoom() {
+      try {
+        var playerId = getPlayerId();
+        var fetches = [
+          fetch('/api/leaderboards/today').then(function(r) { return r.json(); }),
+          fetch('/api/leaderboards/history').then(function(r) { return r.json(); }),
+          fetch('/api/territory/actions/today').then(function(r) { return r.json(); })
+        ];
+
+        if (playerId) {
+          fetches.push(fetch('/api/players/' + playerId).then(function(r) { return r.json(); }));
+        }
+
+        var results = await Promise.all(fetches);
+        var todayData = results[0] || {};
+        var historyData = results[1] || [];
+        var actionsData = results[2] || {};
+        player = results[3] || null;
+
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('wrContent').style.display = 'block';
+
+        if (player) renderYourStats(todayData);
+        renderCommunityRace(todayData.communities || []);
+        renderHouseChart(historyData);
+        renderTopPlayers(todayData.players || []);
+        renderFeed(actionsData);
+
+      } catch (e) {
+        console.error('War Room load error:', e);
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('wrContent').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-faint);font-style:italic;">Error loading war room data</div>';
+        document.getElementById('wrContent').style.display = 'block';
+      }
+    }
+
+    // Auto-refresh every 60 seconds
+    loadWarRoom();
+    setInterval(loadWarRoom, 60000);
+  </script>
+</body>
+</html>
