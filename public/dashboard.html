@@ -95,7 +95,7 @@
     .story-card__content {
       position: relative;
       z-index: 1;
-      padding: 18px 22px;
+      padding: 16px 14px;
     }
     .story-card__top {
       display: flex;
@@ -109,7 +109,7 @@
     .story-card__zone {
       font-family: var(--font-title);
       font-weight: 700;
-      font-size: 24px;
+      font-size: 20px;
       color: var(--text-bright);
       letter-spacing: 2px;
       margin: 8px 0;
@@ -117,7 +117,7 @@
     }
     .story-card__desc {
       font-family: var(--font-body);
-      font-size: 15px;
+      font-size: 14px;
       font-style: italic;
       color: var(--text-body);
       line-height: 1.6;
@@ -466,7 +466,7 @@
           + '    </div>'
           + '    <div class="story-card__body">'
           + '      <span class="label">Daily Narrative</span>'
-          + '      <h2 class="story-card__zone">' + (objective.name || 'Unknown Zone') + '</h2>'
+          + '      <h2 class="story-card__zone">' + (objective.narrative_title || objective.name || 'Unknown Zone') + '</h2>'
           + '      <p class="story-card__desc">' + (objective.description || 'A new chapter unfolds in the world of Avaloris.') + '</p>'
           + '      <div class="story-card__cta-text">Show up. Represent. Become part of the story.</div>'
           + '      <a href="' + tweetLink + '" target="_blank" class="btn-gold">𝕏 Join the Story</a>'

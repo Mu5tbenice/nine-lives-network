@@ -94,12 +94,13 @@ async function postMorningSituation() {
     const { data } = await client.v2.tweet(tweet);
     console.log('📖 Posted morning situation:', data.id);
 
-    // Store the tweet ID on the zone
+    // Store the tweet ID and narrative title on the zone
     await supabaseAdmin
       .from('zones')
       .update({
         objective_tweet_id: data.id,
-        objective_posted_at: new Date().toISOString()
+        objective_posted_at: new Date().toISOString(),
+        narrative_title: todaysNarrative.title
       })
       .eq('id', zone.id);
 

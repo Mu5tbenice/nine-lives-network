@@ -209,6 +209,9 @@ img { max-width: 100%; display: block; }
 
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 480px) {
-  .main-container { padding: 62px 12px 30px; }
-  .mana-orb { width: 19px; height: 19px; }
+  .main-container { padding: 62px 10px 30px; }
+  .mana-orb { width: 17px; height: 17px; }
+  .label { font-size: 8px; letter-spacing: 1px; }
+  .quick-btn__label { font-size: 7px; }
+  .stat-card { padding: 12px 6px; }
 }
