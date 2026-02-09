@@ -15,6 +15,115 @@
     .world-hero__title { font-family: var(--font-title); font-weight: 700; font-size: 24px; color: var(--gold); letter-spacing: 3px; }
     .world-hero__sub { font-family: var(--font-body); font-size: 15px; font-style: italic; color: var(--text-muted); margin-top: 4px; }
 
+    /* ═══ CRYSTAL TOWERS ═══ */
+    .towers-wrap {
+      background: rgba(255,255,255,0.015);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 14px;
+      padding: 12px 4px 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .towers-wrap::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 90%, rgba(212,166,75,0.06) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .towers-label {
+      font-family: var(--font-data); font-size: 7px; color: var(--text-faint);
+      letter-spacing: 2px; text-align: center; margin-bottom: 4px;
+    }
+    .towers-row {
+      display: flex; align-items: flex-end; justify-content: center;
+      gap: 4px; height: 240px; padding: 0 2px; position: relative; z-index: 1;
+    }
+    .tower-col {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 3px; flex: 1; max-width: 52px; min-width: 28px;
+    }
+    /* The orb at top of tower */
+    .tower-orb {
+      width: 10px; height: 10px; border-radius: 50%;
+      margin-bottom: -5px; z-index: 2; position: relative;
+      animation: towerOrbPulse 3s ease-in-out infinite;
+    }
+    .tower-col--you .tower-orb {
+      width: 12px; height: 12px;
+      animation: towerOrbPulse 2s ease-in-out infinite;
+    }
+    @keyframes towerOrbPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.3); }
+    }
+    /* The crystal body */
+    .tower-body {
+      width: 20px; border-radius: 3px 3px 2px 2px;
+      position: relative; overflow: hidden;
+      transition: height 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .tower-col--you .tower-body { width: 26px; }
+    .tower-shimmer {
+      position: absolute; top: 0; left: 35%; width: 2px; height: 100%;
+      animation: towerShimmer 2.5s ease-in-out infinite;
+    }
+    @keyframes towerShimmer { 0%,100% { opacity: 0.2; } 50% { opacity: 0.7; } }
+    /* Base glow */
+    .tower-base {
+      width: 28px; height: 3px; border-radius: 50%;
+    }
+    .tower-col--you .tower-base { width: 34px; }
+    /* Crest image */
+    .tower-crest {
+      width: 22px; height: 22px; object-fit: contain;
+      filter: drop-shadow(0 0 3px rgba(0,0,0,0.5));
+    }
+    .tower-col--you .tower-crest { width: 26px; height: 26px; }
+    /* Rank */
+    .tower-rank {
+      font-family: var(--font-data); font-size: 7px; letter-spacing: 0.5px;
+    }
+    /* Name */
+    .tower-name {
+      font-family: var(--font-title); font-size: 7px; color: #999;
+      text-align: center; line-height: 1; max-width: 52px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .tower-col--you .tower-name { font-weight: 700; }
+    /* Power */
+    .tower-pts {
+      font-family: var(--font-data); font-size: 7px; color: #777;
+    }
+    .tower-col--you .tower-pts { font-weight: 700; }
+    /* Ground line */
+    .towers-ground {
+      height: 1px; margin: 0 16px;
+      background: linear-gradient(90deg, transparent, rgba(212,166,75,0.2), transparent);
+    }
+    /* Your house badge */
+    .towers-you-badge {
+      display: flex; align-items: center; gap: 6px; justify-content: center;
+      margin-top: 8px; padding: 5px 12px;
+      background: rgba(255,200,0,0.04); border: 1px solid rgba(255,200,0,0.12);
+      border-radius: 6px; width: fit-content; margin-left: auto; margin-right: auto;
+    }
+    .towers-you-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      animation: towerOrbPulse 2s ease-in-out infinite;
+    }
+    .towers-you-text {
+      font-family: var(--font-data); font-size: 7px; letter-spacing: 1px;
+    }
+    @media (max-width: 380px) {
+      .towers-row { gap: 2px; height: 200px; }
+      .tower-body { width: 16px; }
+      .tower-col--you .tower-body { width: 20px; }
+      .tower-crest { width: 18px; height: 18px; }
+      .tower-col--you .tower-crest { width: 22px; height: 22px; }
+      .tower-name { font-size: 6px; max-width: 38px; }
+      .tower-pts { font-size: 6px; }
+    }
+
     /* Player bar */
     .player-bar {
       display: flex; align-items: center; justify-content: space-between;
@@ -31,9 +140,7 @@
     .player-bar__mana-label { font-family: var(--font-data); font-size: 8px; color: var(--text-muted); letter-spacing: 1px; }
 
     /* Sort/filter bar */
-    .sort-bar {
-      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-    }
+    .sort-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .sort-btn {
       padding: 7px 14px; border: 1px solid var(--border-subtle); border-radius: 6px;
       background: var(--bg-card); color: var(--text-muted);
@@ -45,7 +152,6 @@
 
     /* Zone card */
     .zone-grid { display: flex; flex-direction: column; gap: 8px; }
-
     .zone-card {
       background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px;
       padding: 16px; cursor: pointer; transition: all 0.2s;
@@ -53,44 +159,24 @@
     .zone-card:hover { border-color: var(--border-medium); background: var(--bg-card-hover); }
     .zone-card--objective { border-color: var(--gold-border); box-shadow: 0 0 15px var(--gold-glow); }
     .zone-card--bonus { border-color: rgba(0, 212, 255, 0.2); }
-
     .zone-card__top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
     .zone-card__info { flex: 1; }
     .zone-card__name { font-family: var(--font-title); font-size: 15px; font-weight: 700; color: var(--text-bright); letter-spacing: 0.5px; }
     .zone-card__desc { font-family: var(--font-body); font-size: 13px; color: var(--text-faint); margin-top: 2px; }
     .zone-card__badges { display: flex; gap: 4px; flex-shrink: 0; margin-left: 8px; }
-    .zone-badge {
-      font-family: var(--font-data); font-size: 7px; padding: 3px 8px;
-      border-radius: 4px; letter-spacing: 0.5px;
-    }
+    .zone-badge { font-family: var(--font-data); font-size: 7px; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.5px; }
     .zone-badge--objective { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-border); }
     .zone-badge--bonus { background: rgba(0, 212, 255, 0.08); color: var(--cyan); border: 1px solid rgba(0, 212, 255, 0.2); }
     .zone-badge--controlled { padding: 3px 6px; display: flex; align-items: center; gap: 4px; background: var(--bg-inset); border: 1px solid var(--border-subtle); }
     .zone-badge--controlled img { width: 12px; height: 12px; object-fit: contain; }
-
-    /* Influence bar */
     .zone-card__influence { margin-bottom: 10px; }
-    .influence-bar {
-      height: 8px; border-radius: 4px; background: rgba(255,255,255,0.04);
-      overflow: hidden; display: flex;
-    }
-    .influence-segment {
-      height: 100%; transition: width 0.6s ease;
-    }
-    .influence-labels {
-      display: flex; justify-content: space-between; margin-top: 4px;
-    }
-    .influence-label {
-      display: flex; align-items: center; gap: 3px;
-      font-family: var(--font-data); font-size: 7px; color: var(--text-faint);
-    }
+    .influence-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.04); overflow: hidden; display: flex; }
+    .influence-segment { height: 100%; transition: width 0.6s ease; }
+    .influence-labels { display: flex; justify-content: space-between; margin-top: 4px; }
+    .influence-label { display: flex; align-items: center; gap: 3px; font-family: var(--font-data); font-size: 7px; color: var(--text-faint); }
     .influence-label img { width: 10px; height: 10px; object-fit: contain; }
-
-    /* Zone footer: actions count + buttons */
     .zone-card__footer { display: flex; align-items: center; justify-content: space-between; }
-    .zone-card__activity {
-      font-family: var(--font-mono); font-size: 10px; color: var(--text-faint);
-    }
+    .zone-card__activity { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }
     .zone-card__actions { display: flex; gap: 6px; }
     .zone-action-btn {
       padding: 8px 16px; border-radius: 6px; border: none;
@@ -114,39 +200,24 @@
       border: 1px solid var(--border-subtle); border-bottom: none;
       animation: slideUpModal 0.3s ease;
     }
-    @keyframes slideUpModal {
-      from { transform: translateY(100%); } to { transform: translateY(0); }
-    }
+    @keyframes slideUpModal { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .zone-modal__header {
       padding: 20px 20px 14px; border-bottom: 1px solid var(--border-subtle);
       display: flex; align-items: flex-start; justify-content: space-between;
     }
     .zone-modal__title { font-family: var(--font-title); font-size: 18px; font-weight: 700; color: var(--text-bright); letter-spacing: 1px; }
     .zone-modal__desc { font-family: var(--font-body); font-size: 13px; color: var(--text-faint); margin-top: 2px; }
-    .zone-modal__close {
-      background: none; border: none; color: var(--text-faint); font-size: 20px;
-      cursor: pointer; padding: 0 4px; line-height: 1;
-    }
+    .zone-modal__close { background: none; border: none; color: var(--text-faint); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1; }
     .zone-modal__body { padding: 16px 20px 24px; }
-
     .zone-modal__influence { margin-bottom: 16px; }
-    .zone-modal__influence-title {
-      font-family: var(--font-data); font-size: 8px; color: var(--text-muted);
-      letter-spacing: 1px; margin-bottom: 8px;
-    }
-    .modal-influence-row {
-      display: flex; align-items: center; gap: 8px; padding: 6px 0;
-    }
+    .zone-modal__influence-title { font-family: var(--font-data); font-size: 8px; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 8px; }
+    .modal-influence-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
     .modal-influence-row img { width: 18px; height: 18px; object-fit: contain; }
     .modal-influence-name { font-family: var(--font-title); font-size: 12px; font-weight: 600; color: var(--text-bright); min-width: 90px; }
     .modal-influence-bar { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.04); overflow: hidden; }
     .modal-influence-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
     .modal-influence-pct { font-family: var(--font-data); font-size: 9px; color: var(--text-muted); min-width: 32px; text-align: right; }
-
-    .zone-modal__actions-title {
-      font-family: var(--font-data); font-size: 8px; color: var(--text-muted);
-      letter-spacing: 1px; margin-bottom: 8px;
-    }
+    .zone-modal__actions-title { font-family: var(--font-data); font-size: 8px; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 8px; }
     .modal-action-row {
       display: flex; align-items: center; gap: 10px;
       padding: 10px 12px; background: var(--bg-inset); border-radius: 8px; margin-bottom: 4px;
@@ -182,8 +253,8 @@
 </head>
 <body>
 
-  <nav class="top-nav"><div class="top-nav-content"><a href="/" class="nav-logo">Nine Lives Network</a><ul class="nav-links"><li><a href="/dashboard.html">Dashboard</a></li><li><a href="/map.html" class="active">World</a></li><li><a href="/leaderboards.html">Leaderboards</a></li><li><a href="/arena.html">Arena</a></li><li><a href="/how-to-play.html">Help</a></li></ul><button class="hamburger" id="hamburger" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button></div></nav>
-  <div class="mobile-menu" id="mobileMenu"><a href="/dashboard.html">Dashboard</a><a href="/map.html" class="active">World</a><a href="/leaderboards.html">Leaderboards</a><a href="/warroom.html">War Room</a><a href="/arena.html">Arena</a><a href="/how-to-play.html">Help</a></div>
+  <nav class="top-nav"><div class="top-nav-content"><a href="/" class="nav-logo">Nine Lives Network</a><ul class="nav-links"><li><a href="/dashboard.html">Dashboard</a></li><li><a href="/map.html" class="active">World</a></li><li><a href="/leaderboards.html">Leaderboards</a></li><li><a href="/arena.html">Arena</a></li><li><a href="/how-to-play.html">Help</a></li><li id="navLogout" style="display:none;"><a href="#" class="logout-btn" onclick="doLogout()">Logout</a></li></ul><button class="hamburger" id="hamburger" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button></div></nav>
+  <div class="mobile-menu" id="mobileMenu"><a href="/dashboard.html">Dashboard</a><a href="/map.html" class="active">World</a><a href="/leaderboards.html">Leaderboards</a><a href="/arena.html">Arena</a><a href="/how-to-play.html">Help</a><a href="#" class="logout-btn" id="mobileLogout" style="display:none;" onclick="doLogout()">🚪 Logout</a></div>
 
   <div class="main-container">
 
@@ -194,6 +265,14 @@
 
     <!-- Player bar -->
     <div class="player-bar fade-up fade-up-1" id="playerBar" style="display:none;"></div>
+
+    <!-- Crystal Towers -->
+    <div class="towers-wrap fade-up fade-up-1" id="towersWrap" style="display:none;">
+      <div class="towers-label">HOUSE POWER</div>
+      <div class="towers-row" id="towersRow"></div>
+      <div class="towers-ground"></div>
+      <div class="towers-you-badge" id="towersYouBadge" style="display:none;"></div>
+    </div>
 
     <!-- Sort -->
     <div class="sort-bar fade-up fade-up-2">
@@ -231,15 +310,15 @@
 
   <script>
     var HOUSES = {
-      1: { name: 'Smoulders', color: '#E03C31', img: 'Housesmoulders.png' },
-      2: { name: 'Darktide', color: '#00B4D8', img: 'Housedarktide.png' },
-      3: { name: 'Stonebark', color: '#5CB338', img: 'Housestonebark.png' },
-      4: { name: 'Ashenvale', color: '#90E0EF', img: 'HouseAshenvale.png' },
-      5: { name: 'Stormrage', color: '#FFC800', img: 'Housestormrage.png' },
-      6: { name: 'Nighthollow', color: '#7B2D8E', img: 'Housenighthollow.png' },
-      7: { name: 'Dawnbringer', color: '#FF8C00', img: 'HouseDwnbringer.png' },
-      8: { name: 'Manastorm', color: '#5B8FE0', img: 'Housemanastorm.png' },
-      9: { name: 'Plaguemire', color: '#E84393', img: 'Houseplaguemire.png' }
+      1: { name: 'Smoulders', color: '#E03C31', glow: '#ff6b5b', img: 'Housesmoulders.png' },
+      2: { name: 'Darktide', color: '#00B4D8', glow: '#4de8ff', img: 'Housedarktide.png' },
+      3: { name: 'Stonebark', color: '#5CB338', glow: '#8aef5a', img: 'Housestonebark.png' },
+      4: { name: 'Ashenvale', color: '#90E0EF', glow: '#b8f0ff', img: 'HouseAshenvale.png' },
+      5: { name: 'Stormrage', color: '#FFC800', glow: '#ffe566', img: 'Housestormrage.png' },
+      6: { name: 'Nighthollow', color: '#7B2D8E', glow: '#c066dd', img: 'Housenighthollow.png' },
+      7: { name: 'Dawnbringer', color: '#FF8C00', glow: '#ffb84d', img: 'HouseDwnbringer.png' },
+      8: { name: 'Manastorm', color: '#5B8FE0', glow: '#8bb8ff', img: 'Housemanastorm.png' },
+      9: { name: 'Plaguemire', color: '#E84393', glow: '#ff7ab8', img: 'Houseplaguemire.png' }
     };
 
     var zones = [];
@@ -252,6 +331,13 @@
     function toggleMobileMenu() {
       document.getElementById('hamburger').classList.toggle('active');
       document.getElementById('mobileMenu').classList.toggle('active');
+    }
+    function doLogout() { localStorage.removeItem('player_id'); window.location.href = '/'; }
+    if (localStorage.getItem('player_id')) {
+      var nl = document.getElementById('navLogout');
+      var ml = document.getElementById('mobileLogout');
+      if (nl) nl.style.display = '';
+      if (ml) ml.style.display = '';
     }
 
     function hImg(filename, size) {
@@ -274,10 +360,87 @@
       return Math.floor(diff / 86400) + 'd ago';
     }
 
-    // ═══ GET PLAYER ═══
     function getPlayerId() {
       var params = new URLSearchParams(window.location.search);
       return params.get('player_id') || localStorage.getItem('player_id');
+    }
+
+    // ═══════════════════════════════════
+    // CRYSTAL TOWERS
+    // ═══════════════════════════════════
+    function renderTowers(schoolData) {
+      if (!schoolData || schoolData.length === 0) return;
+
+      // Sort by total points descending
+      var sorted = schoolData.slice().sort(function(a, b) { return (b.total_points || 0) - (a.total_points || 0); });
+      var maxPts = sorted[0].total_points || 1;
+      var mySchoolId = player ? player.school_id : null;
+      var rankColors = ['#FFD700', '#C0C0C0', '#CD7F32'];
+
+      var row = document.getElementById('towersRow');
+      var html = '';
+
+      sorted.forEach(function(s, i) {
+        var h = HOUSES[s.school_id];
+        if (!h) return;
+        var isYou = s.school_id === mySchoolId;
+        var heightPct = (s.total_points || 0) / maxPts;
+        var towerH = Math.max(20, 30 + heightPct * 160);
+        var colClass = 'tower-col' + (isYou ? ' tower-col--you' : '');
+        var rc = i < 3 ? rankColors[i] : '#555';
+
+        html += '<div class="' + colClass + '" style="animation-delay:' + (i * 0.06) + 's;">'
+          // Orb
+          + '<div class="tower-orb" style="background:' + h.glow + ';box-shadow:0 0 ' + (isYou ? 16 : 8) + 'px ' + h.glow + ',0 0 ' + (isYou ? 30 : 14) + 'px ' + h.color + '50;animation-delay:' + (i * 0.3) + 's;"></div>'
+          // Tower body
+          + '<div class="tower-body" style="height:' + towerH + 'px;background:linear-gradient(180deg,' + h.glow + '35 0%,' + h.color + ' 30%,' + h.color + '90 70%,' + h.color + '35 100%);border:1px solid ' + h.glow + '50;box-shadow:' + (isYou ? '0 0 18px ' + h.color + '50,inset 0 0 12px ' + h.glow + '25' : '0 0 6px ' + h.color + '25,inset 0 0 6px ' + h.glow + '12') + ';">'
+          + '<div class="tower-shimmer" style="background:linear-gradient(180deg,transparent,' + h.glow + '40,transparent);"></div>'
+          + '</div>'
+          // Base
+          + '<div class="tower-base" style="background:linear-gradient(90deg,transparent,' + h.color + '50,transparent);"></div>'
+          // Crest
+          + '<img src="/assets/images/houses/' + h.img + '" class="tower-crest" onerror="this.style.display=\'none\'">'
+          // Rank
+          + '<div class="tower-rank" style="color:' + rc + ';">#' + (i + 1) + '</div>'
+          // Name
+          + '<div class="tower-name" style="color:' + (isYou ? h.glow : '#999') + ';">' + h.name + '</div>'
+          // Points
+          + '<div class="tower-pts" style="color:' + (isYou ? h.glow : '#777') + ';">' + (s.total_points || 0) + '</div>'
+          + '</div>';
+      });
+
+      // Fill empty houses (no points yet)
+      var shown = {};
+      sorted.forEach(function(s) { shown[s.school_id] = true; });
+      var rank = sorted.length;
+      for (var id = 1; id <= 9; id++) {
+        if (!shown[id]) {
+          var h = HOUSES[id];
+          var isYou = id === mySchoolId;
+          rank++;
+          html += '<div class="tower-col' + (isYou ? ' tower-col--you' : '') + '">'
+            + '<div class="tower-orb" style="background:' + h.glow + '60;box-shadow:0 0 4px ' + h.glow + '40;"></div>'
+            + '<div class="tower-body" style="height:20px;background:' + h.color + '40;border:1px solid ' + h.color + '30;opacity:0.4;"></div>'
+            + '<div class="tower-base" style="background:linear-gradient(90deg,transparent,' + h.color + '30,transparent);"></div>'
+            + '<img src="/assets/images/houses/' + h.img + '" class="tower-crest" style="opacity:0.4;" onerror="this.style.display=\'none\'">'
+            + '<div class="tower-rank" style="color:#444;">-</div>'
+            + '<div class="tower-name" style="color:#555;">' + h.name + '</div>'
+            + '<div class="tower-pts" style="color:#444;">0</div>'
+            + '</div>';
+        }
+      }
+
+      row.innerHTML = html;
+      document.getElementById('towersWrap').style.display = 'block';
+
+      // Your house badge
+      if (mySchoolId) {
+        var myHouse = HOUSES[mySchoolId];
+        var badge = document.getElementById('towersYouBadge');
+        badge.innerHTML = '<div class="towers-you-dot" style="background:' + myHouse.color + ';box-shadow:0 0 6px ' + myHouse.glow + ';"></div>'
+          + '<span class="towers-you-text" style="color:' + myHouse.glow + ';">YOUR HOUSE: ' + myHouse.name.toUpperCase() + '</span>';
+        badge.style.display = 'flex';
+      }
     }
 
     // ═══ RENDER PLAYER BAR ═══
@@ -285,13 +448,11 @@
       if (!player) return;
       var h = HOUSES[player.school_id] || { name: '?', color: '#888', img: '' };
       var bar = document.getElementById('playerBar');
-
       var manaHTML = '';
       var mana = player.mana != null ? player.mana : 5;
       for (var i = 0; i < 5; i++) {
         manaHTML += '<div class="mana-orb' + (i < mana ? ' mana-orb--filled' : '') + '" style="width:14px;height:14px;"></div>';
       }
-
       bar.innerHTML = '<div class="player-bar__left">'
         + (player.profile_image ? '<img src="' + player.profile_image + '" class="player-bar__avatar">' : '')
         + '<div>'
@@ -305,52 +466,35 @@
       bar.style.display = 'flex';
     }
 
-    // ═══ GET ZONE ACTIVITY COUNT ═══
-    function getZoneActivity(zoneId) {
-      return actionsToday[zoneId] ? actionsToday[zoneId].length : 0;
-    }
+    function getZoneActivity(zoneId) { return actionsToday[zoneId] ? actionsToday[zoneId].length : 0; }
 
-    // ═══ GET TOP HOUSE FOR ZONE ═══
     function getTopHouse(zoneId) {
       var inf = influence[zoneId];
       if (!inf) return null;
       var topId = null; var topPct = 0;
-      Object.keys(inf).forEach(function(sid) {
-        if (inf[sid] > topPct) { topPct = inf[sid]; topId = parseInt(sid); }
-      });
+      Object.keys(inf).forEach(function(sid) { if (inf[sid] > topPct) { topPct = inf[sid]; topId = parseInt(sid); } });
       return topId ? { id: topId, pct: topPct } : null;
     }
 
-    // ═══ RENDER INFLUENCE BAR ═══
     function renderInfluenceBar(zoneId) {
       var inf = influence[zoneId];
       if (!inf || Object.keys(inf).length === 0) {
         return '<div class="influence-bar"><div style="width:100%;background:rgba(255,255,255,0.04);"></div></div>';
       }
-
-      var segments = '';
-      var labels = '';
-      var entries = [];
+      var segments = ''; var labels = ''; var entries = [];
       Object.keys(inf).forEach(function(sid) { entries.push({ id: parseInt(sid), pct: inf[sid] }); });
       entries.sort(function(a, b) { return b.pct - a.pct; });
-
       entries.forEach(function(e) {
         var h = HOUSES[e.id] || { color: '#888', img: '' };
         segments += '<div class="influence-segment" style="width:' + e.pct + '%;background:' + h.color + ';"></div>';
       });
-
-      // Show top 3 labels
-      var topEntries = entries.slice(0, 3);
-      topEntries.forEach(function(e) {
+      entries.slice(0, 3).forEach(function(e) {
         var h = HOUSES[e.id] || { name: '?', img: '' };
         labels += '<div class="influence-label">' + hImg(h.img, 10) + ' ' + e.pct + '%</div>';
       });
-
-      return '<div class="influence-bar">' + segments + '</div>'
-        + '<div class="influence-labels">' + labels + '</div>';
+      return '<div class="influence-bar">' + segments + '</div><div class="influence-labels">' + labels + '</div>';
     }
 
-    // ═══ SORT ZONES ═══
     function sortZones(type) {
       currentSort = type;
       var btns = document.querySelectorAll('.sort-btn');
@@ -373,15 +517,12 @@
         sorted.sort(function(a, b) {
           if (a.is_current_objective && !b.is_current_objective) return -1;
           if (!a.is_current_objective && b.is_current_objective) return 1;
-          var aBonus = a.bonus_effect && a.bonus_effect.includes('+50%') ? 1 : 0;
-          var bBonus = b.bonus_effect && b.bonus_effect.includes('+50%') ? 1 : 0;
-          return bBonus - aBonus;
+          return 0;
         });
       } else if (currentSort === 'bonus') {
         sorted.sort(function(a, b) {
-          var aBonus = a.bonus_effect ? 1 : 0;
-          var bBonus = b.bonus_effect ? 1 : 0;
-          if (bBonus !== aBonus) return bBonus - aBonus;
+          var aB = a.bonus_effect ? 1 : 0; var bB = b.bonus_effect ? 1 : 0;
+          if (bB !== aB) return bB - aB;
           return getZoneActivity(b.id) - getZoneActivity(a.id);
         });
       } else if (currentSort === 'alpha') {
@@ -390,12 +531,10 @@
       return sorted;
     }
 
-    // ═══ RENDER ZONE GRID ═══
     function renderZoneGrid() {
       var sorted = getSortedZones();
       var grid = document.getElementById('zoneGrid');
       var html = '';
-
       sorted.forEach(function(z) {
         var isObjective = z.is_current_objective;
         var isBonus = z.bonus_effect && z.bonus_effect.includes('+50%');
@@ -405,17 +544,13 @@
         var cardClass = 'zone-card fade-up';
         if (isObjective) cardClass += ' zone-card--objective';
         else if (isBonus) cardClass += ' zone-card--bonus';
-
-        // Badges
         var badges = '';
         if (isObjective) badges += '<span class="zone-badge zone-badge--objective">OBJECTIVE</span>';
         if (isBonus) badges += '<span class="zone-badge zone-badge--bonus">BONUS</span>';
         if (topHouse && topHouse.pct >= 50) {
-          var th = HOUSES[topHouse.id] || { img: '', name: '?' };
+          var th = HOUSES[topHouse.id] || { img: '' };
           badges += '<span class="zone-badge zone-badge--controlled">' + hImg(th.img, 12) + '</span>';
         }
-
-        // Action buttons
         var btnsHTML = '';
         if (!player) {
           btnsHTML = '<a href="/register.html" class="zone-action-btn zone-action-btn--attack" style="text-decoration:none;font-size:8px;">JOIN TO PLAY</a>';
@@ -427,41 +562,31 @@
           btnsHTML = '<button class="zone-action-btn zone-action-btn--attack" onclick="event.stopPropagation();doAction(' + z.id + ',\'attack\')">ATTACK</button>'
             + '<button class="zone-action-btn zone-action-btn--defend" onclick="event.stopPropagation();doAction(' + z.id + ',\'defend\')">DEFEND</button>';
         }
-
         html += '<div class="' + cardClass + '" onclick="openZoneModal(' + z.id + ')">'
-          + '<div class="zone-card__top">'
-          + '  <div class="zone-card__info">'
-          + '    <div class="zone-card__name">' + z.name + '</div>'
-          + '    <div class="zone-card__desc">' + z.description + '</div>'
-          + '  </div>'
-          + '  <div class="zone-card__badges">' + badges + '</div>'
-          + '</div>'
+          + '<div class="zone-card__top"><div class="zone-card__info">'
+          + '<div class="zone-card__name">' + z.name + '</div>'
+          + '<div class="zone-card__desc">' + z.description + '</div>'
+          + '</div><div class="zone-card__badges">' + badges + '</div></div>'
           + '<div class="zone-card__influence">' + renderInfluenceBar(z.id) + '</div>'
           + '<div class="zone-card__footer">'
-          + '  <span class="zone-card__activity">' + activity + ' action' + (activity !== 1 ? 's' : '') + ' today</span>'
-          + '  <div class="zone-card__actions">' + btnsHTML + '</div>'
-          + '</div>'
-          + '</div>';
+          + '<span class="zone-card__activity">' + activity + ' action' + (activity !== 1 ? 's' : '') + ' today</span>'
+          + '<div class="zone-card__actions">' + btnsHTML + '</div>'
+          + '</div></div>';
       });
-
       grid.innerHTML = html;
       document.getElementById('zoneCount').textContent = sorted.length + ' zones';
     }
 
-    // ═══ ATTACK / DEFEND ═══
     async function doAction(zoneId, actionType) {
       if (!player || player.mana < 1) return;
       if (playerActedZones[zoneId]) return;
-
       try {
         var res = await fetch('/api/territory/action', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ player_id: player.id, zone_id: zoneId, action_type: actionType })
         });
-
         var data = await res.json();
-
         if (res.ok && data.success) {
           player.mana = data.mana_remaining;
           playerActedZones[zoneId] = true;
@@ -469,75 +594,48 @@
           var msg = (actionType === 'attack' ? 'Attack' : 'Defend') + ' +' + pts + ' pts';
           if (data.multiplier > 1) msg += ' (x' + data.multiplier + ' bonus)';
           showToast(msg, 'success');
-
-          // Update influence locally
           if (!influence[zoneId]) influence[zoneId] = {};
           if (!influence[zoneId][player.school_id]) influence[zoneId][player.school_id] = 0;
           influence[zoneId][player.school_id] += (actionType === 'attack' ? 20 : 10);
-
-          // Recalculate percentages for this zone
           var total = 0;
           Object.values(influence[zoneId]).forEach(function(v) { total += v; });
           Object.keys(influence[zoneId]).forEach(function(sid) {
             influence[zoneId][sid] = Math.round((influence[zoneId][sid] / total) * 100);
           });
-
-          // Add to local actions
           if (!actionsToday[zoneId]) actionsToday[zoneId] = [];
           actionsToday[zoneId].unshift({
             player: { id: player.id, twitter_handle: player.twitter_handle, profile_image: player.profile_image, school_id: player.school_id },
-            action_type: actionType,
-            created_at: new Date().toISOString()
+            action_type: actionType, created_at: new Date().toISOString()
           });
-
           renderPlayerBar();
           renderZoneGrid();
-        } else {
-          showToast(data.error || 'Action failed', 'error');
-        }
-      } catch (e) {
-        console.error(e);
-        showToast('Connection error', 'error');
-      }
+        } else { showToast(data.error || 'Action failed', 'error'); }
+      } catch (e) { console.error(e); showToast('Connection error', 'error'); }
     }
 
-    // ═══ ZONE MODAL ═══
     function openZoneModal(zoneId) {
       var zone = zones.find(function(z) { return z.id === zoneId; });
       if (!zone) return;
-
       document.getElementById('modalTitle').textContent = zone.name;
       document.getElementById('modalDesc').textContent = zone.description + (zone.bonus_effect ? ' — ' + zone.bonus_effect : '');
-
       var body = '';
-
-      // Influence breakdown
       var inf = influence[zoneId];
-      body += '<div class="zone-modal__influence">';
-      body += '<div class="zone-modal__influence-title">HOUSE INFLUENCE</div>';
-
+      body += '<div class="zone-modal__influence"><div class="zone-modal__influence-title">HOUSE INFLUENCE</div>';
       if (inf && Object.keys(inf).length > 0) {
         var entries = [];
         Object.keys(inf).forEach(function(sid) { entries.push({ id: parseInt(sid), pct: inf[sid] }); });
         entries.sort(function(a, b) { return b.pct - a.pct; });
         entries.forEach(function(e) {
           var h = HOUSES[e.id] || { name: '?', color: '#888', img: '' };
-          body += '<div class="modal-influence-row">'
-            + hImg(h.img, 18)
+          body += '<div class="modal-influence-row">' + hImg(h.img, 18)
             + '<span class="modal-influence-name">' + h.name + '</span>'
             + '<div class="modal-influence-bar"><div class="modal-influence-fill" style="width:' + e.pct + '%;background:' + h.color + ';"></div></div>'
-            + '<span class="modal-influence-pct">' + e.pct + '%</span>'
-            + '</div>';
+            + '<span class="modal-influence-pct">' + e.pct + '%</span></div>';
         });
-      } else {
-        body += '<div class="modal-empty">No activity yet — be the first!</div>';
-      }
+      } else { body += '<div class="modal-empty">No activity yet — be the first!</div>'; }
       body += '</div>';
-
-      // Today's actions
       var actions = actionsToday[zoneId] || [];
       body += '<div class="zone-modal__actions-title">TODAY\'S ACTIONS (' + actions.length + ')</div>';
-
       if (actions.length > 0) {
         actions.forEach(function(a) {
           var p = a.player || {};
@@ -546,28 +644,17 @@
           var typeLabel = a.action_type === 'attack' ? 'ATTACK' : 'DEFEND';
           body += '<div class="modal-action-row">'
             + (p.profile_image ? '<img src="' + p.profile_image + '" class="modal-action-avatar">' : '<div class="modal-action-avatar" style="background:var(--bg-inset);display:flex;align-items:center;justify-content:center;">' + hImg(h.img, 16) + '</div>')
-            + '<div class="modal-action-info">'
-            + '  <div class="modal-action-name">@' + (p.twitter_handle || 'unknown') + '</div>'
-            + '  <span class="modal-action-type ' + typeClass + '">' + typeLabel + '</span>'
-            + '</div>'
-            + '<span class="modal-action-time">' + timeAgo(a.created_at) + '</span>'
-            + '</div>';
+            + '<div class="modal-action-info"><div class="modal-action-name">@' + (p.twitter_handle || 'unknown') + '</div>'
+            + '<span class="modal-action-type ' + typeClass + '">' + typeLabel + '</span></div>'
+            + '<span class="modal-action-time">' + timeAgo(a.created_at) + '</span></div>';
         });
-      } else {
-        body += '<div class="modal-empty">No actions yet today</div>';
-      }
-
+      } else { body += '<div class="modal-empty">No actions yet today</div>'; }
       document.getElementById('modalBody').innerHTML = body;
       document.getElementById('zoneModalOverlay').classList.add('active');
     }
 
-    function closeModal() {
-      document.getElementById('zoneModalOverlay').classList.remove('active');
-    }
-
-    document.getElementById('zoneModalOverlay').addEventListener('click', function(e) {
-      if (e.target.id === 'zoneModalOverlay') closeModal();
-    });
+    function closeModal() { document.getElementById('zoneModalOverlay').classList.remove('active'); }
+    document.getElementById('zoneModalOverlay').addEventListener('click', function(e) { if (e.target.id === 'zoneModalOverlay') closeModal(); });
 
     // ═══ LOAD DATA ═══
     async function loadWorld() {
@@ -576,24 +663,22 @@
         var fetches = [
           fetch('/api/zones').then(function(r) { return r.json(); }),
           fetch('/api/territory/actions/today').then(function(r) { return r.json(); }),
-          fetch('/api/territory/influence').then(function(r) { return r.json(); })
+          fetch('/api/territory/influence').then(function(r) { return r.json(); }),
+          fetch('/api/leaderboards/schools').then(function(r) { return r.json(); })
         ];
-
         if (playerId) {
           fetches.push(fetch('/api/players/' + playerId).then(function(r) { return r.json(); }));
         }
-
         var results = await Promise.all(fetches);
         zones = results[0] || [];
         actionsToday = results[1] || {};
         influence = results[2] || {};
-        player = results[3] || null;
+        var schoolData = results[3] || [];
+        player = results[4] || null;
 
-        // Track which zones player already acted on
         if (player) {
           Object.keys(actionsToday).forEach(function(zoneId) {
-            var zoneActions = actionsToday[zoneId];
-            zoneActions.forEach(function(a) {
+            actionsToday[zoneId].forEach(function(a) {
               var p = a.player || {};
               if (p.id === player.id) playerActedZones[zoneId] = true;
             });
@@ -601,11 +686,12 @@
           renderPlayerBar();
         }
 
+        // Render towers
+        renderTowers(schoolData);
+
         var loader = document.getElementById('loadingState');
         if (loader) loader.style.display = 'none';
-
         renderZoneGrid();
-
       } catch (e) {
         console.error('World load error:', e);
         var loader = document.getElementById('loadingState');
