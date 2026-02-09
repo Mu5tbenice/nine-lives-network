@@ -756,8 +756,8 @@
     }
 
     .fighter-name {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
       color: #fff;
     }
 
@@ -1133,7 +1133,8 @@
     }
 
     .attacker-name {
-      font-size: 0.8rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
       color: #fff;
     }
 
@@ -1231,8 +1232,8 @@
     }
 
     .profile-mini-name {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.3rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
       color: #fff;
       margin-bottom: 4px;
     }
@@ -1404,7 +1405,8 @@
     }
 
     .profile-card-handle {
-      font-size: 0.85rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
       color: #1da1f2;
       margin-bottom: 8px;
     }
@@ -2325,7 +2327,7 @@
             </div>
             <div class="activity-content">
               <div class="activity-text">
-                <a href="#" onclick="openProfileModal(${action.player_id}); return false;" style="color: #00D4FF; text-decoration: none;">@${playerName}</a>
+                <a href="#" onclick="openProfileModal(${action.player_id}); return false;" style="color: #00D4FF; text-decoration: none; font-family: 'JetBrains Mono', monospace; font-size: 12px;">@${playerName}</a>
                 <span class="activity-action-badge ${action.action_type}">${action.action_type === 'attack' ? '⚔️ ATK' : '🛡️ DEF'}</span>
                 <span class="zone-name">${zoneName}</span>
               </div>

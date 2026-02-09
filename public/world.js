@@ -715,8 +715,8 @@
     }
 
     .fighter-name {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 0.4rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
       color: #fff;
     }
 
