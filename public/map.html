@@ -151,42 +151,100 @@
     .zone-count { font-family: var(--font-data); font-size: 8px; color: var(--text-faint); margin-left: auto; }
 
     /* Zone card */
-    .zone-grid { display: flex; flex-direction: column; gap: 8px; }
+    .zone-grid { display: flex; flex-direction: column; gap: 12px; }
     .zone-card {
       background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px;
-      padding: 16px; cursor: pointer; transition: all 0.2s;
+      cursor: pointer; transition: all 0.25s ease; overflow: hidden;
+      position: relative;
     }
-    .zone-card:hover { border-color: var(--border-medium); background: var(--bg-card-hover); }
-    .zone-card--objective { border-color: var(--gold-border); box-shadow: 0 0 15px var(--gold-glow); }
-    .zone-card--bonus { border-color: rgba(0, 212, 255, 0.2); }
-    .zone-card__top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; }
-    .zone-card__info { flex: 1; }
-    .zone-card__name { font-family: var(--font-title); font-size: 15px; font-weight: 700; color: var(--text-bright); letter-spacing: 0.5px; }
-    .zone-card__desc { font-family: var(--font-body); font-size: 13px; color: var(--text-faint); margin-top: 2px; }
-    .zone-card__badges { display: flex; gap: 4px; flex-shrink: 0; margin-left: 8px; }
-    .zone-badge { font-family: var(--font-data); font-size: 7px; padding: 3px 8px; border-radius: 4px; letter-spacing: 0.5px; }
-    .zone-badge--objective { background: var(--gold-dim); color: var(--gold); border: 1px solid var(--gold-border); }
-    .zone-badge--bonus { background: rgba(0, 212, 255, 0.08); color: var(--cyan); border: 1px solid rgba(0, 212, 255, 0.2); }
-    .zone-badge--controlled { padding: 3px 6px; display: flex; align-items: center; gap: 4px; background: var(--bg-inset); border: 1px solid var(--border-subtle); }
+    .zone-card:hover { border-color: var(--border-medium); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .zone-card--objective { border-color: var(--gold-border); box-shadow: 0 0 20px var(--gold-glow), inset 0 0 30px rgba(212,166,75,0.03); }
+    .zone-card--objective:hover { box-shadow: 0 0 25px var(--gold-glow), 0 8px 24px rgba(0,0,0,0.3); }
+    .zone-card--bonus { border-color: rgba(0, 255, 136, 0.2); box-shadow: 0 0 12px rgba(0,255,136,0.06); }
+    .zone-card--bonus:hover { box-shadow: 0 0 18px rgba(0,255,136,0.1), 0 8px 24px rgba(0,0,0,0.3); }
+
+    .zone-card__image {
+      position: relative; height: 120px; overflow: hidden;
+      background-color: var(--bg-inset); background-size: cover; background-position: center;
+    }
+    .zone-card__image::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(10,8,18,0.1) 0%, rgba(10,8,18,0.65) 60%, rgba(10,8,18,0.95) 100%);
+    }
+    .zone-card__image-badges {
+      position: absolute; top: 8px; right: 8px; z-index: 2;
+      display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;
+    }
+    .zone-card__image-overlay {
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 2;
+      padding: 10px 14px 8px;
+    }
+    .zone-card__name {
+      font-family: var(--font-title); font-size: 16px; font-weight: 700;
+      color: #fff; letter-spacing: 0.5px; text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+    }
+    .zone-card__desc {
+      font-family: var(--font-body); font-size: 12px; color: rgba(255,255,255,0.65);
+      margin-top: 2px; text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .zone-card__no-image {
+      height: 0; padding: 14px 14px 0;
+    }
+    .zone-card__no-image .zone-card__name { color: var(--text-bright); text-shadow: none; }
+    .zone-card__no-image .zone-card__desc { color: var(--text-faint); text-shadow: none; }
+
+    .zone-card__body { padding: 10px 14px 14px; }
+    .zone-card__badges { display: flex; gap: 4px; flex-shrink: 0; flex-wrap: wrap; }
+    .zone-badge {
+      font-family: var(--font-data); font-size: 7px; padding: 3px 8px;
+      border-radius: 4px; letter-spacing: 0.5px; backdrop-filter: blur(4px);
+    }
+    .zone-badge--objective { background: rgba(212,166,75,0.25); color: var(--gold); border: 1px solid var(--gold-border); }
+    .zone-badge--bonus { background: rgba(0,255,136,0.12); color: #00ff88; border: 1px solid rgba(0,255,136,0.25); }
+    .zone-badge--controlled {
+      padding: 3px 6px; display: flex; align-items: center; gap: 4px;
+      background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.1);
+    }
     .zone-badge--controlled img { width: 12px; height: 12px; object-fit: contain; }
+    .zone-badge--contesting {
+      display: flex; align-items: center; gap: 3px;
+      background: rgba(255,85,85,0.12); color: #ff7777; border: 1px solid rgba(255,85,85,0.2);
+    }
+
     .zone-card__influence { margin-bottom: 10px; }
-    .influence-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.04); overflow: hidden; display: flex; }
+    .influence-bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.04); overflow: hidden; display: flex; }
     .influence-segment { height: 100%; transition: width 0.6s ease; }
     .influence-labels { display: flex; justify-content: space-between; margin-top: 4px; }
     .influence-label { display: flex; align-items: center; gap: 3px; font-family: var(--font-data); font-size: 7px; color: var(--text-faint); }
     .influence-label img { width: 10px; height: 10px; object-fit: contain; }
-    .zone-card__footer { display: flex; align-items: center; justify-content: space-between; }
-    .zone-card__activity { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }
+
+    .zone-card__footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .zone-card__activity {
+      font-family: var(--font-mono); font-size: 10px; color: var(--text-faint);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .zone-card__activity-dot {
+      width: 5px; height: 5px; border-radius: 50%; background: #44cc44;
+      animation: activityPulse 2s ease-in-out infinite;
+    }
+    .zone-card__activity-dot--idle { background: #555; animation: none; }
+    @keyframes activityPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
     .zone-card__actions { display: flex; gap: 6px; }
     .zone-action-btn {
-      padding: 8px 16px; border-radius: 6px; border: none;
+      padding: 7px 14px; border-radius: 6px; border: none;
       font-family: var(--font-data); font-size: 8px; letter-spacing: 1px;
       cursor: pointer; transition: all 0.15s; color: #fff;
     }
-    .zone-action-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-    .zone-action-btn--attack { background: linear-gradient(135deg, #cc3333, #aa2222); }
-    .zone-action-btn--defend { background: linear-gradient(135deg, #3366cc, #2244aa); }
-    .zone-action-btn--done { background: var(--bg-inset); color: var(--text-faint); border: 1px solid var(--border-subtle); }
+    .zone-action-btn:hover { transform: translateY(-1px); }
+    .zone-action-btn:active { transform: translateY(0); }
+    .zone-action-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+    .zone-action-btn--attack { background: linear-gradient(135deg, #cc3333, #aa2222); box-shadow: 0 2px 8px rgba(204,51,51,0.25); }
+    .zone-action-btn--attack:hover { box-shadow: 0 4px 12px rgba(204,51,51,0.4); }
+    .zone-action-btn--defend { background: linear-gradient(135deg, #3366cc, #2244aa); box-shadow: 0 2px 8px rgba(51,102,204,0.25); }
+    .zone-action-btn--defend:hover { box-shadow: 0 4px 12px rgba(51,102,204,0.4); }
+    .zone-action-btn--done { background: var(--bg-inset); color: var(--text-faint); border: 1px solid var(--border-subtle); box-shadow: none; }
 
     /* Zone detail modal */
     .zone-modal-overlay {
@@ -244,8 +302,9 @@
 
     @media (max-width: 480px) {
       .world-hero__title { font-size: 20px; }
-      .zone-card { padding: 14px; }
+      .zone-card__image { height: 100px; }
       .zone-card__name { font-size: 14px; }
+      .zone-card__body { padding: 8px 12px 12px; }
       .sort-btn { font-size: 9px; padding: 6px 10px; }
       .zone-modal { max-height: 85vh; }
     }
@@ -319,6 +378,34 @@
       7: { name: 'Dawnbringer', color: '#FF8C00', glow: '#ffb84d', img: 'HouseDwnbringer.png' },
       8: { name: 'Manastorm', color: '#5B8FE0', glow: '#8bb8ff', img: 'Housemanastorm.png' },
       9: { name: 'Plaguemire', color: '#E84393', glow: '#ff7ab8', img: 'Houseplaguemire.png' }
+    };
+
+    var ZONE_IMAGES = {
+      1: '/assets/images/environments/ashen-approach.jpg',
+      2: '/assets/images/environments/the-drowning-spiral.png',
+      3: '/assets/images/environments/crimson-overlook.jpg',
+      4: '/assets/images/environments/the-floating-citadel.png',
+      5: '/assets/images/environments/violet-storm.png',
+      6: '/assets/images/environments/the-lone-spire.png',
+      7: '/assets/images/environments/azure-expanse.png',
+      8: '/assets/images/environments/shattered-stream.png',
+      9: '/assets/images/environments/the-quiet-woods.png',
+      10: '/assets/images/environments/the-twin-spires.png',
+      11: '/assets/images/environments/the-veiled-cascade.png',
+      12: '/assets/images/environments/the-sunken-archives.png',
+      13: '/assets/images/environments/the-whispering-woods.png',
+      14: '/assets/images/environments/the-fallen-wyrm.jpg',
+      15: '/assets/images/environments/the-grassy-knoll.png',
+      16: '/assets/images/environments/the-gathering-grove.png',
+      17: '/assets/images/environments/the-breach.png',
+      18: '/assets/images/environments/the-great-divide.png',
+      19: '/assets/images/environments/the-chambers-keep.png',
+      20: '/assets/images/environments/the-eastern-exchange.png',
+      21: '/assets/images/environments/the-memorial-arch.png',
+      22: '/assets/images/environments/lunar-sanctum.png',
+      23: '/assets/images/environments/the-divide.png',
+      24: '/assets/images/environments/the-silent-valley.png',
+      25: '/assets/images/environments/the-torn-veil.png'
     };
 
     var zones = [];
@@ -553,23 +640,15 @@
         if (isObjective) cardClass += ' zone-card--objective';
         else if (isBonus) cardClass += ' zone-card--bonus';
 
-        // Controlled zone left border
-        var controlStyle = '';
-        if (z.controlling_school_id && HOUSES[z.controlling_school_id]) {
-          controlStyle = 'border-left:3px solid ' + HOUSES[z.controlling_school_id].color + ';';
-        }
+        var zoneImg = z.image_url || ZONE_IMAGES[z.id] || '';
 
         var badges = '';
         if (isObjective) badges += '<span class="zone-badge zone-badge--objective">OBJECTIVE</span>';
-        if (isBonus) badges += '<span class="zone-badge zone-badge--bonus">BONUS</span>';
-
-        // Permanent controller badge
+        if (isBonus) badges += '<span class="zone-badge zone-badge--bonus">BONUS +50%</span>';
         if (z.controlling_school_id && HOUSES[z.controlling_school_id]) {
           var ctrl = HOUSES[z.controlling_school_id];
           badges += '<span class="zone-badge zone-badge--controlled">' + hImg(ctrl.img, 12) + '<span style="font-size:7px;color:' + ctrl.color + ';">' + ctrl.name.toUpperCase() + '</span></span>';
         }
-
-        // Contesting badge (different house leading today)
         if (topHouse && topHouse.pct >= 40 && (!z.controlling_school_id || topHouse.id !== z.controlling_school_id)) {
           var th = HOUSES[topHouse.id] || { img: '' };
           badges += '<span class="zone-badge zone-badge--contesting">' + hImg(th.img, 10) + ' CONTESTING</span>';
@@ -586,15 +665,35 @@
           btnsHTML = '<button class="zone-action-btn zone-action-btn--attack" onclick="event.stopPropagation();doAction(' + z.id + ',\'attack\')">ATTACK</button>'
             + '<button class="zone-action-btn zone-action-btn--defend" onclick="event.stopPropagation();doAction(' + z.id + ',\'defend\')">DEFEND</button>';
         }
-        html += '<div class="' + cardClass + '" style="' + controlStyle + '" onclick="openZoneModal(' + z.id + ')">'
-          + '<div class="zone-card__top"><div class="zone-card__info">'
-          + '<div class="zone-card__name">' + z.name + '</div>'
-          + '<div class="zone-card__desc">' + z.description + '</div>'
-          + '</div><div class="zone-card__badges">' + badges + '</div></div>'
-          + '<div class="zone-card__influence">' + renderInfluenceBar(z.id) + '</div>'
-          + '<div class="zone-card__footer">'
-          + '<span class="zone-card__activity">' + activity + ' action' + (activity !== 1 ? 's' : '') + ' today</span>'
-          + '<div class="zone-card__actions">' + btnsHTML + '</div></div></div>';
+
+        var activityDotClass = activity > 0 ? 'zone-card__activity-dot' : 'zone-card__activity-dot zone-card__activity-dot--idle';
+
+        if (zoneImg) {
+          html += '<div class="' + cardClass + '" onclick="openZoneModal(' + z.id + ')">'
+            + '<div class="zone-card__image" style="background-image:url(\'' + zoneImg + '\');">'
+            + '<div class="zone-card__image-badges">' + badges + '</div>'
+            + '<div class="zone-card__image-overlay">'
+            + '<div class="zone-card__name">' + z.name + '</div>'
+            + '<div class="zone-card__desc">' + z.description + '</div>'
+            + '</div></div>'
+            + '<div class="zone-card__body">'
+            + '<div class="zone-card__influence">' + renderInfluenceBar(z.id) + '</div>'
+            + '<div class="zone-card__footer">'
+            + '<span class="zone-card__activity"><span class="' + activityDotClass + '"></span>' + activity + ' action' + (activity !== 1 ? 's' : '') + ' today</span>'
+            + '<div class="zone-card__actions">' + btnsHTML + '</div></div></div></div>';
+        } else {
+          html += '<div class="' + cardClass + '" onclick="openZoneModal(' + z.id + ')">'
+            + '<div class="zone-card__no-image">'
+            + '<div class="zone-card__name">' + z.name + '</div>'
+            + '<div class="zone-card__desc">' + z.description + '</div>'
+            + '</div>'
+            + '<div class="zone-card__body">'
+            + (badges ? '<div class="zone-card__badges" style="margin-bottom:8px;">' + badges + '</div>' : '')
+            + '<div class="zone-card__influence">' + renderInfluenceBar(z.id) + '</div>'
+            + '<div class="zone-card__footer">'
+            + '<span class="zone-card__activity"><span class="' + activityDotClass + '"></span>' + activity + ' action' + (activity !== 1 ? 's' : '') + ' today</span>'
+            + '<div class="zone-card__actions">' + btnsHTML + '</div></div></div></div>';
+        }
       });
       grid.innerHTML = html;
       var controlledCount = zones.filter(function(z) { return z.controlling_school_id; }).length;
@@ -640,6 +739,17 @@
     function openZoneModal(zoneId) {
       var zone = zones.find(function(z) { return z.id === zoneId; });
       if (!zone) return;
+      var zoneImg = zone.image_url || ZONE_IMAGES[zone.id] || '';
+      var modalHeader = document.querySelector('.zone-modal__header');
+      if (zoneImg) {
+        modalHeader.style.backgroundImage = 'linear-gradient(180deg, rgba(10,8,18,0.2) 0%, rgba(10,8,18,0.8) 60%, var(--bg-card) 100%), url(' + zoneImg + ')';
+        modalHeader.style.backgroundSize = 'cover, cover';
+        modalHeader.style.backgroundPosition = 'center, center';
+        modalHeader.style.paddingTop = '50px';
+      } else {
+        modalHeader.style.backgroundImage = '';
+        modalHeader.style.paddingTop = '20px';
+      }
       document.getElementById('modalTitle').textContent = zone.name;
       document.getElementById('modalDesc').textContent = zone.description + (zone.bonus_effect ? ' — ' + zone.bonus_effect : '');
       var body = '';
@@ -720,189 +830,6 @@
           renderPlayerBar();
         }
         renderTowers(schoolData);
-        var loader = document.getElementById('loadingState');
-        if (loader) loader.style.display = 'none';
-        renderZoneGrid();
-      } catch (e) {
-        console.error('World load error:', e);
-        var loader = document.getElementById('loadingState');
-        if (loader) loader.style.display = 'none';
-        document.getElementById('zoneGrid').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-faint);font-style:italic;">Error loading world data</div>';
-      }
-    }
-
-    loadWorld();
-  </script>
-</body>
-</html>(a, b) {
-          var aB = a.bonus_effect ? 1 : 0; var bB = b.bonus_effect ? 1 : 0;
-          if (bB !== aB) return bB - aB;
-          return getZoneActivity(b.id) - getZoneActivity(a.id);
-        });
-      } else if (currentSort === 'alpha') {
-        sorted.sort(function(a, b) { return a.name.localeCompare(b.name); });
-      }
-      return sorted;
-    }
-
-    function renderZoneGrid() {
-      var sorted = getSortedZones();
-      var grid = document.getElementById('zoneGrid');
-      var html = '';
-      sorted.forEach(function(z) {
-        var isObjective = z.is_current_objective;
-        var isBonus = z.bonus_effect && z.bonus_effect.includes('+50%');
-        var activity = getZoneActivity(z.id);
-        var topHouse = getTopHouse(z.id);
-        var acted = playerActedZones[z.id];
-        var cardClass = 'zone-card fade-up';
-        if (isObjective) cardClass += ' zone-card--objective';
-        else if (isBonus) cardClass += ' zone-card--bonus';
-        var badges = '';
-        if (isObjective) badges += '<span class="zone-badge zone-badge--objective">OBJECTIVE</span>';
-        if (isBonus) badges += '<span class="zone-badge zone-badge--bonus">BONUS</span>';
-        if (topHouse && topHouse.pct >= 50) {
-          var th = HOUSES[topHouse.id] || { img: '' };
-          badges += '<span class="zone-badge zone-badge--controlled">' + hImg(th.img, 12) + '</span>';
-        }
-        var btnsHTML = '';
-        if (!player) {
-          btnsHTML = '<a href="/register.html" class="zone-action-btn zone-action-btn--attack" style="text-decoration:none;font-size:8px;">JOIN TO PLAY</a>';
-        } else if (acted) {
-          btnsHTML = '<span class="zone-action-btn zone-action-btn--done">ACTED</span>';
-        } else if (player.mana < 1) {
-          btnsHTML = '<span class="zone-action-btn zone-action-btn--done">NO MANA</span>';
-        } else {
-          btnsHTML = '<button class="zone-action-btn zone-action-btn--attack" onclick="event.stopPropagation();doAction(' + z.id + ',\'attack\')">ATTACK</button>'
-            + '<button class="zone-action-btn zone-action-btn--defend" onclick="event.stopPropagation();doAction(' + z.id + ',\'defend\')">DEFEND</button>';
-        }
-        html += '<div class="' + cardClass + '" onclick="openZoneModal(' + z.id + ')">'
-          + '<div class="zone-card__top"><div class="zone-card__info">'
-          + '<div class="zone-card__name">' + z.name + '</div>'
-          + '<div class="zone-card__desc">' + z.description + '</div>'
-          + '</div><div class="zone-card__badges">' + badges + '</div></div>'
-          + '<div class="zone-card__influence">' + renderInfluenceBar(z.id) + '</div>'
-          + '<div class="zone-card__footer">'
-          + '<span class="zone-card__activity">' + activity + ' action' + (activity !== 1 ? 's' : '') + ' today</span>'
-          + '<div class="zone-card__actions">' + btnsHTML + '</div>'
-          + '</div></div>';
-      });
-      grid.innerHTML = html;
-      document.getElementById('zoneCount').textContent = sorted.length + ' zones';
-    }
-
-    async function doAction(zoneId, actionType) {
-      if (!player || player.mana < 1) return;
-      if (playerActedZones[zoneId]) return;
-      try {
-        var res = await fetch('/api/territory/action', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ player_id: player.id, zone_id: zoneId, action_type: actionType })
-        });
-        var data = await res.json();
-        if (res.ok && data.success) {
-          player.mana = data.mana_remaining;
-          playerActedZones[zoneId] = true;
-          var pts = data.points_earned;
-          var msg = (actionType === 'attack' ? 'Attack' : 'Defend') + ' +' + pts + ' pts';
-          if (data.multiplier > 1) msg += ' (x' + data.multiplier + ' bonus)';
-          showToast(msg, 'success');
-          if (!influence[zoneId]) influence[zoneId] = {};
-          if (!influence[zoneId][player.school_id]) influence[zoneId][player.school_id] = 0;
-          influence[zoneId][player.school_id] += (actionType === 'attack' ? 20 : 10);
-          var total = 0;
-          Object.values(influence[zoneId]).forEach(function(v) { total += v; });
-          Object.keys(influence[zoneId]).forEach(function(sid) {
-            influence[zoneId][sid] = Math.round((influence[zoneId][sid] / total) * 100);
-          });
-          if (!actionsToday[zoneId]) actionsToday[zoneId] = [];
-          actionsToday[zoneId].unshift({
-            player: { id: player.id, twitter_handle: player.twitter_handle, profile_image: player.profile_image, school_id: player.school_id },
-            action_type: actionType, created_at: new Date().toISOString()
-          });
-          renderPlayerBar();
-          renderZoneGrid();
-        } else { showToast(data.error || 'Action failed', 'error'); }
-      } catch (e) { console.error(e); showToast('Connection error', 'error'); }
-    }
-
-    function openZoneModal(zoneId) {
-      var zone = zones.find(function(z) { return z.id === zoneId; });
-      if (!zone) return;
-      document.getElementById('modalTitle').textContent = zone.name;
-      document.getElementById('modalDesc').textContent = zone.description + (zone.bonus_effect ? ' — ' + zone.bonus_effect : '');
-      var body = '';
-      var inf = influence[zoneId];
-      body += '<div class="zone-modal__influence"><div class="zone-modal__influence-title">HOUSE INFLUENCE</div>';
-      if (inf && Object.keys(inf).length > 0) {
-        var entries = [];
-        Object.keys(inf).forEach(function(sid) { entries.push({ id: parseInt(sid), pct: inf[sid] }); });
-        entries.sort(function(a, b) { return b.pct - a.pct; });
-        entries.forEach(function(e) {
-          var h = HOUSES[e.id] || { name: '?', color: '#888', img: '' };
-          body += '<div class="modal-influence-row">' + hImg(h.img, 18)
-            + '<span class="modal-influence-name">' + h.name + '</span>'
-            + '<div class="modal-influence-bar"><div class="modal-influence-fill" style="width:' + e.pct + '%;background:' + h.color + ';"></div></div>'
-            + '<span class="modal-influence-pct">' + e.pct + '%</span></div>';
-        });
-      } else { body += '<div class="modal-empty">No activity yet — be the first!</div>'; }
-      body += '</div>';
-      var actions = actionsToday[zoneId] || [];
-      body += '<div class="zone-modal__actions-title">TODAY\'S ACTIONS (' + actions.length + ')</div>';
-      if (actions.length > 0) {
-        actions.forEach(function(a) {
-          var p = a.player || {};
-          var h = HOUSES[p.school_id] || { img: '' };
-          var typeClass = a.action_type === 'attack' ? 'modal-action-type--attack' : 'modal-action-type--defend';
-          var typeLabel = a.action_type === 'attack' ? 'ATTACK' : 'DEFEND';
-          body += '<div class="modal-action-row">'
-            + (p.profile_image ? '<img src="' + p.profile_image + '" class="modal-action-avatar">' : '<div class="modal-action-avatar" style="background:var(--bg-inset);display:flex;align-items:center;justify-content:center;">' + hImg(h.img, 16) + '</div>')
-            + '<div class="modal-action-info"><div class="modal-action-name">@' + (p.twitter_handle || 'unknown') + '</div>'
-            + '<span class="modal-action-type ' + typeClass + '">' + typeLabel + '</span></div>'
-            + '<span class="modal-action-time">' + timeAgo(a.created_at) + '</span></div>';
-        });
-      } else { body += '<div class="modal-empty">No actions yet today</div>'; }
-      document.getElementById('modalBody').innerHTML = body;
-      document.getElementById('zoneModalOverlay').classList.add('active');
-    }
-
-    function closeModal() { document.getElementById('zoneModalOverlay').classList.remove('active'); }
-    document.getElementById('zoneModalOverlay').addEventListener('click', function(e) { if (e.target.id === 'zoneModalOverlay') closeModal(); });
-
-    // ═══ LOAD DATA ═══
-    async function loadWorld() {
-      try {
-        var playerId = getPlayerId();
-        var fetches = [
-          fetch('/api/zones').then(function(r) { return r.json(); }),
-          fetch('/api/territory/actions/today').then(function(r) { return r.json(); }),
-          fetch('/api/territory/influence').then(function(r) { return r.json(); }),
-          fetch('/api/leaderboards/schools').then(function(r) { return r.json(); })
-        ];
-        if (playerId) {
-          fetches.push(fetch('/api/players/' + playerId).then(function(r) { return r.json(); }));
-        }
-        var results = await Promise.all(fetches);
-        zones = results[0] || [];
-        actionsToday = results[1] || {};
-        influence = results[2] || {};
-        var schoolData = results[3] || [];
-        player = results[4] || null;
-
-        if (player) {
-          Object.keys(actionsToday).forEach(function(zoneId) {
-            actionsToday[zoneId].forEach(function(a) {
-              var p = a.player || {};
-              if (p.id === player.id) playerActedZones[zoneId] = true;
-            });
-          });
-          renderPlayerBar();
-        }
-
-        // Render towers
-        renderTowers(schoolData);
-
         var loader = document.getElementById('loadingState');
         if (loader) loader.style.display = 'none';
         renderZoneGrid();
