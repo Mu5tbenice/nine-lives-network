@@ -1,22 +1,37 @@
 const cron = require('node-cron');
-const twitterBot = require('./twitterBot');
 const territoryControl = require('./territoryControl');
 const activityDecay = require('./activityDecay');
-const nermBot = require('./nermBot');
+const narrativeEngine = require('./narrativeEngine');
 const supabase = require('../config/supabase');
 const { supabaseAdmin } = require('../config/supabase');
 
-// Try to load livesReset, but don't fail if it doesn't exist
-let livesReset = null;
-try {
-  livesReset = require('./livesReset');
-} catch (e) {
-  console.log('⚠️ livesReset module not found - lives reset will use inline function');
-}
+// Optional modules
+let twitterBot = null;
+let nermBot = null;
+try { twitterBot = require('./twitterBot'); } catch (e) { console.log('⚠️ twitterBot not loaded'); }
+try { nermBot = require('./nermBot'); } catch (e) { console.log('⚠️ nermBot not loaded'); }
 
 /**
- * Scheduled Jobs for Nine Lives Network
- * All times are in UTC
+ * Nine Lives Network — Scheduler
+ * 
+ * NARRATIVE RAIDS (@9LVNetwork):
+ *   08:05  Tweet 1 — Story opening + rally call
+ *   14:05  Tweet 2 — Midday standings update
+ *   18:00  Tweet 3 — Last call + urgency
+ *   22:05  Tweet 4 — Resolution + winner + points
+ *   */10   Scrape replies (8AM-10PM)
+ * 
+ * TERRITORY (website game):
+ *   */2    Process spell casts
+ *   */5    Update zone control
+ *   23:55  End of day territory processing
+ * 
+ * NERM (reply guy only — no standalone posts):
+ *   Reacts to notable spell casts (10% chance, inside cast processing)
+ * 
+ * MAINTENANCE:
+ *   00:00  Reset mana + lives
+ *   01:30  Activity decay
  */
 
 let jobsInitialized = false;
@@ -30,311 +45,165 @@ function initializeScheduledJobs() {
   console.log('🕐 Initializing scheduled jobs...');
 
   // ============================================
-  // SPELL PROCESSING - Every 2 minutes
+  // NARRATIVE RAIDS — 4-tweet daily story arc
   // ============================================
+
+  // Tweet 1: Story opening + rally call
+  cron.schedule('5 8 * * *', async () => {
+    console.log(`[${ts()}] 📖 Narrative: Opening`);
+    try {
+      await narrativeEngine.postOpening();
+    } catch (e) { console.error('❌ Narrative opening:', e.message); }
+  });
+
+  // Tweet 2: Midday standings
+  cron.schedule('5 14 * * *', async () => {
+    console.log(`[${ts()}] 📊 Narrative: Midday update`);
+    try {
+      await narrativeEngine.postMidDay();
+    } catch (e) { console.error('❌ Narrative midday:', e.message); }
+  });
+
+  // Tweet 3: Last call
+  cron.schedule('0 18 * * *', async () => {
+    console.log(`[${ts()}] ⏰ Narrative: Last call`);
+    try {
+      await narrativeEngine.postLastCall();
+    } catch (e) { console.error('❌ Narrative last call:', e.message); }
+  });
+
+  // Tweet 4: Resolution + winner
+  cron.schedule('5 22 * * *', async () => {
+    console.log(`[${ts()}] 🏆 Narrative: Resolution`);
+    try {
+      await narrativeEngine.postResolution();
+    } catch (e) { console.error('❌ Narrative resolution:', e.message); }
+  });
+
+  // Scrape replies every 10 min during active hours
+  cron.schedule('*/10 8-21 * * *', async () => {
+    try {
+      await narrativeEngine.periodicScrape();
+    } catch (e) { console.error('❌ Narrative scrape:', e.message); }
+  });
+
+  // ============================================
+  // TERRITORY — Website spell casting game
+  // ============================================
+
+  // Process spell casts every 2 minutes
   cron.schedule('*/2 * * * *', async () => {
     try {
+      if (!twitterBot) return;
       const zone = await territoryControl.getCurrentObjective();
       if (!zone || !zone.objective_tweet_id) return;
 
-      console.log(`[${new Date().toISOString()}] ⚡ Processing spell casts`);
       const casts = await twitterBot.processSpellCasts();
+      if (!casts || casts.length === 0) return;
 
-      if (casts.length > 0) {
-        console.log(`✅ Processed ${casts.length} casts`);
+      console.log(`[${ts()}] ⚡ Processed ${casts.length} casts`);
 
-        // Nerm only replies to casts he "noticed" (10% chance, set in processSpellCasts)
-        const noticedCasts = casts.filter(c => c.nermNoticed);
-
-        for (const cast of noticedCasts) {
+      // Nerm reply guy — reacts to noticed casts only
+      if (nermBot) {
+        const noticed = casts.filter(c => c.nermNoticed);
+        for (const cast of noticed) {
           try {
             if (!cast.tweet_id) continue;
-
             const response = await nermBot.generateCustomResponse(
-              `You just noticed @${cast.player} from ${cast.schoolName} cast "${cast.spell}" and earned ${cast.points} points. 
-
-React specifically to:
-- Their school (${cast.schoolName}) - maybe judge their faction
-- Their spell name ("${cast.spell}") - comment on the spell choice
-- Their point total (${cast.points}) - impressive or pathetic?
-
-Keep it under 200 characters. Be deadpan. One sentence max.`
+              `You noticed @${cast.player} from ${cast.schoolName} cast "${cast.spell}" for ${cast.points} points. React to their school, spell, or score. Under 200 chars. Deadpan. One sentence.`
             );
-
             if (response) {
               await nermBot.replyAsNerm(response, cast.tweet_id);
-              console.log(`🐱 Nerm noticed @${cast.player}'s cast and replied`);
+              console.log(`🐱 Nerm replied to @${cast.player}`);
             }
-
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            await new Promise(r => setTimeout(r, 2000));
           } catch (e) {
-            console.error(`Nerm reply error for @${cast.player}:`, e.message);
+            console.error(`Nerm reply error:`, e.message);
           }
         }
-
-        if (noticedCasts.length > 0) {
-          console.log(`🐱 Nerm noticed ${noticedCasts.length}/${casts.length} casts`);
-        }
       }
-    } catch (error) {
-      console.error('❌ Error processing casts:', error.message);
-    }
+    } catch (e) { console.error('❌ Cast processing:', e.message); }
   });
 
-  // ============================================
-  // @9LVNetwork POSTS - 3 BOUNTIES PER DAY
-  // ============================================
-
-  // 08:00 UTC - MORNING BOUNTY
-  cron.schedule('0 8 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 🌅 Posting MORNING bounty`);
-    try {
-      await twitterBot.rotateObjective();
-      const tweet = await twitterBot.postDailyObjective();
-      if (tweet) console.log(`✅ Posted morning bounty: ${tweet.id}`);
-    } catch (error) {
-      console.error('❌ Error posting morning bounty:', error.message);
-    }
-  });
-
-  // 13:00 UTC - Close morning bounty, post results
-  cron.schedule('0 13 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 🏆 Closing MORNING bounty`);
-    try {
-      const tweet = await twitterBot.postDailyResults();
-      if (tweet) console.log(`✅ Posted morning results: ${tweet.id}`);
-    } catch (error) {
-      console.error('❌ Error posting morning results:', error.message);
-    }
-  });
-
-  // 14:00 UTC - AFTERNOON BOUNTY
-  cron.schedule('0 14 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] ☀️ Posting AFTERNOON bounty`);
-    try {
-      await twitterBot.rotateObjective();
-      const tweet = await twitterBot.postDailyObjective();
-      if (tweet) console.log(`✅ Posted afternoon bounty: ${tweet.id}`);
-    } catch (error) {
-      console.error('❌ Error posting afternoon bounty:', error.message);
-    }
-  });
-
-  // 19:00 UTC - Close afternoon bounty, post results
-  cron.schedule('0 19 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 🏆 Closing AFTERNOON bounty`);
-    try {
-      const tweet = await twitterBot.postDailyResults();
-      if (tweet) console.log(`✅ Posted afternoon results: ${tweet.id}`);
-    } catch (error) {
-      console.error('❌ Error posting afternoon results:', error.message);
-    }
-  });
-
-  // 20:00 UTC - EVENING BOUNTY
-  cron.schedule('0 20 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 🌙 Posting EVENING bounty`);
-    try {
-      await twitterBot.rotateObjective();
-      const tweet = await twitterBot.postDailyObjective();
-      if (tweet) console.log(`✅ Posted evening bounty: ${tweet.id}`);
-    } catch (error) {
-      console.error('❌ Error posting evening bounty:', error.message);
-    }
-  });
-
-  // 01:00 UTC (next day) - Close evening bounty, post results
-  cron.schedule('0 1 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 🏆 Closing EVENING bounty`);
-    try {
-      const tweet = await twitterBot.postDailyResults();
-      if (tweet) console.log(`✅ Posted evening results: ${tweet.id}`);
-    } catch (error) {
-      console.error('❌ Error posting evening results:', error.message);
-    }
-  });
-
-  // ============================================
-  // @9LV_Nerm POSTS
-  // ============================================
-
-  // 09:00 UTC - Morning grumpy (100%)
-  cron.schedule('0 9 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 🐱 Nerm morning grumpy`);
-    try {
-      const prompts = [
-        "It's morning in the wizard game. You just woke up and are NOT happy about having to watch these wizards cast spells all day. Complain briefly.",
-        "Another day of watching wizard cats pretend to be magical. Express your displeasure at being awake.",
-        "The sun is up. The wizards are stirring. You'd rather be sleeping. Share your morning mood.",
-      ];
-      const prompt = prompts[Math.floor(Math.random() * prompts.length)];
-      const response = await nermBot.generateCustomResponse(prompt);
-      if (response) {
-        await nermBot.postAsNerm(response);
-        console.log('✅ Posted Nerm morning grumpy');
-      }
-    } catch (error) {
-      console.error('❌ Error in Nerm morning:', error.message);
-    }
-  });
-
-  // 14:00 UTC - Afternoon observation (100%)
-  cron.schedule('0 14 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 🐱 Nerm afternoon observation`);
-    try {
-      const response = await nermBot.generateCustomResponse(
-        "It's the middle of the day in the wizard game. Make a random sarcastic observation about being a cat forced to watch this. Keep it short."
-      );
-      if (response) {
-        await nermBot.postAsNerm(response);
-        console.log('✅ Posted Nerm afternoon observation');
-      }
-    } catch (error) {
-      console.error('❌ Error in Nerm afternoon:', error.message);
-    }
-  });
-
-  // 17:00 UTC - Evening complaint (80%)
-  cron.schedule('0 17 * * *', async () => {
-    if (Math.random() < 0.8) {
-      console.log(`[${new Date().toISOString()}] 🐱 Nerm evening complaint`);
-      try {
-        const response = await nermBot.generateCustomResponse(
-          "It's late afternoon. The wizards are still going. Express your fatigue with watching this game."
-        );
-        if (response) {
-          await nermBot.postAsNerm(response);
-          console.log('✅ Posted Nerm evening complaint');
-        }
-      } catch (error) {
-        console.error('❌ Error in Nerm evening:', error.message);
-      }
-    }
-  });
-
-  // 22:00 UTC - Daily roast (100%)
-  cron.schedule('0 22 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 🐱 Nerm daily roast`);
-    try {
-      await nermBot.postDailyObservation();
-      console.log('✅ Posted Nerm daily roast');
-    } catch (error) {
-      console.error('❌ Error in Nerm roast:', error.message);
-    }
-  });
-
-  // 03:00 UTC - Existential moment (80%)
-  cron.schedule('0 3 * * *', async () => {
-    if (Math.random() < 0.8) {
-      console.log(`[${new Date().toISOString()}] 🐱 Nerm existential moment`);
-      try {
-        await nermBot.maybeGlitch();
-        console.log('✅ Posted Nerm existential moment');
-      } catch (error) {
-        console.error('❌ Error in Nerm existential:', error.message);
-      }
-    }
-  });
-
-  // ============================================
-  // MAINTENANCE JOBS
-  // ============================================
-  // 23:55 UTC - End of day territory processing
-  cron.schedule('55 23 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 🏰 End of day territory processing`);
-    try {
-      const result = await territoryControl.endOfDayProcessing();
-      console.log('✅ Territory processing complete:', result);
-    } catch (error) {
-      console.error('❌ Error in territory processing:', error.message);
-      console.log('   23:55 - Territory end-of-day processing');
-    }
-  });
-  
-  // 00:00 UTC - Reset mana AND lives
-  cron.schedule('0 0 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 🔮 Midnight reset: mana + lives`);
-    try {
-      // Reset mana (use admin client to bypass RLS)
-      const { error: manaError } = await supabaseAdmin
-        .from('players')
-        .update({ mana: 5 })
-        .gte('id', 0); // Update all players
-
-      if (manaError) {
-        console.error('❌ Error resetting mana:', manaError);
-      } else {
-        console.log('✅ All player mana reset to 5');
-      }
-
-      // Reset lives
-      if (livesReset) {
-        await livesReset.resetAllLives();
-        await livesReset.expirePendingDuels();
-      } else {
-        // Inline lives reset if module not available (use admin client)
-        const { error: livesError } = await supabaseAdmin
-          .from('players')
-          .update({ lives: 3 })
-          .lt('lives', 3);
-
-        if (!livesError) {
-          console.log('✅ All player lives reset to 3');
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error in midnight reset:', error.message);
-    }
-  });
-
-  // 01:30 UTC - Activity decay (moved to 01:30 to not clash with evening results at 01:00)
-  cron.schedule('30 1 * * *', async () => {
-    console.log(`[${new Date().toISOString()}] 📉 Activity decay`);
-    try {
-      const result = await activityDecay.processActivityDecay();
-      console.log('Activity decay result:', result);
-    } catch (error) {
-      console.error('❌ Error in activity decay:', error.message);
-    }
-  });
-
-  // Every 5 minutes - Update zone control for ALL active zones
+  // Update zone control every 5 minutes
   cron.schedule('*/5 * * * *', async () => {
     try {
       await territoryControl.updateAllZoneControl();
-    } catch (error) {
-      console.error('❌ Error updating zone control:', error.message);
-    }
+    } catch (e) { console.error('❌ Zone control update:', e.message); }
   });
+
+  // End of day territory processing
+  cron.schedule('55 23 * * *', async () => {
+    console.log(`[${ts()}] 🏰 End of day territory processing`);
+    try {
+      const result = await territoryControl.endOfDayProcessing();
+      console.log('✅ Territory processing complete:', result);
+    } catch (e) { console.error('❌ Territory EOD:', e.message); }
+  });
+
+  // ============================================
+  // MAINTENANCE
+  // ============================================
+
+  // Midnight: reset mana + lives
+  cron.schedule('0 0 * * *', async () => {
+    console.log(`[${ts()}] 🔮 Midnight reset`);
+    try {
+      const { error: manaErr } = await supabaseAdmin
+        .from('players')
+        .update({ mana: 5 })
+        .gte('id', 0);
+      if (manaErr) console.error('❌ Mana reset:', manaErr);
+      else console.log('✅ Mana reset to 5');
+
+      const { error: livesErr } = await supabaseAdmin
+        .from('players')
+        .update({ lives: 3 })
+        .lt('lives', 3);
+      if (!livesErr) console.log('✅ Lives reset to 3');
+    } catch (e) { console.error('❌ Midnight reset:', e.message); }
+  });
+
+  // Activity decay
+  cron.schedule('30 1 * * *', async () => {
+    console.log(`[${ts()}] 📉 Activity decay`);
+    try {
+      const result = await activityDecay.processActivityDecay();
+      console.log('Activity decay:', result);
+    } catch (e) { console.error('❌ Activity decay:', e.message); }
+  });
+
+  // ============================================
+  // DONE
+  // ============================================
 
   jobsInitialized = true;
 
   console.log('');
-  console.log('✅ Scheduled jobs initialized:');
+  console.log('✅ Scheduler initialized:');
   console.log('');
-  console.log('📢 @9LVNetwork (3 bounties/day):');
-  console.log('   08:00 - Morning bounty');
-  console.log('   13:00 - Morning results');
-  console.log('   14:00 - Afternoon bounty');
-  console.log('   19:00 - Afternoon results');
-  console.log('   20:00 - Evening bounty');
-  console.log('   01:00 - Evening results');
+  console.log('📖 Narrative Raids (@9LVNetwork):');
+  console.log('   08:05 — Opening tweet');
+  console.log('   14:05 — Midday standings');
+  console.log('   18:00 — Last call');
+  console.log('   22:05 — Resolution + winner');
+  console.log('   */10  — Scrape replies (8AM-10PM)');
   console.log('');
-  console.log('🐱 @9LV_Nerm:');
-  console.log('   09:00 - Morning (100%)');
-  console.log('   14:00 - Afternoon (100%)');
-  console.log('   17:00 - Evening (80%)');
-  console.log('   22:00 - Daily roast (100%)');
-  console.log('   03:00 - Existential (80%)');
-  console.log('   + Replies to noticed casts');
+  console.log('🗺️  Territory:');
+  console.log('   */2   — Process spell casts');
+  console.log('   */5   — Update zone control');
+  console.log('   23:55 — End of day processing');
   console.log('');
-  console.log('⚙️ Maintenance:');
-  console.log('   */2 min - Process casts');
-  console.log('   */5 min - Update zone control');
-  console.log('   00:00 - Reset mana + lives');
-  console.log('   01:30 - Activity decay');
+  console.log('🐱 Nerm: Reply guy only (reacts to noticed casts)');
+  console.log('');
+  console.log('⚙️  Maintenance:');
+  console.log('   00:00 — Reset mana + lives');
+  console.log('   01:30 — Activity decay');
   console.log('');
 }
+
+// Timestamp helper
+function ts() { return new Date().toISOString(); }
 
 function stopAllJobs() {
   cron.getTasks().forEach(task => task.stop());
@@ -342,10 +211,6 @@ function stopAllJobs() {
   console.log('🛑 All scheduled jobs stopped');
 }
 
-// Auto-initialize when required
 initializeScheduledJobs();
 
-module.exports = {
-  initializeScheduledJobs,
-  stopAllJobs
-};
+module.exports = { initializeScheduledJobs, stopAllJobs };

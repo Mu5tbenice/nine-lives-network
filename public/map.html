@@ -132,7 +132,7 @@
     }
     .player-bar__left { display: flex; align-items: center; gap: 10px; }
     .player-bar__avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-subtle); }
-    .player-bar__name { font-family: 'Press Start 2P', cursive; font-size: 9px; font-weight: 600; color: var(--text-bright); }
+    .player-bar__name { font-family: var(--font-title); font-size: 13px; font-weight: 600; color: var(--text-bright); }
     .player-bar__house { display: flex; align-items: center; gap: 4px; }
     .player-bar__house-img { width: 16px; height: 16px; object-fit: contain; }
     .player-bar__house-name { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }
@@ -224,7 +224,7 @@
     }
     .modal-action-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--border-subtle); }
     .modal-action-info { flex: 1; }
-    .modal-action-name { font-family: 'Press Start 2P', cursive; font-size: 9px; font-weight: 600; color: var(--text-bright); }
+    .modal-action-name { font-family: var(--font-title); font-size: 12px; font-weight: 600; color: var(--text-bright); }
     .modal-action-type { font-family: var(--font-data); font-size: 7px; letter-spacing: 1px; }
     .modal-action-type--attack { color: #ff5555; }
     .modal-action-type--defend { color: #5588ff; }
@@ -521,6 +521,220 @@
         });
       } else if (currentSort === 'bonus') {
         sorted.sort(function(a, b) {
+          var aB = a.bonus_effect ? 1 : 0; var bB = b.bonus_effect ? 1 : 0;
+          if (bB !== aB) return bB - aB;
+          return getZoneActivity(b.id) - getZoneActivity(a.id);
+        });
+      } else if (currentSort === 'controlled') {
+        sorted.sort(function(a, b) {
+          var aC = a.controlling_school_id ? 1 : 0;
+          var bC = b.controlling_school_id ? 1 : 0;
+          if (bC !== aC) return bC - aC;
+          return getZoneActivity(b.id) - getZoneActivity(a.id);
+        });
+      } else if (currentSort === 'alpha') {
+        sorted.sort(function(a, b) { return a.name.localeCompare(b.name); });
+      }
+      return sorted;
+    }
+
+    function renderZoneGrid() {
+      var sorted = getSortedZones();
+      var grid = document.getElementById('zoneGrid');
+      var html = '';
+      sorted.forEach(function(z) {
+        var isObjective = z.is_current_objective;
+        var isBonus = z.bonus_effect && z.bonus_effect.includes('+50%');
+        var activity = getZoneActivity(z.id);
+        var topHouse = getTopHouse(z.id);
+        var acted = playerActedZones[z.id];
+
+        var cardClass = 'zone-card fade-up';
+        if (isObjective) cardClass += ' zone-card--objective';
+        else if (isBonus) cardClass += ' zone-card--bonus';
+
+        // Controlled zone left border
+        var controlStyle = '';
+        if (z.controlling_school_id && HOUSES[z.controlling_school_id]) {
+          controlStyle = 'border-left:3px solid ' + HOUSES[z.controlling_school_id].color + ';';
+        }
+
+        var badges = '';
+        if (isObjective) badges += '<span class="zone-badge zone-badge--objective">OBJECTIVE</span>';
+        if (isBonus) badges += '<span class="zone-badge zone-badge--bonus">BONUS</span>';
+
+        // Permanent controller badge
+        if (z.controlling_school_id && HOUSES[z.controlling_school_id]) {
+          var ctrl = HOUSES[z.controlling_school_id];
+          badges += '<span class="zone-badge zone-badge--controlled">' + hImg(ctrl.img, 12) + '<span style="font-size:7px;color:' + ctrl.color + ';">' + ctrl.name.toUpperCase() + '</span></span>';
+        }
+
+        // Contesting badge (different house leading today)
+        if (topHouse && topHouse.pct >= 40 && (!z.controlling_school_id || topHouse.id !== z.controlling_school_id)) {
+          var th = HOUSES[topHouse.id] || { img: '' };
+          badges += '<span class="zone-badge zone-badge--contesting">' + hImg(th.img, 10) + ' CONTESTING</span>';
+        }
+
+        var btnsHTML = '';
+        if (!player) {
+          btnsHTML = '<a href="/register.html" class="zone-action-btn zone-action-btn--attack" style="text-decoration:none;font-size:8px;">JOIN TO PLAY</a>';
+        } else if (acted) {
+          btnsHTML = '<span class="zone-action-btn zone-action-btn--done">ACTED</span>';
+        } else if (player.mana < 1) {
+          btnsHTML = '<span class="zone-action-btn zone-action-btn--done">NO MANA</span>';
+        } else {
+          btnsHTML = '<button class="zone-action-btn zone-action-btn--attack" onclick="event.stopPropagation();doAction(' + z.id + ',\'attack\')">ATTACK</button>'
+            + '<button class="zone-action-btn zone-action-btn--defend" onclick="event.stopPropagation();doAction(' + z.id + ',\'defend\')">DEFEND</button>';
+        }
+        html += '<div class="' + cardClass + '" style="' + controlStyle + '" onclick="openZoneModal(' + z.id + ')">'
+          + '<div class="zone-card__top"><div class="zone-card__info">'
+          + '<div class="zone-card__name">' + z.name + '</div>'
+          + '<div class="zone-card__desc">' + z.description + '</div>'
+          + '</div><div class="zone-card__badges">' + badges + '</div></div>'
+          + '<div class="zone-card__influence">' + renderInfluenceBar(z.id) + '</div>'
+          + '<div class="zone-card__footer">'
+          + '<span class="zone-card__activity">' + activity + ' action' + (activity !== 1 ? 's' : '') + ' today</span>'
+          + '<div class="zone-card__actions">' + btnsHTML + '</div></div></div>';
+      });
+      grid.innerHTML = html;
+      var controlledCount = zones.filter(function(z) { return z.controlling_school_id; }).length;
+      document.getElementById('zoneCount').textContent = sorted.length + ' zones' + (controlledCount > 0 ? ' · ' + controlledCount + ' controlled' : '');
+    }
+
+    async function doAction(zoneId, actionType) {
+      if (!player || player.mana < 1) return;
+      if (playerActedZones[zoneId]) return;
+      try {
+        var res = await fetch('/api/territory/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ player_id: player.id, zone_id: zoneId, action_type: actionType })
+        });
+        var data = await res.json();
+        if (res.ok && data.success) {
+          player.mana = data.mana_remaining;
+          playerActedZones[zoneId] = true;
+          var pts = data.points_earned;
+          var msg = (actionType === 'attack' ? 'Attack' : 'Defend') + ' +' + pts + ' pts';
+          if (data.multiplier > 1) msg += ' (x' + data.multiplier + ' bonus)';
+          showToast(msg, 'success');
+          if (!influence[zoneId]) influence[zoneId] = {};
+          if (!influence[zoneId][player.school_id]) influence[zoneId][player.school_id] = 0;
+          influence[zoneId][player.school_id] += (actionType === 'attack' ? 20 : 10);
+          var total = 0;
+          Object.values(influence[zoneId]).forEach(function(v) { total += v; });
+          Object.keys(influence[zoneId]).forEach(function(sid) {
+            influence[zoneId][sid] = Math.round((influence[zoneId][sid] / total) * 100);
+          });
+          if (!actionsToday[zoneId]) actionsToday[zoneId] = [];
+          actionsToday[zoneId].unshift({
+            player: { id: player.id, twitter_handle: player.twitter_handle, profile_image: player.profile_image, school_id: player.school_id },
+            action_type: actionType, created_at: new Date().toISOString()
+          });
+          renderPlayerBar();
+          renderZoneGrid();
+        } else { showToast(data.error || 'Action failed', 'error'); }
+      } catch (e) { console.error(e); showToast('Connection error', 'error'); }
+    }
+
+    function openZoneModal(zoneId) {
+      var zone = zones.find(function(z) { return z.id === zoneId; });
+      if (!zone) return;
+      document.getElementById('modalTitle').textContent = zone.name;
+      document.getElementById('modalDesc').textContent = zone.description + (zone.bonus_effect ? ' — ' + zone.bonus_effect : '');
+      var body = '';
+
+      // Controller banner
+      if (zone.controlling_school_id && HOUSES[zone.controlling_school_id]) {
+        var ctrl = HOUSES[zone.controlling_school_id];
+        body += '<div class="modal-controller" style="background:' + ctrl.color + '12;border:1px solid ' + ctrl.color + '30;">'
+          + hImg(ctrl.img, 22)
+          + '<div><div class="modal-controller__label">CONTROLLED BY</div>'
+          + '<div class="modal-controller__name" style="color:' + ctrl.color + ';">' + ctrl.name + '</div></div></div>';
+      }
+
+      // Today's influence
+      body += '<div class="zone-modal__influence"><div class="zone-modal__influence-title">TODAY\'S INFLUENCE</div>';
+      var inf = influence[zoneId];
+      if (inf && Object.keys(inf).length > 0) {
+        var entries = [];
+        Object.keys(inf).forEach(function(sid) { entries.push({ id: parseInt(sid), pct: inf[sid] }); });
+        entries.sort(function(a, b) { return b.pct - a.pct; });
+        entries.forEach(function(e) {
+          var h = HOUSES[e.id] || { name: '?', color: '#888', img: '' };
+          body += '<div class="modal-influence-row">' + hImg(h.img, 18)
+            + '<span class="modal-influence-name">' + h.name + '</span>'
+            + '<div class="modal-influence-bar"><div class="modal-influence-fill" style="width:' + e.pct + '%;background:' + h.color + ';"></div></div>'
+            + '<span class="modal-influence-pct">' + e.pct + '%</span></div>';
+        });
+      } else { body += '<div class="modal-empty">No activity yet — be the first!</div>'; }
+      body += '</div>';
+
+      var actions = actionsToday[zoneId] || [];
+      body += '<div class="zone-modal__actions-title">TODAY\'S ACTIONS (' + actions.length + ')</div>';
+      if (actions.length > 0) {
+        actions.forEach(function(a) {
+          var p = a.player || {};
+          var h = HOUSES[p.school_id] || { img: '' };
+          var typeClass = a.action_type === 'attack' ? 'modal-action-type--attack' : 'modal-action-type--defend';
+          var typeLabel = a.action_type === 'attack' ? 'ATTACK' : 'DEFEND';
+          body += '<div class="modal-action-row">'
+            + (p.profile_image ? '<img src="' + p.profile_image + '" class="modal-action-avatar">' : '<div class="modal-action-avatar" style="background:var(--bg-inset);display:flex;align-items:center;justify-content:center;">' + hImg(h.img, 16) + '</div>')
+            + '<div class="modal-action-info"><div class="modal-action-name">@' + (p.twitter_handle || 'unknown') + '</div>'
+            + '<span class="modal-action-type ' + typeClass + '">' + typeLabel + '</span></div>'
+            + '<span class="modal-action-time">' + timeAgo(a.created_at) + '</span></div>';
+        });
+      } else { body += '<div class="modal-empty">No actions yet today</div>'; }
+      document.getElementById('modalBody').innerHTML = body;
+      document.getElementById('zoneModalOverlay').classList.add('active');
+    }
+
+    function closeModal() { document.getElementById('zoneModalOverlay').classList.remove('active'); }
+    document.getElementById('zoneModalOverlay').addEventListener('click', function(e) { if (e.target.id === 'zoneModalOverlay') closeModal(); });
+
+    async function loadWorld() {
+      try {
+        var playerId = getPlayerId();
+        var fetches = [
+          fetch('/api/zones').then(function(r) { return r.json(); }),
+          fetch('/api/territory/actions/today').then(function(r) { return r.json(); }),
+          fetch('/api/territory/influence').then(function(r) { return r.json(); }),
+          fetch('/api/leaderboards/schools').then(function(r) { return r.json(); })
+        ];
+        if (playerId) {
+          fetches.push(fetch('/api/players/' + playerId).then(function(r) { return r.json(); }));
+        }
+        var results = await Promise.all(fetches);
+        zones = results[0] || [];
+        actionsToday = results[1] || {};
+        influence = results[2] || {};
+        var schoolData = results[3] || [];
+        player = results[4] || null;
+        if (player) {
+          Object.keys(actionsToday).forEach(function(zoneId) {
+            actionsToday[zoneId].forEach(function(a) {
+              var p = a.player || {};
+              if (p.id === player.id) playerActedZones[zoneId] = true;
+            });
+          });
+          renderPlayerBar();
+        }
+        renderTowers(schoolData);
+        var loader = document.getElementById('loadingState');
+        if (loader) loader.style.display = 'none';
+        renderZoneGrid();
+      } catch (e) {
+        console.error('World load error:', e);
+        var loader = document.getElementById('loadingState');
+        if (loader) loader.style.display = 'none';
+        document.getElementById('zoneGrid').innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-faint);font-style:italic;">Error loading world data</div>';
+      }
+    }
+
+    loadWorld();
+  </script>
+</body>
+</html>(a, b) {
           var aB = a.bonus_effect ? 1 : 0; var bB = b.bonus_effect ? 1 : 0;
           if (bB !== aB) return bB - aB;
           return getZoneActivity(b.id) - getZoneActivity(a.id);
