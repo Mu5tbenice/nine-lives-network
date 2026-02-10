@@ -708,6 +708,32 @@
     }
 
     init();
-  </script>
+  
+      // === PvP Mode ===
+      var arenaMode = 'ai';
+      function setArenaMode(mode) {
+        arenaMode = mode;
+        document.getElementById('modeAI').style.background = mode === 'ai' ? 'rgba(212,166,75,0.15)' : 'transparent';
+        document.getElementById('modeAI').style.borderColor = mode === 'ai' ? 'var(--gold-border)' : 'rgba(255,255,255,0.1)';
+        document.getElementById('modeAI').style.color = mode === 'ai' ? 'var(--gold)' : 'var(--text-dim)';
+        document.getElementById('modePvP').style.background = mode === 'pvp' ? 'rgba(212,166,75,0.15)' : 'transparent';
+        document.getElementById('modePvP').style.borderColor = mode === 'pvp' ? 'var(--gold-border)' : 'rgba(255,255,255,0.1)';
+        document.getElementById('modePvP').style.color = mode === 'pvp' ? 'var(--gold)' : 'var(--text-dim)';
+        document.getElementById('pvpSetup').style.display = mode === 'pvp' ? 'block' : 'none';
+      }
+      function startPvPDuel() {
+        var handle = document.getElementById('pvpOpponent').value.trim().replace('@','');
+        if (!handle) { alert('Enter an opponent handle'); return; }
+        document.getElementById('enemyName').textContent = '@' + handle;
+        document.getElementById('enemyHouse').textContent = 'Challenger';
+        addLog('@' + handle + ' accepts your challenge! Duel begins!', 'system');
+        gameState.enemyHP = 100;
+        gameState.enemyShield = false;
+        document.getElementById('enemyHP').style.width = '100%';
+        gameState.duelActive = true;
+        gameState.turn = 'player';
+        enableSpells();
+      }
+</script>
 </body>
 </html>
