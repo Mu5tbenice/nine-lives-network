@@ -347,7 +347,9 @@
         <li><a href="/dashboard.html">Dashboard</a></li>
         <li><a href="/map.html">World</a></li>
         <li><a href="/leaderboards.html">Leaderboards</a></li>
-        <li><a href="/arena.html" class="active">Arena</a></li>
+        <li><a href="/arena.html" class="active">Arena</a>
+            <a href="/spellbook.html">Spellbook</a>
+            <a href="/profile.html">Profile</a></li>
         <li><a href="/how-to-play.html">Help</a></li>
         <li id="navLogout" style="display:none;"><a href="#" class="logout-btn" onclick="localStorage.removeItem('player_id'); window.location.href='/';">Logout</a></li>
       </ul>
@@ -360,6 +362,17 @@
   <div class="arena-container">
     <h1 class="arena-title">⚔️ The Arena</h1>
     <p class="arena-subtitle">Test your magic against rival wizards. Spend mana, cast spells, earn glory.</p>
+        <div style="display:flex; gap:12px; justify-content:center; margin:16px 0;">
+          <button onclick="setArenaMode('ai')" id="modeAI" class="mode-btn active" style="padding:10px 24px; border-radius:8px; border:1px solid var(--gold-border); background:rgba(212,166,75,0.15); color:var(--gold); font-family:'Cinzel',serif; cursor:pointer; font-size:13px; transition:all 0.2s;">Solo vs AI</button>
+          <button onclick="setArenaMode('pvp')" id="modePvP" class="mode-btn" style="padding:10px 24px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:var(--text-dim); font-family:'Cinzel',serif; cursor:pointer; font-size:13px; transition:all 0.2s;">Challenge a Player</button>
+        </div>
+        <div id="pvpSetup" style="display:none; text-align:center; margin-bottom:16px;">
+          <p style="color:var(--text-dim); font-size:13px; margin-bottom:8px;">Enter opponent's @handle to issue a challenge</p>
+          <div style="display:flex; gap:8px; justify-content:center; align-items:center;">
+            <input type="text" id="pvpOpponent" placeholder="@opponent_handle" style="padding:8px 14px; border-radius:8px; border:1px solid var(--gold-border); background:rgba(0,0,0,0.3); color:var(--gold); font-family:'Crimson Text',serif; font-size:14px; width:200px;">
+            <button onclick="startPvPDuel()" style="padding:8px 18px; border-radius:8px; border:1px solid var(--gold-border); background:rgba(212,166,75,0.15); color:var(--gold); font-family:'Cinzel',serif; cursor:pointer; font-size:12px;">Challenge!</button>
+          </div>
+        </div>
 
     <div class="duel-arena" id="duelArena">
       <div class="duel-header">Spell Duel</div>

@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spellbook — Nine Lives Network</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#06060e;--bg-card:rgba(12,12,26,0.8);--glass:rgba(255,255,255,0.03);--glass-border:rgba(255,255,255,0.07);
+  --gold:#FFD700;--gold-dim:#a07d0a;--gold-glow:rgba(255,215,0,0.12);--cyan:#00D4FF;--purple:#8A2BE2;
+  --text:#e8e4d9;--text-dim:#8a8677;--text-muted:#4a4840;
+  --smoulders:#FF4444;--darktide:#00CED1;--stonebark:#55CC44;--ashenvale:#98FB98;
+  --stormrage:#FFBB00;--nighthollow:#CC44DD;--dawnbringer:#FFD700;--manastorm:#6699EE;--plaguemire:#88CC66;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Crimson Text',Georgia,serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;line-height:1.55}
+.ambient{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 50% 40% at 15% 5%,rgba(255,215,0,0.025),transparent 70%),
+  radial-gradient(ellipse 40% 50% at 85% 95%,rgba(138,43,226,0.02),transparent 70%)}
+nav{position:sticky;top:0;z-index:100;background:rgba(6,6,14,0.94);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--glass-border);padding:0.6rem 1.5rem;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'Cinzel',serif;font-weight:900;font-size:1rem;color:var(--gold);letter-spacing:0.12em}
+.logo span{color:var(--text-muted);font-weight:400;font-size:0.65rem;margin-left:0.4rem;letter-spacing:0.15em}
+.nav-links{display:flex;gap:1.2rem}
+.nav-links a{font-family:'Cinzel',serif;font-size:0.65rem;font-weight:600;color:var(--text-muted);
+  text-decoration:none;letter-spacing:0.08em;text-transform:uppercase;transition:color 0.25s}
+.nav-links a:hover,.nav-links a.active{color:var(--gold)}
+.hero{position:relative;z-index:1;text-align:center;padding:3rem 1.5rem 1.5rem}
+.hero h1{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(1.8rem,4.5vw,3rem);
+  background:linear-gradient(135deg,var(--gold),#fff8dc,var(--gold));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:0.06em}
+.hero p{font-style:italic;color:var(--text-dim);font-size:1.05rem;margin-top:0.4rem;max-width:550px;margin-inline:auto}
+.tabs{position:relative;z-index:1;max-width:1100px;margin:1rem auto;padding:0 1.5rem;
+  display:flex;gap:0.4rem;flex-wrap:wrap;justify-content:center}
+.tab{font-family:'Cinzel',serif;font-size:0.6rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;
+  padding:0.45rem 0.9rem;border-radius:4px;border:1px solid var(--glass-border);background:var(--glass);
+  color:var(--text-muted);cursor:pointer;transition:all 0.25s;white-space:nowrap}
+.tab:hover{border-color:var(--gold-dim);color:var(--text)}
+.tab.active{background:var(--gold-glow);border-color:var(--gold);color:var(--gold)}
+.house-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:0.35rem;vertical-align:middle}
+.section{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 1.5rem}
+.section-head{display:flex;align-items:center;gap:0.8rem;margin:2rem 0 0.8rem}
+.section-head h2{font-family:'Cinzel',serif;font-weight:700;font-size:1.15rem;color:var(--gold);letter-spacing:0.04em;white-space:nowrap}
+.section-head .line{flex:1;height:1px;background:linear-gradient(90deg,var(--gold-dim),transparent)}
+.section-head .tag{font-family:'Press Start 2P',monospace;font-size:0.4rem;color:var(--text-muted);
+  letter-spacing:0.08em;padding:0.2rem 0.45rem;border:1px solid var(--glass-border);border-radius:2px;white-space:nowrap}
+.house-motto{font-style:italic;color:var(--text-muted);font-size:0.9rem;margin:-0.4rem 0 0.8rem;padding-left:0.1rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:0.8rem;margin-bottom:1rem}
+.card{background:var(--bg-card);border:1px solid var(--glass-border);border-radius:6px;padding:1rem 1.1rem;
+  transition:all 0.25s;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0.5;transition:opacity 0.25s}
+.card:hover{border-color:rgba(255,255,255,0.12);transform:translateY(-1px);box-shadow:0 6px 24px rgba(0,0,0,0.25)}
+.card:hover::before{opacity:1}
+.card[data-h="universal"]::before{background:linear-gradient(90deg,var(--cyan),var(--purple))}
+.card[data-h="smoulders"]::before{background:var(--smoulders)}
+.card[data-h="darktide"]::before{background:var(--darktide)}
+.card[data-h="stonebark"]::before{background:var(--stonebark)}
+.card[data-h="ashenvale"]::before{background:var(--ashenvale)}
+.card[data-h="stormrage"]::before{background:var(--stormrage)}
+.card[data-h="nighthollow"]::before{background:var(--nighthollow)}
+.card[data-h="dawnbringer"]::before{background:var(--dawnbringer)}
+.card[data-h="manastorm"]::before{background:var(--manastorm)}
+.card[data-h="plaguemire"]::before{background:var(--plaguemire)}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.35rem}
+.spell-name{font-family:'Cinzel',serif;font-weight:700;font-size:1rem;color:#fff}
+.cost-pill{font-family:'Press Start 2P',monospace;font-size:0.5rem;color:var(--cyan);white-space:nowrap;
+  padding:0.15rem 0.4rem;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:3px}
+.card-type{display:flex;gap:0.35rem;margin-bottom:0.4rem;flex-wrap:wrap}
+.type-badge{font-family:'Cinzel',serif;font-size:0.55rem;font-weight:600;letter-spacing:0.06em;
+  text-transform:uppercase;padding:0.12rem 0.4rem;border-radius:3px}
+.type-attack{background:rgba(255,68,68,0.12);color:#ff6b6b;border:1px solid rgba(255,68,68,0.25)}
+.type-defend{background:rgba(0,206,209,0.12);color:#4dd9db;border:1px solid rgba(0,206,209,0.25)}
+.type-support{background:rgba(255,215,0,0.12);color:#ffd700;border:1px solid rgba(255,215,0,0.25)}
+.type-utility{background:rgba(138,43,226,0.12);color:#b366f0;border:1px solid rgba(138,43,226,0.25)}
+.type-debuff{background:rgba(136,204,102,0.12);color:#99dd66;border:1px solid rgba(136,204,102,0.25)}
+.type-control{background:rgba(102,153,238,0.12);color:#7799ff;border:1px solid rgba(102,153,238,0.25)}
+.type-reaction{background:rgba(255,187,0,0.12);color:#ffcc33;border:1px solid rgba(255,187,0,0.25)}
+.tier-badge{font-family:'Press Start 2P',monospace;font-size:0.4rem;letter-spacing:0.04em;
+  padding:0.12rem 0.35rem;border-radius:3px;border:1px solid var(--glass-border);color:var(--text-muted)}
+.tier-1{color:var(--text-dim)}.tier-2{color:var(--cyan);border-color:rgba(0,212,255,0.2)}
+.tier-3{color:var(--gold);border-color:rgba(255,215,0,0.3);animation:ug 2.5s ease-in-out infinite}
+@keyframes ug{0%,100%{box-shadow:0 0 3px rgba(255,215,0,0.05)}50%{box-shadow:0 0 8px rgba(255,215,0,0.2)}}
+.card-base{font-family:'Press Start 2P',monospace;font-size:0.45rem;color:var(--text-dim);margin-bottom:0.4rem}
+.pills{display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.45rem}
+.pill{font-family:'Cinzel',serif;font-size:0.55rem;font-weight:700;letter-spacing:0.04em;
+  padding:0.2rem 0.5rem;border-radius:3px;cursor:default;position:relative;
+  transition:all 0.2s;text-transform:uppercase;white-space:nowrap}
+.pill:hover{transform:translateY(-1px)}
+.pill .tip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  font-family:'Crimson Text',serif;font-size:0.8rem;font-weight:400;text-transform:none;
+  letter-spacing:0;color:var(--text);background:rgba(10,10,20,0.96);border:1px solid rgba(255,255,255,0.1);
+  border-radius:4px;padding:0.4rem 0.6rem;white-space:normal;width:max-content;max-width:220px;
+  opacity:0;pointer-events:none;transition:opacity 0.2s;z-index:50;line-height:1.4;
+  box-shadow:0 4px 16px rgba(0,0,0,0.5)}
+.pill .tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:rgba(10,10,20,0.96)}
+.pill:hover .tip{opacity:1}
+.p-gold{background:rgba(255,215,0,0.13);border:1px solid rgba(255,215,0,0.3);color:#ffd700}
+.p-red{background:rgba(255,80,60,0.13);border:1px solid rgba(255,80,60,0.3);color:#ff7b6b}
+.p-blue{background:rgba(0,180,255,0.13);border:1px solid rgba(0,180,255,0.3);color:#55ccff}
+.p-green{background:rgba(80,200,80,0.13);border:1px solid rgba(80,200,80,0.3);color:#66dd66}
+.p-purple{background:rgba(160,80,240,0.13);border:1px solid rgba(160,80,240,0.3);color:#bb88ff}
+.p-gray{background:rgba(180,180,180,0.1);border:1px solid rgba(180,180,180,0.25);color:#bbbbbb}
+.p-cyan{background:rgba(0,212,255,0.13);border:1px solid rgba(0,212,255,0.3);color:#55ddff}
+.p-orange{background:rgba(255,160,40,0.13);border:1px solid rgba(255,160,40,0.3);color:#ffbb55}
+.p-pink{background:rgba(255,80,180,0.13);border:1px solid rgba(255,80,180,0.3);color:#ff88cc}
+.p-ice{background:rgba(150,220,255,0.13);border:1px solid rgba(150,220,255,0.3);color:#aaddff}
+.p-yellow{background:rgba(255,220,50,0.13);border:1px solid rgba(255,220,50,0.3);color:#ffdd44}
+.p-dark{background:rgba(80,40,120,0.18);border:1px solid rgba(120,60,180,0.35);color:#bb88dd}
+.p-brown{background:rgba(160,120,60,0.13);border:1px solid rgba(160,120,60,0.3);color:#ccaa66}
+.p-white{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.25);color:#eeeedd}
+.p-toxic{background:rgba(120,200,60,0.13);border:1px solid rgba(120,200,60,0.3);color:#aaee55}
+.card-flavor{font-style:italic;font-size:0.85rem;color:var(--text-muted);
+  border-top:1px solid var(--glass-border);padding-top:0.4rem;margin-top:0.3rem}
+.combo-card{background:var(--bg-card);border:1px solid var(--glass-border);border-radius:6px;
+  padding:1rem 1.1rem;position:relative;overflow:hidden}
+.combo-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--gold),var(--cyan),var(--purple));opacity:0.6}
+.combo-name{font-family:'Cinzel',serif;font-weight:700;font-size:1rem;color:#fff;margin-bottom:0.25rem}
+.combo-threshold{display:inline-flex;align-items:center;gap:0.3rem;
+  font-family:'Press Start 2P',monospace;font-size:0.45rem;color:var(--cyan);
+  padding:0.15rem 0.4rem;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);
+  border-radius:3px;margin-bottom:0.35rem}
+.combo-note{font-family:'Crimson Text',serif;font-size:0.8rem;color:var(--text-dim);margin-bottom:0.3rem}
+.combo-effect{font-size:0.95rem;margin-bottom:0.25rem}
+.combo-flavor{font-style:italic;font-size:0.85rem;color:var(--text-muted);
+  border-top:1px solid var(--glass-border);padding-top:0.4rem;margin-top:0.3rem}
+.rotation-bar{position:relative;z-index:1;max-width:1100px;margin:1rem auto;padding:0 1.5rem}
+.rotation-inner{background:var(--bg-card);border:1px solid var(--glass-border);border-radius:6px;
+  padding:0.8rem 1.2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem}
+.rot-label{font-family:'Cinzel',serif;font-weight:600;font-size:0.75rem;color:var(--gold);letter-spacing:0.06em}
+.rot-detail{font-family:'Press Start 2P',monospace;font-size:0.45rem;color:var(--text-dim)}
+.rot-ults span{font-family:'Press Start 2P',monospace;font-size:0.45rem;color:var(--gold)}
+.info-box{position:relative;z-index:1;max-width:1100px;margin:0 auto 0.5rem;padding:0 1.5rem}
+.info-inner{background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.15);border-radius:6px;
+  padding:0.7rem 1rem;font-size:0.9rem;color:var(--text-dim);line-height:1.5}
+.info-inner strong{color:var(--cyan);font-weight:600}
+.hidden{display:none!important}
+.card,.combo-card{opacity:0;animation:fu 0.35s ease forwards;transform:translateY(8px)}
+@keyframes fu{to{opacity:1;transform:translateY(0)}}
+@media(max-width:700px){
+  nav{padding:0.5rem 0.8rem}.nav-links{gap:0.6rem}.nav-links a{font-size:0.55rem}
+  .hero{padding:2rem 1rem 1rem}
+  .tabs,.section,.rotation-bar,.info-box{padding-left:0.8rem;padding-right:0.8rem}
+  .grid{grid-template-columns:1fr}
+  .rotation-inner{flex-direction:column;align-items:flex-start}
+  .pill .tip{left:0;transform:none;max-width:180px}
+}
+</style>
+</head>
+<body>
+<div class="ambient"></div>
+<nav>
+  <div class="logo">9LV <span>Spellbook</span></div>
+  <div class="nav-links">
+    <a href="/dashboard.html">Dashboard</a>
+    <a href="/map.html">World</a>
+    <a href="/leaderboards.html">Leaderboards</a>
+    <a href="/arena.html">Arena</a>
+    <a href="/spellbook.html" class="active">Spellbook</a>
+    <a href="/profile.html">Profile</a>
+    <a href="/how-to-play.html">Help</a>
+  </div>
+</nav>
+<div class="hero">
+  <h1>The Grimoire of Avaloris</h1>
+  <p>Master the spells. Read the rotation. Rule the realm.</p>
+</div>
+<div class="rotation-bar">
+  <div class="rotation-inner">
+    <div><div class="rot-label">Today's Rotation</div><div class="rot-detail" id="rotDate"></div></div>
+    <div class="rot-ults" style="font-family:'Press Start 2P',monospace;font-size:0.45rem;color:var(--text-dim)">ULTIMATES: <span id="rotUlts"></span></div>
+  </div>
+</div>
+<div class="info-box">
+  <div class="info-inner">
+    <strong>How spells work:</strong> Basic Attack/Defend always cost 1 MP and give +10. Spells add <strong>bonus effects on top</strong> — Tier 1 costs the same 1 MP, Tier 2 costs 2 MP, Ultimates cost 3 MP. Hover the colored pills to see what each effect does.
+  </div>
+</div>
+<div class="tabs" id="typeFilter">
+  <button class="tab active" data-f="all">All</button>
+  <button class="tab" data-f="attack">Attack</button>
+  <button class="tab" data-f="defend">Defend</button>
+  <button class="tab" data-f="support">Support</button>
+  <button class="tab" data-f="utility">Utility</button>
+  <button class="tab" data-f="debuff">Debuff</button>
+  <button class="tab" data-f="ultimate">Ultimate</button>
+</div>
+<div class="tabs" id="houseFilter">
+  <button class="tab active" data-h="all">All Houses</button>
+  <button class="tab" data-h="universal"><span class="house-dot" style="background:var(--cyan)"></span>Universal</button>
+  <button class="tab" data-h="smoulders"><span class="house-dot" style="background:var(--smoulders)"></span>Smoulders</button>
+  <button class="tab" data-h="darktide"><span class="house-dot" style="background:var(--darktide)"></span>Darktide</button>
+  <button class="tab" data-h="stonebark"><span class="house-dot" style="background:var(--stonebark)"></span>Stonebark</button>
+  <button class="tab" data-h="ashenvale"><span class="house-dot" style="background:var(--ashenvale)"></span>Ashenvale</button>
+  <button class="tab" data-h="stormrage"><span class="house-dot" style="background:var(--stormrage)"></span>Stormrage</button>
+  <button class="tab" data-h="nighthollow"><span class="house-dot" style="background:var(--nighthollow)"></span>Nighthollow</button>
+  <button class="tab" data-h="dawnbringer"><span class="house-dot" style="background:var(--dawnbringer)"></span>Dawnbringer</button>
+  <button class="tab" data-h="manastorm"><span class="house-dot" style="background:var(--manastorm)"></span>Manastorm</button>
+  <button class="tab" data-h="plaguemire"><span class="house-dot" style="background:var(--plaguemire)"></span>Plaguemire</button>
+</div>
+<div id="content"></div>
+<div style="height:3rem"></div>
+<script>
+const P={
+  'BONUS':{c:'gold',t:'Extra influence or defense on top of base +10'},
+  'BURN':{c:'orange',t:'Target loses influence over time'},
+  'SCALD':{c:'orange',t:'Next attacker takes reduced influence'},
+  'SPREAD':{c:'red',t:'Effect also hits other active zones'},
+  'STRIP DEF':{c:'red',t:'Reduces target house defense'},
+  'ERUPTION':{c:'red',t:'Bonus scales with housemate participation'},
+  'DRAIN':{c:'purple',t:'Steals influence from leading house'},
+  'PULL':{c:'blue',t:'Takes influence from another house'},
+  'REFLECT':{c:'cyan',t:'Returns damage to attackers'},
+  'CLOAK':{c:'dark',t:'Hides your influence percentage'},
+  'STEALTH':{c:'dark',t:'Casts hidden from activity feed'},
+  'SWAP':{c:'pink',t:'Exchanges influence totals between houses'},
+  'WEAKEN':{c:'orange',t:'Reduces all enemies defense'},
+  'ANCHOR':{c:'brown',t:'Defense can\'t drop below threshold'},
+  'HEAL':{c:'green',t:'Restores lost defense'},
+  'THORNS':{c:'green',t:'Attacks against you cost extra mana'},
+  'CONVERT':{c:'cyan',t:'Transform defense into influence or vice versa'},
+  'PERSIST':{c:'gold',t:'Effect carries to next day'},
+  'SWIFT':{c:'white',t:'Reduced cooldown between casts'},
+  'FREE CAST':{c:'cyan',t:'Next housemate cast costs 0 mana'},
+  'DODGE':{c:'ice',t:'Chance next attack has no effect'},
+  'REACH':{c:'white',t:'Can target any active zone'},
+  'SWEEP':{c:'gray',t:'Hits all other houses'},
+  'CRIT 25%':{c:'yellow',t:'25% chance to deal double influence'},
+  'FIZZLE 25%':{c:'yellow',t:'25% chance enemy attack does nothing'},
+  'CHAIN':{c:'blue',t:'Bonus if housemate cast here recently'},
+  'AMPLIFY':{c:'purple',t:'Doubles next spell bonus effects'},
+  'NIGHT OWL':{c:'dark',t:'+5 bonus during 00:00-08:00 UTC'},
+  'HEX':{c:'purple',t:'Debuff reducing target casts'},
+  'SILENCE':{c:'gray',t:'Blocks Tier 2+ spells temporarily'},
+  'STEAL':{c:'red',t:'Takes from controlling house'},
+  'FREEZE':{c:'ice',t:'Locks all other houses influence'},
+  'PIERCE':{c:'white',t:'Ignores part of defense'},
+  'ABSORB':{c:'blue',t:'Blocks next debuff on your house'},
+  'RANDOMIZE':{c:'pink',t:'Random effect — could be low or very high'},
+  'NEGATE':{c:'white',t:'Cancels last enemy spell effects'},
+  'REFUND':{c:'cyan',t:'Refunds 1 MP on use'},
+  'INFECT':{c:'toxic',t:'Punishes if target doesn\'t cast soon'},
+  'WITHER':{c:'brown',t:'Slow influence drain over hours'},
+  'CORRODE':{c:'toxic',t:'Reduces zone max defense for the day'},
+  'PLAGUE':{c:'toxic',t:'Area damage to all other zones'},
+  'TOXIC ZONE':{c:'toxic',t:'Zone damages all houses each hour'},
+  'LOCKOUT':{c:'red',t:'Can\'t attack this zone for a period'},
+  'UNDERDOG':{c:'gold',t:'Bonus when your house has fewer members'},
+  'AURA':{c:'gold',t:'All housemates who cast here get a bonus'},
+  'GIFT':{c:'white',t:'Buff an ally from any house'},
+  'JUSTICE':{c:'gold',t:'Extra bonus against leading house'},
+  'SAFE':{c:'gold',t:'Limits influence loss per hour'},
+  'RESTORE':{c:'cyan',t:'All housemates regen 1 mana (once/day)'},
+  'RESET':{c:'cyan',t:'All influence equalized then yours boosted'},
+  'INSPIRE':{c:'gold',t:'Housemates get small bonus'},
+  'REVEAL':{c:'white',t:'Shows exact influence percentages'},
+  'DOT':{c:'green',t:'Influence added gradually over time'}
+};
+function mp(name,detail){const k=name.replace(/\+\d+\s*/,'').replace(/\d+%?\s*/,'').trim();const d=P[name]||P[k]||{c:'gray',t:detail||name};return`<span class="pill p-${d.c}">${name}<span class="tip">${detail||d.t}</span></span>`}
+
+const S=[
+{n:'Basic Attack',h:'universal',t:0,c:1,y:'attack',b:'+10 influence',p:[],f:'The reliable standby. Always available.'},
+{n:'Basic Defend',h:'universal',t:0,c:1,y:'defend',b:'+10 defense',p:[],f:'Hold the line. Always available.'},
+{n:'Mana Siphon',h:'universal',t:1,c:1,y:'attack',b:'+10 influence',p:[['DRAIN','Steals 2 from leading house']],f:'Drains ambient magic to your will.'},
+{n:'Fortify',h:'universal',t:1,c:1,y:'defend',b:'+10 defense',p:[['+2 BONUS','Extra defense'],['LOCKOUT','Can\'t attack this zone for 1 hr']],f:'Reinforces the ley lines beneath your feet.'},
+{n:'Rally Cry',h:'universal',t:1,c:1,y:'support',b:'+5 influence',p:[['INSPIRE','All housemates who cast here today get +2']],f:'Your voice carries across the battlefield.'},
+{n:'Scout',h:'universal',t:1,c:1,y:'utility',b:'—',p:[['REVEAL','Shows exact % for all houses']],f:'Your familiar surveys the battlefield.'},
+
+{n:'Kindle',h:'smoulders',t:1,c:1,y:'attack',b:'+10 influence',p:[['+3 BONUS','Extra influence'],['BURN','Target loses 1/hr for 2 hrs']],f:'The first spark is always the deadliest.',m:'From ember to inferno. We do not ask — we take.'},
+{n:'Flame Wall',h:'smoulders',t:1,c:1,y:'defend',b:'+10 defense',p:[['+2 BONUS','Extra defense'],['SCALD','Next attacker takes -3']],f:'Step closer. We dare you.'},
+{n:'Ember Toss',h:'smoulders',t:1,c:1,y:'attack',b:'+10 influence',p:[['SPREAD','+3 to one other random active zone']],f:'Fire doesn\'t care about borders.'},
+{n:'Scorch',h:'smoulders',t:2,c:2,y:'attack',b:'+10 influence',p:[['+8 BONUS','Big extra influence'],['STRIP DEF','Top house loses 5 defense']],f:'Burn first. Ask questions never.'},
+{n:'Wildfire',h:'smoulders',t:2,c:2,y:'attack',b:'+10 influence',p:[['SPREAD','+5 to TWO other active zones']],f:'Let it all burn.'},
+{n:'Inferno',h:'smoulders',t:3,c:3,y:'attack',b:'+10 influence',p:[['+20 BONUS','Massive influence'],['ERUPTION','If 3+ Smoulders cast here, doubles to +40']],f:'The mountain erupts.',u:1},
+
+{n:'Undertow',h:'darktide',t:1,c:1,y:'attack',b:'+10 influence',p:[['PULL','Steals 3 from 2nd highest house']],f:'The current always takes more.',m:'The tide comes for all. Patience is our weapon.'},
+{n:'Tidal Shield',h:'darktide',t:1,c:1,y:'defend',b:'+10 defense',p:[['+2 BONUS','Extra defense'],['REFLECT','Returns 3 to next attacker']],f:'The sea gives back everything.'},
+{n:'Fog Bank',h:'darktide',t:1,c:1,y:'utility',b:'—',p:[['CLOAK','Hides your % for 2 hrs (shows ???)']],f:'What lies beneath the mist?'},
+{n:'Riptide',h:'darktide',t:2,c:2,y:'attack',b:'+10 influence',p:[['+5 BONUS','Extra influence'],['SWAP','Swap rank with lowest house']],f:'What was down now rises.'},
+{n:'Erode',h:'darktide',t:2,c:2,y:'attack',b:'+10 influence',p:[['WEAKEN','ALL other houses lose 3 defense']],f:'Water finds every crack.'},
+{n:'Maelstrom',h:'darktide',t:3,c:3,y:'control',b:'—',p:[['RESET','All influence equalized, then +25 yours']],f:'Every throne crumbles before the tide.',u:1},
+
+{n:'Root',h:'stonebark',t:1,c:1,y:'defend',b:'+10 defense',p:[['+4 BONUS','Extra defense'],['ANCHOR','Can\'t drop below 10 for 1 hr']],f:'Deeper than stone. Older than memory.',m:'We are the mountain. Move us if you dare.'},
+{n:'Quake',h:'stonebark',t:1,c:1,y:'attack',b:'+10 influence',p:[['WEAKEN','All others lose 2 defense']],f:'The ground remembers every footstep.'},
+{n:'Regrowth',h:'stonebark',t:1,c:1,y:'defend',b:'+10 defense',p:[['HEAL','Restores 5 defense lost today']],f:'What falls will always rise again.'},
+{n:'Overgrowth',h:'stonebark',t:2,c:2,y:'defend',b:'+10 defense',p:[['+10 BONUS','Huge defense'],['THORNS','Attacks cost +1 MP for 2 hrs']],f:'Nature reclaims what was always hers.'},
+{n:'Terraform',h:'stonebark',t:2,c:2,y:'utility',b:'—',p:[['CONVERT','10 defense becomes 10 influence']],f:'Reshape the world, one stone at a time.'},
+{n:'Living Fortress',h:'stonebark',t:3,c:3,y:'defend',b:'+10 defense',p:[['+30 BONUS','Enormous defense'],['PERSIST','If controlled at day end, +15 carries tomorrow']],f:'Immovable. Eternal. Ours.',u:1},
+
+{n:'Gust',h:'ashenvale',t:1,c:1,y:'attack',b:'+10 influence',p:[['SWIFT','Cooldown 5 min instead of 10']],f:'Blink and you missed it.',m:'Gone before you noticed. Back before you blinked.'},
+{n:'Tailwind',h:'ashenvale',t:1,c:1,y:'support',b:'+5 influence',p:[['FREE CAST','Next Ashenvale cast here costs 0 MP']],f:'The wind at your back is our gift.'},
+{n:'Zephyr',h:'ashenvale',t:1,c:1,y:'defend',b:'+10 defense',p:[['DODGE','30% chance next attack misses']],f:'Can\'t hit what you can\'t catch.'},
+{n:'Cyclone',h:'ashenvale',t:2,c:2,y:'attack',b:'+10 influence',p:[['+2 BONUS','Extra influence'],['SWEEP','Removes 4 from every other house']],f:'Caught in the spin.'},
+{n:'Slipstream',h:'ashenvale',t:2,c:2,y:'attack',b:'+10 influence',p:[['REACH','Target any active zone']],f:'Distance is a state of mind.'},
+{n:'Tempest',h:'ashenvale',t:3,c:3,y:'attack',b:'+10 influence',p:[['+15 BONUS','Large influence'],['SPREAD','Free +10 on another zone']],f:'The sky tears open.',u:1},
+
+{n:'Spark',h:'stormrage',t:1,c:1,y:'attack',b:'+10 influence',p:[['CRIT 25%','25% chance for +20 total']],f:'A single bolt can split a mountain.',m:'The sky answers to us. And today, it\'s angry.'},
+{n:'Static Field',h:'stormrage',t:1,c:1,y:'defend',b:'+10 defense',p:[['FIZZLE 25%','25% chance enemy attack fails']],f:'The air crackles with danger.'},
+{n:'Arc',h:'stormrage',t:1,c:1,y:'attack',b:'+10 influence',p:[['CHAIN','+3 if Stormrage cast here in last 30 min']],f:'Lightning seeks its kin.'},
+{n:'Chain Lightning',h:'stormrage',t:2,c:2,y:'attack',b:'+10 influence',p:[['+5 BONUS','Extra influence'],['SPREAD','+5 to another active zone']],f:'Lightning finds least resistance.'},
+{n:'Overcharge',h:'stormrage',t:2,c:2,y:'utility',b:'—',p:[['AMPLIFY','Next spell bonuses doubled']],f:'Channel the storm. Become the storm.'},
+{n:'Thunderstrike',h:'stormrage',t:3,c:3,y:'attack',b:'+10 influence',p:[['+25 BONUS','Massive influence'],['STRIP DEF','Leading house loses 15']],f:'Judgment from above. No appeal.',u:1},
+
+{n:'Shadow Bolt',h:'nighthollow',t:1,c:1,y:'attack',b:'+10 influence',p:[['NIGHT OWL','+5 during 00:00-08:00 UTC']],f:'The night shift has its perks.',m:'You can\'t fight what you can\'t see.'},
+{n:'Veil',h:'nighthollow',t:1,c:1,y:'defend',b:'+10 defense',p:[['STEALTH','Hidden from activity feed 1 hr']],f:'Can\'t counter what you can\'t see.'},
+{n:'Curse',h:'nighthollow',t:1,c:1,y:'debuff',b:'—',p:[['HEX','Target\'s next 2 casts: -3 influence']],f:'A whispered curse that clings like shadow.'},
+{n:'Hex',h:'nighthollow',t:2,c:2,y:'debuff',b:'—',p:[['SILENCE','Target can\'t use T2+ spells 1 hr']],f:'Your tongue turns to ash.'},
+{n:'Soul Drain',h:'nighthollow',t:2,c:2,y:'attack',b:'+10 influence',p:[['+5 BONUS','Extra influence'],['STEAL','Takes 5 from controller']],f:'Your strength becomes ours.'},
+{n:'Eclipse',h:'nighthollow',t:3,c:3,y:'control',b:'—',p:[['FREEZE','All others frozen 1 hr'],['+25 BONUS','Nighthollow gains +25']],f:'Darkness absolute. Light denied.',u:1},
+
+{n:'Radiance',h:'dawnbringer',t:1,c:1,y:'support',b:'+8 influence',p:[['AURA','All Dawnbringer here get +2']],f:'One light becomes many.',m:'Our light lifts all. Burns enemies brightest.'},
+{n:'Holy Shield',h:'dawnbringer',t:1,c:1,y:'defend',b:'+10 defense',p:[['UNDERDOG','If fewest members here, +8 instead']],f:'The outnumbered shine brightest.'},
+{n:'Blessing',h:'dawnbringer',t:1,c:1,y:'support',b:'+5 influence',p:[['GIFT','Any house ally gets +5 on next cast']],f:'Grace knows no house colors.'},
+{n:'Smite',h:'dawnbringer',t:2,c:2,y:'attack',b:'+10 influence',p:[['+6 BONUS','Extra influence'],['JUSTICE','+5 vs leading house']],f:'Justice burns hotter than fire.'},
+{n:'Sanctuary',h:'dawnbringer',t:2,c:2,y:'defend',b:'+10 defense',p:[['+10 BONUS','Large defense'],['SAFE','Max 5 influence lost/hr for 2 hrs']],f:'Within these walls, nothing touches us.'},
+{n:'Dawn\'s Light',h:'dawnbringer',t:3,c:3,y:'support',b:'+10 influence',p:[['+15 BONUS','Large influence'],['RESTORE','All Dawnbringer regen 1 MP']],f:'The dawn comes for everyone.',u:1},
+
+{n:'Arcane Missile',h:'manastorm',t:1,c:1,y:'attack',b:'+10 influence',p:[['PIERCE','Ignores 3 defense']],f:'Pure theory made lethal.',m:'Reality is a suggestion we rewrite.'},
+{n:'Spell Shield',h:'manastorm',t:1,c:1,y:'defend',b:'+10 defense',p:[['ABSORB','Blocks next debuff']],f:'Every attack is just data.'},
+{n:'Flux',h:'manastorm',t:1,c:1,y:'utility',b:'—',p:[['RANDOMIZE','+5 to +20 influence (random)']],f:'Chaos is just unrecognized order.'},
+{n:'Counterspell',h:'manastorm',t:2,c:2,y:'reaction',b:'—',p:[['NEGATE','Cancels last enemy spell (10 min)'],['REFUND','Refunds 1 MP']],f:'No. — Manastorm, probably.'},
+{n:'Transmute',h:'manastorm',t:2,c:2,y:'utility',b:'—',p:[['CONVERT','Swap up to 15 defense <> influence']],f:'Matter is merely a suggestion.'},
+{n:'Reality Warp',h:'manastorm',t:3,c:3,y:'control',b:'—',p:[['SWAP','Exchange two OTHER houses\' totals']],f:'What was theirs is now... different.',u:1},
+
+{n:'Toxic Bolt',h:'plaguemire',t:1,c:1,y:'attack',b:'+8 influence',p:[['DOT','+2 every 15 min for 1 hr (+8 over time)']],f:'The first sting is the introduction.',m:'Everything rots. We accelerate the process.'},
+{n:'Miasma',h:'plaguemire',t:1,c:1,y:'defend',b:'+8 defense',p:[['TOXIC ZONE','All lose 1/hr for 2 hrs. Plaguemire immune']],f:'Breathe deep. It gets worse.'},
+{n:'Spore',h:'plaguemire',t:1,c:1,y:'attack',b:'+10 influence',p:[['INFECT','If target doesn\'t cast in 30 min, -5']],f:'Tick tock.'},
+{n:'Contagion',h:'plaguemire',t:2,c:2,y:'debuff',b:'—',p:[['WITHER','Target loses 2/hr for 3 hrs']],f:'It spreads. It always spreads.'},
+{n:'Decompose',h:'plaguemire',t:2,c:2,y:'attack',b:'+10 influence',p:[['CORRODE','Zone max defense -10 for the day']],f:'Nothing lasts. Especially defenses.'},
+{n:'Blight',h:'plaguemire',t:3,c:3,y:'attack',b:'+10 influence',p:[['+10 BONUS','Extra influence'],['PLAGUE','Other zones: non-Plaguemire lose 5']],f:'The rot spreads everywhere.',u:1}
+];
+
+const CB=[
+{n:'Resonance',k:'house',th:'3 MEMBERS',nt:'Any 3 house members cast on same zone today',ef:'+5 bonus to every participant (retroactive)',fl:'Three voices become one roar.'},
+{n:'Surge',k:'house',th:'5 MEMBERS',nt:'5 unique members on same zone',ef:'+10 bonus to all (stacks with Resonance)',fl:'The ley lines tremble with united power.'},
+{n:'House United',k:'house',th:'8 MEMBERS',nt:'8 unique members — any cast counts',ef:'+15 bonus. Zone "Claimed" — defense doubled rest of day',fl:'An entire house focuses its will.'},
+{n:'Overwhelming Force',k:'house',th:'12 MEMBERS',nt:'Cumulative with Resonance + Surge + United',ef:'+20 bonus. Double influence for your house all day',fl:'The realm itself bows.'},
+{n:'Community Rally',k:'community',th:'3 SAME TAG',nt:'3 players sharing community tag on same zone',ef:'+3 bonus to all community members here',fl:'Your community rides together.'},
+{n:'Community Siege',k:'community',th:'5 SAME TAG',nt:'5 players with same tag',ef:'+7 bonus + their house gets +5',fl:'A community\'s strength echoes through its house.'},
+{n:'Community Dominance',k:'community',th:'10 SAME TAG',nt:'Tag displayed on zone card for rest of day',ef:'+12 bonus. Community tag shown as controlling',fl:'This zone belongs to your people.'}
+];
+
+const CL=[
+{n:'Alliance Pact',th:'2 HOUSES',nt:'2 different houses both cast Support spells within 30 min',ef:'Both houses get +8 bonus',fl:'An unlikely partnership.'},
+{n:'Convergence',th:'3+ HOUSES',nt:'3+ different houses cast on same zone in 1 hour',ef:'All +5 bonus. Non-participating leader loses 8',fl:'The enemy of my enemy...'},
+{n:'Grand Ritual',th:'5+ HOUSES',nt:'5+ houses on same zone today',ef:'Zone produces 1.5x points rest of day',fl:'A rare moment of unity.'},
+{n:'Chaos Surge',th:'7+ HOUSES',nt:'7+ houses on same zone today',ef:'All bonuses doubled, 15% backfire chance',fl:'Too much magic. Reality cracks.'}
+];
+
+const H=['universal','smoulders','darktide','stonebark','ashenvale','stormrage','nighthollow','dawnbringer','manastorm','plaguemire'];
+const HN={universal:'Universal Spells',smoulders:'House Smoulders',darktide:'House Darktide',stonebark:'House Stonebark',ashenvale:'House Ashenvale',stormrage:'House Stormrage',nighthollow:'House Nighthollow',dawnbringer:'House Dawnbringer',manastorm:'House Manastorm',plaguemire:'House Plaguemire'};
+const HE={universal:'✦',smoulders:'🔥',darktide:'🌊',stonebark:'🌿',ashenvale:'💨',stormrage:'⚡',nighthollow:'🌙',dawnbringer:'☀️',manastorm:'🔮',plaguemire:'☠️'};
+const HT={universal:'ALL HOUSES',smoulders:'FIRE · AGGRESSION',darktide:'WATER · CONTROL',stonebark:'EARTH · ENDURANCE',ashenvale:'WIND · SPEED',stormrage:'LIGHTNING · HIGH RISK',nighthollow:'SHADOW · DISRUPTION',dawnbringer:'LIGHT · SUPPORT',manastorm:'ARCANE · MANIPULATION',plaguemire:'POISON · ATTRITION'};
+
+function rc(s,d){
+  const tc=s.t===3?'tier-3':s.t===2?'tier-2':'tier-1';
+  const tl=s.t===3?'ULT':s.t===2?'T2':s.t>=1?'T1':'';
+  const pl=s.p.map(p=>mp(p[0],p[1])).join('');
+  return`<div class="card" data-h="${s.h}" data-type="${s.y}" data-ult="${!!s.u}" data-tier="${s.t}" style="animation-delay:${d}s">
+    <div class="card-top"><div class="spell-name">${s.n}</div><div class="cost-pill">${s.c} MP</div></div>
+    <div class="card-type"><span class="type-badge type-${s.y}">${s.y}</span>${tl?`<span class="tier-badge ${tc}">${tl}</span>`:''}</div>
+    <div class="card-base">${s.b}</div>
+    ${pl?`<div class="pills">${pl}</div>`:''}
+    <div class="card-flavor">${s.f}</div></div>`;
+}
+function cc(c,d){
+  return`<div class="combo-card" style="animation-delay:${d}s">
+    <div class="combo-name">${c.n}</div><div class="combo-threshold">${c.th}</div>
+    <div class="combo-note">${c.nt}</div><div class="combo-effect">${c.ef}</div>
+    <div class="combo-flavor">${c.fl}</div></div>`;
+}
+
+function render(){
+  let o='',di=0;
+  H.forEach(h=>{
+    const sp=S.filter(s=>s.h===h);if(!sp.length)return;
+    const fm=sp.find(s=>s.m);
+    o+=`<div class="section" data-hs="${h}"><div class="section-head"><h2>${HE[h]} ${HN[h]}</h2><div class="line"></div><span class="tag">${HT[h]}</span></div>`;
+    if(fm)o+=`<div class="house-motto">"${fm.m}"</div>`;
+    o+=`<div class="grid">`;sp.forEach(s=>{o+=rc(s,Math.min(di*0.04,0.4));di++});o+=`</div></div>`;
+  });
+
+  o+=`<div class="section" data-cs="house"><div class="section-head"><h2>⚔️ House Combos</h2><div class="line"></div><span class="tag">AUTO · SAME HOUSE</span></div>`;
+  o+=`<div class="info-inner" style="margin-bottom:0.8rem"><strong>Auto-trigger</strong> when enough unique house members cast on same zone. <strong>Any spell counts</strong> — even Basic Attack. Bonuses apply retroactively.</div>`;
+  o+=`<div class="grid">${CB.filter(c=>c.k==='house').map((c,i)=>cc(c,i*0.05)).join('')}</div></div>`;
+
+  o+=`<div class="section" data-cs="community"><div class="section-head"><h2>🏷️ Community Combos</h2><div class="line"></div><span class="tag">AUTO · SAME TAG</span></div>`;
+  o+=`<div class="info-inner" style="margin-bottom:0.8rem"><strong>Stack with house combos!</strong> 5 $BONK in Smoulders = Surge (+10) + Community Siege (+7) = <strong>+17 each</strong>.</div>`;
+  o+=`<div class="grid">${CB.filter(c=>c.k==='community').map((c,i)=>cc(c,i*0.05)).join('')}</div></div>`;
+
+  o+=`<div class="section" data-cs="collab"><div class="section-head"><h2>🤝 Cross-House Collaborations</h2><div class="line"></div><span class="tag">AUTO · MULTI-HOUSE</span></div>`;
+  o+=`<div class="info-inner" style="margin-bottom:0.8rem">Trigger when <strong>different houses</strong> cast on same zone. Just show up — these are automatic.</div>`;
+  o+=`<div class="grid">${CL.map((c,i)=>cc(c,i*0.05)).join('')}</div></div>`;
+
+  document.getElementById('content').innerHTML=o;
+}
+
+let fT='all',fH='all';
+function af(){
+  document.querySelectorAll('.card').forEach(c=>{
+    const t=c.dataset.type,h=c.dataset.h,u=c.dataset.ult==='true';
+    let tOk=fT==='all'||t===fT||(fT==='ultimate'&&u);
+    let hOk=fH==='all'||h===fH;
+    c.classList.toggle('hidden',!(tOk&&hOk));
+  });
+  document.querySelectorAll('[data-hs]').forEach(s=>{
+    const h=s.dataset.hs;
+    const hOk=fH==='all'||h===fH;
+    const vis=hOk&&s.querySelectorAll('.card:not(.hidden)').length>0;
+    s.classList.toggle('hidden',!vis);
+  });
+  document.querySelectorAll('[data-cs]').forEach(s=>{
+    s.classList.toggle('hidden',fT!=='all'&&fT!=='ultimate');
+  });
+}
+document.getElementById('typeFilter').addEventListener('click',e=>{
+  const b=e.target.closest('.tab');if(!b)return;
+  document.querySelectorAll('#typeFilter .tab').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');fT=b.dataset.f;af();
+});
+document.getElementById('houseFilter').addEventListener('click',e=>{
+  const b=e.target.closest('.tab');if(!b)return;
+  document.querySelectorAll('#houseFilter .tab').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');fH=b.dataset.h;af();
+});
+
+const d=new Date(),dn=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+document.getElementById('rotDate').textContent=`${dn[d.getUTCDay()]} — ${d.toISOString().split('T')[0]}`;
+const us={1:'Smoulders, Darktide, Stonebark',2:'Ashenvale, Stormrage, Nighthollow',3:'Dawnbringer, Manastorm, Plaguemire',4:'⚡ ALL HOUSES — THUNDER DAY',5:'Smoulders, Ashenvale, Dawnbringer',6:'Darktide, Stormrage, Manastorm',0:'Stonebark, Nighthollow, Plaguemire'};
+document.getElementById('rotUlts').textContent=us[d.getUTCDay()];
+render();
+</script>
+</body>
+</html>
