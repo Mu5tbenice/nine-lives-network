@@ -767,17 +767,18 @@ const HOUSE_LOGOS = {
 
     // Daily rotation spells available on zone cards
     var DAILY_SPELLS = [
-      { name:'Basic Attack', type:'attack', mp:1, effect:'+10 influence' },
-      { name:'Basic Defend', type:'defend', mp:1, effect:'+10 defense' },
-      { name:'Mana Siphon', type:'attack', mp:1, effect:'+10 influence, drain' },
-      { name:'Fortify', type:'defend', mp:1, effect:'+10 defense, +2 bonus' },
-      { name:'Rally Cry', type:'support', mp:1, effect:'+5 influence, inspire' },
-      { name:'Scout', type:'utility', mp:1, effect:'reveal zone info' }
+      { name:'Basic Attack', type:'ATTACK', mp:1, effect:'+10 influence', tier:'—' },
+      { name:'Basic Defend', type:'DEFEND', mp:1, effect:'+10 defense', tier:'—' },
+      { name:'Mana Siphon', type:'ATTACK', mp:1, effect:'+10 influence, drain', tier:'T1' },
+      { name:'Fortify', type:'DEFEND', mp:1, effect:'+10 defense, +2 bonus', tier:'T1' },
+      { name:'Rally Cry', type:'SUPPORT', mp:1, effect:'+5 influence, inspire', tier:'T1' },
+      { name:'Scout', type:'UTILITY', mp:1, effect:'Reveal zone %', tier:'T1' }
     ];
     function buildSpellPanel(zoneId) {
       var html = '<div class="zone-card__spell-panel"><h4>Cast a Spell</h4><div class="zone-card__spell-grid">';
       DAILY_SPELLS.forEach(function(s) {
-        html += '<button class="zone-spell-btn" onclick="event.stopPropagation();castSpellOnZone(\'' + zoneId + '\',\'' + s.name + '\')" title="' + s.effect + '">';
+        html += '<button class="zone-spell-btn" onclick="event.stopPropagation();castSpellOnZone(' + zoneId + ',\'' + s.name + '\')" title="' + s.effect + '">';
+        html += '<span style="font-size:8px;opacity:0.6;margin-right:3px;text-transform:uppercase;">' + s.type + '</span>';
         html += '<span>' + s.name + '</span><span class="spell-cost">' + s.mp + ' MP</span></button>';
       });
       html += '</div></div>';

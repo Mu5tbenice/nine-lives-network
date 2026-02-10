@@ -370,7 +370,7 @@ const CL=[
 
 const H=['universal','smoulders','darktide','stonebark','ashenvale','stormrage','nighthollow','dawnbringer','manastorm','plaguemire'];
 const HN={universal:'Universal Spells',smoulders:'House Smoulders',darktide:'House Darktide',stonebark:'House Stonebark',ashenvale:'House Ashenvale',stormrage:'House Stormrage',nighthollow:'House Nighthollow',dawnbringer:'House Dawnbringer',manastorm:'House Manastorm',plaguemire:'House Plaguemire'};
-const HE={universal:'✦',smoulders:'🔥',darktide:'🌊',stonebark:'🌿',ashenvale:'💨',stormrage:'⚡',nighthollow:'🌙',dawnbringer:'☀️',manastorm:'🔮',plaguemire:'☠️'};
+const HE={universal:'✦',smoulders:'<img src="/assets/images/houses/House-smoulders.png" style="width:22px;height:22px;vertical-align:middle">',darktide:'<img src="/assets/images/houses/House-darktide.png" style="width:22px;height:22px;vertical-align:middle">',stonebark:'<img src="/assets/images/houses/House-stonebark.png" style="width:22px;height:22px;vertical-align:middle">',ashenvale:'<img src="/assets/images/houses/House-Ashenvale.png" style="width:22px;height:22px;vertical-align:middle">',stormrage:'<img src="/assets/images/houses/House-stormrage.png" style="width:22px;height:22px;vertical-align:middle">',nighthollow:'<img src="/assets/images/houses/House-nighthollow.png" style="width:22px;height:22px;vertical-align:middle">',dawnbringer:'<img src="/assets/images/houses/House-dawnbringer.png" style="width:22px;height:22px;vertical-align:middle">',manastorm:'<img src="/assets/images/houses/House-manastorm.png" style="width:22px;height:22px;vertical-align:middle">',plaguemire:'<img src="/assets/images/houses/House-plaguemire.png" style="width:22px;height:22px;vertical-align:middle">'};
 const HT={universal:'ALL HOUSES',smoulders:'FIRE · AGGRESSION',darktide:'WATER · CONTROL',stonebark:'EARTH · ENDURANCE',ashenvale:'WIND · SPEED',stormrage:'LIGHTNING · HIGH RISK',nighthollow:'SHADOW · DISRUPTION',dawnbringer:'LIGHT · SUPPORT',manastorm:'ARCANE · MANIPULATION',plaguemire:'POISON · ATTRITION'};
 
 function rc(s,d){
@@ -409,7 +409,7 @@ function render(){
   o+=`<div class="info-inner" style="margin-bottom:0.8rem"><strong>Stack with house combos!</strong> 5 $BONK in Smoulders = Surge (+10) + Community Siege (+7) = <strong>+17 each</strong>.</div>`;
   o+=`<div class="grid">${CB.filter(c=>c.k==='community').map((c,i)=>cc(c,i*0.05)).join('')}</div></div>`;
 
-  o+=`<div class="section" data-cs="collab"><div class="section-head"><h2>🤝 Cross-House Collaborations</h2><div class="line"></div><span class="tag">AUTO · MULTI-HOUSE</span></div>`;
+  o+=`<div class="section" data-cs="collab"><div class="section-head"><h2>&#129309; Cross-House Collaborations</h2><div class="line"></div><span class="tag">AUTO · MULTI-HOUSE</span></div>`;
   o+=`<div class="info-inner" style="margin-bottom:0.8rem">Trigger when <strong>different houses</strong> cast on same zone. Just show up — these are automatic.</div>`;
   o+=`<div class="grid">${CL.map((c,i)=>cc(c,i*0.05)).join('')}</div></div>`;
 
@@ -447,7 +447,7 @@ document.getElementById('houseFilter').addEventListener('click',e=>{
 
 const d=new Date(),dn=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 document.getElementById('rotDate').textContent=`${dn[d.getUTCDay()]} — ${d.toISOString().split('T')[0]}`;
-const us={1:'Smoulders, Darktide, Stonebark',2:'Ashenvale, Stormrage, Nighthollow',3:'Dawnbringer, Manastorm, Plaguemire',4:'⚡ ALL HOUSES — THUNDER DAY',5:'Smoulders, Ashenvale, Dawnbringer',6:'Darktide, Stormrage, Manastorm',0:'Stonebark, Nighthollow, Plaguemire'};
+const us={1:'Smoulders, Darktide, Stonebark',2:'Ashenvale, Stormrage, Nighthollow',3:'Dawnbringer, Manastorm, Plaguemire',4:'ALL HOUSES — THUNDER DAY',5:'Smoulders, Ashenvale, Dawnbringer',6:'Darktide, Stormrage, Manastorm',0:'Stonebark, Nighthollow, Plaguemire'};
 document.getElementById('rotUlts').textContent=us[d.getUTCDay()];
 render();
 </script>
