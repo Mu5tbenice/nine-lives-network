@@ -145,7 +145,7 @@
   </div>
 
   <div class="main-container">
-    <div class="lb-hero fade-up"><h1 class="lb-hero__title">Leaderboards</h1><p class="lb-hero__sub">Who stands tallest in Avaloris?</p></div>
+    <div class="lb-hero fade-up"><h1 class="lb-hero__title">Leaderboards</h1><p class="lb-hero__sub">Who stands tallest in Avaloris?</p><div style="max-width:700px;margin:20px auto 10px;padding:16px 24px;background:linear-gradient(135deg,rgba(212,166,75,0.08),rgba(212,166,75,0.02));border:1px solid rgba(212,166,75,0.15);border-radius:10px;text-align:center;"><p style="color:var(--gold);font-family:var(--font-title);font-size:13px;margin:0 0 6px;">Community Exposure Leaderboard</p><p style="color:var(--text-faint);font-size:12px;margin:0;">Represent your crypto community. The higher you rank, the more visibility your project gets. Every spell cast, every zone conquered, every duel won adds to your community score.</p></div></div>
     <div class="lb-season fade-up"><span class="badge--season">Season 0</span></div>
     <div class="lb-tabs fade-up fade-up-1"><button class="lb-tab active" onclick="switchTab('players')">Players</button><button class="lb-tab" onclick="switchTab('houses')">Houses</button><button class="lb-tab" onclick="switchTab('communities')">Communities</button><button class="lb-tab" onclick="switchTab('markets')">Markets</button></div>
     <div class="loading" id="loadingState"><div class="spinner"></div></div>
@@ -467,7 +467,32 @@ const HOUSE_LOGOS = {
       }catch(e){console.error('Leaderboards error:',e);var l=document.getElementById('loadingState');if(l)l.style.display='none';
         document.getElementById('tab-players').innerHTML='<div class="lb-empty">Error loading leaderboards.</div>'}}
     loadLeaderboards();
-  </script>
+  
+    document.querySelectorAll('.lb-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        var target = this.dataset.tab;
+        if (target === 'houses') loadHouses();
+        if (target === 'communities') loadCommunities();
+      });
+    });
+    // Auto-load players on page load (already happens), add houses/communities tab containers
+    (function() {
+      var tabContent = document.getElementById('tabContent') || document.querySelector('.tab-content');
+      if (!tabContent) return;
+      // Create tab containers if they dont exist
+      if (!document.getElementById('housesTab')) {
+        var d = document.createElement('div'); d.id='housesTab'; d.className='tab-panel'; d.style.display='none';
+        d.innerHTML='<p style="text-align:center;color:var(--text-faint);padding:40px;">Loading houses...</p>';
+        tabContent.appendChild(d);
+      }
+      if (!document.getElementById('communitiesTab')) {
+        var d2 = document.createElement('div'); d2.id='communitiesTab'; d2.className='tab-panel'; d2.style.display='none';
+        d2.innerHTML='<p style="text-align:center;color:var(--text-faint);padding:40px;">Loading communities...</p>';
+        tabContent.appendChild(d2);
+      }
+    })();
+
+</script>
 
     <div class="player-popup" id="playerPopup">
       <div class="pp-name" id="ppName"></div>

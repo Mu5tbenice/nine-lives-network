@@ -362,7 +362,41 @@
       .player-popup-house img { width:16px; height:16px; }
       .player-popup-stats { margin-top:8px; font-size:0.7rem; color:var(--text-dim, #8a8677); }
     
-    </style>
+    
+    /* ── Expanded zone card ── */
+    .zone-card.expanded { grid-column: 1 / -1; }
+    .zone-card.expanded .zone-card__image { height: 200px; }
+    .zone-card.expanded .zone-card__body { padding: 16px 20px; }
+    .zone-card.expanded .zone-card__name { font-size: 20px; }
+    .zone-card__spell-panel { display:none; padding:12px 16px; border-top:1px solid rgba(212,166,75,0.15); }
+    .zone-card.expanded .zone-card__spell-panel { display:block; }
+    .zone-card__spell-panel h4 { font-family:var(--font-title); font-size:11px; color:var(--gold); letter-spacing:1px; margin:0 0 8px; text-transform:uppercase; }
+    .zone-card__spell-grid { display:flex; gap:6px; flex-wrap:wrap; }
+    .zone-spell-btn { background:rgba(212,166,75,0.08); border:1px solid rgba(212,166,75,0.2); border-radius:6px; padding:6px 10px; cursor:pointer; color:var(--text-bright); font-family:var(--font-body); font-size:11px; transition:all 0.2s; display:flex; align-items:center; gap:4px; }
+    .zone-spell-btn:hover { background:rgba(212,166,75,0.18); border-color:var(--gold); transform:translateY(-1px); }
+    .zone-spell-btn .spell-cost { color:var(--gold); font-size:10px; opacity:0.8; }
+    .zone-card__expand-btn { background:none; border:1px solid rgba(212,166,75,0.2); border-radius:4px; color:var(--text-faint); font-size:10px; padding:3px 8px; cursor:pointer; font-family:var(--font-data); letter-spacing:0.5px; transition:all 0.2s; }
+    .zone-card__expand-btn:hover { border-color:var(--gold); color:var(--gold); }
+    /* ── Player hover popup ── */
+    .player-popup { position:fixed; z-index:9999; background:var(--bg-card); border:1px solid rgba(212,166,75,0.3); border-radius:10px; padding:14px; min-width:200px; box-shadow:0 8px 32px rgba(0,0,0,0.5); pointer-events:none; display:none; }
+    .player-popup.visible { display:block; }
+    .player-popup__name { font-family:var(--font-title); font-size:14px; color:var(--text-bright); margin-bottom:4px; }
+    .player-popup__house { font-size:11px; color:var(--gold); display:flex; align-items:center; gap:4px; }
+    .player-popup__house img { width:14px; height:14px; }
+    .player-popup__stats { display:flex; gap:12px; margin-top:8px; font-size:11px; color:var(--text-faint); }
+    .player-popup__stat-val { color:var(--text-bright); font-weight:700; }
+    /* ── Zone modal spell panel ── */
+    .modal-spell-section { padding:12px 0; border-top:1px solid rgba(212,166,75,0.12); margin-top:12px; }
+    .modal-spell-section h4 { font-family:var(--font-title); font-size:11px; letter-spacing:1px; color:var(--gold); margin:0 0 10px; text-transform:uppercase; }
+    .modal-spell-grid { display:flex; gap:8px; flex-wrap:wrap; }
+    .modal-spell-card { background:rgba(212,166,75,0.06); border:1px solid rgba(212,166,75,0.15); border-radius:8px; padding:10px 14px; cursor:pointer; transition:all 0.2s; min-width:120px; }
+    .modal-spell-card:hover { background:rgba(212,166,75,0.15); border-color:var(--gold); transform:translateY(-2px); }
+    .modal-spell-card .spell-name { font-family:var(--font-title); font-size:12px; color:var(--text-bright); }
+    .modal-spell-card .spell-type { font-size:9px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; }
+    .modal-spell-card .spell-effect { font-size:10px; color:var(--text-faint); margin-top:4px; }
+    .modal-spell-card .spell-mp { color:var(--gold); font-size:10px; font-weight:700; }
+
+  </style>
 </head>
 <body>
 
@@ -730,6 +764,35 @@ const HOUSE_LOGOS = {
       return sorted;
     }
 
+
+    // Daily rotation spells available on zone cards
+    var DAILY_SPELLS = [
+      { name:'Basic Attack', type:'attack', mp:1, effect:'+10 influence' },
+      { name:'Basic Defend', type:'defend', mp:1, effect:'+10 defense' },
+      { name:'Mana Siphon', type:'attack', mp:1, effect:'+10 influence, drain' },
+      { name:'Fortify', type:'defend', mp:1, effect:'+10 defense, +2 bonus' },
+      { name:'Rally Cry', type:'support', mp:1, effect:'+5 influence, inspire' },
+      { name:'Scout', type:'utility', mp:1, effect:'reveal zone info' }
+    ];
+    function buildSpellPanel(zoneId) {
+      var html = '<div class="zone-card__spell-panel"><h4>Cast a Spell</h4><div class="zone-card__spell-grid">';
+      DAILY_SPELLS.forEach(function(s) {
+        html += '<button class="zone-spell-btn" onclick="event.stopPropagation();castSpellOnZone(\'' + zoneId + '\',\'' + s.name + '\')" title="' + s.effect + '">';
+        html += '<span>' + s.name + '</span><span class="spell-cost">' + s.mp + ' MP</span></button>';
+      });
+      html += '</div></div>';
+      return html;
+    }
+    function toggleZoneExpand(e, zoneId) {
+      e.stopPropagation();
+      var cards = document.querySelectorAll('.zone-card');
+      cards.forEach(function(c) {
+        if (c.dataset.zoneId !== String(zoneId)) c.classList.remove('expanded');
+      });
+      var card = document.querySelector('.zone-card[data-zone-id="' + zoneId + '"]');
+      if (card) card.classList.toggle('expanded');
+    }
+
     function renderZoneGrid() {
       var sorted = getSortedZones();
       var grid = document.getElementById('zoneGrid');
@@ -774,7 +837,7 @@ const HOUSE_LOGOS = {
         var activityDotClass = activity > 0 ? 'zone-card__activity-dot' : 'zone-card__activity-dot zone-card__activity-dot--idle';
 
         if (zoneImg) {
-          html += '<div class="' + cardClass + '" onclick="openZoneModal(' + z.id + ')">'
+          html += '<div class="' + cardClass + '" data-zone-id="' + z.id + '" onclick="openZoneModal(' + z.id + ')">' 
             + '<div class="zone-card__image" style="background-image:url(\'' + zoneImg + '\');">'
             + '<div class="zone-card__image-badges">' + badges + '</div>'
             + '<div class="zone-card__image-overlay">'
@@ -785,9 +848,9 @@ const HOUSE_LOGOS = {
             + '<div class="zone-card__influence">' + renderInfluenceBar(z.id) + '</div>'
             + '<div class="zone-card__footer">'
             + '<span class="zone-card__activity"><span class="' + activityDotClass + '"></span>' + activity + ' action' + (activity !== 1 ? 's' : '') + ' today</span>'
-            + '<div class="zone-card__actions">' + btnsHTML + '</div></div></div></div>';
+            + '<div class="zone-card__actions">' + btnsHTML + '<button class="zone-card__expand-btn" onclick="toggleZoneExpand(event,' + z.id + ')">DETAILS</button></div>' + buildSpellPanel(z.id) + '</div></div></div>';
         } else {
-          html += '<div class="' + cardClass + '" onclick="openZoneModal(' + z.id + ')">'
+          html += '<div class="' + cardClass + '" data-zone-id="' + z.id + '" onclick="openZoneModal(' + z.id + ')">' 
             + '<div class="zone-card__no-image">'
             + '<div class="zone-card__name">' + z.name + '</div>'
             + '<div class="zone-card__desc">' + z.description + '</div>'
@@ -797,7 +860,7 @@ const HOUSE_LOGOS = {
             + '<div class="zone-card__influence">' + renderInfluenceBar(z.id) + '</div>'
             + '<div class="zone-card__footer">'
             + '<span class="zone-card__activity"><span class="' + activityDotClass + '"></span>' + activity + ' action' + (activity !== 1 ? 's' : '') + ' today</span>'
-            + '<div class="zone-card__actions">' + btnsHTML + '</div></div></div></div>';
+            + '<div class="zone-card__actions">' + btnsHTML + '<button class="zone-card__expand-btn" onclick="toggleZoneExpand(event,' + z.id + ')">DETAILS</button></div>' + buildSpellPanel(z.id) + '</div></div></div>';
         }
       });
       grid.innerHTML = html;
@@ -886,7 +949,15 @@ const HOUSE_LOGOS = {
       body += '</div>';
 
       var actions = actionsToday[zoneId] || [];
-      body += '<div class="zone-modal__actions-title">TODAY\'S ACTIONS (' + actions.length + ')</div>';
+      body += '<div class="modal-spell-section"><h4>Cast Spells on this Zone</h4><div class="modal-spell-grid">';
+        DAILY_SPELLS.forEach(function(s) {
+          body += '<div class="modal-spell-card" onclick="castSpellOnZone(' + zoneId + ',\'' + s.name + '\')">'
+            + '<div class="spell-name">' + s.name + '</div>'
+            + '<div class="spell-type">' + s.type + ' \u2022 <span class="spell-mp">' + s.mp + ' MP</span></div>'
+            + '<div class="spell-effect">' + s.effect + '</div></div>';
+        });
+        body += '</div></div>';
+        body += '<div class="zone-modal__actions-title">TODAY\'S ACTIONS (' + actions.length + ')</div>';
       if (actions.length > 0) {
         actions.forEach(function(a) {
           var p = a.player || {};
