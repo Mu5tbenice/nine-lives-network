@@ -257,7 +257,15 @@
       border-radius: 14px;
       background: var(--bg-card);
     }
-  </style>
+  
+      .spell-rotation-card { background:rgba(20,16,32,0.6); border:1px solid rgba(212,166,75,0.12); border-radius:12px; padding:20px; margin-top:16px; }
+      .spell-rotation-title { font-family:'Cinzel',serif; font-size:0.9rem; color:var(--gold); margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+      .spell-rot-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:8px; }
+      .spell-rot-item { padding:10px 8px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); background:rgba(255,255,255,0.02); text-align:center; }
+      .spell-rot-item .sname { font-family:'Cinzel',serif; font-size:0.7rem; color:var(--text-body); }
+      .spell-rot-item .scost { font-size:0.6rem; color:var(--gold); margin-top:2px; }
+    
+    </style>
 </head>
 <body>
 
@@ -331,15 +339,15 @@ const HOUSE_LOGOS = {
 };
     // ── House data (matches your database) ──
     const HOUSES = {
-      1: { name: 'Smoulders',   emoji: '🔥', color: '#E03C31', element: 'Ember Covenant',  img: '/assets/images/houses/Housesmoulders.png' },
-      2: { name: 'Darktide',    emoji: '🌊', color: '#00B4D8', element: 'Tidal Conclave',   img: '/assets/images/houses/Housedarktide.png' },
-      3: { name: 'Stonebark',   emoji: '🌿', color: '#5CB338', element: 'Stone Covenant',   img: '/assets/images/houses/Housestonebark.png' },
-      4: { name: 'Ashenvale',   emoji: '💨', color: '#90E0EF', element: 'Zephyr Circle',    img: '/assets/images/houses/HouseAshenvale.png' },
-      5: { name: 'Stormrage',   emoji: '⚡', color: '#FFC800', element: 'Storm Assembly',   img: '/assets/images/houses/Housestormrage.png' },
-      6: { name: 'Nighthollow', emoji: '🌙', color: '#7B2D8E', element: 'Umbral Syndicate', img: '/assets/images/houses/Housenighthollow.png' },
-      7: { name: 'Dawnbringer', emoji: '☀️', color: '#FF8C00', element: 'Radiant Order',    img: '/assets/images/houses/HouseDwnbringer.png' },
-      8: { name: 'Manastorm',   emoji: '🔮', color: '#5B8FE0', element: 'Arcane Spire',     img: '/assets/images/houses/Housemanastorm.png' },
-      9: { name: 'Plaguemire',  emoji: '☠️', color: '#E84393', element: 'WildCat Path',     img: '/assets/images/houses/Houseplaguemire.png' },
+      1: { name: 'Smoulders',   emoji: '<img src="/assets/images/houses/House-smoulders.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#E03C31', element: 'Ember Covenant',  img: '/assets/images/houses/Housesmoulders.png' },
+      2: { name: 'Darktide',    emoji: '<img src="/assets/images/houses/House-darktide.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#00B4D8', element: 'Tidal Conclave',   img: '/assets/images/houses/Housedarktide.png' },
+      3: { name: 'Stonebark',   emoji: '<img src="/assets/images/houses/House-stonebark.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#5CB338', element: 'Stone Covenant',   img: '/assets/images/houses/Housestonebark.png' },
+      4: { name: 'Ashenvale',   emoji: '<img src="/assets/images/houses/House-Ashenvale.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#90E0EF', element: 'Zephyr Circle',    img: '/assets/images/houses/HouseAshenvale.png' },
+      5: { name: 'Stormrage',   emoji: '<img src="/assets/images/houses/House-stormrage.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#FFC800', element: 'Storm Assembly',   img: '/assets/images/houses/Housestormrage.png' },
+      6: { name: 'Nighthollow', emoji: '<img src="/assets/images/houses/House-nighthollow.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#7B2D8E', element: 'Umbral Syndicate', img: '/assets/images/houses/Housenighthollow.png' },
+      7: { name: 'Dawnbringer', emoji: '<img src="/assets/images/houses/House-dawnbringer.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#FF8C00', element: 'Radiant Order',    img: '/assets/images/houses/HouseDwnbringer.png' },
+      8: { name: 'Manastorm',   emoji: '<img src="/assets/images/houses/House-manastorm.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#5B8FE0', element: 'Arcane Spire',     img: '/assets/images/houses/Housemanastorm.png' },
+      9: { name: 'Plaguemire',  emoji: '<img src="/assets/images/houses/House-plaguemire.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#E84393', element: 'WildCat Path',     img: '/assets/images/houses/Houseplaguemire.png' },
     };
 
     // Story images — these rotate daily. Replace with your own zone art later.
@@ -501,7 +509,7 @@ const HOUSE_LOGOS = {
         storyCardHTML = ''
           + '<div class="no-story fade-up fade-up-1">'
           + '  <span class="label">Today\'s Story</span>'
-          + '  <p style="font-size:32px; margin:12px 0;">🌙</p>'
+          + '  <p style="font-size:32px; margin:12px 0;"><img src="/assets/images/houses/House-nighthollow.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""></p>'
           + '  <p style="font-family:var(--font-title); font-size:16px; color:var(--text-body); font-style:italic;">No active story right now. Check back at 8 AM UTC.</p>'
           + '</div>';
       }
@@ -588,7 +596,7 @@ const HOUSE_LOGOS = {
         // STREAK
         + '<div class="card fade-up fade-up-3">'
         + '  <div class="streak-bar">'
-        + '    <span class="streak-bar__icon">' + (streak >= 7 ? '💎' : streak >= 1 ? '🔥' : '🌑') + '</span>'
+        + '    <span class="streak-bar__icon">' + (streak >= 7 ? '💎' : streak >= 1 ? '<img src="/assets/images/houses/House-smoulders.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">' : '🌑') + '</span>'
         + '    <div class="streak-bar__info">'
         + '      <div class="streak-bar__count">' + streak + ' <span>DAY STREAK</span></div>'
         + '      <div class="streak-bar__sub">' + (streak < 7 ? (7 - streak) + ' more for Week Warrior 💎' : 'Week Warrior achieved! 💎') + '</div>'
@@ -606,7 +614,20 @@ const HOUSE_LOGOS = {
 
         // SET COMMUNITY
     + '<div class="card fade-up fade-up-4">'
-    + '  <div class="card-header"><span class="label">🪙 Your Community</span></div>'
+    + '  <div class="card-header"><span class="label">🪙 Your Community</span></div>
+          <!-- Today's Spells -->
+          <div class="spell-rotation-card" id="todaySpells">
+            <div class="spell-rotation-title">Today's Rotation</div>
+            <div class="spell-rot-grid" id="spellRotGrid">
+              <div class="spell-rot-item"><div class="sname">Basic Attack</div><div class="scost">1 MP</div></div>
+              <div class="spell-rot-item"><div class="sname">Basic Defend</div><div class="scost">1 MP</div></div>
+              <div class="spell-rot-item"><div class="sname">Mana Siphon</div><div class="scost">1 MP</div></div>
+              <div class="spell-rot-item"><div class="sname">Fortify</div><div class="scost">1 MP</div></div>
+              <div class="spell-rot-item"><div class="sname">Rally Cry</div><div class="scost">1 MP</div></div>
+              <div class="spell-rot-item"><div class="sname">Scout</div><div class="scost">1 MP</div></div>
+            </div>
+            <a href="/spellbook.html" style="display:block;text-align:center;margin-top:12px;font-family:'Cinzel',serif;font-size:0.7rem;color:var(--gold);text-decoration:none;opacity:0.7;">View Full Spellbook &rarr;</a>
+          </div>'
     + '  <div class="community-section" id="communitySection">'
     + '    <div id="communityDisplay" style="display:none; text-align:center; padding:12px;">'
     + '      <div style="font-family: var(--font-data); font-size:14px; color:var(--gold);" id="communityTicker"></div>'
@@ -737,15 +758,15 @@ const HOUSE_LOGOS = {
         <h2 style="font-family:Cinzel,serif; color:#D4A64B; text-align:center; margin-bottom:8px; font-size:22px;">Choose Your House</h2>
         <p style="font-family:Crimson Text,serif; color:#ff8844; text-align:center; margin-bottom:24px; font-size:14px;">Warning: This choice is permanent and cannot be changed!</p>
         <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px;">
-          <div onclick="selectHouse(1)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(255,68,68,0.08); border:1px solid rgba(255,68,68,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-smoulders.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#FF4444;">Smoulders</span><br><span style="font-size:18px;">&#128293;</span></div>
-          <div onclick="selectHouse(2)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(0,206,209,0.08); border:1px solid rgba(0,206,209,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-darktide.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#00CED1;">Darktide</span><br><span style="font-size:18px;">&#127754;</span></div>
-          <div onclick="selectHouse(3)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(85,204,68,0.08); border:1px solid rgba(85,204,68,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-stonebark.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#55CC44;">Stonebark</span><br><span style="font-size:18px;">&#127807;</span></div>
-          <div onclick="selectHouse(4)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(152,251,152,0.08); border:1px solid rgba(152,251,152,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-Ashenvale.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#98FB98;">Ashenvale</span><br><span style="font-size:18px;">&#128168;</span></div>
-          <div onclick="selectHouse(5)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(255,187,0,0.08); border:1px solid rgba(255,187,0,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-stormrage.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#FFBB00;">Stormrage</span><br><span style="font-size:18px;">&#9889;</span></div>
-          <div onclick="selectHouse(6)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(204,68,221,0.08); border:1px solid rgba(204,68,221,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-nighthollow.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#CC44DD;">Nighthollow</span><br><span style="font-size:18px;">&#127769;</span></div>
-          <div onclick="selectHouse(7)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(255,215,0,0.08); border:1px solid rgba(255,215,0,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-dawnbringer.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#FFD700;">Dawnbringer</span><br><span style="font-size:18px;">&#9728;&#65039;</span></div>
-          <div onclick="selectHouse(8)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(102,153,238,0.08); border:1px solid rgba(102,153,238,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-manastorm.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#6699EE;">Manastorm</span><br><span style="font-size:18px;">&#128302;</span></div>
-          <div onclick="selectHouse(9)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(136,204,102,0.08); border:1px solid rgba(136,204,102,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-plaguemire.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#88CC66;">Plaguemire</span><br><span style="font-size:18px;">&#9760;</span></div>
+          <div onclick="selectHouse(1)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(255,68,68,0.08); border:1px solid rgba(255,68,68,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-smoulders.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#FF4444;">Smoulders</span><br><span style="font-size:18px;"><img src="/assets/images/houses/House-smoulders.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""></span></div>
+          <div onclick="selectHouse(2)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(0,206,209,0.08); border:1px solid rgba(0,206,209,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-darktide.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#00CED1;">Darktide</span><br><span style="font-size:18px;"><img src="/assets/images/houses/House-darktide.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""></span></div>
+          <div onclick="selectHouse(3)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(85,204,68,0.08); border:1px solid rgba(85,204,68,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-stonebark.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#55CC44;">Stonebark</span><br><span style="font-size:18px;"><img src="/assets/images/houses/House-stonebark.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""></span></div>
+          <div onclick="selectHouse(4)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(152,251,152,0.08); border:1px solid rgba(152,251,152,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-Ashenvale.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#98FB98;">Ashenvale</span><br><span style="font-size:18px;"><img src="/assets/images/houses/House-Ashenvale.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""></span></div>
+          <div onclick="selectHouse(5)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(255,187,0,0.08); border:1px solid rgba(255,187,0,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-stormrage.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#FFBB00;">Stormrage</span><br><span style="font-size:18px;"><img src="/assets/images/houses/House-stormrage.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""></span></div>
+          <div onclick="selectHouse(6)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(204,68,221,0.08); border:1px solid rgba(204,68,221,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-nighthollow.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#CC44DD;">Nighthollow</span><br><span style="font-size:18px;"><img src="/assets/images/houses/House-nighthollow.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""></span></div>
+          <div onclick="selectHouse(7)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(255,215,0,0.08); border:1px solid rgba(255,215,0,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-dawnbringer.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#FFD700;">Dawnbringer</span><br><span style="font-size:18px;"><img src="/assets/images/houses/House-dawnbringer.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""></span></div>
+          <div onclick="selectHouse(8)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(102,153,238,0.08); border:1px solid rgba(102,153,238,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-manastorm.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#6699EE;">Manastorm</span><br><span style="font-size:18px;"><img src="/assets/images/houses/House-manastorm.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""></span></div>
+          <div onclick="selectHouse(9)" style="cursor:pointer; text-align:center; padding:16px 8px; background:rgba(136,204,102,0.08); border:1px solid rgba(136,204,102,0.2); border-radius:12px; transition:all 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''"><img src="/assets/images/houses/House-plaguemire.png" style="width:48px;height:48px;object-fit:contain;margin-bottom:8px;"><br><span style="font-family:Cinzel,serif;font-size:11px;color:#88CC66;">Plaguemire</span><br><span style="font-size:18px;"><img src="/assets/images/houses/House-plaguemire.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""></span></div>
         </div>
       </div>
     </div>

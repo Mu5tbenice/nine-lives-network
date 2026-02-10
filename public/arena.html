@@ -381,10 +381,12 @@
           <button onclick="setArenaMode('pvp')" id="modePvP" class="mode-btn" style="padding:10px 24px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:var(--text-dim); font-family:'Cinzel',serif; cursor:pointer; font-size:13px; transition:all 0.2s;">Challenge a Player</button>
         </div>
         <div id="pvpSetup" style="display:none; text-align:center; margin-bottom:16px;">
-          <p style="color:var(--text-dim); font-size:13px; margin-bottom:8px;">Enter opponent's @handle to issue a challenge</p>
-          <div style="display:flex; gap:8px; justify-content:center; align-items:center;">
-            <input type="text" id="pvpOpponent" placeholder="@opponent_handle" style="padding:8px 14px; border-radius:8px; border:1px solid var(--gold-border); background:rgba(0,0,0,0.3); color:var(--gold); font-family:'Crimson Text',serif; font-size:14px; width:200px;">
-            <button onclick="startPvPDuel()" style="padding:8px 18px; border-radius:8px; border:1px solid var(--gold-border); background:rgba(212,166,75,0.15); color:var(--gold); font-family:'Cinzel',serif; cursor:pointer; font-size:12px;">Challenge!</button>
+          <div style="background:rgba(0,0,0,0.2); border:1px solid rgba(212,166,75,0.12); border-radius:12px; padding:20px; max-width:500px; margin:0 auto;">
+            <p style="font-family:'Cinzel',serif; color:var(--gold); font-size:0.9rem; margin-bottom:12px;">Online Players</p>
+            <div id="lobbyList" style="max-height:200px; overflow-y:auto; margin-bottom:12px;">
+              <div style="padding:8px; color:var(--text-dim); font-size:0.8rem;">Loading players...</div>
+            </div>
+            <p style="font-size:0.7rem; color:var(--text-dim);">Click a player to challenge them</p>
           </div>
         </div>
 
@@ -734,6 +736,7 @@
         document.getElementById('modePvP').style.borderColor = mode === 'pvp' ? 'var(--gold-border)' : 'rgba(255,255,255,0.1)';
         document.getElementById('modePvP').style.color = mode === 'pvp' ? 'var(--gold)' : 'var(--text-dim)';
         document.getElementById('pvpSetup').style.display = mode === 'pvp' ? 'block' : 'none';
+        if (mode === 'pvp') loadLobby();
       }
       function startPvPDuel() {
         var handle = document.getElementById('pvpOpponent').value.trim().replace('@','');
@@ -748,6 +751,45 @@
         gameState.turn = 'player';
         enableSpells();
       }
-</script>
+
+      // === Lobby System ===
+      function loadLobby() {
+        var list = document.getElementById('lobbyList');
+        if (!list) return;
+        fetch('/api/leaderboards').then(function(r){return r.json()}).then(function(data) {
+          var players = (data.players || data || []).slice(0, 20);
+          if (players.length === 0) {
+            list.innerHTML = '<div style="padding:12px;color:var(--text-dim);font-size:0.8rem;">No players online yet. Be the first!</div>';
+            return;
+          }
+          var html = '';
+          players.forEach(function(p) {
+            var hImg = HOUSE_LOGOS[p.school_id] || '';
+            var imgTag = hImg ? '<img src="'+hImg+'" style="width:20px;height:20px;object-fit:contain;border-radius:50%;">' : '';
+            html += '<div onclick="challengePlayer(\'' + (p.twitter_handle||p.display_name||'player') + '\')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);margin-bottom:4px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.background=\'rgba(212,166,75,0.08)\';this.style.borderColor=\'rgba(212,166,75,0.2)\'" onmouseout="this.style.background=\'\';this.style.borderColor=\'rgba(255,255,255,0.04)\'">' +
+              imgTag +
+              '<span style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:var(--gold);">@' + (p.twitter_handle||'player') + '</span>' +
+              '<span style="margin-left:auto;font-size:0.7rem;color:var(--text-dim);">' + (p.total_points||0) + ' pts</span>' +
+            '</div>';
+          });
+          list.innerHTML = html;
+        }).catch(function() {
+          list.innerHTML = '<div style="padding:12px;color:var(--text-dim);font-size:0.8rem;">Could not load players. Try again.</div>';
+        });
+      }
+
+      function challengePlayer(handle) {
+        document.getElementById('enemyName').textContent = '@' + handle;
+        document.getElementById('enemyHouse').textContent = 'Challenger';
+        addLog('@' + handle + ' accepts your challenge! Duel begins!', 'system');
+        gameState.enemyHP = 100;
+        gameState.enemyShield = false;
+        document.getElementById('enemyHP').style.width = '100%';
+        gameState.duelActive = true;
+        gameState.turn = 'player';
+        enableSpells();
+      }
+
+    </script>
 </body>
 </html>

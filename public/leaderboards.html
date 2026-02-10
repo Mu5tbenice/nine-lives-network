@@ -104,7 +104,15 @@
       .mk-spark{display:none}
     }
     @media(max-width:480px){.lb-hero__title{font-size:20px}.lb-tab{font-size:10px;padding:8px 4px}.podium{gap:6px}.podium-slot--1 .podium-avatar{width:56px;height:56px}.podium-slot--2 .podium-avatar{width:48px;height:48px}.podium-avatar{width:44px;height:44px}.podium-bar{width:60px}.podium-slot--1 .podium-bar{width:70px}.podium-name{font-size:9px;max-width:70px}.lb-row{padding:10px 12px;gap:8px}.lb-name{font-size:13px}}
-  </style>
+  
+      .player-popup { position:fixed; z-index:9999; background:rgba(20,16,32,0.97); border:1px solid rgba(212,166,75,0.25); border-radius:12px; padding:14px 18px; min-width:200px; box-shadow:0 8px 32px rgba(0,0,0,0.6); display:none; pointer-events:none; }
+      .player-popup.show { display:block; }
+      .pp-name { font-family:'Press Start 2P',monospace; font-size:9px; color:var(--gold); }
+      .pp-house { display:flex; align-items:center; gap:6px; margin-top:6px; font-family:'Cinzel',serif; font-size:0.75rem; }
+      .pp-house img { width:18px; height:18px; }
+      .pp-stats { margin-top:8px; font-size:0.75rem; color:var(--text-dim); line-height:1.6; }
+    
+    </style>
 </head>
 <body>
     <nav class="top-nav">
@@ -460,5 +468,40 @@ const HOUSE_LOGOS = {
         document.getElementById('tab-players').innerHTML='<div class="lb-empty">Error loading leaderboards.</div>'}}
     loadLeaderboards();
   </script>
-</body>
+
+    <div class="player-popup" id="playerPopup">
+      <div class="pp-name" id="ppName"></div>
+      <div class="pp-house" id="ppHouse"></div>
+      <div class="pp-stats" id="ppStats"></div>
+    </div>
+    <script>
+      var popup = document.getElementById('playerPopup');
+      document.addEventListener('mouseover', function(e) {
+        var row = e.target.closest('[data-player-id]');
+        if (row) {
+          var name = row.getAttribute('data-name') || '';
+          var house = row.getAttribute('data-house') || '';
+          var houseId = row.getAttribute('data-house-id') || '';
+          var pts = row.getAttribute('data-points') || '0';
+          var houseLogos = {1:'/assets/images/houses/House-smoulders.png',2:'/assets/images/houses/House-darktide.png',3:'/assets/images/houses/House-stonebark.png',4:'/assets/images/houses/House-Ashenvale.png',5:'/assets/images/houses/House-stormrage.png',6:'/assets/images/houses/House-nighthollow.png',7:'/assets/images/houses/House-dawnbringer.png',8:'/assets/images/houses/House-manastorm.png',9:'/assets/images/houses/House-plaguemire.png'};
+          document.getElementById('ppName').textContent = '@' + name;
+          document.getElementById('ppHouse').innerHTML = (houseLogos[houseId] ? '<img src="'+houseLogos[houseId]+'">' : '') + '<span>' + house + '</span>';
+          document.getElementById('ppStats').textContent = pts + ' points';
+          popup.style.left = (e.clientX + 16) + 'px';
+          popup.style.top = (e.clientY - 10) + 'px';
+          popup.classList.add('show');
+        }
+      });
+      document.addEventListener('mouseout', function(e) {
+        var row = e.target.closest('[data-player-id]');
+        if (row) popup.classList.remove('show');
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (popup.classList.contains('show')) {
+          popup.style.left = (e.clientX + 16) + 'px';
+          popup.style.top = (e.clientY - 10) + 'px';
+        }
+      });
+    </script>
+  </body>
 </html>
