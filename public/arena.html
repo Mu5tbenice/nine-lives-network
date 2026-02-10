@@ -8,77 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg-primary: #080810;
-      --bg-card: rgba(20, 16, 32, 0.9);
-      --border-subtle: rgba(212, 166, 75, 0.15);
-      --gold: #D4A64B;
-      --gold-dim: rgba(212, 166, 75, 0.6);
-      --text-primary: #e8e0d0;
-      --text-muted: #7a7668;
-      --font-display: 'Cinzel', serif;
-      --font-body: 'Crimson Text', serif;
-      --font-data: 'Press Start 2P', monospace;
-      --smoulders: #FF4444;
-      --darktide: #00CED1;
-      --stonebark: #55CC44;
-      --ashenvale: #98FB98;
-      --stormrage: #FFBB00;
-      --nighthollow: #CC44DD;
-      --dawnbringer: #FFD700;
-      --manastorm: #6699EE;
-      --plaguemire: #88CC66;
-    }
+    /* === ARENA-SPECIFIC STYLES === */
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      font-family: var(--font-body);
-      min-height: 100vh;
-    }
-
-    /* === NAV === */
-    .top-nav {
-      background: rgba(8, 8, 16, 0.95);
-      border-bottom: 1px solid var(--border-subtle);
-      padding: 0 24px;
-      height: 48px;
-      display: flex;
-      align-items: center;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .top-nav-content { display: flex; align-items: center; width: 100%; max-width: 1200px; margin: 0 auto; }
-    .nav-logo {
-      font-family: var(--font-display);
-      font-size: 14px;
-      color: var(--gold);
-      text-decoration: none;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-    .nav-links { list-style: none; display: flex; gap: 8px; margin-left: auto; }
-    .nav-links a {
-      font-family: var(--font-display);
-      font-size: 11px;
-      color: var(--text-muted);
-      text-decoration: none;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      padding: 6px 12px;
-      border-radius: 4px;
-      transition: all 0.2s;
-    }
-    .nav-links a:hover { color: var(--text-primary); }
-    .nav-links a.active {
-      color: var(--gold);
-      background: rgba(212, 166, 75, 0.1);
-      border: 1px solid var(--border-subtle);
-    }
-
-    /* === ARENA === */
+    /* Arena layout */
     .arena-container {
       max-width: 800px;
       margin: 0 auto;
@@ -316,25 +248,6 @@
       text-transform: uppercase;
     }
 
-    .hamburger { display: none; }
-    @media (max-width: 768px) {
-      .nav-links { display: none; }
-      .hamburger {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 8px;
-        margin-left: auto;
-      }
-      .hamburger span {
-        width: 20px;
-        height: 2px;
-        background: var(--text-muted);
-      }
-    }
   </style>
     <!-- Styles (v2 design system) -->
     <link rel="stylesheet" href="/css/variables-v2.css">
@@ -374,7 +287,7 @@
   </div>
 
   <div class="arena-container">
-    <h1 class="arena-title">⚔️ The Arena</h1>
+    <h1 class="arena-title">âš”ï¸ The Arena</h1>
     <p class="arena-subtitle">Test your magic against rival wizards. Spend mana, cast spells, earn glory.</p>
         <div style="display:flex; gap:12px; justify-content:center; margin:16px 0;">
           <button onclick="setArenaMode('ai')" id="modeAI" class="mode-btn active" style="padding:10px 24px; border-radius:8px; border:1px solid var(--gold-border); background:rgba(212,166,75,0.15); color:var(--gold); font-family:'Cinzel',serif; cursor:pointer; font-size:13px; transition:all 0.2s;">Solo vs AI</button>
@@ -395,18 +308,18 @@
 
       <div class="duel-field">
         <div class="wizard" id="playerWizard">
-          <div class="wizard-avatar" id="playerAvatar">🧙</div>
+          <div class="wizard-avatar" id="playerAvatar">ðŸ§™</div>
           <div class="wizard-name" id="playerName">You</div>
-          <div class="wizard-house" id="playerHouse">—</div>
+          <div class="wizard-house" id="playerHouse">â€”</div>
           <div class="health-bar"><div class="health-fill" id="playerHP" style="width:100%"></div></div>
         </div>
 
         <div class="vs-badge">VS</div>
 
         <div class="wizard" id="enemyWizard">
-          <div class="wizard-avatar" id="enemyAvatar">🧙‍♂️</div>
+          <div class="wizard-avatar" id="enemyAvatar">ðŸ§™â€â™‚ï¸</div>
           <div class="wizard-name" id="enemyName">Rival Wizard</div>
-          <div class="wizard-house" id="enemyHouse">—</div>
+          <div class="wizard-house" id="enemyHouse">â€”</div>
           <div class="health-bar"><div class="health-fill" id="enemyHP" style="width:100%"></div></div>
         </div>
       </div>
@@ -418,39 +331,39 @@
 
       <div class="spell-bar" id="spellBar">
         <button class="spell-btn" onclick="castSpell('fireball')" id="spell-fireball">
-          <span class="spell-icon">🔥</span>
+          <span class="spell-icon">ðŸ”¥</span>
           <span class="spell-name">Fireball</span>
-          <span class="spell-cost">2 mana • 25 dmg</span>
+          <span class="spell-cost">2 mana â€¢ 25 dmg</span>
         </button>
         <button class="spell-btn" onclick="castSpell('shield')" id="spell-shield">
-          <span class="spell-icon">🛡️</span>
+          <span class="spell-icon">ðŸ›¡ï¸</span>
           <span class="spell-name">Shield</span>
-          <span class="spell-cost">1 mana • block</span>
+          <span class="spell-cost">1 mana â€¢ block</span>
         </button>
         <button class="spell-btn" onclick="castSpell('lightning')" id="spell-lightning">
-          <span class="spell-icon">⚡</span>
+          <span class="spell-icon">âš¡</span>
           <span class="spell-name">Lightning</span>
-          <span class="spell-cost">3 mana • 40 dmg</span>
+          <span class="spell-cost">3 mana â€¢ 40 dmg</span>
         </button>
         <button class="spell-btn" onclick="castSpell('heal')" id="spell-heal">
-          <span class="spell-icon">💚</span>
+          <span class="spell-icon">ðŸ’š</span>
           <span class="spell-name">Heal</span>
-          <span class="spell-cost">2 mana • +20 hp</span>
+          <span class="spell-cost">2 mana â€¢ +20 hp</span>
         </button>
         <button class="spell-btn" onclick="castSpell('drain')" id="spell-drain">
-          <span class="spell-icon">🌙</span>
+          <span class="spell-icon">ðŸŒ™</span>
           <span class="spell-name">Drain</span>
-          <span class="spell-cost">2 mana • 15+heal</span>
+          <span class="spell-cost">2 mana â€¢ 15+heal</span>
         </button>
         <button class="spell-btn" onclick="castSpell('surge')" id="spell-surge">
-          <span class="spell-icon">🔮</span>
+          <span class="spell-icon">ðŸ”®</span>
           <span class="spell-name">Mana Surge</span>
-          <span class="spell-cost">0 mana • +2 mp</span>
+          <span class="spell-cost">0 mana â€¢ +2 mp</span>
         </button>
       </div>
 
       <div class="battle-log" id="battleLog">
-        <div class="log-entry system">⚔️ A rival wizard approaches... Choose your spell.</div>
+        <div class="log-entry system">âš”ï¸ A rival wizard approaches... Choose your spell.</div>
       </div>
 
       <div class="duel-result" id="duelResult">
@@ -545,7 +458,7 @@
 
       updateUI();
       clearLog();
-      addLog('⚔️ ' + rivalName + ' of ' + enemyHouseData.name + ' challenges you!', 'system');
+      addLog('âš”ï¸ ' + rivalName + ' of ' + enemyHouseData.name + ' challenges you!', 'system');
     }
 
     function updateUI() {
@@ -589,32 +502,32 @@
           var dmg = gameState.enemyShield ? 10 : 25;
           gameState.enemyHP -= dmg;
           gameState.enemyShield = false;
-          addLog('🔥 You cast Fireball! ' + dmg + ' damage' + (dmg < 25 ? ' (shielded)' : ''), 'player-action');
+          addLog('ðŸ”¥ You cast Fireball! ' + dmg + ' damage' + (dmg < 25 ? ' (shielded)' : ''), 'player-action');
           break;
         case 'shield':
           gameState.playerShield = true;
-          addLog('🛡️ You raise a magic shield!', 'player-action');
+          addLog('ðŸ›¡ï¸ You raise a magic shield!', 'player-action');
           break;
         case 'lightning':
           var ldmg = gameState.enemyShield ? 15 : 40;
           gameState.enemyHP -= ldmg;
           gameState.enemyShield = false;
-          addLog('⚡ Lightning strike! ' + ldmg + ' damage' + (ldmg < 40 ? ' (shielded)' : ''), 'player-action');
+          addLog('âš¡ Lightning strike! ' + ldmg + ' damage' + (ldmg < 40 ? ' (shielded)' : ''), 'player-action');
           break;
         case 'heal':
           gameState.playerHP = Math.min(100, gameState.playerHP + 20);
-          addLog('💚 You heal for 20 HP!', 'player-action');
+          addLog('ðŸ’š You heal for 20 HP!', 'player-action');
           break;
         case 'drain':
           var ddmg = gameState.enemyShield ? 5 : 15;
           gameState.enemyHP -= ddmg;
           gameState.playerHP = Math.min(100, gameState.playerHP + ddmg);
           gameState.enemyShield = false;
-          addLog('🌙 Life drain! ' + ddmg + ' damage, +' + ddmg + ' HP', 'player-action');
+          addLog('ðŸŒ™ Life drain! ' + ddmg + ' damage, +' + ddmg + ' HP', 'player-action');
           break;
         case 'surge':
           gameState.playerMana = Math.min(gameState.maxMana, gameState.playerMana + 2);
-          addLog('🔮 Mana surge! +2 mana', 'player-action');
+          addLog('ðŸ”® Mana surge! +2 mana', 'player-action');
           break;
       }
 
@@ -638,22 +551,22 @@
       var roll = Math.random();
       if (gameState.enemyHP < 30 && roll < 0.4) {
         gameState.enemyHP = Math.min(100, gameState.enemyHP + 20);
-        addLog('💚 Rival heals for 20 HP', 'enemy-action');
+        addLog('ðŸ’š Rival heals for 20 HP', 'enemy-action');
       } else if (roll < 0.15) {
         gameState.enemyShield = true;
-        addLog('🛡️ Rival raises a shield', 'enemy-action');
+        addLog('ðŸ›¡ï¸ Rival raises a shield', 'enemy-action');
       } else if (roll < 0.55) {
         var dmg = gameState.playerShield ? 10 : 25;
         gameState.playerHP -= dmg;
         gameState.playerShield = false;
-        addLog('🔥 Rival casts Fireball! ' + dmg + ' damage' + (dmg < 25 ? ' (shielded)' : ''), 'enemy-action');
+        addLog('ðŸ”¥ Rival casts Fireball! ' + dmg + ' damage' + (dmg < 25 ? ' (shielded)' : ''), 'enemy-action');
         document.getElementById('playerAvatar').classList.add('hit');
         setTimeout(function() { document.getElementById('playerAvatar').classList.remove('hit'); }, 400);
       } else {
         var ldmg = gameState.playerShield ? 10 : 30;
         gameState.playerHP -= ldmg;
         gameState.playerShield = false;
-        addLog('⚡ Rival strikes with lightning! ' + ldmg + ' damage' + (ldmg < 30 ? ' (shielded)' : ''), 'enemy-action');
+        addLog('âš¡ Rival strikes with lightning! ' + ldmg + ' damage' + (ldmg < 30 ? ' (shielded)' : ''), 'enemy-action');
         document.getElementById('playerAvatar').classList.add('hit');
         setTimeout(function() { document.getElementById('playerAvatar').classList.remove('hit'); }, 400);
       }
@@ -680,18 +593,18 @@
       if (won) {
         gameState.wins++;
         gameState.streak++;
-        textEl.textContent = '⚔️ VICTORY!';
+        textEl.textContent = 'âš”ï¸ VICTORY!';
         textEl.className = 'result-text victory';
         var pts = 5 + (gameState.streak > 1 ? gameState.streak : 0);
         rewardEl.textContent = '+' + pts + ' glory points' + (gameState.streak > 1 ? ' (streak x' + gameState.streak + ')' : '');
-        addLog('🏆 Victory! You defeated the rival wizard.', 'system');
+        addLog('ðŸ† Victory! You defeated the rival wizard.', 'system');
       } else {
         gameState.losses++;
         gameState.streak = 0;
-        textEl.textContent = '💀 DEFEATED';
+        textEl.textContent = 'ðŸ’€ DEFEATED';
         textEl.className = 'result-text defeat';
         rewardEl.textContent = 'The darkness claims another...';
-        addLog('💀 Defeated... The rival wizard prevails.', 'system');
+        addLog('ðŸ’€ Defeated... The rival wizard prevails.', 'system');
       }
 
       localStorage.setItem('arena_wins', gameState.wins);
@@ -724,7 +637,7 @@
     }
 
     init();
-  
+
       // === PvP Mode ===
       var arenaMode = 'ai';
       function setArenaMode(mode) {

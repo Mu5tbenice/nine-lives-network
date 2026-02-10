@@ -8,28 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --bg-primary: #080810;
-      --bg-card: rgba(20, 16, 32, 0.9);
-      --border-subtle: rgba(212, 166, 75, 0.15);
-      --gold: #D4A64B;
-      --gold-dim: rgba(212, 166, 75, 0.6);
-      --text-primary: #e8e0d0;
-      --text-muted: #7a7668;
-      --font-display: 'Cinzel', serif;
-      --font-body: 'Crimson Text', serif;
-      --font-data: 'Press Start 2P', monospace;
-    }
-    * { margin:0; padding:0; box-sizing:border-box; }
-    body { background:var(--bg-primary); color:var(--text-primary); font-family:var(--font-body); min-height:100vh; }
-
-    .top-nav { background:rgba(8,8,16,0.95); border-bottom:1px solid var(--border-subtle); padding:0 24px; height:48px; display:flex; align-items:center; position:sticky; top:0; z-index:100; }
-    .top-nav-content { display:flex; align-items:center; width:100%; max-width:1200px; margin:0 auto; }
-    .nav-logo { font-family:var(--font-display); font-size:14px; color:var(--gold); text-decoration:none; letter-spacing:2px; text-transform:uppercase; }
-    .nav-links { list-style:none; display:flex; gap:8px; margin-left:auto; }
-    .nav-links a { font-family:var(--font-display); font-size:11px; color:var(--text-muted); text-decoration:none; text-transform:uppercase; letter-spacing:1px; padding:6px 12px; border-radius:4px; transition:all 0.2s; }
-    .nav-links a:hover { color:var(--text-primary); }
-    .nav-links a.active { color:var(--gold); background:rgba(212,166,75,0.1); border:1px solid var(--border-subtle); }
+    /* === PROFILE-SPECIFIC STYLES === */
 
     .profile-container { max-width:700px; margin:0 auto; padding:32px 20px; }
 
@@ -111,7 +90,7 @@
       <div class="profile-handle" id="profileHandle">@...</div>
       <div class="profile-house" id="profileHouse">
         <img id="profileHouseLogo" src="" style="width:20px;height:20px;">
-        <span class="profile-house-name" id="profileHouseName">—</span>
+        <span class="profile-house-name" id="profileHouseName">â€”</span>
       </div>
     </div>
 
@@ -119,11 +98,11 @@
       <div class="stat-card"><div class="stat-card__value" id="totalPoints">0</div><div class="stat-card__label">Points</div></div>
       <div class="stat-card"><div class="stat-card__value" id="currentStreak">0</div><div class="stat-card__label">Streak</div></div>
       <div class="stat-card"><div class="stat-card__value" id="totalRaids">0</div><div class="stat-card__label">Raids</div></div>
-      <div class="stat-card"><div class="stat-card__value" id="memberSince">—</div><div class="stat-card__label">Joined</div></div>
+      <div class="stat-card"><div class="stat-card__value" id="memberSince">â€”</div><div class="stat-card__label">Joined</div></div>
     </div>
 
     <div class="arena-section">
-      <div class="section-title">⚔️ Arena Record</div>
+      <div class="section-title">âš”ï¸ Arena Record</div>
       <div class="arena-stats">
         <div class="stat-card"><div class="stat-card__value" id="arenaWins">0</div><div class="stat-card__label">Wins</div></div>
         <div class="stat-card"><div class="stat-card__value" id="arenaLosses">0</div><div class="stat-card__label">Losses</div></div>
@@ -132,12 +111,12 @@
     </div>
 
     <div class="badges-section">
-      <div class="section-title">🏅 Achievement Badges</div>
+      <div class="section-title">ðŸ… Achievement Badges</div>
       <div class="badges-grid" id="badgesGrid"></div>
     </div>
 
     <div class="activity-section">
-      <div class="section-title">📜 Recent Activity</div>
+      <div class="section-title">ðŸ“œ Recent Activity</div>
       <div id="activityFeed"><div class="activity-item"><span class="activity-text" style="opacity:0.5;">Activity feed coming soon...</span></div></div>
     </div>
   </div>
@@ -158,18 +137,18 @@
     const HOUSE_COLORS = {1:'#FF4444',2:'#00CED1',3:'#55CC44',4:'#98FB98',5:'#FFBB00',6:'#CC44DD',7:'#FFD700',8:'#6699EE',9:'#88CC66'};
 
     const ACHIEVEMENTS = [
-      { id:'first_blood', name:'First Blood', icon:'⚔️', desc:'Win your first arena duel', check: s => s.arenaWins >= 1 },
-      { id:'warrior', name:'Warrior', icon:'🗡️', desc:'Win 10 arena duels', check: s => s.arenaWins >= 10 },
-      { id:'champion', name:'Champion', icon:'👑', desc:'Win 50 arena duels', check: s => s.arenaWins >= 50 },
-      { id:'raider', name:'Raider', icon:'📜', desc:'Participate in 5 raids', check: s => s.totalRaids >= 5 },
-      { id:'veteran', name:'Veteran', icon:'🎖️', desc:'Participate in 25 raids', check: s => s.totalRaids >= 25 },
+      { id:'first_blood', name:'First Blood', icon:'âš”ï¸', desc:'Win your first arena duel', check: s => s.arenaWins >= 1 },
+      { id:'warrior', name:'Warrior', icon:'ðŸ—¡ï¸', desc:'Win 10 arena duels', check: s => s.arenaWins >= 10 },
+      { id:'champion', name:'Champion', icon:'ðŸ‘‘', desc:'Win 50 arena duels', check: s => s.arenaWins >= 50 },
+      { id:'raider', name:'Raider', icon:'ðŸ“œ', desc:'Participate in 5 raids', check: s => s.totalRaids >= 5 },
+      { id:'veteran', name:'Veteran', icon:'ðŸŽ–ï¸', desc:'Participate in 25 raids', check: s => s.totalRaids >= 25 },
       { id:'streak_3', name:'On Fire', icon:'<img src="/assets/images/houses/House-smoulders.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', desc:'3-day activity streak', check: s => s.streak >= 3 },
-      { id:'streak_7', name:'Devoted', icon:'💎', desc:'7-day activity streak', check: s => s.streak >= 7 },
-      { id:'streak_14', name:'Legendary', icon:'⭐', desc:'14-day streak', check: s => s.streak >= 14 },
-      { id:'points_100', name:'Centurion', icon:'🏛️', desc:'Earn 100 total points', check: s => s.points >= 100 },
-      { id:'points_500', name:'Archmage', icon:'🧙', desc:'Earn 500 total points', check: s => s.points >= 500 },
-      { id:'housepride', name:'House Pride', icon:'🏠', desc:'Choose a house', check: s => s.hasHouse },
-      { id:'community', name:'Community Rep', icon:'🪙', desc:'Set a community', check: s => s.hasCommunity },
+      { id:'streak_7', name:'Devoted', icon:'ðŸ’Ž', desc:'7-day activity streak', check: s => s.streak >= 7 },
+      { id:'streak_14', name:'Legendary', icon:'â­', desc:'14-day streak', check: s => s.streak >= 14 },
+      { id:'points_100', name:'Centurion', icon:'ðŸ›ï¸', desc:'Earn 100 total points', check: s => s.points >= 100 },
+      { id:'points_500', name:'Archmage', icon:'ðŸ§™', desc:'Earn 500 total points', check: s => s.points >= 500 },
+      { id:'housepride', name:'House Pride', icon:'ðŸ ', desc:'Choose a house', check: s => s.hasHouse },
+      { id:'community', name:'Community Rep', icon:'ðŸª™', desc:'Set a community', check: s => s.hasCommunity },
     ];
 
     async function loadProfile() {
