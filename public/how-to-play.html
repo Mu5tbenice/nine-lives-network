@@ -366,7 +366,8 @@
         <li><a href="/dashboard.html">Dashboard</a></li>
         <li><a href="/map.html">World</a></li>
         <li><a href="/leaderboards.html">Leaderboards</a></li>
-        <li><a href="/how-to-play.html" class="active">Help</a></li>
+        <li><a href="/arena.html">Arena</a></li>
+            <li><a href="/how-to-play.html" class="active">Help</a></li>
         <li id="navLogout" style="display:none;"><a href="#" class="logout-btn" onclick="localStorage.removeItem('player_id'); window.location.href='/';">Logout</a></li>
       </ul>
       <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
@@ -378,6 +379,7 @@
     <a href="/dashboard.html"><span class="menu-icon">📊</span> Dashboard</a>
     <a href="/map.html"><span class="menu-icon">🌍</span> World</a>
     <a href="/leaderboards.html"><span class="menu-icon">🏆</span> Leaderboards</a>
+    <a href="/arena.html"><span class="menu-icon">⚔️</span> Arena</a>
     <a href="/how-to-play.html" class="active"><span class="menu-icon">❓</span> Help</a>
     <a href="#" class="logout-btn" id="mobileLogout" style="display:none;" onclick="localStorage.removeItem('player_id'); window.location.href='/';">🚪 Logout</a>
   </div>
@@ -424,7 +426,7 @@
           <div class="step__number">3</div>
           <div class="step__content">
             <div class="step__title">Rep Your Community</div>
-            <div class="step__desc">Optionally add your community tag (like $BONK or $WIF) by pasting the contract address. Your community competes on the War Room leaderboard.</div>
+            <div class="step__desc">Optionally rep your crypto community (like $BONK or $WIF) by pasting the Solana contract address on your dashboard. Your community competes on the community power leaderboard.</div>
           </div>
         </div>
 
@@ -515,7 +517,7 @@
         <div class="tier-header">
           <div class="tier-header__left">
             <span class="tier-header__icon">⚔️</span>
-            <span class="tier-header__name">War Room / Territory</span>
+            <span class="tier-header__name">Territory Control</span>
           </div>
           <span class="tier-header__pct">~30% OF DAILY PTS</span>
         </div>
@@ -762,8 +764,8 @@
         </div>
 
         <div class="faq-item">
-          <div class="faq-q">What is the War Room?</div>
-          <div class="faq-a">The War Room shows community competition. If you added a community tag (like $BONK), your points contribute to your community's total. Communities compete for rankings and bragging rights.</div>
+          <div class="faq-q">What is the Territory?</div>
+          <div class="faq-a">The Territory shows community competition. If you set a community (by pasting a Solana contract address, like $BONK), your points contribute to your community's total. Communities compete for rankings and bragging rights.</div>
         </div>
 
         <div class="faq-item">
@@ -773,7 +775,7 @@
 
         <div class="faq-item">
           <div class="faq-q">What are lives?</div>
-          <div class="faq-a">Lives are used in the Arena (PvP duels). Losing a duel costs 1 life. Lives regenerate over time. The Arena is coming soon!</div>
+          <div class="faq-a">Lives are used in the Arena (PvP duels). Losing a duel costs 1 life. Lives reset to 3 at midnight UTC. Head to the Arena to duel rival wizards!</div>
         </div>
 
         <div class="faq-item">

@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Arena | Nine Lives Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #080810;
+      --bg-card: rgba(20, 16, 32, 0.9);
+      --border-subtle: rgba(212, 166, 75, 0.15);
+      --gold: #D4A64B;
+      --gold-dim: rgba(212, 166, 75, 0.6);
+      --text-primary: #e8e0d0;
+      --text-muted: #7a7668;
+      --font-display: 'Cinzel', serif;
+      --font-body: 'Crimson Text', serif;
+      --font-data: 'Press Start 2P', monospace;
+      --smoulders: #FF4444;
+      --darktide: #00CED1;
+      --stonebark: #55CC44;
+      --ashenvale: #98FB98;
+      --stormrage: #FFBB00;
+      --nighthollow: #CC44DD;
+      --dawnbringer: #FFD700;
+      --manastorm: #6699EE;
+      --plaguemire: #88CC66;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      min-height: 100vh;
+    }
+
+    /* === NAV === */
+    .top-nav {
+      background: rgba(8, 8, 16, 0.95);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 24px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .top-nav-content { display: flex; align-items: center; width: 100%; max-width: 1200px; margin: 0 auto; }
+    .nav-logo {
+      font-family: var(--font-display);
+      font-size: 14px;
+      color: var(--gold);
+      text-decoration: none;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .nav-links { list-style: none; display: flex; gap: 8px; margin-left: auto; }
+    .nav-links a {
+      font-family: var(--font-display);
+      font-size: 11px;
+      color: var(--text-muted);
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 6px 12px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .nav-links a:hover { color: var(--text-primary); }
+    .nav-links a.active {
+      color: var(--gold);
+      background: rgba(212, 166, 75, 0.1);
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* === ARENA === */
+    .arena-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 32px 20px;
+      text-align: center;
+    }
+    .arena-title {
+      font-family: var(--font-display);
+      font-size: 28px;
+      color: var(--gold);
+      margin-bottom: 8px;
+      letter-spacing: 3px;
+    }
+    .arena-subtitle {
+      font-family: var(--font-body);
+      font-style: italic;
+      color: var(--text-muted);
+      font-size: 16px;
+      margin-bottom: 32px;
+    }
+
+    /* Duel Arena */
+    .duel-arena {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+
+    .duel-header {
+      font-family: var(--font-display);
+      font-size: 16px;
+      color: var(--gold);
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .duel-field {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .wizard {
+      flex: 1;
+      text-align: center;
+    }
+    .wizard-avatar {
+      font-size: 64px;
+      margin-bottom: 8px;
+      transition: transform 0.3s;
+    }
+    .wizard-avatar.casting { animation: cast 0.5s ease-out; }
+    .wizard-avatar.hit { animation: hit 0.4s ease-out; }
+    @keyframes cast { 0% { transform: scale(1); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    @keyframes hit { 0% { transform: translateX(0); } 25% { transform: translateX(-10px); } 50% { transform: translateX(10px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
+
+    .wizard-name {
+      font-family: var(--font-display);
+      font-size: 14px;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .wizard-house {
+      font-family: var(--font-data);
+      font-size: 7px;
+      color: var(--text-muted);
+    }
+
+    .health-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 4px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+    .health-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.5s ease-out;
+      background: linear-gradient(90deg, #44ff44, #88ff44);
+    }
+    .health-fill.low { background: linear-gradient(90deg, #ff4444, #ff8844); }
+
+    .vs-badge {
+      font-family: var(--font-display);
+      font-size: 24px;
+      color: var(--gold);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    /* Spell buttons */
+    .spell-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .spell-btn {
+      background: rgba(212, 166, 75, 0.08);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 12px 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .spell-btn:hover:not(:disabled) {
+      background: rgba(212, 166, 75, 0.15);
+      border-color: var(--gold-dim);
+      transform: translateY(-2px);
+    }
+    .spell-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .spell-icon { font-size: 24px; display: block; margin-bottom: 4px; }
+    .spell-name {
+      font-family: var(--font-display);
+      font-size: 10px;
+      color: var(--text-primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .spell-cost {
+      font-family: var(--font-data);
+      font-size: 7px;
+      color: var(--manastorm);
+      margin-top: 4px;
+    }
+
+    .mana-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .mana-label {
+      font-family: var(--font-data);
+      font-size: 8px;
+      color: var(--manastorm);
+    }
+    .mana-pips { display: flex; gap: 4px; }
+    .mana-pip {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--manastorm);
+      transition: all 0.3s;
+    }
+    .mana-pip.spent { background: rgba(102, 153, 238, 0.2); }
+
+    /* Battle log */
+    .battle-log {
+      background: rgba(0,0,0,0.3);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 8px;
+      padding: 12px;
+      max-height: 120px;
+      overflow-y: auto;
+      text-align: left;
+    }
+    .log-entry {
+      font-family: var(--font-data);
+      font-size: 7px;
+      color: var(--text-muted);
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+    }
+    .log-entry.player-action { color: var(--gold); }
+    .log-entry.enemy-action { color: var(--smoulders); }
+    .log-entry.system { color: var(--manastorm); }
+
+    /* Result overlay */
+    .duel-result {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+    .duel-result.show { display: block; }
+    .result-text {
+      font-family: var(--font-display);
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+    .result-text.victory { color: #44ff44; }
+    .result-text.defeat { color: #ff4444; }
+    .result-reward {
+      font-family: var(--font-data);
+      font-size: 8px;
+      color: var(--gold);
+      margin-bottom: 16px;
+    }
+    .play-again-btn {
+      font-family: var(--font-display);
+      font-size: 12px;
+      padding: 10px 24px;
+      background: linear-gradient(180deg, var(--gold) 0%, #b8903d 100%);
+      border: none;
+      border-radius: 6px;
+      color: var(--bg-primary);
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    /* Stats */
+    .arena-stats {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 20px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .stat-box { text-align: center; }
+    .stat-value {
+      font-family: var(--font-data);
+      font-size: 16px;
+      color: var(--gold);
+    }
+    .stat-label {
+      font-family: var(--font-data);
+      font-size: 7px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    .hamburger { display: none; }
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .hamburger {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        margin-left: auto;
+      }
+      .hamburger span {
+        width: 20px;
+        height: 2px;
+        background: var(--text-muted);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="top-nav">
+    <div class="top-nav-content">
+      <a href="/" class="nav-logo">Nine Lives Network</a>
+      <ul class="nav-links">
+        <li><a href="/dashboard.html">Dashboard</a></li>
+        <li><a href="/map.html">World</a></li>
+        <li><a href="/leaderboards.html">Leaderboards</a></li>
+        <li><a href="/arena.html" class="active">Arena</a></li>
+        <li><a href="/how-to-play.html">Help</a></li>
+        <li id="navLogout" style="display:none;"><a href="#" class="logout-btn" onclick="localStorage.removeItem('player_id'); window.location.href='/';">Logout</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+
+  <div class="arena-container">
+    <h1 class="arena-title">⚔️ The Arena</h1>
+    <p class="arena-subtitle">Test your magic against rival wizards. Spend mana, cast spells, earn glory.</p>
+
+    <div class="duel-arena" id="duelArena">
+      <div class="duel-header">Spell Duel</div>
+
+      <div class="duel-field">
+        <div class="wizard" id="playerWizard">
+          <div class="wizard-avatar" id="playerAvatar">🧙</div>
+          <div class="wizard-name" id="playerName">You</div>
+          <div class="wizard-house" id="playerHouse">—</div>
+          <div class="health-bar"><div class="health-fill" id="playerHP" style="width:100%"></div></div>
+        </div>
+
+        <div class="vs-badge">VS</div>
+
+        <div class="wizard" id="enemyWizard">
+          <div class="wizard-avatar" id="enemyAvatar">🧙‍♂️</div>
+          <div class="wizard-name" id="enemyName">Rival Wizard</div>
+          <div class="wizard-house" id="enemyHouse">—</div>
+          <div class="health-bar"><div class="health-fill" id="enemyHP" style="width:100%"></div></div>
+        </div>
+      </div>
+
+      <div class="mana-bar">
+        <span class="mana-label">MANA</span>
+        <div class="mana-pips" id="manaPips"></div>
+      </div>
+
+      <div class="spell-bar" id="spellBar">
+        <button class="spell-btn" onclick="castSpell('fireball')" id="spell-fireball">
+          <span class="spell-icon">🔥</span>
+          <span class="spell-name">Fireball</span>
+          <span class="spell-cost">2 mana • 25 dmg</span>
+        </button>
+        <button class="spell-btn" onclick="castSpell('shield')" id="spell-shield">
+          <span class="spell-icon">🛡️</span>
+          <span class="spell-name">Shield</span>
+          <span class="spell-cost">1 mana • block</span>
+        </button>
+        <button class="spell-btn" onclick="castSpell('lightning')" id="spell-lightning">
+          <span class="spell-icon">⚡</span>
+          <span class="spell-name">Lightning</span>
+          <span class="spell-cost">3 mana • 40 dmg</span>
+        </button>
+        <button class="spell-btn" onclick="castSpell('heal')" id="spell-heal">
+          <span class="spell-icon">💚</span>
+          <span class="spell-name">Heal</span>
+          <span class="spell-cost">2 mana • +20 hp</span>
+        </button>
+        <button class="spell-btn" onclick="castSpell('drain')" id="spell-drain">
+          <span class="spell-icon">🌙</span>
+          <span class="spell-name">Drain</span>
+          <span class="spell-cost">2 mana • 15+heal</span>
+        </button>
+        <button class="spell-btn" onclick="castSpell('surge')" id="spell-surge">
+          <span class="spell-icon">🔮</span>
+          <span class="spell-name">Mana Surge</span>
+          <span class="spell-cost">0 mana • +2 mp</span>
+        </button>
+      </div>
+
+      <div class="battle-log" id="battleLog">
+        <div class="log-entry system">⚔️ A rival wizard approaches... Choose your spell.</div>
+      </div>
+
+      <div class="duel-result" id="duelResult">
+        <div class="result-text" id="resultText"></div>
+        <div class="result-reward" id="resultReward"></div>
+        <button class="play-again-btn" onclick="startNewDuel()">Fight Again</button>
+      </div>
+    </div>
+
+    <div class="arena-stats">
+      <div class="stat-box">
+        <div class="stat-value" id="statWins">0</div>
+        <div class="stat-label">Wins</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="statLosses">0</div>
+        <div class="stat-label">Losses</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value" id="statStreak">0</div>
+        <div class="stat-label">Streak</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Houses data
+    const houses = [
+      { id: 1, name: 'Smoulders', emoji: '🔥' },
+      { id: 2, name: 'Darktide', emoji: '🌊' },
+      { id: 3, name: 'Stonebark', emoji: '🌿' },
+      { id: 4, name: 'Ashenvale', emoji: '💨' },
+      { id: 5, name: 'Stormrage', emoji: '⚡' },
+      { id: 6, name: 'Nighthollow', emoji: '🌙' },
+      { id: 7, name: 'Dawnbringer', emoji: '☀️' },
+      { id: 8, name: 'Manastorm', emoji: '🔮' },
+      { id: 9, name: 'Plaguemire', emoji: '☠️' }
+    ];
+
+    const rivalNames = [
+      'Shadow Mage', 'Crystal Seer', 'Flame Weaver', 'Frost Caller',
+      'Storm Binder', 'Root Walker', 'Moon Priest', 'Sun Knight',
+      'Void Dancer', 'Ember Witch', 'Tide Singer', 'Star Forger',
+      'Bone Shaper', 'Wind Howler', 'Earth Breaker', 'Nether Sage'
+    ];
+
+    let gameState = {
+      playerHP: 100,
+      enemyHP: 100,
+      playerMana: 5,
+      maxMana: 5,
+      playerShield: false,
+      enemyShield: false,
+      gameOver: false,
+      wins: parseInt(localStorage.getItem('arena_wins') || '0'),
+      losses: parseInt(localStorage.getItem('arena_losses') || '0'),
+      streak: parseInt(localStorage.getItem('arena_streak') || '0')
+    };
+
+    let enemyHouseData = null;
+
+    function init() {
+      document.getElementById('statWins').textContent = gameState.wins;
+      document.getElementById('statLosses').textContent = gameState.losses;
+      document.getElementById('statStreak').textContent = gameState.streak;
+
+      // Show logout if logged in
+      if (localStorage.getItem('player_id')) {
+        var el = document.getElementById('navLogout');
+        if (el) el.style.display = '';
+      }
+
+      startNewDuel();
+    }
+
+    function startNewDuel() {
+      gameState.playerHP = 100;
+      gameState.enemyHP = 100;
+      gameState.playerMana = 5;
+      gameState.playerShield = false;
+      gameState.enemyShield = false;
+      gameState.gameOver = false;
+
+      // Random enemy
+      enemyHouseData = houses[Math.floor(Math.random() * houses.length)];
+      var rivalName = rivalNames[Math.floor(Math.random() * rivalNames.length)];
+      document.getElementById('enemyName').textContent = rivalName;
+      document.getElementById('enemyHouse').textContent = enemyHouseData.emoji + ' ' + enemyHouseData.name;
+
+      document.getElementById('duelResult').classList.remove('show');
+      document.getElementById('spellBar').style.display = 'grid';
+
+      updateUI();
+      clearLog();
+      addLog('⚔️ ' + rivalName + ' of ' + enemyHouseData.name + ' challenges you!', 'system');
+    }
+
+    function updateUI() {
+      // HP bars
+      var pHP = document.getElementById('playerHP');
+      var eHP = document.getElementById('enemyHP');
+      pHP.style.width = Math.max(0, gameState.playerHP) + '%';
+      eHP.style.width = Math.max(0, gameState.enemyHP) + '%';
+      pHP.className = 'health-fill' + (gameState.playerHP <= 30 ? ' low' : '');
+      eHP.className = 'health-fill' + (gameState.enemyHP <= 30 ? ' low' : '');
+
+      // Mana pips
+      var pips = '';
+      for (var i = 0; i < gameState.maxMana; i++) {
+        pips += '<div class="mana-pip' + (i >= gameState.playerMana ? ' spent' : '') + '"></div>';
+      }
+      document.getElementById('manaPips').innerHTML = pips;
+
+      // Disable spells based on mana
+      var costs = { fireball: 2, shield: 1, lightning: 3, heal: 2, drain: 2, surge: 0 };
+      Object.keys(costs).forEach(function(spell) {
+        var btn = document.getElementById('spell-' + spell);
+        if (btn) btn.disabled = gameState.playerMana < costs[spell] || gameState.gameOver;
+      });
+    }
+
+    function castSpell(spell) {
+      if (gameState.gameOver) return;
+
+      var costs = { fireball: 2, shield: 1, lightning: 3, heal: 2, drain: 2, surge: 0 };
+      if (gameState.playerMana < costs[spell]) return;
+
+      gameState.playerMana -= costs[spell];
+
+      // Player action
+      document.getElementById('playerAvatar').classList.add('casting');
+      setTimeout(function() { document.getElementById('playerAvatar').classList.remove('casting'); }, 500);
+
+      switch(spell) {
+        case 'fireball':
+          var dmg = gameState.enemyShield ? 10 : 25;
+          gameState.enemyHP -= dmg;
+          gameState.enemyShield = false;
+          addLog('🔥 You cast Fireball! ' + dmg + ' damage' + (dmg < 25 ? ' (shielded)' : ''), 'player-action');
+          break;
+        case 'shield':
+          gameState.playerShield = true;
+          addLog('🛡️ You raise a magic shield!', 'player-action');
+          break;
+        case 'lightning':
+          var ldmg = gameState.enemyShield ? 15 : 40;
+          gameState.enemyHP -= ldmg;
+          gameState.enemyShield = false;
+          addLog('⚡ Lightning strike! ' + ldmg + ' damage' + (ldmg < 40 ? ' (shielded)' : ''), 'player-action');
+          break;
+        case 'heal':
+          gameState.playerHP = Math.min(100, gameState.playerHP + 20);
+          addLog('💚 You heal for 20 HP!', 'player-action');
+          break;
+        case 'drain':
+          var ddmg = gameState.enemyShield ? 5 : 15;
+          gameState.enemyHP -= ddmg;
+          gameState.playerHP = Math.min(100, gameState.playerHP + ddmg);
+          gameState.enemyShield = false;
+          addLog('🌙 Life drain! ' + ddmg + ' damage, +' + ddmg + ' HP', 'player-action');
+          break;
+        case 'surge':
+          gameState.playerMana = Math.min(gameState.maxMana, gameState.playerMana + 2);
+          addLog('🔮 Mana surge! +2 mana', 'player-action');
+          break;
+      }
+
+      if (gameState.enemyHP <= 0) {
+        endDuel(true);
+        return;
+      }
+
+      // Enemy turn
+      setTimeout(enemyTurn, 800);
+      updateUI();
+    }
+
+    function enemyTurn() {
+      if (gameState.gameOver) return;
+
+      document.getElementById('enemyAvatar').classList.add('casting');
+      setTimeout(function() { document.getElementById('enemyAvatar').classList.remove('casting'); }, 500);
+
+      // Simple AI
+      var roll = Math.random();
+      if (gameState.enemyHP < 30 && roll < 0.4) {
+        gameState.enemyHP = Math.min(100, gameState.enemyHP + 20);
+        addLog('💚 Rival heals for 20 HP', 'enemy-action');
+      } else if (roll < 0.15) {
+        gameState.enemyShield = true;
+        addLog('🛡️ Rival raises a shield', 'enemy-action');
+      } else if (roll < 0.55) {
+        var dmg = gameState.playerShield ? 10 : 25;
+        gameState.playerHP -= dmg;
+        gameState.playerShield = false;
+        addLog('🔥 Rival casts Fireball! ' + dmg + ' damage' + (dmg < 25 ? ' (shielded)' : ''), 'enemy-action');
+        document.getElementById('playerAvatar').classList.add('hit');
+        setTimeout(function() { document.getElementById('playerAvatar').classList.remove('hit'); }, 400);
+      } else {
+        var ldmg = gameState.playerShield ? 10 : 30;
+        gameState.playerHP -= ldmg;
+        gameState.playerShield = false;
+        addLog('⚡ Rival strikes with lightning! ' + ldmg + ' damage' + (ldmg < 30 ? ' (shielded)' : ''), 'enemy-action');
+        document.getElementById('playerAvatar').classList.add('hit');
+        setTimeout(function() { document.getElementById('playerAvatar').classList.remove('hit'); }, 400);
+      }
+
+      // Enemy regen 1 mana equiv (implicit)
+      if (gameState.playerHP <= 0) {
+        endDuel(false);
+        return;
+      }
+
+      // Player regains 1 mana per turn
+      gameState.playerMana = Math.min(gameState.maxMana, gameState.playerMana + 1);
+      updateUI();
+    }
+
+    function endDuel(won) {
+      gameState.gameOver = true;
+      document.getElementById('spellBar').style.display = 'none';
+
+      var resultEl = document.getElementById('duelResult');
+      var textEl = document.getElementById('resultText');
+      var rewardEl = document.getElementById('resultReward');
+
+      if (won) {
+        gameState.wins++;
+        gameState.streak++;
+        textEl.textContent = '⚔️ VICTORY!';
+        textEl.className = 'result-text victory';
+        var pts = 5 + (gameState.streak > 1 ? gameState.streak : 0);
+        rewardEl.textContent = '+' + pts + ' glory points' + (gameState.streak > 1 ? ' (streak x' + gameState.streak + ')' : '');
+        addLog('🏆 Victory! You defeated the rival wizard.', 'system');
+      } else {
+        gameState.losses++;
+        gameState.streak = 0;
+        textEl.textContent = '💀 DEFEATED';
+        textEl.className = 'result-text defeat';
+        rewardEl.textContent = 'The darkness claims another...';
+        addLog('💀 Defeated... The rival wizard prevails.', 'system');
+      }
+
+      localStorage.setItem('arena_wins', gameState.wins);
+      localStorage.setItem('arena_losses', gameState.losses);
+      localStorage.setItem('arena_streak', gameState.streak);
+
+      document.getElementById('statWins').textContent = gameState.wins;
+      document.getElementById('statLosses').textContent = gameState.losses;
+      document.getElementById('statStreak').textContent = gameState.streak;
+
+      resultEl.classList.add('show');
+      updateUI();
+    }
+
+    function addLog(msg, type) {
+      var log = document.getElementById('battleLog');
+      var entry = document.createElement('div');
+      entry.className = 'log-entry ' + (type || '');
+      entry.textContent = msg;
+      log.appendChild(entry);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function clearLog() {
+      document.getElementById('battleLog').innerHTML = '';
+    }
+
+    function toggleMobileMenu() {
+      // simple toggle for mobile
+    }
+
+    init();
+  </script>
+</body>
+</html>
