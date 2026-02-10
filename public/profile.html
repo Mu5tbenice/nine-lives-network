@@ -2,227 +2,207 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Profile | Nine Lives Network</title>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/variables-v2.css">
+  <link rel="stylesheet" href="/css/components-v2.css">
+  <link rel="stylesheet" href="/css/nav-v2.css">
+
   <style>
-    /* === PROFILE-SPECIFIC STYLES === */
-
-    .profile-container { max-width:700px; margin:0 auto; padding:32px 20px; }
-
-    .profile-header { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:16px; padding:32px; text-align:center; margin-bottom:24px; }
+    .profile-header { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:16px; padding:32px; text-align:center; }
     .profile-avatar { width:80px; height:80px; border-radius:50%; border:3px solid var(--gold); margin:0 auto 12px; object-fit:contain; background:rgba(0,0,0,0.3); }
-    .profile-name { font-family:var(--font-display); font-size:22px; color:var(--text-primary); margin-bottom:4px; }
+    .profile-name { font-family:var(--font-title); font-size:22px; color:var(--text-bright); margin-bottom:4px; }
     .profile-handle { font-family:var(--font-data); font-size:9px; color:var(--text-muted); margin-bottom:8px; }
     .profile-house { display:inline-flex; align-items:center; gap:8px; padding:6px 16px; background:rgba(212,166,75,0.08); border:1px solid var(--border-subtle); border-radius:20px; }
     .profile-house img { width:20px; height:20px; object-fit:contain; }
-    .profile-house-name { font-family:var(--font-display); font-size:12px; }
+    .profile-house-name { font-family:var(--font-title); font-size:12px; }
 
-    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
-    .stat-card { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:12px; padding:16px; text-align:center; }
-    .stat-card__value { font-family:var(--font-data); font-size:16px; color:var(--gold); }
-    .stat-card__label { font-family:var(--font-data); font-size:7px; color:var(--text-muted); margin-top:6px; text-transform:uppercase; }
+    .p-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    .p-stat { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:12px; padding:16px; text-align:center; }
+    .p-stat__val { font-family:var(--font-data); font-size:16px; color:var(--gold); }
+    .p-stat__label { font-family:var(--font-data); font-size:7px; color:var(--text-muted); margin-top:6px; text-transform:uppercase; }
 
-    .section-title { font-family:var(--font-display); font-size:16px; color:var(--gold); margin-bottom:16px; letter-spacing:2px; text-transform:uppercase; }
-
-    .badges-section { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:12px; padding:24px; margin-bottom:24px; }
     .badges-grid { display:flex; flex-wrap:wrap; gap:12px; }
-    .badge { display:flex; flex-direction:column; align-items:center; gap:4px; padding:12px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.05); border-radius:10px; min-width:80px; }
-    .badge.earned { border-color:var(--gold-dim); background:rgba(212,166,75,0.06); }
-    .badge.locked { opacity:0.35; }
-    .badge__icon { font-size:28px; }
-    .badge__name { font-family:var(--font-data); font-size:6px; color:var(--text-muted); text-align:center; text-transform:uppercase; }
-    .badge.earned .badge__name { color:var(--gold); }
+    .p-badge { display:flex; flex-direction:column; align-items:center; gap:4px; padding:12px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.05); border-radius:10px; min-width:80px; }
+    .p-badge.earned { border-color:var(--gold-border); background:rgba(212,166,75,0.06); }
+    .p-badge.locked { opacity:0.35; }
+    .p-badge__icon { font-size:28px; }
+    .p-badge__name { font-family:var(--font-data); font-size:6px; color:var(--text-muted); text-align:center; text-transform:uppercase; }
+    .p-badge.earned .p-badge__name { color:var(--gold); }
 
-    .arena-section { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:12px; padding:24px; margin-bottom:24px; }
     .arena-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
 
-    .activity-section { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:12px; padding:24px; }
-    .activity-item { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.03); }
-    .activity-item:last-child { border-bottom:none; }
-    .activity-icon { font-size:16px; }
-    .activity-text { font-family:var(--font-body); font-size:14px; color:var(--text-muted); }
-    .activity-date { font-family:var(--font-data); font-size:6px; color:var(--text-muted); margin-left:auto; }
+    .act-item { display:flex; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.03); }
+    .act-item:last-child { border-bottom:none; }
+    .act-icon { font-size:16px; }
+    .act-text { font-family:var(--font-body); font-size:14px; color:var(--text-muted); }
+    .act-date { font-family:var(--font-data); font-size:6px; color:var(--text-muted); margin-left:auto; }
 
-    @media (max-width:600px) { .stats-grid { grid-template-columns:repeat(2,1fr); } }
+    @media(max-width:600px) { .p-stats { grid-template-columns:repeat(2,1fr); } .arena-stats { grid-template-columns:repeat(2,1fr); } }
   </style>
-    <!-- Styles (v2 design system) -->
-    <link rel="stylesheet" href="/css/variables-v2.css">
-    <link rel="stylesheet" href="/css/components-v2.css">
-    <link rel="stylesheet" href="/css/nav-v2.css">
-  </head>
+</head>
 <body>
-    <nav class="top-nav">
+
+  <nav class="top-nav">
     <div class="top-nav-content">
       <a href="/" class="nav-logo">Nine Lives Network</a>
       <ul class="nav-links">
-          <li><a href="/dashboard.html">Dashboard</a></li>
-          <li><a href="/map.html">World</a></li>
-          <li><a href="/leaderboards.html">Leaderboards</a></li>
-          <li><a href="/arena.html">Arena</a></li>
-          <li><a href="/spellbook.html">Spellbook</a></li>
-          <li><a href="/profile.html" class="active">Profile</a></li>
-          <li><a href="/how-to-play.html">Help</a></li>
-          <li id="navLogout" style="display:none;"><a href="#" class="logout-btn" onclick="doLogout()">Logout</a></li>
-        </ul>
-      <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
-        <span></span><span></span><span></span>
-      </button>
+        <li><a href="/dashboard.html">Dashboard</a></li>
+        <li><a href="/map.html">World</a></li>
+        <li><a href="/leaderboards.html">Leaderboards</a></li>
+        <li><a href="/arena.html">Arena</a></li>
+        <li><a href="/spellbook.html">Spellbook</a></li>
+        <li><a href="/profile.html" class="active">Profile</a></li>
+        <li><a href="/how-to-play.html">Help</a></li>
+        <li id="navLogout" style="display:none;"><a href="#" class="logout-btn" onclick="doLogout()">Logout</a></li>
+      </ul>
+      <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button>
     </div>
   </nav>
   <div class="mobile-menu" id="mobileMenu">
-      <a href="/dashboard.html">Dashboard</a>
-      <a href="/map.html">World</a>
-      <a href="/leaderboards.html">Leaderboards</a>
-      <a href="/arena.html">Arena</a>
-      <a href="/spellbook.html">Spellbook</a>
-      <a href="/profile.html" class="active">Profile</a>
-      <a href="/how-to-play.html">Help</a>
-      <a href="#" class="logout-btn" onclick="doLogout()" id="mobileLogout" style="display:none;">Logout</a>
+    <a href="/dashboard.html">Dashboard</a>
+    <a href="/map.html">World</a>
+    <a href="/leaderboards.html">Leaderboards</a>
+    <a href="/arena.html">Arena</a>
+    <a href="/spellbook.html">Spellbook</a>
+    <a href="/profile.html" class="active">Profile</a>
+    <a href="/how-to-play.html">Help</a>
+    <a href="#" class="logout-btn" onclick="doLogout()" id="mobileLogout" style="display:none;">Logout</a>
   </div>
 
-  <div class="profile-container">
-    <div class="profile-header">
-      <img class="profile-avatar" id="profileAvatar" src="/assets/images/houses/House-smoulders.png" alt="">
-      <div class="profile-name" id="profileName">Loading...</div>
-      <div class="profile-handle" id="profileHandle">@...</div>
-      <div class="profile-house" id="profileHouse">
-        <img id="profileHouseLogo" src="" style="width:20px;height:20px;">
-        <span class="profile-house-name" id="profileHouseName">â€”</span>
-      </div>
-    </div>
+  <div class="main-container" id="profileContent" style="display:none;">
+    <div class="loading" id="loadingState"><div class="spinner"></div></div>
+  </div>
 
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-card__value" id="totalPoints">0</div><div class="stat-card__label">Points</div></div>
-      <div class="stat-card"><div class="stat-card__value" id="currentStreak">0</div><div class="stat-card__label">Streak</div></div>
-      <div class="stat-card"><div class="stat-card__value" id="totalRaids">0</div><div class="stat-card__label">Raids</div></div>
-      <div class="stat-card"><div class="stat-card__value" id="memberSince">â€”</div><div class="stat-card__label">Joined</div></div>
-    </div>
-
-    <div class="arena-section">
-      <div class="section-title">âš”ï¸ Arena Record</div>
-      <div class="arena-stats">
-        <div class="stat-card"><div class="stat-card__value" id="arenaWins">0</div><div class="stat-card__label">Wins</div></div>
-        <div class="stat-card"><div class="stat-card__value" id="arenaLosses">0</div><div class="stat-card__label">Losses</div></div>
-        <div class="stat-card"><div class="stat-card__value" id="arenaStreak">0</div><div class="stat-card__label">Best Streak</div></div>
-      </div>
-    </div>
-
-    <div class="badges-section">
-      <div class="section-title">ðŸ… Achievement Badges</div>
-      <div class="badges-grid" id="badgesGrid"></div>
-    </div>
-
-    <div class="activity-section">
-      <div class="section-title">ðŸ“œ Recent Activity</div>
-      <div id="activityFeed"><div class="activity-item"><span class="activity-text" style="opacity:0.5;">Activity feed coming soon...</span></div></div>
-    </div>
+  <div id="errorState" style="display:none; text-align:center; padding:80px 20px;">
+    <p style="font-size:48px; margin-bottom:16px;">🧙</p>
+    <p style="font-family:var(--font-title); font-size:18px; color:var(--text-bright); margin-bottom:8px;">No player found</p>
+    <p style="font-family:var(--font-body); color:var(--text-muted);">You need to <a href="/register.html" style="color:var(--gold);">register</a> first.</p>
   </div>
 
   <script>
-    const HOUSE_LOGOS = {
-      1: '/assets/images/houses/House-smoulders.png',
-      2: '/assets/images/houses/House-darktide.png',
-      3: '/assets/images/houses/House-stonebark.png',
-      4: '/assets/images/houses/House-Ashenvale.png',
-      5: '/assets/images/houses/House-stormrage.png',
-      6: '/assets/images/houses/House-nighthollow.png',
-      7: '/assets/images/houses/House-dawnbringer.png',
-      8: '/assets/images/houses/House-manastorm.png',
-      9: '/assets/images/houses/House-plaguemire.png'
+    var HOUSES = {
+      1:{name:'Smoulders',color:'#E03C31',element:'Ember Covenant',img:'/assets/images/houses/Housesmoulders.png'},
+      2:{name:'Darktide',color:'#00B4D8',element:'Tidal Conclave',img:'/assets/images/houses/Housedarktide.png'},
+      3:{name:'Stonebark',color:'#5CB338',element:'Stone Covenant',img:'/assets/images/houses/Housestonebark.png'},
+      4:{name:'Ashenvale',color:'#90E0EF',element:'Zephyr Circle',img:'/assets/images/houses/HouseAshenvale.png'},
+      5:{name:'Stormrage',color:'#FFC800',element:'Storm Assembly',img:'/assets/images/houses/Housestormrage.png'},
+      6:{name:'Nighthollow',color:'#7B2D8E',element:'Umbral Syndicate',img:'/assets/images/houses/Housenighthollow.png'},
+      7:{name:'Dawnbringer',color:'#FF8C00',element:'Radiant Order',img:'/assets/images/houses/HouseDwnbringer.png'},
+      8:{name:'Manastorm',color:'#5B8FE0',element:'Arcane Spire',img:'/assets/images/houses/Housemanastorm.png'},
+      9:{name:'Plaguemire',color:'#E84393',element:'WildCat Path',img:'/assets/images/houses/Houseplaguemire.png'}
     };
-    const HOUSE_NAMES = {1:'Smoulders',2:'Darktide',3:'Stonebark',4:'Ashenvale',5:'Stormrage',6:'Nighthollow',7:'Dawnbringer',8:'Manastorm',9:'Plaguemire'};
-    const HOUSE_COLORS = {1:'#FF4444',2:'#00CED1',3:'#55CC44',4:'#98FB98',5:'#FFBB00',6:'#CC44DD',7:'#FFD700',8:'#6699EE',9:'#88CC66'};
 
-    const ACHIEVEMENTS = [
-      { id:'first_blood', name:'First Blood', icon:'âš”ï¸', desc:'Win your first arena duel', check: s => s.arenaWins >= 1 },
-      { id:'warrior', name:'Warrior', icon:'ðŸ—¡ï¸', desc:'Win 10 arena duels', check: s => s.arenaWins >= 10 },
-      { id:'champion', name:'Champion', icon:'ðŸ‘‘', desc:'Win 50 arena duels', check: s => s.arenaWins >= 50 },
-      { id:'raider', name:'Raider', icon:'ðŸ“œ', desc:'Participate in 5 raids', check: s => s.totalRaids >= 5 },
-      { id:'veteran', name:'Veteran', icon:'ðŸŽ–ï¸', desc:'Participate in 25 raids', check: s => s.totalRaids >= 25 },
-      { id:'streak_3', name:'On Fire', icon:'<img src="/assets/images/houses/House-smoulders.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', desc:'3-day activity streak', check: s => s.streak >= 3 },
-      { id:'streak_7', name:'Devoted', icon:'ðŸ’Ž', desc:'7-day activity streak', check: s => s.streak >= 7 },
-      { id:'streak_14', name:'Legendary', icon:'â­', desc:'14-day streak', check: s => s.streak >= 14 },
-      { id:'points_100', name:'Centurion', icon:'ðŸ›ï¸', desc:'Earn 100 total points', check: s => s.points >= 100 },
-      { id:'points_500', name:'Archmage', icon:'ðŸ§™', desc:'Earn 500 total points', check: s => s.points >= 500 },
-      { id:'housepride', name:'House Pride', icon:'ðŸ ', desc:'Choose a house', check: s => s.hasHouse },
-      { id:'community', name:'Community Rep', icon:'ðŸª™', desc:'Set a community', check: s => s.hasCommunity },
-    ];
+    function toggleMobileMenu(){document.getElementById('hamburger').classList.toggle('active');document.getElementById('mobileMenu').classList.toggle('active');}
+    function doLogout(){localStorage.removeItem('player_id');window.location.href='/';}
+    if(localStorage.getItem('player_id')){var nl=document.getElementById('navLogout');var ml=document.getElementById('mobileLogout');if(nl)nl.style.display='';if(ml)ml.style.display='';}
 
-    async function loadProfile() {
-      var playerId = localStorage.getItem('player_id');
-      var params = new URLSearchParams(window.location.search);
-      var viewId = params.get('id') || playerId;
+    function getPlayerId(){
+      var params=new URLSearchParams(window.location.search);
+      var fromUrl=params.get('player_id');
+      if(fromUrl){localStorage.setItem('player_id',fromUrl);return fromUrl;}
+      return localStorage.getItem('player_id');
+    }
 
-      if (!viewId) {
-        document.getElementById('profileName').textContent = 'Not logged in';
-        return;
-      }
+    async function loadProfile(){
+      var pid=getPlayerId();
+      if(!pid){document.getElementById('errorState').style.display='block';return;}
 
       try {
-        var resp = await fetch('/api/players/' + viewId);
-        var player = await resp.json();
+        var res=await fetch('/api/players/'+pid);
+        var player=await res.json();
+        if(!player||player.error){document.getElementById('errorState').style.display='block';return;}
 
-        document.getElementById('profileName').textContent = player.display_name || player.twitter_handle || 'Unknown';
-        document.getElementById('profileHandle').textContent = '@' + (player.twitter_handle || 'unknown');
+        var castsRes=await fetch('/api/players/'+pid+'/casts');
+        var casts=await castsRes.json();
 
-        var houseId = player.school_id;
-        if (houseId && HOUSE_LOGOS[houseId]) {
-          document.getElementById('profileAvatar').src = HOUSE_LOGOS[houseId];
-          document.getElementById('profileHouseLogo').src = HOUSE_LOGOS[houseId];
-          document.getElementById('profileHouseName').textContent = HOUSE_NAMES[houseId] || 'Unknown';
-          document.getElementById('profileHouseName').style.color = HOUSE_COLORS[houseId] || '#e8e0d0';
-        }
+        renderProfile(player,Array.isArray(casts)?casts:[]);
+      } catch(e){
+        console.error('Profile load error:',e);
+        document.getElementById('errorState').style.display='block';
+      }
+    }
 
-        document.getElementById('totalPoints').textContent = player.points || 0;
-        document.getElementById('currentStreak').textContent = player.streak || 0;
-        document.getElementById('totalRaids').textContent = player.raid_count || 0;
-        if (player.created_at) {
-          var d = new Date(player.created_at);
-          document.getElementById('memberSince').textContent = d.toLocaleDateString('en-US', {month:'short',year:'numeric'});
-        }
-      } catch(e) {
-        console.error('Profile load error:', e);
+    function renderProfile(player,casts){
+      var house=HOUSES[player.school_id]||HOUSES[1];
+      var points=player.seasonal_points||0;
+      var lifetime=player.lifetime_points||0;
+      var streak=player.streak||0;
+      var mana=player.mana!=null?player.mana:5;
+      var recentCasts=casts.slice(0,5);
+
+      var avatarHTML=player.profile_image
+        ?'<img src="'+player.profile_image+'" alt="" class="profile-avatar">'
+        :'<img src="'+house.img+'" alt="" class="profile-avatar">';
+
+      var castsHTML='';
+      if(recentCasts.length>0){
+        recentCasts.forEach(function(c){
+          castsHTML+='<div class="act-item">'
+            +'<span class="act-icon">✨</span>'
+            +'<span class="act-text">'+(c.spell_name||c.zone_name||'Spell Cast')+'</span>'
+            +'<span class="act-date">'+(c.points_earned||0)+' pts</span>'
+            +'</div>';
+        });
+      } else {
+        castsHTML='<p style="text-align:center;color:var(--text-faint);font-style:italic;padding:16px 0;">No activity yet</p>';
       }
 
-      // Arena stats from localStorage (client-side game)
-      var arenaWins = parseInt(localStorage.getItem('arena_wins') || '0');
-      var arenaLosses = parseInt(localStorage.getItem('arena_losses') || '0');
-      var arenaStreak = parseInt(localStorage.getItem('arena_streak') || '0');
-      document.getElementById('arenaWins').textContent = arenaWins;
-      document.getElementById('arenaLosses').textContent = arenaLosses;
-      document.getElementById('arenaStreak').textContent = arenaStreak;
-
-      // Render badges
-      var playerStats = {
-        arenaWins: arenaWins,
-        totalRaids: 0,
-        streak: 0,
-        points: 0,
-        hasHouse: false,
-        hasCommunity: !!localStorage.getItem('community_ticker')
-      };
-      try {
-        var resp2 = await fetch('/api/players/' + viewId);
-        var p2 = await resp2.json();
-        playerStats.totalRaids = p2.raid_count || 0;
-        playerStats.streak = p2.streak || 0;
-        playerStats.points = p2.points || 0;
-        playerStats.hasHouse = !!p2.school_id;
-      } catch(e) {}
-
-      var grid = document.getElementById('badgesGrid');
-      grid.innerHTML = '';
-      ACHIEVEMENTS.forEach(function(a) {
-        var earned = a.check(playerStats);
-        var div = document.createElement('div');
-        div.className = 'badge ' + (earned ? 'earned' : 'locked');
-        div.title = a.desc;
-        div.innerHTML = '<div class="badge__icon">' + a.icon + '</div><div class="badge__name">' + a.name + '</div>';
-        grid.appendChild(div);
+      var badgesHTML='';
+      var badges=[
+        {icon:'🔥',name:'First Cast',earned:casts.length>0},
+        {icon:'⚡',name:'5 Day Streak',earned:streak>=5},
+        {icon:'💎',name:'Week Warrior',earned:streak>=7},
+        {icon:'🏰',name:'Territory Lord',earned:false},
+        {icon:'👑',name:'Top 10',earned:false},
+        {icon:'🐱',name:'Genesis Cat',earned:false}
+      ];
+      badges.forEach(function(b){
+        badgesHTML+='<div class="p-badge '+(b.earned?'earned':'locked')+'">'
+          +'<span class="p-badge__icon">'+b.icon+'</span>'
+          +'<span class="p-badge__name">'+b.name+'</span>'
+          +'</div>';
       });
+
+      var container=document.getElementById('profileContent');
+      container.innerHTML=''
+        +'<div class="profile-header fade-up">'
+        +avatarHTML
+        +'<div class="profile-name">House '+house.name+'</div>'
+        +'<div class="profile-handle">@'+(player.twitter_handle||'Unknown')+'</div>'
+        +'<div class="profile-house">'
+        +'<img src="'+house.img+'" alt="">'
+        +'<span class="profile-house-name" style="color:'+house.color+'">'+house.element+'</span>'
+        +'</div>'
+        +'</div>'
+
+        +'<div class="p-stats fade-up fade-up-1">'
+        +'<div class="p-stat"><div class="p-stat__val">'+points+'</div><div class="p-stat__label">Season Pts</div></div>'
+        +'<div class="p-stat"><div class="p-stat__val">'+lifetime+'</div><div class="p-stat__label">Lifetime</div></div>'
+        +'<div class="p-stat"><div class="p-stat__val">'+streak+'</div><div class="p-stat__label">Streak</div></div>'
+        +'<div class="p-stat"><div class="p-stat__val">'+mana+'/5</div><div class="p-stat__label">Mana</div></div>'
+        +'</div>'
+
+        +'<div class="card fade-up fade-up-2">'
+        +'<div class="card-header"><span class="label">🏅 Badges</span></div>'
+        +'<div class="badges-grid">'+badgesHTML+'</div>'
+        +'</div>'
+
+        +'<div class="card fade-up fade-up-3">'
+        +'<div class="card-header"><span class="label">Recent Activity</span></div>'
+        +castsHTML
+        +'</div>';
+
+      var loader=document.getElementById('loadingState');
+      if(loader)loader.style.display='none';
+      container.style.display='flex';
     }
 
     loadProfile();
