@@ -359,31 +359,33 @@
 <body>
 
   <!-- ══ NAVIGATION ══ -->
-  <nav class="top-nav">
+    <nav class="top-nav">
     <div class="top-nav-content">
       <a href="/" class="nav-logo">Nine Lives Network</a>
       <ul class="nav-links">
-        <li><a href="/dashboard.html">Dashboard</a></li>
-        <li><a href="/map.html">World</a></li>
-        <li><a href="/leaderboards.html">Leaderboards</a></li>
-        <li><a href="/arena.html">Arena</a>
-            <a href="/spellbook.html">Spellbook</a>
-            <a href="/profile.html">Profile</a></li>
-            <li><a href="/how-to-play.html" class="active">Help</a></li>
-        <li id="navLogout" style="display:none;"><a href="#" class="logout-btn" onclick="localStorage.removeItem('player_id'); window.location.href='/';">Logout</a></li>
-      </ul>
+          <li><a href="/dashboard.html">Dashboard</a></li>
+          <li><a href="/map.html">World</a></li>
+          <li><a href="/leaderboards.html">Leaderboards</a></li>
+          <li><a href="/arena.html">Arena</a></li>
+          <li><a href="/spellbook.html">Spellbook</a></li>
+          <li><a href="/profile.html">Profile</a></li>
+          <li><a href="/how-to-play.html" class="active">Help</a></li>
+          <li id="navLogout" style="display:none;"><a href="#" class="logout-btn" onclick="doLogout()">Logout</a></li>
+        </ul>
       <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()">
         <span></span><span></span><span></span>
       </button>
     </div>
   </nav>
   <div class="mobile-menu" id="mobileMenu">
-    <a href="/dashboard.html"><span class="menu-icon">📊</span> Dashboard</a>
-    <a href="/map.html"><span class="menu-icon">🌍</span> World</a>
-    <a href="/leaderboards.html"><span class="menu-icon">🏆</span> Leaderboards</a>
-    <a href="/arena.html"><span class="menu-icon">⚔️</span> Arena</a>
-    <a href="/how-to-play.html" class="active"><span class="menu-icon">❓</span> Help</a>
-    <a href="#" class="logout-btn" id="mobileLogout" style="display:none;" onclick="localStorage.removeItem('player_id'); window.location.href='/';">🚪 Logout</a>
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/map.html">World</a>
+      <a href="/leaderboards.html">Leaderboards</a>
+      <a href="/arena.html">Arena</a>
+      <a href="/spellbook.html">Spellbook</a>
+      <a href="/profile.html">Profile</a>
+      <a href="/how-to-play.html" class="active">Help</a>
+      <a href="#" class="logout-btn" onclick="doLogout()" id="mobileLogout" style="display:none;">Logout</a>
   </div>
 
   <!-- ══ MAIN CONTENT ══ -->
