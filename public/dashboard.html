@@ -326,28 +326,18 @@
   <!-- JAVASCRIPT                           -->
   <!-- ══════════════════════════════════════ -->
   <script>
-const HOUSE_LOGOS = {
-  1: '/assets/images/houses/House-smoulders.png',
-  2: '/assets/images/houses/House-darktide.png',
-  3: '/assets/images/houses/House-stonebark.png',
-  4: '/assets/images/houses/House-Ashenvale.png',
-  5: '/assets/images/houses/House-stormrage.png',
-  6: '/assets/images/houses/House-nighthollow.png',
-  7: '/assets/images/houses/House-dawnbringer.png',
-  8: '/assets/images/houses/House-manastorm.png',
-  9: '/assets/images/houses/House-plaguemire.png'
-};
+const HOUSE_LOGOS = {1:'/assets/images/houses/House-smoulders.png',2:'/assets/images/houses/House-darktide.png',3:'/assets/images/houses/House-stonebark.png',4:'/assets/images/houses/House-Ashenvale.png',5:'/assets/images/houses/House-stormrage.png',6:'/assets/images/houses/House-nighthollow.png',7:'/assets/images/houses/House-dawnbringer.png',8:'/assets/images/houses/House-manastorm.png',9:'/assets/images/houses/House-plaguemire.png'};
     // ── House data (matches your database) ──
     const HOUSES = {
-      1: { name: 'Smoulders',   emoji: '<img src="/assets/images/houses/House-smoulders.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#E03C31', element: 'Ember Covenant',  img: '/assets/images/houses/Housesmoulders.png' },
-      2: { name: 'Darktide',    emoji: '<img src="/assets/images/houses/House-darktide.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#00B4D8', element: 'Tidal Conclave',   img: '/assets/images/houses/Housedarktide.png' },
-      3: { name: 'Stonebark',   emoji: '<img src="/assets/images/houses/House-stonebark.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#5CB338', element: 'Stone Covenant',   img: '/assets/images/houses/Housestonebark.png' },
-      4: { name: 'Ashenvale',   emoji: '<img src="/assets/images/houses/House-Ashenvale.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#90E0EF', element: 'Zephyr Circle',    img: '/assets/images/houses/HouseAshenvale.png' },
-      5: { name: 'Stormrage',   emoji: '<img src="/assets/images/houses/House-stormrage.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#FFC800', element: 'Storm Assembly',   img: '/assets/images/houses/Housestormrage.png' },
-      6: { name: 'Nighthollow', emoji: '<img src="/assets/images/houses/House-nighthollow.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#7B2D8E', element: 'Umbral Syndicate', img: '/assets/images/houses/Housenighthollow.png' },
-      7: { name: 'Dawnbringer', emoji: '<img src="/assets/images/houses/House-dawnbringer.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#FF8C00', element: 'Radiant Order',    img: '/assets/images/houses/HouseDwnbringer.png' },
-      8: { name: 'Manastorm',   emoji: '<img src="/assets/images/houses/House-manastorm.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#5B8FE0', element: 'Arcane Spire',     img: '/assets/images/houses/Housemanastorm.png' },
-      9: { name: 'Plaguemire',  emoji: '<img src="/assets/images/houses/House-plaguemire.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">', color: '#E84393', element: 'WildCat Path',     img: '/assets/images/houses/Houseplaguemire.png' },
+      1: { name: 'Smoulders',   emoji: '', color: '#E03C31', element: 'Ember Covenant',  img: '/assets/images/houses/Housesmoulders.png' },
+      2: { name: 'Darktide',    emoji: '', color: '#00B4D8', element: 'Tidal Conclave',   img: '/assets/images/houses/Housedarktide.png' },
+      3: { name: 'Stonebark',   emoji: '', color: '#5CB338', element: 'Stone Covenant',   img: '/assets/images/houses/Housestonebark.png' },
+      4: { name: 'Ashenvale',   emoji: '', color: '#90E0EF', element: 'Zephyr Circle',    img: '/assets/images/houses/HouseAshenvale.png' },
+      5: { name: 'Stormrage',   emoji: '', color: '#FFC800', element: 'Storm Assembly',   img: '/assets/images/houses/Housestormrage.png' },
+      6: { name: 'Nighthollow', emoji: '', color: '#7B2D8E', element: 'Umbral Syndicate', img: '/assets/images/houses/Housenighthollow.png' },
+      7: { name: 'Dawnbringer', emoji: '☀', color: '#FF8C00', element: 'Radiant Order',    img: '/assets/images/houses/HouseDwnbringer.png' },
+      8: { name: 'Manastorm',   emoji: '', color: '#5B8FE0', element: 'Arcane Spire',     img: '/assets/images/houses/Housemanastorm.png' },
+      9: { name: 'Plaguemire',  emoji: '', color: '#E84393', element: 'WildCat Path',     img: '/assets/images/houses/Houseplaguemire.png' },
     };
 
     // Story images — these rotate daily. Replace with your own zone art later.
@@ -509,7 +499,7 @@ const HOUSE_LOGOS = {
         storyCardHTML = ''
           + '<div class="no-story fade-up fade-up-1">'
           + '  <span class="label">Today\'s Story</span>'
-          + '  <p style="font-size:32px; margin:12px 0;"><img src="/assets/images/houses/House-nighthollow.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""></p>'
+          + '  <p style="font-size:32px; margin:12px 0;"></p>'
           + '  <p style="font-family:var(--font-title); font-size:16px; color:var(--text-body); font-style:italic;">No active story right now. Check back at 8 AM UTC.</p>'
           + '</div>';
       }
@@ -596,7 +586,7 @@ const HOUSE_LOGOS = {
         // STREAK
         + '<div class="card fade-up fade-up-3">'
         + '  <div class="streak-bar">'
-        + '    <span class="streak-bar__icon">' + (streak >= 7 ? '💎' : streak >= 1 ? '<img src="/assets/images/houses/House-smoulders.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt="">' : '🌑') + '</span>'
+        + '    <span class="streak-bar__icon">' + (streak >= 7 ? '💎' : streak >= 1 ? '' : '🌑') + '</span>'
         + '    <div class="streak-bar__info">'
         + '      <div class="streak-bar__count">' + streak + ' <span>DAY STREAK</span></div>'
         + '      <div class="streak-bar__sub">' + (streak < 7 ? (7 - streak) + ' more for Week Warrior 💎' : 'Week Warrior achieved! 💎') + '</div>'
