@@ -368,6 +368,17 @@
   <div class="toast" id="toast"></div>
 
   <script>
+const HOUSE_LOGOS = {
+  1: '/assets/images/houses/House-smoulders.png',
+  2: '/assets/images/houses/House-darktide.png',
+  3: '/assets/images/houses/House-stonebark.png',
+  4: '/assets/images/houses/House-Ashenvale.png',
+  5: '/assets/images/houses/House-stormrage.png',
+  6: '/assets/images/houses/House-nighthollow.png',
+  7: '/assets/images/houses/House-dawnbringer.png',
+  8: '/assets/images/houses/House-manastorm.png',
+  9: '/assets/images/houses/House-plaguemire.png'
+};
     var HOUSES = {
       1: { name: 'Smoulders', color: '#E03C31', glow: '#ff6b5b', img: 'Housesmoulders.png' },
       2: { name: 'Darktide', color: '#00B4D8', glow: '#4de8ff', img: 'Housedarktide.png' },
@@ -640,7 +651,7 @@
         if (isObjective) cardClass += ' zone-card--objective';
         else if (isBonus) cardClass += ' zone-card--bonus';
 
-        var zoneImg = z.image_url || ZONE_IMAGES[z.id] || '';
+        var zoneImg = (z.image_url ? (z.image_url.startsWith('/') ? z.image_url : '/assets/images/zones/' + z.image_url) : '') || ZONE_IMAGES[z.id] || '';
 
         var badges = '';
         if (isObjective) badges += '<span class="zone-badge zone-badge--objective">OBJECTIVE</span>';
@@ -739,7 +750,7 @@
     function openZoneModal(zoneId) {
       var zone = zones.find(function(z) { return z.id === zoneId; });
       if (!zone) return;
-      var zoneImg = zone.image_url || ZONE_IMAGES[zone.id] || '';
+      var zoneImg = (zone.image_url ? (zone.image_url.startsWith('/') ? zone.image_url : '/assets/images/zones/' + zone.image_url) : '') || ZONE_IMAGES[zone.id] || '';
       var modalHeader = document.querySelector('.zone-modal__header');
       if (zoneImg) {
         modalHeader.style.backgroundImage = 'linear-gradient(180deg, rgba(10,8,18,0.2) 0%, rgba(10,8,18,0.8) 60%, var(--bg-card) 100%), url(' + zoneImg + ')';
