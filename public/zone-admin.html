@@ -433,6 +433,7 @@ function buildSpellRow(s){
     +'<div class="field-group admin-card__grid--full"><span class="field-label">BASE EFFECT</span><input class="admin-input" value="'+esc(s.base_effect)+'" data-spell="'+s.id+'" data-field="base_effect" onchange="markSpell(\''+s.id+'\')"></div>'
     +'<div class="field-group"><span class="field-label">FLAVOR TEXT</span><input class="admin-input" value="'+esc(s.flavor_text||'')+'" data-spell="'+s.id+'" data-field="flavor_text" onchange="markSpell(\''+s.id+'\')"></div>'
     +'<div class="field-group"><span class="field-label">MOTTO</span><input class="admin-input" value="'+esc(s.motto||'')+'" data-spell="'+s.id+'" data-field="motto" onchange="markSpell(\''+s.id+'\')"></div>'
+    +'<div class="field-group"><span class="field-label">SPELL ART IMAGE</span><input class="admin-input admin-input--mono" value="'+esc(s.image_url||'')+'" data-spell="'+s.id+'" data-field="image_url" onchange="markSpell(\''+s.id+'\');updateSpellImg(\''+s.id+'\',this.value)" placeholder="fireball.png"><div class="img-preview" id="spellimg-'+s.id+'">'+(s.image_url?'<img src="/assets/images/spells/'+esc(s.image_url)+'" onerror="this.parentElement.innerHTML=\'<div class=placeholder>NOT FOUND</div>\'">':'<div class="placeholder">NO ART</div>')+'</div></div>'
     +'<div class="field-group admin-card__grid--full"><span class="field-label">BONUS EFFECTS</span><div class="bonus-list" id="bonuses-'+s.id+'">'+bonusHTML+'</div><button class="btn-add-bonus" onclick="addBonus(\''+s.id+'\')">+ ADD EFFECT</button></div>'
     +'</div>'
     +'<div class="admin-card__actions"><button class="btn-save" id="sbtn-'+s.id+'" onclick="saveSpell(\''+s.id+'\')" disabled>Save</button>'
@@ -444,6 +445,10 @@ function buildSpellRow(s){
 function markSpell(id){
   var card=document.getElementById('spell-'+id);if(card)card.classList.add('changed');
   var btn=document.getElementById('sbtn-'+id);if(btn)btn.disabled=false;
+}
+function updateSpellImg(id,fn){
+  var p=document.getElementById('spellimg-'+id);if(!p)return;
+  p.innerHTML=fn?'<img src="/assets/images/spells/'+fn+'" onerror="this.parentElement.innerHTML=\'<div class=placeholder>NOT FOUND</div>\'">':'<div class="placeholder">NO ART</div>';
 }
 
 function collectSpellData(id){

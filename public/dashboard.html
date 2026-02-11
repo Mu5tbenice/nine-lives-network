@@ -112,12 +112,15 @@ function buildDashCard(s){
   var pl='';
   if(bn.length>0){pl='<div class="sc-pills">';bn.forEach(function(b){var tag=b.tag||b.key||'';var desc=b.desc||b.description||tag;pl+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';});pl+='</div>';}
   var be='';if(s.base_effect&&s.base_effect!=='—'&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
+  var hasArt=s.image_url&&s.image_url.length>0;
+  var artImg=hasArt?'<div class="sc-art-img" style="background-image:url(/assets/images/spells/'+esc(s.image_url)+')"></div>':'';
+  var artBlock=hasArt?'':'<div class="sc-art" style="height:60px"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div>'+ai+'<div class="sc-art__tier" style="color:'+h.color+'">'+tl+'</div></div>';
   return '<div class="spell-card show" style="--hc:'+h.color+';--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810)">'
     +'<div class="sc-edge"></div>'
-    +'<div class="sc-face"><div class="sc-inner-edge"></div></div>'
+    +'<div class="sc-face">'+artImg+'<div class="sc-inner-edge"></div></div>'
     +'<div class="sc-body">'
     +'<div class="sc-top" style="padding:6px 8px"><div class="sc-name" style="font-size:10px;color:'+h.color+'">'+esc(s.name)+'</div><div class="sc-mana">'+mo+'</div></div>'
-    +'<div class="sc-art" style="height:60px"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div>'+ai+'<div class="sc-art__tier" style="color:'+h.color+'">'+tl+'</div></div>'
+    +artBlock
     +'<div class="sc-info" style="padding:0 8px 6px">'
     +'<div class="sc-type-row" style="margin:3px 0"><span class="sc-type sc-type--'+(s.spell_type||'attack')+'">'+(s.spell_type||'attack')+'</span></div>'
     +be+pl
