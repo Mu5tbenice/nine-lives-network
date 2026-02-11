@@ -3,178 +3,125 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Zone Admin | Nine Lives Network</title>
+  <title>Admin Panel | Nine Lives Network</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/variables-v2.css">
-  <link rel="stylesheet" href="/css/components-v2.css">
   <style>
-    body { background: var(--bg-deep); color: var(--text-bright); }
-    .admin-wrap { max-width: 960px; margin: 0 auto; padding: 20px 15px; }
-    h1 { font-family: var(--font-title); color: var(--gold); font-size: 24px; letter-spacing: 3px; margin-bottom: 6px; }
-    .sub { font-family: var(--font-body); color: var(--text-muted); font-style: italic; margin-bottom: 20px; }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg-deep);color:var(--text-bright);font-family:'Crimson Text',serif;min-height:100vh}
+    .admin-wrap{max-width:960px;margin:0 auto;padding:20px 15px}
+    h1{font-family:var(--font-title);color:var(--gold);font-size:24px;letter-spacing:3px;margin-bottom:6px}
+    .sub{font-family:var(--font-body);color:var(--text-muted);font-style:italic;margin-bottom:20px}
 
     /* Auth */
-    .auth-box { text-align: center; padding: 40px; }
-    .auth-box input { background: var(--bg-inset); border: 1px solid var(--border-subtle); color: var(--text-bright); padding: 10px 16px; border-radius: 6px; font-size: 14px; width: 250px; font-family: var(--font-body); }
-    .auth-box button { margin-left: 8px; }
+    .auth-box{text-align:center;padding:40px}
+    .auth-box input{background:var(--bg-inset);border:1px solid var(--border-subtle);color:var(--text-bright);padding:10px 16px;border-radius:6px;font-size:14px;width:250px;font-family:var(--font-body)}
+    .auth-box input:focus{outline:none;border-color:var(--gold)}
 
-    /* Stats bar */
-    .stats-bar {
-      display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
-    }
-    .stat-chip {
-      background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 8px;
-      padding: 8px 14px; display: flex; align-items: center; gap: 6px;
-    }
-    .stat-chip__val { font-family: var(--font-data); font-size: 14px; color: var(--gold); letter-spacing: 1px; }
-    .stat-chip__label { font-family: var(--font-data); font-size: 7px; color: var(--text-faint); letter-spacing: 1px; }
+    /* Main tabs */
+    .admin-tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border-subtle);padding-bottom:0}
+    .admin-tab{padding:10px 24px;border:1px solid transparent;border-bottom:none;border-radius:8px 8px 0 0;background:transparent;color:var(--text-faint);font-family:var(--font-title);font-size:12px;font-weight:700;letter-spacing:1.5px;cursor:pointer;transition:all 0.2s;position:relative;bottom:-1px}
+    .admin-tab:hover{color:var(--text-muted);background:var(--bg-card)}
+    .admin-tab.active{background:var(--bg-card);color:var(--gold);border-color:var(--border-subtle);border-bottom-color:var(--bg-card)}
+    .tab-content{display:none}
+    .tab-content.active{display:block}
+
+    /* Stats */
+    .stats-bar{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+    .stat-chip{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:8px;padding:8px 14px;display:flex;align-items:center;gap:6px}
+    .stat-chip__val{font-family:var(--font-data);font-size:14px;color:var(--gold);letter-spacing:1px}
+    .stat-chip__label{font-family:var(--font-data);font-size:7px;color:var(--text-faint);letter-spacing:1px}
 
     /* Toolbar */
-    .toolbar { display: flex; gap: 10px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; }
-    .search-input {
-      background: var(--bg-inset); border: 1px solid var(--border-subtle); color: var(--text-bright);
-      padding: 9px 14px; border-radius: 6px; font-family: var(--font-body); font-size: 14px; width: 200px;
-    }
-    .search-input:focus { outline: none; border-color: var(--gold); }
-    .filter-btn {
-      padding: 7px 14px; border: 1px solid var(--border-subtle); border-radius: 6px;
-      background: var(--bg-card); color: var(--text-muted);
-      font-family: var(--font-title); font-size: 10px; font-weight: 600;
-      letter-spacing: 0.5px; cursor: pointer; transition: all 0.2s;
-    }
-    .filter-btn.active { background: var(--gold-dim); color: var(--gold); border-color: var(--gold-border); }
-    .btn-create {
-      margin-left: auto;
-      background: linear-gradient(180deg, #44cc44, #339933); color: #fff;
-      border: none; padding: 9px 18px; border-radius: 8px; cursor: pointer;
-      font-family: var(--font-title); font-size: 12px; font-weight: 700; letter-spacing: 1px;
-      transition: all 0.15s;
-    }
-    .btn-create:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(68,204,68,0.3); }
+    .toolbar{display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+    .search-input{background:var(--bg-inset);border:1px solid var(--border-subtle);color:var(--text-bright);padding:9px 14px;border-radius:6px;font-family:var(--font-body);font-size:14px;width:200px}
+    .search-input:focus{outline:none;border-color:var(--gold)}
+    .filter-btn{padding:7px 14px;border:1px solid var(--border-subtle);border-radius:6px;background:var(--bg-card);color:var(--text-muted);font-family:var(--font-title);font-size:10px;font-weight:600;letter-spacing:0.5px;cursor:pointer;transition:all 0.2s}
+    .filter-btn.active{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-border)}
+    .btn-create{margin-left:auto;background:linear-gradient(180deg,#44cc44,#339933);color:#fff;border:none;padding:9px 18px;border-radius:8px;cursor:pointer;font-family:var(--font-title);font-size:12px;font-weight:700;letter-spacing:1px;transition:all 0.15s}
+    .btn-create:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(68,204,68,0.3)}
 
-    /* Zone card */
-    .zone-card {
-      background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px;
-      padding: 16px; margin-bottom: 10px; transition: border-color 0.3s;
-    }
-    .zone-card.changed { border-color: var(--gold-border); }
-    .zone-card.saved { border-color: #44cc44; }
-    .zone-card.disabled-zone { opacity: 0.5; }
-    .zone-card.new-zone { border-color: #44cc44; border-style: dashed; }
+    /* ═══ ADMIN CARD (shared by zone + spell editors) ═══ */
+    .admin-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:16px;margin-bottom:10px;transition:border-color 0.3s}
+    .admin-card.changed{border-color:var(--gold-border)}
+    .admin-card.saved{border-color:#44cc44}
+    .admin-card.disabled-item{opacity:0.5}
+    .admin-card.new-item{border-color:#44cc44;border-style:dashed}
 
-    .zone-card__header {
-      display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
-    }
-    .zone-card__id {
-      font-family: var(--font-data); font-size: 8px; color: var(--text-faint);
-      letter-spacing: 1px; background: var(--bg-inset); padding: 3px 8px; border-radius: 4px;
-    }
-    .zone-card__type {
-      font-family: var(--font-data); font-size: 7px; letter-spacing: 1px;
-      padding: 3px 8px; border-radius: 4px;
-    }
-    .zone-card__type--home { background: rgba(255,165,0,0.1); color: #ffaa00; border: 1px solid rgba(255,165,0,0.2); }
-    .zone-card__type--neutral { background: rgba(100,180,255,0.1); color: #88bbff; border: 1px solid rgba(100,180,255,0.2); }
-    .zone-card__status {
-      font-family: var(--font-data); font-size: 7px; letter-spacing: 1px;
-      padding: 3px 8px; border-radius: 4px; margin-left: auto;
-    }
-    .zone-card__status--active { background: rgba(68,204,68,0.1); color: #44cc44; }
-    .zone-card__status--disabled { background: rgba(204,68,68,0.1); color: #cc4444; }
+    .admin-card__header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+    .admin-card__id{font-family:var(--font-data);font-size:8px;color:var(--text-faint);letter-spacing:1px;background:var(--bg-inset);padding:3px 8px;border-radius:4px}
+    .admin-card__badge{font-family:var(--font-data);font-size:7px;letter-spacing:1px;padding:3px 8px;border-radius:4px}
+    .badge--t0{background:rgba(150,150,150,0.1);color:#aaa;border:1px solid rgba(150,150,150,0.2)}
+    .badge--t1{background:rgba(100,180,255,0.1);color:#88bbff;border:1px solid rgba(100,180,255,0.2)}
+    .badge--t2{background:rgba(200,100,255,0.1);color:#cc88ff;border:1px solid rgba(200,100,255,0.2)}
+    .badge--t3{background:rgba(255,165,0,0.1);color:#ffaa00;border:1px solid rgba(255,165,0,0.2)}
+    .badge--home{background:rgba(255,165,0,0.1);color:#ffaa00;border:1px solid rgba(255,165,0,0.2)}
+    .badge--neutral{background:rgba(100,180,255,0.1);color:#88bbff;border:1px solid rgba(100,180,255,0.2)}
+    .badge--active{background:rgba(68,204,68,0.1);color:#44cc44}
+    .badge--disabled{background:rgba(204,68,68,0.1);color:#cc4444}
+    .admin-card__status{font-family:var(--font-data);font-size:7px;letter-spacing:1px;padding:3px 8px;border-radius:4px;margin-left:auto}
 
-    /* Grid layout for fields */
-    .zone-card__grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
-    }
-    .zone-card__grid--full { grid-column: 1 / -1; }
-    .field-group { display: flex; flex-direction: column; gap: 3px; }
-    .field-label { font-family: var(--font-data); font-size: 7px; color: var(--text-faint); letter-spacing: 1px; }
-    .zone-input {
-      background: var(--bg-inset); border: 1px solid var(--border-subtle); color: var(--text-bright);
-      padding: 7px 10px; border-radius: 6px; font-family: var(--font-body); font-size: 13px;
-      width: 100%; transition: border-color 0.2s; box-sizing: border-box;
-    }
-    .zone-input:focus { outline: none; border-color: var(--gold); }
-    .zone-input--title { font-family: var(--font-title); font-weight: 600; font-size: 15px; }
-    .zone-input--mono { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
-    .zone-select {
-      background: var(--bg-inset); border: 1px solid var(--border-subtle); color: var(--text-bright);
-      padding: 7px 10px; border-radius: 6px; font-family: var(--font-body); font-size: 13px;
-      width: 100%; cursor: pointer;
-    }
-    .zone-select:focus { outline: none; border-color: var(--gold); }
+    /* Grid layout */
+    .admin-card__grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .admin-card__grid--full{grid-column:1/-1}
+    .field-group{display:flex;flex-direction:column;gap:3px}
+    .field-label{font-family:var(--font-data);font-size:7px;color:var(--text-faint);letter-spacing:1px}
+    .admin-input{background:var(--bg-inset);border:1px solid var(--border-subtle);color:var(--text-bright);padding:7px 10px;border-radius:6px;font-family:var(--font-body);font-size:13px;width:100%;box-sizing:border-box;transition:border-color 0.2s}
+    .admin-input:focus{outline:none;border-color:var(--gold)}
+    .admin-input--title{font-family:var(--font-title);font-weight:600;font-size:15px}
+    .admin-input--mono{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-muted)}
+    .admin-select{background:var(--bg-inset);border:1px solid var(--border-subtle);color:var(--text-bright);padding:7px 10px;border-radius:6px;font-family:var(--font-body);font-size:13px;width:100%;cursor:pointer}
+    .admin-select:focus{outline:none;border-color:var(--gold)}
+
+    /* Bonus effects */
+    .bonus-list{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+    .bonus-row{display:flex;gap:6px;align-items:center}
+    .bonus-row input{flex:1}
+    .bonus-row .tag-input{max-width:120px}
+    .btn-add-bonus{background:none;border:1px dashed var(--border-subtle);color:var(--text-faint);padding:5px 12px;border-radius:6px;cursor:pointer;font-family:var(--font-data);font-size:7px;letter-spacing:1px;margin-top:4px}
+    .btn-add-bonus:hover{border-color:var(--gold);color:var(--gold)}
+    .btn-remove-bonus{background:none;border:none;color:#cc4444;cursor:pointer;font-size:16px;padding:0 4px}
 
     /* Image preview */
-    .img-preview {
-      width: 100%; height: 60px; border-radius: 6px; overflow: hidden;
-      background: var(--bg-inset); border: 1px dashed var(--border-subtle);
-      display: flex; align-items: center; justify-content: center; margin-top: 4px;
-    }
-    .img-preview img { width: 100%; height: 100%; object-fit: cover; }
-    .img-preview .placeholder { font-family: var(--font-data); font-size: 7px; color: var(--text-faint); }
+    .img-preview{width:100%;height:60px;border-radius:6px;overflow:hidden;background:var(--bg-inset);border:1px dashed var(--border-subtle);display:flex;align-items:center;justify-content:center;margin-top:4px}
+    .img-preview img{width:100%;height:100%;object-fit:cover}
+    .img-preview .placeholder{font-family:var(--font-data);font-size:7px;color:var(--text-faint)}
 
     /* Actions row */
-    .zone-card__actions {
-      display: flex; gap: 6px; margin-top: 12px; align-items: center;
-      padding-top: 10px; border-top: 1px solid var(--border-subtle);
-    }
-    .btn-save {
-      background: linear-gradient(180deg, #D4A64B, #b8903d); color: var(--bg-deep);
-      border: none; padding: 7px 16px; border-radius: 6px; cursor: pointer;
-      font-family: var(--font-title); font-size: 11px; font-weight: 600; letter-spacing: 1px;
-    }
-    .btn-save:disabled { opacity: 0.3; cursor: default; }
-    .btn-toggle {
-      background: var(--bg-inset); border: 1px solid var(--border-subtle); color: var(--text-muted);
-      padding: 7px 14px; border-radius: 6px; cursor: pointer;
-      font-family: var(--font-data); font-size: 8px; letter-spacing: 1px;
-    }
-    .btn-toggle:hover { border-color: var(--gold); color: var(--text-bright); }
-    .btn-delete {
-      background: none; border: 1px solid rgba(204,68,68,0.3); color: #cc4444;
-      padding: 7px 14px; border-radius: 6px; cursor: pointer;
-      font-family: var(--font-data); font-size: 8px; letter-spacing: 1px;
-    }
-    .btn-delete:hover { background: rgba(204,68,68,0.1); border-color: #cc4444; }
-    .status-msg { font-family: var(--font-data); font-size: 7px; color: #44cc44; margin-left: auto; letter-spacing: 0.5px; }
+    .admin-card__actions{display:flex;gap:6px;margin-top:12px;align-items:center;padding-top:10px;border-top:1px solid var(--border-subtle)}
+    .btn-save{background:linear-gradient(180deg,#D4A64B,#b8903d);color:var(--bg-deep);border:none;padding:7px 16px;border-radius:6px;cursor:pointer;font-family:var(--font-title);font-size:11px;font-weight:600;letter-spacing:1px}
+    .btn-save:disabled{opacity:0.3;cursor:default}
+    .btn-toggle{background:var(--bg-inset);border:1px solid var(--border-subtle);color:var(--text-muted);padding:7px 14px;border-radius:6px;cursor:pointer;font-family:var(--font-data);font-size:8px;letter-spacing:1px}
+    .btn-toggle:hover{border-color:var(--gold);color:var(--text-bright)}
+    .btn-delete{background:none;border:1px solid rgba(204,68,68,0.3);color:#cc4444;padding:7px 14px;border-radius:6px;cursor:pointer;font-family:var(--font-data);font-size:8px;letter-spacing:1px}
+    .btn-delete:hover{background:rgba(204,68,68,0.1);border-color:#cc4444}
+    .status-msg{font-family:var(--font-data);font-size:7px;color:#44cc44;margin-left:auto;letter-spacing:0.5px}
 
     /* Toast */
-    .toast {
-      position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-      padding: 10px 24px; border-radius: 8px; font-family: var(--font-title); font-size: 13px; font-weight: 600;
-      display: none; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    }
-    .toast--success { background: #1a3a1a; color: #44cc44; border: 1px solid #2a5a2a; }
-    .toast--error { background: #3a1a1a; color: #cc4444; border: 1px solid #5a2a2a; }
-    .toast.active { display: block; animation: fadeUp 0.3s ease; }
-    @keyframes fadeUp { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:8px;font-family:var(--font-title);font-size:13px;font-weight:600;display:none;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+    .toast--success{background:#1a3a1a;color:#44cc44;border:1px solid #2a5a2a}
+    .toast--error{background:#3a1a1a;color:#cc4444;border:1px solid #5a2a2a}
+    .toast.active{display:block;animation:fadeUp 0.3s ease}
+    @keyframes fadeUp{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
 
     /* Confirm dialog */
-    .confirm-overlay {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-      z-index: 200; justify-content: center; align-items: center;
-    }
-    .confirm-overlay.active { display: flex; }
-    .confirm-box {
-      background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 12px;
-      padding: 24px; max-width: 400px; width: 90%; text-align: center;
-    }
-    .confirm-box__title { font-family: var(--font-title); font-size: 16px; color: var(--text-bright); margin-bottom: 8px; }
-    .confirm-box__text { font-family: var(--font-body); font-size: 14px; color: var(--text-muted); margin-bottom: 20px; }
-    .confirm-box__btns { display: flex; gap: 10px; justify-content: center; }
-    .confirm-box__btn {
-      padding: 9px 20px; border-radius: 6px; border: none; cursor: pointer;
-      font-family: var(--font-title); font-size: 12px; font-weight: 600; letter-spacing: 1px;
-    }
-    .confirm-box__btn--cancel { background: var(--bg-inset); color: var(--text-muted); border: 1px solid var(--border-subtle); }
-    .confirm-box__btn--danger { background: #cc3333; color: #fff; }
+    .confirm-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:200;justify-content:center;align-items:center}
+    .confirm-overlay.active{display:flex}
+    .confirm-box{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:24px;max-width:400px;width:90%;text-align:center}
+    .confirm-box__title{font-family:var(--font-title);font-size:16px;color:var(--text-bright);margin-bottom:8px}
+    .confirm-box__text{font-family:var(--font-body);font-size:14px;color:var(--text-muted);margin-bottom:20px}
+    .confirm-box__btns{display:flex;gap:10px;justify-content:center}
+    .confirm-box__btn{padding:9px 20px;border-radius:6px;border:none;cursor:pointer;font-family:var(--font-title);font-size:12px;font-weight:600;letter-spacing:1px}
+    .confirm-box__btn--cancel{background:var(--bg-inset);color:var(--text-muted);border:1px solid var(--border-subtle)}
+    .confirm-box__btn--danger{background:#cc3333;color:#fff}
 
-    @media (max-width: 600px) {
-      .zone-card__grid { grid-template-columns: 1fr; }
-      .toolbar { flex-direction: column; }
-      .search-input { width: 100%; }
-      .btn-create { margin-left: 0; width: 100%; }
+    @media(max-width:600px){
+      .admin-card__grid{grid-template-columns:1fr}
+      .toolbar{flex-direction:column}
+      .search-input{width:100%}
+      .btn-create{margin-left:0;width:100%}
+      .admin-tab{padding:8px 14px;font-size:10px}
     }
   </style>
 </head>
@@ -183,8 +130,8 @@
   <!-- Auth -->
   <div class="admin-wrap" id="authScreen">
     <div class="auth-box">
-      <h1>Zone Admin</h1>
-      <p class="sub">Enter admin key to manage zones</p>
+      <h1>Admin Panel</h1>
+      <p class="sub">Enter admin key to manage zones &amp; spells</p>
       <input type="password" id="adminKeyInput" placeholder="Admin key..." onkeydown="if(event.key==='Enter')authenticate()">
       <button class="btn-save" onclick="authenticate()" style="margin-left:8px;padding:10px 18px;">Enter</button>
     </div>
@@ -192,549 +139,380 @@
 
   <!-- Admin panel -->
   <div class="admin-wrap" id="adminPanel" style="display:none;">
-    <h1>Zone Manager</h1>
-    <p class="sub">Create, configure, and manage all game zones</p>
+    <h1>Admin Panel</h1>
+    <p class="sub">Manage zones, spells, and game settings</p>
 
-    <!-- Stats -->
-    <div class="stats-bar" id="statsBar"></div>
-
-    <!-- Toolbar -->
-    <div class="toolbar">
-      <input class="search-input" id="searchInput" placeholder="Search zones..." oninput="renderZones()">
-      <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">All</button>
-      <button class="filter-btn" data-filter="neutral" onclick="setFilter('neutral',this)">Neutral</button>
-      <button class="filter-btn" data-filter="home" onclick="setFilter('home',this)">Home</button>
-      <button class="filter-btn" data-filter="bonus" onclick="setFilter('bonus',this)">Has Bonus</button>
-      <button class="filter-btn" data-filter="disabled" onclick="setFilter('disabled',this)">Disabled</button>
-      <button class="btn-create" onclick="createNewZone()">+ New Zone</button>
+    <!-- Tabs -->
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchTab('zones',this)">Zones</button>
+      <button class="admin-tab" onclick="switchTab('spells',this)">Spells</button>
     </div>
 
-    <div id="zoneList"></div>
+    <!-- ═══ ZONES TAB ═══ -->
+    <div class="tab-content active" id="tab-zones">
+      <div class="stats-bar" id="zoneStatsBar"></div>
+      <div class="toolbar">
+        <input class="search-input" id="zoneSearch" placeholder="Search zones..." oninput="renderZones()">
+        <button class="filter-btn active" data-zf="all" onclick="setZoneFilter('all',this)">All</button>
+        <button class="filter-btn" data-zf="neutral" onclick="setZoneFilter('neutral',this)">Neutral</button>
+        <button class="filter-btn" data-zf="home" onclick="setZoneFilter('home',this)">Home</button>
+        <button class="filter-btn" data-zf="bonus" onclick="setZoneFilter('bonus',this)">Has Bonus</button>
+        <button class="filter-btn" data-zf="disabled" onclick="setZoneFilter('disabled',this)">Disabled</button>
+        <button class="btn-create" onclick="createNewZone()">+ New Zone</button>
+      </div>
+      <div id="zoneList"></div>
+    </div>
+
+    <!-- ═══ SPELLS TAB ═══ -->
+    <div class="tab-content" id="tab-spells">
+      <div class="stats-bar" id="spellStatsBar"></div>
+      <div class="toolbar">
+        <input class="search-input" id="spellSearch" placeholder="Search spells..." oninput="renderSpells()">
+        <button class="filter-btn active" data-sf="all" onclick="setSpellFilter('all',this)">All</button>
+        <button class="filter-btn" data-sf="universal" onclick="setSpellFilter('universal',this)">Universal</button>
+        <button class="filter-btn" data-sf="smoulders" onclick="setSpellFilter('smoulders',this)">Smoulders</button>
+        <button class="filter-btn" data-sf="darktide" onclick="setSpellFilter('darktide',this)">Darktide</button>
+        <button class="filter-btn" data-sf="stonebark" onclick="setSpellFilter('stonebark',this)">Stonebark</button>
+        <button class="filter-btn" data-sf="ashenvale" onclick="setSpellFilter('ashenvale',this)">Ashenvale</button>
+        <button class="filter-btn" data-sf="stormrage" onclick="setSpellFilter('stormrage',this)">Stormrage</button>
+        <button class="filter-btn" data-sf="nighthollow" onclick="setSpellFilter('nighthollow',this)">Nighthollow</button>
+        <button class="filter-btn" data-sf="dawnbringer" onclick="setSpellFilter('dawnbringer',this)">Dawnbringer</button>
+        <button class="filter-btn" data-sf="manastorm" onclick="setSpellFilter('manastorm',this)">Manastorm</button>
+        <button class="filter-btn" data-sf="plaguemire" onclick="setSpellFilter('plaguemire',this)">Plaguemire</button>
+        <button class="btn-create" onclick="createNewSpell()">+ New Spell</button>
+      </div>
+      <div id="spellList"></div>
+    </div>
   </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
 
   <!-- Confirm dialog -->
   <div class="confirm-overlay" id="confirmOverlay">
     <div class="confirm-box">
-      <div class="confirm-box__title" id="confirmTitle"></div>
-      <div class="confirm-box__text" id="confirmText"></div>
+      <div class="confirm-box__title" id="confirmTitle">Delete?</div>
+      <div class="confirm-box__text" id="confirmText">This action cannot be undone.</div>
       <div class="confirm-box__btns">
         <button class="confirm-box__btn confirm-box__btn--cancel" onclick="closeConfirm()">Cancel</button>
-        <button class="confirm-box__btn confirm-box__btn--danger" id="confirmAction">Delete</button>
+        <button class="confirm-box__btn confirm-box__btn--danger" id="confirmBtn">Delete</button>
       </div>
     </div>
   </div>
 
-  <div class="toast" id="toast"></div>
-
-  <script>
-    var ADMIN_KEY = '';
-    var zones = [];
-    var changes = {};
-    var currentFilter = 'all';
-    var nextTempId = -1; // negative IDs for unsaved new zones
-
-    var BONUS_OPTIONS = [
-      { value: '', label: 'No bonus' },
-      { value: '+50% points', label: '+50% points' },
-      { value: '+100% points', label: '+100% points' },
-      { value: 'Double mana regen', label: 'Double mana regen' },
-      { value: '+25% attack power', label: '+25% attack power' },
-      { value: '+25% defend power', label: '+25% defend power' },
-      { value: 'Triple XP', label: 'Triple XP' }
-    ];
-
-    function authenticate() {
-      ADMIN_KEY = document.getElementById('adminKeyInput').value;
-      loadZones();
-    }
-
-    async function loadZones() {
-      try {
-        var res = await fetch('/api/zones', { headers: { 'x-admin-key': ADMIN_KEY } });
-        zones = await res.json();
-        if (!Array.isArray(zones) || zones.length === 0) {
-          showToast('Invalid admin key or no zones found', 'error'); return;
-        }
-        // Ensure all zones have is_active field
-        zones.forEach(function(z) { if (z.is_active === undefined) z.is_active = true; });
-        document.getElementById('authScreen').style.display = 'none';
-        document.getElementById('adminPanel').style.display = 'block';
-        renderStats();
-        renderZones();
-      } catch (e) { showToast('Error loading zones', 'error'); }
-    }
-
-    function renderStats() {
-      var total = zones.filter(function(z) { return z.id > 0; }).length;
-      var neutral = zones.filter(function(z) { return z.zone_type === 'neutral' && z.id > 0; }).length;
-      var home = zones.filter(function(z) { return z.zone_type === 'home' && z.id > 0; }).length;
-      var bonus = zones.filter(function(z) { return z.bonus_effect && z.id > 0; }).length;
-      var disabled = zones.filter(function(z) { return !z.is_active && z.id > 0; }).length;
-      document.getElementById('statsBar').innerHTML =
-        chip(total, 'TOTAL') + chip(neutral, 'NEUTRAL') + chip(home, 'HOME') + chip(bonus, 'BONUS') + chip(disabled, 'DISABLED');
-    }
-    function chip(val, label) {
-      return '<div class="stat-chip"><span class="stat-chip__val">' + val + '</span><span class="stat-chip__label">' + label + '</span></div>';
-    }
-
-    function setFilter(filter, btn) {
-      currentFilter = filter;
-      document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      renderZones();
-    }
-
-    function getFilteredZones() {
-      var search = document.getElementById('searchInput').value.toLowerCase();
-      return zones.filter(function(z) {
-        if (search && !(z.name || '').toLowerCase().includes(search) && !(z.description || '').toLowerCase().includes(search)) return false;
-        if (currentFilter === 'neutral') return z.zone_type === 'neutral';
-        if (currentFilter === 'home') return z.zone_type === 'home';
-        if (currentFilter === 'bonus') return !!z.bonus_effect;
-        if (currentFilter === 'disabled') return !z.is_active;
-        return true;
-      });
-    }
-
-    function renderZones() {
-      var filtered = getFilteredZones();
-      var el = document.getElementById('zoneList');
-      if (filtered.length === 0) {
-        el.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text-faint);font-style:italic;">No zones match filters</div>';
-        return;
-      }
-      var html = '';
-      filtered.forEach(function(z) {
-        var isNew = z.id < 0;
-        var isDisabled = !z.is_active;
-        var cardClass = 'zone-card' + (isNew ? ' new-zone' : '') + (isDisabled ? ' disabled-zone' : '') + (changes[z.id] ? ' changed' : '');
-        var typeClass = z.zone_type === 'home' ? 'zone-card__type--home' : 'zone-card__type--neutral';
-        var statusClass = z.is_active ? 'zone-card__status--active' : 'zone-card__status--disabled';
-
-        var imgPath = z.image_url || '';
-        var imgHTML = imgPath
-          ? '<img src="/assets/images/zones/' + esc(imgPath) + '" onerror="this.parentElement.innerHTML=\'<div class=placeholder>NOT FOUND</div>\'">'
-          : '<div class="placeholder">NO IMAGE</div>';
-
-        // Bonus select options
-        var bonusOptions = '';
-        BONUS_OPTIONS.forEach(function(opt) {
-          var sel = (z.bonus_effect || '') === opt.value ? ' selected' : '';
-          bonusOptions += '<option value="' + esc(opt.value) + '"' + sel + '>' + opt.label + '</option>';
-        });
-
-        // Zone type select
-        var typeOptions = '<option value="neutral"' + (z.zone_type === 'neutral' ? ' selected' : '') + '>Neutral</option>'
-          + '<option value="home"' + (z.zone_type === 'home' ? ' selected' : '') + '>Home</option>';
-
-        html += '<div class="' + cardClass + '" id="zcard-' + z.id + '">'
-          // Header
-          + '<div class="zone-card__header">'
-          + (isNew ? '<span class="zone-card__id">NEW</span>' : '<span class="zone-card__id">ZONE #' + z.id + '</span>')
-          + '<span class="zone-card__type ' + typeClass + '">' + (z.zone_type || 'neutral').toUpperCase() + '</span>'
-          + '<span class="zone-card__status ' + statusClass + '">' + (z.is_active ? 'ACTIVE' : 'DISABLED') + '</span>'
-          + '</div>'
-
-          // Fields grid
-          + '<div class="zone-card__grid">'
-
-          // Name (full width)
-          + '<div class="field-group zone-card__grid--full">'
-          + '<span class="field-label">NAME</span>'
-          + '<input class="zone-input zone-input--title" value="' + esc(z.name) + '" onchange="mark(' + z.id + ',\'name\',this.value)" placeholder="Zone name...">'
-          + '</div>'
-
-          // Description (full width)
-          + '<div class="field-group zone-card__grid--full">'
-          + '<span class="field-label">DESCRIPTION</span>'
-          + '<input class="zone-input" value="' + esc(z.description || '') + '" onchange="mark(' + z.id + ',\'description\',this.value)" placeholder="Short description...">'
-          + '</div>'
-
-          // Type
-          + '<div class="field-group">'
-          + '<span class="field-label">TYPE</span>'
-          + '<select class="zone-select" onchange="mark(' + z.id + ',\'zone_type\',this.value);updateTypeLabel(' + z.id + ',this.value)">' + typeOptions + '</select>'
-          + '</div>'
-
-          // Bonus effect
-          + '<div class="field-group">'
-          + '<span class="field-label">BONUS EFFECT</span>'
-          + '<select class="zone-select" onchange="mark(' + z.id + ',\'bonus_effect\',this.value)">' + bonusOptions + '</select>'
-          + '</div>'
-
-          // Image filename
-          + '<div class="field-group">'
-          + '<span class="field-label">IMAGE FILENAME</span>'
-          + '<input class="zone-input zone-input--mono" value="' + esc(imgPath) + '" onchange="mark(' + z.id + ',\'image_url\',this.value);updateImg(' + z.id + ',this.value)" placeholder="zone-image.jpg">'
-          + '<div class="img-preview" id="imgprev-' + z.id + '">' + imgHTML + '</div>'
-          + '</div>'
-
-          // Time limit
-          + '<div class="field-group">'
-          + '<span class="field-label">TIME LIMIT (HOURS) — 0 = no limit</span>'
-          + '<input class="zone-input zone-input--mono" type="number" min="0" max="24" value="' + (z.time_limit_hours || 0) + '" onchange="mark(' + z.id + ',\'time_limit_hours\',parseInt(this.value)||0)" placeholder="0">'
-          + '</div>'
-
-          + '</div>' // end grid
-
-          // Actions
-          + '<div class="zone-card__actions">'
-          + '<button class="btn-save" id="btn-' + z.id + '" onclick="saveZone(' + z.id + ')" ' + (changes[z.id] || isNew ? '' : 'disabled') + '>' + (isNew ? 'Create' : 'Save') + '</button>'
-          + '<button class="btn-toggle" onclick="toggleZone(' + z.id + ')">' + (z.is_active ? 'Disable' : 'Enable') + '</button>'
-          + (z.zone_type !== 'home' ? '<button class="btn-delete" onclick="confirmDelete(' + z.id + ',\'' + esc(z.name) + '\')">Delete</button>' : '')
-          + '<span class="status-msg" id="status-' + z.id + '"></span>'
-          + '</div>'
-
-          + '</div>';
-      });
-      el.innerHTML = html;
-    }
-
-    function esc(str) {
-      return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&#39;');
-    }
-
-    function mark(zoneId, field, value) {
-      if (!changes[zoneId]) changes[zoneId] = {};
-      changes[zoneId][field] = value;
-      var card = document.getElementById('zcard-' + zoneId);
-      if (card) { card.classList.add('changed'); card.classList.remove('saved'); }
-      var btn = document.getElementById('btn-' + zoneId);
-      if (btn) btn.disabled = false;
-    }
-
-    function updateImg(zoneId, filename) {
-      var prev = document.getElementById('imgprev-' + zoneId);
-      if (!prev) return;
-      if (filename) {
-        prev.innerHTML = '<img src="/assets/images/zones/' + filename + '" onerror="this.parentElement.innerHTML=\'<div class=placeholder>NOT FOUND</div>\'">';
-      } else {
-        prev.innerHTML = '<div class="placeholder">NO IMAGE</div>';
-      }
-    }
-
-    function updateTypeLabel(zoneId, type) {
-      // Re-render will catch this on next save
-    }
-
-    function createNewZone() {
-      var newZone = {
-        id: nextTempId--,
-        name: '',
-        description: '',
-        zone_type: 'neutral',
-        bonus_effect: '',
-        image_url: '',
-        time_limit_hours: 0,
-        is_active: true,
-        _isNew: true
-      };
-      zones.unshift(newZone);
-      // Mark all fields as changed so Create button works
-      changes[newZone.id] = {
-        name: '', description: '', zone_type: 'neutral',
-        bonus_effect: '', image_url: '', time_limit_hours: 0, is_active: true
-      };
-      renderZones();
-      // Focus the name field
-      setTimeout(function() {
-        var card = document.getElementById('zcard-' + newZone.id);
-        if (card) {
-          card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          var nameInput = card.querySelector('.zone-input--title');
-          if (nameInput) nameInput.focus();
-        }
-      }, 100);
-    }
-
-    async function saveZone(zoneId) {
-      var zone = zones.find(function(z) { return z.id === zoneId; });
-      if (!zone) return;
-
-      var btn = document.getElementById('btn-' + zoneId);
-      var status = document.getElementById('status-' + zoneId);
-      btn.disabled = true;
-      btn.textContent = '...';
-
-      var isNew = zone._isNew || zoneId < 0;
-
-      try {
-        var payload = changes[zoneId] || {};
-        // For new zones, merge all current field values
-        if (isNew) {
-          var card = document.getElementById('zcard-' + zoneId);
-          var inputs = card.querySelectorAll('.zone-input, .zone-select');
-          // Use existing changes + zone defaults
-          payload.name = payload.name || zone.name || 'Unnamed Zone';
-          payload.zone_type = payload.zone_type || zone.zone_type || 'neutral';
-          payload.is_active = zone.is_active !== false;
-        }
-
-        var url, method;
-        if (isNew) {
-          url = '/api/admin/zones';
-          method = 'POST';
-        } else {
-          url = '/api/admin/zone/' + zoneId;
-          method = 'PUT';
-        }
-
-        var res = await fetch(url, {
-          method: method,
-          headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
-          body: JSON.stringify(payload)
-        });
-
-        var result = await res.json();
-        if (result.error) throw new Error(result.error);
-
-        if (isNew && result.zone) {
-          // Replace temp zone with real one from server
-          var idx = zones.findIndex(function(z) { return z.id === zoneId; });
-          if (idx !== -1) zones[idx] = result.zone;
-        } else if (result.zone) {
-          var idx = zones.findIndex(function(z) { return z.id === zoneId; });
-          if (idx !== -1) Object.assign(zones[idx], result.zone);
-        }
-
-        delete changes[zoneId];
-        renderStats();
-        renderZones();
-        showToast(isNew ? 'Zone created!' : 'Saved!', 'success');
-      } catch (e) {
-        if (status) { status.textContent = 'ERROR: ' + e.message; status.style.color = '#cc4444'; }
-        showToast('Error: ' + e.message, 'error');
-      }
-
-      btn.textContent = zoneId < 0 ? 'Create' : 'Save';
-      btn.disabled = !changes[zoneId];
-    }
-
-    async function toggleZone(zoneId) {
-      var zone = zones.find(function(z) { return z.id === zoneId; });
-      if (!zone || zone._isNew) return;
-
-      var newStatus = !zone.is_active;
-      try {
-        var res = await fetch('/api/admin/zone/' + zoneId, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY },
-          body: JSON.stringify({ is_active: newStatus })
-        });
-        var result = await res.json();
-        if (result.error) throw new Error(result.error);
-
-        zone.is_active = newStatus;
-        renderStats();
-        renderZones();
-        showToast(zone.name + ' ' + (newStatus ? 'enabled' : 'disabled'), 'success');
-      } catch (e) { showToast('Error: ' + e.message, 'error'); }
-    }
-
-    var pendingDeleteId = null;
-    function confirmDelete(zoneId, zoneName) {
-      var zone = zones.find(function(z) { return z.id === zoneId; });
-      if (!zone) return;
-
-      // New unsaved zones just remove from array
-      if (zone._isNew || zoneId < 0) {
-        zones = zones.filter(function(z) { return z.id !== zoneId; });
-        delete changes[zoneId];
-        renderStats();
-        renderZones();
-        return;
-      }
-
-      pendingDeleteId = zoneId;
-      document.getElementById('confirmTitle').textContent = 'Delete Zone';
-      document.getElementById('confirmText').textContent = 'Permanently delete "' + zoneName + '"? This cannot be undone.';
-      document.getElementById('confirmAction').onclick = doDelete;
-      document.getElementById('confirmOverlay').classList.add('active');
-    }
-
-    function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('active'); pendingDeleteId = null; }
-
-    async function doDelete() {
-      if (!pendingDeleteId) return;
-      closeConfirm();
-      try {
-        var res = await fetch('/api/admin/zone/' + pendingDeleteId, {
-          method: 'DELETE',
-          headers: { 'x-admin-key': ADMIN_KEY }
-        });
-        var result = await res.json();
-        if (result.error) throw new Error(result.error);
-
-        zones = zones.filter(function(z) { return z.id !== pendingDeleteId; });
-        delete changes[pendingDeleteId];
-        renderStats();
-        renderZones();
-        showToast('Zone deleted', 'success');
-      } catch (e) { showToast('Error: ' + e.message, 'error'); }
-      pendingDeleteId = null;
-    }
-
-    function showToast(msg, type) {
-      var t = document.getElementById('toast');
-      t.textContent = msg;
-      t.className = 'toast toast--' + (type || 'success') + ' active';
-      setTimeout(function() { t.classList.remove('active'); }, 3000);
-    }
-    /**
-     * Admin Routes - Zone Management
-     * 
-     * ADD THESE ROUTES to your existing server/routes/admin.js
-     * (or replace the zone-related routes if they already exist)
-     * 
-     * Existing route to UPDATE:
-     *   PUT /api/admin/zone/:id  — now also handles is_active, time_limit_hours, zone_type
-     * 
-     * New routes to ADD:
-     *   POST /api/admin/zones    — create a new zone
-     *   DELETE /api/admin/zone/:id — delete a zone
-     */
-
-    // ============================================
-    // PUT /api/admin/zone/:id  (UPDATE — replace existing)
-    // ============================================
-    router.put('/zone/:id', async (req, res) => {
-      try {
-        const adminKey = req.headers['x-admin-key'];
-        if (adminKey !== process.env.ADMIN_KEY) {
-          return res.status(401).json({ error: 'Invalid admin key' });
-        }
-
-        const zoneId = parseInt(req.params.id);
-        const updates = {};
-
-        // Allow updating these fields
-        const allowedFields = [
-          'name', 'description', 'image_url', 'bonus_effect',
-          'zone_type', 'is_active', 'time_limit_hours'
-        ];
-
-        allowedFields.forEach(field => {
-          if (req.body[field] !== undefined) {
-            updates[field] = req.body[field];
-          }
-        });
-
-        if (Object.keys(updates).length === 0) {
-          return res.status(400).json({ error: 'No valid fields to update' });
-        }
-
-        const { data, error } = await supabase
-          .from('zones')
-          .update(updates)
-          .eq('id', zoneId)
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        res.json({ success: true, zone: data });
-      } catch (e) {
-        console.error('Zone update error:', e);
-        res.status(500).json({ error: e.message || 'Failed to update zone' });
-      }
-    });
-
-
-    // ============================================
-    // POST /api/admin/zones  (CREATE — new route)
-    // ============================================
-    router.post('/zones', async (req, res) => {
-      try {
-        const adminKey = req.headers['x-admin-key'];
-        if (adminKey !== process.env.ADMIN_KEY) {
-          return res.status(401).json({ error: 'Invalid admin key' });
-        }
-
-        const {
-          name = 'Unnamed Zone',
-          description = '',
-          zone_type = 'neutral',
-          bonus_effect = null,
-          image_url = null,
-          time_limit_hours = 0,
-          is_active = true
-        } = req.body;
-
-        if (!name || name.trim() === '') {
-          return res.status(400).json({ error: 'Zone name is required' });
-        }
-
-        const { data, error } = await supabase
-          .from('zones')
-          .insert({
-            name: name.trim(),
-            description: description.trim(),
-            zone_type,
-            bonus_effect: bonus_effect || null,
-            image_url: image_url || null,
-            time_limit_hours: time_limit_hours || 0,
-            is_active
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        console.log(`[Admin] Created zone: ${data.id} - ${data.name}`);
-        res.json({ success: true, zone: data });
-      } catch (e) {
-        console.error('Zone create error:', e);
-        res.status(500).json({ error: e.message || 'Failed to create zone' });
-      }
-    });
-
-
-    // ============================================
-    // DELETE /api/admin/zone/:id  (DELETE — new route)
-    // ============================================
-    router.delete('/zone/:id', async (req, res) => {
-      try {
-        const adminKey = req.headers['x-admin-key'];
-        if (adminKey !== process.env.ADMIN_KEY) {
-          return res.status(401).json({ error: 'Invalid admin key' });
-        }
-
-        const zoneId = parseInt(req.params.id);
-
-        // Don't allow deleting home zones
-        const { data: zone } = await supabase
-          .from('zones')
-          .select('zone_type, name')
-          .eq('id', zoneId)
-          .single();
-
-        if (!zone) {
-          return res.status(404).json({ error: 'Zone not found' });
-        }
-
-        if (zone.zone_type === 'home') {
-          return res.status(400).json({ error: 'Cannot delete home zones' });
-        }
-
-        // Clean up related data first
-        await supabase.from('territory_actions').delete().eq('zone_id', zoneId);
-        await supabase.from('zone_control').delete().eq('zone_id', zoneId);
-
-        // Delete the zone
-        const { error } = await supabase
-          .from('zones')
-          .delete()
-          .eq('id', zoneId);
-
-        if (error) throw error;
-
-        console.log(`[Admin] Deleted zone: ${zoneId} - ${zone.name}`);
-        res.json({ success: true });
-      } catch (e) {
-        console.error('Zone delete error:', e);
-        res.status(500).json({ error: e.message || 'Failed to delete zone' });
-      }
-    });
-  </script>
+<script>
+var ADMIN_KEY='';
+var zones=[],allSpells=[];
+var zoneFilter='all',spellFilter='all';
+var zoneChanges={},spellChanges={};
+var nextTempZoneId=-1;
+
+var HOUSES=['universal','smoulders','darktide','stonebark','ashenvale','stormrage','nighthollow','dawnbringer','manastorm','plaguemire'];
+var TYPES=['attack','defend','support','utility','debuff','reaction','control'];
+var HOUSE_COLORS={universal:'#D4A64B',smoulders:'#E03C31',darktide:'#00B4D8',stonebark:'#5CB338',ashenvale:'#90E0EF',stormrage:'#FFC800',nighthollow:'#7B2D8E',dawnbringer:'#FF8C00',manastorm:'#5B8FE0',plaguemire:'#E84393'};
+var BONUS_OPTIONS=[{value:'',label:'No bonus'},{value:'+50% points',label:'+50% points'},{value:'+100% points',label:'+100% points'},{value:'Double mana regen',label:'Double mana regen'},{value:'+25% attack power',label:'+25% attack power'},{value:'+25% defend power',label:'+25% defend power'},{value:'Triple XP',label:'Triple XP'}];
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');}
+function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast toast--'+(type||'success')+' active';setTimeout(function(){t.classList.remove('active');},3000);}
+function chip(val,label){return'<div class="stat-chip"><span class="stat-chip__val">'+val+'</span><span class="stat-chip__label">'+label+'</span></div>';}
+
+// ═══ TABS ═══
+function switchTab(tab,btn){
+  document.querySelectorAll('.admin-tab').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(function(c){c.classList.remove('active');});
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+// ═══ AUTH ═══
+function authenticate(){
+  ADMIN_KEY=document.getElementById('adminKeyInput').value.trim();
+  if(!ADMIN_KEY)return;
+  Promise.all([loadZones(),loadSpells()]).then(function(){
+    document.getElementById('authScreen').style.display='none';
+    document.getElementById('adminPanel').style.display='block';
+  });
+}
+
+async function apiFetch(url,options){
+  options=options||{};options.headers=options.headers||{};
+  options.headers['x-admin-key']=ADMIN_KEY;
+  if(options.body)options.headers['Content-Type']='application/json';
+  var res=await fetch(url,options);
+  if(res.status===401){showToast('Invalid admin key','error');return null;}
+  return res.json();
+}
+
+// ═══════════════════════════════════════
+//  ZONES
+// ═══════════════════════════════════════
+async function loadZones(){
+  try{
+    var res=await fetch('/api/zones',{headers:{'x-admin-key':ADMIN_KEY}});
+    zones=await res.json();
+    if(!Array.isArray(zones)){zones=[];showToast('Could not load zones','error');return;}
+    zones.forEach(function(z){if(z.is_active===undefined)z.is_active=true;});
+    renderZoneStats();renderZones();
+  }catch(e){showToast('Error loading zones','error');}
+}
+
+function renderZoneStats(){
+  var total=zones.filter(function(z){return z.id>0;}).length;
+  var neutral=zones.filter(function(z){return z.zone_type==='neutral'&&z.id>0;}).length;
+  var home=zones.filter(function(z){return z.zone_type==='home'&&z.id>0;}).length;
+  var bonus=zones.filter(function(z){return z.bonus_effect&&z.id>0;}).length;
+  var disabled=zones.filter(function(z){return!z.is_active&&z.id>0;}).length;
+  document.getElementById('zoneStatsBar').innerHTML=chip(total,'TOTAL')+chip(neutral,'NEUTRAL')+chip(home,'HOME')+chip(bonus,'BONUS')+chip(disabled,'DISABLED');
+}
+
+function setZoneFilter(f,btn){
+  zoneFilter=f;
+  document.querySelectorAll('[data-zf]').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');renderZones();
+}
+
+function renderZones(){
+  var search=(document.getElementById('zoneSearch').value||'').toLowerCase();
+  var filtered=zones.filter(function(z){
+    if(search&&(z.name||'').toLowerCase().indexOf(search)===-1&&(z.description||'').toLowerCase().indexOf(search)===-1)return false;
+    if(zoneFilter==='neutral')return z.zone_type==='neutral';
+    if(zoneFilter==='home')return z.zone_type==='home';
+    if(zoneFilter==='bonus')return!!z.bonus_effect;
+    if(zoneFilter==='disabled')return!z.is_active;
+    return true;
+  });
+  var el=document.getElementById('zoneList');
+  if(!filtered.length){el.innerHTML='<div style="text-align:center;padding:30px;color:var(--text-faint);font-style:italic;">No zones match</div>';return;}
+  var html='';
+  filtered.forEach(function(z){
+    var isNew=z.id<0,isDis=!z.is_active;
+    var cls='admin-card'+(isNew?' new-item':'')+(isDis?' disabled-item':'')+(zoneChanges[z.id]?' changed':'');
+    var imgPath=z.image_url||'';
+    var imgHTML=imgPath?'<img src="/assets/images/zones/'+esc(imgPath)+'" onerror="this.parentElement.innerHTML=\'<div class=placeholder>NOT FOUND</div>\'">':'<div class="placeholder">NO IMAGE</div>';
+    var bonusOpts='';BONUS_OPTIONS.forEach(function(o){bonusOpts+='<option value="'+esc(o.value)+'"'+((z.bonus_effect||'')===o.value?' selected':'')+'>'+o.label+'</option>';});
+    var typeOpts='<option value="neutral"'+(z.zone_type==='neutral'?' selected':'')+'>Neutral</option><option value="home"'+(z.zone_type==='home'?' selected':'')+'>Home</option>';
+
+    html+='<div class="'+cls+'" id="zcard-'+z.id+'">'
+      +'<div class="admin-card__header">'
+      +(isNew?'<span class="admin-card__id">NEW</span>':'<span class="admin-card__id">ZONE #'+z.id+'</span>')
+      +'<span class="admin-card__badge badge--'+(z.zone_type||'neutral')+'">'+(z.zone_type||'neutral').toUpperCase()+'</span>'
+      +'<span class="admin-card__status badge--'+(z.is_active?'active':'disabled')+'">'+(z.is_active?'ACTIVE':'DISABLED')+'</span>'
+      +'</div>'
+      +'<div class="admin-card__grid">'
+      +'<div class="field-group admin-card__grid--full"><span class="field-label">NAME</span><input class="admin-input admin-input--title" value="'+esc(z.name)+'" onchange="markZone('+z.id+',\'name\',this.value)"></div>'
+      +'<div class="field-group admin-card__grid--full"><span class="field-label">DESCRIPTION</span><input class="admin-input" value="'+esc(z.description||'')+'" onchange="markZone('+z.id+',\'description\',this.value)"></div>'
+      +'<div class="field-group"><span class="field-label">TYPE</span><select class="admin-select" onchange="markZone('+z.id+',\'zone_type\',this.value)">'+typeOpts+'</select></div>'
+      +'<div class="field-group"><span class="field-label">BONUS EFFECT</span><select class="admin-select" onchange="markZone('+z.id+',\'bonus_effect\',this.value)">'+bonusOpts+'</select></div>'
+      +'<div class="field-group"><span class="field-label">IMAGE FILENAME</span><input class="admin-input admin-input--mono" value="'+esc(imgPath)+'" onchange="markZone('+z.id+',\'image_url\',this.value);updateZoneImg('+z.id+',this.value)"><div class="img-preview" id="imgprev-'+z.id+'">'+imgHTML+'</div></div>'
+      +'<div class="field-group"><span class="field-label">TIME LIMIT (HOURS)</span><input class="admin-input admin-input--mono" type="number" min="0" max="24" value="'+(z.time_limit_hours||0)+'" onchange="markZone('+z.id+',\'time_limit_hours\',parseInt(this.value)||0)"></div>'
+      +'</div>'
+      +'<div class="admin-card__actions">'
+      +'<button class="btn-save" id="zbtn-'+z.id+'" onclick="saveZone('+z.id+')" '+(zoneChanges[z.id]||isNew?'':'disabled')+'>'+(isNew?'Create':'Save')+'</button>'
+      +'<button class="btn-toggle" onclick="toggleZone('+z.id+')">'+(z.is_active?'Disable':'Enable')+'</button>'
+      +(z.zone_type!=='home'?'<button class="btn-delete" onclick="confirmDeleteZone('+z.id+',\''+esc(z.name)+'\')">Delete</button>':'')
+      +'<span class="status-msg" id="zstatus-'+z.id+'"></span>'
+      +'</div></div>';
+  });
+  el.innerHTML=html;
+}
+
+function markZone(id,field,value){
+  if(!zoneChanges[id])zoneChanges[id]={};zoneChanges[id][field]=value;
+  var card=document.getElementById('zcard-'+id);if(card){card.classList.add('changed');card.classList.remove('saved');}
+  var btn=document.getElementById('zbtn-'+id);if(btn)btn.disabled=false;
+}
+function updateZoneImg(id,fn){
+  var p=document.getElementById('imgprev-'+id);if(!p)return;
+  p.innerHTML=fn?'<img src="/assets/images/zones/'+fn+'" onerror="this.parentElement.innerHTML=\'<div class=placeholder>NOT FOUND</div>\'">':'<div class="placeholder">NO IMAGE</div>';
+}
+function createNewZone(){
+  var nz={id:nextTempZoneId--,name:'',description:'',zone_type:'neutral',bonus_effect:'',image_url:'',time_limit_hours:0,is_active:true,_isNew:true};
+  zones.unshift(nz);zoneChanges[nz.id]={name:'',description:'',zone_type:'neutral',bonus_effect:'',image_url:'',time_limit_hours:0,is_active:true};
+  renderZones();
+  setTimeout(function(){var c=document.getElementById('zcard-'+nz.id);if(c){c.scrollIntoView({behavior:'smooth'});var i=c.querySelector('.admin-input--title');if(i)i.focus();}},100);
+}
+async function saveZone(id){
+  var zone=zones.find(function(z){return z.id===id;});if(!zone)return;
+  var btn=document.getElementById('zbtn-'+id);if(btn){btn.disabled=true;btn.textContent='...';}
+  var isNew=zone._isNew||id<0;
+  try{
+    var payload=zoneChanges[id]||{};
+    if(isNew){payload.name=payload.name||zone.name||'Unnamed Zone';payload.zone_type=payload.zone_type||'neutral';payload.is_active=zone.is_active!==false;}
+    var url=isNew?'/api/admin/zones':'/api/admin/zone/'+id;
+    var res=await fetch(url,{method:isNew?'POST':'PUT',headers:{'Content-Type':'application/json','x-admin-key':ADMIN_KEY},body:JSON.stringify(payload)});
+    var result=await res.json();if(result.error)throw new Error(result.error);
+    if(isNew&&result.zone){var idx=zones.findIndex(function(z){return z.id===id;});if(idx!==-1)zones[idx]=result.zone;}
+    else if(result.zone){var idx=zones.findIndex(function(z){return z.id===id;});if(idx!==-1)Object.assign(zones[idx],result.zone);}
+    delete zoneChanges[id];renderZoneStats();renderZones();showToast(isNew?'Zone created!':'Saved!','success');
+  }catch(e){showToast('Error: '+e.message,'error');}
+  if(btn){btn.textContent=id<0?'Create':'Save';btn.disabled=!zoneChanges[id];}
+}
+async function toggleZone(id){
+  var zone=zones.find(function(z){return z.id===id;});if(!zone||zone._isNew)return;
+  try{
+    var res=await fetch('/api/admin/zone/'+id,{method:'PUT',headers:{'Content-Type':'application/json','x-admin-key':ADMIN_KEY},body:JSON.stringify({is_active:!zone.is_active})});
+    var result=await res.json();if(result.error)throw new Error(result.error);
+    zone.is_active=!zone.is_active;renderZoneStats();renderZones();showToast(zone.name+' '+(zone.is_active?'enabled':'disabled'),'success');
+  }catch(e){showToast('Error: '+e.message,'error');}
+}
+function confirmDeleteZone(id,name){
+  var zone=zones.find(function(z){return z.id===id;});if(!zone)return;
+  if(zone._isNew||id<0){zones=zones.filter(function(z){return z.id!==id;});delete zoneChanges[id];renderZoneStats();renderZones();return;}
+  document.getElementById('confirmTitle').textContent='Delete "'+name+'"?';
+  document.getElementById('confirmText').textContent='Permanently delete this zone. Cannot be undone.';
+  document.getElementById('confirmBtn').onclick=async function(){
+    closeConfirm();
+    try{var res=await fetch('/api/admin/zone/'+id,{method:'DELETE',headers:{'x-admin-key':ADMIN_KEY}});var r=await res.json();if(r.error)throw new Error(r.error);
+    zones=zones.filter(function(z){return z.id!==id;});delete zoneChanges[id];renderZoneStats();renderZones();showToast('Zone deleted','success');}catch(e){showToast('Error: '+e.message,'error');}
+  };
+  document.getElementById('confirmOverlay').classList.add('active');
+}
+
+// ═══════════════════════════════════════
+//  SPELLS
+// ═══════════════════════════════════════
+async function loadSpells(){
+  try{
+    var data=await apiFetch('/api/spells');
+    if(!data)return;if(data.error){showToast(data.error,'error');return;}
+    allSpells=data.spells||data;
+    renderSpellStats();renderSpells();
+  }catch(e){showToast('Error loading spells','error');}
+}
+
+function renderSpellStats(){
+  var total=allSpells.length;
+  var active=allSpells.filter(function(s){return s.is_active!==false;}).length;
+  var houses={};allSpells.forEach(function(s){houses[s.house]=(houses[s.house]||0)+1;});
+  document.getElementById('spellStatsBar').innerHTML=chip(total,'TOTAL')+chip(active,'ACTIVE')+chip(Object.keys(houses).length,'HOUSES');
+}
+
+function setSpellFilter(f,btn){
+  spellFilter=f;
+  document.querySelectorAll('[data-sf]').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');renderSpells();
+}
+
+function renderSpells(){
+  var search=(document.getElementById('spellSearch').value||'').toLowerCase();
+  var filtered=allSpells.filter(function(s){
+    if(spellFilter!=='all'&&s.house!==spellFilter)return false;
+    if(search&&s.name.toLowerCase().indexOf(search)===-1&&s.house.toLowerCase().indexOf(search)===-1)return false;
+    return true;
+  });
+  filtered.sort(function(a,b){
+    var ha=HOUSES.indexOf(a.house),hb=HOUSES.indexOf(b.house);
+    if(ha!==hb)return ha-hb;if(a.tier!==b.tier)return a.tier-b.tier;return a.name.localeCompare(b.name);
+  });
+  var html='';filtered.forEach(function(s){html+=buildSpellRow(s);});
+  document.getElementById('spellList').innerHTML=html||'<div style="text-align:center;padding:30px;color:var(--text-faint);font-style:italic;">No spells found</div>';
+}
+
+function buildSpellRow(s){
+  var isNew=s._isNew,isActive=s.is_active!==false,hc=HOUSE_COLORS[s.house]||'#888';
+  var bonuses=[];try{bonuses=typeof s.bonus_effects==='string'?JSON.parse(s.bonus_effects):(s.bonus_effects||[]);}catch(e){bonuses=[];}
+  var cls='admin-card'+(isNew?' new-item':'')+(!isActive?' disabled-item':'');
+  var bonusHTML='';
+  bonuses.forEach(function(b,i){
+    bonusHTML+='<div class="bonus-row"><input class="admin-input admin-input--mono tag-input" value="'+esc(b.tag||'')+'" placeholder="Tag" data-spell="'+s.id+'" data-bonus-idx="'+i+'" data-bonus-field="tag" onchange="markSpell('+s.id+')"><input class="admin-input admin-input--mono" value="'+esc(b.desc||'')+'" placeholder="Description" data-spell="'+s.id+'" data-bonus-idx="'+i+'" data-bonus-field="desc" onchange="markSpell('+s.id+')"><button class="btn-remove-bonus" onclick="removeBonus(\''+s.id+'\','+i+')">×</button></div>';
+  });
+  var houseOpts=HOUSES.map(function(h){return'<option value="'+h+'"'+(s.house===h?' selected':'')+'>'+h+'</option>';}).join('');
+  var typeOpts=TYPES.map(function(t){return'<option value="'+t+'"'+(s.spell_type===t?' selected':'')+'>'+t+'</option>';}).join('');
+  return '<div class="'+cls+'" id="spell-'+s.id+'">'
+    +'<div class="admin-card__header"><span class="admin-card__id">#'+s.id+'</span>'
+    +'<span class="admin-card__badge badge--t'+s.tier+'">T'+s.tier+'</span>'
+    +'<span class="admin-card__badge" style="background:'+hc+'18;color:'+hc+';border:1px solid '+hc+'40;">'+s.house.toUpperCase()+'</span>'
+    +'<span class="admin-card__status badge--'+(isActive?'active':'disabled')+'">'+(isActive?'ACTIVE':'DISABLED')+'</span></div>'
+    +'<div class="admin-card__grid">'
+    +'<div class="field-group"><span class="field-label">NAME</span><input class="admin-input admin-input--title" value="'+esc(s.name)+'" data-spell="'+s.id+'" data-field="name" onchange="markSpell(\''+s.id+'\')"></div>'
+    +'<div class="field-group"><span class="field-label">SLUG</span><input class="admin-input admin-input--mono" value="'+esc(s.slug)+'" data-spell="'+s.id+'" data-field="slug" onchange="markSpell(\''+s.id+'\')"></div>'
+    +'<div class="field-group"><span class="field-label">HOUSE</span><select class="admin-select" data-spell="'+s.id+'" data-field="house" onchange="markSpell(\''+s.id+'\')">'+houseOpts+'</select></div>'
+    +'<div class="field-group"><span class="field-label">TYPE</span><select class="admin-select" data-spell="'+s.id+'" data-field="spell_type" onchange="markSpell(\''+s.id+'\')">'+typeOpts+'</select></div>'
+    +'<div class="field-group"><span class="field-label">TIER</span><select class="admin-select" data-spell="'+s.id+'" data-field="tier" onchange="markSpell(\''+s.id+'\')"><option value="0"'+(s.tier==0?' selected':'')+'>T0 — Basic</option><option value="1"'+(s.tier==1?' selected':'')+'>T1 — 1 MP</option><option value="2"'+(s.tier==2?' selected':'')+'>T2 — 2 MP</option><option value="3"'+(s.tier==3?' selected':'')+'>T3 — 3 MP</option></select></div>'
+    +'<div class="field-group"><span class="field-label">MANA COST</span><input type="number" class="admin-input" value="'+s.mana_cost+'" min="0" max="5" data-spell="'+s.id+'" data-field="mana_cost" onchange="markSpell(\''+s.id+'\')"></div>'
+    +'<div class="field-group admin-card__grid--full"><span class="field-label">BASE EFFECT</span><input class="admin-input" value="'+esc(s.base_effect)+'" data-spell="'+s.id+'" data-field="base_effect" onchange="markSpell(\''+s.id+'\')"></div>'
+    +'<div class="field-group"><span class="field-label">FLAVOR TEXT</span><input class="admin-input" value="'+esc(s.flavor_text||'')+'" data-spell="'+s.id+'" data-field="flavor_text" onchange="markSpell(\''+s.id+'\')"></div>'
+    +'<div class="field-group"><span class="field-label">MOTTO</span><input class="admin-input" value="'+esc(s.motto||'')+'" data-spell="'+s.id+'" data-field="motto" onchange="markSpell(\''+s.id+'\')"></div>'
+    +'<div class="field-group admin-card__grid--full"><span class="field-label">BONUS EFFECTS</span><div class="bonus-list" id="bonuses-'+s.id+'">'+bonusHTML+'</div><button class="btn-add-bonus" onclick="addBonus(\''+s.id+'\')">+ ADD EFFECT</button></div>'
+    +'</div>'
+    +'<div class="admin-card__actions"><button class="btn-save" id="sbtn-'+s.id+'" onclick="saveSpell(\''+s.id+'\')" disabled>Save</button>'
+    +'<button class="btn-toggle" onclick="toggleSpell(\''+s.id+'\')">'+(isActive?'Disable':'Enable')+'</button>'
+    +(!s.is_always_available?'<button class="btn-delete" onclick="confirmDeleteSpell(\''+s.id+'\',\''+esc(s.name)+'\')">Delete</button>':'')
+    +'<span class="status-msg" id="sstatus-'+s.id+'"></span></div></div>';
+}
+
+function markSpell(id){
+  var card=document.getElementById('spell-'+id);if(card)card.classList.add('changed');
+  var btn=document.getElementById('sbtn-'+id);if(btn)btn.disabled=false;
+}
+
+function collectSpellData(id){
+  var data={};
+  document.querySelectorAll('[data-spell="'+id+'"][data-field]').forEach(function(el){
+    var f=el.dataset.field,v=el.value;
+    if(f==='tier'||f==='mana_cost')v=parseInt(v);
+    data[f]=v;
+  });
+  var bonuses=[];
+  document.querySelectorAll('[data-spell="'+id+'"][data-bonus-idx]').forEach(function(el){
+    var idx=parseInt(el.dataset.bonusIdx),field=el.dataset.bonusField;
+    if(!bonuses[idx])bonuses[idx]={};bonuses[idx][field]=el.value;
+  });
+  data.bonus_effects=bonuses.filter(function(b){return b&&(b.tag||b.desc);});
+  return data;
+}
+
+async function saveSpell(id){
+  var data=collectSpellData(id);
+  var spell=allSpells.find(function(s){return s.id==id;});
+  var isNew=spell&&spell._isNew;
+  var result=await apiFetch(isNew?'/api/spells':'/api/spells/'+id,{method:isNew?'POST':'PUT',body:JSON.stringify(data)});
+  if(!result)return;if(result.error){showToast(result.error,'error');return;}
+  showToast(isNew?'Spell created!':'Spell saved!','success');
+  var card=document.getElementById('spell-'+id);
+  if(card){card.classList.remove('changed');card.classList.add('saved');setTimeout(function(){card.classList.remove('saved');},2000);}
+  var btn=document.getElementById('sbtn-'+id);if(btn)btn.disabled=true;
+  loadSpells();
+}
+
+async function toggleSpell(id){
+  var spell=allSpells.find(function(s){return s.id==id;});if(!spell)return;
+  var result=await apiFetch('/api/spells/'+id,{method:'PUT',body:JSON.stringify({is_active:spell.is_active===false})});
+  if(!result||result.error){showToast(result?result.error:'Failed','error');return;}
+  showToast(spell.name+(spell.is_active===false?' enabled':' disabled'),'success');loadSpells();
+}
+
+function addBonus(id){
+  var spell=allSpells.find(function(s){return s.id==id;});if(!spell)return;
+  var b=typeof spell.bonus_effects==='string'?JSON.parse(spell.bonus_effects):(spell.bonus_effects||[]);
+  b.push({tag:'',desc:''});spell.bonus_effects=b;markSpell(id);renderSpells();
+}
+function removeBonus(id,idx){
+  var spell=allSpells.find(function(s){return s.id==id;});if(!spell)return;
+  var b=typeof spell.bonus_effects==='string'?JSON.parse(spell.bonus_effects):(spell.bonus_effects||[]);
+  b.splice(idx,1);spell.bonus_effects=b;markSpell(id);renderSpells();
+}
+
+function createNewSpell(){
+  var nid='new_'+Date.now();
+  allSpells.unshift({id:nid,name:'New Spell',slug:'new-spell',house:'universal',tier:1,mana_cost:1,spell_type:'attack',base_effect:'+10 influence',bonus_effects:[],flavor_text:'',motto:null,is_active:true,is_always_available:false,_isNew:true});
+  renderSpells();
+  var el=document.getElementById('spell-'+nid);if(el)el.scrollIntoView({behavior:'smooth'});
+}
+
+function confirmDeleteSpell(id,name){
+  document.getElementById('confirmTitle').textContent='Delete "'+name+'"?';
+  document.getElementById('confirmText').textContent='Permanently delete this spell.';
+  document.getElementById('confirmBtn').onclick=async function(){
+    closeConfirm();
+    var result=await apiFetch('/api/spells/'+id,{method:'DELETE'});
+    if(!result||result.error){showToast(result?result.error:'Failed','error');return;}
+    showToast('Spell deleted','success');loadSpells();
+  };
+  document.getElementById('confirmOverlay').classList.add('active');
+}
+
+function closeConfirm(){document.getElementById('confirmOverlay').classList.remove('active');}
+</script>
 </body>
 </html>

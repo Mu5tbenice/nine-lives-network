@@ -237,14 +237,14 @@ img { max-width: 100%; display: block; }
 .spell-card:hover .sc-edge{border-color:var(--edge-hover,rgba(255,255,255,0.15))}
 
 /* Rotating shimmer border */
-.sc-border{position:absolute;inset:-2px;border-radius:14px;z-index:0;
+.sc-border{position:absolute;inset:-2px;border-radius:14px;z-index:0;pointer-events:none;
   background:conic-gradient(from var(--shimmer,0deg),transparent,var(--hc,#D4A64B) 8%,transparent 16%);
   opacity:0;transition:opacity 0.5s}
 .spell-card:hover .sc-border{opacity:0.5}
 
 /* Card face */
 .sc-face{position:absolute;inset:2px;border-radius:10px;overflow:hidden;z-index:1;
-  background:var(--card-bg,linear-gradient(180deg,#12101a,#0c0a14,#0a0810))}
+  background:var(--card-bg,linear-gradient(180deg,#12101a,#0c0a14,#0a0810));pointer-events:none}
 
 /* Inner edge glow */
 .sc-inner-edge{position:absolute;inset:0;z-index:2;pointer-events:none;border-radius:10px;
@@ -252,7 +252,7 @@ img { max-width: 100%; display: block; }
 .spell-card:hover .sc-inner-edge{box-shadow:inset 0 0 25px 4px var(--inner-glow-hover,rgba(255,255,255,0.06))}
 
 /* Spell art image — top portion with fade */
-.sc-art-img{position:absolute;top:0;left:0;right:0;height:60%;
+.sc-art-img{position:absolute;top:0;left:0;right:0;height:60%;pointer-events:none;
   background-size:cover;background-position:center;
   mask-image:linear-gradient(to bottom,black 55%,transparent 100%);
   -webkit-mask-image:linear-gradient(to bottom,black 55%,transparent 100%)}
