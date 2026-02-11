@@ -133,15 +133,15 @@
       <input class="search-input" id="searchInput" placeholder="Search spells..." oninput="renderSpells()">
       <button class="filter-btn active" data-filter="all" onclick="setFilter('all',this)">All</button>
       <button class="filter-btn" data-filter="universal" onclick="setFilter('universal',this)">Universal</button>
-      <button class="filter-btn" data-filter="smoulders" onclick="setFilter('smoulders',this)">🔥 Smoulders</button>
-      <button class="filter-btn" data-filter="darktide" onclick="setFilter('darktide',this)">🌊 Darktide</button>
-      <button class="filter-btn" data-filter="stonebark" onclick="setFilter('stonebark',this)">🌿 Stonebark</button>
-      <button class="filter-btn" data-filter="ashenvale" onclick="setFilter('ashenvale',this)">💨 Ashenvale</button>
-      <button class="filter-btn" data-filter="stormrage" onclick="setFilter('stormrage',this)">⚡ Stormrage</button>
-      <button class="filter-btn" data-filter="nighthollow" onclick="setFilter('nighthollow',this)">🌑 Nighthollow</button>
-      <button class="filter-btn" data-filter="dawnbringer" onclick="setFilter('dawnbringer',this)">☀️ Dawnbringer</button>
-      <button class="filter-btn" data-filter="manastorm" onclick="setFilter('manastorm',this)">🔮 Manastorm</button>
-      <button class="filter-btn" data-filter="plaguemire" onclick="setFilter('plaguemire',this)">☣️ Plaguemire</button>
+      <button class="filter-btn" data-filter="smoulders" onclick="setFilter('smoulders',this)">ðŸ”¥ Smoulders</button>
+      <button class="filter-btn" data-filter="darktide" onclick="setFilter('darktide',this)">ðŸŒŠ Darktide</button>
+      <button class="filter-btn" data-filter="stonebark" onclick="setFilter('stonebark',this)">ðŸŒ¿ Stonebark</button>
+      <button class="filter-btn" data-filter="ashenvale" onclick="setFilter('ashenvale',this)">ðŸ’¨ Ashenvale</button>
+      <button class="filter-btn" data-filter="stormrage" onclick="setFilter('stormrage',this)">âš¡ Stormrage</button>
+      <button class="filter-btn" data-filter="nighthollow" onclick="setFilter('nighthollow',this)">ðŸŒ‘ Nighthollow</button>
+      <button class="filter-btn" data-filter="dawnbringer" onclick="setFilter('dawnbringer',this)">â˜€ï¸ Dawnbringer</button>
+      <button class="filter-btn" data-filter="manastorm" onclick="setFilter('manastorm',this)">ðŸ”® Manastorm</button>
+      <button class="filter-btn" data-filter="plaguemire" onclick="setFilter('plaguemire',this)">â˜£ï¸ Plaguemire</button>
       <button class="btn-create" onclick="createNewSpell()">+ New Spell</button>
     </div>
 
@@ -196,7 +196,7 @@
 
     // Load all spells
     async function loadSpells() {
-      var data = await apiFetch('/api/admin/spells');
+      var data = await apiFetch('/api/spells');
       if (!data) return;
       if (data.error) { toast(data.error, 'error'); return; }
       allSpells = data.spells || data;
@@ -263,7 +263,7 @@
         bonusHTML += '<div class="bonus-row">' +
           '<input class="spell-input spell-input--mono tag-input" value="' + escAttr(b.tag || '') + '" placeholder="Tag" data-spell="' + s.id + '" data-bonus-idx="' + i + '" data-bonus-field="tag" onchange="markChanged(' + s.id + ')">' +
           '<input class="spell-input spell-input--mono" value="' + escAttr(b.desc || '') + '" placeholder="Description" data-spell="' + s.id + '" data-bonus-idx="' + i + '" data-bonus-field="desc" onchange="markChanged(' + s.id + ')">' +
-          '<button class="btn-remove-bonus" onclick="removeBonus(' + s.id + ',' + i + ')">×</button></div>';
+          '<button class="btn-remove-bonus" onclick="removeBonus(' + s.id + ',' + i + ')">Ã—</button></div>';
       });
 
       return '<div class="' + cardClass + '" id="spell-' + s.id + '">' +
@@ -281,7 +281,7 @@
           '<div class="field-group"><span class="field-label">HOUSE</span><select class="spell-select" data-spell="' + s.id + '" data-field="house" onchange="markChanged(' + s.id + ')">' + HOUSES.map(function(h) { return '<option value="' + h + '"' + (s.house === h ? ' selected' : '') + '>' + h + '</option>'; }).join('') + '</select></div>' +
           '<div class="field-group"><span class="field-label">TYPE</span><select class="spell-select" data-spell="' + s.id + '" data-field="spell_type" onchange="markChanged(' + s.id + ')">' + TYPES.map(function(t) { return '<option value="' + t + '"' + (s.spell_type === t ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></div>' +
           // Row 3: Tier + Mana Cost
-          '<div class="field-group"><span class="field-label">TIER</span><select class="spell-select" data-spell="' + s.id + '" data-field="tier" onchange="markChanged(' + s.id + ')"><option value="0"' + (s.tier==0?' selected':'') + '>T0 — Basic</option><option value="1"' + (s.tier==1?' selected':'') + '>T1 — 1 MP</option><option value="2"' + (s.tier==2?' selected':'') + '>T2 — 2 MP</option><option value="3"' + (s.tier==3?' selected':'') + '>T3 — 3 MP</option></select></div>' +
+          '<div class="field-group"><span class="field-label">TIER</span><select class="spell-select" data-spell="' + s.id + '" data-field="tier" onchange="markChanged(' + s.id + ')"><option value="0"' + (s.tier==0?' selected':'') + '>T0 â€” Basic</option><option value="1"' + (s.tier==1?' selected':'') + '>T1 â€” 1 MP</option><option value="2"' + (s.tier==2?' selected':'') + '>T2 â€” 2 MP</option><option value="3"' + (s.tier==3?' selected':'') + '>T3 â€” 3 MP</option></select></div>' +
           '<div class="field-group"><span class="field-label">MANA COST</span><input type="number" class="spell-input" value="' + s.mana_cost + '" min="0" max="5" data-spell="' + s.id + '" data-field="mana_cost" onchange="markChanged(' + s.id + ')"></div>' +
           // Row 4: Base Effect (full width)
           '<div class="field-group spell-card__grid--full"><span class="field-label">BASE EFFECT</span><input class="spell-input" value="' + escAttr(s.base_effect) + '" data-spell="' + s.id + '" data-field="base_effect" onchange="markChanged(' + s.id + ')"></div>' +
@@ -337,7 +337,7 @@
       var spell = allSpells.find(function(s) { return s.id === id; });
       var isNew = spell && spell._isNew;
 
-      var url = isNew ? '/api/admin/spells' : '/api/admin/spell/' + id;
+      var url = isNew ? '/api/spells' : '/api/spells/' + id;
       var method = isNew ? 'POST' : 'PUT';
 
       var result = await apiFetch(url, { method: method, body: JSON.stringify(data) });
@@ -361,7 +361,7 @@
       var spell = allSpells.find(function(s) { return s.id === id; });
       if (!spell) return;
       var newActive = spell.is_active === false ? true : false;
-      var result = await apiFetch('/api/admin/spell/' + id, { method: 'PUT', body: JSON.stringify({ is_active: newActive }) });
+      var result = await apiFetch('/api/spells/' + id, { method: 'PUT', body: JSON.stringify({ is_active: newActive }) });
       if (!result || result.error) { toast(result ? result.error : 'Failed', 'error'); return; }
       toast(spell.name + (newActive ? ' enabled' : ' disabled'), 'success');
       loadSpells();
@@ -378,7 +378,7 @@
 
     async function deleteSpell(id) {
       hideConfirm();
-      var result = await apiFetch('/api/admin/spell/' + id, { method: 'DELETE' });
+      var result = await apiFetch('/api/spells/' + id, { method: 'DELETE' });
       if (!result || result.error) { toast(result ? result.error : 'Failed', 'error'); return; }
       toast('Spell deleted', 'success');
       loadSpells();
@@ -430,10 +430,10 @@
      * BACKEND ROUTES NEEDED
      * Add these to your server/routes/admin.js:
      *
-     * GET    /api/admin/spells        — list all spells
-     * POST   /api/admin/spells        — create new spell
-     * PUT    /api/admin/spell/:id     — update spell
-     * DELETE /api/admin/spell/:id     — delete spell
+     * GET    /api/admin/spells        â€” list all spells
+     * POST   /api/admin/spells        â€” create new spell
+     * PUT    /api/admin/spell/:id     â€” update spell
+     * DELETE /api/admin/spell/:id     â€” delete spell
      *
      * All routes require x-admin-key header.
      * See commented code below for copy-paste implementation.
