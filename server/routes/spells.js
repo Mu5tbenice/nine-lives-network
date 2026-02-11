@@ -3,18 +3,23 @@
  * Mounted at /api/spells in index.js
  *
  * Public:
- *   GET /                    — all spells
- *   GET /rotation/:house     — daily rotation for a house
+ *   GET /                    â€” all spells
+ *   GET /rotation/:house     â€” daily rotation for a house
  *
  * Admin (requires x-admin-key header):
- *   POST   /                 — create a spell
- *   PUT    /:id              — update a spell
- *   DELETE /:id              — delete a spell
+ *   POST   /                 â€” create a spell
+ *   PUT    /:id              â€” update a spell
+ *   DELETE /:id              â€” delete a spell
  */
 
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/supabase');
+const { createClient } = require('@supabase/supabase-js');
+
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
 
 function requireAdmin(req, res, next) {
   if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {
@@ -86,7 +91,7 @@ router.get('/rotation/:house', async (req, res) => {
 // POST /api/spells
 router.post('/', requireAdmin, async (req, res) => {
   try {
-    const { name, slug, house, tier, mana_cost, spell_type, base_effect, bonus_effects, flavor_text, motto, is_active } = req.body;
+    const { name, slug, house, tier, mana_cost, spell_type, base_effect, bonus_effects, flavor_text, motto, is_active, image_url } = req.body;
     const finalSlug = slug || (name || 'spell').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
     const { data, error } = await supabase
@@ -102,7 +107,8 @@ router.post('/', requireAdmin, async (req, res) => {
         bonus_effects: bonus_effects || '[]',
         flavor_text: flavor_text || null,
         motto: motto || null,
-        is_active: is_active !== false
+        is_active: is_active !== false,
+        image_url: image_url || null
       })
       .select()
       .single();
@@ -118,7 +124,7 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const updates = {};
-    const allowed = ['name', 'slug', 'house', 'tier', 'mana_cost', 'spell_type', 'base_effect', 'bonus_effects', 'flavor_text', 'motto', 'is_active'];
+    const allowed = ['name', 'slug', 'house', 'tier', 'mana_cost', 'spell_type', 'base_effect', 'bonus_effects', 'flavor_text', 'motto', 'is_active', 'image_url'];
     allowed.forEach(key => {
       if (req.body[key] !== undefined) updates[key] = req.body[key];
     });

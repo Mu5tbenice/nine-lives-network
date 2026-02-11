@@ -107,7 +107,7 @@ function buildDashCard(s){
   var h=SLUG_MAP[s.house]||SLUG_MAP.universal;
   var bn=[];try{bn=typeof s.bonus_effects==='string'?JSON.parse(s.bonus_effects):(s.bonus_effects||[]);}catch(e){bn=[];}
   var tl=s.tier===0?'BASIC':'TIER '+s.tier;
-  var mo='';for(var i=0;i<s.mana_cost;i++)mo+='<div class="mana-orb" style="width:9px;height:9px"></div>';
+  var mo='<div class="sc-mana sc-mana--mini">'+s.mana_cost+'MP</div>';
   var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:18px;position:relative;z-index:1">✦</span>';
   var pl='';
   if(bn.length>0){pl='<div class="sc-pills">';bn.forEach(function(b){var tag=b.tag||b.key||'';var desc=b.desc||b.description||tag;pl+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';});pl+='</div>';}
@@ -119,7 +119,7 @@ function buildDashCard(s){
     +'<div class="sc-edge"></div>'
     +'<div class="sc-face">'+artImg+'<div class="sc-inner-edge"></div></div>'
     +'<div class="sc-body">'
-    +'<div class="sc-top" style="padding:6px 8px"><div class="sc-name" style="font-size:10px;color:'+h.color+'">'+esc(s.name)+'</div><div class="sc-mana">'+mo+'</div></div>'
+    +'<div class="sc-top" style="padding:6px 8px"><div class="sc-name" style="font-size:10px;color:'+h.color+'">'+esc(s.name)+'</div>'+mo+'</div>'
     +artBlock
     +'<div class="sc-info" style="padding:0 8px 6px">'
     +'<div class="sc-type-row" style="margin:3px 0"><span class="sc-type sc-type--'+(s.spell_type||'attack')+'">'+(s.spell_type||'attack')+'</span></div>'

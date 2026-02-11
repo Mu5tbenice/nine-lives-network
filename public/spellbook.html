@@ -229,7 +229,7 @@ function buildCard(s,d){
   try{bn=typeof s.bonus_effects==='string'?JSON.parse(s.bonus_effects):(s.bonus_effects||[]);}catch(e){bn=[];}
   var tl=s.tier===0?'BASIC':s.tier>=2?'TIER '+s.tier:'TIER 1';
   var tc=s.tier>=2?'#00D4FF':s.tier===0?'#847C98':h.color;
-  var mo='';for(var i=0;i<s.mana_cost;i++)mo+='<div class="mana-orb"></div>';
+  var mo='<div class="sc-mana">'+s.mana_cost+' MP</div>';
   var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:28px;position:relative;z-index:1">✦</span>';
   var tb=s.tier>=2?'<span class="sc-tier">T'+s.tier+'</span>':'';
   var pl='';
@@ -248,7 +248,7 @@ function buildCard(s,d){
     +'<div class="sc-foil"></div><div class="sc-rainbow"></div>'
     +'<canvas class="sc-particles"></canvas><div class="sc-glow"></div></div>'
     +'<div class="sc-body">'
-    +'<div class="sc-top"><div class="sc-name-row">'+miniCrest+'<div class="sc-name" style="color:'+h.color+'">'+esc(s.name)+'</div></div><div class="sc-mana">'+mo+'</div></div>'
+    +'<div class="sc-top"><div class="sc-name-row">'+miniCrest+'<div class="sc-name" style="color:'+h.color+'">'+esc(s.name)+'</div></div>'+mo+'</div>'
     +artBlock
     +'<div class="sc-info">'
     +'<div class="sc-type-row"><span class="sc-type sc-type--'+(s.spell_type||'attack')+'">'+(s.spell_type||'attack')+'</span>'+tb+'<span class="sc-type-spacer"></span><span class="sc-house-tag" style="color:'+h.color+'">'+h.name.toUpperCase()+'</span></div>'

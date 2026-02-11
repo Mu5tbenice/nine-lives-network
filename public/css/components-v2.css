@@ -251,17 +251,18 @@ img { max-width: 100%; display: block; }
   box-shadow:inset 0 0 20px 2px var(--inner-glow,rgba(255,255,255,0.03));transition:box-shadow 0.3s}
 .spell-card:hover .sc-inner-edge{box-shadow:inset 0 0 25px 4px var(--inner-glow-hover,rgba(255,255,255,0.06))}
 
-/* Spell art image — top portion with fade */
-.sc-art-img{position:absolute;top:0;left:0;right:0;height:60%;pointer-events:none;
-  background-size:cover;background-position:center;
-  mask-image:linear-gradient(to bottom,black 55%,transparent 100%);
-  -webkit-mask-image:linear-gradient(to bottom,black 55%,transparent 100%)}
+/* Spell art image — full bleed to top edges with fade into bottom */
+.sc-art-img{position:absolute;top:0;left:0;right:0;height:65%;pointer-events:none;
+  background-size:cover;background-position:center top;
+  mask-image:linear-gradient(to bottom,black 50%,transparent 100%);
+  -webkit-mask-image:linear-gradient(to bottom,black 50%,transparent 100%);z-index:2}
 
-/* House crest watermark */
-.sc-crest-watermark{position:absolute;bottom:12px;right:10px;width:48px;height:48px;
+/* House crest watermark — visible ghost in bottom-right */
+.sc-crest-watermark{position:absolute;bottom:10px;right:8px;width:52px;height:52px;
   background-size:contain;background-repeat:no-repeat;background-position:center;
-  opacity:0.05;z-index:2;pointer-events:none;transition:opacity 0.4s}
-.spell-card:hover .sc-crest-watermark{opacity:0.1}
+  opacity:0.08;z-index:2;pointer-events:none;transition:opacity 0.4s;
+  filter:drop-shadow(0 0 4px rgba(0,0,0,0.4))}
+.spell-card:hover .sc-crest-watermark{opacity:0.15}
 
 /* Foil shine layer */
 .sc-foil{position:absolute;inset:0;z-index:3;
@@ -292,8 +293,9 @@ img { max-width: 100%; display: block; }
 .sc-body{position:relative;z-index:8;padding:0;display:flex;flex-direction:column;height:100%}
 .sc-top{padding:10px 12px;display:flex;justify-content:space-between;align-items:flex-start}
 .sc-name-row{display:flex;align-items:center}
-.sc-mini-crest{width:20px;height:20px;border-radius:50%;background-size:contain;background-repeat:no-repeat;
-  background-position:center;margin-right:5px;flex-shrink:0;box-shadow:0 0 6px rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.06)}
+.sc-mini-crest{width:22px;height:22px;border-radius:50%;background-size:contain;background-repeat:no-repeat;
+  background-position:center;margin-right:6px;flex-shrink:0;box-shadow:0 0 8px rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.1);
+  filter:drop-shadow(0 0 3px rgba(0,0,0,0.5))}
 .sc-info{margin-top:auto;padding:0 12px 10px}
 
 /* Card grid layout */
@@ -308,7 +310,11 @@ img { max-width: 100%; display: block; }
 .sc-header{display:flex;justify-content:space-between;align-items:flex-start}
 .sc-name{font-family:var(--font-title);font-weight:700;font-size:14px;line-height:1.2;flex:1;padding-right:5px;
   text-shadow:0 2px 12px rgba(0,0,0,0.9),0 0 20px rgba(0,0,0,0.6)}
-.sc-mana{display:flex;gap:2px;flex-shrink:0;padding-top:1px}
+.sc-mana{font-family:var(--font-data);font-size:11px;font-weight:700;letter-spacing:1px;
+  color:#5bc0ff;background:rgba(0,0,0,0.55);border:1px solid rgba(91,192,255,0.3);
+  border-radius:4px;padding:2px 6px;flex-shrink:0;
+  text-shadow:0 0 8px rgba(91,192,255,0.5);line-height:1;white-space:nowrap}
+.sc-mana--mini{font-size:8px;padding:1px 4px;border-radius:3px}
 
 /* ── Card art frame (fallback when no spell art image) ── */
 .sc-art{margin:0 0 6px;height:130px;border-radius:5px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
