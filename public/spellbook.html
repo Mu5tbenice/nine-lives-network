@@ -59,102 +59,23 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 /* ═══ PLAYING CARD GRID ═══ */
 .card-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:1rem}
 
-/* ═══ SPELL CARD — TRADITIONAL BORDERED ═══ */
+/* ═══ SPELL CARD — HOLO OVERRIDES ═══ */
+.spell-card .sc-body{pointer-events:none}
 .spell-card{
-  width:200px;min-height:300px;border-radius:10px;position:relative;overflow:hidden;cursor:pointer;flex-shrink:0;
-  transition:all 0.35s cubic-bezier(0.4,0,0.2,1);opacity:0;transform:translateY(20px);
-  box-shadow:0 4px 18px rgba(0,0,0,0.5),0 1px 3px rgba(0,0,0,0.3)}
+  width:200px;min-height:300px;cursor:pointer}
 .spell-card.show{opacity:1;transform:translateY(0)}
-.spell-card:hover{transform:translateY(-8px) scale(1.03);box-shadow:0 16px 45px rgba(0,0,0,0.55)}
 .spell-card.hide{display:none}
 
-/* Outer border frame — ornamental double border */
-.spell-card__frame{position:absolute;inset:0;border-radius:10px;padding:3px;transition:all 0.3s}
-.spell-card__leather{width:100%;height:100%;border-radius:7px;position:relative;overflow:hidden;
-  background:linear-gradient(180deg, #1e1a14 0%, #15120e 35%, #100e0a 65%, #181510 100%);
-  border:1px solid rgba(212,166,75,0.08)}
-/* Parchment grain texture */
-.spell-card__leather::before{content:'';position:absolute;inset:0;
-  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-  pointer-events:none;z-index:0}
-
-/* Inner ornamental border */
-.spell-card__stitch{position:absolute;inset:6px;border-radius:5px;pointer-events:none;z-index:1;
-  border:1px solid rgba(212,166,75,0.1);box-shadow:inset 0 0 0 1px rgba(212,166,75,0.03)}
-/* Wear marks — aged look */
-.spell-card__wear{position:absolute;inset:2px;border-radius:8px;pointer-events:none;z-index:1;
-  background:radial-gradient(ellipse at 20% 15%,rgba(212,166,75,0.015),transparent 40%),
-  radial-gradient(ellipse at 80% 85%,rgba(0,0,0,0.15),transparent 45%)}
-
-/* Card content — ALL TEXT GOLD TONE */
-.spell-card__body{position:relative;z-index:2;padding:10px 11px 8px;display:flex;flex-direction:column;height:100%}
-.sc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px}
-.sc-name{font-family:var(--font-title);font-weight:700;font-size:13px;color:var(--gold-light);line-height:1.2;flex:1;padding-right:5px;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
-.sc-mana{display:flex;gap:2px;flex-shrink:0;padding-top:1px}
-.mana-orb{width:11px;height:11px;border-radius:50%;background:linear-gradient(135deg,#00E5FF,#0077AA);
-  box-shadow:0 0 5px rgba(0,212,255,0.45),inset 0 1px 2px rgba(255,255,255,0.25);border:1px solid rgba(0,180,255,0.25)}
-
-/* Art frame — centered house crest */
+/* Art frame with crest — used when no spell art image */
 .sc-art{margin:0 0 6px;height:130px;border-radius:5px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
-  border:1px solid rgba(212,166,75,0.06)}
+  border:1px solid rgba(255,255,255,0.03)}
 .sc-art__bg{position:absolute;inset:0}
 .sc-art__glow{position:absolute;width:100px;height:100px;border-radius:50%;filter:blur(8px)}
-.sc-art img{width:70px;height:70px;object-fit:contain;position:relative;z-index:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4))}
-.sc-art__tier{position:absolute;bottom:2px;right:4px;font-family:var(--font-data);font-size:5px;letter-spacing:0.5px;color:var(--gold);opacity:0.5}
-.sc-art__corner{position:absolute;width:4px;height:4px;border-radius:1px;transform:rotate(45deg);background:rgba(212,166,75,0.15)}
+.sc-art img{width:60px;height:60px;object-fit:contain;position:relative;z-index:1;filter:drop-shadow(0 2px 12px rgba(0,0,0,0.6))}
+.sc-art__tier{position:absolute;bottom:2px;right:4px;font-family:var(--font-data);font-size:5px;letter-spacing:0.5px;opacity:0.5}
+.sc-art__corner{position:absolute;width:4px;height:4px;border-radius:1px;transform:rotate(45deg)}
 .sc-art__corner--tl{top:3px;left:3px}.sc-art__corner--tr{top:3px;right:3px}
 .sc-art__corner--bl{bottom:3px;left:3px}.sc-art__corner--br{bottom:3px;right:3px}
-
-/* Type line */
-.sc-type-row{display:flex;align-items:center;gap:4px;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid rgba(212,166,75,0.06)}
-.sc-type{font-family:var(--font-title);font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:2px 7px;border-radius:3px}
-.sc-type--attack{background:rgba(255,68,68,0.12);color:#ff6b6b;border:1px solid rgba(255,68,68,0.25)}
-.sc-type--defend{background:rgba(0,206,209,0.12);color:#4dd9db;border:1px solid rgba(0,206,209,0.25)}
-.sc-type--support{background:rgba(255,215,0,0.12);color:#ffd700;border:1px solid rgba(255,215,0,0.25)}
-.sc-type--utility{background:rgba(138,43,226,0.12);color:#b366f0;border:1px solid rgba(138,43,226,0.25)}
-.sc-type--debuff{background:rgba(136,204,102,0.12);color:#99dd66;border:1px solid rgba(136,204,102,0.25)}
-.sc-type--control{background:rgba(102,153,238,0.12);color:#7799ff;border:1px solid rgba(102,153,238,0.25)}
-.sc-type--reaction{background:rgba(255,160,60,0.12);color:#ffaa66;border:1px solid rgba(255,160,60,0.25)}
-.sc-tier{font-family:var(--font-data);font-size:6px;padding:2px 5px;border-radius:2px;border:1px solid rgba(212,166,75,0.2);color:var(--gold)}
-.sc-type-spacer{flex:1}
-.sc-house-tag{font-family:var(--font-data);font-size:4px;letter-spacing:1.5px;color:var(--gold);opacity:0.4}
-
-/* Effect box — gold themed */
-.sc-effect{padding:5px 7px;border-radius:4px;background:rgba(212,166,75,0.04);border:1px solid rgba(212,166,75,0.08);margin-bottom:4px}
-.sc-effect__base{font-family:var(--font-data);font-size:6px;line-height:1.7;color:var(--gold-light);letter-spacing:0.3px}
-
-/* Effect pills — tooltip matches pill color */
-.sc-pills{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:5px}
-.pill{position:relative;display:inline-flex;align-items:center;font-family:var(--font-title);font-size:7px;
-  font-weight:700;letter-spacing:0.4px;text-transform:uppercase;white-space:nowrap;
-  padding:2px 7px;border-radius:3px;cursor:default;transition:all 0.15s}
-.pill:hover{transform:translateY(-1px)}
-/* Tooltip — positioned by JS to avoid clipping */
-.pill .tip{display:none;position:fixed;
-  font-family:var(--font-body);font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;
-  white-space:normal;width:max-content;max-width:220px;
-  border-radius:6px;padding:8px 12px;line-height:1.4;z-index:9999;
-  box-shadow:0 8px 28px rgba(0,0,0,0.7);pointer-events:none}
-/* Pill color classes */
-.p-red{background:rgba(255,68,68,0.14);border:1px solid rgba(255,68,68,0.3);color:#ff7b6b}
-.p-orange{background:rgba(255,160,40,0.14);border:1px solid rgba(255,160,40,0.3);color:#ffaa55}
-.p-gold{background:rgba(212,166,75,0.14);border:1px solid rgba(212,166,75,0.3);color:#D4A64B}
-.p-yellow{background:rgba(255,220,50,0.14);border:1px solid rgba(255,220,50,0.3);color:#ffdd44}
-.p-green{background:rgba(80,200,80,0.14);border:1px solid rgba(80,200,80,0.3);color:#66dd66}
-.p-cyan{background:rgba(0,212,255,0.14);border:1px solid rgba(0,212,255,0.3);color:#55ddff}
-.p-blue{background:rgba(0,150,255,0.14);border:1px solid rgba(0,150,255,0.3);color:#55bbff}
-.p-purple{background:rgba(160,80,240,0.14);border:1px solid rgba(160,80,240,0.3);color:#bb88ff}
-.p-pink{background:rgba(255,80,180,0.14);border:1px solid rgba(255,80,180,0.3);color:#ff88cc}
-.p-dark{background:rgba(80,40,120,0.16);border:1px solid rgba(120,60,180,0.3);color:#bb88dd}
-.p-brown{background:rgba(160,120,60,0.14);border:1px solid rgba(160,120,60,0.3);color:#ccaa66}
-.p-white{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.2);color:#eeeedd}
-.p-toxic{background:rgba(120,200,60,0.14);border:1px solid rgba(120,200,60,0.3);color:#aaee55}
-.p-ice{background:rgba(150,220,255,0.14);border:1px solid rgba(150,220,255,0.3);color:#aaddff}
-.p-gray{background:rgba(180,180,180,0.08);border:1px solid rgba(180,180,180,0.2);color:#bbb}
-
-/* Flavor text — muted gold */
-.sc-flavor{margin-top:auto;padding-top:3px;font-style:italic;font-size:10px;color:rgba(212,166,75,0.35);line-height:1.3;text-shadow:0 1px 2px rgba(0,0,0,0.3)}
-.sc-bottom{margin-top:6px;padding-top:4px;border-top:1px solid rgba(212,166,75,0.06);text-align:center;font-family:var(--font-data);font-size:4px;letter-spacing:2px;color:var(--gold);opacity:0.3}
 
 /* ═══ ZOOMED CARD MODAL ═══ */
 .zoom-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9000;
@@ -170,10 +91,12 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   width:340px!important;min-height:510px!important;border-radius:14px;
   opacity:1!important;transform:none!important;cursor:default;
   box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 40px rgba(212,166,75,0.08)}
-.zoom-card .spell-card__frame{border-radius:14px;padding:4px}
-.zoom-card .spell-card__leather{border-radius:10px}
-.zoom-card .spell-card__stitch{inset:10px;border-radius:8px}
-.zoom-card .spell-card__body{padding:16px 18px 14px}
+.zoom-card .sc-border{inset:-3px;border-radius:17px}
+.zoom-card .sc-edge{border-radius:15px}
+.zoom-card .sc-face{border-radius:13px}
+.zoom-card .sc-body{padding:0}
+.zoom-card .sc-top{padding:16px 18px}
+.zoom-card .sc-info{padding:0 18px 14px}
 .zoom-card .sc-name{font-size:22px}
 .zoom-card .sc-mana{gap:3px}
 .zoom-card .sc-mana .mana-orb{width:16px;height:16px}
@@ -268,6 +191,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   <div class="zoom-card" id="zoomCard"><button class="zoom-close" onclick="closeZoom(event)">&#10005;</button></div>
 </div>
 
+<script src="/js/spell-particles.js"></script>
 <script>
 var HOUSES={
   universal:{name:'Universal',color:'#D4A64B',rgb:'212,166,75',img:null,element:'ALL HOUSES'},
@@ -310,20 +234,26 @@ function buildCard(s,d){
   var tb=s.tier>=2?'<span class="sc-tier">T'+s.tier+'</span>':'';
   var pl='';
   if(bn.length>0){pl='<div class="sc-pills">';bn.forEach(function(b){var tag=b.tag||b.key||'';var desc=b.desc||b.description||tag;pl+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';});pl+='</div>';}
-  var be='';if(s.base_effect&&s.base_effect!=='—'&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base">'+esc(s.base_effect)+'</div></div>';
-  return '<div class="spell-card" data-house="'+s.house+'" data-type="'+(s.spell_type||'attack')+'" style="--hc:'+h.color+';--hc-rgb:'+h.rgb+';transition-delay:'+d+'s">'
-    +'<div class="spell-card__frame" style="background:linear-gradient(180deg,'+h.color+'55,'+h.color+'15,'+h.color+'35)"><div class="spell-card__leather"></div></div>'
-    +'<div class="spell-card__stitch" style="border-color:'+h.color+'12"></div><div class="spell-card__wear"></div>'
-    +'<div class="spell-card__body">'
-    +'<div class="sc-header"><div class="sc-name">'+esc(s.name)+'</div><div class="sc-mana">'+mo+'</div></div>'
+  var be='';if(s.base_effect&&s.base_effect!=='—'&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
+  var pType=PARTICLE_MAP[s.house]||'stardust';
+  var crestHtml=h.img?'<div class="sc-crest-watermark" style="background-image:url('+h.img+')"></div>':'';
+  var miniCrest=h.img?'<div class="sc-mini-crest" style="background-image:url('+h.img+')"></div>':'';
+  return '<div class="spell-card" data-house="'+s.house+'" data-type="'+(s.spell_type||'attack')+'" data-color="'+h.color+'" data-glow="'+h.color+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="25" style="--hc:'+h.color+';--hc-shadow:'+h.color+'30;--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810);transition-delay:'+d+'s">'
+    +'<div class="sc-border"></div><div class="sc-edge"></div>'
+    +'<div class="sc-face"><div class="sc-inner-edge"></div>'+crestHtml
+    +'<div class="sc-foil"></div><div class="sc-rainbow"></div>'
+    +'<canvas class="sc-particles"></canvas><div class="sc-glow"></div></div>'
+    +'<div class="sc-body">'
+    +'<div class="sc-top"><div class="sc-name-row">'+miniCrest+'<div class="sc-name" style="color:'+h.color+'">'+esc(s.name)+'</div></div><div class="sc-mana">'+mo+'</div></div>'
     +'<div class="sc-art"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div><div class="sc-art__glow" style="background:radial-gradient(circle,'+h.color+'0A,transparent 70%)"></div>'+ai
     +'<div class="sc-art__corner sc-art__corner--tl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--tr" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--bl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--br" style="background:'+h.color+'25"></div>'
     +'<div class="sc-art__tier" style="color:'+tc+'">'+tl+'</div></div>'
+    +'<div class="sc-info">'
     +'<div class="sc-type-row"><span class="sc-type sc-type--'+(s.spell_type||'attack')+'">'+(s.spell_type||'attack')+'</span>'+tb+'<span class="sc-type-spacer"></span><span class="sc-house-tag" style="color:'+h.color+'">'+h.name.toUpperCase()+'</span></div>'
     +be+pl
     +'<div class="sc-flavor">"'+esc(s.flavor_text||s.motto||'')+'"</div>'
     +'<div class="sc-bottom" style="color:'+h.color+'">'+h.name.toUpperCase()+'</div>'
-    +'</div></div>';
+    +'</div></div></div>';
 }
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -344,7 +274,7 @@ function render(){
   });
   if(!html)html='<div class="loading">No spells found</div>';
   document.getElementById('spellContent').innerHTML=html;
-  setTimeout(function(){document.querySelectorAll('.spell-card').forEach(function(c){c.classList.add('show');});attachCardClicks();},50);
+  setTimeout(function(){document.querySelectorAll('.spell-card').forEach(function(c){c.classList.add('show');});attachCardClicks();initAllSpellCards();},50);
 }
 
 function renderC(){
