@@ -68,6 +68,14 @@ try {
   console.error('❌ Failed to load admin routes:', e.message);
 }
 
+try {
+  const spellRoutes = require('./routes/spells');
+  app.use('/api/spells', spellRoutes);
+  console.log('✅ Spell routes loaded');
+} catch (e) {
+  console.error('❌ Failed to load spell routes:', e.message);
+}
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
