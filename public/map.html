@@ -11,8 +11,6 @@
   <link rel="stylesheet" href="/css/components-v2.css">
   <link rel="stylesheet" href="/css/nav-v2.css">
   <style>
-    html,body{width:100%;margin:0;padding:0;overflow-x:hidden}
-    .main-container{max-width:800px;margin-left:auto;margin-right:auto}
     /* â•â•â• HERO â•â•â• */
     .world-hero{text-align:center;padding:14px 0 6px}
     .world-hero__title{font-family:var(--font-title);font-weight:700;font-size:24px;color:var(--gold);letter-spacing:3px}
@@ -114,19 +112,22 @@
     .influence-label{display:flex;align-items:center;gap:3px;font-family:var(--font-data);font-size:7px;color:var(--text-faint)}
     .influence-label img{width:10px;height:10px;object-fit:contain}
 
-    /* â•â•â• TIMELINE FEED â•â•â• */
-    .timeline{display:flex;align-items:center;gap:0;margin:8px 0;overflow-x:auto;padding:4px 0}
-    .timeline::-webkit-scrollbar{height:0}
-    .tl-node{display:flex;flex-direction:column;align-items:center;flex-shrink:0;position:relative;cursor:pointer}
-    .tl-node__dot{width:24px;height:24px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg-inset);transition:transform 0.15s}
-    .tl-node:hover .tl-node__dot{transform:scale(1.15)}
-    .tl-node__avatar{width:100%;height:100%;object-fit:cover;border-radius:50%}
-    .tl-node__score{font-family:var(--font-data);font-size:5px;color:var(--text-faint);letter-spacing:0.5px;background:var(--bg-inset);padding:1px 4px;border-radius:3px}
-    .tl-node__label{font-family:var(--font-data);font-size:5px;letter-spacing:0.5px;margin-top:2px}
-    .tl-node__handle{font-family:var(--font-data);font-size:4px;color:var(--text-faint);margin-top:1px;max-width:44px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .tl-line{width:12px;height:2px;flex-shrink:0;margin:0 -1px;margin-top:-10px}
+    /* TIMELINE — MINI PLAYING CARDS */
+    .timeline{display:flex;gap:6px;margin:8px 0;overflow-x:auto;padding:4px 0;scroll-snap-type:x mandatory}
+    .timeline::-webkit-scrollbar{height:3px}
+    .timeline::-webkit-scrollbar-thumb{background:rgba(212,166,75,0.15);border-radius:2px}
+    .tl-card{flex-shrink:0;width:72px;border-radius:6px;padding:1px;cursor:pointer;transition:all 0.2s;scroll-snap-align:start;position:relative}
+    .tl-card:hover{transform:translateY(-3px);box-shadow:0 6px 16px rgba(0,0,0,0.4)}
+    .tl-card__inner{background:linear-gradient(180deg,#1a1410,#0e0c08);border-radius:5px;padding:5px 4px 4px;height:100%;display:flex;flex-direction:column;align-items:center;gap:2px}
+    .tl-card__avatar{width:22px;height:22px;border-radius:50%;border:1.5px solid;object-fit:cover;flex-shrink:0}
+    .tl-card__avatar--crest{display:flex;align-items:center;justify-content:center;background:var(--bg-inset)}
+    .tl-card__type{font-family:var(--font-data);font-size:5px;letter-spacing:1px;font-weight:700}
+    .tl-card__handle{font-family:var(--font-data);font-size:4px;color:var(--text-faint);max-width:64px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:center}
+    .tl-card__bar{width:100%;height:4px;border-radius:2px;background:rgba(255,255,255,0.04);overflow:hidden;display:flex;margin-top:auto}
+    .tl-card__seg{height:100%;transition:width 0.3s}
+    .tl-card__pct{font-family:var(--font-data);font-size:6px;font-weight:700;margin-top:1px}
     .tl-empty{font-family:var(--font-body);font-size:11px;color:var(--text-faint);font-style:italic;padding:4px 0}
-    /* Timeline influence tooltip */
+    /* Timeline tooltip */
     .tl-tip{display:none;position:fixed;background:rgba(16,12,28,0.97);border:1px solid var(--gold-border);border-radius:8px;padding:10px 12px;min-width:160px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.6);pointer-events:none}
     .tl-tip.visible{display:block}
     .tl-tip__header{font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px}
@@ -206,15 +207,20 @@
     .modal-action-time{font-family:var(--font-data);font-size:7px;color:var(--text-faint)}
     .modal-empty{font-family:var(--font-body);font-size:14px;font-style:italic;color:var(--text-faint);text-align:center;padding:20px 0}
     /* Modal timeline */
-    .modal-timeline{display:flex;align-items:flex-start;gap:0;margin:12px 0;overflow-x:auto;padding:8px 0}
-    .modal-tl-node{display:flex;flex-direction:column;align-items:center;flex-shrink:0;position:relative}
-    .modal-tl-dot{width:32px;height:32px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg-inset)}
-    .modal-tl-dot img{width:100%;height:100%;object-fit:cover;border-radius:50%}
-    .modal-tl-meta{text-align:center;margin-top:4px;max-width:48px}
-    .modal-tl-name{font-family:var(--font-data);font-size:5px;color:var(--text-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:48px}
-    .modal-tl-type{font-family:var(--font-data);font-size:5px;letter-spacing:0.5px;margin-top:1px}
-    .modal-tl-score{font-family:var(--font-data);font-size:6px;color:var(--text-muted);margin-top:2px;background:var(--bg-inset);padding:1px 4px;border-radius:3px}
-    .modal-tl-line{width:16px;height:2px;flex-shrink:0;margin-top:14px}
+    .modal-timeline{display:flex;gap:8px;margin:12px 0;overflow-x:auto;padding:8px 0;scroll-snap-type:x mandatory}
+    .modal-timeline::-webkit-scrollbar{height:3px}
+    .modal-timeline::-webkit-scrollbar-thumb{background:rgba(212,166,75,0.15);border-radius:2px}
+    .modal-tl-card{flex-shrink:0;width:90px;border-radius:8px;padding:1.5px;cursor:pointer;transition:all 0.2s;scroll-snap-align:start}
+    .modal-tl-card:hover{transform:translateY(-4px);box-shadow:0 8px 20px rgba(0,0,0,0.5)}
+    .modal-tl-card__inner{background:linear-gradient(180deg,#1a1410,#0e0c08);border-radius:7px;padding:7px 6px 5px;height:100%;display:flex;flex-direction:column;align-items:center;gap:3px}
+    .modal-tl-card__avatar{width:28px;height:28px;border-radius:50%;border:2px solid;object-fit:cover}
+    .modal-tl-card__avatar--crest{display:flex;align-items:center;justify-content:center;background:var(--bg-inset)}
+    .modal-tl-card__type{font-family:var(--font-data);font-size:6px;letter-spacing:1px;font-weight:700}
+    .modal-tl-card__handle{font-family:var(--font-data);font-size:5px;color:var(--text-faint);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .modal-tl-card__bar{width:100%;height:5px;border-radius:3px;background:rgba(255,255,255,0.04);overflow:hidden;display:flex;margin-top:auto}
+    .modal-tl-card__seg{height:100%;transition:width 0.3s}
+    .modal-tl-card__pct{font-family:var(--font-data);font-size:7px;font-weight:700;margin-top:2px}
+    .modal-tl-card__time{font-family:var(--font-data);font-size:4px;color:var(--text-faint);letter-spacing:0.5px}
 
     /* Toast */
     .toast{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;font-family:var(--font-title);font-size:13px;font-weight:600;z-index:200;letter-spacing:0.5px;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
@@ -255,7 +261,6 @@
 
   <div class="zone-modal-overlay" id="zoneModalOverlay"><div class="zone-modal" id="zoneModal"><div class="zone-modal__header"><div><div class="zone-modal__title" id="modalTitle"></div><div class="zone-modal__desc" id="modalDesc"></div></div><button class="zone-modal__close" onclick="closeModal()">&#10005;</button></div><div class="zone-modal__body" id="modalBody"></div></div></div>
   <div class="toast" id="toast"></div>
-  <div class="tl-tip" id="tlTip"></div>
   <div class="player-popup" id="playerPopup"></div>
 
 <script>
@@ -394,28 +399,24 @@ function buildTimeline(zid){
     running[p.school_id]+=1;
     var total=0;Object.values(running).forEach(function(v){total+=v;});
     var myPct=total>0?Math.round(running[p.school_id]/total*100):0;
-    var snapData=encodeURIComponent(JSON.stringify(running));
-    if(i>0)html+='<div class="tl-line" style="background:linear-gradient(90deg,'+h.color+'40,'+h.color+');"></div>';
-    html+='<div class="tl-node" data-snap="'+snapData+'" onmouseenter="showInfluenceTip(event,this)" onmouseleave="hideInfluenceTip()">'
-      +'<div class="tl-node__dot" style="border-color:'+typeCol+';">'
-      +(p.profile_image?'<img class="tl-node__avatar" src="'+p.profile_image+'">':hImg(h.img,16))
-      +'</div>'
-      +'<div class="tl-node__label" style="color:'+typeCol+';">'+typeLabel+'</div>'
-      +'<div class="tl-node__handle">@'+esc((p.twitter_handle||'?').substring(0,8))+'</div>'
-      +'<div class="tl-node__score">'+myPct+'%</div></div>';
+    // Build mini influence bar segments
+    var barSegs='';var entries=[];
+    Object.keys(running).forEach(function(sid){var pct=Math.round(running[sid]/total*100);entries.push({id:parseInt(sid),pct:pct});});
+    entries.sort(function(a,b){return b.pct-a.pct;});
+    entries.forEach(function(e){var eh=HOUSES[e.id]||{color:'#888'};barSegs+='<div class="tl-card__seg" style="width:'+e.pct+'%;background:'+eh.color+';"></div>';});
+    // Avatar
+    var avatarHtml=p.profile_image?'<img class="tl-card__avatar" style="border-color:'+typeCol+';" src="'+p.profile_image+'">':'<div class="tl-card__avatar tl-card__avatar--crest" style="border-color:'+typeCol+';">'+hImg(h.img,14)+'</div>';
+    html+='<div class="tl-card" style="background:linear-gradient(180deg,'+h.color+'55,'+h.color+'15,'+h.color+'35);">'
+      +'<div class="tl-card__inner">'
+      +avatarHtml
+      +'<div class="tl-card__type" style="color:'+typeCol+';">'+typeLabel+'</div>'
+      +'<div class="tl-card__handle">@'+esc((p.twitter_handle||'?').substring(0,10))+'</div>'
+      +'<div class="tl-card__bar">'+barSegs+'</div>'
+      +'<div class="tl-card__pct" style="color:'+h.color+';">'+myPct+'%</div>'
+      +'</div></div>';
   });
   html+='</div>';return html;
 }
-function showInfluenceTip(e,el){
-  var tip=document.getElementById('tlTip');
-  try{var running=JSON.parse(decodeURIComponent(el.dataset.snap));
-    tip.innerHTML=buildInfluenceSnapshot(running);
-    tip.classList.add('visible');
-    tip.style.left=Math.min(e.clientX-80,window.innerWidth-180)+'px';
-    tip.style.top=Math.max(e.clientY-tip.offsetHeight-15,10)+'px';
-  }catch(ex){}
-}
-function hideInfluenceTip(){document.getElementById('tlTip').classList.remove('visible');}
 
 // â•â•â• PLAYER POPUP â•â•â•
 var popupTimeout=null;
@@ -560,7 +561,7 @@ function openZoneModal(zoneId){
   }else{body+='<div class="modal-empty">No activity yet â€” be the first!</div>';}
   body+='</div>';
 
-  // Timeline in modal
+  // Timeline in modal — playing cards
   var acts=actionsToday[zoneId]||[];
   if(acts.length>0){
     body+='<div style="margin:12px 0;"><div class="zone-modal__influence-title">INFLUENCE TIMELINE</div>';
@@ -571,9 +572,23 @@ function openZoneModal(zoneId){
       var type=a.action_type||'attack';var typeCol=type==='attack'?'#ff5555':'#5588ff';
       var typeLabel=type==='attack'?'ATK':'DEF';
       if(!running[p.school_id])running[p.school_id]=0;running[p.school_id]+=1;
-      var total=0;Object.values(running).forEach(function(v){total+=v;});var myPct=total>0?Math.round(running[p.school_id]/total*100):0;
-      if(i>0)body+='<div class="modal-tl-line" style="background:linear-gradient(90deg,'+h.color+'40,'+h.color+');"></div>';
-      body+='<div class="modal-tl-node"><div class="modal-tl-dot" style="border-color:'+typeCol+';">'+(p.profile_image?'<img src="'+p.profile_image+'">':hImg(h.img,18))+'</div><div class="modal-tl-meta"><div class="modal-tl-type" style="color:'+typeCol+';">'+typeLabel+'</div><div class="modal-tl-name">@'+esc(p.twitter_handle||'?')+'</div><div class="modal-tl-score">'+myPct+'%</div></div></div>';
+      var total=0;Object.values(running).forEach(function(v){total+=v;});
+      var myPct=total>0?Math.round(running[p.school_id]/total*100):0;
+      // Bar segments
+      var barSegs='';var entries=[];
+      Object.keys(running).forEach(function(sid){var pct=Math.round(running[sid]/total*100);entries.push({id:parseInt(sid),pct:pct});});
+      entries.sort(function(aa,bb){return bb.pct-aa.pct;});
+      entries.forEach(function(e){var eh=HOUSES[e.id]||{color:'#888'};barSegs+='<div class="modal-tl-card__seg" style="width:'+e.pct+'%;background:'+eh.color+';"></div>';});
+      var avatarHtml=p.profile_image?'<img class="modal-tl-card__avatar" style="border-color:'+typeCol+';" src="'+p.profile_image+'">':'<div class="modal-tl-card__avatar modal-tl-card__avatar--crest" style="border-color:'+typeCol+';">'+hImg(h.img,18)+'</div>';
+      body+='<div class="modal-tl-card" style="background:linear-gradient(180deg,'+h.color+'55,'+h.color+'15,'+h.color+'35);">'
+        +'<div class="modal-tl-card__inner">'
+        +avatarHtml
+        +'<div class="modal-tl-card__type" style="color:'+typeCol+';">'+typeLabel+'</div>'
+        +'<div class="modal-tl-card__handle">@'+esc((p.twitter_handle||'?').substring(0,12))+'</div>'
+        +'<div class="modal-tl-card__bar">'+barSegs+'</div>'
+        +'<div class="modal-tl-card__pct" style="color:'+h.color+';">'+myPct+'%</div>'
+        +'<div class="modal-tl-card__time">'+timeAgo(a.created_at)+'</div>'
+        +'</div></div>';
     });
     body+='</div></div>';
   }
@@ -661,7 +676,7 @@ async function loadWorld(){
     renderTowers(schoolData);
     // Load community clashes (set via admin)
     try{
-      var cr=await fetch('/api/admin/clashes');if(cr.ok){var cd=await cr.json();communityClashes=cd||[];renderClashes();}
+      var cr=await fetch('/api/clashes');if(cr.ok){var cd=await cr.json();communityClashes=cd||[];renderClashes();}
     }catch(e){communityClashes=[];}
     var loader=document.getElementById('loadingState');if(loader)loader.style.display='none';
     renderZoneGrid();

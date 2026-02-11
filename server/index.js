@@ -76,6 +76,9 @@ try {
   console.error('❌ Failed to load spell routes:', e.message);
 }
 
+const clashesRoutes = require('./routes/clashes');
+app.use('/api/clashes', clashesRoutes);
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
