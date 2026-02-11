@@ -16,12 +16,10 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   radial-gradient(ellipse 40% 50% at 85% 95%,rgba(138,43,226,0.015),transparent 70%)}
 .main-container{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 16px 60px}
 
-/* Hero */
-.hero{text-align:center;padding:2.5rem 1rem 1.2rem}
-.hero h1{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(1.6rem,4vw,2.4rem);
-  background:linear-gradient(135deg,var(--gold),#fff8dc,var(--gold));
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:0.06em}
-.hero p{font-style:italic;color:#847C98;font-size:0.95rem;margin-top:0.3rem}
+/* Hero — matches other pages */
+.hero{text-align:center;padding:14px 0 6px}
+.hero h1{font-family:var(--font-title);font-weight:700;font-size:24px;color:var(--gold);letter-spacing:3px}
+.hero p{font-family:var(--font-body);font-size:15px;font-style:italic;color:var(--text-muted);margin-top:4px}
 
 /* How it works */
 .info-box{background:rgba(0,212,255,0.03);border:1px solid rgba(0,212,255,0.12);border-radius:8px;
@@ -61,52 +59,55 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 /* ═══ PLAYING CARD GRID ═══ */
 .card-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:1rem}
 
-/* ═══ SPELL CARD — LEATHER GRIMOIRE ═══ */
+/* ═══ SPELL CARD — TRADITIONAL BORDERED ═══ */
 .spell-card{
-  width:200px;min-height:300px;border-radius:10px;position:relative;overflow:hidden;cursor:default;flex-shrink:0;
+  width:200px;min-height:300px;border-radius:10px;position:relative;overflow:hidden;cursor:pointer;flex-shrink:0;
   transition:all 0.35s cubic-bezier(0.4,0,0.2,1);opacity:0;transform:translateY(20px);
-  box-shadow:0 6px 25px rgba(0,0,0,0.4)}
+  box-shadow:0 4px 18px rgba(0,0,0,0.5),0 1px 3px rgba(0,0,0,0.3)}
 .spell-card.show{opacity:1;transform:translateY(0)}
 .spell-card:hover{transform:translateY(-8px) scale(1.03);box-shadow:0 16px 45px rgba(0,0,0,0.55)}
 .spell-card.hide{display:none}
 
-/* Border frame */
-.spell-card__frame{position:absolute;inset:0;border-radius:10px;padding:2px;transition:all 0.3s}
-.spell-card__leather{width:100%;height:100%;border-radius:8px;
-  background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E"),
-    radial-gradient(ellipse at 30% 20%, rgba(45,35,25,0.5), transparent 60%),
-    radial-gradient(ellipse at 70% 80%, rgba(35,28,20,0.4), transparent 50%),
-    linear-gradient(180deg, #1a1410 0%, #12100c 30%, #0e0c08 60%, #151210 100%)}
+/* Outer border frame — ornamental double border */
+.spell-card__frame{position:absolute;inset:0;border-radius:10px;padding:3px;transition:all 0.3s}
+.spell-card__leather{width:100%;height:100%;border-radius:7px;position:relative;overflow:hidden;
+  background:linear-gradient(180deg, #1e1a14 0%, #15120e 35%, #100e0a 65%, #181510 100%);
+  border:1px solid rgba(212,166,75,0.08)}
+/* Parchment grain texture */
+.spell-card__leather::before{content:'';position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0}
 
-/* Inner stitch border */
-.spell-card__stitch{position:absolute;inset:6px;border-radius:6px;pointer-events:none;z-index:1;border:1px dashed rgba(255,255,255,0.04)}
-/* Wear mark */
+/* Inner ornamental border */
+.spell-card__stitch{position:absolute;inset:6px;border-radius:5px;pointer-events:none;z-index:1;
+  border:1px solid rgba(212,166,75,0.1);box-shadow:inset 0 0 0 1px rgba(212,166,75,0.03)}
+/* Wear marks — aged look */
 .spell-card__wear{position:absolute;inset:2px;border-radius:8px;pointer-events:none;z-index:1;
-  background:radial-gradient(ellipse at 20% 15%,rgba(255,255,255,0.012),transparent 40%),
-  radial-gradient(ellipse at 80% 85%,rgba(0,0,0,0.12),transparent 40%)}
+  background:radial-gradient(ellipse at 20% 15%,rgba(212,166,75,0.015),transparent 40%),
+  radial-gradient(ellipse at 80% 85%,rgba(0,0,0,0.15),transparent 45%)}
 
-/* Content */
+/* Card content — ALL TEXT GOLD TONE */
 .spell-card__body{position:relative;z-index:2;padding:10px 11px 8px;display:flex;flex-direction:column;height:100%}
 .sc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px}
-.sc-name{font-family:'Cinzel',serif;font-weight:700;font-size:13px;color:#F0ECF8;line-height:1.2;flex:1;padding-right:5px;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
+.sc-name{font-family:var(--font-title);font-weight:700;font-size:13px;color:var(--gold-light);line-height:1.2;flex:1;padding-right:5px;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
 .sc-mana{display:flex;gap:2px;flex-shrink:0;padding-top:1px}
 .mana-orb{width:11px;height:11px;border-radius:50%;background:linear-gradient(135deg,#00E5FF,#0077AA);
   box-shadow:0 0 5px rgba(0,212,255,0.45),inset 0 1px 2px rgba(255,255,255,0.25);border:1px solid rgba(0,180,255,0.25)}
 
-/* Art frame */
-.sc-art{margin:0 0 6px;height:80px;border-radius:5px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+/* Art frame — centered house crest */
+.sc-art{margin:0 0 6px;height:80px;border-radius:5px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
+  border:1px solid rgba(212,166,75,0.06)}
 .sc-art__bg{position:absolute;inset:0}
 .sc-art__glow{position:absolute;width:100px;height:100px;border-radius:50%;filter:blur(8px)}
 .sc-art img{width:50px;height:50px;object-fit:contain;position:relative;z-index:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.4))}
-.sc-art__tier{position:absolute;bottom:2px;right:4px;font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:0.5px;opacity:0.5}
-.sc-art__corner{position:absolute;width:4px;height:4px;border-radius:1px;transform:rotate(45deg)}
+.sc-art__tier{position:absolute;bottom:2px;right:4px;font-family:var(--font-data);font-size:5px;letter-spacing:0.5px;color:var(--gold);opacity:0.5}
+.sc-art__corner{position:absolute;width:4px;height:4px;border-radius:1px;transform:rotate(45deg);background:rgba(212,166,75,0.15)}
 .sc-art__corner--tl{top:3px;left:3px}.sc-art__corner--tr{top:3px;right:3px}
 .sc-art__corner--bl{bottom:3px;left:3px}.sc-art__corner--br{bottom:3px;right:3px}
 
 /* Type line */
-.sc-type-row{display:flex;align-items:center;gap:4px;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid rgba(255,255,255,0.03)}
-.sc-type{font-family:'Cinzel',serif;font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:2px 7px;border-radius:3px}
+.sc-type-row{display:flex;align-items:center;gap:4px;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid rgba(212,166,75,0.06)}
+.sc-type{font-family:var(--font-title);font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:2px 7px;border-radius:3px}
 .sc-type--attack{background:rgba(255,68,68,0.12);color:#ff6b6b;border:1px solid rgba(255,68,68,0.25)}
 .sc-type--defend{background:rgba(0,206,209,0.12);color:#4dd9db;border:1px solid rgba(0,206,209,0.25)}
 .sc-type--support{background:rgba(255,215,0,0.12);color:#ffd700;border:1px solid rgba(255,215,0,0.25)}
@@ -114,27 +115,27 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 .sc-type--debuff{background:rgba(136,204,102,0.12);color:#99dd66;border:1px solid rgba(136,204,102,0.25)}
 .sc-type--control{background:rgba(102,153,238,0.12);color:#7799ff;border:1px solid rgba(102,153,238,0.25)}
 .sc-type--reaction{background:rgba(255,160,60,0.12);color:#ffaa66;border:1px solid rgba(255,160,60,0.25)}
-.sc-tier{font-family:'Press Start 2P',monospace;font-size:6px;padding:2px 5px;border-radius:2px;border:1px solid rgba(0,212,255,0.2);color:#00D4FF}
+.sc-tier{font-family:var(--font-data);font-size:6px;padding:2px 5px;border-radius:2px;border:1px solid rgba(212,166,75,0.2);color:var(--gold)}
 .sc-type-spacer{flex:1}
-.sc-house-tag{font-family:'Press Start 2P',monospace;font-size:4px;letter-spacing:1.5px;opacity:0.4}
+.sc-house-tag{font-family:var(--font-data);font-size:4px;letter-spacing:1.5px;color:var(--gold);opacity:0.4}
 
-/* Effect box */
-.sc-effect{padding:5px 7px;border-radius:4px;background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.03);margin-bottom:4px}
-.sc-effect__base{font-family:'Press Start 2P',monospace;font-size:6px;line-height:1.7;color:#00D4FF;letter-spacing:0.3px}
+/* Effect box — gold themed */
+.sc-effect{padding:5px 7px;border-radius:4px;background:rgba(212,166,75,0.04);border:1px solid rgba(212,166,75,0.08);margin-bottom:4px}
+.sc-effect__base{font-family:var(--font-data);font-size:6px;line-height:1.7;color:var(--gold-light);letter-spacing:0.3px}
 
-/* Effect pills */
+/* Effect pills — tooltip matches pill color */
 .sc-pills{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:5px}
-.pill{position:relative;display:inline-flex;align-items:center;font-family:'Cinzel',serif;font-size:7px;
+.pill{position:relative;display:inline-flex;align-items:center;font-family:var(--font-title);font-size:7px;
   font-weight:700;letter-spacing:0.4px;text-transform:uppercase;white-space:nowrap;
   padding:2px 7px;border-radius:3px;cursor:default;transition:all 0.15s}
 .pill:hover{transform:translateY(-1px)}
-.pill .tip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
-  font-family:'Crimson Text',serif;font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;
-  color:#e8e4d9;white-space:normal;width:max-content;max-width:200px;
-  background:rgba(10,8,18,0.96);border:1px solid rgba(255,255,255,0.1);border-radius:5px;
-  padding:6px 10px;line-height:1.4;z-index:80;box-shadow:0 6px 20px rgba(0,0,0,0.6);pointer-events:none}
-.pill .tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:rgba(10,8,18,0.96)}
-.pill:hover .tip{display:block}
+/* Tooltip — positioned by JS to avoid clipping */
+.pill .tip{display:none;position:fixed;
+  font-family:var(--font-body);font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;
+  white-space:normal;width:max-content;max-width:220px;
+  border-radius:6px;padding:8px 12px;line-height:1.4;z-index:9999;
+  box-shadow:0 8px 28px rgba(0,0,0,0.7);pointer-events:none}
+/* Pill color classes */
 .p-red{background:rgba(255,68,68,0.14);border:1px solid rgba(255,68,68,0.3);color:#ff7b6b}
 .p-orange{background:rgba(255,160,40,0.14);border:1px solid rgba(255,160,40,0.3);color:#ffaa55}
 .p-gold{background:rgba(212,166,75,0.14);border:1px solid rgba(212,166,75,0.3);color:#D4A64B}
@@ -151,8 +152,40 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 .p-ice{background:rgba(150,220,255,0.14);border:1px solid rgba(150,220,255,0.3);color:#aaddff}
 .p-gray{background:rgba(180,180,180,0.08);border:1px solid rgba(180,180,180,0.2);color:#bbb}
 
-.sc-flavor{margin-top:auto;padding-top:3px;font-style:italic;font-size:10px;color:#5a5248;line-height:1.3;text-shadow:0 1px 2px rgba(0,0,0,0.3)}
-.sc-bottom{margin-top:6px;padding-top:4px;border-top:1px solid rgba(255,255,255,0.03);text-align:center;font-family:'Press Start 2P',monospace;font-size:4px;letter-spacing:2px;opacity:0.4}
+/* Flavor text — muted gold */
+.sc-flavor{margin-top:auto;padding-top:3px;font-style:italic;font-size:10px;color:rgba(212,166,75,0.35);line-height:1.3;text-shadow:0 1px 2px rgba(0,0,0,0.3)}
+.sc-bottom{margin-top:6px;padding-top:4px;border-top:1px solid rgba(212,166,75,0.06);text-align:center;font-family:var(--font-data);font-size:4px;letter-spacing:2px;color:var(--gold);opacity:0.3}
+
+/* ═══ ZOOMED CARD MODAL ═══ */
+.zoom-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9000;
+  justify-content:center;align-items:center;padding:20px;cursor:pointer;
+  backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.zoom-overlay.active{display:flex}
+.zoom-card{
+  width:340px;min-height:510px;border-radius:14px;position:relative;overflow:hidden;cursor:default;
+  box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 40px rgba(212,166,75,0.08);
+  animation:zoomIn 0.25s ease-out}
+@keyframes zoomIn{from{transform:scale(0.85);opacity:0}to{transform:scale(1);opacity:1}}
+.zoom-card .spell-card__frame{border-radius:14px;padding:4px}
+.zoom-card .spell-card__leather{border-radius:10px}
+.zoom-card .spell-card__stitch{inset:9px;border-radius:7px}
+.zoom-card .spell-card__body{padding:16px 18px 12px}
+.zoom-card .sc-name{font-size:20px}
+.zoom-card .sc-mana .mana-orb{width:15px;height:15px}
+.zoom-card .sc-art{height:140px;border-radius:8px}
+.zoom-card .sc-art img{width:90px;height:90px}
+.zoom-card .sc-art__tier{font-size:7px}
+.zoom-card .sc-art__corner{width:6px;height:6px}
+.zoom-card .sc-type{font-size:10px;padding:3px 10px}
+.zoom-card .sc-tier{font-size:8px;padding:3px 7px}
+.zoom-card .sc-house-tag{font-size:6px}
+.zoom-card .sc-effect__base{font-size:8px;line-height:1.8}
+.zoom-card .pill{font-size:9px;padding:3px 9px}
+.zoom-card .sc-flavor{font-size:13px}
+.zoom-card .sc-bottom{font-size:5px}
+.zoom-close{position:absolute;top:12px;right:14px;font-size:22px;color:var(--gold);opacity:0.5;
+  cursor:pointer;z-index:1;transition:opacity 0.2s;background:none;border:none;line-height:1}
+.zoom-close:hover{opacity:1}
 
 /* ═══ COMBO CARDS ═══ */
 .combo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-bottom:1rem}
@@ -217,6 +250,10 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   <div id="comboContent"></div>
 </div>
 
+<div class="zoom-overlay" id="zoomOverlay" onclick="closeZoom(event)">
+  <div class="zoom-card" id="zoomCard"><button class="zoom-close" onclick="closeZoom(event)">&#10005;</button></div>
+</div>
+
 <script>
 var HOUSES={
   universal:{name:'Universal',color:'#D4A64B',rgb:'212,166,75',img:null,element:'ALL HOUSES'},
@@ -266,7 +303,7 @@ function buildCard(s,d){
     +'<div class="spell-card__body">'
     +'<div class="sc-header"><div class="sc-name">'+esc(s.name)+'</div><div class="sc-mana">'+mo+'</div></div>'
     +'<div class="sc-art"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div><div class="sc-art__glow" style="background:radial-gradient(circle,'+h.color+'0A,transparent 70%)"></div>'+ai
-    +'<div class="sc-art__corner sc-art__corner--tl" style="border-color:'+h.color+'20"></div><div class="sc-art__corner sc-art__corner--tr" style="border-color:'+h.color+'20"></div><div class="sc-art__corner sc-art__corner--bl" style="border-color:'+h.color+'20"></div><div class="sc-art__corner sc-art__corner--br" style="border-color:'+h.color+'20"></div>'
+    +'<div class="sc-art__corner sc-art__corner--tl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--tr" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--bl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--br" style="background:'+h.color+'25"></div>'
     +'<div class="sc-art__tier" style="color:'+tc+'">'+tl+'</div></div>'
     +'<div class="sc-type-row"><span class="sc-type sc-type--'+(s.spell_type||'attack')+'">'+(s.spell_type||'attack')+'</span>'+tb+'<span class="sc-type-spacer"></span><span class="sc-house-tag" style="color:'+h.color+'">'+h.name.toUpperCase()+'</span></div>'
     +be+pl
@@ -293,7 +330,7 @@ function render(){
   });
   if(!html)html='<div class="loading">No spells found</div>';
   document.getElementById('spellContent').innerHTML=html;
-  setTimeout(function(){document.querySelectorAll('.spell-card').forEach(function(c){c.classList.add('show');});},50);
+  setTimeout(function(){document.querySelectorAll('.spell-card').forEach(function(c){c.classList.add('show');});attachCardClicks();},50);
 }
 
 function renderC(){
@@ -325,6 +362,66 @@ async function load(){
 
 function toggleMobileMenu(){var m=document.getElementById('mobileMenu');var h=document.getElementById('hamburger');m.classList.toggle('open');h.classList.toggle('active');}
 function doLogout(){localStorage.removeItem('player_id');window.location.href='/';}
+
+// ═══ CLICK TO ZOOM ═══
+function openZoom(cardEl){
+  var clone=cardEl.cloneNode(true);
+  clone.classList.remove('show');clone.classList.add('show');
+  clone.style.opacity='1';clone.style.transform='none';clone.style.width='100%';clone.style.minHeight='100%';
+  clone.style.cursor='default';clone.style.boxShadow='none';
+  clone.onclick=null;
+  var zc=document.getElementById('zoomCard');
+  // Keep the close button, replace the rest
+  var closeBtn=zc.querySelector('.zoom-close');
+  zc.innerHTML='';zc.appendChild(closeBtn);zc.appendChild(clone);
+  // Copy the frame style (house color gradient)
+  var origFrame=cardEl.querySelector('.spell-card__frame');
+  if(origFrame){var cloneFrame=clone.querySelector('.spell-card__frame');if(cloneFrame)cloneFrame.style.background=origFrame.style.background;}
+  document.getElementById('zoomOverlay').classList.add('active');
+  document.body.style.overflow='hidden';
+}
+function closeZoom(e){
+  if(e&&e.target.closest('.spell-card')&&!e.target.closest('.zoom-close'))return;
+  document.getElementById('zoomOverlay').classList.remove('active');
+  document.body.style.overflow='';
+}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeZoom();});
+
+// ═══ SMART PILL TOOLTIPS (match pill color, no clipping) ═══
+document.addEventListener('mouseenter',function(e){
+  var pill=e.target.closest('.pill');if(!pill)return;
+  var tip=pill.querySelector('.tip');if(!tip)return;
+  // Get pill's computed color for tooltip border/background
+  var style=getComputedStyle(pill);
+  var borderCol=style.borderColor||'rgba(212,166,75,0.3)';
+  var textCol=style.color||'#D4A64B';
+  tip.style.background='rgba(10,8,18,0.97)';
+  tip.style.borderColor=borderCol;
+  tip.style.color=textCol;
+  // Position to avoid clipping
+  var r=pill.getBoundingClientRect();
+  tip.style.display='block';
+  var tw=tip.offsetWidth;var th=tip.offsetHeight;
+  var left=r.left+r.width/2-tw/2;
+  var top=r.top-th-10;
+  // Clamp to viewport
+  if(left<8)left=8;
+  if(left+tw>window.innerWidth-8)left=window.innerWidth-tw-8;
+  if(top<8){top=r.bottom+10;} // Flip below if no room above
+  tip.style.left=left+'px';
+  tip.style.top=top+'px';
+},true);
+document.addEventListener('mouseleave',function(e){
+  var pill=e.target.closest('.pill');if(!pill)return;
+  var tip=pill.querySelector('.tip');if(tip)tip.style.display='none';
+},true);
+
+// Add click handler to cards after render
+function attachCardClicks(){
+  document.querySelectorAll('.spell-card').forEach(function(c){
+    c.onclick=function(e){if(!e.target.closest('.pill'))openZoom(c);};
+  });
+}
 
 buildTabs();
 if(localStorage.getItem('player_id')){var nl=document.getElementById('navLogout');if(nl)nl.style.display='';var ml=document.getElementById('mobileLogout');if(ml)ml.style.display='';}
