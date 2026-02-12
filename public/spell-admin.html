@@ -507,7 +507,7 @@
         }
         const spellId = parseInt(req.params.id);
         const updates = {};
-        const allowed = ['name','slug','house','tier','mana_cost','spell_type','base_effect','bonus_effects','flavor_text','motto','is_active','is_always_available'];
+        const allowed = ['name','slug','house','tier','mana_cost','spell_type','base_effect','bonus_effects','flavor_text','motto','is_active','is_always_available','image_url'];
         allowed.forEach(field => {
           if (req.body[field] !== undefined) {
             updates[field] = field === 'bonus_effects' ? JSON.stringify(req.body[field]) : req.body[field];

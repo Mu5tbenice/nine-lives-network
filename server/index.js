@@ -76,16 +76,21 @@ try {
   console.error('❌ Failed to load spell routes:', e.message);
 }
 
-const clashesRoutes = require('./routes/clashes');
-app.use('/api/clashes', clashesRoutes);
+try {
+  const clashesRoutes = require('./routes/clashes');
+  app.use('/api/clashes', clashesRoutes);
+  console.log('✅ Clashes routes loaded');
+} catch (e) {
+  console.error('❌ Failed to load clashes routes:', e.message);
+}
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Redirect old map.html to world.html
-app.get('/map.html', (req, res) => res.redirect('/world.html'));
+// Redirect old world.html to map.html
+app.get('/world.html', (req, res) => res.redirect('/map.html'));
 
 // Start scheduler for automated tasks
 try {
