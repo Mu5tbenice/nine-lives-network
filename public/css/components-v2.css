@@ -259,7 +259,7 @@ img { max-width: 100%; display: block; }
 
 /* House crest watermark — visible ghost in bottom-right */
 .sc-crest-watermark{position:absolute;bottom:10px;right:8px;width:56px;height:56px;
-  background-size:contain;background-repeat:no-repeat;background-position:center;
+  object-fit:contain;
   opacity:0.1;z-index:9;pointer-events:none;transition:opacity 0.4s;
   filter:drop-shadow(0 0 4px rgba(0,0,0,0.4))}
 .spell-card:hover .sc-crest-watermark{opacity:0.18}
@@ -295,7 +295,7 @@ img { max-width: 100%; display: block; }
 .sc-name-row{display:flex;align-items:center}
 /* House logo — top-left corner of card */
 .sc-house-logo{position:absolute;top:8px;left:8px;width:28px;height:28px;z-index:12;pointer-events:none;
-  background-size:contain;background-repeat:no-repeat;background-position:center;
+  object-fit:contain;
   filter:drop-shadow(0 2px 6px rgba(0,0,0,0.8))}
 /* Legacy mini-crest hidden — replaced by sc-house-logo */
 .sc-mini-crest{display:none}
@@ -361,13 +361,8 @@ img { max-width: 100%; display: block; }
   font-weight:700;letter-spacing:0.4px;text-transform:uppercase;white-space:nowrap;
   padding:2px 7px;border-radius:3px;cursor:default;transition:all 0.15s;pointer-events:auto}
 .pill:hover{transform:translateY(-1px)}
-.pill .tip{display:none;position:fixed;
-  font-family:var(--font-body);font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;
-  color:#e8e4d9;white-space:normal;width:max-content;max-width:200px;
-  background:rgba(10,8,18,0.96);border:1px solid rgba(255,255,255,0.1);border-radius:5px;
-  padding:6px 10px;line-height:1.4;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,0.6);pointer-events:none}
-.pill .tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:rgba(10,8,18,0.96)}
-.pill:hover .tip{display:block}
+/* Tips are shown via JS floatTip, hide inline tips */
+.pill .tip{display:none!important;position:absolute;visibility:hidden}
 
 /* Pill color variants */
 .p-red{background:rgba(255,68,68,0.14);border:1px solid rgba(255,68,68,0.3);color:#ff7b6b}

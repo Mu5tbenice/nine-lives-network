@@ -237,8 +237,8 @@ function buildCard(s,d){
   if(bn.length>0){pl='<div class="sc-pills">';bn.forEach(function(b){var tag=b.tag||b.key||'';var desc=b.desc||b.description||tag;pl+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';});pl+='</div>';}
   var be='';if(s.base_effect&&s.base_effect!=='â€”'&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
   var pType=PARTICLE_MAP[s.house]||'stardust';
-  var crestHtml=h.img?'<div class="sc-crest-watermark" style="background-image:url('+h.img+')"></div>':'';
-  var houseLogo=h.img?'<div class="sc-house-logo" style="background-image:url('+h.img+')"></div>':'';
+  var crestHtml=h.img?'<img class="sc-crest-watermark" src="'+h.img+'" onerror="this.style.display=\'none\'">':'';
+  var houseLogo=h.img?'<img class="sc-house-logo" src="'+h.img+'" onerror="this.style.display=\'none\'">':'';
   var hasArt=s.image_url&&s.image_url.length>0;
   var artImg=hasArt?'<div class="sc-art-img" style="background-image:url(/assets/images/spells/'+esc(s.image_url)+')"></div>':'';
   var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:28px;position:relative;z-index:1">âœ¦</span>';
@@ -330,34 +330,36 @@ function closeZoom(e){
 }
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeZoom();});
 
-// â•â•â• SMART PILL TOOLTIPS (match pill color, no clipping) â•â•â•
-document.addEventListener('mouseenter',function(e){
-  var pill=e.target.closest('.pill');if(!pill)return;
-  var tip=pill.querySelector('.tip');if(!tip)return;
-  // Get pill's computed color for tooltip border/background
-  var style=getComputedStyle(pill);
-  var borderCol=style.borderColor||'rgba(212,166,75,0.3)';
-  var textCol=style.color||'#D4A64B';
-  tip.style.background='rgba(10,8,18,0.97)';
-  tip.style.borderColor=borderCol;
-  tip.style.color=textCol;
-  // Position to avoid clipping
-  var r=pill.getBoundingClientRect();
-  tip.style.display='block';
-  var tw=tip.offsetWidth;var th=tip.offsetHeight;
-  var left=r.left+r.width/2-tw/2;
-  var top=r.top-th-10;
-  // Clamp to viewport
-  if(left<8)left=8;
-  if(left+tw>window.innerWidth-8)left=window.innerWidth-tw-8;
-  if(top<8){top=r.bottom+10;} // Flip below if no room above
-  tip.style.left=left+'px';
-  tip.style.top=top+'px';
-},true);
-document.addEventListener('mouseleave',function(e){
-  var pill=e.target.closest('.pill');if(!pill)return;
-  var tip=pill.querySelector('.tip');if(tip)tip.style.display='none';
-},true);
+
+// SMART PILL TOOLTIPS - floating div on body escapes transform contexts
+(function(){
+  var ft=document.createElement('div');
+  ft.id='floatTip';
+  ft.style.cssText='display:none;position:fixed;z-index:99999;font-family:Crimson Text,serif;font-size:12px;font-weight:400;color:#e8e4d9;white-space:normal;width:max-content;max-width:200px;background:rgba(10,8,18,0.97);border:1px solid rgba(255,255,255,0.1);border-radius:5px;padding:6px 10px;line-height:1.4;box-shadow:0 6px 20px rgba(0,0,0,0.6);pointer-events:none';
+  document.body.appendChild(ft);
+  document.addEventListener('mouseenter',function(e){
+    var pill=e.target.closest('.pill');if(!pill)return;
+    var tip=pill.querySelector('.tip');if(!tip)return;
+    var style=getComputedStyle(pill);
+    ft.style.borderColor=style.borderColor||'rgba(212,166,75,0.3)';
+    ft.style.color=style.color||'#D4A64B';
+    ft.textContent=tip.textContent;
+    ft.style.display='block';
+    var r=pill.getBoundingClientRect();
+    var tw=ft.offsetWidth,th=ft.offsetHeight;
+    var left=r.left+r.width/2-tw/2;
+    var top=r.top-th-10;
+    if(left<8)left=8;
+    if(left+tw>window.innerWidth-8)left=window.innerWidth-tw-8;
+    if(top<8)top=r.bottom+10;
+    ft.style.left=left+'px';
+    ft.style.top=top+'px';
+  },true);
+  document.addEventListener('mouseleave',function(e){
+    var pill=e.target.closest('.pill');if(!pill)return;
+    ft.style.display='none';
+  },true);
+})();
 
 // Add click handler to cards after render
 function attachCardClicks(){
