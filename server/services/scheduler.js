@@ -1,3 +1,5 @@
+const packSystem = require('./packSystem');
+const effectEngine = require('./effectEngine');
 const cron = require('node-cron');
 const territoryControl = require('./territoryControl');
 const activityDecay = require('./activityDecay');
@@ -146,6 +148,33 @@ function initializeScheduledJobs() {
   // ============================================
 
   // Midnight: reset mana + lives
+  // V2: Process card upgrades
+  try {
+    const upgradeResult = await packSystem.processUpgrades();
+    console.log('[Scheduler] Card upgrades:', upgradeResult.upgraded, 'processed');
+  } catch (err) {
+    console.error('[Scheduler] Upgrade error:', err);
+  }
+
+  // V2: Reset mana to 7 (not 5!)
+  try {
+    await supabase
+      .from('players')
+      .update({ mana: 7, arcane_energy_today: 0 })
+      .gt('id', 0);
+    console.log('[Scheduler] Mana reset to 7, energy reset');
+  } catch (err) {
+    console.error('[Scheduler] Reset error:', err);
+  }
+
+  // V2: Clean expired zone effects
+  try {
+    await effectEngine.cleanupExpiredEffects();
+    console.log('[Scheduler] Expired effects cleaned');
+  } catch (err) {
+    console.error('[Scheduler] Cleanup error:', err);
+  }
+  
   cron.schedule('0 0 * * *', async () => {
     console.log(`[${ts()}] 🔮 Midnight reset`);
     try {
