@@ -906,6 +906,7 @@ async function testConnection() {
 }
 
 module.exports = {
+  mainClient: getNineLivesClient(),
   authClient,
   postDailyObjective,
   postDailyResults,
