@@ -301,6 +301,9 @@ img { max-width: 100%; display: block; }
 .sc-mini-crest{display:none}
 .sc-info{margin-top:auto;padding:0 12px 10px}
 
+/* Spacer to fill art area when spell has background art image */
+.sc-art-spacer{flex:1;min-height:80px}
+
 /* Card grid layout */
 .card-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:1rem}
 @media(max-width:600px){
@@ -356,13 +359,13 @@ img { max-width: 100%; display: block; }
 .sc-pills{display:flex;gap:3px;flex-wrap:wrap;margin-bottom:5px}
 .pill{position:relative;display:inline-flex;align-items:center;font-family:var(--font-title);font-size:7px;
   font-weight:700;letter-spacing:0.4px;text-transform:uppercase;white-space:nowrap;
-  padding:2px 7px;border-radius:3px;cursor:default;transition:all 0.15s}
+  padding:2px 7px;border-radius:3px;cursor:default;transition:all 0.15s;pointer-events:auto}
 .pill:hover{transform:translateY(-1px)}
-.pill .tip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
+.pill .tip{display:none;position:fixed;
   font-family:var(--font-body);font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;
   color:#e8e4d9;white-space:normal;width:max-content;max-width:200px;
   background:rgba(10,8,18,0.96);border:1px solid rgba(255,255,255,0.1);border-radius:5px;
-  padding:6px 10px;line-height:1.4;z-index:80;box-shadow:0 6px 20px rgba(0,0,0,0.6);pointer-events:none}
+  padding:6px 10px;line-height:1.4;z-index:9999;box-shadow:0 6px 20px rgba(0,0,0,0.6);pointer-events:none}
 .pill .tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:rgba(10,8,18,0.96)}
 .pill:hover .tip{display:block}
 
