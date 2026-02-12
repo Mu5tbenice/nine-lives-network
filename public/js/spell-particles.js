@@ -48,8 +48,8 @@ function initSpellCard(card){
   function makeP(){
     return{x:Math.random()*w,y:Math.random()*h,
       vx:(Math.random()-0.5)*0.2,vy:-Math.random()*0.3-0.05,
-      size:Math.random()*1.6+0.3,alpha:Math.random()*0.2+0.02,
-      baseAlpha:Math.random()*0.2+0.02,
+      size:Math.random()*2.2+0.5,alpha:Math.random()*0.35+0.08,
+      baseAlpha:Math.random()*0.35+0.08,
       life:Math.random()*400+200,maxLife:Math.random()*400+200,
       pulse:Math.random()*Math.PI*2,pulseSpeed:Math.random()*0.02+0.005,
       trail:[]};
@@ -57,7 +57,7 @@ function initSpellCard(card){
   function resetP(p){
     p.x=Math.random()*w;p.y=Math.random()*h;
     p.vx=(Math.random()-0.5)*0.2;p.vy=-Math.random()*0.3-0.05;
-    p.size=Math.random()*1.6+0.3;p.alpha=p.baseAlpha;p.life=p.maxLife;p.trail=[];
+    p.size=Math.random()*2.2+0.5;p.alpha=p.baseAlpha;p.life=p.maxLife;p.trail=[];
   }
   for(var i=0;i<numP;i++)particles.push(makeP());
 

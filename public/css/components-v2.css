@@ -258,11 +258,11 @@ img { max-width: 100%; display: block; }
   -webkit-mask-image:linear-gradient(to bottom,black 50%,transparent 100%);z-index:2}
 
 /* House crest watermark — visible ghost in bottom-right */
-.sc-crest-watermark{position:absolute;bottom:10px;right:8px;width:52px;height:52px;
+.sc-crest-watermark{position:absolute;bottom:10px;right:8px;width:56px;height:56px;
   background-size:contain;background-repeat:no-repeat;background-position:center;
-  opacity:0.08;z-index:2;pointer-events:none;transition:opacity 0.4s;
+  opacity:0.1;z-index:9;pointer-events:none;transition:opacity 0.4s;
   filter:drop-shadow(0 0 4px rgba(0,0,0,0.4))}
-.spell-card:hover .sc-crest-watermark{opacity:0.15}
+.spell-card:hover .sc-crest-watermark{opacity:0.18}
 
 /* Foil shine layer */
 .sc-foil{position:absolute;inset:0;z-index:3;
@@ -302,7 +302,7 @@ img { max-width: 100%; display: block; }
 .sc-info{margin-top:auto;padding:0 12px 10px}
 
 /* Spacer to fill art area when spell has background art image */
-.sc-art-spacer{flex:1;min-height:80px}
+.sc-art-spacer{flex:0 0 auto;height:45%}
 
 /* Card grid layout */
 .card-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:1rem}

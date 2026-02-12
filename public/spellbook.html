@@ -243,12 +243,12 @@ function buildCard(s,d){
   var artImg=hasArt?'<div class="sc-art-img" style="background-image:url(/assets/images/spells/'+esc(s.image_url)+')"></div>':'';
   var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:28px;position:relative;z-index:1">âœ¦</span>';
   var artBlock=hasArt?'<div class="sc-art-spacer"></div>':'<div class="sc-art"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div><div class="sc-art__glow" style="background:radial-gradient(circle,'+h.color+'0A,transparent 70%)"></div>'+ai+'<div class="sc-art__corner sc-art__corner--tl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--tr" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--bl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--br" style="background:'+h.color+'25"></div><div class="sc-art__tier" style="color:'+tc+'">'+tl+'</div></div>';
-  return '<div class="spell-card" data-house="'+s.house+'" data-type="'+(s.spell_type||'attack')+'" data-color="'+h.color+'" data-glow="'+h.color+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="25" style="--hc:'+h.color+';--hc-shadow:'+h.color+'30;--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810);transition-delay:'+d+'s">'
+  return '<div class="spell-card" data-house="'+s.house+'" data-type="'+(s.spell_type||'attack')+'" data-color="'+h.color+'" data-glow="'+h.color+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="40" style="--hc:'+h.color+';--hc-shadow:'+h.color+'30;--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810);transition-delay:'+d+'s">'
     +'<div class="sc-border"></div><div class="sc-edge"></div>'
-    +'<div class="sc-face">'+artImg+'<div class="sc-inner-edge"></div>'+crestHtml
+    +'<div class="sc-face">'+artImg+'<div class="sc-inner-edge"></div>'
     +'<div class="sc-foil"></div><div class="sc-rainbow"></div>'
     +'<canvas class="sc-particles"></canvas><div class="sc-glow"></div></div>'
-    +houseLogo
+    +houseLogo+crestHtml
     +'<div class="sc-body">'
     +'<div class="sc-top"><div class="sc-name" style="color:'+h.color+'">'+esc(s.name)+'</div>'+mo+'</div>'
     +artBlock
