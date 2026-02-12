@@ -32,7 +32,7 @@ try { nermBot = require('./nermBot'); } catch (e) { console.log('⚠️ nermBot 
  *   Reacts to notable spell casts (10% chance, inside cast processing)
  * 
  * MAINTENANCE:
- *   00:00  Reset mana + lives
+ *   00:00  Reset mana (7) + lives + card upgrades + effect cleanup
  *   01:30  Activity decay
  */
 
@@ -147,50 +147,44 @@ function initializeScheduledJobs() {
   // MAINTENANCE
   // ============================================
 
-  // Midnight: reset mana + lives
-  // V2: Process card upgrades
-  try {
-    const upgradeResult = await packSystem.processUpgrades();
-    console.log('[Scheduler] Card upgrades:', upgradeResult.upgraded, 'processed');
-  } catch (err) {
-    console.error('[Scheduler] Upgrade error:', err);
-  }
-
-  // V2: Reset mana to 7 (not 5!)
-  try {
-    await supabase
-      .from('players')
-      .update({ mana: 7, arcane_energy_today: 0 })
-      .gt('id', 0);
-    console.log('[Scheduler] Mana reset to 7, energy reset');
-  } catch (err) {
-    console.error('[Scheduler] Reset error:', err);
-  }
-
-  // V2: Clean expired zone effects
-  try {
-    await effectEngine.cleanupExpiredEffects();
-    console.log('[Scheduler] Expired effects cleaned');
-  } catch (err) {
-    console.error('[Scheduler] Cleanup error:', err);
-  }
-  
+  // Midnight: reset mana + lives + V2 upgrades + cleanup
   cron.schedule('0 0 * * *', async () => {
     console.log(`[${ts()}] 🔮 Midnight reset`);
+
+    // V2: Process card upgrades (check yesterday's mana + energy)
+    try {
+      const upgradeResult = await packSystem.processUpgrades();
+      console.log('[Scheduler] Card upgrades:', upgradeResult.upgraded, 'processed');
+    } catch (err) {
+      console.error('[Scheduler] Upgrade error:', err.message);
+    }
+
+    // V2: Reset mana to 7
     try {
       const { error: manaErr } = await supabaseAdmin
         .from('players')
-        .update({ mana: 5 })
+        .update({ mana: 7 })
         .gte('id', 0);
       if (manaErr) console.error('❌ Mana reset:', manaErr);
-      else console.log('✅ Mana reset to 5');
+      else console.log('✅ Mana reset to 7');
+    } catch (e) { console.error('❌ Mana reset:', e.message); }
 
+    // Reset lives
+    try {
       const { error: livesErr } = await supabaseAdmin
         .from('players')
         .update({ lives: 3 })
         .lt('lives', 3);
       if (!livesErr) console.log('✅ Lives reset to 3');
-    } catch (e) { console.error('❌ Midnight reset:', e.message); }
+    } catch (e) { console.error('❌ Lives reset:', e.message); }
+
+    // V2: Clean expired zone effects
+    try {
+      await effectEngine.cleanupExpiredEffects();
+      console.log('✅ Expired zone effects cleaned');
+    } catch (err) {
+      console.error('[Scheduler] Cleanup error:', err.message);
+    }
   });
 
   // Activity decay
@@ -226,7 +220,7 @@ function initializeScheduledJobs() {
   console.log('🐱 Nerm: Reply guy only (reacts to noticed casts)');
   console.log('');
   console.log('⚙️  Maintenance:');
-  console.log('   00:00 — Reset mana + lives');
+  console.log('   00:00 — Reset mana (7) + lives + upgrades + cleanup');
   console.log('   01:30 — Activity decay');
   console.log('');
 }
