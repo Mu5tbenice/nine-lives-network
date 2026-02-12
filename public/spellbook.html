@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Spellbook — Nine Lives Network</title>
+<title>Spellbook â€” Nine Lives Network</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Press+Start+2P&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/variables-v2.css">
 <link rel="stylesheet" href="/css/components-v2.css">
@@ -16,7 +16,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   radial-gradient(ellipse 40% 50% at 85% 95%,rgba(138,43,226,0.015),transparent 70%)}
 .main-container{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 16px 60px}
 
-/* Hero — matches other pages */
+/* Hero â€” matches other pages */
 .hero{text-align:center;padding:14px 0 6px}
 .hero h1{font-family:var(--font-title);font-weight:700;font-size:24px;color:var(--gold);letter-spacing:3px}
 .hero p{font-family:var(--font-body);font-size:15px;font-style:italic;color:var(--text-muted);margin-top:4px}
@@ -56,17 +56,17 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   letter-spacing:0.08em;padding:3px 6px;border:1px solid rgba(255,255,255,0.06);border-radius:2px;white-space:nowrap}
 .section-head__img{width:22px;height:22px;border-radius:50%;object-fit:contain}
 
-/* ═══ PLAYING CARD GRID ═══ */
+/* â•â•â• PLAYING CARD GRID â•â•â• */
 .card-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:1rem}
 
-/* ═══ SPELL CARD — HOLO OVERRIDES ═══ */
+/* â•â•â• SPELL CARD â€” HOLO OVERRIDES â•â•â• */
 .spell-card .sc-body{pointer-events:none}
 .spell-card{
   width:200px;min-height:300px;cursor:pointer}
 .spell-card.show{opacity:1;transform:translateY(0)}
 .spell-card.hide{display:none}
 
-/* Art frame with crest — used when no spell art image */
+/* Art frame with crest â€” used when no spell art image */
 .sc-art{margin:0 0 6px;height:130px;border-radius:5px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;
   border:1px solid rgba(255,255,255,0.03)}
 .sc-art__bg{position:absolute;inset:0}
@@ -77,7 +77,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 .sc-art__corner--tl{top:3px;left:3px}.sc-art__corner--tr{top:3px;right:3px}
 .sc-art__corner--bl{bottom:3px;left:3px}.sc-art__corner--br{bottom:3px;right:3px}
 
-/* ═══ ZOOMED CARD MODAL ═══ */
+/* â•â•â• ZOOMED CARD MODAL â•â•â• */
 .zoom-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9000;
   justify-content:center;align-items:center;padding:20px;cursor:pointer;
   backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
@@ -89,17 +89,18 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 /* Override the spell-card inside zoom to be large */
 .zoom-card .spell-card{
   width:340px!important;min-height:510px!important;border-radius:14px;
-  opacity:1!important;transform:none!important;cursor:default;
+  opacity:1!important;cursor:default;transform-style:preserve-3d;
   box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 40px rgba(212,166,75,0.08)}
 .zoom-card .sc-border{inset:-3px;border-radius:17px}
 .zoom-card .sc-edge{border-radius:15px}
 .zoom-card .sc-face{border-radius:13px}
 .zoom-card .sc-body{padding:0}
-.zoom-card .sc-top{padding:16px 18px}
+.zoom-card .sc-top{padding:16px 18px 16px 54px}
 .zoom-card .sc-info{padding:0 18px 14px}
-.zoom-card .sc-name{font-size:22px}
-.zoom-card .sc-mana{gap:3px}
-.zoom-card .sc-mana .mana-orb{width:16px;height:16px}
+.zoom-card .sc-name{font-size:18px}
+.zoom-card .sc-mana{font-size:10px;padding:4px 8px}
+.zoom-card .sc-house-logo{width:38px;height:38px;top:12px;left:12px}
+.zoom-card .sc-crest-watermark{width:80px;height:80px;bottom:20px;right:12px}
 .zoom-card .sc-art{height:220px;border-radius:8px}
 .zoom-card .sc-art img{width:120px;height:120px}
 .zoom-card .sc-art__tier{font-size:8px}
@@ -124,7 +125,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   .zoom-card .sc-art{height:120px}
 }
 
-/* ═══ COMBO CARDS ═══ */
+/* â•â•â• COMBO CARDS â•â•â• */
 .combo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin-bottom:1rem}
 .combo-card{background:var(--bg-card);border:1px solid rgba(255,255,255,0.06);border-radius:8px;
   padding:0.9rem 1rem;position:relative;overflow:hidden;opacity:0;animation:fu 0.35s ease forwards}
@@ -175,7 +176,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 
 <div class="main-container">
   <div class="hero"><h1>The Grimoire of Avaloris</h1><p>Master the spells. Rule the realm.</p></div>
-  <div class="info-box"><strong>How spells work:</strong> Basic Attack/Defend always cost 1 MP and give +10. Spells add <strong>bonus effects on top</strong> — Tier 1 costs 1 MP, Tier 2 costs 2 MP. Hover the colored pills to see what each effect does.</div>
+  <div class="info-box"><strong>How spells work:</strong> Basic Attack/Defend always cost 1 MP and give +10. Spells add <strong>bonus effects on top</strong> â€” Tier 1 costs 1 MP, Tier 2 costs 2 MP. Hover the colored pills to see what each effect does.</div>
   <div class="tab-bar"><div class="tab-row" id="houseTabs"></div></div>
   <div class="type-tabs" id="typeTabs">
     <button class="ttab active" data-t="all">All</button><button class="ttab" data-t="attack">Attack</button>
@@ -195,20 +196,20 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 <script>
 var HOUSES={
   universal:{name:'Universal',color:'#D4A64B',rgb:'212,166,75',img:null,element:'ALL HOUSES'},
-  smoulders:{name:'Smoulders',color:'#E03C31',rgb:'224,60,49',img:'/assets/images/houses/House-smoulders.png',element:'FIRE · AGGRESSION'},
-  darktide:{name:'Darktide',color:'#00B4D8',rgb:'0,180,216',img:'/assets/images/houses/House-darktide.png',element:'WATER · CONTROL'},
-  stonebark:{name:'Stonebark',color:'#5CB338',rgb:'92,179,56',img:'/assets/images/houses/House-stonebark.png',element:'EARTH · ENDURANCE'},
-  ashenvale:{name:'Ashenvale',color:'#90E0EF',rgb:'144,224,239',img:'/assets/images/houses/House-Ashenvale.png',element:'WIND · SPEED'},
-  stormrage:{name:'Stormrage',color:'#FFC800',rgb:'255,200,0',img:'/assets/images/houses/House-stormrage.png',element:'LIGHTNING · HIGH RISK'},
-  nighthollow:{name:'Nighthollow',color:'#7B2D8E',rgb:'123,45,142',img:'/assets/images/houses/House-nighthollow.png',element:'SHADOW · DISRUPTION'},
-  dawnbringer:{name:'Dawnbringer',color:'#FF8C00',rgb:'255,140,0',img:'/assets/images/houses/House-dawnbringer.png',element:'LIGHT · SUPPORT'},
-  manastorm:{name:'Manastorm',color:'#5B8FE0',rgb:'91,143,224',img:'/assets/images/houses/House-manastorm.png',element:'ARCANE · MANIPULATION'},
-  plaguemire:{name:'Plaguemire',color:'#E84393',rgb:'232,67,147',img:'/assets/images/houses/House-plaguemire.png',element:'POISON · ATTRITION'}
+  smoulders:{name:'Smoulders',color:'#E03C31',rgb:'224,60,49',img:'/assets/images/houses/House-smoulders.png',element:'FIRE Â· AGGRESSION'},
+  darktide:{name:'Darktide',color:'#00B4D8',rgb:'0,180,216',img:'/assets/images/houses/House-darktide.png',element:'WATER Â· CONTROL'},
+  stonebark:{name:'Stonebark',color:'#5CB338',rgb:'92,179,56',img:'/assets/images/houses/House-stonebark.png',element:'EARTH Â· ENDURANCE'},
+  ashenvale:{name:'Ashenvale',color:'#90E0EF',rgb:'144,224,239',img:'/assets/images/houses/House-Ashenvale.png',element:'WIND Â· SPEED'},
+  stormrage:{name:'Stormrage',color:'#FFC800',rgb:'255,200,0',img:'/assets/images/houses/House-stormrage.png',element:'LIGHTNING Â· HIGH RISK'},
+  nighthollow:{name:'Nighthollow',color:'#7B2D8E',rgb:'123,45,142',img:'/assets/images/houses/House-nighthollow.png',element:'SHADOW Â· DISRUPTION'},
+  dawnbringer:{name:'Dawnbringer',color:'#FF8C00',rgb:'255,140,0',img:'/assets/images/houses/House-dawnbringer.png',element:'LIGHT Â· SUPPORT'},
+  manastorm:{name:'Manastorm',color:'#5B8FE0',rgb:'91,143,224',img:'/assets/images/houses/House-manastorm.png',element:'ARCANE Â· MANIPULATION'},
+  plaguemire:{name:'Plaguemire',color:'#E84393',rgb:'232,67,147',img:'/assets/images/houses/House-plaguemire.png',element:'POISON Â· ATTRITION'}
 };
 var HO=['universal','smoulders','darktide','stonebark','ashenvale','stormrage','nighthollow','dawnbringer','manastorm','plaguemire'];
 
 var PC={'BURN':'orange','SCALD':'orange','SPREAD':'red','STRIP':'red','ERUPTION':'red','DRAIN':'purple','PULL':'blue','REFLECT':'cyan','CLOAK':'dark','STEALTH':'dark','SWAP':'pink','WEAKEN':'orange','ANCHOR':'brown','HEAL':'green','THORNS':'green','CONVERT':'cyan','PERSIST':'gold','SWIFT':'white','HASTE':'cyan','FREE':'cyan','DODGE':'ice','REACH':'white','SWEEP':'gray','CRIT':'yellow','FIZZLE':'yellow','CHAIN':'blue','AMPLIFY':'purple','NIGHT':'dark','HEX':'purple','SILENCE':'gray','STEAL':'red','FREEZE':'ice','PIERCE':'white','ABSORB':'blue','RANDOMIZE':'pink','NEGATE':'white','REFUND':'cyan','INFECT':'toxic','WITHER':'brown','CORRODE':'toxic','PLAGUE':'toxic','TOXIC':'toxic','LOCKOUT':'red','UNDERDOG':'gold','AURA':'gold','GIFT':'white','JUSTICE':'gold','SAFE':'gold','RESTORE':'cyan','RESET':'cyan','INSPIRE':'gold','REVEAL':'white','DOT':'green','BONUS':'gold','BLESS':'gold','WARD':'gold','PURGE':'orange','PUSH':'ice','SHUFFLE':'blue','CURSE':'purple','VANISH':'dark','SIPHON':'purple','POISON':'toxic','IMMUNE':'cyan','SURGE':'yellow'};
-function pillCol(tag){var k=tag.replace(/[\+\d\s×x\.]/g,'').toUpperCase();for(var p in PC){if(k.indexOf(p)!==-1)return PC[p];}return'gray';}
+function pillCol(tag){var k=tag.replace(/[\+\d\sÃ—x\.]/g,'').toUpperCase();for(var p in PC){if(k.indexOf(p)!==-1)return PC[p];}return'gray';}
 
 var HC=[{n:'House Resonance',th:'2 MEMBERS',nt:'2 unique house members cast on same zone',ef:'All get +3 bonus',fl:'Two voices, one chorus.'},{n:'House Surge',th:'3 MEMBERS',nt:'3 unique house members on same zone',ef:'All get +5 bonus, zone defended +5',fl:'The chorus becomes a war cry.'},{n:'House United',th:'4 MEMBERS',nt:'4 unique house members on same zone',ef:'All get +10 bonus, enemies -3',fl:'Four as one. Unstoppable.'},{n:'Overwhelming Force',th:'5+ MEMBERS',nt:'5+ unique house members on same zone',ef:'All get +15 bonus, zone locked 30 min',fl:'The realm bows.'}];
 var CC=[{n:'Community Rally',th:'3 MEMBERS',nt:'3 same community tag on same zone',ef:'All get +3 bonus',fl:'The community rides together.'},{n:'Community Siege',th:'5 MEMBERS',nt:'5 same community tag on same zone',ef:'All get +7 bonus, special raid badge',fl:'We came. We saw. We took.'},{n:'Community Dominance',th:'8+ MEMBERS',nt:'8+ same community tag on same zone',ef:'All get +12 bonus, zone named after community 24h',fl:'This zone belongs to us now.'}];
@@ -230,17 +231,17 @@ function buildCard(s,d){
   var tl=s.tier===0?'BASIC':s.tier>=2?'TIER '+s.tier:'TIER 1';
   var tc=s.tier>=2?'#00D4FF':s.tier===0?'#847C98':h.color;
   var mo='<div class="sc-mana">'+s.mana_cost+' MP</div>';
-  var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:28px;position:relative;z-index:1">✦</span>';
+  var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:28px;position:relative;z-index:1">âœ¦</span>';
   var tb=s.tier>=2?'<span class="sc-tier">T'+s.tier+'</span>':'';
   var pl='';
   if(bn.length>0){pl='<div class="sc-pills">';bn.forEach(function(b){var tag=b.tag||b.key||'';var desc=b.desc||b.description||tag;pl+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';});pl+='</div>';}
-  var be='';if(s.base_effect&&s.base_effect!=='—'&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
+  var be='';if(s.base_effect&&s.base_effect!=='â€”'&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
   var pType=PARTICLE_MAP[s.house]||'stardust';
   var crestHtml=h.img?'<div class="sc-crest-watermark" style="background-image:url('+h.img+')"></div>':'';
-  var miniCrest=h.img?'<div class="sc-mini-crest" style="background-image:url('+h.img+')"></div>':'';
+  var houseLogo=h.img?'<div class="sc-house-logo" style="background-image:url('+h.img+')"></div>':'';
   var hasArt=s.image_url&&s.image_url.length>0;
   var artImg=hasArt?'<div class="sc-art-img" style="background-image:url(/assets/images/spells/'+esc(s.image_url)+')"></div>':'';
-  var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:28px;position:relative;z-index:1">✦</span>';
+  var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:28px;position:relative;z-index:1">âœ¦</span>';
   var artBlock=hasArt?'':'<div class="sc-art"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div><div class="sc-art__glow" style="background:radial-gradient(circle,'+h.color+'0A,transparent 70%)"></div>'+ai+'<div class="sc-art__corner sc-art__corner--tl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--tr" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--bl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--br" style="background:'+h.color+'25"></div><div class="sc-art__tier" style="color:'+tc+'">'+tl+'</div></div>';
   return '<div class="spell-card" data-house="'+s.house+'" data-type="'+(s.spell_type||'attack')+'" data-color="'+h.color+'" data-glow="'+h.color+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="25" style="--hc:'+h.color+';--hc-shadow:'+h.color+'30;--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810);transition-delay:'+d+'s">'
     +'<div class="sc-border"></div><div class="sc-edge"></div>'
@@ -248,7 +249,8 @@ function buildCard(s,d){
     +'<div class="sc-foil"></div><div class="sc-rainbow"></div>'
     +'<canvas class="sc-particles"></canvas><div class="sc-glow"></div></div>'
     +'<div class="sc-body">'
-    +'<div class="sc-top"><div class="sc-name-row">'+miniCrest+'<div class="sc-name" style="color:'+h.color+'">'+esc(s.name)+'</div></div>'+mo+'</div>'
+    +houseLogo
+    +'<div class="sc-top"><div class="sc-name" style="color:'+h.color+'">'+esc(s.name)+'</div>'+mo+'</div>'
     +artBlock
     +'<div class="sc-info">'
     +'<div class="sc-type-row"><span class="sc-type sc-type--'+(s.spell_type||'attack')+'">'+(s.spell_type||'attack')+'</span>'+tb+'<span class="sc-type-spacer"></span><span class="sc-house-tag" style="color:'+h.color+'">'+h.name.toUpperCase()+'</span></div>'
@@ -282,14 +284,14 @@ function render(){
 function renderC(){
   if(aT!=='all'){document.getElementById('comboContent').innerHTML='';return;}
   var h='';
-  h+='<div class="section-head"><h2>⚔️ House Combos</h2><div class="line"></div><span class="tag">AUTO · SAME HOUSE</span></div>';
-  h+='<div class="info-box" style="margin-bottom:0.6rem"><strong>Auto-trigger</strong> when enough unique house members cast on same zone. <strong>Any spell counts</strong> — even Basic Attack.</div>';
+  h+='<div class="section-head"><h2>âš”ï¸ House Combos</h2><div class="line"></div><span class="tag">AUTO Â· SAME HOUSE</span></div>';
+  h+='<div class="info-box" style="margin-bottom:0.6rem"><strong>Auto-trigger</strong> when enough unique house members cast on same zone. <strong>Any spell counts</strong> â€” even Basic Attack.</div>';
   h+='<div class="combo-grid">';HC.forEach(function(c,i){h+=cCard(c,i*0.05);});h+='</div>';
-  h+='<div class="section-head"><h2>🏷️ Community Combos</h2><div class="line"></div><span class="tag">AUTO · SAME TAG</span></div>';
+  h+='<div class="section-head"><h2>ðŸ·ï¸ Community Combos</h2><div class="line"></div><span class="tag">AUTO Â· SAME TAG</span></div>';
   h+='<div class="info-box" style="margin-bottom:0.6rem"><strong>Stack with house combos!</strong> 5 $BONK in Smoulders = Surge (+10) + Community Siege (+7) = <strong>+17 each</strong>.</div>';
   h+='<div class="combo-grid">';CC.forEach(function(c,i){h+=cCard(c,i*0.05);});h+='</div>';
-  h+='<div class="section-head"><h2>🤝 Cross-House Collaborations</h2><div class="line"></div><span class="tag">AUTO · MULTI-HOUSE</span></div>';
-  h+='<div class="info-box" style="margin-bottom:0.6rem">Trigger when <strong>different houses</strong> cast on same zone. Just show up — these are automatic.</div>';
+  h+='<div class="section-head"><h2>ðŸ¤ Cross-House Collaborations</h2><div class="line"></div><span class="tag">AUTO Â· MULTI-HOUSE</span></div>';
+  h+='<div class="info-box" style="margin-bottom:0.6rem">Trigger when <strong>different houses</strong> cast on same zone. Just show up â€” these are automatic.</div>';
   h+='<div class="combo-grid">';XC.forEach(function(c,i){h+=cCard(c,i*0.05);});h+='</div>';
   document.getElementById('comboContent').innerHTML=h;
 }
@@ -309,17 +311,17 @@ async function load(){
 function toggleMobileMenu(){var m=document.getElementById('mobileMenu');var h=document.getElementById('hamburger');m.classList.toggle('open');h.classList.toggle('active');}
 function doLogout(){localStorage.removeItem('player_id');window.location.href='/';}
 
-// ═══ CLICK TO ZOOM ═══
+// â•â•â• CLICK TO ZOOM â•â•â•
 function openZoom(cardEl){
   var clone=cardEl.cloneNode(true);
   clone.classList.add('show');
-  // Don't override sizing — let .zoom-card CSS handle scale-up
   clone.style.transition='none';
   var zc=document.getElementById('zoomCard');
   zc.innerHTML='<button class="zoom-close" onclick="closeZoom(event)">&#10005;</button>';
   zc.appendChild(clone);
   document.getElementById('zoomOverlay').classList.add('active');
   document.body.style.overflow='hidden';
+  setTimeout(function(){ initSpellCard(clone); },100);
 }
 function closeZoom(e){
   if(e&&e.target.closest('.spell-card')&&!e.target.closest('.zoom-close'))return;
@@ -328,7 +330,7 @@ function closeZoom(e){
 }
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeZoom();});
 
-// ═══ SMART PILL TOOLTIPS (match pill color, no clipping) ═══
+// â•â•â• SMART PILL TOOLTIPS (match pill color, no clipping) â•â•â•
 document.addEventListener('mouseenter',function(e){
   var pill=e.target.closest('.pill');if(!pill)return;
   var tip=pill.querySelector('.tip');if(!tip)return;
