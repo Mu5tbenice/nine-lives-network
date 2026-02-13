@@ -97,8 +97,8 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 .zoom-card .sc-body{padding:0}
 .zoom-card .sc-top{padding:14px 18px 14px 54px}
 .zoom-card .sc-info{padding:0 18px 16px}
-.zoom-card .sc-name{font-size:22px;-webkit-text-stroke:0.4px rgba(0,0,0,0.5);
-  text-shadow:0 0 4px rgba(0,0,0,1),0 0 8px rgba(0,0,0,1),0 2px 6px rgba(0,0,0,0.9)}
+.zoom-card .sc-name{font-size:22px;
+  text-shadow:0 1px 3px #000,0 0 6px #000,2px 0 3px #000,-2px 0 3px #000,0 -1px 3px #000}
 .zoom-card .sc-mana{font-size:12px;padding:5px 10px}
 .zoom-card .sc-house-logo{width:38px;height:38px;top:12px;left:12px}
 .zoom-card .sc-crest-watermark{width:90px;height:90px;bottom:20px;right:12px;opacity:0.15}
@@ -108,8 +108,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 .zoom-card .sc-art__tier{font-size:8px}
 .zoom-card .sc-art__corner{width:6px;height:6px}
 .zoom-card .sc-type{font-size:12px;padding:4px 12px}
-.zoom-card .sc-tier{font-size:9px;padding:3px 8px}
-.zoom-card .sc-house-tag{font-size:7px}
+.zoom-card .sc-rarity{font-size:10px;padding:4px 10px}
 .zoom-card .sc-type-row{margin-bottom:10px;padding-bottom:8px}
 .zoom-card .sc-effect{padding:10px 12px;margin-bottom:8px}
 .zoom-card .sc-effect__base{font-size:12px;line-height:1.7}
@@ -234,7 +233,7 @@ function buildCard(s,d){
   var tc=s.tier>=2?'#00D4FF':s.tier===0?'#847C98':h.color;
   var mo='<div class="sc-mana">'+s.mana_cost+' MP</div>';
   var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:28px;position:relative;z-index:1">âœ¦</span>';
-  var tb=s.tier>=2?'<span class="sc-tier">T'+s.tier+'</span>':'';
+  var rb='<span class="sc-rarity sc-rarity--basic">BASIC ×1.0</span>';
   var pl='';
   if(bn.length>0){pl='<div class="sc-pills">';bn.forEach(function(b){var tag=b.tag||b.key||'';var desc=b.desc||b.description||tag;pl+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';});pl+='</div>';}
   var be='';if(s.base_effect&&s.base_effect!=='â€”'&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
@@ -245,8 +244,8 @@ function buildCard(s,d){
   var hasArt=s.image_url&&s.image_url.length>0;
   var artImg=hasArt?'<div class="sc-art-img" style="background-image:url(/assets/images/spells/'+esc(s.image_url)+')"></div>':'';
   var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:28px;position:relative;z-index:1">âœ¦</span>';
-  var artBlock=hasArt?'<div class="sc-art-spacer"></div>':'<div class="sc-art"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div><div class="sc-art__glow" style="background:radial-gradient(circle,'+h.color+'0A,transparent 70%)"></div>'+ai+'<div class="sc-art__corner sc-art__corner--tl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--tr" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--bl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--br" style="background:'+h.color+'25"></div><div class="sc-art__tier" style="color:'+tc+'">'+tl+'</div></div>';
-  return '<div class="spell-card" data-house="'+s.house+'" data-type="'+(s.spell_type||'attack')+'" data-color="'+h.color+'" data-glow="'+h.color+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="50" style="--hc:'+h.color+';--hc-shadow:'+h.color+'30;--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810);transition-delay:'+d+'s">'
+  var artBlock=hasArt?'<div class="sc-art-spacer"></div>':'<div class="sc-art"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div><div class="sc-art__glow" style="background:radial-gradient(circle,'+h.color+'0A,transparent 70%)"></div>'+ai+'<div class="sc-art__corner sc-art__corner--tl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--tr" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--bl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--br" style="background:'+h.color+'25"></div></div>';
+  return '<div class="spell-card" data-house="'+s.house+'" data-type="'+(s.spell_type||'attack')+'" data-color="'+h.color+'" data-glow="'+h.color+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="35" style="--hc:'+h.color+';--hc-shadow:'+h.color+'30;--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810);transition-delay:'+d+'s">'
     +'<div class="sc-border"></div><div class="sc-edge"></div>'
     +'<div class="sc-face">'+artImg+'<div class="sc-inner-edge"></div>'
     +'<div class="sc-foil"></div><div class="sc-rainbow"></div>'
@@ -256,7 +255,7 @@ function buildCard(s,d){
     +'<div class="sc-top"><div class="sc-name">'+esc(s.name)+'</div>'+mo+'</div>'
     +artBlock
     +'<div class="sc-info">'
-    +'<div class="sc-type-row"><span class="sc-type sc-type--'+(s.spell_type||'attack')+'">'+(s.spell_type||'attack')+'</span>'+tb+'<span class="sc-type-spacer"></span><span class="sc-house-tag" style="color:'+h.color+'">'+h.name.toUpperCase()+'</span></div>'
+    +'<div class="sc-type-row"><span class="sc-type sc-type--'+(s.spell_type||'attack')+'">'+(s.spell_type||'attack')+'</span><span class="sc-type-spacer"></span>'+rb+'</div>'
     +be+pl
     +'<div class="sc-flavor">"'+esc(s.flavor_text||s.motto||'')+'"</div>'
     +'<div class="sc-bottom" style="color:'+h.color+'">'+h.name.toUpperCase()+'</div>'
@@ -281,7 +280,24 @@ function render(){
   });
   if(!html)html='<div class="loading">No spells found</div>';
   document.getElementById('spellContent').innerHTML=html;
-  setTimeout(function(){document.querySelectorAll('.spell-card').forEach(function(c){c.classList.add('show');});attachCardClicks();initAllSpellCards();},50);
+  setTimeout(function(){
+    document.querySelectorAll('.spell-card').forEach(function(c){c.classList.add('show');});
+    attachCardClicks();
+    // Lazy-init particles — only when card scrolls into view
+    if('IntersectionObserver' in window){
+      var obs=new IntersectionObserver(function(entries){
+        entries.forEach(function(en){
+          if(en.isIntersecting && !en.target._particleInit){
+            en.target._particleInit=true;
+            initSpellCard(en.target);
+          }
+        });
+      },{rootMargin:'200px'});
+      document.querySelectorAll('.spell-card').forEach(function(c){obs.observe(c);});
+    } else {
+      initAllSpellCards();
+    }
+  },50);
 }
 
 function renderC(){
