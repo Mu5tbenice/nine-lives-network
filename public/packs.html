@@ -355,6 +355,31 @@ function buildCard(s, d, rarity){
   return buildSpellCard(s, { delay: d || 0, rarity: rarity || s.rarity || null });
 }
 
+async function openPack(){
+  var pid=getPlayerId();
+  if(!pid){alert('Please log in first');return;}
+  var btn=document.getElementById('openPackBtn');
+  btn.disabled=true;btn.textContent='Opening...';
+  try{
+    var res=await fetch('/api/packs/open',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({player_id:pid})});
+    var data=await res.json();
+    if(!data.success){btn.disabled=false;btn.textContent='Open Today\'s Pack';alert(data.error||'Failed');return;}
+    var cards=data.cards;
+    var revealHTML='';
+    cards.forEach(function(c,i){revealHTML+=buildCard(c, 0, c.rarity);});
+    document.getElementById('revealCards').innerHTML=revealHTML;
+    var revealCards=document.querySelectorAll('#revealCards .spell-card');
+    revealCards.forEach(function(el,i){el.style.animationDelay=(0.3+i*0.25)+'s';el.classList.add('show');});
+    document.getElementById('packReveal').classList.add('active');
+    document.body.style.overflow='hidden';
+    setTimeout(function(){if(typeof initAllSpellCards==='function')initAllSpellCards();if(typeof attachCardClicks==='function')attachCardClicks();},200);
+  }catch(e){
+    console.error('Open pack error:',e);
+    btn.disabled=false;btn.textContent='Open Today\'s Pack';
+  }
+}
+
 function closeReveal(){
   document.getElementById('packReveal').classList.remove('active');
   document.body.style.overflow='';

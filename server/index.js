@@ -9,6 +9,11 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "../public")));
+app.use(express.static('public', { 
+  setHeaders: (res) => {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  }
+}));
 
 // Load routes with error handling
 try {
@@ -82,14 +87,6 @@ try {
   console.log("✅ Clashes routes loaded");
 } catch (e) {
   console.error("❌ Failed to load clashes routes:", e.message);
-}
-
-try {
-  const packsRoutes = require("./routes/packs");
-  app.use("/api/packs", packsRoutes);
-  console.log("✅ Pack routes loaded");
-} catch (e) {
-  console.error("❌ Failed to load pack routes:", e.message);
 }
 
 // Health check

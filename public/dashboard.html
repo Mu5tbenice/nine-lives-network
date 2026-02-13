@@ -122,13 +122,12 @@ async function loadDashboard(){
     var[pR,cR,zR,sR]=await Promise.all([fetch('/api/players/'+pid),fetch('/api/players/'+pid+'/casts'),fetch('/api/zones'),fetch('/api/leaderboards/schools')]);
     var player=await pR.json(),casts=await cR.json(),zones=await zR.json(),schools=await sR.json();
     if(!player||player.error){document.getElementById('dashContent').style.display='none';document.getElementById('errorState').style.display='block';return;}
-    var house=HOUSES[player.school_id]||HOUSES[1];var spellData=null;
-    try{var sr=await fetch('/api/spells/rotation/'+house.slug);spellData=await sr.json();}catch(e){}
-    render(player,casts||[],zones||[],schools||[],spellData);
+    var house=HOUSES[player.school_id]||HOUSES[1];
+    render(player,casts||[],zones||[],schools||[]);
   }catch(err){console.error(err);document.getElementById('dashContent').style.display='none';document.getElementById('errorState').style.display='block';}
 }
 
-function render(player,casts,zones,schools,spellData){
+async function render(player,casts,zones,schools){
   var house=HOUSES[player.school_id]||HOUSES[1];
   var obj=Array.isArray(zones)?zones.find(function(z){return z.is_current_objective;}):null;
   var mana=(player.mana!=null)?player.mana:5,maxM=5;
@@ -157,16 +156,25 @@ function render(player,casts,zones,schools,spellData){
     scH='<div class="no-story fade-up fade-up-1"><span class="label">Today\'s Story</span><p style="font-family:var(--font-title);font-size:16px;color:var(--text-body);font-style:italic;margin-top:12px;">No active story right now. Check back at 8 AM UTC.</p></div>';
   }
 
-  // Spell rotation Ã¢â‚¬â€ playing cards
-  var spH='<div class="spell-section fade-up fade-up-2"><div class="spell-section__title">Ã¢Å“Â¦ Today\'s Spell Rotation</div><div class="spell-grid">';
-  spH+=buildDashCard({name:'Basic Attack',house:'universal',tier:0,mana_cost:1,spell_type:'attack',base_effect:'+10 influence',bonus_effects:[]});
-  spH+=buildDashCard({name:'Basic Defend',house:'universal',tier:0,mana_cost:1,spell_type:'defend',base_effect:'+10 defense',bonus_effects:[]});
-  if(spellData&&spellData.rotation&&spellData.rotation.length>0){
-    spellData.rotation.forEach(function(sp){spH+=buildDashCard(sp);});
+  // Pack hand + collection (replaces old spell rotation)
+  var handCards=[];
+  try{var hR2=await fetch('/api/packs/hand/'+pid);var hd2=await hR2.json();if(hd2&&hd2.success&&hd2.hand&&hd2.hand.cards)handCards=hd2.hand.cards;}catch(e){}
+  var spH='<div class="spell-section fade-up fade-up-2"><div class="spell-section__title">Today\'s Hand</div>';
+  if(handCards.length>0){
+    spH+='<div class="spell-grid">';
+    handCards.forEach(function(card){spH+=buildDashCard(card);});
+    spH+='</div>';
   }else{
-    spH+='<div style="display:flex;align-items:center;justify-content:center;min-width:140px;min-height:200px;border:1px dashed rgba(212,166,75,0.15);border-radius:10px;"><span style="font-family:var(--font-body);font-size:11px;color:var(--text-faint);font-style:italic;text-align:center;padding:12px;">Visit the Spellbook<br>for your full list</span></div>';
+    spH+='<div style="text-align:center;padding:20px;border:1px dashed rgba(212,166,75,0.15);border-radius:10px;">';
+    spH+='<p style="font-family:var(--font-body);color:var(--text-faint);font-style:italic;margin-bottom:10px;">No pack opened today.</p>';
+    spH+='<a href="/packs.html" class="btn-gold" style="text-decoration:none;font-size:12px;padding:8px 20px;">Open Daily Pack</a>';
+    spH+='</div>';
   }
-  spH+='</div><a href="/spellbook.html" style="display:block;text-align:center;margin-top:12px;font-family:var(--font-title);font-size:12px;color:var(--gold);text-decoration:none;opacity:0.7;letter-spacing:1px;">View Full Spellbook Ã¢â€ â€™</a></div>';
+  spH+='<div style="display:flex;gap:8px;justify-content:center;margin-top:12px;">';
+  spH+='<a href="/packs.html" style="font-family:var(--font-title);font-size:11px;color:var(--gold);text-decoration:none;letter-spacing:1px;opacity:0.7;">Packs</a>';
+  spH+='<span style="color:var(--text-faint);">|</span>';
+  spH+='<a href="/spellbook.html" style="font-family:var(--font-title);font-size:11px;color:var(--gold);text-decoration:none;letter-spacing:1px;opacity:0.7;">Spellbook</a>';
+  spH+='</div></div>';
 
   // Active zones with images
   var az=(Array.isArray(zones)?zones:[]).filter(function(z){return z.is_active!==false&&z.zone_type!=='home';}).slice(0,4);
