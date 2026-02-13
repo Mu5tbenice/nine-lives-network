@@ -1,380 +1,594 @@
+// ═══════════════════════════════════════════════════════
+// server/services/territoryControl.js
+// Midnight Banking + Territory Control System
+// Called by scheduler at 00:00 UTC
+// ═══════════════════════════════════════════════════════
+
 const supabase = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
+const effectEngine = require('./effectEngine');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-/**
- * Territory Control System
- * Reads from territory_actions table (website attacks/defends)
- * Determines daily winners and updates zone ownership
- */
+const MANA_CAP = 7;
+const ZONE_CAPTURE_BONUS = 15;
+const ZONE_HELD_BONUS = 5;
+const DECAY_PERCENT = 40; // 40% decay overnight
 
-/**
- * Calculate influence for a zone based on today's territory_actions
- * Returns { schoolId: { power, percentage, playerCount } }
- */
-async function calculateZoneInfluence(zoneId, gameDay) {
+
+// ═══════════════════════════════════
+// MIDNIGHT BANKING (main entry point)
+// Called once at 00:00 UTC
+// ═══════════════════════════════════
+
+async function midnightBanking() {
+  console.log('\n════════════════════════════════════');
+  console.log('  MIDNIGHT BANKING — ' + new Date().toISOString());
+  console.log('════════════════════════════════════\n');
+
+  const today = new Date().toISOString().split('T')[0];
+
+  // Yesterday's date (the day we're processing)
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+
   try {
-    var day = gameDay || new Date().toISOString().split('T')[0];
+    // STEP 1: Snapshot current influence
+    console.log('[1/7] Saving influence snapshot...');
+    await snapshotInfluence(yesterdayStr);
 
-    var { data: actions, error } = await supabase
-      .from('territory_actions')
-      .select('player_id, school_id, action_type')
-      .eq('zone_id', zoneId)
-      .eq('game_day', day);
+    // STEP 2: Process end-of-day zone flags (POISON, CORRODE)
+    console.log('[2/7] Processing zone flags...');
+    await processZoneFlags(yesterdayStr);
 
-    if (error) {
-      console.error('Error fetching actions for zone', zoneId, error);
-      return {};
-    }
+    // STEP 3: Determine winners + flip zones
+    console.log('[3/7] Determining zone winners...');
+    const results = await processZoneWinners(yesterdayStr);
 
-    if (!actions || actions.length === 0) {
-      return {};
-    }
+    // STEP 4: Award bonuses (capture, held territory)
+    console.log('[4/7] Awarding bonuses...');
+    await awardBonuses(results, yesterdayStr);
 
-    // Aggregate power by school (attack=2, defend=1)
-    var schools = {};
-    actions.forEach(function(a) {
-      if (!schools[a.school_id]) {
-        schools[a.school_id] = { power: 0, players: {} };
-      }
-      schools[a.school_id].power += (a.action_type === 'attack' ? 2 : 1);
-      schools[a.school_id].players[a.player_id] = true;
-    });
+    // STEP 5: Apply decay (reduce influence by ~40%)
+    console.log('[5/7] Applying overnight decay...');
+    await applyDecay();
 
-    // Calculate total power
-    var totalPower = 0;
-    Object.values(schools).forEach(function(s) { totalPower += s.power; });
+    // STEP 6: Reset daily state
+    console.log('[6/7] Resetting daily state...');
+    await resetDaily();
 
-    if (totalPower === 0) return {};
+    // STEP 7: Clear zone flags
+    console.log('[7/7] Clearing zone flags...');
+    await effectEngine.clearAllDailyFlags();
 
-    // Calculate percentages
-    var result = {};
-    Object.keys(schools).forEach(function(sid) {
-      result[sid] = {
-        power: schools[sid].power,
-        percentage: Math.round((schools[sid].power / totalPower) * 100),
-        playerCount: Object.keys(schools[sid].players).length
-      };
-    });
+    console.log('\n════════════════════════════════════');
+    console.log('  MIDNIGHT BANKING COMPLETE');
+    console.log('  Processed: ' + results.length + ' zones');
+    console.log('════════════════════════════════════\n');
 
-    return result;
+    return { success: true, processed: results.length, results };
 
   } catch (error) {
-    console.error('Error calculating zone influence:', error);
-    return {};
+    console.error('MIDNIGHT BANKING ERROR:', error);
+    return { success: false, error: error.message };
   }
 }
 
-/**
- * Update zone_control table for a specific zone
- */
+
+// ═══════════════════════════════════
+// STEP 1: SNAPSHOT INFLUENCE
+// Save current state to zone_influence_history
+// ═══════════════════════════════════
+
+async function snapshotInfluence(gameDay) {
+  try {
+    const influence = await getAllZoneInfluence(gameDay);
+    const inserts = [];
+
+    for (const [zoneId, schools] of Object.entries(influence)) {
+      for (const [schoolId, data] of Object.entries(schools)) {
+        inserts.push({
+          zone_id: parseInt(zoneId),
+          school_id: parseInt(schoolId),
+          influence_pct: data.percentage,
+          snapshot_time: new Date().toISOString(),
+        });
+      }
+    }
+
+    if (inserts.length > 0) {
+      await supabaseAdmin.from('zone_influence_history').insert(inserts);
+      console.log('  Saved ' + inserts.length + ' influence snapshots');
+    }
+  } catch (e) {
+    console.error('  Snapshot error:', e.message);
+  }
+}
+
+
+// ═══════════════════════════════════
+// STEP 2: PROCESS ZONE FLAGS
+// Apply POISON, CORRODE at end of day
+// ═══════════════════════════════════
+
+async function processZoneFlags(gameDay) {
+  try {
+    const dayStr = gameDay || new Date().toISOString().split('T')[0];
+    const zoneStates = await effectEngine.getAllZoneFlagsForDate(dayStr);
+
+    for (const state of zoneStates) {
+      const flags = state.flags || {};
+      const zoneId = state.zone_id;
+
+      // POISON: leading house loses X%
+      if (flags.poison) {
+        const pct = flags.poison.pct || 2;
+        const leader = await getLeadingHouse(zoneId, gameDay);
+        if (leader) {
+          await reduceInfluence(zoneId, leader.school_id, pct);
+          console.log('  Zone ' + zoneId + ': POISON -' + pct + '% from house ' + leader.school_id);
+        }
+      }
+
+      // CORRODE: all houses lose X%
+      if (flags.corrode) {
+        const pct = flags.corrode.pct || 3;
+        await reduceAllInfluence(zoneId, pct);
+        console.log('  Zone ' + zoneId + ': CORRODE -' + pct + '% from all houses');
+      }
+    }
+  } catch (e) {
+    console.error('  processZoneFlags error:', e.message);
+  }
+}
+
+
+// ═══════════════════════════════════
+// STEP 3: DETERMINE WINNERS + FLIP
+// ═══════════════════════════════════
+
+async function processZoneWinners(gameDay) {
+  const results = [];
+
+  try {
+    const influence = await getAllZoneInfluence(gameDay);
+
+    for (const [zoneId, schools] of Object.entries(influence)) {
+      // Find highest influence house
+      let winnerId = null;
+      let highestPct = 0;
+
+      for (const [schoolId, data] of Object.entries(schools)) {
+        if (data.percentage > highestPct) {
+          highestPct = data.percentage;
+          winnerId = parseInt(schoolId);
+        }
+      }
+
+      if (winnerId && highestPct > 0) {
+        // Get current controller
+        const { data: zone } = await supabase
+          .from('zones')
+          .select('controlling_school_id, days_held')
+          .eq('id', parseInt(zoneId))
+          .single();
+
+        const prevController = zone ? zone.controlling_school_id : null;
+        const isFlip = prevController !== winnerId;
+        const daysHeld = isFlip ? 1 : ((zone ? zone.days_held : 0) || 0) + 1;
+
+        // Update zone
+        await supabaseAdmin
+          .from('zones')
+          .update({
+            controlling_school_id: winnerId,
+            days_held: daysHeld,
+            last_captured_at: isFlip ? new Date().toISOString() : undefined,
+          })
+          .eq('id', parseInt(zoneId));
+
+        if (isFlip) {
+          console.log('  Zone ' + zoneId + ': FLIPPED to house ' + winnerId + ' (' + highestPct + '%)');
+        } else {
+          console.log('  Zone ' + zoneId + ': HELD by house ' + winnerId + ' (day ' + daysHeld + ')');
+        }
+
+        results.push({
+          zone_id: parseInt(zoneId),
+          winner_school_id: winnerId,
+          percentage: highestPct,
+          flipped: isFlip,
+          days_held: daysHeld,
+          prev_controller: prevController,
+        });
+      }
+    }
+  } catch (e) {
+    console.error('  processZoneWinners error:', e.message);
+  }
+
+  return results;
+}
+
+
+// ═══════════════════════════════════
+// STEP 4: AWARD BONUSES
+// ═══════════════════════════════════
+
+async function awardBonuses(results, gameDay) {
+  try {
+    for (const r of results) {
+      // +15 pts to all participants from winning house
+      const { data: actions } = await supabase
+        .from('territory_actions')
+        .select('player_id')
+        .eq('zone_id', r.zone_id)
+        .eq('school_id', r.winner_school_id)
+        .eq('game_day', gameDay);
+
+      if (!actions || actions.length === 0) continue;
+
+      // Unique player IDs
+      const playerIds = [...new Set(actions.map(a => a.player_id))];
+
+      for (const pid of playerIds) {
+        // Zone capture bonus
+        let bonus = ZONE_CAPTURE_BONUS;
+
+        // Zone held 3+ days = extra passive bonus
+        if (r.days_held >= 3) {
+          bonus += ZONE_HELD_BONUS;
+        }
+
+        const { data: player } = await supabase
+          .from('players')
+          .select('seasonal_points, lifetime_points')
+          .eq('id', pid)
+          .single();
+
+        if (player) {
+          await supabaseAdmin
+            .from('players')
+            .update({
+              seasonal_points: (player.seasonal_points || 0) + bonus,
+              lifetime_points: (player.lifetime_points || 0) + bonus,
+            })
+            .eq('id', pid);
+        }
+      }
+
+      console.log('  Zone ' + r.zone_id + ': +' + ZONE_CAPTURE_BONUS + ' pts to ' + playerIds.length + ' players');
+    }
+  } catch (e) {
+    console.error('  awardBonuses error:', e.message);
+  }
+}
+
+
+// ═══════════════════════════════════
+// STEP 5: APPLY DECAY
+// Reduce all zone_control by ~40%
+// ═══════════════════════════════════
+
+async function applyDecay() {
+  try {
+    const { data: controls } = await supabase
+      .from('zone_control')
+      .select('*');
+
+    if (!controls || controls.length === 0) return;
+
+    let updated = 0;
+    for (const c of controls) {
+      const decayed = Math.round(c.control_percentage * (1 - DECAY_PERCENT / 100));
+      if (decayed <= 0) {
+        await supabaseAdmin.from('zone_control').delete().eq('id', c.id);
+      } else {
+        await supabaseAdmin
+          .from('zone_control')
+          .update({ control_percentage: decayed, updated_at: new Date().toISOString() })
+          .eq('id', c.id);
+      }
+      updated++;
+    }
+
+    console.log('  Decayed ' + updated + ' zone_control entries by ' + DECAY_PERCENT + '%');
+  } catch (e) {
+    console.error('  applyDecay error:', e.message);
+  }
+}
+
+
+// ═══════════════════════════════════
+// STEP 6: RESET DAILY STATE
+// Mana → 7, streaks, objectives
+// ═══════════════════════════════════
+
+async function resetDaily() {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+    // Reset all player mana to 7
+    const { data: manaResult } = await supabaseAdmin
+      .from('players')
+      .update({ mana: MANA_CAP })
+      .eq('is_active', true)
+      .select('id');
+
+    console.log('  Reset mana to ' + MANA_CAP + ' for ' + (manaResult ? manaResult.length : 0) + ' players');
+
+    // Update streaks
+    // Players who acted yesterday: increment streak
+    const { data: activePlayers } = await supabase
+      .from('territory_actions')
+      .select('player_id')
+      .eq('game_day', yesterdayStr);
+
+    const activeIds = activePlayers ? [...new Set(activePlayers.map(a => a.player_id))] : [];
+
+    if (activeIds.length > 0) {
+      for (const pid of activeIds) {
+        const { data: p } = await supabase
+          .from('players')
+          .select('streak')
+          .eq('id', pid)
+          .single();
+        if (p) {
+          await supabaseAdmin
+            .from('players')
+            .update({ streak: (p.streak || 0) + 1 })
+            .eq('id', pid);
+        }
+      }
+      console.log('  Incremented streak for ' + activeIds.length + ' active players');
+    }
+
+    // Players who did NOT act yesterday: reset streak to 0
+    if (activeIds.length > 0) {
+      await supabaseAdmin
+        .from('players')
+        .update({ streak: 0 })
+        .eq('is_active', true)
+        .not('id', 'in', '(' + activeIds.join(',') + ')');
+    }
+
+    // Clear objective flag
+    await supabaseAdmin
+      .from('zones')
+      .update({ is_current_objective: false })
+      .eq('is_current_objective', true);
+
+    console.log('  Cleared daily objective');
+
+  } catch (e) {
+    console.error('  resetDaily error:', e.message);
+  }
+}
+
+
+// ═══════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════
+
+// Get influence breakdown for all zones on a given day
+async function getAllZoneInfluence(gameDay) {
+  const day = gameDay || new Date().toISOString().split('T')[0];
+  const result = {};
+
+  try {
+    const { data: actions } = await supabase
+      .from('territory_actions')
+      .select('zone_id, school_id, action_type, total_power')
+      .eq('game_day', day);
+
+    if (!actions) return result;
+
+    // Aggregate
+    actions.forEach(a => {
+      if (!result[a.zone_id]) result[a.zone_id] = {};
+      if (!result[a.zone_id][a.school_id]) {
+        result[a.zone_id][a.school_id] = { power: 0, count: 0 };
+      }
+      // Use total_power if available, else fall back to simple counting
+      const power = a.total_power || (a.action_type === 'attack' ? 2 : 1);
+      result[a.zone_id][a.school_id].power += power;
+      result[a.zone_id][a.school_id].count++;
+    });
+
+    // Calculate percentages
+    for (const zoneId of Object.keys(result)) {
+      let total = 0;
+      for (const s of Object.values(result[zoneId])) total += s.power;
+      for (const schoolId of Object.keys(result[zoneId])) {
+        result[zoneId][schoolId].percentage = total > 0
+          ? Math.round((result[zoneId][schoolId].power / total) * 100)
+          : 0;
+      }
+    }
+  } catch (e) {
+    console.error('getAllZoneInfluence error:', e.message);
+  }
+
+  return result;
+}
+
+// Get leading house on a zone for today
+async function getLeadingHouse(zoneId, gameDay) {
+  const influence = await getAllZoneInfluence(gameDay);
+  const zoneInf = influence[zoneId];
+  if (!zoneInf) return null;
+
+  let leaderId = null;
+  let highest = 0;
+  for (const [schoolId, data] of Object.entries(zoneInf)) {
+    if (data.percentage > highest) {
+      highest = data.percentage;
+      leaderId = parseInt(schoolId);
+    }
+  }
+  return leaderId ? { school_id: leaderId, percentage: highest } : null;
+}
+
+// Reduce influence for a specific house on a zone
+async function reduceInfluence(zoneId, schoolId, pct) {
+  try {
+    const { data } = await supabase
+      .from('zone_control')
+      .select('*')
+      .eq('zone_id', zoneId)
+      .eq('school_id', schoolId)
+      .single();
+
+    if (data) {
+      const reduced = Math.max(0, data.control_percentage - pct);
+      await supabaseAdmin
+        .from('zone_control')
+        .update({ control_percentage: reduced })
+        .eq('id', data.id);
+    }
+  } catch (e) { /* non-critical */ }
+}
+
+// Reduce influence for all houses on a zone
+async function reduceAllInfluence(zoneId, pct) {
+  try {
+    const { data } = await supabase
+      .from('zone_control')
+      .select('*')
+      .eq('zone_id', zoneId);
+
+    if (data) {
+      for (const row of data) {
+        const reduced = Math.max(0, row.control_percentage - pct);
+        await supabaseAdmin
+          .from('zone_control')
+          .update({ control_percentage: reduced })
+          .eq('id', row.id);
+      }
+    }
+  } catch (e) { /* non-critical */ }
+}
+
+// Update zone control for a single zone (called by route every 5 min)
 async function updateZoneControlTable(zoneId) {
   try {
-    var influence = await calculateZoneInfluence(zoneId);
+    const today = new Date().toISOString().split('T')[0];
+    const influence = await getAllZoneInfluence(today);
+    const zoneInf = influence[zoneId];
 
-    if (Object.keys(influence).length === 0) {
+    if (!zoneInf || Object.keys(zoneInf).length === 0) {
       return { updated: false, reason: 'No actions today' };
     }
 
-    // Clear existing control for this zone
-    await supabaseAdmin
-      .from('zone_control')
-      .delete()
-      .eq('zone_id', zoneId);
-
-    // Insert new control data
-    var insertData = [];
-    Object.keys(influence).forEach(function(sid) {
-      insertData.push({
-        zone_id: zoneId,
-        school_id: parseInt(sid),
-        control_percentage: influence[sid].percentage,
-        updated_at: new Date().toISOString()
-      });
-    });
-
-    var { error } = await supabaseAdmin
-      .from('zone_control')
-      .insert(insertData);
-
-    if (error) {
-      console.error('Error updating zone control:', error);
-      return { updated: false, error: error };
+    // Upsert each school's influence
+    for (const [schoolId, data] of Object.entries(zoneInf)) {
+      await supabaseAdmin
+        .from('zone_control')
+        .upsert(
+          {
+            zone_id: zoneId,
+            school_id: parseInt(schoolId),
+            control_percentage: data.percentage,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'zone_id,school_id' }
+        );
     }
 
-    return { updated: true, influence: influence };
-
-  } catch (error) {
-    console.error('Error in updateZoneControlTable:', error);
-    return { updated: false, error: error };
+    return { updated: true };
+  } catch (e) {
+    console.error('updateZoneControlTable error:', e.message);
+    return { updated: false, error: e.message };
   }
 }
 
-/**
- * Update zone control for ALL zones with activity today
- */
+// Update all zones with activity today
 async function updateAllZoneControl() {
   try {
-    var today = new Date().toISOString().split('T')[0];
-
-    // Get all zones that have actions today
-    var { data: activeZones, error } = await supabase
+    const today = new Date().toISOString().split('T')[0];
+    const { data: actions } = await supabase
       .from('territory_actions')
       .select('zone_id')
       .eq('game_day', today);
 
-    if (error || !activeZones) return;
+    if (!actions) return 0;
 
-    // Get unique zone IDs
-    var zoneIds = {};
-    activeZones.forEach(function(a) { zoneIds[a.zone_id] = true; });
+    const zoneIds = [...new Set(actions.map(a => a.zone_id))];
+    let updated = 0;
 
-    var updated = 0;
-    for (var zoneId of Object.keys(zoneIds)) {
-      var result = await updateZoneControlTable(parseInt(zoneId));
+    for (const zoneId of zoneIds) {
+      const result = await updateZoneControlTable(zoneId);
       if (result.updated) updated++;
     }
 
-    console.log('Updated zone control for ' + updated + ' zones');
     return updated;
-
-  } catch (error) {
-    console.error('Error updating all zone control:', error);
+  } catch (e) {
+    console.error('updateAllZoneControl error:', e.message);
     return 0;
   }
 }
 
-/**
- * Determine winner for a zone on a given day
- * Winner = school with highest influence percentage
- */
-async function determineDailyWinner(zoneId, gameDay) {
-  try {
-    var influence = await calculateZoneInfluence(zoneId, gameDay);
-
-    if (Object.keys(influence).length === 0) {
-      return { winner: null, reason: 'No participation' };
-    }
-
-    // Find school with highest percentage
-    var winnerId = null;
-    var highestPct = 0;
-
-    Object.keys(influence).forEach(function(sid) {
-      if (influence[sid].percentage > highestPct) {
-        highestPct = influence[sid].percentage;
-        winnerId = parseInt(sid);
-      }
-    });
-
-    return {
-      winner: {
-        school_id: winnerId,
-        percentage: highestPct,
-        power: influence[winnerId] ? influence[winnerId].power : 0,
-        playerCount: influence[winnerId] ? influence[winnerId].playerCount : 0
-      },
-      allResults: influence
-    };
-
-  } catch (error) {
-    console.error('Error determining winner:', error);
-    return { winner: null, error: error };
-  }
-}
-
-/**
- * Award bonus points to winning school's participants
- */
-async function awardWinnerBonuses(zoneId, gameDay) {
-  try {
-    var day = gameDay || new Date().toISOString().split('T')[0];
-    var result = await determineDailyWinner(zoneId, day);
-
-    if (!result.winner) {
-      return { awarded: false, reason: 'No winner' };
-    }
-
-    var winningSchoolId = result.winner.school_id;
-    var bonusPoints = 10; // +10 to each participant from winning school
-
-    // Get all actions from winning school on this zone today
-    var { data: actions } = await supabase
-      .from('territory_actions')
-      .select('player_id')
-      .eq('zone_id', zoneId)
-      .eq('school_id', winningSchoolId)
-      .eq('game_day', day);
-
-    if (!actions || actions.length === 0) {
-      return { awarded: false, reason: 'No winning casters found' };
-    }
-
-    // Get unique player IDs
-    var playerIds = {};
-    actions.forEach(function(a) { playerIds[a.player_id] = true; });
-    var uniqueIds = Object.keys(playerIds).map(Number);
-
-    // Award bonus to each player
-    for (var i = 0; i < uniqueIds.length; i++) {
-      var pid = uniqueIds[i];
-      var { data: player } = await supabase
-        .from('players')
-        .select('seasonal_points, lifetime_points')
-        .eq('id', pid)
-        .single();
-
-      if (player) {
-        await supabaseAdmin
-          .from('players')
-          .update({
-            seasonal_points: (player.seasonal_points || 0) + bonusPoints,
-            lifetime_points: (player.lifetime_points || 0) + bonusPoints
-          })
-          .eq('id', pid);
-      }
-    }
-
-    console.log('Awarded ' + bonusPoints + ' bonus pts to ' + uniqueIds.length + ' players from school ' + winningSchoolId + ' on zone ' + zoneId);
-
-    return {
-      awarded: true,
-      school_id: winningSchoolId,
-      players_awarded: uniqueIds.length,
-      points_each: bonusPoints
-    };
-
-  } catch (error) {
-    console.error('Error awarding bonuses:', error);
-    return { awarded: false, error: error };
-  }
-}
-
-/**
- * END OF DAY PROCESSING
- * Called at midnight UTC
- * 1. Find all zones with activity today
- * 2. Determine winner for each
- * 3. Update controlling_school_id on zones table
- * 4. Award bonus points to winners
- * 5. Clear zone_control table for fresh start
- */
-async function endOfDayProcessing() {
-  console.log('\n=== END OF DAY TERRITORY PROCESSING ===');
-  console.log('Time: ' + new Date().toISOString());
-
-  try {
-    var today = new Date().toISOString().split('T')[0];
-
-    // Get all zones with actions today
-    var { data: activeActions, error } = await supabase
-      .from('territory_actions')
-      .select('zone_id')
-      .eq('game_day', today);
-
-    if (error || !activeActions || activeActions.length === 0) {
-      console.log('No territory actions today. Nothing to process.');
-      return { processed: 0 };
-    }
-
-    // Get unique zone IDs
-    var zoneIds = {};
-    activeActions.forEach(function(a) { zoneIds[a.zone_id] = true; });
-    var uniqueZones = Object.keys(zoneIds).map(Number);
-
-    console.log('Processing ' + uniqueZones.length + ' zones with activity');
-
-    var results = [];
-
-    for (var i = 0; i < uniqueZones.length; i++) {
-      var zoneId = uniqueZones[i];
-      console.log('\n--- Zone ' + zoneId + ' ---');
-
-      // Determine winner
-      var winnerResult = await determineDailyWinner(zoneId, today);
-      console.log('Winner:', JSON.stringify(winnerResult.winner));
-
-      if (winnerResult.winner) {
-        // Update controlling_school_id on zones table
-        var { error: updateError } = await supabaseAdmin
-          .from('zones')
-          .update({
-            controlling_school_id: winnerResult.winner.school_id,
-            last_captured_at: new Date().toISOString()
-          })
-          .eq('id', zoneId);
-
-        if (updateError) {
-          console.error('Error updating zone control:', updateError);
-        } else {
-          console.log('Zone ' + zoneId + ' now controlled by school ' + winnerResult.winner.school_id);
-        }
-
-        // Award bonuses
-        var bonusResult = await awardWinnerBonuses(zoneId, today);
-        console.log('Bonuses:', JSON.stringify(bonusResult));
-
-        results.push({
-          zone_id: zoneId,
-          winner: winnerResult.winner,
-          bonuses: bonusResult
-        });
-      } else {
-        console.log('No winner for zone ' + zoneId);
-        results.push({ zone_id: zoneId, winner: null });
-      }
-    }
-
-    // Clear zone_control table for fresh start tomorrow
-    var { error: clearError } = await supabaseAdmin
-      .from('zone_control')
-      .delete()
-      .gte('zone_id', 0);
-
-    if (clearError) {
-      console.error('Error clearing zone_control:', clearError);
-    } else {
-      console.log('\nCleared zone_control table for new day');
-    }
-
-    console.log('\n=== END OF DAY COMPLETE ===');
-    console.log('Processed ' + results.length + ' zones');
-
-    return { processed: results.length, results: results };
-
-  } catch (error) {
-    console.error('Error in end of day processing:', error);
-    return { processed: 0, error: error.message };
-  }
-}
-
-/**
- * Get current objective zone
- */
+// Get current objective zone
 async function getCurrentObjective() {
   try {
-    var { data: zone } = await supabase
+    const { data } = await supabase
       .from('zones')
       .select('*')
       .eq('is_current_objective', true)
       .single();
-
-    return zone;
-  } catch (error) {
+    return data;
+  } catch (e) {
     return null;
   }
 }
 
+// Set random objective zone for today
+async function setRandomObjective() {
+  try {
+    // Clear old
+    await supabaseAdmin
+      .from('zones')
+      .update({ is_current_objective: false })
+      .eq('is_current_objective', true);
+
+    // Pick random zone
+    const { data: zones } = await supabase
+      .from('zones')
+      .select('id')
+      .eq('zone_type', 'neutral');
+
+    if (!zones || zones.length === 0) return null;
+
+    const pick = zones[Math.floor(Math.random() * zones.length)];
+
+    await supabaseAdmin
+      .from('zones')
+      .update({ is_current_objective: true })
+      .eq('id', pick.id);
+
+    console.log('[Objective] Set zone ' + pick.id + ' as today\'s objective');
+    return pick.id;
+  } catch (e) {
+    console.error('setRandomObjective error:', e.message);
+    return null;
+  }
+}
+
+
 module.exports = {
-  calculateZoneInfluence,
+  midnightBanking,
   updateZoneControlTable,
   updateAllZoneControl,
-  determineDailyWinner,
-  awardWinnerBonuses,
-  endOfDayProcessing,
-  getCurrentObjective
+  getCurrentObjective,
+  setRandomObjective,
+  getAllZoneInfluence,
+  // Legacy export for backward compat
+  endOfDayProcessing: midnightBanking,
 };

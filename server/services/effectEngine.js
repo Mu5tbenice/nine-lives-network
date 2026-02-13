@@ -1,100 +1,151 @@
 // ═══════════════════════════════════════════════════════
 // server/services/effectEngine.js
 // Processes spell card effects on territory zones
+// Uses zone_daily_state table with JSONB flags
 // ═══════════════════════════════════════════════════════
 
 const supabase = require('../config/supabase');
+const { createClient } = require('@supabase/supabase-js');
 
-// ── EFFECT DEFINITIONS ──
-// Each effect has a type, what it does, and how long it lasts
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+// ── EFFECT HANDLERS ──
 const EFFECTS = {
-  // DAMAGE (Attack modifiers)
-  'BURN':    { category: 'damage', apply: applyBurn },
-  'SPREAD':  { category: 'damage', apply: applySpread },
-  'CHAIN':   { category: 'damage', apply: applyChain },
-  'PIERCE':  { category: 'damage', apply: applyPierce },
-  'CRIT':    { category: 'damage', apply: applyCrit },
-  'DRAIN':   { category: 'damage', apply: applyDrain },
+  // ATTACK (Smoulders, Stormrage)
+  'BURN':    { category: 'attack',  apply: applyBurn },
+  'CHAIN':   { category: 'attack',  apply: applyChain },
+  'PIERCE':  { category: 'attack',  apply: applyPierce },
+  'CRIT':    { category: 'attack',  apply: applyCrit },
+  'SURGE':   { category: 'attack',  apply: applySurge },
 
-  // DEFENSE
+  // DEFENSE (Stonebark)
   'HEAL':    { category: 'defense', apply: applyHeal },
-  'THORNS':  { category: 'defense', apply: applyThorns },
   'ANCHOR':  { category: 'defense', apply: applyAnchor },
+  'THORNS':  { category: 'defense', apply: applyThorns },
   'WARD':    { category: 'defense', apply: applyWard },
-  'REFLECT': { category: 'defense', apply: applyReflect },
 
-  // SUPPORT
-  'AMPLIFY': { category: 'support', apply: applyAmplify },
-  'HASTE':   { category: 'support', apply: applyHaste },
-  'REVEAL':  { category: 'support', apply: applyReveal },
-  'INSPIRE': { category: 'support', apply: applyInspire },
+  // MANIPULATION (Darktide, Nighthollow, Manastorm)
+  'DRAIN':   { category: 'manipulation', apply: applyDrain },
+  'SIPHON':  { category: 'manipulation', apply: applySiphon },
+  'WEAKEN':  { category: 'manipulation', apply: applyWeaken },
+  'HEX':     { category: 'manipulation', apply: applyHex },
+  'SILENCE': { category: 'manipulation', apply: applySilence },
 
-  // DEBUFF
-  'HEX':     { category: 'debuff', apply: applyHex },
-  'SILENCE': { category: 'debuff', apply: applySilence },
-  'WEAKEN':  { category: 'debuff', apply: applyWeaken },
-  'FREEZE':  { category: 'debuff', apply: applyFreeze },
-  'POISON':  { category: 'debuff', apply: applyPoison },
-
-  // UTILITY
-  'SWAP':    { category: 'utility', apply: applySwap },
+  // UTILITY (Ashenvale)
+  'HASTE':   { category: 'utility', apply: applyHaste },
+  'SWIFT':   { category: 'utility', apply: applySwift },
   'DODGE':   { category: 'utility', apply: applyDodge },
+  'FREE':    { category: 'utility', apply: applyFree },
+
+  // ATTRITION (Plaguemire)
+  'POISON':  { category: 'attrition', apply: applyPoison },
+  'CORRODE': { category: 'attrition', apply: applyCorrode },
+  'INFECT':  { category: 'attrition', apply: applyInfect },
+
+  // SUPPORT (Dawnbringer)
+  'AMPLIFY': { category: 'support', apply: applyAmplify },
+  'INSPIRE': { category: 'support', apply: applyInspire },
+  'BLESS':   { category: 'support', apply: applyBless },
 };
 
 // ── MAIN: PROCESS ALL EFFECTS FROM A CARD ──
-// Returns { powerModifier, bonusPoints, effectsApplied[], manaRefund }
 async function processEffects(card, zoneId, playerId, playerHouse) {
   const result = {
-    powerModifier: 1.0,    // multiplied against base influence power
-    bonusPoints: 0,         // extra points from effects
-    effectsApplied: [],     // log of what happened
-    manaRefund: 0,          // if HASTE triggers
-    extraInfluence: 0,      // flat influence added
+    powerModifier: 1.0,
+    bonusPoints: 0,
+    effectsApplied: [],
+    manaRefund: 0,
+    extraInfluence: 0,
   };
 
   if (!card.effects || card.effects.length === 0) return result;
 
-  // Check for active zone effects that might block us
-  const activeEffects = await getActiveZoneEffects(zoneId);
-  const isSilenced = activeEffects.some(e => e.effect_type === 'SILENCE');
-  const isWarded = activeEffects.some(e => e.effect_type === 'WARD' && e.target_house !== playerHouse);
+  // Get current zone flags
+  const flags = await getZoneFlags(zoneId);
 
+  // Check SILENCE — blocks support + utility effects
+  const isSilenced = !!flags.silence;
+
+  // Check WARD — blocks attack effects (consumed on use)
+  const isWarded = !!flags.ward;
+
+  // Check HEX — extra mana cost (handled by territory.js, we just flag it)
+  if (flags.hex) {
+    result.effectsApplied.push({ effect: 'HEX', status: 'ZONE_HEXED', detail: '+1 mana cost' });
+  }
+
+  // Check AMPLIFY — boost if same house as setter
+  if (flags.amplify && flags.amplify.house_id === playerHouse) {
+    result.powerModifier *= (flags.amplify.multiplier || 1.5);
+    result.effectsApplied.push({ effect: 'AMPLIFY', status: 'APPLIED', detail: 'Amplified ×' + (flags.amplify.multiplier || 1.5) });
+    // Consume amplify
+    await removeFlag(zoneId, 'amplify');
+  }
+
+  // Check WEAKEN — reduce enemy gains
+  if (flags.weaken && flags.weaken.house_id !== playerHouse) {
+    result.powerModifier *= (flags.weaken.factor || 0.75);
+    result.effectsApplied.push({ effect: 'WEAKEN', status: 'APPLIED', detail: 'Weakened ×' + (flags.weaken.factor || 0.75) });
+  }
+
+  // Check THORNS — attacker loses influence
+  if (flags.thorns && card.type === 'attack') {
+    result.extraInfluence -= (flags.thorns.damage || 3);
+    result.effectsApplied.push({ effect: 'THORNS', status: 'APPLIED', detail: 'Took ' + (flags.thorns.damage || 3) + '% thorn damage' });
+  }
+
+  // Process each effect on the card
   for (const effectStr of card.effects) {
-    // Parse effect string like "BURN +3" or "CHAIN ×2" or "DRAIN 10%"
     const parsed = parseEffect(effectStr);
     if (!parsed) continue;
 
     const handler = EFFECTS[parsed.key];
     if (!handler) continue;
 
-    // Support effects blocked by SILENCE
+    // SILENCE blocks support + utility
     if (isSilenced && (handler.category === 'support' || handler.category === 'utility')) {
-      result.effectsApplied.push({ effect: effectStr, status: 'BLOCKED_BY_SILENCE' });
+      result.effectsApplied.push({ effect: parsed.raw, status: 'BLOCKED_BY_SILENCE' });
+      // Consume silence
+      await removeFlag(zoneId, 'silence');
       continue;
     }
 
-    // Damage effects blocked by WARD (consume the ward)
-    if (isWarded && handler.category === 'damage') {
-      result.effectsApplied.push({ effect: effectStr, status: 'BLOCKED_BY_WARD' });
-      // Remove the ward (consumed)
-      await removeZoneEffect(zoneId, 'WARD');
-      continue;
+    // WARD blocks attack effects (consumed)
+    if (isWarded && handler.category === 'attack') {
+      // Check if card has PIERCE — ignores 50% of ward
+      const hasPierce = card.effects.some(e => {
+        const p = parseEffect(e);
+        return p && p.key === 'PIERCE';
+      });
+
+      if (!hasPierce) {
+        result.effectsApplied.push({ effect: parsed.raw, status: 'BLOCKED_BY_WARD' });
+        await removeFlag(zoneId, 'ward');
+        continue;
+      }
+      // PIERCE present — ward only blocks 50%, continue processing
     }
 
     try {
-      const effectResult = await handler.apply(parsed, zoneId, playerId, playerHouse);
+      const ctx = { zoneId, playerId, playerHouse, flags };
+      const effectResult = await handler.apply(parsed, ctx);
+
       result.powerModifier *= (effectResult.powerModifier || 1.0);
       result.bonusPoints += (effectResult.bonusPoints || 0);
       result.manaRefund += (effectResult.manaRefund || 0);
       result.extraInfluence += (effectResult.extraInfluence || 0);
+
       result.effectsApplied.push({
-        effect: effectStr,
+        effect: parsed.raw,
         status: 'APPLIED',
         detail: effectResult.detail || '',
       });
     } catch (err) {
-      console.error(`Effect ${effectStr} failed:`, err.message);
-      result.effectsApplied.push({ effect: effectStr, status: 'ERROR', detail: err.message });
+      console.error('Effect ' + parsed.raw + ' error:', err.message);
+      result.effectsApplied.push({ effect: parsed.raw, status: 'ERROR', detail: err.message });
     }
   }
 
@@ -103,18 +154,17 @@ async function processEffects(card, zoneId, playerId, playerHouse) {
 
 // ── PARSE EFFECT STRING ──
 // "BURN +3" → { key: "BURN", value: 3 }
-// "CHAIN ×2" → { key: "CHAIN", value: 2 }
-// "DRAIN 10%" → { key: "DRAIN", value: 10 }
+// { tag: "BURN +3" } → { key: "BURN", value: 3 }
 function parseEffect(str) {
-  if (!str || typeof str !== 'string') {
-    // Handle object format from bonus_effects JSONB
-    if (str && str.tag) {
-      const tag = str.tag.replace(/[\+\d\s×x%\.]/g, '').toUpperCase();
-      const numMatch = str.tag.match(/[\d\.]+/);
-      return { key: tag, value: numMatch ? parseFloat(numMatch[0]) : 0, raw: str.tag };
-    }
-    return null;
+  if (!str) return null;
+
+  // Handle object format from bonus_effects JSONB: { tag: "BURN +3", desc: "..." }
+  if (typeof str === 'object' && str.tag) {
+    str = str.tag;
   }
+
+  if (typeof str !== 'string') return null;
+
   const clean = str.trim().toUpperCase();
   const parts = clean.split(/[\s]+/);
   const key = parts[0].replace(/[^A-Z]/g, '');
@@ -123,200 +173,260 @@ function parseEffect(str) {
   return { key, value, raw: str };
 }
 
-// ── EFFECT IMPLEMENTATIONS ──
 
-// BURN +X: Extra X% influence to your house
-async function applyBurn({ value }, zoneId, playerId, playerHouse) {
-  return { extraInfluence: value || 3, bonusPoints: 3, detail: `+${value || 3}% extra influence` };
+// ═══════════════════════════════════
+// EFFECT IMPLEMENTATIONS
+// ═══════════════════════════════════
+
+// ── ATTACK EFFECTS ──
+
+async function applyBurn({ value }, ctx) {
+  const extra = value || 3;
+  return { extraInfluence: extra, bonusPoints: 3, detail: '+' + extra + '% extra influence' };
 }
 
-// SPREAD: Attack hits adjacent zone too (half power)
-async function applySpread(parsed, zoneId, playerId, playerHouse) {
-  // For now, just gives bonus — full adjacency needs zone graph
-  return { bonusPoints: 3, detail: 'Spread to adjacent zone (half power)' };
-}
-
-// CHAIN ×N: Multiply influence contribution
-async function applyChain({ value }, zoneId, playerId, playerHouse) {
+async function applyChain({ value }, ctx) {
   const mult = value || 2;
-  return { powerModifier: mult, bonusPoints: 3, detail: `Influence multiplied ×${mult}` };
+  return { powerModifier: mult, bonusPoints: 3, detail: 'Influence ×' + mult };
 }
 
-// PIERCE: Ignore 50% of defender bonuses
-async function applyPierce(parsed, zoneId, playerId, playerHouse) {
-  return { bonusPoints: 3, detail: 'Pierced 50% of defense bonuses' };
+async function applyPierce({ value }, ctx) {
+  // PIERCE halves defensive flags (WARD, ANCHOR)
+  if (ctx.flags.anchor) {
+    ctx.flags.anchor.max_loss = (ctx.flags.anchor.max_loss || 5) * 2; // double allowed loss
+    await setFlag(ctx.zoneId, 'anchor', ctx.flags.anchor);
+  }
+  return { bonusPoints: 3, detail: 'Pierced defenses — 50% reduction' };
 }
 
-// CRIT: 25% chance to triple influence
-async function applyCrit(parsed, zoneId, playerId, playerHouse) {
-  const rolled = Math.random() < 0.25;
-  if (rolled) {
-    return { powerModifier: 3.0, bonusPoints: 6, detail: '💥 CRITICAL HIT! ×3 influence!' };
+async function applyCrit({ value }, ctx) {
+  const chance = 0.25;
+  if (Math.random() < chance) {
+    return { powerModifier: 3.0, bonusPoints: 6, detail: '💥 CRIT! ×3 influence!' };
   }
   return { bonusPoints: 0, detail: 'Crit missed (25% chance)' };
 }
 
-// DRAIN X%: Steal influence from leading house
-async function applyDrain({ value }, zoneId, playerId, playerHouse) {
-  const pct = value || 5;
-  // Find leading house on this zone and reduce their influence
-  const { data: actions } = await supabase
-    .from('territory_actions')
-    .select('*')
-    .eq('zone_id', zoneId)
-    .gte('created_at', new Date().toISOString().split('T')[0]);
-
-  return { extraInfluence: pct, bonusPoints: 3, detail: `Drained ${pct}% from leading house` };
+async function applySurge({ value }, ctx) {
+  // +50% influence but costs 1 extra mana (manaRefund = -1 means extra cost)
+  return { powerModifier: 1.5, bonusPoints: 3, manaRefund: -1, detail: 'Surge! ×1.5 power, +1 mana cost' };
 }
 
-// HEAL +X: Restore influence to your house
-async function applyHeal({ value }, zoneId, playerId, playerHouse) {
-  return { extraInfluence: value || 3, bonusPoints: 3, detail: `Healed +${value || 3}% influence` };
+// ── DEFENSE EFFECTS ──
+
+async function applyHeal({ value }, ctx) {
+  const heal = value || 3;
+  return { extraInfluence: heal, bonusPoints: 3, detail: 'Healed +' + heal + '% influence' };
 }
 
-// THORNS: Attackers lose influence
-async function applyThorns(parsed, zoneId, playerId, playerHouse) {
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-  await addZoneEffect(zoneId, 'THORNS', playerHouse, playerId, null, 3, expiresAt);
-  return { bonusPoints: 3, detail: 'Thorns active — attackers lose 3% influence for 24h' };
+async function applyAnchor({ value }, ctx) {
+  await setFlag(ctx.zoneId, 'anchor', { house_id: ctx.playerHouse, max_loss: value || 5 });
+  return { bonusPoints: 3, detail: 'Anchored — max ' + (value || 5) + '% loss today' };
 }
 
-// ANCHOR: Cap influence loss at 5% today
-async function applyAnchor(parsed, zoneId, playerId, playerHouse) {
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  await addZoneEffect(zoneId, 'ANCHOR', playerHouse, playerId, playerHouse, 5, expiresAt);
-  return { bonusPoints: 3, detail: 'Anchored — max 5% influence loss today' };
+async function applyThorns({ value }, ctx) {
+  await setFlag(ctx.zoneId, 'thorns', { house_id: ctx.playerHouse, damage: value || 3 });
+  return { bonusPoints: 3, detail: 'Thorns — attackers lose ' + (value || 3) + '%' };
 }
 
-// WARD: Block next attack effect
-async function applyWard(parsed, zoneId, playerId, playerHouse) {
-  const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000); // 12 hours
-  await addZoneEffect(zoneId, 'WARD', playerHouse, playerId, null, 1, expiresAt);
+async function applyWard({ value }, ctx) {
+  await setFlag(ctx.zoneId, 'ward', true);
   return { bonusPoints: 3, detail: 'Ward placed — blocks next attack effect' };
 }
 
-// REFLECT: Next attacker's influence goes to you
-async function applyReflect(parsed, zoneId, playerId, playerHouse) {
-  const expiresAt = new Date(Date.now() + 6 * 60 * 60 * 1000); // 6 hours
-  await addZoneEffect(zoneId, 'REFLECT', playerHouse, playerId, null, 1, expiresAt);
-  return { bonusPoints: 3, detail: 'Reflect active — next attack benefits you instead' };
+// ── MANIPULATION EFFECTS ──
+
+async function applyDrain({ value }, ctx) {
+  const pct = value || 5;
+  // Steal from leading house (actual influence shift happens in territory processing)
+  return { extraInfluence: pct, bonusPoints: 3, detail: 'Drained ' + pct + '% from leader' };
 }
 
-// AMPLIFY: Your next cast on this zone is doubled
-async function applyAmplify(parsed, zoneId, playerId, playerHouse) {
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  await addZoneEffect(zoneId, 'AMPLIFY', playerHouse, playerId, playerHouse, 2, expiresAt);
-  return { bonusPoints: 3, detail: 'Amplified — next cast on this zone ×2' };
+async function applySiphon({ value }, ctx) {
+  // Steal 2% from every other house
+  return { extraInfluence: 6, bonusPoints: 3, detail: 'Siphoned 2% from each rival house' };
 }
 
-// HASTE: This cast doesn't consume mana (refund 1)
-async function applyHaste(parsed, zoneId, playerId, playerHouse) {
-  return { manaRefund: 1, bonusPoints: 3, detail: 'Haste! Mana refunded' };
+async function applyWeaken({ value }, ctx) {
+  const factor = value ? (1 - value / 100) : 0.75;
+  await setFlag(ctx.zoneId, 'weaken', { house_id: ctx.playerHouse, factor: factor });
+  return { bonusPoints: 3, detail: 'Weakened — enemy gains ×' + factor + ' today' };
 }
 
-// REVEAL: Shows exact influence (just gives info + points)
-async function applyReveal(parsed, zoneId, playerId, playerHouse) {
-  return { bonusPoints: 3, detail: 'Revealed exact influence percentages' };
+async function applyHex({ value }, ctx) {
+  await setFlag(ctx.zoneId, 'hex', true);
+  return { bonusPoints: 3, detail: 'Hex — next cast here costs +1 mana' };
 }
 
-// INSPIRE: Double X energy for today
-async function applyInspire(parsed, zoneId, playerId, playerHouse) {
-  // Set a flag that the X energy tracker checks
-  return { bonusPoints: 3, detail: '✨ Inspired — 𝕏 energy doubled today' };
+async function applySilence({ value }, ctx) {
+  await setFlag(ctx.zoneId, 'silence', true);
+  return { bonusPoints: 3, detail: 'Silence — next card\'s effects blocked' };
 }
 
-// HEX: Target house's next cast has 0 effect
-async function applyHex(parsed, zoneId, playerId, playerHouse) {
-  const expiresAt = new Date(Date.now() + 6 * 60 * 60 * 1000);
-  // Hex the house with most influence that isn't ours
-  await addZoneEffect(zoneId, 'HEX', playerHouse, playerId, null, 1, expiresAt);
-  return { bonusPoints: 3, detail: 'Hex placed — enemy\'s next cast nullified' };
+// ── UTILITY EFFECTS ──
+
+async function applyHaste({ value }, ctx) {
+  return { manaRefund: 1, bonusPoints: 3, detail: 'Haste! −1 mana cost' };
 }
 
-// SILENCE: No support/utility effects for 1 hour
-async function applySilence(parsed, zoneId, playerId, playerHouse) {
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-  await addZoneEffect(zoneId, 'SILENCE', playerHouse, playerId, null, 1, expiresAt);
-  return { bonusPoints: 3, detail: 'Silence! No support effects for 1 hour' };
+async function applySwift({ value }, ctx) {
+  // Check if this is first cast today
+  const today = new Date().toISOString().split('T')[0];
+  const { count } = await supabase
+    .from('territory_actions')
+    .select('id', { count: 'exact', head: true })
+    .eq('player_id', ctx.playerId)
+    .eq('game_day', today);
+
+  if (count === 0 || count === 1) { // 0 or 1 (current one being processed)
+    return { manaRefund: 1, bonusPoints: 3, detail: 'Swift! First cast — +1 mana refund' };
+  }
+  return { bonusPoints: 0, detail: 'Swift — not first cast (no refund)' };
 }
 
-// WEAKEN: Target house reduced 50% for 2 hours
-async function applyWeaken(parsed, zoneId, playerId, playerHouse) {
-  const expiresAt = new Date(Date.now() + 2 * 60 * 60 * 1000);
-  await addZoneEffect(zoneId, 'WEAKEN', playerHouse, playerId, null, 50, expiresAt);
-  return { bonusPoints: 3, detail: 'Weakened — enemy influence -50% for 2 hours' };
+async function applyDodge({ value }, ctx) {
+  if (Math.random() < 0.3) {
+    return { manaRefund: 1, bonusPoints: 2, detail: 'Dodge! 🎲 Mana refunded' };
+  }
+  return { bonusPoints: 0, detail: 'Dodge missed (30% chance)' };
 }
 
-// FREEZE: Lock influence — no changes for 1 hour
-async function applyFreeze(parsed, zoneId, playerId, playerHouse) {
-  const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
-  await addZoneEffect(zoneId, 'FREEZE', playerHouse, playerId, null, 1, expiresAt);
-  return { bonusPoints: 3, detail: 'Frozen! No influence changes for 1 hour' };
+async function applyFree({ value }, ctx) {
+  return { manaRefund: 99, bonusPoints: 2, detail: 'Free cast! 0 mana' };
+  // manaRefund 99 = territory.js caps refund at card cost, so effectively free
 }
 
-// POISON +X: Target loses X% per hour for 3 hours
-async function applyPoison({ value }, zoneId, playerId, playerHouse) {
-  const expiresAt = new Date(Date.now() + 3 * 60 * 60 * 1000);
-  await addZoneEffect(zoneId, 'POISON', playerHouse, playerId, null, value || 3, expiresAt);
-  return { bonusPoints: 3, detail: `Poison applied — -${value || 3}% per hour for 3h` };
+// ── ATTRITION EFFECTS (processed at midnight) ──
+
+async function applyPoison({ value }, ctx) {
+  await setFlag(ctx.zoneId, 'poison', { pct: value || 2, source_house: ctx.playerHouse });
+  return { bonusPoints: 3, detail: 'Poison — leader loses ' + (value || 2) + '% at midnight' };
 }
 
-// SWAP: Switch two houses' positions
-async function applySwap(parsed, zoneId, playerId, playerHouse) {
-  return { bonusPoints: 3, detail: 'Swapped top two houses\' influence' };
+async function applyCorrode({ value }, ctx) {
+  await setFlag(ctx.zoneId, 'corrode', { pct: value || 3, source_house: ctx.playerHouse });
+  return { bonusPoints: 3, detail: 'Corrode — all houses lose ' + (value || 3) + '% at midnight' };
 }
 
-// DODGE: 50% chance to completely avoid damage
-async function applyDodge(parsed, zoneId, playerId, playerHouse) {
-  return { bonusPoints: 2, detail: 'Dodge ready — 50% chance to avoid next attack' };
+async function applyInfect({ value }, ctx) {
+  await setFlag(ctx.zoneId, 'infect', { source_house: ctx.playerHouse });
+  return { bonusPoints: 3, detail: 'Infect — poison spreads if zone flips' };
 }
 
-// ── ZONE EFFECT HELPERS ──
+// ── SUPPORT EFFECTS ──
 
-async function addZoneEffect(zoneId, effectType, sourceHouse, sourcePlayerId, targetHouse, value, expiresAt) {
-  await supabase.from('zone_effects').insert({
-    zone_id: zoneId,
-    effect_type: effectType,
-    source_house: sourceHouse,
-    source_player_id: sourcePlayerId,
-    target_house: targetHouse,
-    value: value,
-    expires_at: expiresAt.toISOString(),
-  });
+async function applyAmplify({ value }, ctx) {
+  const mult = value || 1.5;
+  await setFlag(ctx.zoneId, 'amplify', { house_id: ctx.playerHouse, multiplier: mult });
+  return { bonusPoints: 3, detail: 'Amplify — next housemate cast ×' + mult };
 }
 
-async function getActiveZoneEffects(zoneId) {
-  const { data } = await supabase
-    .from('zone_effects')
-    .select('*')
-    .eq('zone_id', zoneId)
-    .gt('expires_at', new Date().toISOString());
-  return data || [];
+async function applyInspire({ value }, ctx) {
+  // Set player flag for doubled 𝕏 energy today
+  try {
+    await supabaseAdmin
+      .from('players')
+      .update({ inspired_today: true })
+      .eq('id', ctx.playerId);
+  } catch (e) { /* column might not exist yet */ }
+  return { bonusPoints: 3, detail: '✨ Inspired — 𝕏 energy ×2 today' };
 }
 
-async function removeZoneEffect(zoneId, effectType) {
-  await supabase
-    .from('zone_effects')
-    .delete()
-    .eq('zone_id', zoneId)
-    .eq('effect_type', effectType)
-    .gt('expires_at', new Date().toISOString())
-    .limit(1);
+async function applyBless({ value }, ctx) {
+  await setFlag(ctx.zoneId, 'bless', { house_id: ctx.playerHouse, bonus: value || 2 });
+  return { bonusPoints: 3, detail: 'Bless — housemates get +' + (value || 2) + ' pts today' };
 }
 
-// Clean up expired effects (called by scheduler)
-async function cleanupExpiredEffects() {
-  const { data } = await supabase
-    .from('zone_effects')
-    .delete()
-    .lt('expires_at', new Date().toISOString());
-  return data;
+
+// ═══════════════════════════════════
+// ZONE FLAG HELPERS (zone_daily_state)
+// ═══════════════════════════════════
+
+async function getZoneFlags(zoneId) {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const { data } = await supabase
+      .from('zone_daily_state')
+      .select('flags')
+      .eq('zone_id', zoneId)
+      .eq('date', today)
+      .single();
+    return (data && data.flags) || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+async function setFlag(zoneId, key, value) {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    // Get current flags
+    const flags = await getZoneFlags(zoneId);
+    flags[key] = value;
+
+    // Upsert
+    await supabaseAdmin
+      .from('zone_daily_state')
+      .upsert(
+        { zone_id: zoneId, date: today, flags: flags },
+        { onConflict: 'zone_id,date' }
+      );
+  } catch (e) {
+    console.error('setFlag error:', e.message);
+  }
+}
+
+async function removeFlag(zoneId, key) {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const flags = await getZoneFlags(zoneId);
+    delete flags[key];
+
+    await supabaseAdmin
+      .from('zone_daily_state')
+      .upsert(
+        { zone_id: zoneId, date: today, flags: flags },
+        { onConflict: 'zone_id,date' }
+      );
+  } catch (e) {
+    console.error('removeFlag error:', e.message);
+  }
+}
+
+// ── CLEAN UP (called by scheduler at midnight) ──
+async function clearAllDailyFlags() {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    await supabaseAdmin
+      .from('zone_daily_state')
+      .delete()
+      .lt('date', today); // delete yesterday and older
+    console.log('[EffectEngine] Cleared old zone flags');
+  } catch (e) {
+    console.error('clearAllDailyFlags error:', e.message);
+  }
+}
+
+// ── GET ALL FLAGS FOR MIDNIGHT PROCESSING ──
+async function getAllZoneFlagsForDate(date) {
+  try {
+    const { data } = await supabase
+      .from('zone_daily_state')
+      .select('zone_id, flags')
+      .eq('date', date);
+    return data || [];
+  } catch (e) {
+    return [];
+  }
 }
 
 module.exports = {
   processEffects,
   parseEffect,
-  getActiveZoneEffects,
-  cleanupExpiredEffects,
+  getZoneFlags,
+  setFlag,
+  removeFlag,
+  clearAllDailyFlags,
+  getAllZoneFlagsForDate,
   EFFECTS,
 };

@@ -1,535 +1,511 @@
+// ═══════════════════════════════════════════════════════
+// server/routes/admin.js
+// Admin panel API — zones, clashes, spells, scheduler
+// All routes require x-admin-key header
+// ═══════════════════════════════════════════════════════
+
 const express = require('express');
 const router = express.Router();
-const twitterBot = require('../services/twitterBot');
 const territoryControl = require('../services/territoryControl');
 const activityDecay = require('../services/activityDecay');
-const nermBot = require('../services/nermBot');
 const supabase = require('../config/supabase');
-
-// Simple admin key check (in production, use proper auth)
-const checkAdminKey = (req, res, next) => {
-  const adminKey = req.headers['x-admin-key'] || req.query.admin_key;
-  if (adminKey !== process.env.ADMIN_KEY) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
-  next();
-};
-
 const { createClient } = require('@supabase/supabase-js');
+
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-/**
- * GET /api/admin/test-bot
- * Test the Twitter bot connection
- */
-router.get('/test-bot', checkAdminKey, async (req, res) => {
-  try {
-    const user = await twitterBot.testConnection();
-    if (user) {
-      res.json({ success: true, user });
-    } else {
-      res.status(500).json({ error: 'Bot connection failed' });
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+// Optional modules
+let twitterBot = null;
+let nermBot = null;
+let scheduler = null;
+try { twitterBot = require('../services/twitterBot'); } catch (e) {}
+try { nermBot = require('../services/nermBot'); } catch (e) {}
+try { scheduler = require('../services/scheduler'); } catch (e) {}
+
+// ── AUTH MIDDLEWARE ──
+function checkAdminKey(req, res, next) {
+  const adminKey = req.headers['x-admin-key'] || req.query.admin_key;
+  if (adminKey !== process.env.ADMIN_KEY) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
-});
+  next();
+}
 
-/**
- * POST /api/admin/post-objective
- * Post the daily objective tweet
- */
-router.post('/post-objective', checkAdminKey, async (req, res) => {
+// Apply to all routes
+router.use(checkAdminKey);
+
+
+// ╔═══════════════════════════════════╗
+// ║  DASHBOARD / HEALTH               ║
+// ╚═══════════════════════════════════╝
+
+// GET /api/admin/stats — game overview
+router.get('/stats', async (req, res) => {
   try {
-    const tweet = await twitterBot.postDailyObjective();
-    if (tweet) {
-      res.json({ success: true, tweet_id: tweet.id });
-    } else {
-      res.status(500).json({ error: 'Failed to post objective' });
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+    const { data: players } = await supabase.from('players').select('id').eq('is_active', true);
+    const { data: zones } = await supabase.from('zones').select('id, name, is_current_objective, controlling_school_id');
+    const { data: spells } = await supabase.from('spells').select('id').eq('is_active', true);
 
-/**
- * POST /api/admin/post-results
- * Post the daily results tweet
- */
-router.post('/post-results', checkAdminKey, async (req, res) => {
-  try {
-    const tweet = await twitterBot.postDailyResults();
-    if (tweet) {
-      res.json({ success: true, tweet_id: tweet.id });
-    } else {
-      res.status(500).json({ error: 'Failed to post results' });
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+    const today = new Date().toISOString().split('T')[0];
+    const { data: todayActions } = await supabase.from('territory_actions').select('id').eq('game_day', today);
 
-/**
- * POST /api/admin/process-casts
- * Process spell casts from Twitter mentions
- */
-router.post('/process-casts', checkAdminKey, async (req, res) => {
-  try {
-    const casts = await twitterBot.processSpellCasts();
-    res.json({ success: true, processed: casts.length, casts });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * POST /api/admin/set-objective
- * Set a specific zone as the daily objective
- */
-router.post('/set-objective', checkAdminKey, async (req, res) => {
-  try {
-    const { zone_id } = req.body;
-    if (!zone_id) {
-      return res.status(400).json({ error: 'zone_id required' });
-    }
-
-    const success = await twitterBot.setDailyObjective(zone_id);
-    if (success) {
-      res.json({ success: true });
-    } else {
-      res.status(500).json({ error: 'Failed to set objective' });
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * POST /api/admin/rotate-objective
- * Rotate to a random neutral zone
- */
-router.post('/rotate-objective', checkAdminKey, async (req, res) => {
-  try {
-    const success = await twitterBot.rotateObjective();
-    if (success) {
-      res.json({ success: true });
-    } else {
-      res.status(500).json({ error: 'Failed to rotate objective' });
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * POST /api/admin/reset-mana
- * Reset all players' mana to full (daily reset)
- */
-router.post('/reset-mana', checkAdminKey, async (req, res) => {
-  try {
-    const { error } = await supabase
-      .from('players')
-      .update({ mana: 5 })
-      .eq('is_active', true);
-
-    if (error) {
-      return res.status(500).json({ error: 'Failed to reset mana' });
-    }
-
-    res.json({ success: true, message: 'All players mana reset to 5' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * GET /api/admin/stats
- * Get game statistics
- */
-router.get('/stats', checkAdminKey, async (req, res) => {
-  try {
-    const { data: players } = await supabase
-      .from('players')
-      .select('id')
-      .eq('is_active', true);
-
-    const { data: casts } = await supabase
-      .from('casts')
-      .select('id');
-
-    const { data: zones } = await supabase
-      .from('zones')
-      .select('id, name, is_current_objective');
-
-    const currentObjective = zones?.find(z => z.is_current_objective);
+    const objective = zones ? zones.find(z => z.is_current_objective) : null;
+    const controlled = zones ? zones.filter(z => z.controlling_school_id).length : 0;
 
     res.json({
-      total_players: players?.length || 0,
-      total_casts: casts?.length || 0,
-      current_objective: currentObjective?.name || 'None set',
-      zones: zones?.length || 0
+      total_players: players ? players.length : 0,
+      active_spells: spells ? spells.length : 0,
+      total_zones: zones ? zones.length : 0,
+      zones_controlled: controlled,
+      actions_today: todayActions ? todayActions.length : 0,
+      current_objective: objective ? objective.name : 'None set',
     });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-/**
- * POST /api/admin/spell-of-the-day
- * Award Spell of the Day bonus to a player (+50 points)
- */
-router.post('/spell-of-the-day', checkAdminKey, async (req, res) => {
+// GET /api/admin/scheduler-status — cron job health
+router.get('/scheduler-status', async (req, res) => {
   try {
-    const { player_id, cast_id, reason } = req.body;
-
-    if (!player_id) {
-      return res.status(400).json({ error: 'player_id required' });
-    }
-
-    const bonusPoints = 50;
-
-    // Get the player
-    const { data: player, error: playerError } = await supabase
-      .from('players')
-      .select('*')
-      .eq('id', player_id)
-      .single();
-
-    if (playerError || !player) {
-      return res.status(404).json({ error: 'Player not found' });
-    }
-
-    // Update player points
-    const { error: updateError } = await supabase
-      .from('players')
-      .update({
-        seasonal_points: (player.seasonal_points || 0) + bonusPoints,
-        lifetime_points: (player.lifetime_points || 0) + bonusPoints
-      })
-      .eq('id', player_id);
-
-    if (updateError) {
-      return res.status(500).json({ error: 'Failed to award bonus' });
-    }
-
-    // If cast_id provided, update the cast record too
-    if (cast_id) {
-      await supabase
-        .from('casts')
-        .update({
-          points_earned: supabase.raw(`points_earned + ${bonusPoints}`)
-        })
-        .eq('id', cast_id);
-    }
-
-    console.log(`🏆 Spell of the Day awarded to @${player.twitter_handle}: +${bonusPoints} points. Reason: ${reason || 'No reason given'}`);
-
-    res.json({ 
-      success: true, 
-      player: player.twitter_handle,
-      bonus_awarded: bonusPoints,
-      new_total: (player.seasonal_points || 0) + bonusPoints
-    });
-
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * GET /api/admin/recent-casts
- * Get recent casts for review (to pick Spell of the Day)
- */
-router.get('/recent-casts', checkAdminKey, async (req, res) => {
-  try {
-    const limit = parseInt(req.query.limit) || 50;
-
-    const { data: casts, error } = await supabase
-      .from('casts')
-      .select(`
-        id,
-        spell_name,
-        points_earned,
-        tweet_id,
-        created_at,
-        player_id
-      `)
-      .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (error) {
-      return res.status(500).json({ error: 'Failed to fetch casts' });
-    }
-
-    res.json(casts || []);
-
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * GET /api/admin/zone-control/:zoneId
- * Get current control calculation for a zone
- */
-router.get('/zone-control/:zoneId', checkAdminKey, async (req, res) => {
-  try {
-    const { zoneId } = req.params;
-    const control = await territoryControl.calculateZoneControl(parseInt(zoneId));
-    res.json({ zone_id: zoneId, control });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * POST /api/admin/update-zone-control/:zoneId
- * Manually trigger zone control update
- */
-router.post('/update-zone-control/:zoneId', checkAdminKey, async (req, res) => {
-  try {
-    const { zoneId } = req.params;
-    const result = await territoryControl.updateZoneControlTable(parseInt(zoneId));
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * GET /api/admin/daily-winner/:zoneId
- * Get the daily winner for a zone
- */
-router.get('/daily-winner/:zoneId', checkAdminKey, async (req, res) => {
-  try {
-    const { zoneId } = req.params;
-    const result = await territoryControl.determineDailyWinner(parseInt(zoneId));
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * POST /api/admin/end-of-day/:zoneId
- * Run full end-of-day processing for a zone
- */
-router.post('/end-of-day/:zoneId', checkAdminKey, async (req, res) => {
-  try {
-    const { zoneId } = req.params;
-    const result = await territoryControl.endOfDayProcessing(parseInt(zoneId));
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * POST /api/admin/end-of-day-current
- * Run end-of-day processing for current objective zone
- */
-router.post('/end-of-day-current', checkAdminKey, async (req, res) => {
-  try {
-    const zone = await territoryControl.getCurrentObjective();
-    if (!zone) {
-      return res.status(400).json({ error: 'No current objective zone' });
-    }
-    const result = await territoryControl.endOfDayProcessing(zone.id);
-    res.json({ zone: zone.name, ...result });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * POST /api/admin/activity-decay
- * Run activity decay check manually
- */
-router.post('/activity-decay', checkAdminKey, async (req, res) => {
-  try {
-    const result = await activityDecay.processActivityDecay();
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * GET /api/admin/inactive-players
- * Get list of inactive players
- */
-router.get('/inactive-players', checkAdminKey, async (req, res) => {
-  try {
-    const players = await activityDecay.getInactivePlayers();
-    res.json(players);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * POST /api/admin/reactivate-player/:id
- * Reactivate an inactive player
- */
-router.post('/reactivate-player/:id', checkAdminKey, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const success = await activityDecay.reactivatePlayer(parseInt(id));
-    res.json({ success });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * GET /api/admin/test-nerm
- * Test Nerm bot connection
- */
-router.get('/test-nerm', checkAdminKey, async (req, res) => {
-  try {
-    const user = await nermBot.testConnection();
-    if (user) {
-      res.json({ success: true, user });
-    } else {
-      res.status(500).json({ error: 'Nerm connection failed' });
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-/**
- * GET /api/admin/nerm-status
- * Get Nerm's rate limit status
- */
-router.get('/nerm-status', checkAdminKey, async (req, res) => {
-  try {
-    const status = nermBot.getRateLimitStatus();
+    const status = scheduler ? scheduler.getJobStatus() : { initialized: false, lastRuns: {} };
     res.json(status);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-/**
- * POST /api/admin/nerm-post
- * Make Nerm post a custom message
- */
-router.post('/nerm-post', checkAdminKey, async (req, res) => {
+
+// ╔═══════════════════════════════════╗
+// ║  FORCE ACTIONS                     ║
+// ╚═══════════════════════════════════╝
+
+// POST /api/admin/force-midnight — manually trigger midnight banking
+router.post('/force-midnight', async (req, res) => {
   try {
-    const { message } = req.body;
-    if (!message) {
-      return res.status(400).json({ error: 'message required' });
-    }
-    const tweet = await nermBot.postAsNerm(message);
-    if (tweet) {
-      res.json({ success: true, tweet_id: tweet.id });
-    } else {
-      res.status(500).json({ error: 'Failed to post (rate limited?)' });
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    console.log('[Admin] Force midnight banking triggered');
+    const result = await territoryControl.midnightBanking();
+    res.json({ success: true, result });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-/**
- * POST /api/admin/nerm-observation
- * Make Nerm post a daily observation
- */
-router.post('/nerm-observation', checkAdminKey, async (req, res) => {
+// POST /api/admin/force-objective — set random or specific objective
+router.post('/force-objective', async (req, res) => {
   try {
-    const tweet = await nermBot.postDailyObservation();
-    if (tweet) {
-      res.json({ success: true, tweet_id: tweet.id });
+    const { zone_id } = req.body;
+
+    if (zone_id) {
+      // Set specific zone
+      await supabaseAdmin.from('zones').update({ is_current_objective: false }).eq('is_current_objective', true);
+      await supabaseAdmin.from('zones').update({ is_current_objective: true }).eq('id', zone_id);
+      res.json({ success: true, zone_id });
     } else {
-      res.status(500).json({ error: 'Failed to post (rate limited?)' });
+      // Random
+      const id = await territoryControl.setRandomObjective();
+      res.json({ success: true, zone_id: id });
     }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-/**
- * POST /api/admin/nerm-roast
- * Make Nerm roast a specific player
- */
-router.post('/nerm-roast', checkAdminKey, async (req, res) => {
+// POST /api/admin/reset-mana — reset all player mana to 7
+router.post('/reset-mana', async (req, res) => {
   try {
-    const { player, reason } = req.body;
-    if (!player || !reason) {
-      return res.status(400).json({ error: 'player and reason required' });
-    }
-    const tweet = await nermBot.roastPlayer(player, reason);
-    if (tweet) {
-      res.json({ success: true, tweet_id: tweet.id });
-    } else {
-      res.status(500).json({ error: 'Failed to post (rate limited?)' });
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    await supabaseAdmin.from('players').update({ mana: 7 }).eq('is_active', true);
+    res.json({ success: true, message: 'All players mana reset to 7' });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-/**
- * POST /api/admin/nerm-generate
- * Generate a custom Nerm response (doesn't post, just returns text)
- */
-router.post('/nerm-generate', checkAdminKey, async (req, res) => {
+
+// ╔═══════════════════════════════════╗
+// ║  ZONE MANAGEMENT                   ║
+// ╚═══════════════════════════════════╝
+
+// GET /api/admin/zones — list all zones
+router.get('/zones', async (req, res) => {
   try {
-    const { prompt } = req.body;
-    if (!prompt) {
-      return res.status(400).json({ error: 'prompt required' });
-    }
-    const response = await nermBot.generateCustomResponse(prompt);
-    if (response) {
-      res.json({ success: true, response });
-    } else {
-      res.status(500).json({ error: 'Failed to generate' });
-    }
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    const { data, error } = await supabase.from('zones').select('*').order('id');
+    if (error) throw error;
+    res.json(data || []);
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// PUT /api/admin/zone/:id — update a zone
 router.put('/zone/:id', async (req, res) => {
   try {
-    const adminKey = req.headers['x-admin-key'];
-    if (adminKey !== process.env.ADMIN_KEY) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
     const zoneId = parseInt(req.params.id);
-    const { name, description, image_url } = req.body;
-
+    const allowed = ['name', 'description', 'image_url', 'video_url', 'zone_type', 'bonus_effect', 'is_current_objective'];
     const updates = {};
-    if (name !== undefined) updates.name = name;
-    if (description !== undefined) updates.description = description;
-    if (image_url !== undefined) updates.image_url = image_url;
+    allowed.forEach(f => { if (req.body[f] !== undefined) updates[f] = req.body[f]; });
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: 'No fields to update' });
     }
 
-    const { data, error } = await supabaseAdmin
-      .from('zones')
-      .update(updates)
-      .eq('id', zoneId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating zone:', error);
-      return res.status(500).json({ error: 'Failed to update zone' });
-    }
-
-    console.log(`Updated zone ${zoneId}:`, updates);
+    const { data, error } = await supabaseAdmin.from('zones').update(updates).eq('id', zoneId).select().single();
+    if (error) throw error;
     res.json(data);
-  } catch (error) {
-    console.error('Error in zone update:', error);
-    res.status(500).json({ error: 'Failed to update zone' });
-  }
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
+
+// POST /api/admin/zones — create a zone
+router.post('/zones', async (req, res) => {
+  try {
+    const { name, description, zone_type, image_url, video_url, bonus_effect } = req.body;
+    if (!name) return res.status(400).json({ error: 'Name required' });
+
+    const { data, error } = await supabaseAdmin.from('zones').insert({
+      name, description: description || '',
+      zone_type: zone_type || 'neutral',
+      image_url: image_url || null,
+      video_url: video_url || null,
+      bonus_effect: bonus_effect || null,
+    }).select().single();
+
+    if (error) throw error;
+    res.json({ success: true, zone: data });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/admin/zone/:id — delete a zone
+router.delete('/zone/:id', async (req, res) => {
+  try {
+    const zoneId = parseInt(req.params.id);
+    const { error } = await supabaseAdmin.from('zones').delete().eq('id', zoneId);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/zone/:id/objective — toggle objective
+router.post('/zone/:id/objective', async (req, res) => {
+  try {
+    const zoneId = parseInt(req.params.id);
+    // Clear all objectives first
+    await supabaseAdmin.from('zones').update({ is_current_objective: false }).eq('is_current_objective', true);
+    // Set this one
+    await supabaseAdmin.from('zones').update({ is_current_objective: true }).eq('id', zoneId);
+    res.json({ success: true, zone_id: zoneId });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/zone/:id/bonus — set bonus effect
+router.post('/zone/:id/bonus', async (req, res) => {
+  try {
+    const zoneId = parseInt(req.params.id);
+    const { bonus_effect } = req.body;
+    await supabaseAdmin.from('zones').update({ bonus_effect: bonus_effect || null }).eq('id', zoneId);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/zone-influence/:id — detailed influence for a zone
+router.get('/zone-influence/:id', async (req, res) => {
+  try {
+    const zoneId = parseInt(req.params.id);
+    const today = new Date().toISOString().split('T')[0];
+    const influence = await territoryControl.getAllZoneInfluence(today);
+    res.json({ zone_id: zoneId, influence: influence[zoneId] || {} });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// ╔═══════════════════════════════════╗
+// ║  COMMUNITY CLASH MANAGEMENT        ║
+// ╚═══════════════════════════════════╝
+
+// GET /api/admin/clashes — list active clashes
+router.get('/clashes', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('community_clashes')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+
+    // Format for frontend compatibility
+    const formatted = (data || []).map(c => ({
+      id: c.id,
+      team_a: { tag: c.team_a_tag, color: c.team_a_color, points: c.team_a_points },
+      team_b: { tag: c.team_b_tag, color: c.team_b_color, points: c.team_b_points },
+      season: c.season,
+      week: c.week,
+      is_active: c.is_active,
+    }));
+
+    res.json(formatted);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/clashes — create a clash
+router.post('/clashes', async (req, res) => {
+  try {
+    const { team_a_tag, team_a_color, team_b_tag, team_b_color, season, week } = req.body;
+    if (!team_a_tag || !team_b_tag) return res.status(400).json({ error: 'Both team tags required' });
+
+    const { data, error } = await supabaseAdmin.from('community_clashes').insert({
+      team_a_tag,
+      team_a_color: team_a_color || '#D4A64B',
+      team_b_tag,
+      team_b_color: team_b_color || '#00D4FF',
+      season: season || 0,
+      week: week || 1,
+    }).select().single();
+
+    if (error) throw error;
+    res.json({ success: true, clash: data });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/admin/clash/:id — update a clash
+router.put('/clash/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const allowed = ['team_a_tag', 'team_a_color', 'team_b_tag', 'team_b_color',
+                     'team_a_points', 'team_b_points', 'season', 'week', 'is_active'];
+    const updates = {};
+    allowed.forEach(f => { if (req.body[f] !== undefined) updates[f] = req.body[f]; });
+
+    const { data, error } = await supabaseAdmin.from('community_clashes').update(updates).eq('id', id).select().single();
+    if (error) throw error;
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/admin/clash/:id — delete a clash
+router.delete('/clash/:id', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { error } = await supabaseAdmin.from('community_clashes').delete().eq('id', id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// ╔═══════════════════════════════════╗
+// ║  SPELL MANAGEMENT                  ║
+// ╚═══════════════════════════════════╝
+
+// GET /api/admin/spells — list all spells
+router.get('/spells', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('spells').select('*').order('id');
+    if (error) throw error;
+    res.json({ spells: data || [] });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/spells — create spell
+router.post('/spells', async (req, res) => {
+  try {
+    const { name, slug, house, tier, mana_cost, spell_type, base_effect, bonus_effects, flavor_text, motto } = req.body;
+    if (!name || !slug) return res.status(400).json({ error: 'Name and slug required' });
+
+    const { data, error } = await supabaseAdmin.from('spells').insert({
+      name: name.trim(),
+      slug: slug.trim(),
+      house: house || 'universal',
+      tier: tier || 0,
+      mana_cost: mana_cost || 1,
+      spell_type: spell_type || 'attack',
+      base_effect: base_effect || '+10 influence',
+      bonus_effects: JSON.stringify(bonus_effects || []),
+      flavor_text: flavor_text || '',
+      motto: motto || null,
+      is_active: true,
+      is_always_available: false,
+    }).select().single();
+
+    if (error) throw error;
+    console.log('[Admin] Created spell: ' + data.id + ' - ' + data.name);
+    res.json({ success: true, spell: data });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/admin/spell/:id — update spell
+router.put('/spell/:id', async (req, res) => {
+  try {
+    const spellId = parseInt(req.params.id);
+    const allowed = ['name', 'slug', 'house', 'tier', 'mana_cost', 'spell_type',
+                     'base_effect', 'bonus_effects', 'flavor_text', 'motto',
+                     'is_active', 'is_always_available', 'image_url', 'in_pack_pool'];
+    const updates = {};
+    allowed.forEach(f => {
+      if (req.body[f] !== undefined) {
+        updates[f] = f === 'bonus_effects' ? JSON.stringify(req.body[f]) : req.body[f];
+      }
+    });
+
+    if (Object.keys(updates).length === 0) return res.status(400).json({ error: 'No fields to update' });
+
+    const { data, error } = await supabaseAdmin.from('spells').update(updates).eq('id', spellId).select().single();
+    if (error) throw error;
+    res.json({ success: true, spell: data });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// DELETE /api/admin/spell/:id — delete spell
+router.delete('/spell/:id', async (req, res) => {
+  try {
+    const spellId = parseInt(req.params.id);
+
+    // Don't delete always-available spells
+    const { data: spell } = await supabase.from('spells').select('is_always_available, name').eq('id', spellId).single();
+    if (!spell) return res.status(404).json({ error: 'Spell not found' });
+    if (spell.is_always_available) return res.status(400).json({ error: 'Cannot delete always-available spells' });
+
+    const { error } = await supabaseAdmin.from('spells').delete().eq('id', spellId);
+    if (error) throw error;
+    console.log('[Admin] Deleted spell: ' + spellId + ' - ' + spell.name);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// ╔═══════════════════════════════════╗
+// ║  PLAYER MANAGEMENT                 ║
+// ╚═══════════════════════════════════╝
+
+// GET /api/admin/players — list all players
+router.get('/players', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('players')
+      .select('id, twitter_handle, school_id, community_tag, mana, seasonal_points, lifetime_points, streak, lives, arcane_energy, is_active, created_at')
+      .order('seasonal_points', { ascending: false });
+    if (error) throw error;
+    res.json(data || []);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// PUT /api/admin/player/:id — update player
+router.put('/player/:id', async (req, res) => {
+  try {
+    const playerId = parseInt(req.params.id);
+    const allowed = ['mana', 'seasonal_points', 'lifetime_points', 'streak', 'lives', 'arcane_energy', 'is_active', 'school_id', 'community_tag'];
+    const updates = {};
+    allowed.forEach(f => { if (req.body[f] !== undefined) updates[f] = req.body[f]; });
+
+    const { data, error } = await supabaseAdmin.from('players').update(updates).eq('id', playerId).select().single();
+    if (error) throw error;
+    res.json(data);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// ╔═══════════════════════════════════╗
+// ║  NERM BOT CONTROLS                 ║
+// ╚═══════════════════════════════════╝
+
+// GET /api/admin/test-nerm
+router.get('/test-nerm', async (req, res) => {
+  try {
+    if (!nermBot) return res.status(500).json({ error: 'Nerm not loaded' });
+    const user = await nermBot.testConnection();
+    res.json({ success: !!user, user });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/nerm-post — make Nerm post
+router.post('/nerm-post', async (req, res) => {
+  try {
+    if (!nermBot) return res.status(500).json({ error: 'Nerm not loaded' });
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ error: 'message required' });
+    const tweet = await nermBot.postAsNerm(message);
+    res.json({ success: !!tweet, tweet_id: tweet ? tweet.id : null });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/nerm-generate — generate without posting
+router.post('/nerm-generate', async (req, res) => {
+  try {
+    if (!nermBot) return res.status(500).json({ error: 'Nerm not loaded' });
+    const { prompt } = req.body;
+    if (!prompt) return res.status(400).json({ error: 'prompt required' });
+    const response = await nermBot.generateCustomResponse(prompt);
+    res.json({ success: !!response, response });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/nerm-status
+router.get('/nerm-status', async (req, res) => {
+  try {
+    if (!nermBot) return res.json({ loaded: false });
+    const status = nermBot.getRateLimitStatus();
+    res.json({ loaded: true, ...status });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// ╔═══════════════════════════════════╗
+// ║  TWITTER BOT CONTROLS              ║
+// ╚═══════════════════════════════════╝
+
+// GET /api/admin/test-bot
+router.get('/test-bot', async (req, res) => {
+  try {
+    if (!twitterBot) return res.status(500).json({ error: 'Twitter bot not loaded' });
+    const user = await twitterBot.testConnection();
+    res.json({ success: !!user, user });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/post-objective
+router.post('/post-objective', async (req, res) => {
+  try {
+    if (!twitterBot) return res.status(500).json({ error: 'Twitter bot not loaded' });
+    const tweet = await twitterBot.postDailyObjective();
+    res.json({ success: !!tweet, tweet_id: tweet ? tweet.id : null });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// POST /api/admin/process-casts
+router.post('/process-casts', async (req, res) => {
+  try {
+    if (!twitterBot) return res.status(500).json({ error: 'Twitter bot not loaded' });
+    const casts = await twitterBot.processSpellCasts();
+    res.json({ success: true, processed: casts ? casts.length : 0, casts });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// ╔═══════════════════════════════════╗
+// ║  ACTIVITY DECAY                    ║
+// ╚═══════════════════════════════════╝
+
+// POST /api/admin/activity-decay
+router.post('/activity-decay', async (req, res) => {
+  try {
+    const result = await activityDecay.processActivityDecay();
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/inactive-players
+router.get('/inactive-players', async (req, res) => {
+  try {
+    const players = await activityDecay.getInactivePlayers();
+    res.json(players || []);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+
+// ╔═══════════════════════════════════╗
+// ║  RECENT ACTIONS (replaces casts)   ║
+// ╚═══════════════════════════════════╝
+
+// GET /api/admin/recent-actions — recent territory actions
+router.get('/recent-actions', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const { data, error } = await supabase
+      .from('territory_actions')
+      .select('id, player_id, zone_id, action_type, spell_name, spell_rarity, points_earned, effects_applied, created_at')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    res.json(data || []);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+
 module.exports = router;
