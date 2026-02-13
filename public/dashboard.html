@@ -24,6 +24,10 @@
     .dash-header__meta{display:flex;align-items:center;gap:8px;margin-top:3px;flex-wrap:wrap}
     .dash-header__handle{font-family:var(--font-data);font-size:10px;color:var(--text-body);letter-spacing:0.5px}
     .dash-header__tag{font-family:var(--font-data);font-size:8px;padding:2px 10px;border-radius:10px;letter-spacing:1px;font-weight:600}
+    .season-pill{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;background:linear-gradient(135deg,rgba(212,166,75,0.12),rgba(212,166,75,0.06));border:1px solid var(--gold-border);transition:background 0.2s}
+    .season-pill:hover{background:linear-gradient(135deg,rgba(212,166,75,0.2),rgba(212,166,75,0.1))}
+    .season-pill__icon{font-size:14px}
+    .season-pill__text{font-family:var(--font-data);font-size:11px;color:var(--gold);letter-spacing:1.5px;font-weight:600}
     .story-card{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--gold-border);min-height:220px;animation:glowPulse 4s ease-in-out infinite}
     .story-card__bg{position:absolute;inset:0}
     .story-card__bg img{width:100%;height:100%;object-fit:cover;filter:brightness(0.3) saturate(1.4)}
@@ -130,7 +134,7 @@ async function loadDashboard(){
 async function render(player,casts,zones,schools){
   var house=HOUSES[player.school_id]||HOUSES[1];
   var obj=Array.isArray(zones)?zones.find(function(z){return z.is_current_objective;}):null;
-  var mana=(player.mana!=null)?player.mana:5,maxM=5;
+  var mana=(player.mana!=null)?player.mana:7,maxM=7;
   var lives=(player.lives!=null)?player.lives:3,maxL=5;
   var pts=player.seasonal_points||0,streak=player.streak||0;
   var now=new Date(),doy=Math.floor((now-new Date(now.getFullYear(),0,0))/86400000);
@@ -200,7 +204,7 @@ async function render(player,casts,zones,schools){
   // ASSEMBLE
   var c=document.getElementById('dashContent');
   c.innerHTML=''
-    +'<div class="dash-header fade-up"><div class="dash-header__left"><div class="dash-header__avatar-wrap">'+avH+'</div><img src="'+house.img+'" class="dash-header__house-bg" onerror="this.style.display=\'none\'"><div><div class="dash-header__house-name" style="color:'+house.color+';">'+house.name+'</div><div class="dash-header__meta"><span class="dash-header__handle">@'+esc(player.twitter_handle||'Unknown')+'</span>'+tagH+'</div></div></div><span class="badge--season">S0</span></div>'
+    +'<div class="dash-header fade-up"><div class="dash-header__left"><div class="dash-header__avatar-wrap">'+avH+'</div><img src="'+house.img+'" class="dash-header__house-bg" onerror="this.style.display=\'none\'"><div><div class="dash-header__house-name" style="color:'+house.color+';">'+house.name+'</div><div class="dash-header__meta"><span class="dash-header__handle">@'+esc(player.twitter_handle||'Unknown')+'</span>'+tagH+'</div></div></div><div class="season-pill"><span class="season-pill__icon">&#9883;</span><span class="season-pill__text">SEASON 0</span></div></div>'
     +scH
     +'<div class="stats-row fade-up fade-up-2"><div class="stat-card"><span class="label">Mana</span><div class="mana-row">'+mH+'</div></div><div class="stat-card"><span class="label">Lives</span><div class="lives-row">'+lH+'</div></div><div class="stat-card"><span class="label">Points</span><div class="data-value">'+pts+'</div><div class="data-sub">Season 0</div></div></div>'
     +'<div class="card fade-up fade-up-3"><div class="streak-bar"><span class="streak-bar__icon">'+(streak>=7?'&#128142;':streak>=1?'&#128293;':'&#127761;')+'</span><div class="streak-bar__info"><div class="streak-bar__count">'+streak+' <span>DAY STREAK</span></div><div class="streak-bar__sub">'+(streak<7?(7-streak)+' more for Week Warrior &#128142;':'Week Warrior achieved! &#128142;')+'</div></div><div class="streak-dots">'+sH+'</div></div></div>'

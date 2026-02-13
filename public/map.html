@@ -11,12 +11,12 @@
   <link rel="stylesheet" href="/css/components-v2.css">
   <link rel="stylesheet" href="/css/nav-v2.css">
   <style>
-    /* HERO */
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â HERO ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
     .world-hero{text-align:center;padding:14px 0 6px}
     .world-hero__title{font-family:var(--font-title);font-weight:700;font-size:24px;color:var(--gold);letter-spacing:3px}
     .world-hero__sub{font-family:var(--font-body);font-size:15px;font-style:italic;color:var(--text-muted);margin-top:4px}
 
-    /*   PLAYER HEADER (matches dashboard)   */
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â PLAYER HEADER (matches dashboard) ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
     .player-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:10px}
     .player-header__left{display:flex;align-items:center;gap:12px}
     .player-header__avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)}
@@ -26,7 +26,7 @@
     .player-header__mana{display:flex;align-items:center;gap:6px}
     .player-header__mana-label{font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:1px}
 
-    /* CRYSTAL TOWERS */
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â CRYSTAL TOWERS ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
     .towers-wrap{background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.05);border-radius:14px;padding:12px 4px 8px;position:relative;overflow:hidden}
     .towers-wrap::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 90%,rgba(212,166,75,0.06) 0%,transparent 65%);pointer-events:none}
     .towers-label{font-family:var(--font-data);font-size:7px;color:var(--text-faint);letter-spacing:2px;text-align:center;margin-bottom:4px}
@@ -53,13 +53,9 @@
     .towers-you-dot{width:6px;height:6px;border-radius:50%;animation:towerOrbPulse 2s ease-in-out infinite}
     .towers-you-text{font-family:var(--font-data);font-size:7px;letter-spacing:1px}
 
-    /* COMMUNITY CLASH */
-
-    .clash-card{background:var(--bg-card);border:1px solid rgba(212,166,75,0.2);border-radius:12px;padding:14px;position:relative;overflow:hidden}
-    .clash-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(212,166,75,0.05),transparent 60%);pointer-events:none}
-    .clash-label{font-family:var(--font-data);font-size:7px;color:var(--text-faint);letter-spacing:2px;text-align:center;margin-bottom:4px}
-    .clash-week{font-family:var(--font-title);font-size:11px;color:var(--gold);text-align:center;letter-spacing:1px;margin-bottom:8px}
-    .clash-live{display:inline-block;width:6px;height:6px;border-radius:50%;background:#44cc44;animation:activityPulse 2s ease-in-out infinite;margin-right:4px;vertical-align:middle}
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â COMMUNITY CLASH ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
+    .clash-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:14px;position:relative;overflow:hidden}
+    .clash-label{font-family:var(--font-data);font-size:7px;color:var(--text-faint);letter-spacing:2px;text-align:center;margin-bottom:10px}
     .clash-vs{display:flex;align-items:center;justify-content:center;gap:12px}
     .clash-side{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
     .clash-icon{width:40px;height:40px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-family:var(--font-data);font-size:9px}
@@ -70,13 +66,13 @@
     .clash-bar__seg{height:100%;transition:width 0.6s}
     .clash-empty{font-family:var(--font-body);font-size:12px;color:var(--text-faint);text-align:center;font-style:italic;padding:6px 0}
 
-    /* SORT BAR */
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â SORT BAR ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
     .sort-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
     .sort-btn{padding:7px 14px;border:1px solid var(--border-subtle);border-radius:6px;background:var(--bg-card);color:var(--text-muted);font-family:var(--font-title);font-size:10px;font-weight:600;letter-spacing:0.5px;cursor:pointer;transition:all 0.2s}
     .sort-btn.active{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-border)}
     .zone-count{font-family:var(--font-data);font-size:8px;color:var(--text-faint);margin-left:auto}
 
-    /* ZONE CARDS */
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â ZONE CARDS ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
     .zone-grid{display:flex;flex-direction:column;gap:12px}
     .zone-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;cursor:pointer;transition:all 0.25s ease;overflow:hidden;position:relative}
     .zone-card:hover{border-color:var(--border-medium);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
@@ -116,7 +112,7 @@
     .influence-label{display:flex;align-items:center;gap:3px;font-family:var(--font-data);font-size:7px;color:var(--text-faint)}
     .influence-label img{width:10px;height:10px;object-fit:contain}
 
-    /* TIMELINE FEED */
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â TIMELINE FEED ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
     .timeline{display:flex;align-items:center;gap:0;margin:8px 0;overflow-x:auto;padding:4px 0}
     .timeline::-webkit-scrollbar{height:0}
     .tl-node{display:flex;flex-direction:column;align-items:center;flex-shrink:0;position:relative;cursor:pointer}
@@ -128,9 +124,6 @@
     .tl-node__handle{font-family:var(--font-data);font-size:4px;color:var(--text-faint);margin-top:1px;max-width:44px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .tl-line{width:12px;height:2px;flex-shrink:0;margin:0 -1px;margin-top:-10px}
     .tl-empty{font-family:var(--font-body);font-size:11px;color:var(--text-faint);font-style:italic;padding:4px 0}
-    .tl-spell{flex-shrink:0;margin:0 2px;margin-top:-8px;padding:2px 6px;border:1px solid;border-radius:4px;background:rgba(255,255,255,0.02)}
-    .tl-spell__name{font-family:var(--font-data);font-size:5px;letter-spacing:0.3px;white-space:nowrap}
-
     /* Timeline influence tooltip */
     .tl-tip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:rgba(16,12,28,0.97);border:1px solid var(--gold-border);border-radius:8px;padding:8px 10px;min-width:140px;z-index:60;box-shadow:0 4px 16px rgba(0,0,0,0.6)}
     .tl-node:hover .tl-tip{display:block}
@@ -156,7 +149,7 @@
     .zone-action-btn--defend{background:linear-gradient(135deg,#3366cc,#2244aa);box-shadow:0 2px 8px rgba(51,102,204,0.25)}
     .zone-action-btn--done{background:var(--bg-inset);color:var(--text-faint);border:1px solid var(--border-subtle);box-shadow:none}
 
-    /* PLAYER POPUP */
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â PLAYER POPUP ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
     .player-popup{position:fixed;z-index:9999;background:rgba(16,12,28,0.97);border:1px solid rgba(212,166,75,0.3);border-radius:10px;padding:14px;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,0.6);display:none;cursor:pointer;transition:opacity 0.15s}
     .player-popup.visible{display:block}
     .player-popup__row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
@@ -169,7 +162,7 @@
     .player-popup__stat-val{font-family:var(--font-data);font-size:8px;color:var(--text-bright)}
     .player-popup__stat-label{font-family:var(--font-data);font-size:5px;color:var(--text-faint);letter-spacing:0.5px;margin-top:2px}
 
-    /* MODAL */
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â MODAL ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
     .zone-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:100;justify-content:center;align-items:flex-end;padding:0}
     .zone-modal-overlay.active{display:flex}
     .zone-modal{max-width:500px;width:100%;max-height:80vh;overflow-y:auto;background:var(--bg-card);border-radius:16px 16px 0 0;border:1px solid var(--border-subtle);border-bottom:none;animation:slideUpModal 0.3s ease}
@@ -236,7 +229,7 @@
     .toast.active{display:block;animation:fadeUp 0.3s ease}
     @keyframes fadeUp{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
 
-    /* Layout override   center content under nav */
+    /* Layout override Ã¢â‚¬â€ center content under nav */
     .main-container{max-width:960px;margin:0 auto;padding-left:20px;padding-right:20px}
 
     @media(max-width:480px){
@@ -260,7 +253,7 @@
   <div class="mobile-menu" id="mobileMenu"><a href="/dashboard.html">Dashboard</a><a href="/map.html" class="active">World</a><a href="/leaderboards.html">Leaderboards</a><a href="/arena.html">Arena</a><a href="/spellbook.html">Spellbook</a><a href="/profile.html">Profile</a><a href="/how-to-play.html">Help</a><a href="#" class="logout-btn" onclick="doLogout()" id="mobileLogout" style="display:none;">Logout</a></div>
 
   <div class="main-container">
-    <div class="world-hero fade-up"><h1 class="world-hero__title">World of Avaloris</h1><p class="world-hero__sub">Attack and defend territories. Control the realm.</p></div>
+    <div class="world-hero fade-up"><h1 class="world-hero__title">World of Nethara</h1><p class="world-hero__sub">Attack and defend territories. Control the realm.</p></div>
     <div class="player-header fade-up fade-up-1" id="playerHeader" style="display:none;"></div>
     <div class="clash-card fade-up fade-up-1" id="clashCard" style="display:none;"><div class="clash-label">COMMUNITY CLASH</div><div id="clashContent"></div></div>
     <div class="towers-wrap fade-up fade-up-1" id="towersWrap" style="display:none;"><div class="towers-label">HOUSE POWER</div><div class="towers-row" id="towersRow"></div><div class="towers-ground"></div><div class="towers-you-badge" id="towersYouBadge" style="display:none;"></div></div>
@@ -273,27 +266,48 @@
   <div class="toast" id="toast"></div>
   <div class="player-popup" id="playerPopup"></div>
 
-<script src="/js/spell-card-builder.js"></script>
 <script src="/js/spell-particles.js"></script>
 <script>
-var HOUSES={1:{name:'Smoulders',color:'#E03C31',glow:'#ff6b5b',slug:'smoulders',img:'House-smoulders.png'},2:{name:'Darktide',color:'#00B4D8',glow:'#4de8ff',slug:'darktide',img:'House-darktide.png'},3:{name:'Stonebark',color:'#5CB338',glow:'#8aef5a',slug:'stonebark',img:'House-stonebark.png'},4:{name:'Ashenvale',color:'#90E0EF',glow:'#b8f0ff',slug:'ashenvale',img:'House-Ashenvale.png'},5:{name:'Stormrage',color:'#FFC800',glow:'#ffe566',slug:'stormrage',img:'House-stormrage.png'},6:{name:'Nighthollow',color:'#7B2D8E',glow:'#c066dd',slug:'nighthollow',img:'House-nighthollow.png'},7:{name:'Dawnbringer',color:'#FF8C00',glow:'#ffb84d',slug:'dawnbringer',img:'House-dawnbringer.png'},8:{name:'Manastorm',color:'#5B8FE0',glow:'#8bb8ff',slug:'manastorm',img:'House-manastorm.png'},9:{name:'Plaguemire',color:'#E84393',glow:'#ff7ab8',slug:'plaguemire',img:'House-plaguemire.png'}};
+var HOUSES={1:{name:'Smoulders',color:'#E03C31',glow:'#ff6b5b',slug:'smoulders',img:'Housesmoulders.png'},2:{name:'Darktide',color:'#00B4D8',glow:'#4de8ff',slug:'darktide',img:'Housedarktide.png'},3:{name:'Stonebark',color:'#5CB338',glow:'#8aef5a',slug:'stonebark',img:'Housestonebark.png'},4:{name:'Ashenvale',color:'#90E0EF',glow:'#b8f0ff',slug:'ashenvale',img:'HouseAshenvale.png'},5:{name:'Stormrage',color:'#FFC800',glow:'#ffe566',slug:'stormrage',img:'Housestormrage.png'},6:{name:'Nighthollow',color:'#7B2D8E',glow:'#c066dd',slug:'nighthollow',img:'Housenighthollow.png'},7:{name:'Dawnbringer',color:'#FF8C00',glow:'#ffb84d',slug:'dawnbringer',img:'HouseDwnbringer.png'},8:{name:'Manastorm',color:'#5B8FE0',glow:'#8bb8ff',slug:'manastorm',img:'Housemanastorm.png'},9:{name:'Plaguemire',color:'#E84393',glow:'#ff7ab8',slug:'plaguemire',img:'Houseplaguemire.png'}};
 var ZONE_IMAGES={1:'/assets/images/environments/ashen-approach.jpg',2:'/assets/images/environments/the-drowning-spiral.png',3:'/assets/images/environments/crimson-overlook.jpg',4:'/assets/images/environments/the-floating-citadel.png',5:'/assets/images/environments/violet-storm.png',6:'/assets/images/environments/the-lone-spire.png',7:'/assets/images/environments/azure-expanse.png',8:'/assets/images/environments/shattered-stream.png',9:'/assets/images/environments/the-quiet-woods.png',10:'/assets/images/environments/the-twin-spires.png',11:'/assets/images/environments/the-veiled-cascade.png',12:'/assets/images/environments/the-sunken-archives.png',13:'/assets/images/environments/the-whispering-woods.png',14:'/assets/images/environments/the-fallen-wyrm.jpg',15:'/assets/images/environments/the-grassy-knoll.png',16:'/assets/images/environments/the-gathering-grove.png',17:'/assets/images/environments/the-breach.png',18:'/assets/images/environments/the-great-divide.png',19:'/assets/images/environments/the-chambers-keep.png',20:'/assets/images/environments/the-eastern-exchange.png',21:'/assets/images/environments/the-memorial-arch.png',22:'/assets/images/environments/lunar-sanctum.png',23:'/assets/images/environments/the-divide.png',24:'/assets/images/environments/the-silent-valley.png',25:'/assets/images/environments/the-torn-veil.png'};
-var zones=[],actionsToday={},influence={},player=null,playerActedZones={},currentSort='activity',houseSpells=[],communityClashes=[],handCards=[],collectionCards=[];
+var zones=[],actionsToday={},influence={},player=null,playerActedZones={},currentSort='activity',houseSpells=[],communityClashes=[];
 
 // Slug lookup for spell cards (spellbook API returns house as slug string)
 var SLUG_MAP={};Object.keys(HOUSES).forEach(function(id){SLUG_MAP[HOUSES[id].slug]={name:HOUSES[id].name,color:HOUSES[id].color,img:'/assets/images/houses/'+HOUSES[id].img};});
 SLUG_MAP.universal={name:'Universal',color:'#D4A64B',img:null};
 var PC={'BURN':'orange','SCALD':'orange','SPREAD':'red','STRIP':'red','ERUPTION':'red','DRAIN':'purple','PULL':'blue','REFLECT':'cyan','CLOAK':'dark','STEALTH':'dark','SWAP':'pink','WEAKEN':'orange','ANCHOR':'brown','HEAL':'green','THORNS':'green','CONVERT':'cyan','PERSIST':'gold','SWIFT':'white','HASTE':'cyan','FREE':'cyan','DODGE':'ice','REACH':'white','SWEEP':'gray','CRIT':'yellow','FIZZLE':'yellow','CHAIN':'blue','AMPLIFY':'purple','NIGHT':'dark','HEX':'purple','SILENCE':'gray','STEAL':'red','FREEZE':'ice','PIERCE':'white','ABSORB':'blue','RANDOMIZE':'pink','NEGATE':'white','REFUND':'cyan','INFECT':'toxic','WITHER':'brown','CORRODE':'toxic','PLAGUE':'toxic','TOXIC':'toxic','LOCKOUT':'red','UNDERDOG':'gold','AURA':'gold','GIFT':'white','JUSTICE':'gold','SAFE':'gold','RESTORE':'cyan','RESET':'cyan','INSPIRE':'gold','REVEAL':'white','DOT':'green','BONUS':'gold','BLESS':'gold','WARD':'gold','PURGE':'orange','PUSH':'ice','SHUFFLE':'blue','CURSE':'purple','VANISH':'dark','SIPHON':'purple','POISON':'toxic','IMMUNE':'cyan','SURGE':'yellow'};
-function pillCol(tag){var k=tag.replace(/[^A-Z]/g,'').toUpperCase();for(var p in PC){if(k.indexOf(p)!==-1)return PC[p];}return'gray';}
+function pillCol(tag){var k=tag.replace(/[\+\d\sÃƒâ€”x\.]/g,'').toUpperCase();for(var p in PC){if(k.indexOf(p)!==-1)return PC[p];}return'gray';}
 
 function buildMiniSpellCard(s,zoneId){
+  var h=SLUG_MAP[s.house]||SLUG_MAP.universal;
+  var bn=[];try{bn=typeof s.bonus_effects==='string'?JSON.parse(s.bonus_effects):(s.bonus_effects||[]);}catch(e){bn=[];}
+  var tl=s.tier===0?'BASIC':'TIER '+s.tier;
+  var mo='<div class="sc-mana sc-mana--mini">'+s.mana_cost+'MP</div>';
+  var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:18px;position:relative;z-index:1">\u2726</span>';
+  var pl='';
+  if(bn.length>0){pl='<div class="sc-pills">';bn.forEach(function(b){var tag=b.tag||b.key||'';var desc=b.desc||b.description||tag;pl+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';});pl+='</div>';}
+  var be='';if(s.base_effect&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
   var escName=esc(s.name).replace(/'/g,"\\'");
-  return buildSpellCard(s, {
-    delay: 0,
-    rarity: s.rarity || null,
-    mini: true,
-    onclick: "event.stopPropagation();castSpellOnZone(\'"+zoneId+"\',\'"+escName+"\')"
-  });
+  var hasArt=s.image_url&&s.image_url.length>0;
+  var artImg=hasArt?'<div class="sc-art-img" style="background-image:url(/assets/images/spells/'+esc(s.image_url)+')"></div>':'';
+  var artBlock=hasArt?'':'<div class="sc-art" style="height:60px"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div>'+ai+'<div class="sc-art__tier" style="color:'+h.color+'">'+tl+'</div></div>';
+  var houseLogo=h.img?'<div class="sc-house-logo" style="background-image:url('+h.img+');width:18px;height:18px;top:5px;left:5px"></div>':'';
+  var pType=PARTICLE_MAP[s.house]||'stardust';
+  return '<div class="spell-card show" style="--hc:'+h.color+';--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810)" onclick="event.stopPropagation();castSpellOnZone(\''+zoneId+'\',\''+escName+'\')" data-house="'+s.house+'" data-type="'+(s.spell_type||'attack')+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="25">'
+    +'<div class="sc-border"></div><div class="sc-edge"></div>'
+    +'<div class="sc-face">'+artImg+'<div class="sc-inner-edge"></div></div>'
+    +'<div class="sc-foil"></div><div class="sc-rainbow"></div>'
+    +'<canvas class="sc-particles"></canvas><div class="sc-glow"></div>'
+    +houseLogo
+    +'<div class="sc-body">'
+    +'<div class="sc-top" style="padding:6px 8px 6px 26px"><div class="sc-name" style="font-size:10px;color:'+h.color+'">'+esc(s.name)+'</div>'+mo+'</div>'
+    +artBlock
+    +'<div class="sc-info">'
+    +'<div class="sc-type-row"><span class="sc-type sc-type--'+(s.spell_type||'attack')+'">'+(s.spell_type||'attack')+'</span>'
+    +be+pl
+    +'<div class="sc-flavor">'+esc(s.flavor_text||s.motto||'')+'</div>'
+    +'<div class="sc-bottom" style="color:'+h.color+'">'+h.name.toUpperCase()+'</div>'
+    +'</div></div></div>';
 }
 
 function toggleMobileMenu(){document.getElementById('hamburger').classList.toggle('active');document.getElementById('mobileMenu').classList.toggle('active');}
@@ -305,34 +319,29 @@ function timeAgo(d){if(!d)return'';var s=(Date.now()-new Date(d).getTime())/1000
 function getPlayerId(){var p=new URLSearchParams(window.location.search);return p.get('player_id')||localStorage.getItem('player_id');}
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 
-// ===
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â COMMUNITY CLASH ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
 function renderClashes(){
-  if(!communityClashes||!communityClashes.matchups||!communityClashes.matchups.length){document.getElementById('clashCard').style.display='none';return;}
-  var data=communityClashes;
+  if(!communityClashes||!communityClashes.length){
+    document.getElementById('clashContent').innerHTML='<div class="clash-vs"><div class="clash-side"><div class="clash-icon" style="border-color:#555;color:#555;">?</div><div class="clash-tag" style="color:var(--text-faint);">TBD</div><div class="clash-pts" style="color:var(--text-faint);">0</div></div><div class="clash-divider">VS</div><div class="clash-side"><div class="clash-icon" style="border-color:#555;color:#555;">?</div><div class="clash-tag" style="color:var(--text-faint);">TBD</div><div class="clash-pts" style="color:var(--text-faint);">0</div></div></div><p style="text-align:center;font-family:var(--font-body);font-size:12px;color:var(--text-faint);font-style:italic;margin-top:10px;">Community matchups coming soon. Join a community to compete!</p>';
+    document.getElementById('clashCard').style.display='block';
+    return;
+  }
   var html='';
-  if(data.current_week)html+='<div class="clash-week">Week '+data.current_week+(data.total_weeks?' / '+data.total_weeks:'')+'</div>';
-  data.matchups.forEach(function(clash){
+  communityClashes.forEach(function(clash){
     var a=clash.team_a||{};var b=clash.team_b||{};
     var apts=a.points||0;var bpts=b.points||0;var total=apts+bpts||1;
     var apct=Math.round(apts/total*100);var bpct=100-apct;
     var aColor=a.color||'#D4A64B';var bColor=b.color||'#00D4FF';
-    var aInit=(a.tag||'?').replace('$','').substring(0,3);
-    var bInit=(b.tag||'?').replace('$','').substring(0,3);
-    var liveTag=clash.status==='live'?'<span class="clash-live"></span>LIVE':'';
     html+='<div class="clash-vs">'
-      +'<div class="clash-side"><div class="clash-icon" style="border-color:'+aColor+';color:'+aColor+';">'+aInit+'</div>'
+      +'<div class="clash-side"><div class="clash-icon" style="border-color:'+aColor+';color:'+aColor+';">'+(a.tag||'?').replace('$','').substring(0,3)+'</div>'
       +'<div class="clash-tag" style="color:'+aColor+';">'+esc(a.tag||'?')+'</div>'
-      +'<div style="font-family:var(--font-data);font-size:7px;color:var(--text-faint);">'+(a.members||0)+' raiders</div>'
       +'<div class="clash-pts" style="color:'+aColor+';">'+apts+'</div></div>'
-      +'<div class="clash-divider"><div style="font-family:var(--font-data);font-size:6px;color:var(--text-faint);margin-bottom:2px;">'+liveTag+'</div>VS</div>'
-      +'<div class="clash-side"><div class="clash-icon" style="border-color:'+bColor+';color:'+bColor+';">'+bInit+'</div>'
+      +'<div class="clash-divider">VS</div>'
+      +'<div class="clash-side"><div class="clash-icon" style="border-color:'+bColor+';color:'+bColor+';">'+(b.tag||'?').replace('$','').substring(0,3)+'</div>'
       +'<div class="clash-tag" style="color:'+bColor+';">'+esc(b.tag||'?')+'</div>'
-      +'<div style="font-family:var(--font-data);font-size:7px;color:var(--text-faint);">'+(b.members||0)+' raiders</div>'
       +'<div class="clash-pts" style="color:'+bColor+';">'+bpts+'</div></div></div>'
       +'<div class="clash-bar"><div class="clash-bar__seg" style="width:'+apct+'%;background:'+aColor+';"></div><div class="clash-bar__seg" style="width:'+bpct+'%;background:'+bColor+';"></div></div>';
   });
-  // Link to leaderboards for full table
-  html+='<a href="/leaderboards.html" style="display:block;text-align:center;margin-top:8px;font-family:var(--font-data);font-size:7px;color:var(--gold);letter-spacing:1px;text-decoration:none;">VIEW LEAGUE TABLE &#8594;</a>';
   document.getElementById('clashContent').innerHTML=html;
   document.getElementById('clashCard').style.display='block';
 }
@@ -352,12 +361,12 @@ function buildInfluenceSnapshot(running){
   });
   return html;
 }
-// ===
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â PLAYER HEADER (matches dashboard style) ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
 function renderPlayerHeader(){
   if(!player)return;
   var h=HOUSES[player.school_id]||{name:'?',color:'#888',img:''};
   var mH='';var mana=player.mana!=null?player.mana:7;
-  for(var i=0;i<7;i++)mH+='<div class="mana-orb'+(i<mana?' mana-orb--filled':'')+'" style="width:12px;height:12px;"></div>';
+  for(var i=0;i<7;i++)mH+='<div class="mana-orb'+(i<mana?' mana-orb--filled':'')+'" style="width:14px;height:14px;"></div>';
   var tagH=player.community_tag?'<span class="player-header__tag">'+esc(player.community_tag)+'</span>':'';
   var el=document.getElementById('playerHeader');
   el.innerHTML='<div class="player-header__left">'
@@ -369,7 +378,7 @@ function renderPlayerHeader(){
   el.style.display='flex';
 }
 
-// ===
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â CRYSTAL TOWERS ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
 function renderTowers(schoolData){
   if(!schoolData||schoolData.length===0)return;
   var sorted=schoolData.slice().sort(function(a,b){return(b.total_points||0)-(a.total_points||0);});
@@ -397,7 +406,7 @@ function renderTowers(schoolData){
   if(mySchoolId){var my=HOUSES[mySchoolId];var badge=document.getElementById('towersYouBadge');badge.innerHTML='<div class="towers-you-dot" style="background:'+my.color+';box-shadow:0 0 6px '+my.glow+';"></div><span class="towers-you-text" style="color:'+my.glow+';">YOUR HOUSE: '+my.name.toUpperCase()+'</span>';badge.style.display='flex';}
 }
 
-// ===
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â HELPERS ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
 function getZoneActivity(zid){return actionsToday[zid]?actionsToday[zid].length:0;}
 function getTopHouse(zid){var inf=influence[zid];if(!inf)return null;var topId=null,topPct=0;Object.keys(inf).forEach(function(sid){if(inf[sid]>topPct){topPct=inf[sid];topId=parseInt(sid);}});return topId?{id:topId,pct:topPct}:null;}
 function renderInfluenceBar(zid){
@@ -410,18 +419,18 @@ function renderInfluenceBar(zid){
   return'<div class="influence-bar">'+segs+'</div><div class="influence-labels">'+labels+'</div>';
 }
 
-// ===
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â STATUS PILLS ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
 function buildPills(z){
   var html='';
-  if(z.is_current_objective)html+='<span class="zone-pill zone-pill--objective" title="Double points for actions here today">OBJECTIVE<span class="zone-pill__tip">2x points for all actions today</span></span>';
+  if(z.is_current_objective)html+='<span class="zone-pill zone-pill--objective" title="Double points for actions here today">ÃƒÂ¢Ã…Â¡Ã¢â‚¬ÂÃƒÂ¯Ã‚Â¸Ã‚Â OBJECTIVE<span class="zone-pill__tip">2x points for all actions today</span></span>';
   if(z.bonus_effect)html+='<span class="zone-pill zone-pill--bonus" title="'+esc(z.bonus_effect)+'">BONUS +50%<span class="zone-pill__tip">'+esc(z.bonus_effect)+'</span></span>';
-  if(z.controlling_school_id&&HOUSES[z.controlling_school_id]){var c=HOUSES[z.controlling_school_id];html+='<span class="zone-pill zone-pill--controlled" style="color:'+c.color+';" title="Controlled by '+c.name+'">'+hImg(c.img,12)+c.name.toUpperCase()+'<span class="zone-pill__tip">Controlled by '+c.name+' - defenders get +25% bonus</span></span>';}
+  if(z.controlling_school_id&&HOUSES[z.controlling_school_id]){var c=HOUSES[z.controlling_school_id];html+='<span class="zone-pill zone-pill--controlled" style="color:'+c.color+';" title="Controlled by '+c.name+'">'+hImg(c.img,12)+c.name.toUpperCase()+'<span class="zone-pill__tip">Controlled by '+c.name+' ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â defenders get +25% bonus</span></span>';}
   var top=getTopHouse(z.id);if(top&&top.pct>=40&&(!z.controlling_school_id||top.id!==z.controlling_school_id)){var th=HOUSES[top.id];html+='<span class="zone-pill zone-pill--contesting" title="'+th.name+' contesting at '+top.pct+'%">'+hImg(th.img,10)+'CONTESTING<span class="zone-pill__tip">'+th.name+' at '+top.pct+'% influence</span></span>';}
   // Only show spell effect pills for special spells (not basic attack/defend)
   return html?'<div class="zone-pills">'+html+'</div>':'';
 }
 
-// ===
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â TIMELINE ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
 function buildTimeline(zid){
   var acts=actionsToday[zid]||[];if(!acts.length)return'<div class="tl-empty">No activity yet</div>';
   var html='<div class="timeline">';
@@ -432,27 +441,26 @@ function buildTimeline(zid){
     var type=a.action_type||'attack';
     var typeCol=type==='attack'?'#ff5555':'#5588ff';
     var typeLabel=type==='attack'?'ATK':'DEF';
-    var spellName=a.spell_name||type;
     if(!running[p.school_id])running[p.school_id]=0;
     running[p.school_id]+=1;
+    var total=0;Object.values(running).forEach(function(v){total+=v;});
+    var myPct=total>0?Math.round(running[p.school_id]/total*100):0;
+    // Build snapshot of influence at this moment
     var snapHtml=buildInfluenceSnapshot(Object.assign({},running));
-    // Connector line from previous
     if(i>0)html+='<div class="tl-line" style="background:linear-gradient(90deg,'+h.color+'40,'+h.color+');"></div>';
-    // Player node
     html+='<div class="tl-node">'
       +'<div class="tl-tip">'+snapHtml+'</div>'
       +'<div class="tl-node__dot" style="border-color:'+typeCol+';">'
       +(p.profile_image?'<img class="tl-node__avatar" src="'+p.profile_image+'">':hImg(h.img,16))
       +'</div>'
       +'<div class="tl-node__label" style="color:'+typeCol+';">'+typeLabel+'</div>'
-      +'<div class="tl-node__handle">@'+esc((p.twitter_handle||'?').substring(0,8))+'</div></div>';
-    // Spell card connector
-    html+='<div class="tl-spell" style="border-color:'+h.color+'40;"><div class="tl-spell__name" style="color:'+h.color+';">'+esc(spellName)+'</div></div>';
+      +'<div class="tl-node__handle">@'+esc((p.twitter_handle||'?').substring(0,8))+'</div>'
+      +'<div class="tl-node__score">'+myPct+'%</div></div>';
   });
   html+='</div>';return html;
 }
 
-// ===
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â PLAYER POPUP ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
 var popupTimeout=null;
 function showPlayerPopup(e,p){
   clearTimeout(popupTimeout);
@@ -464,12 +472,12 @@ function showPlayerPopup(e,p){
     +'<div><div class="player-popup__name">@'+esc(p.twitter_handle||'unknown')+'</div>'
     +'<div class="player-popup__house" style="color:'+h.color+';">'+hImg(h.img,14)+h.name+'</div></div></div>'
     +'<div class="player-popup__stats">'
-    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.seasonal_points||'-')+'</div><div class="player-popup__stat-label">POINTS</div></div>'
-    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.streak||'-')+'</div><div class="player-popup__stat-label">STREAK</div></div>'
-    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.mana!=null?p.mana:'-')+'</div><div class="player-popup__stat-label">MANA</div></div>'
-    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.lives!=null?p.lives:'-')+'</div><div class="player-popup__stat-label">LIVES</div></div>'
+    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.seasonal_points||'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â')+'</div><div class="player-popup__stat-label">POINTS</div></div>'
+    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.streak||'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â')+'</div><div class="player-popup__stat-label">STREAK</div></div>'
+    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.mana!=null?p.mana:'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â')+'</div><div class="player-popup__stat-label">MANA</div></div>'
+    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.lives!=null?p.lives:'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â')+'</div><div class="player-popup__stat-label">LIVES</div></div>'
     +'</div>'
-    +'<a href="'+profileLink+'" style="display:block;text-align:center;margin-top:8px;font-family:var(--font-data);font-size:6px;color:var(--gold);letter-spacing:1px;text-decoration:none;padding:4px 0;border-top:1px solid var(--border-subtle);">VIEW PROFILE &#8594;</a>';
+    +'<a href="'+profileLink+'" style="display:block;text-align:center;margin-top:8px;font-family:var(--font-data);font-size:6px;color:var(--gold);letter-spacing:1px;text-decoration:none;padding:4px 0;border-top:1px solid var(--border-subtle);">VIEW PROFILE ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢</a>';
   popup.style.left=Math.min(e.clientX+10,window.innerWidth-220)+'px';
   popup.style.top=Math.max(e.clientY-140,10)+'px';
   popup.classList.add('visible');
@@ -479,7 +487,7 @@ function hidePlayerPopup(){popupTimeout=setTimeout(function(){document.getElemen
 document.getElementById('playerPopup').addEventListener('mouseenter',function(){clearTimeout(popupTimeout);});
 document.getElementById('playerPopup').addEventListener('mouseleave',function(){hidePlayerPopup();});
 
-// ===
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â SORTING ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
 function sortZones(type){currentSort=type;var btns=document.querySelectorAll('.sort-btn');for(var i=0;i<btns.length;i++)btns[i].classList.remove('active');event.target.classList.add('active');renderZoneGrid();}
 function getSortedZones(){
   var s=zones.slice();
@@ -490,7 +498,7 @@ function getSortedZones(){
   return s;
 }
 
-// ===
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â RENDER ZONE GRID ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
 function renderZoneGrid(){
   var sorted=getSortedZones();var grid=document.getElementById('zoneGrid');var html='';
   sorted.forEach(function(z){
@@ -506,7 +514,7 @@ function renderZoneGrid(){
     if(!player)btnsHTML='<a href="/register.html" class="zone-action-btn zone-action-btn--attack" style="text-decoration:none;font-size:8px;">JOIN</a>';
     else if(acted)btnsHTML='<span class="zone-action-btn zone-action-btn--done">ACTED</span>';
     else if(player.mana<1)btnsHTML='<span class="zone-action-btn zone-action-btn--done">NO MANA</span>';
-    else btnsHTML='<button class="zone-action-btn zone-action-btn--attack" onclick="event.stopPropagation();openZoneModal('+z.id+')">CAST</button>';
+    else btnsHTML='<button class="zone-action-btn zone-action-btn--attack" onclick="event.stopPropagation();doAction('+z.id+',\'attack\')">ATTACK</button><button class="zone-action-btn zone-action-btn--defend" onclick="event.stopPropagation();doAction('+z.id+',\'defend\')">DEFEND</button>';
 
     var dotCls=activity>0?'zone-card__activity-dot':'zone-card__activity-dot zone-card__activity-dot--idle';
 
@@ -530,10 +538,10 @@ function renderZoneGrid(){
   });
   grid.innerHTML=html;
   var cc=zones.filter(function(z){return z.controlling_school_id;}).length;
-  document.getElementById('zoneCount').textContent=sorted.length+' zones'+(cc>0?' | '+cc+' controlled':'');
+  document.getElementById('zoneCount').textContent=sorted.length+' zones'+(cc>0?' Ãƒâ€šÃ‚Â· '+cc+' controlled':'');
 }
 
-// ===
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â ACTIONS ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
 async function doAction(zoneId,actionType){
   if(!player||player.mana<1)return;if(playerActedZones[zoneId])return;
   try{
@@ -555,7 +563,7 @@ async function doAction(zoneId,actionType){
   }catch(e){console.error(e);showToast('Connection error','error');}
 }
 
-// ===
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â MODAL ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
 function openZoneModal(zoneId){
   var zone=zones.find(function(z){return z.id===zoneId;});if(!zone)return;
   var zImg=(zone.image_url?(zone.image_url.startsWith('/')?zone.image_url:'/assets/images/zones/'+zone.image_url):'')||ZONE_IMAGES[zone.id]||'';
@@ -592,7 +600,7 @@ function openZoneModal(zoneId){
     entries.forEach(function(e){var h=HOUSES[e.id]||{name:'?',color:'#888',img:''};
       body+='<div class="modal-influence-row">'+hImg(h.img,18)+'<span class="modal-influence-name">'+h.name+'</span><div class="modal-influence-bar"><div class="modal-influence-fill" style="width:'+e.pct+'%;background:'+h.color+';"></div></div><span class="modal-influence-pct">'+e.pct+'%</span></div>';
     });
-  }else{body+='<div class="modal-empty">No activity yet - be the first!</div>';}
+  }else{body+='<div class="modal-empty">No activity yet ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â be the first!</div>';}
   body+='</div>';
 
   // Timeline in modal
@@ -613,33 +621,14 @@ function openZoneModal(zoneId){
     body+='</div></div>';
   }
 
-    // Cast Spells - tabs for Hand and Collection
-  body+='<div class="modal-spell-section"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><h4 style="margin:0">Cast Spells</h4>';
-  body+='<div style="display:flex;gap:4px;">';
-  body+='<button class="sort-btn active" onclick="switchCastTab(\'hand\',this)" style="font-size:8px;padding:4px 10px;">Hand</button>';
-  body+='<button class="sort-btn" onclick="switchCastTab(\'collection\',this)" style="font-size:8px;padding:4px 10px;">Collection</button>';
+  // Spells Ã¢â‚¬â€ playing card design
+  body+='<div class="modal-spell-section"><h4>Cast Spells</h4><div class="modal-spell-grid">';
+  body+=buildMiniSpellCard({name:'Basic Attack',house:'universal',tier:0,mana_cost:1,spell_type:'attack',base_effect:'+10 influence',bonus_effects:[],flavor_text:'Strike first.'},zoneId);
+  body+=buildMiniSpellCard({name:'Basic Defend',house:'universal',tier:0,mana_cost:1,spell_type:'defend',base_effect:'+10 defense',bonus_effects:[],flavor_text:'Hold the line.'},zoneId);
+  if(houseSpells.length>0){
+    houseSpells.forEach(function(sp){body+=buildMiniSpellCard(sp,zoneId);});
+  }
   body+='</div></div>';
-  // Hand cards
-  body+='<div class="modal-cast-tab" id="castTabHand">';
-  if(handCards&&handCards.length>0){
-    body+='<div class="modal-spell-grid">';
-    handCards.forEach(function(card){body+=buildMiniSpellCard(card,zoneId);});
-    body+='</div>';
-  }else{
-    body+='<div style="text-align:center;padding:16px;border:1px dashed rgba(212,166,75,0.15);border-radius:8px;"><p style="font-family:var(--font-body);color:var(--text-faint);font-style:italic;margin-bottom:8px;">No pack opened today.</p><a href="/packs.html" style="font-family:var(--font-title);font-size:11px;color:var(--gold);text-decoration:none;letter-spacing:1px;">Open Daily Pack &#8594;</a></div>';
-  }
-  body+='</div>';
-  // Collection cards
-  body+='<div class="modal-cast-tab" id="castTabCollection" style="display:none;">';
-  if(collectionCards&&collectionCards.length>0){
-    body+='<div class="modal-spell-grid">';
-    collectionCards.forEach(function(card){body+=buildMiniSpellCard(card,zoneId);});
-    body+='</div>';
-  }else{
-    body+='<div style="text-align:center;padding:16px;border:1px dashed rgba(212,166,75,0.15);border-radius:8px;"><p style="font-family:var(--font-body);color:var(--text-faint);font-style:italic;">No cards in collection yet. Open packs to build your collection.</p></div>';
-  }
-  body+='</div>';
-  body+='</div>';
 
   // Actions list
   body+='<div class="zone-modal__actions-title">TODAY\'S ACTIONS ('+acts.length+')</div>';
@@ -659,14 +648,6 @@ function openZoneModal(zoneId){
   setTimeout(function(){if(typeof initAllSpellCards==='function')initAllSpellCards();},50);
   document.getElementById('zoneModalOverlay').classList.add('active');
 }
-function switchCastTab(tab,btn){
-  document.getElementById('castTabHand').style.display=tab==='hand'?'block':'none';
-  document.getElementById('castTabCollection').style.display=tab==='collection'?'block':'none';
-  var btns=btn.parentElement.querySelectorAll('.sort-btn');
-  for(var i=0;i<btns.length;i++)btns[i].classList.remove('active');
-  btn.classList.add('active');
-  setTimeout(function(){if(typeof initAllSpellCards==='function')initAllSpellCards();},50);
-}
 function closeModal(){
   document.getElementById('zoneModalOverlay').classList.remove('active');
   // Stop any playing video
@@ -674,7 +655,7 @@ function closeModal(){
 }
 document.getElementById('zoneModalOverlay').addEventListener('click',function(e){if(e.target.id==='zoneModalOverlay')closeModal();});
 
-// ===
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â CAST SPELL ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
 function castSpellOnZone(zoneId,spell){
   var pid=localStorage.getItem('player_id');if(!pid){alert('Log in first!');return;}
   if(confirm('Cast '+spell+'?')){
@@ -686,7 +667,7 @@ function castSpellOnZone(zoneId,spell){
   }
 }
 
-// ===
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â LOAD ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
 async function loadWorld(){
   try{
     var playerId=getPlayerId();
@@ -709,14 +690,13 @@ async function loadWorld(){
         var h=HOUSES[player.school_id];
         if(h){var sr=await fetch('/api/spells/rotation/'+h.slug);var sd=await sr.json();houseSpells=sd.rotation||[];}
       }catch(e){houseSpells=[];}
-      try{var pid=getPlayerId();if(pid){var hR=await fetch('/api/packs/hand/'+pid);var hd=await hR.json();if(hd&&hd.hand&&hd.hand.cards)handCards=hd.hand.cards;else handCards=[];}}catch(e3){handCards=[];}
-      try{var pid2=getPlayerId();if(pid2){var cR2=await fetch('/api/packs/collection/'+pid2);var cd2=await cR2.json();if(cd2&&cd2.cards)collectionCards=cd2.cards;else collectionCards=[];}}catch(e4){collectionCards=[];}
     }
     renderTowers(schoolData);
     // Load community clashes (set via admin)
     try{
-      var cr=await fetch('/api/clashes/current');if(cr.ok){var cd=await cr.json();if(cd.success)communityClashes=cd.data||{};renderClashes();}
+      var cr=await fetch('/api/admin/clashes');if(cr.ok){var cd=await cr.json();communityClashes=cd||[];}
     }catch(e){communityClashes=[];}
+    renderClashes();
     var loader=document.getElementById('loadingState');if(loader)loader.style.display='none';
     renderZoneGrid();
   }catch(e){
@@ -727,28 +707,25 @@ async function loadWorld(){
 }
 loadWorld();
 
-// Floating pill tooltips
-(function(){
-  var ft=document.createElement('div');ft.id='floatTip';
-  ft.style.cssText='display:none;position:fixed;z-index:99999;font-family:Crimson Text,serif;font-size:12px;color:#e8e4d9;white-space:normal;width:max-content;max-width:200px;background:rgba(10,8,18,0.97);border:1px solid rgba(255,255,255,0.1);border-radius:5px;padding:6px 10px;line-height:1.4;box-shadow:0 6px 20px rgba(0,0,0,0.6);pointer-events:none';
-  document.body.appendChild(ft);
-  document.addEventListener('mouseenter',function(e){
-    var pill=e.target.closest('.pill');if(!pill)return;
-    var tip=pill.querySelector('.tip');if(!tip)return;
-    var style=getComputedStyle(pill);
-    ft.style.borderColor=style.borderColor||'rgba(212,166,75,0.3)';
-    ft.style.color=style.color||'#D4A64B';
-    ft.textContent=tip.textContent;ft.style.display='block';
-    var r=pill.getBoundingClientRect(),tw=ft.offsetWidth,th=ft.offsetHeight;
-    var left=r.left+r.width/2-tw/2,top=r.top-th-10;
-    if(left<8)left=8;if(left+tw>window.innerWidth-8)left=window.innerWidth-tw-8;
-    if(top<8)top=r.bottom+10;
-    ft.style.left=left+'px';ft.style.top=top+'px';
-  },true);
-  document.addEventListener('mouseleave',function(e){
-    var pill=e.target.closest('.pill');if(!pill)return;ft.style.display='none';
-  },true);
-})();
+// Smart pill tooltips for spell cards
+document.addEventListener('mouseenter',function(e){
+  var pill=e.target.closest('.pill');if(!pill)return;
+  var tip=pill.querySelector('.tip');if(!tip)return;
+  var style=getComputedStyle(pill);
+  tip.style.background='rgba(10,8,18,0.97)';
+  tip.style.borderColor=style.borderColor||'rgba(212,166,75,0.3)';
+  tip.style.color=style.color||'#D4A64B';
+  tip.style.display='block';
+  var r=pill.getBoundingClientRect();var tw=tip.offsetWidth;var th=tip.offsetHeight;
+  var left=r.left+r.width/2-tw/2;var top=r.top-th-10;
+  if(left<8)left=8;if(left+tw>window.innerWidth-8)left=window.innerWidth-tw-8;
+  if(top<8){top=r.bottom+10;}
+  tip.style.left=left+'px';tip.style.top=top+'px';
+},true);
+document.addEventListener('mouseleave',function(e){
+  var pill=e.target.closest('.pill');if(!pill)return;
+  var tip=pill.querySelector('.tip');if(tip)tip.style.display='none';
+},true);
 </script>
 </body>
 </html>
