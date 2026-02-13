@@ -88,9 +88,9 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 .zoom-card .sc-body{padding:0}
 .zoom-card .sc-top{padding:14px 18px 14px 54px}
 .zoom-card .sc-info{padding:0 18px 16px}
-.zoom-card .sc-name{font-size:22px;
+.zoom-card .sc-name{font-size:22px;padding-right:60px;
   text-shadow:0 1px 3px #000,0 0 6px #000,2px 0 3px #000,-2px 0 3px #000,0 -1px 3px #000}
-.zoom-card .sc-mana{font-size:12px;padding:5px 10px}
+.zoom-card .sc-mana{font-size:12px;padding:5px 10px 5px 8px;right:-18px}
 .zoom-card .sc-house-logo{width:38px;height:38px;top:12px;left:12px}
 .zoom-card .sc-crest-watermark{width:90px;height:90px;bottom:20px;right:12px;opacity:0.15}
 .zoom-card .sc-art-spacer{flex:0 0 240px}
@@ -222,7 +222,7 @@ function buildCard(s,d){
   var tc=s.tier>=2?'#00D4FF':s.tier===0?'#847C98':h.color;
   var mo='<div class="sc-mana">'+s.mana_cost+' MP</div>';
   var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:28px;position:relative;z-index:1">&#10022;</span>';
-  var rb='<span class="sc-rarity sc-rarity--basic">BASIC \u00d71.0</span>';
+  var rb='<span class="sc-rarity sc-rarity--basic" data-upgradeable data-base-effect="'+esc(s.base_effect||'')+'" data-mana="'+s.mana_cost+'" data-tier="0">BASIC \u00d71.0</span>';
   var pl='';
   if(bn.length>0){pl='<div class="sc-pills">';bn.forEach(function(b){var tag=b.tag||b.key||'';var desc=b.desc||b.description||tag;pl+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';});pl+='</div>';}
   var be='';if(s.base_effect&&s.base_effect!=='\u2014'&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
@@ -252,22 +252,17 @@ function buildCard(s,d){
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 // === AUTO-SCALE CARD NAMES ===
-// Shrinks font-size on long spell names so they always fit beside the MP pill.
-// Runs after render and again when zooming a card.
+// Shrinks font-size on long spell names so the full name is visible
+// rather than clipped by overflow:hidden. The padding-right on .sc-name
+// already prevents overlap with the MP pill slot.
 function fitCardNames(root){
   var names=(root||document).querySelectorAll('.sc-name');
   names.forEach(function(el){
-    el.style.fontSize=''; // reset to CSS default first
-    var top=el.closest('.sc-top');
-    if(!top)return;
-    var mana=top.querySelector('.sc-mana');
-    if(!mana)return;
-    // available = container width minus mana pill minus padding/gap
-    var availW=top.clientWidth-mana.offsetWidth-30;
-    var nameW=el.scrollWidth;
-    if(nameW>availW && availW>0){
-      var ratio=availW/nameW;
-      var base=parseFloat(getComputedStyle(el).fontSize)||14;
+    el.style.fontSize=''; // reset to CSS default
+    // If text overflows the visible content area, scale down
+    if(el.scrollWidth>el.clientWidth && el.clientWidth>0){
+      var ratio=el.clientWidth/el.scrollWidth;
+      var base=parseFloat(getComputedStyle(el).fontSize)||15;
       var newSize=Math.max(9, Math.floor(base*ratio));
       el.style.fontSize=newSize+'px';
     }
@@ -381,9 +376,86 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeZoom();
   },true);
 })();
 
+// === TIER UPGRADE PREVIEW ===
+var TIER_LADDER=[
+  {key:'basic',  label:'BASIC',     mult:1.0, cls:'sc-rarity--basic',     mana:0},
+  {key:'common', label:'COMMON',    mult:1.0, cls:'sc-rarity--common',    mana:0},
+  {key:'uncommon',label:'UNCOMMON', mult:1.25,cls:'sc-rarity--uncommon',  mana:0},
+  {key:'rare',   label:'RARE',      mult:1.5, cls:'sc-rarity--rare',      mana:1},
+  {key:'epic',   label:'EPIC',      mult:2.0, cls:'sc-rarity--epic',      mana:1},
+  {key:'legendary',label:'LEGENDARY',mult:3.0,cls:'sc-rarity--legendary', mana:2}
+];
+
+function scaleEffect(baseEffect,mult){
+  if(!baseEffect||mult===1)return baseEffect;
+  // Find numbers in the effect text and multiply them
+  return baseEffect.replace(/(\d+(\.\d+)?)/g,function(m){
+    var n=parseFloat(m);var scaled=Math.round(n*mult);
+    if(scaled===n)return m;
+    return '<b style="color:#fff">'+scaled+'</b>';
+  });
+}
+
+function cycleRarity(pill,e){
+  e.stopPropagation();
+  var cur=parseInt(pill.getAttribute('data-tier'))||0;
+  var next=(cur+1)%TIER_LADDER.length;
+  var tier=TIER_LADDER[next];
+  var baseEffect=pill.getAttribute('data-base-effect');
+  var baseMana=parseInt(pill.getAttribute('data-mana'))||1;
+
+  // Update pill appearance
+  pill.className='sc-rarity '+tier.cls+' sc-rarity--preview';
+  pill.setAttribute('data-upgradeable','');
+  pill.setAttribute('data-tier',next);
+  pill.innerHTML=tier.label+' \u00d7'+tier.mult+(next>0?'':'');
+
+  // Find parent card and update the effect text
+  var card=pill.closest('.spell-card')||pill.closest('.zoom-card .spell-card');
+  if(!card)return;
+
+  var effectEl=card.querySelector('.sc-effect__base');
+  if(effectEl&&baseEffect&&baseEffect!=='\u2014'&&baseEffect!=='-'){
+    if(tier.mult===1){
+      effectEl.innerHTML=esc(baseEffect);
+    }else{
+      effectEl.innerHTML=scaleEffect(baseEffect,tier.mult);
+    }
+    effectEl.classList.add('sc-rarity--preview');
+    setTimeout(function(){effectEl.classList.remove('sc-rarity--preview');},300);
+  }
+
+  // Update mana cost preview
+  var manaEl=card.querySelector('.sc-mana');
+  if(manaEl){
+    var newMana=baseMana+tier.mana;
+    manaEl.textContent=newMana+' MP';
+    if(tier.mana>0){
+      manaEl.style.color='#ff8844';
+      manaEl.style.borderColor='rgba(255,136,68,0.3)';
+    }else{
+      manaEl.style.color='';manaEl.style.borderColor='';
+    }
+  }
+
+  // Card glow hint at higher tiers
+  var edge=card.querySelector('.sc-edge');
+  if(edge){
+    if(next>=4){edge.style.borderColor='rgba(160,80,240,0.4)';edge.style.boxShadow='0 0 12px rgba(160,80,240,0.15)';}
+    else if(next>=3){edge.style.borderColor='rgba(0,150,255,0.3)';edge.style.boxShadow='0 0 8px rgba(0,150,255,0.1)';}
+    else{edge.style.borderColor='';edge.style.boxShadow='';}
+  }
+}
+
+// Delegate click on rarity pills
+document.addEventListener('click',function(e){
+  var pill=e.target.closest('.sc-rarity[data-upgradeable]');
+  if(pill)cycleRarity(pill,e);
+},false);
+
 function attachCardClicks(){
   document.querySelectorAll('.spell-card').forEach(function(c){
-    c.onclick=function(e){if(!e.target.closest('.pill'))openZoom(c);};
+    c.onclick=function(e){if(!e.target.closest('.pill')&&!e.target.closest('.sc-rarity'))openZoom(c);};
   });
 }
 

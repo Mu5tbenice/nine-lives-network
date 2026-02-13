@@ -291,7 +291,7 @@ img { max-width: 100%; display: block; }
 
 /* Card body content */
 .sc-body{position:relative;z-index:8;padding:0;display:flex;flex-direction:column;height:100%}
-.sc-top{padding:8px 10px 8px 40px;display:flex;justify-content:space-between;align-items:flex-start}
+.sc-top{padding:8px 10px 8px 40px;position:relative}
 .sc-name-row{display:flex;align-items:center}
 /* House logo — top-left corner of card */
 .sc-house-logo{position:absolute;top:8px;left:8px;width:28px;height:28px;z-index:12;pointer-events:none;
@@ -309,7 +309,7 @@ img { max-width: 100%; display: block; }
 @media(max-width:600px){
   .spell-card{width:170px;min-height:270px}
   .card-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
-  .sc-name{font-size:11px}
+  .sc-name{font-size:11px;padding-right:42px}
   .sc-art-spacer{flex:0 0 90px}
   .sc-art{height:65px}
   .sc-art img{width:40px;height:40px}
@@ -317,13 +317,14 @@ img { max-width: 100%; display: block; }
 
 /* ── Card header ── */
 .sc-header{display:flex;justify-content:space-between;align-items:flex-start}
-.sc-name{font-family:var(--font-title);font-weight:700;font-size:15px;line-height:1.15;flex:1;min-width:0;padding-right:5px;
-  white-space:nowrap;overflow:hidden;
+.sc-name{font-family:var(--font-title);font-weight:700;font-size:15px;line-height:1.15;
+  display:block;padding-right:48px;white-space:nowrap;overflow:hidden;
   color:#D4A64B;
   text-shadow:0 1px 2px #000,0 0 4px #000,1px 0 2px #000,-1px 0 2px #000,0 -1px 2px #000}
-.sc-mana{font-family:var(--font-data);font-size:11px;font-weight:700;letter-spacing:1px;
-  color:#5bc0ff;background:rgba(0,0,0,0.55);border:1px solid rgba(91,192,255,0.3);
-  border-radius:4px;padding:2px 6px;flex-shrink:0;
+.sc-mana{position:absolute;top:50%;right:-10px;transform:translateY(-50%);z-index:10;
+  font-family:var(--font-data);font-size:11px;font-weight:700;letter-spacing:1px;
+  color:#5bc0ff;background:rgba(0,0,0,0.75);border:1px solid rgba(91,192,255,0.3);
+  border-right:none;border-radius:4px 0 0 4px;padding:3px 8px 3px 6px;
   text-shadow:0 0 8px rgba(91,192,255,0.5);line-height:1;white-space:nowrap}
 .sc-mana--mini{font-size:8px;padding:1px 4px;border-radius:3px}
 
@@ -361,6 +362,35 @@ img { max-width: 100%; display: block; }
 .sc-rarity--epic{background:rgba(160,80,240,0.12);border:1px solid rgba(160,80,240,0.3);color:#bb88ff}
 .sc-rarity--legendary{background:rgba(255,200,0,0.12);border:1px solid rgba(255,200,0,0.3);color:#ffd700;
   box-shadow:0 0 6px rgba(255,200,0,0.15)}
+
+/* ── Clickable rarity pill ── */
+.sc-rarity[data-upgradeable]{cursor:pointer;transition:all 0.2s;position:relative}
+.sc-rarity[data-upgradeable]:hover{transform:translateY(-1px);filter:brightness(1.2)}
+.sc-rarity[data-upgradeable]::after{content:'\25B2';margin-left:4px;font-size:6px;opacity:0.5}
+.sc-rarity--preview{animation:rarityPulse 0.3s ease}
+@keyframes rarityPulse{0%{transform:scale(1)}50%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+/* ── Card back ── */
+.sc-card-back{position:absolute;inset:2px;border-radius:10px;z-index:15;
+  background:linear-gradient(180deg,#0e0c18 0%,#100e1c 50%,#0a0812 100%);
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  overflow:hidden}
+.sc-card-back.visible{display:flex}
+.sc-card-back::before{content:'';position:absolute;inset:6px;border-radius:8px;
+  border:1px solid rgba(212,166,75,0.15);pointer-events:none}
+.sc-card-back::after{content:'';position:absolute;inset:0;
+  background:repeating-linear-gradient(45deg,transparent,transparent 8px,rgba(212,166,75,0.02) 8px,rgba(212,166,75,0.02) 9px);
+  pointer-events:none}
+.sc-card-back__img{width:80px;height:80px;object-fit:contain;opacity:0.6;
+  filter:drop-shadow(0 0 12px rgba(212,166,75,0.2));position:relative;z-index:1}
+.sc-card-back__text{font-family:var(--font-title);font-size:9px;letter-spacing:3px;
+  color:rgba(212,166,75,0.35);text-transform:uppercase;position:relative;z-index:1}
+.sc-card-back__pattern{position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 40%,rgba(212,166,75,0.04),transparent 60%);
+  pointer-events:none}
+/* If a custom card-back image is supplied */
+.sc-card-back--custom{background-size:cover;background-position:center}
+.sc-card-back--custom::after{display:none}
 
 /* ── Effect box ── */
 .sc-effect{padding:6px 9px;border-radius:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);margin-bottom:5px}
