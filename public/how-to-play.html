@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="/css/nav-v2.css">
 
   <style>
-    /* ══ How to Play specific styles ══ */
+    /* â•â• How to Play specific styles â•â• */
 
     .hero-section {
       text-align: center;
@@ -335,7 +335,7 @@
       gap: 8px;
     }
     .faq-q::before {
-      content: '▸';
+      content: 'â–¸';
       color: var(--gold);
       font-size: 12px;
     }
@@ -358,7 +358,7 @@
 </head>
 <body>
 
-  <!-- ══ NAVIGATION ══ -->
+  <!-- â•â• NAVIGATION â•â• -->
     <nav class="top-nav">
     <div class="top-nav-content">
       <a href="/" class="nav-logo">Nine Lives Network</a>
@@ -388,12 +388,12 @@
       <a href="#" class="logout-btn" onclick="doLogout()" id="mobileLogout" style="display:none;">Logout</a>
   </div>
 
-  <!-- ══ MAIN CONTENT ══ -->
+  <!-- â•â• MAIN CONTENT â•â• -->
   <div class="main-container">
 
     <!-- Hero -->
     <div class="hero-section fade-up">
-      <div class="hero-section__icon">🧙</div>
+      <div class="hero-section__icon">ðŸ§™</div>
       <h1 class="hero-section__title">How to Play</h1>
       <p class="hero-section__sub">Become part of the story. Earn your place in Avaloris.</p>
     </div>
@@ -401,12 +401,13 @@
     <!-- Tabs -->
     <div class="tab-bar fade-up fade-up-1">
       <button class="tab-btn active" onclick="switchTab('overview')">Getting Started</button>
+      <button class="tab-btn" onclick="switchTab('cards')">Cards &amp; Packs</button>
       <button class="tab-btn" onclick="switchTab('points')">Points</button>
       <button class="tab-btn" onclick="switchTab('examples')">Daily Examples</button>
       <button class="tab-btn" onclick="switchTab('faq')">FAQ</button>
     </div>
 
-    <!-- ═══ TAB 1: GETTING STARTED ═══ -->
+    <!-- TAB 1: GETTING STARTED -->
     <div class="tab-content active" id="tab-overview">
       <div class="card fade-up fade-up-2">
 
@@ -422,334 +423,258 @@
           <div class="step__number">2</div>
           <div class="step__content">
             <div class="step__title">Choose Your House</div>
-            <div class="step__desc">Pick one of 9 magical houses. Each has its own identity, emblem, and community. This is permanent — choose wisely!</div>
+            <div class="step__desc">Pick one of 9 magical houses. Each has its own identity, emblem, and community. This is permanent — choose wisely! Your house spells get bonus power.</div>
           </div>
         </div>
 
         <div class="step">
           <div class="step__number">3</div>
           <div class="step__content">
-            <div class="step__title">Rep Your Community</div>
-            <div class="step__desc">Optionally rep your crypto community (like $BONK or $WIF) by pasting the Solana contract address on your dashboard. Your community competes on the community power leaderboard.</div>
+            <div class="step__title">Open Your Daily Pack</div>
+            <div class="step__desc">Every day you get a free <a href="/packs.html">pack of 5 spell cards</a>: 5 random spells from all 9 houses (including 4 universal). Each card has a rarity (Common → Legendary) that multiplies your power.</div>
           </div>
         </div>
 
         <div class="step">
           <div class="step__number">4</div>
           <div class="step__content">
-            <div class="step__title">Join the Daily Story</div>
-            <div class="step__desc">Every day at 8 AM UTC, <a href="https://twitter.com/9LVNetwork" target="_blank">@9LVNetwork</a> posts a new story chapter. Reply to the tweet to participate and earn points.</div>
+            <div class="step__title">Join the Daily Story on 𝕏</div>
+            <div class="step__desc">Every day at 8 AM UTC, <a href="https://twitter.com/9LVNetwork" target="_blank">@9LVNetwork</a> posts a new story chapter. Reply, like, retweet, and quote tweet to earn <strong>Points</strong> and <strong>Arcane Energy ⚡</strong>.</div>
           </div>
         </div>
 
         <div class="step">
           <div class="step__number">5</div>
           <div class="step__content">
-            <div class="step__title">Control Territory</div>
-            <div class="step__desc">Visit the <a href="/map.html">World map</a> to attack or defend zones. Each action costs 1 mana. Help your house control more territory for bonus points.</div>
+            <div class="step__title">Cast Spells on the World Map</div>
+            <div class="step__desc">Visit the <a href="/map.html">World map</a> and play cards from your hand on zones. Each card costs mana (1–3 MP). You get <strong>7 mana per day</strong>. Help your house control territory for bonus points.</div>
           </div>
         </div>
 
         <div class="step">
           <div class="step__number">6</div>
           <div class="step__content">
-            <div class="step__title">Climb the Ranks</div>
-            <div class="step__desc">Build streaks, earn Nerm's Pick bonus, and grind the leaderboards. Top players, houses, and communities earn glory each season.</div>
+            <div class="step__title">Upgrade Your Collection</div>
+            <div class="step__desc">Each day, if you <strong>spend all your mana</strong> AND <strong>earn 30⚡ on 𝕏</strong>, one of your cards upgrades to the next rarity overnight. Build streaks and climb the leaderboards!</div>
           </div>
         </div>
 
       </div>
     </div>
 
-    <!-- ═══ TAB 2: POINTS ═══ -->
+    <!-- TAB 2: CARDS & PACKS -->
+    <div class="tab-content" id="tab-cards">
+
+      <div class="tier-card tier-card--territory fade-up fade-up-1">
+        <div class="tier-header">
+          <div class="tier-header__left">
+            <span class="tier-header__icon">🃏</span>
+            <span class="tier-header__name">Daily Pack</span>
+          </div>
+          <span class="tier-header__pct">5 CARDS / DAY</span>
+        </div>
+        <div class="pts-row"><span class="pts-row__action">5 random spells from all houses</span><span class="pts-row__limit">T0–T3</span><span class="pts-row__value">1–3 MP</span></div>
+        <div class="pts-row"><span class="pts-row__action">Includes 4 universal spells in pool</span><span class="pts-row__limit">any house</span><span class="pts-row__value">utility</span></div>
+        <div class="tier-max"><span class="tier-max__label">Open your pack daily at</span><span class="tier-max__value"><a href="/packs.html" style="color:var(--gold)">Packs page</a></span></div>
+      </div>
+
+      <div class="tier-card tier-card--x fade-up fade-up-2">
+        <div class="tier-header">
+          <div class="tier-header__left">
+            <span class="tier-header__icon">✨</span>
+            <span class="tier-header__name">Card Rarity</span>
+          </div>
+          <span class="tier-header__pct">POWER MULTIPLIER</span>
+        </div>
+        <div class="pts-row"><span class="pts-row__action" style="color:#bbb">Common</span><span class="pts-row__limit">55% drop</span><span class="pts-row__value">×1.0</span></div>
+        <div class="pts-row"><span class="pts-row__action" style="color:#66dd66">Uncommon</span><span class="pts-row__limit">25% drop</span><span class="pts-row__value" style="color:#66dd66">×1.25</span></div>
+        <div class="pts-row"><span class="pts-row__action" style="color:#55bbff">Rare</span><span class="pts-row__limit">12% drop</span><span class="pts-row__value" style="color:#55bbff">×1.5</span></div>
+        <div class="pts-row"><span class="pts-row__action" style="color:#bb88ff">Epic</span><span class="pts-row__limit">6% drop</span><span class="pts-row__value" style="color:#bb88ff">×2.0</span></div>
+        <div class="pts-row"><span class="pts-row__action" style="color:#ffd700">Legendary</span><span class="pts-row__limit">2% drop</span><span class="pts-row__value pts-row__value--special" style="color:#ffd700">×3.0</span></div>
+        <div class="tier-max"><span class="tier-max__label">Rarity multiplies both points and influence</span><span class="tier-max__value">up to ×3</span></div>
+      </div>
+
+      <div class="tier-card tier-card--streak fade-up fade-up-3">
+        <div class="tier-header">
+          <div class="tier-header__left">
+            <span class="tier-header__icon">🏠</span>
+            <span class="tier-header__name">House Affinity</span>
+          </div>
+          <span class="tier-header__pct">BONUS POWER</span>
+        </div>
+        <div class="pts-row"><span class="pts-row__action">Your house spell</span><span class="pts-row__limit">matching</span><span class="pts-row__value pts-row__value--mult">+30% pts, +20% influence</span></div>
+        <div class="pts-row"><span class="pts-row__action">Allied house spell</span><span class="pts-row__limit">allied</span><span class="pts-row__value pts-row__value--mult">+10% pts</span></div>
+        <div class="pts-row"><span class="pts-row__action">Any other spell</span><span class="pts-row__limit">neutral</span><span class="pts-row__value">no bonus</span></div>
+        <div class="tier-max"><span class="tier-max__label">Everyone can use every spell — your house just makes its spells stronger</span><span class="tier-max__value"></span></div>
+      </div>
+
+      <div class="tier-card fade-up fade-up-4" style="border-color:rgba(0,212,255,0.25)">
+        <div class="tier-header">
+          <div class="tier-header__left">
+            <span class="tier-header__icon">⬆️</span>
+            <span class="tier-header__name">Card Upgrades</span>
+          </div>
+          <span class="tier-header__pct">DAILY GOAL</span>
+        </div>
+        <div class="pts-row"><span class="pts-row__action">Spend all 7 mana on the map</span><span class="pts-row__limit">✅ or ❌</span><span class="pts-row__value">Condition 1</span></div>
+        <div class="pts-row"><span class="pts-row__action">Earn 30⚡ Arcane Energy on 𝕏</span><span class="pts-row__limit">✅ or ❌</span><span class="pts-row__value">Condition 2</span></div>
+        <div class="tier-max"><span class="tier-max__label">Both met = 1 card upgrades at midnight</span><span class="tier-max__value">Common → Legendary</span></div>
+      </div>
+
+    </div>
+
+    <!-- TAB 3: POINTS -->
     <div class="tab-content" id="tab-points">
 
-      <!-- Tier 1: X Battlefield -->
       <div class="tier-card tier-card--x fade-up fade-up-1">
         <div class="tier-header">
           <div class="tier-header__left">
             <span class="tier-header__icon">𝕏</span>
             <span class="tier-header__name">𝕏 Battlefield</span>
           </div>
-          <span class="tier-header__pct">~60% OF DAILY PTS</span>
+          <span class="tier-header__pct">POINTS + ARCANE ENERGY</span>
         </div>
-
-        <div class="pts-row">
-          <span class="pts-row__action">Reply to daily story</span>
-          <span class="pts-row__limit">1/day</span>
-          <span class="pts-row__value">+20 pts</span>
-        </div>
-        <div class="pts-row">
-          <span class="pts-row__action">Like story post</span>
-          <span class="pts-row__limit">1/day</span>
-          <span class="pts-row__value">+5 pts</span>
-        </div>
-        <div class="pts-row">
-          <span class="pts-row__action">Retweet</span>
-          <span class="pts-row__limit">1/day</span>
-          <span class="pts-row__value">+10 pts</span>
-        </div>
-        <div class="pts-row">
-          <span class="pts-row__action">Quote tweet</span>
-          <span class="pts-row__limit">1/day</span>
-          <span class="pts-row__value">+15 pts</span>
-        </div>
-        <div class="pts-row">
-          <span class="pts-row__action">Short reply bonus (10-30 words)</span>
-          <span class="pts-row__limit"></span>
-          <span class="pts-row__value">+5 pts</span>
-        </div>
-        <div class="pts-row">
-          <span class="pts-row__action">Detailed reply (30+ words)</span>
-          <span class="pts-row__limit"></span>
-          <span class="pts-row__value">+10 pts</span>
-        </div>
-        <div class="pts-row">
-          <span class="pts-row__action">🎰 Nerm's Pick (AI selects best)</span>
-          <span class="pts-row__limit">1-3/day</span>
-          <span class="pts-row__value pts-row__value--special">+25 pts</span>
-        </div>
-
-        <div class="tier-max">
-          <span class="tier-max__label">Max daily from 𝕏</span>
-          <span class="tier-max__value">~80 pts</span>
-        </div>
+        <div class="pts-row"><span class="pts-row__action">Reply to daily story</span><span class="pts-row__limit">1/day</span><span class="pts-row__value">+20 pts &nbsp;+20⚡</span></div>
+        <div class="pts-row"><span class="pts-row__action">Like story post</span><span class="pts-row__limit">1/day</span><span class="pts-row__value">+5 pts &nbsp;+5⚡</span></div>
+        <div class="pts-row"><span class="pts-row__action">Retweet</span><span class="pts-row__limit">1/day</span><span class="pts-row__value">+10 pts &nbsp;+10⚡</span></div>
+        <div class="pts-row"><span class="pts-row__action">Quote tweet</span><span class="pts-row__limit">1/day</span><span class="pts-row__value">+15 pts &nbsp;+15⚡</span></div>
+        <div class="pts-row"><span class="pts-row__action">Short reply bonus (10–30 words)</span><span class="pts-row__limit"></span><span class="pts-row__value">+5 pts &nbsp;+5⚡</span></div>
+        <div class="pts-row"><span class="pts-row__action">Detailed reply (30+ words)</span><span class="pts-row__limit"></span><span class="pts-row__value">+10 pts &nbsp;+10⚡</span></div>
+        <div class="pts-row"><span class="pts-row__action">🎰 Nerm's Pick (AI selects best)</span><span class="pts-row__limit">1–3/day</span><span class="pts-row__value pts-row__value--special">+25 pts &nbsp;+25⚡</span></div>
+        <div class="pts-row"><span class="pts-row__action">Likes on YOUR reply</span><span class="pts-row__limit">cap 20</span><span class="pts-row__value">+1⚡ each</span></div>
+        <div class="pts-row"><span class="pts-row__action">RTs of YOUR quote tweet</span><span class="pts-row__limit">cap 20</span><span class="pts-row__value">+2⚡ each</span></div>
+        <div class="tier-max"><span class="tier-max__label">Max daily from 𝕏</span><span class="tier-max__value">~80 pts &nbsp;~105⚡</span></div>
       </div>
 
-      <!-- Tier 2: Territory -->
       <div class="tier-card tier-card--territory fade-up fade-up-2">
         <div class="tier-header">
           <div class="tier-header__left">
             <span class="tier-header__icon">⚔️</span>
             <span class="tier-header__name">Territory Control</span>
           </div>
-          <span class="tier-header__pct">~30% OF DAILY PTS</span>
+          <span class="tier-header__pct">7 MANA / DAY</span>
         </div>
-
-        <div class="pts-row">
-          <span class="pts-row__action">Attack a zone</span>
-          <span class="pts-row__limit">costs 1 mana</span>
-          <span class="pts-row__value">+8 pts</span>
-        </div>
-        <div class="pts-row">
-          <span class="pts-row__action">Defend a zone</span>
-          <span class="pts-row__limit">costs 1 mana</span>
-          <span class="pts-row__value">+8 pts</span>
-        </div>
-        <div class="pts-row">
-          <span class="pts-row__action">All mana spent bonus</span>
-          <span class="pts-row__limit">1/day</span>
-          <span class="pts-row__value">+5 pts</span>
-        </div>
-        <div class="pts-row">
-          <span class="pts-row__action">Zone captured (house wins)</span>
-          <span class="pts-row__limit">end of day</span>
-          <span class="pts-row__value">+10 pts</span>
-        </div>
-        <div class="pts-row">
-          <span class="pts-row__action">Zone held 3+ days</span>
-          <span class="pts-row__limit">passive</span>
-          <span class="pts-row__value">+3 pts/day</span>
-        </div>
-        <div class="pts-row">
-          <span class="pts-row__action">Objective zone multiplier</span>
-          <span class="pts-row__limit"></span>
-          <span class="pts-row__value pts-row__value--mult">×1.5</span>
-        </div>
-
-        <div class="tier-max">
-          <span class="tier-max__label">Max daily from territory</span>
-          <span class="tier-max__value">~58 pts</span>
-        </div>
+        <div class="pts-row"><span class="pts-row__action">Cast any card on a zone</span><span class="pts-row__limit">costs mana</span><span class="pts-row__value">+10 pts × rarity</span></div>
+        <div class="pts-row"><span class="pts-row__action">Bonus effect triggers</span><span class="pts-row__limit">per effect</span><span class="pts-row__value">+3 pts each</span></div>
+        <div class="pts-row"><span class="pts-row__action">All mana spent bonus</span><span class="pts-row__limit">1/day</span><span class="pts-row__value">+10 pts</span></div>
+        <div class="pts-row"><span class="pts-row__action">Zone captured (house wins)</span><span class="pts-row__limit">end of day</span><span class="pts-row__value">+15 pts</span></div>
+        <div class="pts-row"><span class="pts-row__action">Zone held 3+ days</span><span class="pts-row__limit">passive</span><span class="pts-row__value">+5 pts/day</span></div>
+        <div class="pts-row"><span class="pts-row__action">Objective zone multiplier</span><span class="pts-row__limit"></span><span class="pts-row__value pts-row__value--mult">×1.5</span></div>
+        <div class="tier-max"><span class="tier-max__label">Mana is map-only. 𝕏 actions don't cost mana.</span><span class="tier-max__value">~95+ pts</span></div>
       </div>
 
-      <!-- Tier 3: Streaks -->
       <div class="tier-card tier-card--streak fade-up fade-up-3">
         <div class="tier-header">
           <div class="tier-header__left">
-            <span class="tier-header__icon"><img src="/assets/images/houses/House-smoulders.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""></span>
+            <span class="tier-header__icon">🔥</span>
             <span class="tier-header__name">Streak Multipliers</span>
           </div>
           <span class="tier-header__pct">~10% BONUS</span>
         </div>
-
-        <div class="pts-row">
-          <span class="pts-row__action">First activity of the day</span>
-          <span class="pts-row__limit">1/day</span>
-          <span class="pts-row__value">+5 pts</span>
-        </div>
-        <div class="pts-row">
-          <span class="pts-row__action">3-6 day streak</span>
-          <span class="pts-row__limit">all earnings</span>
-          <span class="pts-row__value pts-row__value--mult">×1.1</span>
-        </div>
-        <div class="pts-row">
-          <span class="pts-row__action">7-13 day streak</span>
-          <span class="pts-row__limit">all earnings</span>
-          <span class="pts-row__value pts-row__value--mult">×1.2</span>
-        </div>
-        <div class="pts-row">
-          <span class="pts-row__action">14+ day streak</span>
-          <span class="pts-row__limit">all earnings</span>
-          <span class="pts-row__value pts-row__value--mult">×1.3</span>
-        </div>
-
-        <div class="tier-max">
-          <span class="tier-max__label">Multiplied across all tiers</span>
-          <span class="tier-max__value">up to ×1.3</span>
-        </div>
+        <div class="pts-row"><span class="pts-row__action">First activity of the day</span><span class="pts-row__limit">1/day</span><span class="pts-row__value">+5 pts</span></div>
+        <div class="pts-row"><span class="pts-row__action">3–6 day streak</span><span class="pts-row__limit">all earnings</span><span class="pts-row__value pts-row__value--mult">×1.1</span></div>
+        <div class="pts-row"><span class="pts-row__action">7–13 day streak</span><span class="pts-row__limit">all earnings</span><span class="pts-row__value pts-row__value--mult">×1.2</span></div>
+        <div class="pts-row"><span class="pts-row__action">14+ day streak</span><span class="pts-row__limit">all earnings</span><span class="pts-row__value pts-row__value--mult">×1.3</span></div>
+        <div class="tier-max"><span class="tier-max__label">Multiplied across all tiers</span><span class="tier-max__value">up to ×1.3</span></div>
       </div>
 
     </div>
 
-    <!-- ═══ TAB 3: DAILY EXAMPLES ═══ -->
+    <!-- TAB 4: DAILY EXAMPLES -->
     <div class="tab-content" id="tab-examples">
 
-      <!-- Casual -->
       <div class="example-card fade-up fade-up-1">
         <div class="example-header">
           <div class="example-header__left">
-            <span class="example-header__icon"><img src="/assets/images/houses/House-nighthollow.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""></span>
-            <div>
-              <div class="example-header__name">Casual Wizard</div>
-              <div class="example-header__sub">~2 minutes per day</div>
-            </div>
+            <span class="example-header__icon">🐱</span>
+            <div><div class="example-header__name">Casual Wizard</div><div class="example-header__sub">~3 minutes per day</div></div>
           </div>
-          <div class="example-header__pts">
-            <div class="example-header__pts-val">~30</div>
-            <div class="example-header__pts-label">PTS/DAY</div>
-          </div>
+          <div class="example-header__pts"><div class="example-header__pts-val">~40</div><div class="example-header__pts-label">PTS/DAY</div></div>
         </div>
         <div class="example-breakdown">
-          <div class="example-line">
-            <span class="example-line__action">Reply to daily story</span>
-            <span class="example-line__pts">+20</span>
-          </div>
-          <div class="example-line">
-            <span class="example-line__action">Like the post</span>
-            <span class="example-line__pts">+5</span>
-          </div>
-          <div class="example-line">
-            <span class="example-line__action">First activity bonus</span>
-            <span class="example-line__pts">+5</span>
-          </div>
+          <div class="example-line"><span class="example-line__action">Reply to daily story + like</span><span class="example-line__pts">+25 pts, +25⚡</span></div>
+          <div class="example-line"><span class="example-line__action">Cast 2 basic spells on map</span><span class="example-line__pts">+20 pts</span></div>
+          <div class="example-line"><span class="example-line__action">First activity bonus</span><span class="example-line__pts">+5</span></div>
+          <div class="example-line" style="color:var(--text-faint);font-style:italic"><span class="example-line__action">No card upgrade (didn't spend all mana)</span><span class="example-line__pts">❌</span></div>
         </div>
       </div>
 
-      <!-- Active -->
       <div class="example-card fade-up fade-up-2">
         <div class="example-header">
           <div class="example-header__left">
-            <span class="example-header__icon"><img src="/assets/images/houses/House-stormrage.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""></span>
-            <div>
-              <div class="example-header__name">Active Player</div>
-              <div class="example-header__sub">~10 minutes per day</div>
-            </div>
+            <span class="example-header__icon">⚔️</span>
+            <div><div class="example-header__name">Active Player</div><div class="example-header__sub">~10 minutes per day</div></div>
           </div>
-          <div class="example-header__pts">
-            <div class="example-header__pts-val">~100</div>
-            <div class="example-header__pts-label">PTS/DAY</div>
-          </div>
+          <div class="example-header__pts"><div class="example-header__pts-val">~130</div><div class="example-header__pts-label">PTS/DAY</div></div>
         </div>
         <div class="example-breakdown">
-          <div class="example-line">
-            <span class="example-line__action">Reply to daily story (detailed)</span>
-            <span class="example-line__pts">+30</span>
-          </div>
-          <div class="example-line">
-            <span class="example-line__action">Like + Retweet</span>
-            <span class="example-line__pts">+15</span>
-          </div>
-          <div class="example-line">
-            <span class="example-line__action">Attack 3 zones</span>
-            <span class="example-line__pts">+24</span>
-          </div>
-          <div class="example-line">
-            <span class="example-line__action">Defend 2 zones</span>
-            <span class="example-line__pts">+16</span>
-          </div>
-          <div class="example-line">
-            <span class="example-line__action">All mana spent bonus</span>
-            <span class="example-line__pts">+5</span>
-          </div>
-          <div class="example-line">
-            <span class="example-line__action">First activity + 3-day streak (×1.1)</span>
-            <span class="example-line__pts example-line__pts--mult">+~10</span>
-          </div>
+          <div class="example-line"><span class="example-line__action">Reply (detailed) + Like + RT</span><span class="example-line__pts">+45 pts, +45⚡</span></div>
+          <div class="example-line"><span class="example-line__action">Cast all 5 pack cards (Uncommon ×1.25)</span><span class="example-line__pts">+55 pts</span></div>
+          <div class="example-line"><span class="example-line__action">All mana spent bonus</span><span class="example-line__pts">+10</span></div>
+          <div class="example-line"><span class="example-line__action">Zone capture + 3-day streak (×1.1)</span><span class="example-line__pts example-line__pts--mult">+20</span></div>
+          <div class="example-line" style="color:var(--cyan)"><span class="example-line__action">✅ Card upgrade earned!</span><span class="example-line__pts" style="color:var(--cyan)">⬆️</span></div>
         </div>
       </div>
 
-      <!-- Grinder -->
       <div class="example-card fade-up fade-up-3" style="border-color: var(--gold-border);">
         <div class="example-header">
           <div class="example-header__left">
             <span class="example-header__icon">💎</span>
-            <div>
-              <div class="example-header__name">Daily Grinder</div>
-              <div class="example-header__sub">~15 minutes per day</div>
-            </div>
+            <div><div class="example-header__name">Daily Grinder</div><div class="example-header__sub">~15 minutes per day</div></div>
           </div>
-          <div class="example-header__pts">
-            <div class="example-header__pts-val">~140+</div>
-            <div class="example-header__pts-label">PTS/DAY</div>
-          </div>
+          <div class="example-header__pts"><div class="example-header__pts-val">~200+</div><div class="example-header__pts-label">PTS/DAY</div></div>
         </div>
         <div class="example-breakdown">
-          <div class="example-line">
-            <span class="example-line__action">Reply to daily story (detailed)</span>
-            <span class="example-line__pts">+30</span>
-          </div>
-          <div class="example-line">
-            <span class="example-line__action">Like + RT + Quote tweet</span>
-            <span class="example-line__pts">+30</span>
-          </div>
-          <div class="example-line">
-            <span class="example-line__action">Nerm's Pick (if selected)</span>
-            <span class="example-line__pts" style="color:var(--gold);">+25</span>
-          </div>
-          <div class="example-line">
-            <span class="example-line__action">Attack 3 + Defend 2 zones</span>
-            <span class="example-line__pts">+40</span>
-          </div>
-          <div class="example-line">
-            <span class="example-line__action">All mana spent + zone capture</span>
-            <span class="example-line__pts">+15</span>
-          </div>
-          <div class="example-line">
-            <span class="example-line__action">14-day streak (×1.3 all earnings)</span>
-            <span class="example-line__pts example-line__pts--mult">×1.3</span>
-          </div>
+          <div class="example-line"><span class="example-line__action">Full 𝕏 engagement (reply + like + RT + QT)</span><span class="example-line__pts">+60 pts, +60⚡</span></div>
+          <div class="example-line"><span class="example-line__action">Nerm's Pick bonus</span><span class="example-line__pts" style="color:var(--gold);">+25 pts</span></div>
+          <div class="example-line"><span class="example-line__action">Cast all cards (Rare Fireball ×1.5 on objective)</span><span class="example-line__pts">+75 pts</span></div>
+          <div class="example-line"><span class="example-line__action">All mana + zone captures</span><span class="example-line__pts">+25</span></div>
+          <div class="example-line"><span class="example-line__action">14-day streak (×1.3 all earnings)</span><span class="example-line__pts example-line__pts--mult">×1.3</span></div>
+          <div class="example-line" style="color:var(--gold)"><span class="example-line__action">✅ Card upgrade + growing Legendary collection</span><span class="example-line__pts" style="color:var(--gold)">👑</span></div>
         </div>
       </div>
 
-      <!-- Weekly projection -->
       <div class="weekly-card fade-up fade-up-4">
-        <div class="card-header">
-          <span class="label">📅 Weekly Projection</span>
-        </div>
-        <div class="weekly-row">
-          <span class="weekly-row__label"><img src="/assets/images/houses/House-nighthollow.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""> Casual (7 days)</span>
-          <span class="weekly-row__value">~210 pts</span>
-        </div>
-        <div class="weekly-row">
-          <span class="weekly-row__label"><img src="/assets/images/houses/House-stormrage.png" style="width:18px;height:18px;object-fit:contain;vertical-align:middle;" alt=""> Active (7 days)</span>
-          <span class="weekly-row__value">~700 pts</span>
-        </div>
-        <div class="weekly-row">
-          <span class="weekly-row__label">💎 Grinder (7 days)</span>
-          <span class="weekly-row__value">~1,100+ pts</span>
-        </div>
+        <div class="card-header"><span class="label">📅 Weekly Projection</span></div>
+        <div class="weekly-row"><span class="weekly-row__label">🐱 Casual (7 days)</span><span class="weekly-row__value">~280 pts, 0 upgrades</span></div>
+        <div class="weekly-row"><span class="weekly-row__label">⚔️ Active (7 days)</span><span class="weekly-row__value">~910 pts, 7 upgrades</span></div>
+        <div class="weekly-row"><span class="weekly-row__label">💎 Grinder (7 days)</span><span class="weekly-row__value">~1,400+ pts, 7 upgrades</span></div>
       </div>
 
     </div>
 
-    <!-- ═══ TAB 4: FAQ ═══ -->
+    <!-- TAB 5: FAQ -->
     <div class="tab-content" id="tab-faq">
       <div class="card fade-up fade-up-1">
 
         <div class="faq-item">
           <div class="faq-q">What is mana?</div>
-          <div class="faq-a">Mana is your daily energy. You get 5 mana per day. Each spell cast on 𝕏 or territory action on the map costs 1 mana. It resets at midnight UTC.</div>
+          <div class="faq-a">Mana is your daily energy for casting spells on the territory map. You get <strong>7 mana per day</strong>. Each spell costs 1–3 mana depending on its tier. Mana is <strong>map-only</strong> — 𝕏 actions don't cost mana. It resets at midnight UTC.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">What is Arcane Energy?</div>
+          <div class="faq-a">Arcane Energy (⚡) is earned by engaging on 𝕏 — replying, liking, retweeting, and quote tweeting the daily story. You need <strong>30⚡ per day</strong> (plus spending all mana) to qualify for a card upgrade. It resets at midnight UTC.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">How do card packs work?</div>
+          <div class="faq-a">Every day you get a free pack of 5 cards: 5 random spells drawn from all 9 houses plus 4 universal spells. Each card gets a random rarity (Common 55%, Uncommon 25%, Rare 12%, Epic 6%, Legendary 2%). Play them on the map to cast them.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">How do card upgrades work?</div>
+          <div class="faq-a">If you spend all 7 mana AND earn 30⚡ in the same day, one card from your collection upgrades to the next rarity at midnight (Common → Uncommon → Rare → Epic → Legendary). You need BOTH — just playing on the site or just posting on 𝕏 isn't enough.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">What is house affinity?</div>
+          <div class="faq-a">Everyone can use every spell, but casting your own house's spells gives +30% points and +20% influence. Allied house spells give +10% points. There's no penalty for using other houses' spells.</div>
+        </div>
+
+        <div class="faq-item">
+          <div class="faq-q">What do the effect pills do?</div>
+          <div class="faq-a">Effects like BURN, DRAIN, THORNS, HEAL modify what happens when you cast a card. BURN adds extra influence, DRAIN steals from the leading house, THORNS punishes attackers, HEAL restores influence. Hover over pills in the <a href="/spellbook.html">Spellbook</a> to see descriptions.</div>
         </div>
 
         <div class="faq-item">
@@ -759,27 +684,12 @@
 
         <div class="faq-item">
           <div class="faq-q">What is Nerm's Pick?</div>
-          <div class="faq-a">Each day, the AI bot Nerm selects 1-3 outstanding replies for a +25 point bonus. Write thoughtful, creative, or engaging replies to increase your chances.</div>
+          <div class="faq-a">Each day, the AI bot Nerm selects 1–3 outstanding replies for a +25 point bonus and +25⚡. Write thoughtful, creative, or engaging replies to increase your chances.</div>
         </div>
 
         <div class="faq-item">
           <div class="faq-q">How do streaks work?</div>
-          <div class="faq-a">Do any activity (reply, attack, defend) for consecutive days to build a streak. At 3 days you get ×1.1 on all points, 7 days gives ×1.2, and 14+ days gives ×1.3. Missing a day resets your streak to 0.</div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-q">What is the Territory?</div>
-          <div class="faq-a">The Territory shows community competition. If you set a community (by pasting a Solana contract address, like $BONK), your points contribute to your community's total. Communities compete for rankings and bragging rights.</div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-q">When does the daily story go live?</div>
-          <div class="faq-a">Every day at 8 AM UTC, @9LVNetwork posts a new story chapter. The story resolves at 11 PM UTC with results posted. Mana resets at midnight UTC.</div>
-        </div>
-
-        <div class="faq-item">
-          <div class="faq-q">What are lives?</div>
-          <div class="faq-a">Lives are used in the Arena (PvP duels). Losing a duel costs 1 life. Lives reset to 3 at midnight UTC. Head to the Arena to duel rival wizards!</div>
+          <div class="faq-a">Do any activity (reply, cast, attack) for consecutive days to build a streak. At 3 days you get ×1.1 on all points, 7 days gives ×1.2, and 14+ days gives ×1.3. Missing a day resets your streak to 0.</div>
         </div>
 
         <div class="faq-item">
@@ -787,39 +697,12 @@
           <div class="faq-a">Yes! Nine Lives Network is completely free to play. You only need a 𝕏 account. NFTs and tokens are optional future features.</div>
         </div>
 
+        <div class="faq-item">
+          <div class="faq-q">When does the daily story go live?</div>
+          <div class="faq-a">Every day at 8 AM UTC, @9LVNetwork posts a new story chapter. The story resolves at 11 PM UTC with results posted. Mana resets at midnight UTC.</div>
+        </div>
+
       </div>
     </div>
 
   </div>
-
-  <!-- ══ JAVASCRIPT ══ -->
-  <script>
-    function toggleMobileMenu() {
-      document.getElementById('hamburger').classList.toggle('active');
-      document.getElementById('mobileMenu').classList.toggle('active');
-    }
-
-    function switchTab(tabName) {
-      // Hide all tabs
-      var tabs = document.querySelectorAll('.tab-content');
-      for (var i = 0; i < tabs.length; i++) {
-        tabs[i].classList.remove('active');
-      }
-      // Deactivate all buttons
-      var btns = document.querySelectorAll('.tab-btn');
-      for (var i = 0; i < btns.length; i++) {
-        btns[i].classList.remove('active');
-      }
-      // Show selected tab
-      var target = document.getElementById('tab-' + tabName);
-      if (target) target.classList.add('active');
-      // Activate clicked button
-      event.target.classList.add('active');
-    }
-  </script>
-  <script>
-    if(localStorage.getItem('player_id')){var nl=document.getElementById('navLogout');if(nl)nl.style.display='';var ml=document.getElementById('mobileLogout');if(ml)ml.style.display='';}
-  </script>
-
-</body>
-</html>

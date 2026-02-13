@@ -21,7 +21,7 @@
     .lb-tab.active{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border)}
     .lb-content{display:none}.lb-content.active{display:block}
 
-    /* ═══ CHART AREA ═══ */
+    /* â•â•â• CHART AREA â•â•â• */
     .lb-chart-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:16px;margin-bottom:16px;position:relative;overflow:hidden}
     .lb-chart-card__bg{position:absolute;top:0;right:0;width:120px;height:100%;object-fit:contain;opacity:0.04;pointer-events:none}
     .lb-chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;position:relative;z-index:1}
@@ -31,7 +31,7 @@
     .lb-chart-toggle.active{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-border)}
     .lb-chart-wrap{position:relative;height:180px;z-index:1}
 
-    /* ═══ PODIUM ═══ */
+    /* â•â•â• PODIUM â•â•â• */
     .podium{display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:16px 0 20px}
     .podium-slot{display:flex;flex-direction:column;align-items:center;gap:6px;text-decoration:none}
     .podium-slot--1{order:2}.podium-slot--2{order:1}.podium-slot--3{order:3}
@@ -49,7 +49,7 @@
     .podium-slot--1 .podium-bar{height:60px;width:80px;border-color:var(--gold-border);background:var(--gold-dim)}
     .podium-slot--2 .podium-bar{height:44px}.podium-slot--3 .podium-bar{height:32px}
 
-    /* ═══ LIST ROWS ═══ */
+    /* â•â•â• LIST ROWS â•â•â• */
     .lb-list{display:flex;flex-direction:column;gap:4px}
     .lb-row{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:10px;text-decoration:none;transition:all .2s;cursor:pointer}
     .lb-row:hover{background:var(--bg-card-hover);border-color:var(--border-medium)}
@@ -72,7 +72,7 @@
     .lb-tag{font-family:var(--font-title);font-size:15px;font-weight:700;color:var(--text-bright);letter-spacing:.5px}
     .lb-empty{text-align:center;padding:30px 16px;color:var(--text-faint);font-family:var(--font-body);font-style:italic;font-size:15px}
 
-    /* ═══ HOUSE ROWS ═══ */
+    /* â•â•â• HOUSE ROWS â•â•â• */
     .house-row{display:flex;align-items:center;gap:10px;padding:14px;border-radius:12px;border:1px solid;margin-bottom:6px;position:relative;overflow:hidden;transition:all .2s}
     .house-row:hover{transform:translateY(-1px)}
     .house-row__bg{position:absolute;top:-10px;right:-10px;width:80px;height:80px;object-fit:contain;opacity:0.08;pointer-events:none}
@@ -87,7 +87,7 @@
     .house-row__pts-val{font-family:var(--font-data);font-size:14px;font-weight:700}
     .house-row__pts-label{font-family:var(--font-data);font-size:6px;letter-spacing:1px}
 
-    /* ═══ COMMUNITY ROWS ═══ */
+    /* â•â•â• COMMUNITY ROWS â•â•â• */
     .comm-row{cursor:pointer}
     .comm-icon{width:36px;height:36px;border-radius:50%;border:2px solid var(--gold-border);display:flex;align-items:center;justify-content:center;background:var(--gold-dim);flex-shrink:0;font-family:var(--font-data);font-size:8px;color:var(--gold)}
     .comm-members{display:none;padding:0 14px 12px;margin-top:-6px;background:var(--bg-card);border:1px solid var(--border-subtle);border-top:none;border-radius:0 0 10px 10px}
@@ -100,7 +100,7 @@
     .comm-arrow{font-size:10px;color:var(--text-faint);transition:transform .2s;flex-shrink:0}
     .comm-row.open .comm-arrow{transform:rotate(90deg)}
 
-    /* ═══ PLAYER POPUP ═══ */
+    /* â•â•â• PLAYER POPUP â•â•â• */
     .player-popup{position:fixed;z-index:9999;background:rgba(16,12,28,0.97);border:1px solid rgba(212,166,75,0.3);border-radius:10px;padding:14px;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,0.6);display:none;cursor:pointer;transition:opacity 0.15s}
     .player-popup.visible{display:block}
     .player-popup__row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
@@ -122,8 +122,10 @@
   <div class="mobile-menu" id="mobileMenu"><a href="/dashboard.html">Dashboard</a><a href="/map.html">World</a><a href="/leaderboards.html" class="active">Leaderboards</a><a href="/arena.html">Arena</a><a href="/spellbook.html">Spellbook</a><a href="/profile.html">Profile</a><a href="/how-to-play.html">Help</a><a href="#" class="logout-btn" onclick="doLogout()" id="mobileLogout" style="display:none;">Logout</a></div>
 
   <div class="main-container">
-    <div class="lb-hero fade-up"><h1 class="lb-hero__title">Leaderboards</h1><p class="lb-hero__sub">Who stands tallest in Avaloris?</p></div>
+    <div class="lb-hero fade-up"><h1 class="lb-hero__title">Leaderboards</h1><p class="lb-hero__sub">Communities, houses, and wizards battle for dominance</p></div>
     <div class="lb-season fade-up"><span class="badge--season">Season 0</span></div>
+    <div class="power-hero fade-up fade-up-1" id="powerHero" style="display:none;"></div>
+    <div class="league-hero fade-up fade-up-1" id="leagueHero" style="display:none;"></div>
     <div class="lb-tabs fade-up fade-up-1">
       <button class="lb-tab active" onclick="switchTab('players')">Players</button>
       <button class="lb-tab" onclick="switchTab('houses')">Houses</button>
@@ -150,12 +152,11 @@ function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace
 
 function switchTab(t){
   var c=document.querySelectorAll('.lb-content');for(var i=0;i<c.length;i++)c[i].classList.remove('active');
-  var b=document.querySelectorAll('.lb-tab');for(var i=0;i<b.length;i++)b[i].classList.remove('active');
+  var b=document.querySelectorAll('.lb-tab');for(var i=0;i<b.length;i++){b[i].classList.remove('active');if(b[i].textContent.toLowerCase().indexOf(t)!==-1)b[i].classList.add('active');}
   document.getElementById('tab-'+t).classList.add('active');
-  event.target.classList.add('active');
 }
 
-// ═══ PLAYER POPUP ═══
+// â•â•â• PLAYER POPUP â•â•â•
 var popupTimeout=null;
 function showPlayerPopup(e,p){
   clearTimeout(popupTimeout);
@@ -166,11 +167,11 @@ function showPlayerPopup(e,p){
     +'<div><div class="player-popup__name">@'+esc(p.twitter_handle||'unknown')+'</div>'
     +'<div class="player-popup__house" style="color:'+h.color+';">'+hImg(h.img,14)+h.name+'</div></div></div>'
     +'<div class="player-popup__stats">'
-    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.seasonal_points||'—')+'</div><div class="player-popup__stat-label">POINTS</div></div>'
-    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.streak||'—')+'</div><div class="player-popup__stat-label">STREAK</div></div>'
-    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.mana!=null?p.mana:'—')+'</div><div class="player-popup__stat-label">MANA</div></div>'
-    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.lives!=null?p.lives:'—')+'</div><div class="player-popup__stat-label">LIVES</div></div></div>'
-    +'<a href="/profile.html?player_id='+p.id+'" class="player-popup__link">VIEW PROFILE →</a>';
+    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.seasonal_points||'â€”')+'</div><div class="player-popup__stat-label">POINTS</div></div>'
+    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.streak||'â€”')+'</div><div class="player-popup__stat-label">STREAK</div></div>'
+    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.mana!=null?p.mana:'â€”')+'</div><div class="player-popup__stat-label">MANA</div></div>'
+    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.lives!=null?p.lives:'â€”')+'</div><div class="player-popup__stat-label">LIVES</div></div></div>'
+    +'<a href="/profile.html?player_id='+p.id+'" class="player-popup__link">VIEW PROFILE â†’</a>';
   popup.style.left=Math.min(e.clientX+10,window.innerWidth-220)+'px';
   popup.style.top=Math.max(e.clientY-140,10)+'px';
   popup.classList.add('visible');
@@ -179,16 +180,150 @@ function hidePlayerPopup(){popupTimeout=setTimeout(function(){document.getElemen
 document.getElementById('playerPopup').addEventListener('mouseenter',function(){clearTimeout(popupTimeout);});
 document.getElementById('playerPopup').addEventListener('mouseleave',function(){hidePlayerPopup();});
 
-// ═══════════════════════
-// PLAYERS TAB
-// ═══════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 
+
+// ═══ COMMUNITY CLASH LEAGUE ═══
+var clashData=null;
+async function loadClashData(){
+  try{
+    var r=await fetch('/api/clashes/current');
+    var d=await r.json();
+    if(d.success&&d.data)clashData=d.data;
+    renderLeague();
+  }catch(e){console.error('Clash load error:',e);}
+}
+function renderLeague(){
+  var el=document.getElementById('leagueHero');
+  if(!clashData||(!clashData.matchups&&!clashData.table)){el.style.display='none';return;}
+  el.style.display='block';
+  var html='<div class="league-header">';
+  html+='<div class="league-header__label">COMMUNITY CLASH</div>';
+  html+='<div class="league-header__title">Battle League</div>';
+  if(clashData.current_week)html+='<div class="league-header__week">Week '+clashData.current_week+(clashData.total_weeks?' of '+clashData.total_weeks:'')+'</div>';
+  html+='</div>';
+
+  // This week's matchups
+  var matchups=clashData.matchups||[];
+  if(matchups.length>0){
+    html+='<div class="league-matchups">';
+    matchups.forEach(function(m){
+      var a=m.team_a||{};var b=m.team_b||{};
+      var apts=a.points||0;var bpts=b.points||0;var total=apts+bpts||1;
+      var apct=Math.round(apts/total*100);var bpct=100-apct;
+      var ac=a.color||'#D4A64B';var bc=b.color||'#00D4FF';
+      var aInit=(a.tag||'?').replace('$','').substring(0,3);
+      var bInit=(b.tag||'?').replace('$','').substring(0,3);
+      var liveCls=m.status==='live'?' league-matchup--live':'';
+      html+='<div class="league-matchup'+liveCls+'">';
+      html+='<div class="lm-side">';
+      html+='<div class="lm-icon" style="border-color:'+ac+';color:'+ac+';">'+aInit+'</div>';
+      html+='<div><div class="lm-name" style="color:'+ac+';">'+esc(a.tag)+'</div><div style="font-family:var(--font-data);font-size:6px;color:var(--text-faint);">'+(a.members||0)+' raiders</div></div>';
+      html+='</div>';
+      html+='<div class="lm-pts" style="color:'+ac+';">'+apts+'</div>';
+      if(m.status==="live")html+='<div class="lm-live"></div>';
+      html+='<div class="lm-vs">VS</div>';
+      if(m.status==="live")html+='<div class="lm-live"></div>';
+      html+='<div class="lm-pts" style="color:'+bc+';">'+bpts+'</div>';
+      html+='<div class="lm-side lm-side--right">';
+      html+='<div><div class="lm-name" style="color:'+bc+';text-align:right;">'+esc(b.tag)+'</div><div style="font-family:var(--font-data);font-size:6px;color:var(--text-faint);text-align:right;">'+(b.members||0)+' raiders</div></div>';
+      html+='<div class="lm-icon" style="border-color:'+bc+';color:'+bc+';">'+bInit+'</div>';
+      html+='</div></div>';
+      // Power bar under matchup
+      html+='<div class="lm-bar" style="margin:-2px 16px 8px;"><div class="lm-bar__seg" style="width:'+apct+'%;background:'+ac+';"></div><div class="lm-bar__seg" style="width:'+bpct+'%;background:'+bc+';"></div></div>';
+    });
+    html+='</div>';
+  }
+
+  // League table
+  var table=clashData.table||[];
+  if(table.length>0){
+    html+='<div class="league-table">';
+    html+='<div class="league-table__header"><span>#</span><span>COMMUNITY</span><span>P</span><span>W</span><span>D</span><span>L</span><span>PTS</span></div>';
+    var myTag='';
+    if(myPlayerId){
+      var me=allPlayers.find(function(p){return String(p.id)===String(myPlayerId);});
+      if(me)myTag=(me.community_tag||'').toUpperCase();
+    }
+    table.forEach(function(t,i){
+      var tc=t.color||COMM_COLORS[i%COMM_COLORS.length];
+      var init=(t.tag||'?').replace('$','').substring(0,3);
+      var isYou=myTag&&t.tag&&t.tag.toUpperCase()===myTag;
+      var rowCls='league-table__row'+(isYou?' league-table__row--you':'');
+      var rankColors=['#FFD700','#C0C0C0','#CD7F32'];
+      var rc=i<3?rankColors[i]:tc;
+      html+='<div class="'+rowCls+'">';
+      html+='<div class="lt-rank" style="color:'+rc+';">'+(i+1)+'</div>';
+      html+='<div class="lt-team"><div class="lt-team__icon" style="border-color:'+tc+';color:'+tc+';">'+init+'</div><div class="lt-team__name" style="color:'+tc+';">'+esc(t.tag)+'</div></div>';
+      html+='<div class="lt-stat">'+(t.played||0)+'</div>';
+      html+='<div class="lt-stat" style="color:#44cc44;">'+(t.wins||0)+'</div>';
+      html+='<div class="lt-stat" style="color:#ccaa44;">'+(t.draws||0)+'</div>';
+      html+='<div class="lt-stat" style="color:#cc4444;">'+(t.losses||0)+'</div>';
+      html+='<div class="lt-stat lt-stat--pts" style="color:'+rc+';">'+(t.league_pts||0)+'</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  }
+
+  el.innerHTML=html;
+}
+
+// ═══ COMMUNITY POWER HERO ═══
+function renderPowerHero(communities){
+  var el=document.getElementById('powerHero');
+  if(!communities||!communities.length){el.style.display='none';return;}
+  el.style.display='block';
+  var total=0;communities.forEach(function(c){total+=(c.total_points||0);});
+  var top=communities.slice(0,6);
+  var maxPts=top.length>0?(top[0].total_points||1):1;
+
+  var html='<div class="power-hero__header">';
+  html+='<div class="power-hero__label">SEASON 0</div>';
+  html+='<div class="power-hero__title">Community Power Race</div>';
+  html+='<div class="power-hero__sub">'+communities.length+' communities battling for dominance</div>';
+  html+='</div>';
+
+  // Animated bars
+  html+='<div class="power-hero__bars">';
+  top.forEach(function(cm,i){
+    var initials=cm.community_tag.replace('$','').substring(0,3);
+    var color=COMM_COLORS[i%COMM_COLORS.length];
+    var pct=total>0?((cm.total_points/total)*100).toFixed(1):0;
+    var barW=Math.max(3,((cm.total_points||0)/maxPts)*100);
+    var rankColors=['#FFD700','#C0C0C0','#CD7F32'];
+    var rankCol=i<3?rankColors[i]:color;
+
+    html+='<div class="power-bar">';
+    html+='<div class="power-bar__rank" style="color:'+rankCol+';">'+(i+1)+'</div>';
+    html+='<div class="power-bar__icon" style="border-color:'+color+'60;color:'+color+';">'+initials+'</div>';
+    html+='<div class="power-bar__info">';
+    html+='<div style="display:flex;align-items:baseline;gap:8px;">';
+    html+='<div class="power-bar__name" style="color:'+color+';">'+esc(cm.community_tag)+'</div>';
+    html+='<div class="power-bar__meta"><span>'+(cm.member_count||0)+' raiders</span></div>';
+    html+='</div>';
+    html+='<div class="power-bar__track"><div class="power-bar__fill" style="width:'+barW+'%;background:linear-gradient(90deg,'+color+','+color+'88);"></div></div>';
+    html+='</div>';
+    html+='<div class="power-bar__pts" style="color:'+color+';">'+(cm.total_points||0)+'</div>';
+    html+='<div class="power-bar__pct" style="color:'+color+'80;">'+pct+'%</div>';
+    html+='</div>';
+  });
+  html+='</div>';
+
+  // CTA to communities tab
+  if(communities.length>6)html+='<a href="#" class="power-hero__cta" onclick="event.preventDefault();document.querySelectorAll(\'.lb-tab\')[2].click();">View All '+communities.length+' Communities &#8594;</a>';
+
+  el.innerHTML=html;
+}
+
+PLAYERS TAB
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function renderPlayers(players){
   allPlayers=players;
   var c=document.getElementById('tab-players');
   if(!players||!players.length){c.innerHTML='<div class="lb-empty">No players yet. Be the first!</div>';return;}
   var html='';
 
-  // Chart card — "market style" candlestick-ish line chart
+  // Chart card â€” "market style" candlestick-ish line chart
   html+='<div class="lb-chart-card fade-up"><div class="lb-chart-header"><div class="lb-chart-title">PLAYER POWER INDEX</div></div><div class="lb-chart-wrap"><canvas id="playerChart"></canvas></div></div>';
 
   // Podium
@@ -236,9 +371,9 @@ function drawPlayerChart(players){
       scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#606070',font:{family:'JetBrains Mono',size:8}}},y:{grid:{display:false},ticks:{color:function(ctx){return colors[ctx.index]||'#aaa';},font:{family:'Press Start 2P',size:7}}}}}});
 }
 
-// ═══════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // HOUSES TAB
-// ═══════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function renderHouses(schools){
   allSchools=schools;
   var c=document.getElementById('tab-houses');
@@ -246,7 +381,7 @@ function renderHouses(schools){
   var mx=schools[0].total_points||1;
   var html='';
 
-  // House chart — same style as dashboard horizontal bar
+  // House chart â€” same style as dashboard horizontal bar
   html+='<div class="lb-chart-card fade-up"><div class="lb-chart-header"><div class="lb-chart-title">HOUSE POWER RANKINGS</div></div><div class="lb-chart-wrap"><canvas id="houseChart"></canvas></div></div>';
 
   // House rows with house-colored backgrounds and crest banners
@@ -291,9 +426,9 @@ function drawHouseChart(schools){
       scales:{x:{grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'#606070',font:{family:'JetBrains Mono',size:8}}},y:{grid:{display:false},ticks:{color:function(ctx){return colors[ctx.index]||'#aaa';},font:{family:'Cinzel',size:10,weight:600}}}}}});
 }
 
-// ═══════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // COMMUNITIES TAB
-// ═══════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 function renderCommunities(communities){
   allCommunities=communities;
   var c=document.getElementById('tab-communities');
@@ -303,7 +438,7 @@ function renderCommunities(communities){
   // Dopamine chart
   html+='<div class="lb-chart-card fade-up" style="border-color:rgba(212,166,75,0.2);"><div class="lb-chart-header"><div class="lb-chart-title">COMMUNITY POWER RACE</div></div><div class="lb-chart-wrap" style="height:200px;"><canvas id="commChart"></canvas></div></div>';
 
-  // Community rows — clickable to expand members
+  // Community rows â€” clickable to expand members
   html+='<div class="lb-list" id="commList">';
   for(var i=0;i<communities.length;i++){
     var cm=communities[i];var rc=i<3?'lb-rank--gold':'';
@@ -315,7 +450,7 @@ function renderCommunities(communities){
       +'<div class="lb-info"><div class="lb-tag" style="color:'+color+';">'+esc(cm.community_tag)+'</div>'
       +'<div class="lb-meta">'+(cm.member_count||0)+' members</div></div>'
       +'<div class="lb-points"><div class="lb-points__val">'+(cm.total_points||0)+'</div><div class="lb-points__label">PTS</div></div>'
-      +'<span class="comm-arrow">▸</span></div>'
+      +'<span class="comm-arrow">â–¸</span></div>'
       +'<div class="comm-members" id="commMembers'+i+'"><div style="padding:10px 0;text-align:center;color:var(--text-faint);font-family:var(--font-body);font-size:13px;">Loading members...</div></div>';
   }
   html+='</div>';
@@ -352,7 +487,7 @@ function toggleComm(idx){
 
 function drawCommChart(communities){
   var cv=document.getElementById('commChart');if(!cv||!communities.length)return;
-  // Polarized dopamine chart — radial/doughnut for community power share
+  // Polarized dopamine chart â€” radial/doughnut for community power share
   var labels=communities.slice(0,8).map(function(c){return c.community_tag;});
   var data=communities.slice(0,8).map(function(c){return c.total_points||0;});
   var colors=communities.slice(0,8).map(function(c,i){return COMM_COLORS[i%COMM_COLORS.length];});
@@ -362,7 +497,7 @@ function drawCommChart(communities){
         tooltip:{backgroundColor:'#1a1a2e',borderColor:'#D4A64B44',borderWidth:1,titleFont:{family:'Cinzel',size:12},bodyFont:{family:'JetBrains Mono',size:10},callbacks:{label:function(ctx){var total=ctx.dataset.data.reduce(function(a,b){return a+b;},0);var pct=total>0?((ctx.raw/total)*100).toFixed(1):'0';return ctx.label+': '+ctx.raw+' pts ('+pct+'%)';}}}}}});
 }
 
-// ═══ LOAD ═══
+// â•â•â• LOAD â•â•â•
 async function loadLeaderboards(){
   try{
     var r=await Promise.all([
@@ -370,7 +505,7 @@ async function loadLeaderboards(){
       fetch('/api/leaderboards/schools').then(function(r){return r.json();}),
       fetch('/api/leaderboards/communities').then(function(r){return r.json();})
     ]);
-    renderPlayers(r[0]||[]);renderHouses(r[1]||[]);renderCommunities(r[2]||[]);
+    renderPowerHero(r[2]||[]);loadClashData();renderPlayers(r[0]||[]);renderHouses(r[1]||[]);renderCommunities(r[2]||[]);
     var l=document.getElementById('loadingState');if(l)l.style.display='none';
   }catch(e){
     console.error('Leaderboards error:',e);
