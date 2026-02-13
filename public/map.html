@@ -273,6 +273,7 @@
   <div class="toast" id="toast"></div>
   <div class="player-popup" id="playerPopup"></div>
 
+<script src="/js/spell-card-builder.js"></script>
 <script src="/js/spell-particles.js"></script>
 <script>
 var HOUSES={1:{name:'Smoulders',color:'#E03C31',glow:'#ff6b5b',slug:'smoulders',img:'Housesmoulders.png'},2:{name:'Darktide',color:'#00B4D8',glow:'#4de8ff',slug:'darktide',img:'Housedarktide.png'},3:{name:'Stonebark',color:'#5CB338',glow:'#8aef5a',slug:'stonebark',img:'Housestonebark.png'},4:{name:'Ashenvale',color:'#90E0EF',glow:'#b8f0ff',slug:'ashenvale',img:'HouseAshenvale.png'},5:{name:'Stormrage',color:'#FFC800',glow:'#ffe566',slug:'stormrage',img:'Housestormrage.png'},6:{name:'Nighthollow',color:'#7B2D8E',glow:'#c066dd',slug:'nighthollow',img:'Housenighthollow.png'},7:{name:'Dawnbringer',color:'#FF8C00',glow:'#ffb84d',slug:'dawnbringer',img:'HouseDwnbringer.png'},8:{name:'Manastorm',color:'#5B8FE0',glow:'#8bb8ff',slug:'manastorm',img:'Housemanastorm.png'},9:{name:'Plaguemire',color:'#E84393',glow:'#ff7ab8',slug:'plaguemire',img:'Houseplaguemire.png'}};
@@ -286,37 +287,13 @@ var PC={'BURN':'orange','SCALD':'orange','SPREAD':'red','STRIP':'red','ERUPTION'
 function pillCol(tag){var k=tag.replace(/[\+\d\sÃƒâ€”x\.]/g,'').toUpperCase();for(var p in PC){if(k.indexOf(p)!==-1)return PC[p];}return'gray';}
 
 function buildMiniSpellCard(s,zoneId){
-  var h=SLUG_MAP[s.house]||SLUG_MAP.universal;
-  var bn=[];
-  try{var ef=s.effects||s.bonus_effects||[];bn=typeof ef==='string'?JSON.parse(ef):ef;if(!Array.isArray(bn))bn=[];}catch(e){bn=[];}
-  var cost=s.cost||s.mana_cost||1;
-  var mo='<div class="sc-mana sc-mana--mini">'+cost+'MP</div>';
-  var spellType=s.type||s.spell_type||'attack';
-  var pl='';
-  if(bn.length>0){pl='<div class="sc-pills">';bn.forEach(function(b){var tag=(typeof b==='string')?b:(b.tag||b.key||'');var desc=(typeof b==='string')?tag:(b.desc||b.description||tag);pl+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';});pl+='</div>';}
-  var be='';if(s.base_effect&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
   var escName=esc(s.name).replace(/'/g,"\\'");
-  var hasArt=s.image_url&&s.image_url.length>0;
-  var artImg=hasArt?'<div class="sc-art-img" style="background-image:url(/assets/images/spells/'+esc(s.image_url)+')"></div>':'';
-  var artBlock=hasArt?'<div style="flex:0 0 60px"></div>':'<div class="sc-art" style="height:60px"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div></div>';
-  var r=s.rarity||'common';
-  var rarityColors={common:'#bbb',uncommon:'#66dd66',rare:'#55bbff',epic:'#bb88ff',legendary:'#ffd700'};
-  var rc=rarityColors[r]||'#bbb';
-  var pType=PARTICLE_MAP[s.house]||'stardust';
-  return '<div class="spell-card show" style="--hc:'+h.color+';--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810)" onclick="event.stopPropagation();castSpellOnZone(\''+zoneId+'\',\''+escName+'\')" data-house="'+s.house+'" data-type="'+spellType+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="25">'
-    +'<div class="sc-border"></div><div class="sc-edge"></div>'
-    +'<div class="sc-face">'+artImg+'<div class="sc-inner-edge"></div></div>'
-    +'<div class="sc-foil"></div><div class="sc-rainbow"></div>'
-    +'<canvas class="sc-particles"></canvas><div class="sc-glow"></div>'
-    +'<div class="sc-body">'
-    +'<div class="sc-top" style="padding:6px 8px"><div class="sc-name" style="font-size:10px">'+esc(s.name)+'</div>'+mo+'</div>'
-    +artBlock
-    +'<div class="sc-info">'
-    +'<div class="sc-type-row"><span class="sc-type sc-type--'+spellType+'">'+spellType+'</span><span class="sc-type-spacer"></span><span style="font-family:var(--font-data);font-size:5px;color:'+rc+';letter-spacing:0.5px">'+r.toUpperCase()+'</span></div>'
-    +be+pl
-    +'<div class="sc-flavor">'+esc(s.flavor_text||s.motto||'')+'</div>'
-    +'<div class="sc-bottom" style="color:'+h.color+'">'+(h.name||'').toUpperCase()+'</div>'
-    +'</div></div></div>';
+  return buildSpellCard(s, {
+    delay: 0,
+    rarity: s.rarity || null,
+    mini: true,
+    onclick: "event.stopPropagation();castSpellOnZone(\'"+zoneId+"\',\'"+escName+"\')"
+  });
 }
 
 function toggleMobileMenu(){document.getElementById('hamburger').classList.toggle('active');document.getElementById('mobileMenu').classList.toggle('active');}

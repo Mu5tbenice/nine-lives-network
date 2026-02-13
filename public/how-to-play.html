@@ -706,3 +706,26 @@
     </div>
 
   </div>
+
+  <script>
+    function switchTab(tabName) {
+      var tabs = document.querySelectorAll('.tab-content');
+      for (var i = 0; i < tabs.length; i++) tabs[i].classList.remove('active');
+      var btns = document.querySelectorAll('.tab-btn');
+      for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+      var target = document.getElementById('tab-' + tabName);
+      if (target) target.classList.add('active');
+      // Find matching button by tab name
+      for (var i = 0; i < btns.length; i++) {
+        if (btns[i].getAttribute('onclick') && btns[i].getAttribute('onclick').indexOf(tabName) !== -1) {
+          btns[i].classList.add('active');
+        }
+      }
+    }
+  </script>
+  <script>
+    if(localStorage.getItem('player_id')){var nl=document.getElementById('navLogout');if(nl)nl.style.display='';var ml=document.getElementById('mobileLogout');if(ml)ml.style.display='';}
+  </script>
+
+</body>
+</html>

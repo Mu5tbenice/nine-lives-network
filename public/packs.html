@@ -313,6 +313,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   <div class="zoom-card" id="zoomCard"><button class="zoom-close" onclick="closeZoom(event)">&#10005;</button></div>
 </div>
 
+<script src="/js/spell-card-builder.js"></script>
 <script src="/js/spell-particles.js"></script>
 <script>
 // â•â•â• HOUSE DATA (match spellbook exactly) â•â•â•
@@ -351,98 +352,7 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 
 // â•â•â• BUILD SPELL CARD (same as spellbook) â•â•â•
 function buildCard(s, d, rarity){
-  var h=HOUSES[s.house]||HOUSES.universal;
-  var bn=[];
-  try{bn=typeof s.effects==='string'?JSON.parse(s.effects):(s.effects||[]);
-    if(!Array.isArray(bn)&&typeof s.bonus_effects!=='undefined'){bn=typeof s.bonus_effects==='string'?JSON.parse(s.bonus_effects):(s.bonus_effects||[]);}
-  }catch(e){bn=[];}
-
-  var tl=s.tier===0?'BASIC':s.tier>=2?'TIER '+s.tier:'TIER 1';
-  var tc=s.tier>=2?'#00D4FF':s.tier===0?'#847C98':h.color;
-  var mo='<div class="sc-mana">'+s.cost+' MP</div>';
-  var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:28px;position:relative;z-index:1">âœ¦</span>';
-  var tb=s.tier>=2?'<span class="sc-tier">T'+s.tier+'</span>':'';
-  var spellType=s.type||s.spell_type||'attack';
-
-  var pl='';
-  if(bn.length>0){pl='<div class="sc-pills">';bn.forEach(function(b){
-    var tag=(typeof b==='string')?b:(b.tag||b.key||'');
-    var desc=(typeof b==='string')?tag:(b.desc||b.description||tag);
-    pl+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';
-  });pl+='</div>';}
-
-  var be='';if(s.base_effect&&s.base_effect!=='â€”'&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
-
-  var pType=PARTICLE_MAP[s.house]||'stardust';
-  var crestHtml=h.img?'<div class="sc-crest-watermark" style="background-image:url('+h.img+')"></div>':'';
-  var miniCrest=h.img?'<div class="sc-mini-crest" style="background-image:url('+h.img+')"></div>':'';
-  var hasArt=s.image_url&&s.image_url.length>0;
-  var artImg=hasArt?'<div class="sc-art-img" style="background-image:url(/assets/images/spells/'+esc(s.image_url)+')"></div>':'';
-  var artBlock=hasArt?'':'<div class="sc-art"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div><div class="sc-art__glow" style="background:radial-gradient(circle,'+h.color+'0A,transparent 70%)"></div>'+ai+'<div class="sc-art__corner sc-art__corner--tl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--tr" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--bl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--br" style="background:'+h.color+'25"></div><div class="sc-art__tier" style="color:'+tc+'">'+tl+'</div></div>';
-
-  // Rarity info
-  var rc=RARITY_COLORS[rarity||'common'];
-  var rarityHtml='<div class="rarity-badge rarity-badge--'+(rarity||'common')+'" style="position:absolute;top:6px;right:6px;z-index:20">'+rc.label+' '+RARITY_MULT[rarity||'common']+'</div>';
-
-  return '<div class="spell-card" data-house="'+s.house+'" data-type="'+spellType+'" data-rarity="'+(rarity||'common')+'" data-color="'+h.color+'" data-glow="'+h.color+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="25" style="--hc:'+h.color+';--hc-shadow:'+h.color+'30;--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810);transition-delay:'+(d||0)+'s">'
-    +'<div class="sc-border"></div><div class="sc-edge"></div>'
-    +'<div class="sc-face">'+artImg+'<div class="sc-inner-edge"></div>'+crestHtml
-    +'<div class="sc-foil"></div><div class="sc-rainbow"></div>'
-    +'<canvas class="sc-particles"></canvas><div class="sc-glow"></div></div>'
-    +'<div class="sc-body">'
-    +rarityHtml
-    +'<div class="sc-top"><div class="sc-name-row">'+miniCrest+'<div class="sc-name" style="color:'+h.color+'">'+esc(s.name)+'</div></div>'+mo+'</div>'
-    +artBlock
-    +'<div class="sc-info">'
-    +'<div class="sc-type-row"><span class="sc-type sc-type--'+spellType+'">'+spellType+'</span>'+tb+'<span class="sc-type-spacer"></span><span class="sc-house-tag" style="color:'+h.color+'">'+(h.name||'').toUpperCase()+'</span></div>'
-    +be+pl
-    +'<div class="sc-flavor">"Cast with purpose."</div>'
-    +'<div class="sc-bottom" style="color:'+h.color+'">'+(h.name||'').toUpperCase()+'</div>'
-    +'</div></div></div>';
-}
-
-// â•â•â• OPEN PACK â•â•â•
-async function openPack(){
-  var pid=getPlayerId();
-  if(!pid){alert('Please log in first');return;}
-  var btn=document.getElementById('openPackBtn');
-  btn.disabled=true;btn.textContent='Opening...';
-
-  try{
-    var res=await fetch('/api/packs/open',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({player_id:pid})});
-    var data=await res.json();
-
-    if(!data.success){btn.disabled=false;btn.textContent='Open Today\'s Pack';alert(data.error||'Failed');return;}
-
-    var cards=data.cards;
-    // Show reveal animation
-    var revealHTML='';
-    cards.forEach(function(c,i){
-      revealHTML+=buildCard(c, 0, c.rarity);
-    });
-    document.getElementById('revealCards').innerHTML=revealHTML;
-
-    // Stagger animation
-    var revealCards=document.querySelectorAll('#revealCards .spell-card');
-    revealCards.forEach(function(el,i){
-      el.style.animationDelay=(0.3+i*0.25)+'s';
-      el.classList.add('show');
-    });
-
-    document.getElementById('packReveal').classList.add('active');
-    document.body.style.overflow='hidden';
-
-    // Init particles on reveal cards
-    setTimeout(function(){
-      if(typeof initAllSpellCards==='function')initAllSpellCards();
-      attachCardClicks();
-    },200);
-
-  }catch(e){
-    console.error('Open pack error:',e);
-    btn.disabled=false;btn.textContent='Open Today\'s Pack';
-  }
+  return buildSpellCard(s, { delay: d || 0, rarity: rarity || s.rarity || null });
 }
 
 function closeReveal(){
