@@ -261,7 +261,6 @@ img { max-width: 100%; display: block; }
 .sc-crest-watermark{position:absolute;bottom:10px;right:8px;width:56px;height:56px;
   object-fit:contain;
   opacity:0.12;z-index:9;pointer-events:none;transition:opacity 0.4s;
-  mix-blend-mode:lighten;
   filter:drop-shadow(0 0 4px rgba(0,0,0,0.4))}
 .spell-card:hover .sc-crest-watermark{opacity:0.2}
 
@@ -291,19 +290,20 @@ img { max-width: 100%; display: block; }
 .sc-particles{position:absolute;inset:0;z-index:6;pointer-events:none;border-radius:10px}
 
 /* Card body content */
-.sc-body{position:relative;z-index:8;padding:0;display:flex;flex-direction:column;height:100%}
+.sc-body{position:relative;z-index:8;padding:0;height:100%}
 .sc-top{padding:8px 10px 8px 40px;display:flex;justify-content:space-between;align-items:flex-start}
 .sc-name-row{display:flex;align-items:center}
 /* House logo — top-left corner of card */
 .sc-house-logo{position:absolute;top:8px;left:8px;width:28px;height:28px;z-index:12;pointer-events:none;
-  object-fit:contain;mix-blend-mode:lighten;
+  object-fit:contain;
   filter:drop-shadow(0 1px 3px rgba(0,0,0,0.9))}
 /* Legacy mini-crest hidden — replaced by sc-house-logo */
 .sc-mini-crest{display:none}
-.sc-info{margin-top:auto;padding:0 12px 10px}
+/* Pin info section to the bottom of the card */
+.sc-info{position:absolute;bottom:0;left:0;right:0;padding:0 12px 10px}
 
-/* Spacer to push info below art when spell has background art image */
-.sc-art-spacer{flex:1 1 auto;min-height:40%}
+/* Spacer no longer needed — info is position:absolute bottom */
+.sc-art-spacer{display:none}
 
 /* Card grid layout — Scryfall-style */
 .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;justify-items:center;margin-bottom:1.5rem}
