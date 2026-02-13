@@ -186,7 +186,6 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
     <button class="ttab" data-t="control">Control</button>
   </div>
   <div id="spellContent"><div class="loading">Loading grimoire...</div></div>
-  <div id="comboContent"></div>
 </div>
 
 <div class="zoom-overlay" id="zoomOverlay" onclick="closeZoom(event)">
@@ -212,9 +211,6 @@ var HO=['universal','smoulders','darktide','stonebark','ashenvale','stormrage','
 var PC={'BURN':'orange','SCALD':'orange','SPREAD':'red','STRIP':'red','ERUPTION':'red','DRAIN':'purple','PULL':'blue','REFLECT':'cyan','CLOAK':'dark','STEALTH':'dark','SWAP':'pink','WEAKEN':'orange','ANCHOR':'brown','HEAL':'green','THORNS':'green','CONVERT':'cyan','PERSIST':'gold','SWIFT':'white','HASTE':'cyan','FREE':'cyan','DODGE':'ice','REACH':'white','SWEEP':'gray','CRIT':'yellow','FIZZLE':'yellow','CHAIN':'blue','AMPLIFY':'purple','NIGHT':'dark','HEX':'purple','SILENCE':'gray','STEAL':'red','FREEZE':'ice','PIERCE':'white','ABSORB':'blue','RANDOMIZE':'pink','NEGATE':'white','REFUND':'cyan','INFECT':'toxic','WITHER':'brown','CORRODE':'toxic','PLAGUE':'toxic','TOXIC':'toxic','LOCKOUT':'red','UNDERDOG':'gold','AURA':'gold','GIFT':'white','JUSTICE':'gold','SAFE':'gold','RESTORE':'cyan','RESET':'cyan','INSPIRE':'gold','REVEAL':'white','DOT':'green','BONUS':'gold','BLESS':'gold','WARD':'gold','PURGE':'orange','PUSH':'ice','SHUFFLE':'blue','CURSE':'purple','VANISH':'dark','SIPHON':'purple','POISON':'toxic','IMMUNE':'cyan','SURGE':'yellow'};
 function pillCol(tag){var k=tag.replace(/[\+\d\sÃ—x\.]/g,'').toUpperCase();for(var p in PC){if(k.indexOf(p)!==-1)return PC[p];}return'gray';}
 
-var HC=[{n:'House Resonance',th:'2 MEMBERS',nt:'2 unique house members cast on same zone',ef:'All get +3 bonus',fl:'Two voices, one chorus.'},{n:'House Surge',th:'3 MEMBERS',nt:'3 unique house members on same zone',ef:'All get +5 bonus, zone defended +5',fl:'The chorus becomes a war cry.'},{n:'House United',th:'4 MEMBERS',nt:'4 unique house members on same zone',ef:'All get +10 bonus, enemies -3',fl:'Four as one. Unstoppable.'},{n:'Overwhelming Force',th:'5+ MEMBERS',nt:'5+ unique house members on same zone',ef:'All get +15 bonus, zone locked 30 min',fl:'The realm bows.'}];
-var CC=[{n:'Community Rally',th:'3 MEMBERS',nt:'3 same community tag on same zone',ef:'All get +3 bonus',fl:'The community rides together.'},{n:'Community Siege',th:'5 MEMBERS',nt:'5 same community tag on same zone',ef:'All get +7 bonus, special raid badge',fl:'We came. We saw. We took.'},{n:'Community Dominance',th:'8+ MEMBERS',nt:'8+ same community tag on same zone',ef:'All get +12 bonus, zone named after community 24h',fl:'This zone belongs to us now.'}];
-var XC=[{n:'Alliance Pact',th:'2 HOUSES',nt:'2 different houses cast on same zone in 1 hour',ef:'Both get +3 bonus',fl:'Enemies of my enemy...'},{n:'Convergence',th:'3+ HOUSES',nt:'3+ different houses on same zone in 1 hour',ef:'All +5 bonus. Non-participating leader loses 8',fl:'The enemy of my enemy...'},{n:'Grand Ritual',th:'5+ HOUSES',nt:'5+ houses on same zone today',ef:'Zone produces 1.5x points rest of day',fl:'A rare moment of unity.'},{n:'Chaos Surge',th:'7+ HOUSES',nt:'7+ houses on same zone today',ef:'All bonuses doubled, 15% backfire chance',fl:'Too much magic. Reality cracks.'}];
 
 var allSpells=[],aH='all',aT='all';
 
@@ -300,30 +296,15 @@ function render(){
   },50);
 }
 
-function renderC(){
-  if(aT!=='all'){document.getElementById('comboContent').innerHTML='';return;}
-  var h='';
-  h+='<div class="section-head"><h2>âš”ï¸ House Combos</h2><div class="line"></div><span class="tag">AUTO Â· SAME HOUSE</span></div>';
-  h+='<div class="info-box" style="margin-bottom:0.6rem"><strong>Auto-trigger</strong> when enough unique house members cast on same zone. <strong>Any spell counts</strong> â€” even Basic Attack.</div>';
-  h+='<div class="combo-grid">';HC.forEach(function(c,i){h+=cCard(c,i*0.05);});h+='</div>';
-  h+='<div class="section-head"><h2>ðŸ·ï¸ Community Combos</h2><div class="line"></div><span class="tag">AUTO Â· SAME TAG</span></div>';
-  h+='<div class="info-box" style="margin-bottom:0.6rem"><strong>Stack with house combos!</strong> 5 $BONK in Smoulders = Surge (+10) + Community Siege (+7) = <strong>+17 each</strong>.</div>';
-  h+='<div class="combo-grid">';CC.forEach(function(c,i){h+=cCard(c,i*0.05);});h+='</div>';
-  h+='<div class="section-head"><h2>ðŸ¤ Cross-House Collaborations</h2><div class="line"></div><span class="tag">AUTO Â· MULTI-HOUSE</span></div>';
-  h+='<div class="info-box" style="margin-bottom:0.6rem">Trigger when <strong>different houses</strong> cast on same zone. Just show up â€” these are automatic.</div>';
-  h+='<div class="combo-grid">';XC.forEach(function(c,i){h+=cCard(c,i*0.05);});h+='</div>';
-  document.getElementById('comboContent').innerHTML=h;
-}
-function cCard(c,d){return '<div class="combo-card" style="animation-delay:'+d+'s"><div class="combo-name">'+c.n+'</div><div class="combo-threshold">'+c.th+'</div><div class="combo-note">'+c.nt+'</div><div class="combo-effect">'+c.ef+'</div><div class="combo-flavor">'+c.fl+'</div></div>';}
 
-function swH(h,btn){aH=h;document.querySelectorAll('.htab').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');render();renderC();}
-document.getElementById('typeTabs').addEventListener('click',function(e){var b=e.target.closest('.ttab');if(!b)return;document.querySelectorAll('.ttab').forEach(function(x){x.classList.remove('active');});b.classList.add('active');aT=b.dataset.t;render();renderC();});
+function swH(h,btn){aH=h;document.querySelectorAll('.htab').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');render();}
+document.getElementById('typeTabs').addEventListener('click',function(e){var b=e.target.closest('.ttab');if(!b)return;document.querySelectorAll('.ttab').forEach(function(x){x.classList.remove('active');});b.classList.add('active');aT=b.dataset.t;render();});
 
 async function load(){
   try{
     var r=await fetch('/api/spells');var d=await r.json();allSpells=d||[];
     allSpells.sort(function(a,b){var ha=HO.indexOf(a.house),hb=HO.indexOf(b.house);if(ha===-1)ha=99;if(hb===-1)hb=99;if(ha!==hb)return ha-hb;if(a.tier!==b.tier)return a.tier-b.tier;return(a.name||'').localeCompare(b.name||'');});
-    render();renderC();
+    render();
   }catch(e){console.error('Spells load error:',e);document.getElementById('spellContent').innerHTML='<div class="loading">Failed to load spells. Add spells via spell-admin.</div>';}
 }
 

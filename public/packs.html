@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daily Pack — Nine Lives Network</title>
+<title>Daily Pack â€” Nine Lives Network</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Press+Start+2P&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/variables-v2.css">
 <link rel="stylesheet" href="/css/components-v2.css">
@@ -33,7 +33,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 .section-head .tag{font-family:'Press Start 2P',monospace;font-size:6px;color:#554E68;
   letter-spacing:0.08em;padding:3px 6px;border:1px solid rgba(255,255,255,0.06);border-radius:2px;white-space:nowrap}
 
-/* ═══ PACK STATUS BAR ═══ */
+/* â•â•â• PACK STATUS BAR â•â•â• */
 .status-bar{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
 .status-card{flex:1;min-width:140px;background:var(--bg-card);border:1px solid var(--border-subtle);
   border-radius:10px;padding:12px 14px;text-align:center}
@@ -44,7 +44,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 .status-card__value--green{color:var(--green)}
 .status-card__sub{font-family:'Crimson Text',serif;font-size:12px;color:var(--text-muted);margin-top:2px}
 
-/* ═══ OPEN PACK BUTTON ═══ */
+/* â•â•â• OPEN PACK BUTTON â•â•â• */
 .pack-cta{text-align:center;margin:1.5rem 0}
 .open-pack-btn{
   display:inline-flex;align-items:center;justify-content:center;gap:12px;
@@ -60,7 +60,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 .open-pack-btn:disabled{opacity:0.4;cursor:not-allowed;transform:none}
 .open-pack-btn__icon{font-size:22px}
 
-/* ═══ PACK REVEAL ANIMATION ═══ */
+/* â•â•â• PACK REVEAL ANIMATION â•â•â• */
 .pack-reveal{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;
   background:rgba(0,0,0,0.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .pack-reveal.active{display:flex}
@@ -85,7 +85,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   cursor:pointer;letter-spacing:1px;transition:all 0.2s;opacity:0;animation:revealTitle 0.4s 2s ease forwards}
 .pack-reveal__close:hover{background:rgba(212,166,75,0.2);border-color:var(--gold)}
 
-/* ═══ RARITY INDICATORS ═══ */
+/* â•â•â• RARITY INDICATORS â•â•â• */
 .rarity-badge{font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:0.5px;
   padding:2px 6px;border-radius:3px;text-transform:uppercase;display:inline-flex;align-items:center;gap:3px}
 .rarity-badge--common{background:rgba(180,180,180,0.08);border:1px solid rgba(180,180,180,0.2);color:#bbb}
@@ -106,7 +106,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   50%{box-shadow:0 0 35px rgba(255,200,0,0.5),0 0 60px rgba(255,200,0,0.15)}
 }
 
-/* ═══ HAND VIEW ═══ */
+/* â•â•â• HAND VIEW â•â•â• */
 .hand-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:1rem}
 .hand-card-wrapper{position:relative}
 .hand-card-wrapper.used .spell-card{opacity:0.35;filter:grayscale(0.6)}
@@ -119,7 +119,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   font-family:'Press Start 2P',monospace;font-size:7px;color:var(--cyan);
   background:rgba(0,0,0,0.8);border:1px solid rgba(0,212,255,0.2);padding:3px 8px;border-radius:4px}
 
-/* ═══ COLLECTION STATS ═══ */
+/* â•â•â• COLLECTION STATS â•â•â• */
 .stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1rem}
 @media(max-width:600px){.stats-grid{grid-template-columns:repeat(3,1fr)}}
 .stat-pill{text-align:center;padding:10px 6px;border-radius:8px;background:var(--bg-card);
@@ -128,7 +128,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 .stat-pill__label{font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:0.5px;
   text-transform:uppercase;margin-top:4px}
 
-/* ═══ UPGRADE PROGRESS ═══ */
+/* â•â•â• UPGRADE PROGRESS â•â•â• */
 .upgrade-card{background:var(--bg-card);border:1px solid var(--gold-border);border-radius:10px;
   padding:16px;margin-bottom:1rem;position:relative;overflow:hidden}
 .upgrade-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
@@ -144,14 +144,14 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   padding:8px;border-top:1px solid var(--border-subtle)}
 .upgrade-result.ready{color:var(--gold);font-weight:700}
 
-/* ═══ ENERGY BAR ═══ */
+/* â•â•â• ENERGY BAR â•â•â• */
 .energy-bar{height:8px;border-radius:4px;background:rgba(255,255,255,0.04);overflow:hidden;margin-top:6px}
 .energy-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,#5B8FE0,#00D4FF);
   transition:width 0.8s ease;box-shadow:0 0 8px rgba(0,212,255,0.3)}
 
 .loading{text-align:center;padding:40px;font-family:'Crimson Text',serif;font-style:italic;color:#554E68}
 
-/* ═══ ZOOMED CARD MODAL (match spellbook) ═══ */
+/* â•â•â• ZOOMED CARD MODAL (match spellbook) â•â•â• */
 .zoom-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:9000;
   justify-content:center;align-items:center;padding:20px;cursor:pointer;
   backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
@@ -159,26 +159,31 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 .zoom-card{position:relative;cursor:default;animation:zoomIn 0.25s ease-out}
 @keyframes zoomIn{from{transform:scale(0.85);opacity:0}to{transform:scale(1);opacity:1}}
 .zoom-card .spell-card{width:340px!important;min-height:510px!important;border-radius:14px;
-  opacity:1!important;transform:none!important;cursor:default;
+  opacity:1!important;cursor:default;transform-style:preserve-3d;
   box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 40px rgba(212,166,75,0.08)}
 .zoom-card .sc-border{inset:-3px;border-radius:17px}
 .zoom-card .sc-edge{border-radius:15px}
 .zoom-card .sc-face{border-radius:13px}
 .zoom-card .sc-body{padding:0}
-.zoom-card .sc-top{padding:16px 18px}
-.zoom-card .sc-info{padding:0 18px 14px}
-.zoom-card .sc-name{font-size:22px}
+.zoom-card .sc-top{padding:14px 18px 14px 54px}
+.zoom-card .sc-info{padding:0 18px 16px}
+.zoom-card .sc-name{font-size:22px;
+  text-shadow:0 1px 3px #000,0 0 6px #000,2px 0 3px #000,-2px 0 3px #000,0 -1px 3px #000}
+.zoom-card .sc-mana{font-size:12px;padding:5px 10px}
+.zoom-card .sc-house-logo{width:38px;height:38px;top:12px;left:12px}
+.zoom-card .sc-crest-watermark{width:90px;height:90px;bottom:20px;right:12px;opacity:0.15}
+.zoom-card .sc-art-spacer{flex:0 0 240px}
 .zoom-card .sc-art{height:220px;border-radius:8px}
 .zoom-card .sc-art img{width:120px;height:120px}
-.zoom-card .sc-art__tier{font-size:8px}
-.zoom-card .sc-type{font-size:11px;padding:3px 10px}
-.zoom-card .sc-tier{font-size:8px;padding:3px 8px}
-.zoom-card .sc-type-row{margin-bottom:8px;padding-bottom:6px}
-.zoom-card .sc-effect{padding:8px 10px;margin-bottom:6px}
-.zoom-card .sc-effect__base{font-size:9px;line-height:1.8}
-.zoom-card .sc-pills{gap:5px;margin-bottom:8px}
-.zoom-card .pill{font-size:10px;padding:4px 10px;border-radius:4px}
-.zoom-card .sc-flavor{font-size:14px;padding-top:6px}
+.zoom-card .sc-type{font-size:12px;padding:4px 12px}
+.zoom-card .sc-rarity{font-size:10px;padding:4px 10px}
+.zoom-card .sc-type-row{margin-bottom:10px;padding-bottom:8px}
+.zoom-card .sc-effect{padding:10px 12px;margin-bottom:8px}
+.zoom-card .sc-effect__base{font-size:12px;line-height:1.7}
+.zoom-card .sc-pills{gap:6px;margin-bottom:10px}
+.zoom-card .pill{font-size:8px;padding:5px 12px;border-radius:4px}
+.zoom-card .sc-flavor{font-size:14px;padding-top:8px}
+.zoom-card .sc-bottom{font-size:7px;margin-top:10px;padding-top:6px}
 .zoom-close{position:absolute;top:-8px;right:-8px;width:28px;height:28px;border-radius:50%;
   font-size:14px;color:var(--gold);background:rgba(10,8,18,0.9);border:1px solid rgba(212,166,75,0.3);
   cursor:pointer;z-index:1;transition:all 0.2s;display:flex;align-items:center;justify-content:center}
@@ -235,18 +240,18 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   <div class="status-bar" id="statusBar">
     <div class="status-card">
       <div class="status-card__label">Mana</div>
-      <div class="status-card__value status-card__value--cyan" id="manaDisplay">—</div>
+      <div class="status-card__value status-card__value--cyan" id="manaDisplay">â€”</div>
       <div class="status-card__sub">of <span id="maxMana">7</span> MP</div>
     </div>
     <div class="status-card">
       <div class="status-card__label">Cards Today</div>
-      <div class="status-card__value" id="cardsUsed">—</div>
+      <div class="status-card__value" id="cardsUsed">â€”</div>
       <div class="status-card__sub">of 5 played</div>
     </div>
     <div class="status-card">
       <div class="status-card__label">Arcane Energy</div>
       <div class="status-card__value status-card__value--cyan" id="energyDisplay">0</div>
-      <div class="status-card__sub">of 30 ⚡ needed</div>
+      <div class="status-card__sub">of 30 âš¡ needed</div>
     </div>
     <div class="status-card">
       <div class="status-card__label">Collection</div>
@@ -258,14 +263,14 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   <!-- Open Pack CTA -->
   <div class="pack-cta" id="packCTA">
     <button class="open-pack-btn" id="openPackBtn" onclick="openPack()">
-      <span class="open-pack-btn__icon">✦</span>
+      <span class="open-pack-btn__icon">âœ¦</span>
       Open Today's Pack
     </button>
   </div>
 
   <!-- Info Box -->
   <div class="info-box" id="packInfo">
-    <strong>How packs work:</strong> You get 5 cards each day — 1 Basic Attack, 1 Basic Defend, and 3 random spells from all 9 houses. Each card has a <strong>rarity</strong> (Common → Legendary) that multiplies your points and influence. Play cards on the <strong>World map</strong> to cast them. Complete both <strong>all mana spent</strong> + <strong>30 Arcane Energy</strong> to upgrade a card overnight.
+    <strong>How packs work:</strong> You get 5 cards each day â€” 1 Basic Attack, 1 Basic Defend, and 3 random spells from all 9 houses. Each card has a <strong>rarity</strong> (Common â†’ Legendary) that multiplies your points and influence. Play cards on the <strong>World map</strong> to cast them. Complete both <strong>all mana spent</strong> + <strong>30 Arcane Energy</strong> to upgrade a card overnight.
   </div>
 
   <!-- Upgrade Progress -->
@@ -273,12 +278,12 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
     <div class="section-head" style="margin-top:0"><h2>Card Upgrade Progress</h2><div class="line"></div><span class="tag">DAILY</span></div>
     <div class="upgrade-row">
       <div class="upgrade-check">
-        <div class="upgrade-check__icon" id="manaCheck">✗</div>
+        <div class="upgrade-check__icon" id="manaCheck">âœ—</div>
         <div class="upgrade-check__text" id="manaCheckText">Spend all mana (0/7)</div>
       </div>
       <div class="upgrade-check">
-        <div class="upgrade-check__icon" id="energyCheck">✗</div>
-        <div class="upgrade-check__text" id="energyCheckText">Earn 30 ⚡ on 𝕏 (0/30)</div>
+        <div class="upgrade-check__icon" id="energyCheck">âœ—</div>
+        <div class="upgrade-check__text" id="energyCheckText">Earn 30 âš¡ on ð• (0/30)</div>
       </div>
     </div>
     <div class="energy-bar"><div class="energy-fill" id="energyBar" style="width:0%"></div></div>
@@ -301,10 +306,10 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 <!-- Pack Reveal Overlay -->
 <div class="pack-reveal" id="packReveal">
   <div class="pack-reveal__inner">
-    <div class="pack-reveal__title">✦ Pack Opened ✦</div>
+    <div class="pack-reveal__title">âœ¦ Pack Opened âœ¦</div>
     <div class="pack-reveal__sub">Your spells for today</div>
     <div class="pack-reveal__cards" id="revealCards"></div>
-    <button class="pack-reveal__close" onclick="closeReveal()">View Your Hand →</button>
+    <button class="pack-reveal__close" onclick="closeReveal()">View Your Hand â†’</button>
   </div>
 </div>
 
@@ -315,7 +320,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 
 <script src="/js/spell-particles.js"></script>
 <script>
-// ═══ HOUSE DATA (match spellbook exactly) ═══
+// â•â•â• HOUSE DATA (match spellbook exactly) â•â•â•
 var HOUSES={
   universal:{name:'Universal',color:'#D4A64B',rgb:'212,166,75',img:null,element:'ALL HOUSES'},
   smoulders:{name:'Smoulders',color:'#E03C31',rgb:'224,60,49',img:'/assets/images/houses/House-smoulders.png',element:'FIRE'},
@@ -332,7 +337,7 @@ var HOUSES={
 var PARTICLE_MAP={smoulders:'ember',darktide:'rain',stonebark:'leaf',ashenvale:'wind',stormrage:'spark',nighthollow:'shadow',dawnbringer:'light',manastorm:'arcane',plaguemire:'toxic',universal:'stardust'};
 
 var PC={'BURN':'orange','SCALD':'orange','SPREAD':'red','STRIP':'red','ERUPTION':'red','DRAIN':'purple','PULL':'blue','REFLECT':'cyan','CLOAK':'dark','STEALTH':'dark','SWAP':'pink','WEAKEN':'orange','ANCHOR':'brown','HEAL':'green','THORNS':'green','CONVERT':'cyan','PERSIST':'gold','SWIFT':'white','HASTE':'cyan','FREE':'cyan','DODGE':'ice','REACH':'white','SWEEP':'gray','CRIT':'yellow','FIZZLE':'yellow','CHAIN':'blue','AMPLIFY':'purple','NIGHT':'dark','HEX':'purple','SILENCE':'gray','STEAL':'red','FREEZE':'ice','PIERCE':'white','ABSORB':'blue','RANDOMIZE':'pink','NEGATE':'white','REFUND':'cyan','INFECT':'toxic','WITHER':'brown','CORRODE':'toxic','PLAGUE':'toxic','TOXIC':'toxic','LOCKOUT':'red','UNDERDOG':'gold','AURA':'gold','GIFT':'white','JUSTICE':'gold','SAFE':'gold','RESTORE':'cyan','RESET':'cyan','INSPIRE':'gold','REVEAL':'white','DOT':'green','BONUS':'gold','BLESS':'gold','WARD':'gold','PURGE':'orange','PUSH':'ice','SHUFFLE':'blue','CURSE':'purple','VANISH':'dark','SIPHON':'purple','POISON':'toxic','IMMUNE':'cyan','SURGE':'yellow'};
-function pillCol(tag){var k=tag.replace(/[\+\d\s×x\.]/g,'').toUpperCase();for(var p in PC){if(k.indexOf(p)!==-1)return PC[p];}return'gray';}
+function pillCol(tag){var k=tag.replace(/[\+\d\sÃ—x\.]/g,'').toUpperCase();for(var p in PC){if(k.indexOf(p)!==-1)return PC[p];}return'gray';}
 
 var RARITY_COLORS={
   common:{bg:'rgba(180,180,180,0.08)',border:'rgba(180,180,180,0.2)',color:'#bbb',label:'Common'},
@@ -342,14 +347,15 @@ var RARITY_COLORS={
   legendary:{bg:'rgba(255,200,0,0.12)',border:'rgba(255,200,0,0.3)',color:'#ffd700',label:'Legendary'}
 };
 
-var RARITY_MULT={common:'×1.0',uncommon:'×1.25',rare:'×1.5',epic:'×2.0',legendary:'×3.0'};
+var RARITY_MULT={common:'Ã—1.0',uncommon:'Ã—1.25',rare:'Ã—1.5',epic:'Ã—2.0',legendary:'Ã—3.0'};
 
 var player=null, handData=null;
 
 function getPlayerId(){return new URLSearchParams(window.location.search).get('player_id')||localStorage.getItem('player_id');}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-// ═══ BUILD SPELL CARD (same as spellbook) ═══
+// â•â•â• BUILD SPELL CARD (same as spellbook) â•â•â•
+// BUILD SPELL CARD (synced with spellbook design)
 function buildCard(s, d, rarity){
   var h=HOUSES[s.house]||HOUSES.universal;
   var bn=[];
@@ -357,12 +363,14 @@ function buildCard(s, d, rarity){
     if(!Array.isArray(bn)&&typeof s.bonus_effects!=='undefined'){bn=typeof s.bonus_effects==='string'?JSON.parse(s.bonus_effects):(s.bonus_effects||[]);}
   }catch(e){bn=[];}
 
-  var tl=s.tier===0?'BASIC':s.tier>=2?'TIER '+s.tier:'TIER 1';
-  var tc=s.tier>=2?'#00D4FF':s.tier===0?'#847C98':h.color;
-  var mo='<div class="sc-mana">'+s.cost+' MP</div>';
-  var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:28px;position:relative;z-index:1">✦</span>';
-  var tb=s.tier>=2?'<span class="sc-tier">T'+s.tier+'</span>':'';
+  var mo='<div class="sc-mana">'+(s.cost||s.mana_cost||1)+' MP</div>';
+  var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:28px;position:relative;z-index:1">\u2726</span>';
   var spellType=s.type||s.spell_type||'attack';
+
+  // Rarity badge in type-row (packs show actual rarity)
+  var r=rarity||'common';
+  var rc=RARITY_COLORS[r];
+  var rb='<span class="sc-rarity sc-rarity--'+r+'">'+rc.label+' '+RARITY_MULT[r]+'</span>';
 
   var pl='';
   if(bn.length>0){pl='<div class="sc-pills">';bn.forEach(function(b){
@@ -371,37 +379,35 @@ function buildCard(s, d, rarity){
     pl+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';
   });pl+='</div>';}
 
-  var be='';if(s.base_effect&&s.base_effect!=='—'&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
+  var be='';if(s.base_effect&&s.base_effect!=='\u2014'&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
 
   var pType=PARTICLE_MAP[s.house]||'stardust';
-  var crestHtml=h.img?'<div class="sc-crest-watermark" style="background-image:url('+h.img+')"></div>':'';
-  var miniCrest=h.img?'<div class="sc-mini-crest" style="background-image:url('+h.img+')"></div>':'';
+  var houseLogo=h.img?'<img class="sc-house-logo" src="'+h.img+'" onerror="this.style.display=\'none\'">':'';
+  var crestWM=h.img?'<img class="sc-crest-watermark" src="'+h.img+'" onerror="this.style.display=\'none\'">':'';
   var hasArt=s.image_url&&s.image_url.length>0;
   var artImg=hasArt?'<div class="sc-art-img" style="background-image:url(/assets/images/spells/'+esc(s.image_url)+')"></div>':'';
-  var artBlock=hasArt?'':'<div class="sc-art"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div><div class="sc-art__glow" style="background:radial-gradient(circle,'+h.color+'0A,transparent 70%)"></div>'+ai+'<div class="sc-art__corner sc-art__corner--tl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--tr" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--bl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--br" style="background:'+h.color+'25"></div><div class="sc-art__tier" style="color:'+tc+'">'+tl+'</div></div>';
+  var artBlock=hasArt?'<div class="sc-art-spacer"></div>':'<div class="sc-art"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div><div class="sc-art__glow" style="background:radial-gradient(circle,'+h.color+'0A,transparent 70%)"></div>'+ai+'<div class="sc-art__corner sc-art__corner--tl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--tr" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--bl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--br" style="background:'+h.color+'25"></div></div>';
 
-  // Rarity info
-  var rc=RARITY_COLORS[rarity||'common'];
-  var rarityHtml='<div class="rarity-badge rarity-badge--'+(rarity||'common')+'" style="position:absolute;top:6px;right:6px;z-index:20">'+rc.label+' '+RARITY_MULT[rarity||'common']+'</div>';
+  var flavor=s.flavor_text||s.motto||'Cast with purpose.';
 
-  return '<div class="spell-card" data-house="'+s.house+'" data-type="'+spellType+'" data-rarity="'+(rarity||'common')+'" data-color="'+h.color+'" data-glow="'+h.color+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="25" style="--hc:'+h.color+';--hc-shadow:'+h.color+'30;--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810);transition-delay:'+(d||0)+'s">'
+  return '<div class="spell-card" data-house="'+s.house+'" data-type="'+spellType+'" data-rarity="'+r+'" data-color="'+h.color+'" data-glow="'+h.color+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="35" style="--hc:'+h.color+';--hc-shadow:'+h.color+'30;--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810);transition-delay:'+(d||0)+'s">'
     +'<div class="sc-border"></div><div class="sc-edge"></div>'
-    +'<div class="sc-face">'+artImg+'<div class="sc-inner-edge"></div>'+crestHtml
+    +'<div class="sc-face">'+artImg+'<div class="sc-inner-edge"></div>'
     +'<div class="sc-foil"></div><div class="sc-rainbow"></div>'
     +'<canvas class="sc-particles"></canvas><div class="sc-glow"></div></div>'
+    +houseLogo+crestWM
     +'<div class="sc-body">'
-    +rarityHtml
-    +'<div class="sc-top"><div class="sc-name-row">'+miniCrest+'<div class="sc-name" style="color:'+h.color+'">'+esc(s.name)+'</div></div>'+mo+'</div>'
+    +'<div class="sc-top"><div class="sc-name">'+esc(s.name)+'</div>'+mo+'</div>'
     +artBlock
     +'<div class="sc-info">'
-    +'<div class="sc-type-row"><span class="sc-type sc-type--'+spellType+'">'+spellType+'</span>'+tb+'<span class="sc-type-spacer"></span><span class="sc-house-tag" style="color:'+h.color+'">'+(h.name||'').toUpperCase()+'</span></div>'
+    +'<div class="sc-type-row"><span class="sc-type sc-type--'+spellType+'">'+spellType+'</span><span class="sc-type-spacer"></span>'+rb+'</div>'
     +be+pl
-    +'<div class="sc-flavor">"Cast with purpose."</div>'
+    +'<div class="sc-flavor">"'+esc(flavor)+'"</div>'
     +'<div class="sc-bottom" style="color:'+h.color+'">'+(h.name||'').toUpperCase()+'</div>'
     +'</div></div></div>';
 }
 
-// ═══ OPEN PACK ═══
+// â•â•â• OPEN PACK â•â•â•
 async function openPack(){
   var pid=getPlayerId();
   if(!pid){alert('Please log in first');return;}
@@ -435,7 +441,17 @@ async function openPack(){
 
     // Init particles on reveal cards
     setTimeout(function(){
-      if(typeof initAllSpellCards==='function')initAllSpellCards();
+      if('IntersectionObserver' in window){
+      var obs=new IntersectionObserver(function(entries){
+        entries.forEach(function(en){
+          if(en.isIntersecting && !en.target._particleInit){
+            en.target._particleInit=true;
+            if(typeof initSpellCard==='function') initSpellCard(en.target);
+          }
+        });
+      },{rootMargin:'200px'});
+      document.querySelectorAll('.spell-card').forEach(function(c){obs.observe(c);});
+    } else if(typeof initAllSpellCards==='function') initAllSpellCards();
       attachCardClicks();
     },200);
 
@@ -451,7 +467,7 @@ function closeReveal(){
   loadPage(); // refresh to show hand
 }
 
-// ═══ RENDER HAND ═══
+// â•â•â• RENDER HAND â•â•â•
 function renderHand(hand){
   if(!hand||!hand.cards){document.getElementById('handSection').style.display='none';return;}
   document.getElementById('handSection').style.display='block';
@@ -465,7 +481,7 @@ function renderHand(hand){
   cards.forEach(function(c,i){
     var wrapper='<div class="hand-card-wrapper'+(c.used?' used':'')+'">';
     wrapper+=buildCard(c, i*0.06, c.rarity);
-    if(!c.used){wrapper+='<div class="hand-cost">'+c.cost+' MP — Click to cast on map</div>';}
+    if(!c.used){wrapper+='<div class="hand-cost">'+c.cost+' MP â€” Click to cast on map</div>';}
     wrapper+='</div>';
     html+=wrapper;
   });
@@ -473,7 +489,17 @@ function renderHand(hand){
   document.getElementById('handGrid').innerHTML=html;
   setTimeout(function(){
     document.querySelectorAll('.hand-grid .spell-card').forEach(function(c){c.classList.add('show');});
-    if(typeof initAllSpellCards==='function')initAllSpellCards();
+    if('IntersectionObserver' in window){
+      var obs=new IntersectionObserver(function(entries){
+        entries.forEach(function(en){
+          if(en.isIntersecting && !en.target._particleInit){
+            en.target._particleInit=true;
+            if(typeof initSpellCard==='function') initSpellCard(en.target);
+          }
+        });
+      },{rootMargin:'200px'});
+      document.querySelectorAll('.spell-card').forEach(function(c){obs.observe(c);});
+    } else if(typeof initAllSpellCards==='function') initAllSpellCards();
     attachCardClicks();
   },50);
 
@@ -484,26 +510,26 @@ function renderHand(hand){
 
   var manaCheckEl=document.getElementById('manaCheck');
   var manaTextEl=document.getElementById('manaCheckText');
-  if(manaSpent){manaCheckEl.textContent='✓';manaCheckEl.classList.add('done');manaTextEl.classList.add('done');manaTextEl.textContent='All mana spent ✓';}
-  else{manaCheckEl.textContent='✗';manaCheckEl.classList.remove('done');manaTextEl.classList.remove('done');
+  if(manaSpent){manaCheckEl.textContent='âœ“';manaCheckEl.classList.add('done');manaTextEl.classList.add('done');manaTextEl.textContent='All mana spent âœ“';}
+  else{manaCheckEl.textContent='âœ—';manaCheckEl.classList.remove('done');manaTextEl.classList.remove('done');
     var manaUsed=player?(player.max_mana||7)-(player.mana||0):0;
     manaTextEl.textContent='Spend all mana ('+manaUsed+'/'+(player?.max_mana||7)+')';}
 
   var energyCheckEl=document.getElementById('energyCheck');
   var energyTextEl=document.getElementById('energyCheckText');
   var energy=player?.arcane_energy_today||0;
-  if(energyMet){energyCheckEl.textContent='✓';energyCheckEl.classList.add('done');energyTextEl.classList.add('done');energyTextEl.textContent='30 ⚡ earned ✓';}
-  else{energyCheckEl.textContent='✗';energyCheckEl.classList.remove('done');energyTextEl.classList.remove('done');
-    energyTextEl.textContent='Earn 30 ⚡ on 𝕏 ('+energy+'/30)';}
+  if(energyMet){energyCheckEl.textContent='âœ“';energyCheckEl.classList.add('done');energyTextEl.classList.add('done');energyTextEl.textContent='30 âš¡ earned âœ“';}
+  else{energyCheckEl.textContent='âœ—';energyCheckEl.classList.remove('done');energyTextEl.classList.remove('done');
+    energyTextEl.textContent='Earn 30 âš¡ on ð• ('+energy+'/30)';}
 
   document.getElementById('energyBar').style.width=Math.min(100,Math.round(energy/30*100))+'%';
 
   var resultEl=document.getElementById('upgradeResult');
-  if(manaSpent&&energyMet){resultEl.textContent='🎉 Card upgrade queued for midnight!';resultEl.classList.add('ready');}
+  if(manaSpent&&energyMet){resultEl.textContent='ðŸŽ‰ Card upgrade queued for midnight!';resultEl.classList.add('ready');}
   else{resultEl.textContent='Complete both to upgrade a card at midnight';resultEl.classList.remove('ready');}
 }
 
-// ═══ RENDER COLLECTION STATS ═══
+// â•â•â• RENDER COLLECTION STATS â•â•â•
 async function renderCollectionStats(){
   var pid=getPlayerId();if(!pid)return;
   try{
@@ -523,7 +549,7 @@ async function renderCollectionStats(){
   }catch(e){console.error('Collection stats error:',e);}
 }
 
-// ═══ LOAD PAGE ═══
+// â•â•â• LOAD PAGE â•â•â•
 async function loadPage(){
   var pid=getPlayerId();
   if(!pid){document.getElementById('packCTA').innerHTML='<div class="info-box"><strong>Log in</strong> to open your daily pack. <a href="/register.html" style="color:var(--gold)">Register here</a></div>';return;}
@@ -545,7 +571,7 @@ async function loadPage(){
       handData=hd.hand;
       renderHand(handData);
     }else{
-      // No pack opened — show button
+      // No pack opened â€” show button
       document.getElementById('packCTA').style.display='block';
       document.getElementById('handSection').style.display='none';
     }
@@ -554,7 +580,7 @@ async function loadPage(){
   renderCollectionStats();
 }
 
-// ═══ ZOOM MODAL (match spellbook) ═══
+// â•â•â• ZOOM MODAL (match spellbook) â•â•â•
 function openZoom(cardEl){
   var clone=cardEl.cloneNode(true);clone.classList.add('show');clone.style.transition='none';
   var zc=document.getElementById('zoomCard');
@@ -562,6 +588,7 @@ function openZoom(cardEl){
   zc.appendChild(clone);
   document.getElementById('zoomOverlay').classList.add('active');
   document.body.style.overflow='hidden';
+  setTimeout(function(){ if(typeof initSpellCard==='function') initSpellCard(clone); },100);
 }
 function closeZoom(e){
   if(e&&e.target.closest('.spell-card')&&!e.target.closest('.zoom-close'))return;
@@ -576,25 +603,35 @@ function attachCardClicks(){
   });
 }
 
-// Pill tooltips (match spellbook)
-document.addEventListener('mouseenter',function(e){
-  var pill=e.target.closest('.pill');if(!pill)return;
-  var tip=pill.querySelector('.tip');if(!tip)return;
-  var style=getComputedStyle(pill);
-  tip.style.background='rgba(10,8,18,0.97)';
-  tip.style.borderColor=style.borderColor||'rgba(212,166,75,0.3)';
-  tip.style.color=style.color||'#D4A64B';
-  tip.style.display='block';
-  var r=pill.getBoundingClientRect();var tw=tip.offsetWidth;var th=tip.offsetHeight;
-  var left=r.left+r.width/2-tw/2;var top=r.top-th-10;
-  if(left<8)left=8;if(left+tw>window.innerWidth-8)left=window.innerWidth-tw-8;
-  if(top<8){top=r.bottom+10;}
-  tip.style.left=left+'px';tip.style.top=top+'px';
-},true);
-document.addEventListener('mouseleave',function(e){
-  var pill=e.target.closest('.pill');if(!pill)return;
-  var tip=pill.querySelector('.tip');if(tip)tip.style.display='none';
-},true);
+// SMART PILL TOOLTIPS - floating div on body escapes transform contexts
+(function(){
+  var ft=document.createElement('div');
+  ft.id='floatTip';
+  ft.style.cssText='display:none;position:fixed;z-index:99999;font-family:Crimson Text,serif;font-size:12px;font-weight:400;color:#e8e4d9;white-space:normal;width:max-content;max-width:200px;background:rgba(10,8,18,0.97);border:1px solid rgba(255,255,255,0.1);border-radius:5px;padding:6px 10px;line-height:1.4;box-shadow:0 6px 20px rgba(0,0,0,0.6);pointer-events:none';
+  document.body.appendChild(ft);
+  document.addEventListener('mouseenter',function(e){
+    var pill=e.target.closest('.pill');if(!pill)return;
+    var tip=pill.querySelector('.tip');if(!tip)return;
+    var style=getComputedStyle(pill);
+    ft.style.borderColor=style.borderColor||'rgba(212,166,75,0.3)';
+    ft.style.color=style.color||'#D4A64B';
+    ft.textContent=tip.textContent;
+    ft.style.display='block';
+    var r=pill.getBoundingClientRect();
+    var tw=ft.offsetWidth,th=ft.offsetHeight;
+    var left=r.left+r.width/2-tw/2;
+    var top=r.top-th-10;
+    if(left<8)left=8;
+    if(left+tw>window.innerWidth-8)left=window.innerWidth-tw-8;
+    if(top<8)top=r.bottom+10;
+    ft.style.left=left+'px';
+    ft.style.top=top+'px';
+  },true);
+  document.addEventListener('mouseleave',function(e){
+    var pill=e.target.closest('.pill');if(!pill)return;
+    ft.style.display='none';
+  },true);
+})();
 
 function toggleMobileMenu(){var m=document.getElementById('mobileMenu');var h=document.getElementById('hamburger');m.classList.toggle('open');h.classList.toggle('active');}
 function doLogout(){localStorage.removeItem('player_id');window.location.href='/';}
