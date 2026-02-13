@@ -89,6 +89,14 @@ try {
   console.error("❌ Failed to load clashes routes:", e.message);
 }
 
+try {
+  const packsRoutes = require("./routes/packs");
+  app.use("/api/packs", packsRoutes);
+  console.log("✅ Packs routes loaded");
+} catch (e) {
+  console.error("❌ Failed to load packs routes:", e.message);
+}
+
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
