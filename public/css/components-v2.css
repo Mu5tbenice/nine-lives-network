@@ -317,9 +317,10 @@ img { max-width: 100%; display: block; }
 
 /* ── Card header ── */
 .sc-header{display:flex;justify-content:space-between;align-items:flex-start}
-.sc-name{font-family:var(--font-title);font-weight:700;font-size:14px;line-height:1.2;flex:1;padding-right:5px;
+.sc-name{font-family:var(--font-title);font-weight:700;font-size:12px;line-height:1.2;flex:1;padding-right:5px;
   color:#D4A64B;-webkit-text-stroke:0.3px rgba(0,0,0,0.6);
-  text-shadow:0 0 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,1),0 1px 4px rgba(0,0,0,0.9),0 0 14px rgba(0,0,0,0.7)}
+  text-shadow:0 0 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,1),0 1px 4px rgba(0,0,0,0.9),0 0 14px rgba(0,0,0,0.7);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sc-mana{font-family:var(--font-data);font-size:11px;font-weight:700;letter-spacing:1px;
   color:#5bc0ff;background:rgba(0,0,0,0.55);border:1px solid rgba(91,192,255,0.3);
   border-radius:4px;padding:2px 6px;flex-shrink:0;
