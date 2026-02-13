@@ -1,77 +1,766 @@
-const express = require('express');
-const router = express.Router();
-const supabase = require('../config/supabase');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>World | Nine Lives Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/variables-v2.css">
+  <link rel="stylesheet" href="/css/components-v2.css">
+  <link rel="stylesheet" href="/css/nav-v2.css">
+  <style>
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â HERO ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
+    .world-hero{text-align:center;padding:14px 0 6px}
+    .world-hero__title{font-family:var(--font-title);font-weight:700;font-size:24px;color:var(--gold);letter-spacing:3px}
+    .world-hero__sub{font-family:var(--font-body);font-size:15px;font-style:italic;color:var(--text-muted);margin-top:4px}
 
-// Get all zones
-router.get('/', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('zones')
-      .select('*')
-      .order('id');
-    if (error) throw error;
-    res.json(data);
-  } catch (error) {
-    console.error('Error fetching zones:', error);
-    res.status(500).json({ error: 'Failed to fetch zones' });
-  }
-});
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â PLAYER HEADER (matches dashboard) ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
+    .player-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:10px}
+    .player-header__left{display:flex;align-items:center;gap:12px}
+    .player-header__avatar{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)}
+    .player-header__name{font-family:var(--font-data);font-size:10px;color:var(--text-body);letter-spacing:0.5px}
+    .player-header__house{font-family:var(--font-title);font-size:13px;font-weight:600;letter-spacing:1px}
+    .player-header__tag{font-family:var(--font-data);font-size:8px;padding:3px 10px;border-radius:10px;letter-spacing:0.5px;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border)}
+    .player-header__mana{display:flex;align-items:center;gap:6px}
+    .player-header__mana-label{font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:1px}
 
-// Get current objective zone with tweet info
-router.get('/objective', async (req, res) => {
-  try {
-    const { data: zone, error } = await supabase
-      .from('zones')
-      .select('*')
-      .eq('is_current_objective', true)
-      .single();
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â CRYSTAL TOWERS ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
+    .towers-wrap{background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.05);border-radius:14px;padding:12px 4px 8px;position:relative;overflow:hidden}
+    .towers-wrap::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 90%,rgba(212,166,75,0.06) 0%,transparent 65%);pointer-events:none}
+    .towers-label{font-family:var(--font-data);font-size:7px;color:var(--text-faint);letter-spacing:2px;text-align:center;margin-bottom:4px}
+    .towers-row{display:flex;align-items:flex-end;justify-content:center;gap:4px;height:240px;padding:0 2px;position:relative;z-index:1}
+    .tower-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1;max-width:52px;min-width:28px}
+    .tower-orb{width:10px;height:10px;border-radius:50%;margin-bottom:-5px;z-index:2;position:relative;animation:towerOrbPulse 3s ease-in-out infinite}
+    .tower-col--you .tower-orb{width:12px;height:12px;animation:towerOrbPulse 2s ease-in-out infinite}
+    @keyframes towerOrbPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.6;transform:scale(1.3)}}
+    .tower-body{width:20px;border-radius:3px 3px 2px 2px;position:relative;overflow:hidden;transition:height 1.2s cubic-bezier(0.22,1,0.36,1)}
+    .tower-col--you .tower-body{width:26px}
+    .tower-shimmer{position:absolute;top:0;left:35%;width:2px;height:100%;animation:towerShimmer 2.5s ease-in-out infinite}
+    @keyframes towerShimmer{0%,100%{opacity:0.2}50%{opacity:0.7}}
+    .tower-base{width:28px;height:3px;border-radius:50%}
+    .tower-col--you .tower-base{width:34px}
+    .tower-crest{width:22px;height:22px;object-fit:contain;filter:drop-shadow(0 0 3px rgba(0,0,0,0.5))}
+    .tower-col--you .tower-crest{width:26px;height:26px}
+    .tower-rank{font-family:var(--font-data);font-size:7px;letter-spacing:0.5px}
+    .tower-name{font-family:var(--font-title);font-size:7px;color:#999;text-align:center;line-height:1;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .tower-col--you .tower-name{font-weight:700}
+    .tower-pts{font-family:var(--font-data);font-size:7px;color:#777}
+    .tower-col--you .tower-pts{font-weight:700}
+    .towers-ground{height:1px;margin:0 16px;background:linear-gradient(90deg,transparent,rgba(212,166,75,0.2),transparent)}
+    .towers-you-badge{display:flex;align-items:center;gap:6px;justify-content:center;margin-top:8px;padding:5px 12px;background:rgba(255,200,0,0.04);border:1px solid rgba(255,200,0,0.12);border-radius:6px;width:fit-content;margin-left:auto;margin-right:auto}
+    .towers-you-dot{width:6px;height:6px;border-radius:50%;animation:towerOrbPulse 2s ease-in-out infinite}
+    .towers-you-text{font-family:var(--font-data);font-size:7px;letter-spacing:1px}
 
-    if (error || !zone) {
-      return res.json({ zone: null, tweet_id: null });
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â COMMUNITY CLASH ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
+    .clash-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:14px;position:relative;overflow:hidden}
+    .clash-label{font-family:var(--font-data);font-size:7px;color:var(--text-faint);letter-spacing:2px;text-align:center;margin-bottom:10px}
+    .clash-vs{display:flex;align-items:center;justify-content:center;gap:12px}
+    .clash-side{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+    .clash-icon{width:40px;height:40px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;font-family:var(--font-data);font-size:9px}
+    .clash-tag{font-family:var(--font-data);font-size:9px;letter-spacing:0.5px}
+    .clash-pts{font-family:var(--font-data);font-size:12px;font-weight:700}
+    .clash-divider{font-family:var(--font-title);font-size:18px;color:var(--text-faint);font-weight:700}
+    .clash-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;margin-top:10px}
+    .clash-bar__seg{height:100%;transition:width 0.6s}
+    .clash-empty{font-family:var(--font-body);font-size:12px;color:var(--text-faint);text-align:center;font-style:italic;padding:6px 0}
+
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â SORT BAR ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
+    .sort-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .sort-btn{padding:7px 14px;border:1px solid var(--border-subtle);border-radius:6px;background:var(--bg-card);color:var(--text-muted);font-family:var(--font-title);font-size:10px;font-weight:600;letter-spacing:0.5px;cursor:pointer;transition:all 0.2s}
+    .sort-btn.active{background:var(--gold-dim);color:var(--gold);border-color:var(--gold-border)}
+    .zone-count{font-family:var(--font-data);font-size:8px;color:var(--text-faint);margin-left:auto}
+
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â ZONE CARDS ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
+    .zone-grid{display:flex;flex-direction:column;gap:12px}
+    .zone-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;cursor:pointer;transition:all 0.25s ease;overflow:hidden;position:relative}
+    .zone-card:hover{border-color:var(--border-medium);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+    .zone-card--objective{border-color:var(--gold-border);box-shadow:0 0 20px var(--gold-glow),inset 0 0 30px rgba(212,166,75,0.03)}
+    .zone-card--bonus{border-color:rgba(0,255,136,0.2);box-shadow:0 0 12px rgba(0,255,136,0.06)}
+    .zone-card__image{position:relative;height:120px;overflow:hidden;background-color:var(--bg-inset);background-size:cover;background-position:center}
+    .zone-card__image::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,8,18,0.1) 0%,rgba(10,8,18,0.65) 60%,rgba(10,8,18,0.95) 100%)}
+    .zone-card__image-badges{position:absolute;top:8px;right:8px;z-index:2;display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+    .zone-card__image-overlay{position:absolute;bottom:0;left:0;right:0;z-index:2;padding:10px 14px 12px}
+    .zone-card__name{font-family:var(--font-title);font-size:16px;font-weight:700;color:#fff;letter-spacing:0.5px;text-shadow:0 2px 8px rgba(0,0,0,0.7)}
+    .zone-card__desc{font-family:var(--font-body);font-size:12px;color:rgba(255,255,255,0.65);margin-top:2px;text-shadow:0 1px 4px rgba(0,0,0,0.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px}
+    .zone-card__no-image{height:0;padding:14px 14px 0}
+    .zone-card__no-image .zone-card__name{color:var(--text-bright);text-shadow:none}
+    .zone-card__no-image .zone-card__desc{color:var(--text-faint);text-shadow:none}
+    .zone-card__body{padding:12px 14px 14px}
+
+    /* Status pills */
+    .zone-pills{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
+    .zone-pill{font-family:var(--font-data);font-size:6px;padding:3px 8px;border-radius:4px;letter-spacing:0.5px;cursor:help;position:relative;transition:all 0.15s}
+    .zone-pill:hover{transform:translateY(-1px)}
+    .zone-pill--objective{background:rgba(212,166,75,0.2);color:var(--gold);border:1px solid var(--gold-border)}
+    .zone-pill--bonus{background:rgba(0,255,136,0.1);color:#00ff88;border:1px solid rgba(0,255,136,0.2)}
+    .zone-pill--controlled{background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;gap:4px}
+    .zone-pill--controlled img{width:12px;height:12px;object-fit:contain}
+    .zone-pill--contesting{background:rgba(255,85,85,0.1);color:#ff7777;border:1px solid rgba(255,85,85,0.2);display:flex;align-items:center;gap:3px}
+    .zone-pill--contesting img{width:10px;height:10px}
+    .zone-pill--effect{border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);color:var(--text-muted)}
+    .zone-pill__tip{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1a1a2e;border:1px solid var(--gold-border);border-radius:6px;padding:6px 10px;font-family:var(--font-body);font-size:11px;color:var(--text-body);white-space:nowrap;z-index:50;box-shadow:0 4px 16px rgba(0,0,0,0.5)}
+    .zone-pill:hover .zone-pill__tip{display:block}
+    .zone-pill__tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1a1a2e}
+
+    /* Influence */
+    .zone-card__influence{margin-bottom:8px}
+    .influence-bar{height:6px;border-radius:3px;background:rgba(255,255,255,0.04);overflow:hidden;display:flex}
+    .influence-segment{height:100%;transition:width 0.6s ease}
+    .influence-labels{display:flex;justify-content:space-between;margin-top:4px}
+    .influence-label{display:flex;align-items:center;gap:3px;font-family:var(--font-data);font-size:7px;color:var(--text-faint)}
+    .influence-label img{width:10px;height:10px;object-fit:contain}
+
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â TIMELINE FEED ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
+    .timeline{display:flex;align-items:center;gap:0;margin:8px 0;overflow-x:auto;padding:4px 0}
+    .timeline::-webkit-scrollbar{height:0}
+    .tl-node{display:flex;flex-direction:column;align-items:center;flex-shrink:0;position:relative;cursor:pointer}
+    .tl-node__dot{width:24px;height:24px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg-inset);transition:transform 0.15s}
+    .tl-node:hover .tl-node__dot{transform:scale(1.15)}
+    .tl-node__avatar{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .tl-node__score{font-family:var(--font-data);font-size:5px;color:var(--text-faint);letter-spacing:0.5px;background:var(--bg-inset);padding:1px 4px;border-radius:3px}
+    .tl-node__label{font-family:var(--font-data);font-size:5px;letter-spacing:0.5px;margin-top:2px}
+    .tl-node__handle{font-family:var(--font-data);font-size:4px;color:var(--text-faint);margin-top:1px;max-width:44px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .tl-line{width:12px;height:2px;flex-shrink:0;margin:0 -1px;margin-top:-10px}
+    .tl-empty{font-family:var(--font-body);font-size:11px;color:var(--text-faint);font-style:italic;padding:4px 0}
+    /* Timeline influence tooltip */
+    .tl-tip{display:none;position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:rgba(16,12,28,0.97);border:1px solid var(--gold-border);border-radius:8px;padding:8px 10px;min-width:140px;z-index:60;box-shadow:0 4px 16px rgba(0,0,0,0.6)}
+    .tl-node:hover .tl-tip{display:block}
+    .tl-tip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:rgba(16,12,28,0.97)}
+    .tl-tip__header{font-family:var(--font-data);font-size:6px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px}
+    .tl-tip__row{display:flex;align-items:center;gap:4px;padding:2px 0}
+    .tl-tip__row img{width:10px;height:10px;object-fit:contain}
+    .tl-tip__name{font-family:var(--font-data);font-size:5px;flex:1}
+    .tl-tip__bar{width:40px;height:4px;border-radius:2px;background:rgba(255,255,255,0.06);overflow:hidden}
+    .tl-tip__fill{height:100%;border-radius:2px}
+    .tl-tip__pct{font-family:var(--font-data);font-size:6px;min-width:22px;text-align:right}
+
+    /* Footer */
+    .zone-card__footer{display:flex;align-items:center;justify-content:space-between;gap:8px}
+    .zone-card__activity{font-family:var(--font-mono);font-size:10px;color:var(--text-faint);display:flex;align-items:center;gap:4px}
+    .zone-card__activity-dot{width:5px;height:5px;border-radius:50%;background:#44cc44;animation:activityPulse 2s ease-in-out infinite}
+    .zone-card__activity-dot--idle{background:#555;animation:none}
+    @keyframes activityPulse{0%,100%{opacity:1}50%{opacity:0.3}}
+    .zone-card__actions{display:flex;gap:6px}
+    .zone-action-btn{padding:7px 14px;border-radius:6px;border:none;font-family:var(--font-data);font-size:8px;letter-spacing:1px;cursor:pointer;transition:all 0.15s;color:#fff}
+    .zone-action-btn:hover{transform:translateY(-1px)}
+    .zone-action-btn--attack{background:linear-gradient(135deg,#cc3333,#aa2222);box-shadow:0 2px 8px rgba(204,51,51,0.25)}
+    .zone-action-btn--cast{background:linear-gradient(135deg,var(--gold),#b8860b);color:#0a0810;font-weight:700;box-shadow:0 2px 8px rgba(212,166,75,0.3)}
+    .zone-action-btn--defend{background:linear-gradient(135deg,#3366cc,#2244aa);box-shadow:0 2px 8px rgba(51,102,204,0.25)}
+    .zone-action-btn--done{background:var(--bg-inset);color:var(--text-faint);border:1px solid var(--border-subtle);box-shadow:none}
+
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â PLAYER POPUP ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
+    .player-popup{position:fixed;z-index:9999;background:rgba(16,12,28,0.97);border:1px solid rgba(212,166,75,0.3);border-radius:10px;padding:14px;min-width:200px;box-shadow:0 8px 32px rgba(0,0,0,0.6);display:none;cursor:pointer;transition:opacity 0.15s}
+    .player-popup.visible{display:block}
+    .player-popup__row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .player-popup__avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)}
+    .player-popup__name{font-family:var(--font-data);font-size:9px;color:var(--text-bright);letter-spacing:0.5px}
+    .player-popup__house{font-family:var(--font-title);font-size:11px;display:flex;align-items:center;gap:4px;margin-top:2px}
+    .player-popup__house img{width:14px;height:14px}
+    .player-popup__stats{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding-top:8px;border-top:1px solid var(--border-subtle)}
+    .player-popup__stat{text-align:center}
+    .player-popup__stat-val{font-family:var(--font-data);font-size:8px;color:var(--text-bright)}
+    .player-popup__stat-label{font-family:var(--font-data);font-size:5px;color:var(--text-faint);letter-spacing:0.5px;margin-top:2px}
+
+    /* ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â MODAL ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â */
+    .zone-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:100;justify-content:center;align-items:flex-end;padding:0}
+    .zone-modal-overlay.active{display:flex}
+    .zone-modal{max-width:500px;width:100%;max-height:80vh;overflow-y:auto;background:var(--bg-card);border-radius:16px 16px 0 0;border:1px solid var(--border-subtle);border-bottom:none;animation:slideUpModal 0.3s ease}
+    @keyframes slideUpModal{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .zone-modal__header{padding:20px 20px 14px;border-bottom:1px solid var(--border-subtle);display:flex;align-items:flex-start;justify-content:space-between}
+    .zone-modal__title{font-family:var(--font-title);font-size:18px;font-weight:700;color:var(--text-bright);letter-spacing:1px}
+    .zone-modal__desc{font-family:var(--font-body);font-size:13px;color:var(--text-faint);margin-top:2px}
+    .zone-modal__close{background:none;border:none;color:var(--text-faint);font-size:20px;cursor:pointer;padding:0 4px;line-height:1}
+    .zone-modal__body{padding:16px 20px 24px}
+    .zone-modal__influence{margin-bottom:16px}
+    .zone-modal__influence-title{font-family:var(--font-data);font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px}
+    .modal-influence-row{display:flex;align-items:center;gap:8px;padding:6px 0}
+    .modal-influence-row img{width:18px;height:18px;object-fit:contain}
+    .modal-influence-name{font-family:var(--font-title);font-size:12px;font-weight:600;color:var(--text-bright);min-width:90px}
+    .modal-influence-bar{flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,0.04);overflow:hidden}
+    .modal-influence-fill{height:100%;border-radius:3px;transition:width 0.5s}
+    .modal-influence-pct{font-family:var(--font-data);font-size:9px;color:var(--text-muted);min-width:32px;text-align:right}
+    .modal-controller{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;margin-bottom:12px}
+    .modal-controller__label{font-family:var(--font-data);font-size:6px;letter-spacing:1px;color:var(--text-faint)}
+    .modal-controller__name{font-family:var(--font-title);font-size:14px;font-weight:600}
+    .modal-spell-section{padding:12px 0;border-top:1px solid rgba(212,166,75,0.12);margin-top:12px}
+    .modal-spell-section h4{font-family:var(--font-title);font-size:11px;letter-spacing:1px;color:var(--gold);margin:0 0 10px;text-transform:uppercase}
+    .modal-spell-grid{display:flex;gap:10px;overflow-x:auto;padding:4px 0;scroll-snap-type:x mandatory}
+    .modal-spell-grid::-webkit-scrollbar{height:3px}
+    .modal-spell-grid::-webkit-scrollbar-thumb{background:rgba(212,166,75,0.15);border-radius:2px}
+    .modal-spell-grid .spell-card{width:140px;min-height:200px;cursor:pointer;flex-shrink:0;scroll-snap-align:start;opacity:1;transform:none}
+    .modal-spell-grid .spell-card:hover{transform:translateY(-4px) scale(1.02)}
+    .modal-spell-grid .sc-art{height:60px}
+    .modal-spell-grid .sc-art img{width:35px;height:35px}
+    .modal-spell-grid .sc-name{font-size:10px}
+    .modal-spell-grid .sc-type{font-size:7px;padding:2px 5px}
+    .modal-spell-grid .sc-effect__base{font-size:5px;line-height:1.6}
+    .modal-spell-grid .pill{font-size:5px;padding:1px 5px}
+    .modal-spell-grid .sc-flavor{display:none}
+    .modal-spell-grid .sc-bottom{display:none}
+    .pill .tip{display:none;position:fixed;font-family:var(--font-body);font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;white-space:normal;width:max-content;max-width:220px;border-radius:6px;padding:8px 12px;line-height:1.4;z-index:9999;box-shadow:0 8px 28px rgba(0,0,0,0.7);pointer-events:none}
+    .zone-modal__actions-title{font-family:var(--font-data);font-size:8px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px}
+    .modal-action-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-inset);border-radius:8px;margin-bottom:4px;cursor:pointer;transition:background 0.15s}
+    .modal-action-row:hover{background:rgba(255,255,255,0.06)}
+    .modal-action-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid var(--border-subtle)}
+    .modal-action-info{flex:1}
+    .modal-action-name{font-family:var(--font-data);font-size:8px;color:var(--text-bright);letter-spacing:0.5px}
+    .modal-action-tag{font-family:var(--font-data);font-size:7px;color:var(--gold);margin-left:4px}
+    .modal-action-type{font-family:var(--font-data);font-size:7px;letter-spacing:1px}
+    .modal-action-type--attack{color:#ff5555}
+    .modal-action-type--defend{color:#5588ff}
+    .modal-action-time{font-family:var(--font-data);font-size:7px;color:var(--text-faint)}
+    .modal-empty{font-family:var(--font-body);font-size:14px;font-style:italic;color:var(--text-faint);text-align:center;padding:20px 0}
+    /* Modal timeline */
+    .modal-timeline{display:flex;align-items:flex-start;gap:0;margin:12px 0;overflow-x:auto;padding:8px 0}
+    .modal-tl-node{display:flex;flex-direction:column;align-items:center;flex-shrink:0;position:relative}
+    .modal-tl-dot{width:32px;height:32px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--bg-inset)}
+    .modal-tl-dot img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+    .modal-tl-meta{text-align:center;margin-top:4px;max-width:48px}
+    .modal-tl-name{font-family:var(--font-data);font-size:5px;color:var(--text-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:48px}
+    .modal-tl-type{font-family:var(--font-data);font-size:5px;letter-spacing:0.5px;margin-top:1px}
+    .modal-tl-score{font-family:var(--font-data);font-size:6px;color:var(--text-muted);margin-top:2px;background:var(--bg-inset);padding:1px 4px;border-radius:3px}
+    .modal-tl-line{width:16px;height:2px;flex-shrink:0;margin-top:14px}
+
+    /* Toast */
+    .toast{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;font-family:var(--font-title);font-size:13px;font-weight:600;z-index:200;letter-spacing:0.5px;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
+    .toast--success{background:#1a3a1a;color:#44cc44;border:1px solid #2a5a2a}
+    .toast--error{background:#3a1a1a;color:#cc4444;border:1px solid #5a2a2a}
+    .toast.active{display:block;animation:fadeUp 0.3s ease}
+    @keyframes fadeUp{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+
+    /* Layout override Ã¢â‚¬â€ center content under nav */
+    .main-container{max-width:960px;padding-left:20px;padding-right:20px}
+
+    @media(max-width:480px){
+      .world-hero__title{font-size:20px}
+      .zone-card__image{height:100px}
+      .zone-card__name{font-size:14px}
+      .zone-card__body{padding:8px 12px 12px}
+      .sort-btn{font-size:9px;padding:6px 10px}
+      .zone-modal{max-height:85vh}
+      .towers-row{gap:2px;height:200px}
+      .tower-body{width:16px}
+      .tower-col--you .tower-body{width:20px}
+      .tower-crest{width:18px;height:18px}
+      .tower-col--you .tower-crest{width:22px;height:22px}
+      .tower-name{font-size:6px;max-width:38px}
     }
+  </style>
+</head>
+<body>
+  <nav class="top-nav"><div class="top-nav-content"><a href="/" class="nav-logo">Nine Lives Network</a><ul class="nav-links"><li><a href="/dashboard.html">Dashboard</a></li><li><a href="/map.html" class="active">World</a></li><li><a href="/leaderboards.html">Leaderboards</a></li><li><a href="/arena.html">Arena</a></li><li><a href="/spellbook.html">Spellbook</a></li><li><a href="/profile.html">Profile</a></li><li><a href="/how-to-play.html">Help</a></li><li id="navLogout" style="display:none;"><a href="#" class="logout-btn" onclick="doLogout()">Logout</a></li></ul><button class="hamburger" id="hamburger" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button></div></nav>
+  <div class="mobile-menu" id="mobileMenu"><a href="/dashboard.html">Dashboard</a><a href="/map.html" class="active">World</a><a href="/leaderboards.html">Leaderboards</a><a href="/arena.html">Arena</a><a href="/spellbook.html">Spellbook</a><a href="/profile.html">Profile</a><a href="/how-to-play.html">Help</a><a href="#" class="logout-btn" onclick="doLogout()" id="mobileLogout" style="display:none;">Logout</a></div>
 
-    res.json({
-      zone: zone,
-      tweet_id: zone.objective_tweet_id,
-      tweet_url: zone.objective_tweet_id 
-        ? `https://twitter.com/9LVNetwork/status/${zone.objective_tweet_id}`
-        : null,
-      posted_at: zone.objective_posted_at
+  <div class="main-container">
+    <div class="world-hero fade-up"><h1 class="world-hero__title">World of Avaloris</h1><p class="world-hero__sub">Attack and defend territories. Control the realm.</p></div>
+    <div class="player-header fade-up fade-up-1" id="playerHeader" style="display:none;"></div>
+    <div class="clash-card fade-up fade-up-1" id="clashCard" style="display:none;"><div class="clash-label">COMMUNITY CLASH</div><div id="clashContent"></div></div>
+    <div class="towers-wrap fade-up fade-up-1" id="towersWrap" style="display:none;"><div class="towers-label">HOUSE POWER</div><div class="towers-row" id="towersRow"></div><div class="towers-ground"></div><div class="towers-you-badge" id="towersYouBadge" style="display:none;"></div></div>
+    <div class="sort-bar fade-up fade-up-2"><button class="sort-btn active" onclick="sortZones('activity')">Most Active</button><button class="sort-btn" onclick="sortZones('objective')">Objective</button><button class="sort-btn" onclick="sortZones('bonus')">Bonus</button><button class="sort-btn" onclick="sortZones('alpha')">A-Z</button><span class="zone-count" id="zoneCount"></span></div>
+    <div class="loading" id="loadingState"><div class="spinner"></div></div>
+    <div class="zone-grid" id="zoneGrid"></div>
+  </div>
+
+  <div class="zone-modal-overlay" id="zoneModalOverlay"><div class="zone-modal" id="zoneModal"><div class="zone-modal__header"><div><div class="zone-modal__title" id="modalTitle"></div><div class="zone-modal__desc" id="modalDesc"></div></div><button class="zone-modal__close" onclick="closeModal()">&#10005;</button></div><div class="zone-modal__body" id="modalBody"></div></div></div>
+  <div class="toast" id="toast"></div>
+  <div class="player-popup" id="playerPopup"></div>
+
+<script src="/js/spell-particles.js"></script>
+<script>
+var HOUSES={1:{name:'Smoulders',color:'#E03C31',glow:'#ff6b5b',slug:'smoulders',img:'Housesmoulders.png'},2:{name:'Darktide',color:'#00B4D8',glow:'#4de8ff',slug:'darktide',img:'Housedarktide.png'},3:{name:'Stonebark',color:'#5CB338',glow:'#8aef5a',slug:'stonebark',img:'Housestonebark.png'},4:{name:'Ashenvale',color:'#90E0EF',glow:'#b8f0ff',slug:'ashenvale',img:'HouseAshenvale.png'},5:{name:'Stormrage',color:'#FFC800',glow:'#ffe566',slug:'stormrage',img:'Housestormrage.png'},6:{name:'Nighthollow',color:'#7B2D8E',glow:'#c066dd',slug:'nighthollow',img:'Housenighthollow.png'},7:{name:'Dawnbringer',color:'#FF8C00',glow:'#ffb84d',slug:'dawnbringer',img:'HouseDwnbringer.png'},8:{name:'Manastorm',color:'#5B8FE0',glow:'#8bb8ff',slug:'manastorm',img:'Housemanastorm.png'},9:{name:'Plaguemire',color:'#E84393',glow:'#ff7ab8',slug:'plaguemire',img:'Houseplaguemire.png'}};
+var ZONE_IMAGES={1:'/assets/images/environments/ashen-approach.jpg',2:'/assets/images/environments/the-drowning-spiral.png',3:'/assets/images/environments/crimson-overlook.jpg',4:'/assets/images/environments/the-floating-citadel.png',5:'/assets/images/environments/violet-storm.png',6:'/assets/images/environments/the-lone-spire.png',7:'/assets/images/environments/azure-expanse.png',8:'/assets/images/environments/shattered-stream.png',9:'/assets/images/environments/the-quiet-woods.png',10:'/assets/images/environments/the-twin-spires.png',11:'/assets/images/environments/the-veiled-cascade.png',12:'/assets/images/environments/the-sunken-archives.png',13:'/assets/images/environments/the-whispering-woods.png',14:'/assets/images/environments/the-fallen-wyrm.jpg',15:'/assets/images/environments/the-grassy-knoll.png',16:'/assets/images/environments/the-gathering-grove.png',17:'/assets/images/environments/the-breach.png',18:'/assets/images/environments/the-great-divide.png',19:'/assets/images/environments/the-chambers-keep.png',20:'/assets/images/environments/the-eastern-exchange.png',21:'/assets/images/environments/the-memorial-arch.png',22:'/assets/images/environments/lunar-sanctum.png',23:'/assets/images/environments/the-divide.png',24:'/assets/images/environments/the-silent-valley.png',25:'/assets/images/environments/the-torn-veil.png'};
+var zones=[],actionsToday={},influence={},player=null,playerActedZones={},currentSort='activity',houseSpells=[],communityClashes=[];
+
+// Slug lookup for spell cards (spellbook API returns house as slug string)
+var SLUG_MAP={};Object.keys(HOUSES).forEach(function(id){SLUG_MAP[HOUSES[id].slug]={name:HOUSES[id].name,color:HOUSES[id].color,img:'/assets/images/houses/'+HOUSES[id].img};});
+SLUG_MAP.universal={name:'Universal',color:'#D4A64B',img:null};
+var PC={'BURN':'orange','SCALD':'orange','SPREAD':'red','STRIP':'red','ERUPTION':'red','DRAIN':'purple','PULL':'blue','REFLECT':'cyan','CLOAK':'dark','STEALTH':'dark','SWAP':'pink','WEAKEN':'orange','ANCHOR':'brown','HEAL':'green','THORNS':'green','CONVERT':'cyan','PERSIST':'gold','SWIFT':'white','HASTE':'cyan','FREE':'cyan','DODGE':'ice','REACH':'white','SWEEP':'gray','CRIT':'yellow','FIZZLE':'yellow','CHAIN':'blue','AMPLIFY':'purple','NIGHT':'dark','HEX':'purple','SILENCE':'gray','STEAL':'red','FREEZE':'ice','PIERCE':'white','ABSORB':'blue','RANDOMIZE':'pink','NEGATE':'white','REFUND':'cyan','INFECT':'toxic','WITHER':'brown','CORRODE':'toxic','PLAGUE':'toxic','TOXIC':'toxic','LOCKOUT':'red','UNDERDOG':'gold','AURA':'gold','GIFT':'white','JUSTICE':'gold','SAFE':'gold','RESTORE':'cyan','RESET':'cyan','INSPIRE':'gold','REVEAL':'white','DOT':'green','BONUS':'gold','BLESS':'gold','WARD':'gold','PURGE':'orange','PUSH':'ice','SHUFFLE':'blue','CURSE':'purple','VANISH':'dark','SIPHON':'purple','POISON':'toxic','IMMUNE':'cyan','SURGE':'yellow'};
+function pillCol(tag){var k=tag.replace(/[\+\d\sÃƒâ€”x\.]/g,'').toUpperCase();for(var p in PC){if(k.indexOf(p)!==-1)return PC[p];}return'gray';}
+
+function buildMiniSpellCard(s,zoneId){
+  var h=SLUG_MAP[s.house]||SLUG_MAP.universal;
+  var bn=[];try{bn=typeof s.bonus_effects==='string'?JSON.parse(s.bonus_effects):(s.bonus_effects||[]);}catch(e){bn=[];}
+  var tierNames=['BASIC','COMMON','UNCOMMON','RARE','EPIC','LEGENDARY'];
+  var tl=tierNames[s.tier||0]||'BASIC';
+  var manaCost=s.mana_cost||1;
+  var mo='<div class="sc-mana sc-mana--mini">'+manaCost+'MP</div>';
+  var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:18px;position:relative;z-index:1">\u2726</span>';
+  var pl='';
+  if(bn.length>0){pl='<div class="sc-pills">';bn.forEach(function(b){var tag=b.tag||b.key||'';var desc=b.desc||b.description||tag;pl+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';});pl+='</div>';}
+  var be='';if(s.base_effect&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
+  var spellId=s.id||0;
+  var escName=esc(s.name).replace(/'/g,"\\'");
+  var hasArt=s.image_url&&s.image_url.length>0;
+  var artImg=hasArt?'<div class="sc-art-img" style="background-image:url(/assets/images/spells/'+esc(s.image_url)+')"></div>':'';
+  var artBlock=hasArt?'':'<div class="sc-art" style="height:60px"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div>'+ai+'<div class="sc-art__tier" style="color:'+h.color+'">'+tl+'</div></div>';
+  var houseLogo=h.img?'<div class="sc-house-logo" style="background-image:url('+h.img+');width:18px;height:18px;top:5px;left:5px"></div>':'';
+  var pType=PARTICLE_MAP[s.house]||'stardust';
+
+  // Mana check — grey out if player doesn't have enough
+  var canCast=player&&player.mana>=manaCost&&!playerActedZones[zoneId];
+  var disabledStyle=canCast?'':'opacity:0.4;pointer-events:none;filter:grayscale(0.6);';
+  var disabledLabel='';
+  if(player&&player.mana<manaCost)disabledLabel='<div style="position:absolute;bottom:6px;left:0;right:0;text-align:center;font-family:var(--font-data);font-size:7px;color:#ff5555;letter-spacing:1px;z-index:10;">NOT ENOUGH MANA</div>';
+  else if(playerActedZones[zoneId])disabledLabel='<div style="position:absolute;bottom:6px;left:0;right:0;text-align:center;font-family:var(--font-data);font-size:7px;color:#888;letter-spacing:1px;z-index:10;">ALREADY CAST</div>';
+
+  return '<div class="spell-card show" style="'+disabledStyle+'--hc:'+h.color+';--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810)" onclick="event.stopPropagation();castSpellOnZone('+zoneId+','+spellId+',\''+escName+'\',\''+(s.spell_type||'attack')+'\','+manaCost+')" data-house="'+s.house+'" data-type="'+(s.spell_type||'attack')+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="25">'
+    +'<div class="sc-border"></div><div class="sc-edge"></div>'
+    +'<div class="sc-face">'+artImg+'<div class="sc-inner-edge"></div></div>'
+    +'<div class="sc-foil"></div><div class="sc-rainbow"></div>'
+    +'<canvas class="sc-particles"></canvas><div class="sc-glow"></div>'
+    +houseLogo+disabledLabel
+    +'<div class="sc-body">'
+    +'<div class="sc-top" style="padding:6px 8px 6px 26px"><div class="sc-name" style="font-size:10px;color:'+h.color+'">'+esc(s.name)+'</div>'+mo+'</div>'
+    +artBlock
+    +'<div class="sc-info">'
+    +'<div class="sc-type-row"><span class="sc-type sc-type--'+(s.spell_type||'attack')+'">'+(s.spell_type||'attack')+'</span>'
+    +be+pl
+    +'<div class="sc-flavor">'+esc(s.flavor_text||s.motto||'')+'</div>'
+    +'<div class="sc-bottom" style="color:'+h.color+'">'+h.name.toUpperCase()+'</div>'
+    +'</div></div></div>';
+}
+
+function toggleMobileMenu(){document.getElementById('hamburger').classList.toggle('active');document.getElementById('mobileMenu').classList.toggle('active');}
+function doLogout(){localStorage.removeItem('player_id');window.location.href='/';}
+if(localStorage.getItem('player_id')){var nl=document.getElementById('navLogout'),ml=document.getElementById('mobileLogout');if(nl)nl.style.display='';if(ml)ml.style.display='';}
+function hImg(fn,sz){return'<img src="/assets/images/houses/'+fn+'" style="width:'+sz+'px;height:'+sz+'px;object-fit:contain;" onerror="this.style.display=\'none\'">';}
+function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast toast--'+type+' active';setTimeout(function(){t.classList.remove('active');},3000);}
+function timeAgo(d){if(!d)return'';var s=(Date.now()-new Date(d).getTime())/1000;if(s<60)return Math.floor(s)+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago';}
+function getPlayerId(){var p=new URLSearchParams(window.location.search);return p.get('player_id')||localStorage.getItem('player_id');}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â COMMUNITY CLASH ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
+function renderClashes(){
+  if(!communityClashes||!communityClashes.length){document.getElementById('clashCard').style.display='none';return;}
+  var html='';
+  communityClashes.forEach(function(clash){
+    var a=clash.team_a||{};var b=clash.team_b||{};
+    var apts=a.points||0;var bpts=b.points||0;var total=apts+bpts||1;
+    var apct=Math.round(apts/total*100);var bpct=100-apct;
+    var aColor=a.color||'#D4A64B';var bColor=b.color||'#00D4FF';
+    html+='<div class="clash-vs">'
+      +'<div class="clash-side"><div class="clash-icon" style="border-color:'+aColor+';color:'+aColor+';">'+(a.tag||'?').replace('$','').substring(0,3)+'</div>'
+      +'<div class="clash-tag" style="color:'+aColor+';">'+esc(a.tag||'?')+'</div>'
+      +'<div class="clash-pts" style="color:'+aColor+';">'+apts+'</div></div>'
+      +'<div class="clash-divider">VS</div>'
+      +'<div class="clash-side"><div class="clash-icon" style="border-color:'+bColor+';color:'+bColor+';">'+(b.tag||'?').replace('$','').substring(0,3)+'</div>'
+      +'<div class="clash-tag" style="color:'+bColor+';">'+esc(b.tag||'?')+'</div>'
+      +'<div class="clash-pts" style="color:'+bColor+';">'+bpts+'</div></div></div>'
+      +'<div class="clash-bar"><div class="clash-bar__seg" style="width:'+apct+'%;background:'+aColor+';"></div><div class="clash-bar__seg" style="width:'+bpct+'%;background:'+bColor+';"></div></div>';
+  });
+  document.getElementById('clashContent').innerHTML=html;
+  document.getElementById('clashCard').style.display='block';
+}
+
+// Helper: build influence snapshot HTML for a given running state
+function buildInfluenceSnapshot(running){
+  var total=0;Object.values(running).forEach(function(v){total+=v;});
+  if(total===0)return'';
+  var entries=[];Object.keys(running).forEach(function(sid){entries.push({id:parseInt(sid),pct:Math.round(running[sid]/total*100)});});
+  entries.sort(function(a,b){return b.pct-a.pct;});
+  var html='<div class="tl-tip__header">INFLUENCE AT THIS POINT</div>';
+  entries.forEach(function(e){
+    var h=HOUSES[e.id]||{name:'?',color:'#888',img:''};
+    html+='<div class="tl-tip__row">'+hImg(h.img,10)+'<span class="tl-tip__name" style="color:'+h.color+';">'+h.name+'</span>'
+      +'<div class="tl-tip__bar"><div class="tl-tip__fill" style="width:'+e.pct+'%;background:'+h.color+';"></div></div>'
+      +'<span class="tl-tip__pct" style="color:'+h.color+';">'+e.pct+'%</span></div>';
+  });
+  return html;
+}
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â PLAYER HEADER (matches dashboard style) ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
+function renderPlayerHeader(){
+  if(!player)return;
+  var h=HOUSES[player.school_id]||{name:'?',color:'#888',img:''};
+  var mH='';var mana=player.mana!=null?player.mana:5;
+  for(var i=0;i<5;i++)mH+='<div class="mana-orb'+(i<mana?' mana-orb--filled':'')+'" style="width:14px;height:14px;"></div>';
+  var tagH=player.community_tag?'<span class="player-header__tag">'+esc(player.community_tag)+'</span>':'';
+  var el=document.getElementById('playerHeader');
+  el.innerHTML='<div class="player-header__left">'
+    +(player.profile_image?'<img src="'+player.profile_image+'" class="player-header__avatar">':'')
+    +'<div><div class="player-header__name">@'+esc(player.twitter_handle||'Unknown')+'</div>'
+    +'<div style="display:flex;align-items:center;gap:6px;margin-top:2px;"><span class="player-header__house" style="color:'+h.color+';">'+hImg(h.img,14)+' '+h.name+'</span>'+tagH+'</div>'
+    +'</div></div>'
+    +'<div class="player-header__mana"><span class="player-header__mana-label">MANA</span><div class="mana-row" style="gap:3px;">'+mH+'</div></div>';
+  el.style.display='flex';
+}
+
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â CRYSTAL TOWERS ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
+function renderTowers(schoolData){
+  if(!schoolData||schoolData.length===0)return;
+  var sorted=schoolData.slice().sort(function(a,b){return(b.total_points||0)-(a.total_points||0);});
+  var maxPts=sorted[0].total_points||1;var mySchoolId=player?player.school_id:null;var rankColors=['#FFD700','#C0C0C0','#CD7F32'];
+  var row=document.getElementById('towersRow');var html='';
+  sorted.forEach(function(s,i){
+    var h=HOUSES[s.school_id];if(!h)return;
+    var isYou=s.school_id===mySchoolId;var heightPct=(s.total_points||0)/maxPts;var tH=Math.max(20,30+heightPct*160);
+    var cls='tower-col'+(isYou?' tower-col--you':'');var rc=i<3?rankColors[i]:'#555';
+    html+='<div class="'+cls+'" style="animation-delay:'+(i*0.06)+'s;">'
+      +'<div class="tower-orb" style="background:'+h.glow+';box-shadow:0 0 '+(isYou?16:8)+'px '+h.glow+',0 0 '+(isYou?30:14)+'px '+h.color+'50;animation-delay:'+(i*0.3)+'s;"></div>'
+      +'<div class="tower-body" style="height:'+tH+'px;background:linear-gradient(180deg,'+h.glow+'35 0%,'+h.color+' 30%,'+h.color+'90 70%,'+h.color+'35 100%);border:1px solid '+h.glow+'50;box-shadow:'+(isYou?'0 0 18px '+h.color+'50,inset 0 0 12px '+h.glow+'25':'0 0 6px '+h.color+'25,inset 0 0 6px '+h.glow+'12')+';"><div class="tower-shimmer" style="background:linear-gradient(180deg,transparent,'+h.glow+'40,transparent);"></div></div>'
+      +'<div class="tower-base" style="background:linear-gradient(90deg,transparent,'+h.color+'50,transparent);"></div>'
+      +'<img src="/assets/images/houses/'+h.img+'" class="tower-crest" onerror="this.style.display=\'none\'">'
+      +'<div class="tower-rank" style="color:'+rc+';">#'+(i+1)+'</div>'
+      +'<div class="tower-name" style="color:'+(isYou?h.glow:'#999')+';">'+h.name+'</div>'
+      +'<div class="tower-pts" style="color:'+(isYou?h.glow:'#777')+';">'+(s.total_points||0)+'</div></div>';
+  });
+  var shown={};sorted.forEach(function(s){shown[s.school_id]=true;});
+  var rank=sorted.length;
+  for(var id=1;id<=9;id++){if(!shown[id]){var h=HOUSES[id];var isYou=id===mySchoolId;rank++;
+    html+='<div class="tower-col'+(isYou?' tower-col--you':'')+'"><div class="tower-orb" style="background:'+h.glow+'60;box-shadow:0 0 4px '+h.glow+'40;"></div><div class="tower-body" style="height:20px;background:'+h.color+'40;border:1px solid '+h.color+'30;opacity:0.4;"></div><div class="tower-base" style="background:linear-gradient(90deg,transparent,'+h.color+'30,transparent);"></div><img src="/assets/images/houses/'+h.img+'" class="tower-crest" style="opacity:0.4;" onerror="this.style.display=\'none\'"><div class="tower-rank" style="color:#444;">-</div><div class="tower-name" style="color:#555;">'+h.name+'</div><div class="tower-pts" style="color:#444;">0</div></div>';
+  }}
+  row.innerHTML=html;document.getElementById('towersWrap').style.display='block';
+  if(mySchoolId){var my=HOUSES[mySchoolId];var badge=document.getElementById('towersYouBadge');badge.innerHTML='<div class="towers-you-dot" style="background:'+my.color+';box-shadow:0 0 6px '+my.glow+';"></div><span class="towers-you-text" style="color:'+my.glow+';">YOUR HOUSE: '+my.name.toUpperCase()+'</span>';badge.style.display='flex';}
+}
+
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â HELPERS ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
+function getZoneActivity(zid){return actionsToday[zid]?actionsToday[zid].length:0;}
+function getTopHouse(zid){var inf=influence[zid];if(!inf)return null;var topId=null,topPct=0;Object.keys(inf).forEach(function(sid){if(inf[sid]>topPct){topPct=inf[sid];topId=parseInt(sid);}});return topId?{id:topId,pct:topPct}:null;}
+function renderInfluenceBar(zid){
+  var inf=influence[zid];if(!inf||Object.keys(inf).length===0)return'<div class="influence-bar"><div style="width:100%;background:rgba(255,255,255,0.04);"></div></div>';
+  var segs='',labels='',entries=[];
+  Object.keys(inf).forEach(function(sid){entries.push({id:parseInt(sid),pct:inf[sid]});});
+  entries.sort(function(a,b){return b.pct-a.pct;});
+  entries.forEach(function(e){var h=HOUSES[e.id]||{color:'#888'};segs+='<div class="influence-segment" style="width:'+e.pct+'%;background:'+h.color+';"></div>';});
+  entries.slice(0,3).forEach(function(e){var h=HOUSES[e.id]||{name:'?',img:''};labels+='<div class="influence-label">'+hImg(h.img,10)+' '+e.pct+'%</div>';});
+  return'<div class="influence-bar">'+segs+'</div><div class="influence-labels">'+labels+'</div>';
+}
+
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â STATUS PILLS ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
+function buildPills(z){
+  var html='';
+  if(z.is_current_objective)html+='<span class="zone-pill zone-pill--objective" title="Double points for actions here today">ÃƒÂ¢Ã…Â¡Ã¢â‚¬ÂÃƒÂ¯Ã‚Â¸Ã‚Â OBJECTIVE<span class="zone-pill__tip">2x points for all actions today</span></span>';
+  if(z.bonus_effect)html+='<span class="zone-pill zone-pill--bonus" title="'+esc(z.bonus_effect)+'">BONUS +50%<span class="zone-pill__tip">'+esc(z.bonus_effect)+'</span></span>';
+  if(z.controlling_school_id&&HOUSES[z.controlling_school_id]){var c=HOUSES[z.controlling_school_id];html+='<span class="zone-pill zone-pill--controlled" style="color:'+c.color+';" title="Controlled by '+c.name+'">'+hImg(c.img,12)+c.name.toUpperCase()+'<span class="zone-pill__tip">Controlled by '+c.name+' ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â defenders get +25% bonus</span></span>';}
+  var top=getTopHouse(z.id);if(top&&top.pct>=40&&(!z.controlling_school_id||top.id!==z.controlling_school_id)){var th=HOUSES[top.id];html+='<span class="zone-pill zone-pill--contesting" title="'+th.name+' contesting at '+top.pct+'%">'+hImg(th.img,10)+'CONTESTING<span class="zone-pill__tip">'+th.name+' at '+top.pct+'% influence</span></span>';}
+  // Only show spell effect pills for special spells (not basic attack/defend)
+  return html?'<div class="zone-pills">'+html+'</div>':'';
+}
+
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â TIMELINE ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
+function buildTimeline(zid){
+  var acts=actionsToday[zid]||[];if(!acts.length)return'<div class="tl-empty">No activity yet</div>';
+  var html='<div class="timeline">';
+  var reversed=acts.slice().reverse();// oldest first
+  var running={};
+  reversed.forEach(function(a,i){
+    var p=a.player||{};var h=HOUSES[p.school_id]||{color:'#888',img:''};
+    var type=a.action_type||'attack';
+    var typeCol=type==='attack'?'#ff5555':'#5588ff';
+    var typeLabel=type==='attack'?'ATK':'DEF';
+    if(!running[p.school_id])running[p.school_id]=0;
+    running[p.school_id]+=1;
+    var total=0;Object.values(running).forEach(function(v){total+=v;});
+    var myPct=total>0?Math.round(running[p.school_id]/total*100):0;
+    // Build snapshot of influence at this moment
+    var snapHtml=buildInfluenceSnapshot(Object.assign({},running));
+    if(i>0)html+='<div class="tl-line" style="background:linear-gradient(90deg,'+h.color+'40,'+h.color+');"></div>';
+    html+='<div class="tl-node">'
+      +'<div class="tl-tip">'+snapHtml+'</div>'
+      +'<div class="tl-node__dot" style="border-color:'+typeCol+';">'
+      +(p.profile_image?'<img class="tl-node__avatar" src="'+p.profile_image+'">':hImg(h.img,16))
+      +'</div>'
+      +'<div class="tl-node__label" style="color:'+typeCol+';">'+typeLabel+'</div>'
+      +'<div class="tl-node__handle">@'+esc((p.twitter_handle||'?').substring(0,8))+'</div>'
+      +'<div class="tl-node__score">'+myPct+'%</div></div>';
+  });
+  html+='</div>';return html;
+}
+
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â PLAYER POPUP ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
+var popupTimeout=null;
+function showPlayerPopup(e,p){
+  clearTimeout(popupTimeout);
+  var popup=document.getElementById('playerPopup');
+  var h=HOUSES[p.school_id]||{name:'?',color:'#888',img:''};
+  var profileLink=p.id?'/profile.html?player_id='+p.id:'#';
+  popup.innerHTML='<div class="player-popup__row">'
+    +(p.profile_image?'<img src="'+p.profile_image+'" class="player-popup__avatar">':'<div class="player-popup__avatar" style="display:flex;align-items:center;justify-content:center;background:var(--bg-inset);">'+hImg(h.img,20)+'</div>')
+    +'<div><div class="player-popup__name">@'+esc(p.twitter_handle||'unknown')+'</div>'
+    +'<div class="player-popup__house" style="color:'+h.color+';">'+hImg(h.img,14)+h.name+'</div></div></div>'
+    +'<div class="player-popup__stats">'
+    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.seasonal_points||'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â')+'</div><div class="player-popup__stat-label">POINTS</div></div>'
+    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.streak||'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â')+'</div><div class="player-popup__stat-label">STREAK</div></div>'
+    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.mana!=null?p.mana:'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â')+'</div><div class="player-popup__stat-label">MANA</div></div>'
+    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.lives!=null?p.lives:'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â')+'</div><div class="player-popup__stat-label">LIVES</div></div>'
+    +'</div>'
+    +'<a href="'+profileLink+'" style="display:block;text-align:center;margin-top:8px;font-family:var(--font-data);font-size:6px;color:var(--gold);letter-spacing:1px;text-decoration:none;padding:4px 0;border-top:1px solid var(--border-subtle);">VIEW PROFILE ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢</a>';
+  popup.style.left=Math.min(e.clientX+10,window.innerWidth-220)+'px';
+  popup.style.top=Math.max(e.clientY-140,10)+'px';
+  popup.classList.add('visible');
+}
+function hidePlayerPopup(){popupTimeout=setTimeout(function(){document.getElementById('playerPopup').classList.remove('visible');},200);}
+// Keep popup visible when hovering over it
+document.getElementById('playerPopup').addEventListener('mouseenter',function(){clearTimeout(popupTimeout);});
+document.getElementById('playerPopup').addEventListener('mouseleave',function(){hidePlayerPopup();});
+
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â SORTING ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
+function sortZones(type){currentSort=type;var btns=document.querySelectorAll('.sort-btn');for(var i=0;i<btns.length;i++)btns[i].classList.remove('active');event.target.classList.add('active');renderZoneGrid();}
+function getSortedZones(){
+  var s=zones.slice();
+  if(currentSort==='activity')s.sort(function(a,b){var d=getZoneActivity(b.id)-getZoneActivity(a.id);if(d!==0)return d;if(b.is_current_objective)return 1;if(a.is_current_objective)return-1;return 0;});
+  else if(currentSort==='objective')s.sort(function(a,b){return(b.is_current_objective?1:0)-(a.is_current_objective?1:0);});
+  else if(currentSort==='bonus')s.sort(function(a,b){return(b.bonus_effect?1:0)-(a.bonus_effect?1:0)||getZoneActivity(b.id)-getZoneActivity(a.id);});
+  else if(currentSort==='alpha')s.sort(function(a,b){return a.name.localeCompare(b.name);});
+  return s;
+}
+
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â RENDER ZONE GRID ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
+function renderZoneGrid(){
+  var sorted=getSortedZones();var grid=document.getElementById('zoneGrid');var html='';
+  sorted.forEach(function(z){
+    var isObj=z.is_current_objective,isBonus=z.bonus_effect&&z.bonus_effect.includes('+50%');
+    var activity=getZoneActivity(z.id),acted=playerActedZones[z.id];
+    var cls='zone-card fade-up';if(isObj)cls+=' zone-card--objective';else if(isBonus)cls+=' zone-card--bonus';
+    var zImg=(z.image_url?(z.image_url.startsWith('/')?z.image_url:'/assets/images/zones/'+z.image_url):'')||ZONE_IMAGES[z.id]||'';
+    var badges='';// Image badges (minimal - just objective/bonus)
+    if(isObj)badges+='<span class="zone-pill zone-pill--objective" style="font-size:7px;">OBJECTIVE</span>';
+    if(isBonus)badges+='<span class="zone-pill zone-pill--bonus" style="font-size:7px;">BONUS</span>';
+
+    var btnsHTML='';
+    if(!player)btnsHTML='<a href="/register.html" class="zone-action-btn zone-action-btn--attack" style="text-decoration:none;font-size:8px;">JOIN</a>';
+    else if(acted)btnsHTML='<span class="zone-action-btn zone-action-btn--done">ACTED</span>';
+    else if(player.mana<1)btnsHTML='<span class="zone-action-btn zone-action-btn--done">NO MANA</span>';
+    else btnsHTML='<button class="zone-action-btn zone-action-btn--cast" onclick="event.stopPropagation();openZoneModal('+z.id+')">CAST SPELL</button>';
+
+    var dotCls=activity>0?'zone-card__activity-dot':'zone-card__activity-dot zone-card__activity-dot--idle';
+
+    if(zImg){
+      html+='<div class="'+cls+'" data-zone-id="'+z.id+'" onclick="openZoneModal('+z.id+')">'
+        +'<div class="zone-card__image" style="background-image:url(\''+zImg+'\');"><div class="zone-card__image-badges">'+badges+'</div><div class="zone-card__image-overlay"><div class="zone-card__name">'+esc(z.name)+'</div><div class="zone-card__desc">'+esc(z.description)+'</div></div></div>'
+        +'<div class="zone-card__body">'
+        +buildPills(z)
+        +'<div class="zone-card__influence">'+renderInfluenceBar(z.id)+'</div>'
+        +buildTimeline(z.id)
+        +'<div class="zone-card__footer"><span class="zone-card__activity"><span class="'+dotCls+'"></span>'+activity+' action'+(activity!==1?'s':'')+' today</span><div class="zone-card__actions">'+btnsHTML+'</div></div></div></div>';
+    }else{
+      html+='<div class="'+cls+'" data-zone-id="'+z.id+'" onclick="openZoneModal('+z.id+')">'
+        +'<div class="zone-card__no-image"><div class="zone-card__name">'+esc(z.name)+'</div><div class="zone-card__desc">'+esc(z.description)+'</div></div>'
+        +'<div class="zone-card__body">'
+        +buildPills(z)
+        +'<div class="zone-card__influence">'+renderInfluenceBar(z.id)+'</div>'
+        +buildTimeline(z.id)
+        +'<div class="zone-card__footer"><span class="zone-card__activity"><span class="'+dotCls+'"></span>'+activity+' action'+(activity!==1?'s':'')+' today</span><div class="zone-card__actions">'+btnsHTML+'</div></div></div></div>';
+    }
+  });
+  grid.innerHTML=html;
+  var cc=zones.filter(function(z){return z.controlling_school_id;}).length;
+  document.getElementById('zoneCount').textContent=sorted.length+' zones'+(cc>0?' Ãƒâ€šÃ‚Â· '+cc+' controlled':'');
+}
+
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â ACTIONS ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
+async function doAction(zoneId,actionType){
+  // All casting now goes through the modal spell cards
+  openZoneModal(zoneId);
+}
+
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â MODAL ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
+function openZoneModal(zoneId){
+  var zone=zones.find(function(z){return z.id===zoneId;});if(!zone)return;
+  var zImg=(zone.image_url?(zone.image_url.startsWith('/')?zone.image_url:'/assets/images/zones/'+zone.image_url):'')||ZONE_IMAGES[zone.id]||'';
+  var zVid=zone.video_url||'';// If zone has a video_url field
+  var mh=document.querySelector('.zone-modal__header');
+  // Clear previous video if any
+  var oldVid=mh.querySelector('.modal-header-video');if(oldVid)oldVid.remove();
+  if(zVid){
+    mh.style.backgroundImage='';mh.style.paddingTop='0';mh.style.position='relative';mh.style.overflow='hidden';mh.style.minHeight='160px';
+    var vidEl=document.createElement('video');vidEl.className='modal-header-video';vidEl.autoplay=true;vidEl.loop=true;vidEl.muted=true;vidEl.playsInline=true;
+    vidEl.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0.35;z-index:0;';
+    vidEl.src=zVid;mh.insertBefore(vidEl,mh.firstChild);
+    // Overlay gradient
+    mh.style.backgroundImage='linear-gradient(180deg,rgba(10,8,18,0.3) 0%,rgba(10,8,18,0.9) 80%)';
+    mh.style.paddingTop='60px';
+  }else if(zImg){mh.style.backgroundImage='linear-gradient(180deg,rgba(10,8,18,0.2) 0%,rgba(10,8,18,0.8) 60%,var(--bg-card) 100%),url('+zImg+')';mh.style.backgroundSize='cover,cover';mh.style.backgroundPosition='center,center';mh.style.paddingTop='50px';mh.style.position='';mh.style.overflow='';mh.style.minHeight='';}
+  else{mh.style.backgroundImage='';mh.style.paddingTop='20px';mh.style.position='';mh.style.overflow='';mh.style.minHeight='';}
+  document.getElementById('modalTitle').textContent=zone.name;
+  document.getElementById('modalDesc').textContent=zone.description+(zone.bonus_effect?' ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â '+zone.bonus_effect:'');
+  var body='';
+
+  // Controller
+  if(zone.controlling_school_id&&HOUSES[zone.controlling_school_id]){
+    var ctrl=HOUSES[zone.controlling_school_id];
+    body+='<div class="modal-controller" style="background:'+ctrl.color+'12;border:1px solid '+ctrl.color+'30;">'+hImg(ctrl.img,22)+'<div><div class="modal-controller__label">CONTROLLED BY</div><div class="modal-controller__name" style="color:'+ctrl.color+';">'+ctrl.name+'</div></div></div>';
+  }
+
+  // Influence
+  body+='<div class="zone-modal__influence"><div class="zone-modal__influence-title">TODAY\'S INFLUENCE</div>';
+  var inf=influence[zoneId];
+  if(inf&&Object.keys(inf).length>0){
+    var entries=[];Object.keys(inf).forEach(function(sid){entries.push({id:parseInt(sid),pct:inf[sid]});});
+    entries.sort(function(a,b){return b.pct-a.pct;});
+    entries.forEach(function(e){var h=HOUSES[e.id]||{name:'?',color:'#888',img:''};
+      body+='<div class="modal-influence-row">'+hImg(h.img,18)+'<span class="modal-influence-name">'+h.name+'</span><div class="modal-influence-bar"><div class="modal-influence-fill" style="width:'+e.pct+'%;background:'+h.color+';"></div></div><span class="modal-influence-pct">'+e.pct+'%</span></div>';
     });
-  } catch (error) {
-    console.error('Error fetching objective:', error);
-    res.status(500).json({ error: 'Failed to fetch objective' });
-  }
-});
+  }else{body+='<div class="modal-empty">No activity yet ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â be the first!</div>';}
+  body+='</div>';
 
-// Get zone control data
-router.get('/control', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('zone_control')
-      .select('*');
-    if (error) throw error;
-    res.json(data || []);
-  } catch (error) {
-    console.error('Error fetching zone control:', error);
-    res.status(500).json({ error: 'Failed to fetch zone control' });
+  // Timeline in modal
+  var acts=actionsToday[zoneId]||[];
+  if(acts.length>0){
+    body+='<div style="margin:12px 0;"><div class="zone-modal__influence-title">INFLUENCE TIMELINE</div>';
+    body+='<div class="modal-timeline">';
+    var running={};var reversed=acts.slice().reverse();
+    reversed.forEach(function(a,i){
+      var p=a.player||{};var h=HOUSES[p.school_id]||{color:'#888',img:''};
+      var type=a.action_type||'attack';var typeCol=type==='attack'?'#ff5555':'#5588ff';
+      var typeLabel=type==='attack'?'ATK':'DEF';
+      if(!running[p.school_id])running[p.school_id]=0;running[p.school_id]+=1;
+      var total=0;Object.values(running).forEach(function(v){total+=v;});var myPct=total>0?Math.round(running[p.school_id]/total*100):0;
+      if(i>0)body+='<div class="modal-tl-line" style="background:linear-gradient(90deg,'+h.color+'40,'+h.color+');"></div>';
+      body+='<div class="modal-tl-node"><div class="modal-tl-dot" style="border-color:'+typeCol+';">'+(p.profile_image?'<img src="'+p.profile_image+'">':hImg(h.img,18))+'</div><div class="modal-tl-meta"><div class="modal-tl-type" style="color:'+typeCol+';">'+typeLabel+'</div><div class="modal-tl-name">@'+esc(p.twitter_handle||'?')+'</div><div class="modal-tl-score">'+myPct+'%</div></div></div>';
+    });
+    body+='</div></div>';
   }
-});
 
-// Get single zone
-router.get('/:id', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('zones')
-      .select('*')
-      .eq('id', req.params.id)
-      .single();
-    if (error) throw error;
-    res.json(data);
-  } catch (error) {
-    console.error('Error fetching zone:', error);
-    res.status(500).json({ error: 'Failed to fetch zone' });
+  // Spells Ã¢â‚¬â€ playing card design
+  body+='<div class="modal-spell-section">';
+  if(!player){
+    body+='<h4>Cast Spells</h4><div style="text-align:center;padding:16px 0;"><a href="/register.html" style="display:inline-block;padding:10px 24px;background:linear-gradient(135deg,var(--gold),#b8860b);color:#0a0810;font-family:var(--font-title);font-size:13px;font-weight:700;letter-spacing:1px;border-radius:8px;text-decoration:none;">JOIN TO CAST</a></div>';
+  } else {
+    var mana=player.mana!=null?player.mana:7;
+    body+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><h4 style="margin:0;">Your Spells</h4><div style="display:flex;align-items:center;gap:6px;"><span style="font-family:var(--font-data);font-size:7px;color:var(--text-faint);letter-spacing:1px;">MANA</span>';
+    for(var mi=0;mi<7;mi++)body+='<div class="mana-orb'+(mi<mana?' mana-orb--filled':'')+'" style="width:12px;height:12px;"></div>';
+    body+='</div></div>';
+    body+='<div class="modal-spell-grid">';
+    body+=buildMiniSpellCard({id:0,name:'Basic Attack',house:'universal',tier:0,mana_cost:1,spell_type:'attack',base_effect:'+10 influence',bonus_effects:[],flavor_text:'Strike first.'},zoneId);
+    body+=buildMiniSpellCard({id:0,name:'Basic Defend',house:'universal',tier:0,mana_cost:1,spell_type:'defend',base_effect:'+10 defense',bonus_effects:[],flavor_text:'Hold the line.'},zoneId);
+    if(houseSpells.length>0){
+      houseSpells.forEach(function(sp){body+=buildMiniSpellCard(sp,zoneId);});
+    }
+    body+='</div>';
+    if(playerActedZones[zoneId])body+='<div style="text-align:center;font-family:var(--font-data);font-size:8px;color:var(--text-faint);letter-spacing:1px;margin-top:8px;padding:6px;background:rgba(255,255,255,0.02);border-radius:6px;">YOU ALREADY CAST ON THIS ZONE TODAY</div>';
   }
-});
+  body+='</div>';
 
-module.exports = router;
+  // Actions list
+  body+='<div class="zone-modal__actions-title">TODAY\'S ACTIONS ('+acts.length+')</div>';
+  if(acts.length>0){
+    acts.forEach(function(a){
+      var p=a.player||{};var h=HOUSES[p.school_id]||{img:'',color:'#888'};
+      var typeCls=a.action_type==='attack'?'modal-action-type--attack':'modal-action-type--defend';
+      var tagH=p.community_tag?'<span class="modal-action-tag">'+esc(p.community_tag)+'</span>':'';
+      body+='<div class="modal-action-row" onmouseenter="showPlayerPopup(event,'+JSON.stringify(p).replace(/"/g,'&quot;')+')" onmouseleave="hidePlayerPopup()">'
+        +(p.profile_image?'<img src="'+p.profile_image+'" class="modal-action-avatar">':'<div class="modal-action-avatar" style="background:var(--bg-inset);display:flex;align-items:center;justify-content:center;">'+hImg(h.img,16)+'</div>')
+        +'<div class="modal-action-info"><div class="modal-action-name">@'+esc(p.twitter_handle||'unknown')+tagH+'</div><span class="modal-action-type '+typeCls+'">'+(a.action_type==='attack'?'ATTACK':'DEFEND')+'</span></div>'
+        +'<span class="modal-action-time">'+timeAgo(a.created_at)+'</span></div>';
+    });
+  }else{body+='<div class="modal-empty">No actions yet today</div>';}
+
+  document.getElementById('modalBody').innerHTML=body;
+  setTimeout(function(){if(typeof initAllSpellCards==='function')initAllSpellCards();},50);
+  document.getElementById('zoneModalOverlay').classList.add('active');
+}
+function closeModal(){
+  document.getElementById('zoneModalOverlay').classList.remove('active');
+  // Stop any playing video
+  var vid=document.querySelector('.modal-header-video');if(vid){vid.pause();vid.remove();}
+}
+document.getElementById('zoneModalOverlay').addEventListener('click',function(e){if(e.target.id==='zoneModalOverlay')closeModal();});
+
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â CAST SPELL ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
+function castSpellOnZone(zoneId,spellId,spellName,spellType,manaCost){
+  var pid=localStorage.getItem('player_id');if(!pid){alert('Log in first!');return;}
+  if(!player||player.mana<(manaCost||1)){showToast('Not enough mana!','error');return;}
+  if(playerActedZones[zoneId]){showToast('Already cast on this zone today','error');return;}
+
+  var payload={player_id:parseInt(pid),zone_id:zoneId,action_type:spellType||'attack',spell_name:spellName};
+  if(spellId)payload.spell_id=spellId;
+
+  // Send cast to backend
+  fetch('/api/territory/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.success){
+      // Update local state
+      player.mana=d.mana_remaining!=null?d.mana_remaining:(player.mana-(manaCost||1));
+      playerActedZones[zoneId]=true;
+
+      // Build result message
+      var pts=d.points_earned||d.totalPoints||10;
+      var msg=spellName+' +'+pts+' pts';
+      if(d.effects_applied&&d.effects_applied.length>0){
+        msg+=' | '+d.effects_applied.join(', ');
+      }
+      if(d.multiplier&&d.multiplier>1)msg+=' (x'+d.multiplier+')';
+      showToast(msg,'success');
+
+      // Update influence locally
+      if(!influence[zoneId])influence[zoneId]={};
+      if(!influence[zoneId][player.school_id])influence[zoneId][player.school_id]=0;
+      influence[zoneId][player.school_id]+=1;
+      var total=0;Object.values(influence[zoneId]).forEach(function(v){total+=v;});
+      Object.keys(influence[zoneId]).forEach(function(sid){influence[zoneId][sid]=Math.round(influence[zoneId][sid]/total*100);});
+
+      // Add to timeline
+      if(!actionsToday[zoneId])actionsToday[zoneId]=[];
+      actionsToday[zoneId].unshift({player:{id:player.id,twitter_handle:player.twitter_handle,profile_image:player.profile_image,school_id:player.school_id,seasonal_points:player.seasonal_points,streak:player.streak,mana:player.mana,lives:player.lives},action_type:spellType||'attack',spell_name:spellName,created_at:new Date().toISOString()});
+
+      // Close modal and refresh
+      closeModal();
+      renderPlayerHeader();
+      renderZoneGrid();
+    }else{showToast(d.error||d.message||'Cast failed','error');}
+  }).catch(function(e){console.error(e);showToast('Connection error','error');});
+}
+
+// ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â LOAD ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â
+async function loadWorld(){
+  try{
+    var playerId=getPlayerId();
+    var fetches=[
+      fetch('/api/zones').then(function(r){return r.json();}),
+      fetch('/api/territory/actions/today').then(function(r){return r.json();}),
+      fetch('/api/territory/influence').then(function(r){return r.json();}),
+      fetch('/api/leaderboards/schools').then(function(r){return r.json();})
+    ];
+    if(playerId)fetches.push(fetch('/api/players/'+playerId).then(function(r){return r.json();}));
+    var results=await Promise.all(fetches);
+    zones=results[0]||[];actionsToday=results[1]||{};influence=results[2]||{};
+    var schoolData=results[3]||[];player=results[4]||null;
+
+    if(player){
+      Object.keys(actionsToday).forEach(function(zid){actionsToday[zid].forEach(function(a){var p=a.player||{};if(p.id===player.id)playerActedZones[zid]=true;});});
+      renderPlayerHeader();
+      // Load house spells from API
+      try{
+        var h=HOUSES[player.school_id];
+        if(h){var sr=await fetch('/api/spells/rotation/'+h.slug);var sd=await sr.json();houseSpells=sd.rotation||[];}
+      }catch(e){houseSpells=[];}
+    }
+    renderTowers(schoolData);
+    // Load community clashes (set via admin)
+    try{
+      var cr=await fetch('/api/admin/clashes');if(cr.ok){var cd=await cr.json();communityClashes=cd||[];renderClashes();}
+    }catch(e){communityClashes=[];}
+    var loader=document.getElementById('loadingState');if(loader)loader.style.display='none';
+    renderZoneGrid();
+  }catch(e){
+    console.error('World load error:',e);
+    var loader=document.getElementById('loadingState');if(loader)loader.style.display='none';
+    document.getElementById('zoneGrid').innerHTML='<div style="text-align:center;padding:30px;color:var(--text-faint);font-style:italic;">Error loading world data</div>';
+  }
+}
+loadWorld();
+
+// Smart pill tooltips for spell cards
+document.addEventListener('mouseenter',function(e){
+  var pill=e.target.closest('.pill');if(!pill)return;
+  var tip=pill.querySelector('.tip');if(!tip)return;
+  var style=getComputedStyle(pill);
+  tip.style.background='rgba(10,8,18,0.97)';
+  tip.style.borderColor=style.borderColor||'rgba(212,166,75,0.3)';
+  tip.style.color=style.color||'#D4A64B';
+  tip.style.display='block';
+  var r=pill.getBoundingClientRect();var tw=tip.offsetWidth;var th=tip.offsetHeight;
+  var left=r.left+r.width/2-tw/2;var top=r.top-th-10;
+  if(left<8)left=8;if(left+tw>window.innerWidth-8)left=window.innerWidth-tw-8;
+  if(top<8){top=r.bottom+10;}
+  tip.style.left=left+'px';tip.style.top=top+'px';
+},true);
+document.addEventListener('mouseleave',function(e){
+  var pill=e.target.closest('.pill');if(!pill)return;
+  var tip=pill.querySelector('.tip');if(tip)tip.style.display='none';
+},true);
+</script>
+</body>
+</html>
