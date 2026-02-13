@@ -33,10 +33,10 @@ try { nermBot = require('./nermBot'); } catch (e) { console.log('⚠️ nermBot 
  * 18:00  Narrative: Last call
  * 22:05  Narrative: Resolution + winner
  *
- * */2    Process Twitter spell casts (8AM-10PM)
- * */5    Update zone control percentages
- * */5    Save influence snapshot (for dominance charts)
- * */10   Scrape narrative replies (8AM-10PM)
+  every 2 min    Process Twitter spell casts (8AM-10PM)
+  every 5 min    Update zone control percentages
+  every 5 min    Save influence snapshot (for dominance charts)
+  every 10 min   Scrape narrative replies (8AM-10PM)
  */
 
 let jobsInitialized = false;
