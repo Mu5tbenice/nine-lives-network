@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/css/components-v2.css">
   <link rel="stylesheet" href="/css/nav-v2.css">
   <style>
-    /* ══ Connect Screen ══ */
+    /* - Connect Screen - */
     .connect-screen {
       display: flex;
       flex-direction: column;
@@ -116,7 +116,7 @@
     .legal-links a { color: var(--gold-dim); text-decoration: none; }
     .legal-links a:hover { text-decoration: underline; }
 
-    /* ══ House Selection Screen ══ */
+    /* - House Selection Screen - */
     .house-select-screen {
       display: none;
       min-height: 100vh;
@@ -156,7 +156,7 @@
       letter-spacing: 1px;
     }
 
-    /* ══ House Grid ══ */
+    /* - House Grid - */
     .house-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -172,7 +172,7 @@
       .house-grid { grid-template-columns: 1fr; max-width: 340px; }
     }
 
-    /* ══ House Card ══ */
+    /* - House Card - */
     .house-card {
       position: relative;
       border-radius: 14px;
@@ -288,7 +288,7 @@
       letter-spacing: 1px;
     }
 
-    /* ══ Detail Overlay ══ */
+    /* - Detail Overlay - */
     .house-detail-overlay {
       display: none;
       position: fixed;
@@ -423,7 +423,7 @@
     .house-detail-btn.confirm { color: #fff; }
     .house-detail-btn:hover { transform: translateY(-2px); }
 
-    /* ══ Confirm Section ══ */
+    /* - Confirm Section - */
     .confirm-section {
       display: none;
       max-width: 500px;
@@ -572,7 +572,7 @@
   <!-- STEP 1: Connect X -->
   <div class="connect-screen" id="connectScreen">
     <img src="/assets/images/Mustbenice_Base_model.png" alt="Nine Lives Network" class="connect-logo"
-         onerror="this.src='/assets/images/houses/Housesmoulders.png'">
+         onerror="this.style.display='none'">
     <h1 class="connect-title">Nine Lives Network</h1>
     <p class="connect-subtitle">Join the realm of Avaloris. Choose your house. Cast spells. Conquer territory.</p>
 
@@ -674,113 +674,113 @@
   </div>
 
   <script>
-    // ═══ HOUSE DATA (no emojis) ═══
+    // - HOUSE DATA (no emojis) â•â•â•
     var houses = {
       1: {
         name: 'House Smoulders', element: 'Fire', color: '#E03C31',
-        crest: '/assets/images/houses/Housesmoulders.png',
+        crest: '/assets/images/houses/House-smoulders.png',
         desc: 'Born of ash and ember, House Smoulders burns brightest in the heart of battle. Their fury is unmatched, their resolve unbreakable.',
         bonuses: [
-          { text: '<strong>Firestarter</strong> — +2 bonus points when your reply is in the top 10 earliest' },
-          { text: '<strong>Aggression</strong> — Built for players who charge in first' },
-          { text: '<strong>Playstyle:</strong> Aggressive, fast, competitive' }
+          { text: '<strong>Firestarter</strong> - +20% influence when attacking zones your house doesn\'t control' },
+          { text: '<strong>Aggression</strong> - BURN effects on your spells are 10% stronger' },
+          { text: '<strong>Playstyle:</strong> Aggressive, offensive, territory conqueror' }
         ],
-        shortBonus: 'Early bird bonus points'
+        shortBonus: '+20% attack on uncontrolled zones'
       },
       2: {
         name: 'House Darktide', element: 'Water', color: '#00B4D8',
-        crest: '/assets/images/houses/Housedarktide.png',
+        crest: '/assets/images/houses/House-darktide.png',
         desc: 'From the crushing depths they rise. House Darktide commands the currents of war, building momentum that becomes unstoppable.',
         bonuses: [
-          { text: '<strong>Rising Tide</strong> — +2 bonus points on the Escalation post' },
-          { text: '<strong>Momentum</strong> — Gets stronger as the day progresses' },
-          { text: '<strong>Playstyle:</strong> Strategic, patient, builds over time' }
+          { text: '<strong>Rising Tide</strong> - DRAIN effects steal 10% more influence' },
+          { text: '<strong>Undertow</strong> - Defending a zone you control costs 10% less influence to maintain' },
+          { text: '<strong>Playstyle:</strong> Strategic, patient, resource control' }
         ],
-        shortBonus: 'Escalation post bonus'
+        shortBonus: 'Stronger drain effects'
       },
       3: {
         name: 'House Stonebark', element: 'Earth', color: '#5CB338',
-        crest: '/assets/images/houses/Housestonebark.png',
+        crest: '/assets/images/houses/House-stonebark.png',
         desc: 'Rooted deep in the ancient soil, House Stonebark endures what others cannot. Their shields are living wood, their walls grown from the earth itself.',
         bonuses: [
-          { text: '<strong>Deep Roots</strong> — No activity decay penalty' },
-          { text: '<strong>Endurance</strong> — Perfect for casual players' },
-          { text: '<strong>Playstyle:</strong> Casual-friendly, resilient, steady' }
+          { text: '<strong>Deep Roots</strong> - HEAL and ANCHOR effects are 15% stronger' },
+          { text: '<strong>Endurance</strong> - Your house loses 10% less influence from enemy attacks' },
+          { text: '<strong>Playstyle:</strong> Defensive, resilient, hold territory' }
         ],
-        shortBonus: 'No activity decay'
+        shortBonus: '+15% stronger defense effects'
       },
       4: {
         name: 'House Ashenvale', element: 'Air', color: '#90E0EF',
-        crest: '/assets/images/houses/HouseAshenvale.png',
+        crest: '/assets/images/houses/House-Ashenvale.png',
         desc: 'Whispered into being from the winds between worlds, House Ashenvale moves unseen. They strike where least expected.',
         bonuses: [
-          { text: '<strong>Windborne</strong> — See tomorrow\'s zone 2 hours early' },
-          { text: '<strong>Intel</strong> — Plan your strategy ahead of time' },
-          { text: '<strong>Playstyle:</strong> Strategic, informed, planners' }
+          { text: '<strong>Windborne</strong> - HASTE and SWIFT effects trigger 15% more often' },
+          { text: '<strong>Agility</strong> - 10% chance to refund 1 mana on any cast' },
+          { text: '<strong>Playstyle:</strong> Fast, efficient, more casts per day' }
         ],
-        shortBonus: 'Early zone intel'
+        shortBonus: '10% mana refund chance'
       },
       5: {
         name: 'House Stormrage', element: 'Lightning', color: '#FFC800',
-        crest: '/assets/images/houses/Housestormrage.png',
+        crest: '/assets/images/houses/House-stormrage.png',
         desc: 'When the sky cracks and thunder speaks, House Stormrage answers. Raw power channeled into devastating strikes.',
         bonuses: [
-          { text: '<strong>Lightning Rod</strong> — Nerm notice chance 15% instead of 10%' },
-          { text: '<strong>Spotlight</strong> — More chances for bonus points' },
-          { text: '<strong>Playstyle:</strong> Flashy, attention-seeking, high reward' }
+          { text: '<strong>Lightning Rod</strong> - CRIT chance increased from 25% to 30%' },
+          { text: '<strong>Overcharge</strong> - CHAIN effects deal 10% more bonus influence' },
+          { text: '<strong>Playstyle:</strong> High risk, high reward, explosive plays' }
         ],
-        shortBonus: '+50% Nerm notice chance'
+        shortBonus: '+5% crit chance on spells'
       },
       6: {
         name: 'House Nighthollow', element: 'Shadow', color: '#7B2D8E',
-        crest: '/assets/images/houses/Housenighthollow.png',
+        crest: '/assets/images/houses/House-nighthollow.png',
         desc: 'What light cannot reach, House Nighthollow commands. Masters of misdirection, they thrive where others fear to tread.',
         bonuses: [
-          { text: '<strong>Unseen</strong> — Replies hidden from Escalation post counts' },
-          { text: '<strong>Mind Games</strong> — Other houses can\'t see your numbers' },
-          { text: '<strong>Playstyle:</strong> Sneaky, deceptive, chaos agent' }
+          { text: '<strong>Shadow Veil</strong> - HEX and SILENCE effects last 15% longer' },
+          { text: '<strong>Disruption</strong> - Enemy effects on your zone have 10% chance to fizzle' },
+          { text: '<strong>Playstyle:</strong> Disruptive, debuffer, chaos agent' }
         ],
-        shortBonus: 'Hidden participation'
+        shortBonus: 'Stronger disruption effects'
       },
       7: {
         name: 'House Dawnbringer', element: 'Light', color: '#FF8C00',
-        crest: '/assets/images/houses/HouseDwnbringer.png',
+        crest: '/assets/images/houses/House-dawnbringer.png',
         desc: 'The first light of morning given form. House Dawnbringer stands as a beacon, strengthening all who fight alongside them.',
         bonuses: [
-          { text: '<strong>Guiding Light</strong> — When you reply, a random housemate gets +2 pts' },
-          { text: '<strong>Team Player</strong> — Your participation lifts your house' },
-          { text: '<strong>Playstyle:</strong> Supportive, social, team-oriented' }
+          { text: '<strong>Guiding Light</strong> - AMPLIFY and BLESS effects are 15% stronger' },
+          { text: '<strong>Beacon</strong> - House Resonance combo triggers at 2 members instead of 3' },
+          { text: '<strong>Playstyle:</strong> Supportive, team player, combo enabler' }
         ],
-        shortBonus: 'Buff your housemates'
+        shortBonus: 'Easier house combos'
       },
       8: {
         name: 'House Manastorm', element: 'Arcane', color: '#5B8FE0',
-        crest: '/assets/images/houses/Housemanastorm.png',
+        crest: '/assets/images/houses/House-manastorm.png',
         desc: 'Knowledge is the ultimate weapon. House Manastorm bends the rules of magic itself, wielding power others can only dream of.',
         bonuses: [
-          { text: '<strong>Overflow</strong> — +1 max mana (6 instead of 5)' },
-          { text: '<strong>Arcane Edge</strong> — More actions on the territory map' },
-          { text: '<strong>Playstyle:</strong> Strategic, map-focused, resource advantage' }
+          { text: '<strong>Arcane Mastery</strong> - Tier 2+ spells cost 1 less influence to cast' },
+          { text: '<strong>Spell Weaver</strong> - 10% bonus points when casting spells from other houses' },
+          { text: '<strong>Playstyle:</strong> Versatile, spell collector, cross-house synergy' }
         ],
-        shortBonus: '+1 max mana (6/day)'
+        shortBonus: '+10% cross-house spell bonus'
       },
       9: {
         name: 'House Plaguemire', element: 'Chaos', color: '#E84393',
-        crest: '/assets/images/houses/Houseplaguemire.png',
-        desc: 'From rot comes renewal. House Plaguemire understands that true power lies in persistence — what is dead may never die.',
+        crest: '/assets/images/houses/House-plaguemire.png',
+        desc: 'From rot comes renewal. House Plaguemire understands that true power lies in persistence - what is dead may never die.',
         bonuses: [
-          { text: '<strong>Persistent</strong> — Full day streak bonus is +15 instead of +10' },
-          { text: '<strong>Undying</strong> — Rewards consistent daily engagement' },
-          { text: '<strong>Playstyle:</strong> Consistent, grinder, daily dedication' }
+          { text: '<strong>Festering</strong> - POISON and CORRODE effects deal 15% more damage' },
+          { text: '<strong>Persistence</strong> - Streak multiplier grows 1 day faster (x1.1 at day 2)' },
+          { text: '<strong>Playstyle:</strong> Consistent, grinder, long-game dominance' }
         ],
-        shortBonus: 'Bigger streak bonus'
+        shortBonus: 'Faster streak growth'
       }
     };
 
     var selectedHouse = null;
     var oauthData = {};
 
-    // ═══ RENDER HOUSE GRID ═══
+    // - RENDER HOUSE GRID â•â•â•
     function renderHouseGrid() {
       var grid = document.getElementById('houseGrid');
       var html = '';
@@ -807,7 +807,7 @@
       grid.innerHTML = html;
     }
 
-    // ═══ DETAIL MODAL ═══
+    // - DETAIL MODAL â•â•â•
     function openDetail(id) {
       var h = houses[id];
       if (!h) return;
@@ -844,7 +844,7 @@
       closeDetail();
     }
 
-    // ═══ SELECT / DESELECT ═══
+    // - SELECT / DESELECT â•â•â•
     function selectHouse(id) {
       selectedHouse = id;
       var h = houses[id];
@@ -874,12 +874,12 @@
       document.getElementById('submitBtn').disabled = true;
     }
 
-    // ═══ TWITTER CONNECT ═══
+    // - TWITTER CONNECT â•â•â•
     function connectTwitter() {
       window.location.href = '/auth/twitter';
     }
 
-    // ═══ COMPLETE REGISTRATION ═══
+    // - COMPLETE REGISTRATION â•â•â•
     async function completeRegistration() {
       if (!selectedHouse) return;
 
@@ -924,7 +924,7 @@
       }
     }
 
-    // ═══ CHECK OAUTH RETURN ═══
+    // - CHECK OAUTH RETURN â•â•â•
     function checkOAuthReturn() {
       var params = new URLSearchParams(window.location.search);
 
