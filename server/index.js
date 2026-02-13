@@ -1,114 +1,120 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 5000;
-const packsRoutes = require('./routes/packs');
-app.use('/api/packs', packsRoutes);
 
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, "../public")));
 
 // Load routes with error handling
 try {
-  const authRoutes = require('./routes/auth');
-  app.use('/auth', authRoutes);
-  console.log('✅ Auth routes loaded');
+  const authRoutes = require("./routes/auth");
+  app.use("/auth", authRoutes);
+  console.log("✅ Auth routes loaded");
 } catch (e) {
-  console.error('❌ Failed to load auth routes:', e.message);
+  console.error("❌ Failed to load auth routes:", e.message);
 }
 
 try {
-  const playerRoutes = require('./routes/players');
-  app.use('/api/players', playerRoutes);
-  console.log('✅ Player routes loaded');
+  const playerRoutes = require("./routes/players");
+  app.use("/api/players", playerRoutes);
+  console.log("✅ Player routes loaded");
 } catch (e) {
-  console.error('❌ Failed to load player routes:', e.message);
+  console.error("❌ Failed to load player routes:", e.message);
 }
 
 try {
-  const territoryRoutes = require('./routes/territory');
-  app.use('/api/territory', territoryRoutes);
-  console.log('✅ Territory routes loaded');
+  const territoryRoutes = require("./routes/territory");
+  app.use("/api/territory", territoryRoutes);
+  console.log("✅ Territory routes loaded");
 } catch (e) {
-  console.error('❌ Failed to load territory routes:', e.message);
+  console.error("❌ Failed to load territory routes:", e.message);
 }
 
 try {
-  const duelRoutes = require('./routes/duels');
-  app.use('/api/duels', duelRoutes);
-  console.log('✅ Duel routes loaded');
+  const duelRoutes = require("./routes/duels");
+  app.use("/api/duels", duelRoutes);
+  console.log("✅ Duel routes loaded");
 } catch (e) {
-  console.error('❌ Failed to load duel routes:', e.message);
+  console.error("❌ Failed to load duel routes:", e.message);
 }
 
 try {
-  const mapRoutes = require('./routes/map');
-  app.use('/api/map', mapRoutes);
-  app.use('/api/zones', mapRoutes);
-  console.log('✅ Map routes loaded');
+  const mapRoutes = require("./routes/map");
+  app.use("/api/map", mapRoutes);
+  app.use("/api/zones", mapRoutes);
+  console.log("✅ Map routes loaded");
 } catch (e) {
-  console.error('❌ Failed to load map routes:', e.message);
+  console.error("❌ Failed to load map routes:", e.message);
 }
 
 try {
-  const leaderboardRoutes = require('./routes/leaderboards');
-  app.use('/api/leaderboards', leaderboardRoutes);
-  console.log('✅ Leaderboard routes loaded');
+  const leaderboardRoutes = require("./routes/leaderboards");
+  app.use("/api/leaderboards", leaderboardRoutes);
+  console.log("✅ Leaderboard routes loaded");
 } catch (e) {
-  console.error('❌ Failed to load leaderboard routes:', e.message);
+  console.error("❌ Failed to load leaderboard routes:", e.message);
 }
 
 try {
-  const adminRoutes = require('./routes/admin');
-  app.use('/api/admin', adminRoutes);
-  console.log('✅ Admin routes loaded');
+  const adminRoutes = require("./routes/admin");
+  app.use("/api/admin", adminRoutes);
+  console.log("✅ Admin routes loaded");
 } catch (e) {
-  console.error('❌ Failed to load admin routes:', e.message);
+  console.error("❌ Failed to load admin routes:", e.message);
 }
 
 try {
-  const spellRoutes = require('./routes/spells');
-  app.use('/api/spells', spellRoutes);
-  console.log('✅ Spell routes loaded');
+  const spellRoutes = require("./routes/spells");
+  app.use("/api/spells", spellRoutes);
+  console.log("✅ Spell routes loaded");
 } catch (e) {
-  console.error('❌ Failed to load spell routes:', e.message);
+  console.error("❌ Failed to load spell routes:", e.message);
 }
 
 try {
-  const clashesRoutes = require('./routes/clashes');
-  app.use('/api/clashes', clashesRoutes);
-  console.log('✅ Clashes routes loaded');
+  const clashesRoutes = require("./routes/clashes");
+  app.use("/api/clashes", clashesRoutes);
+  console.log("✅ Clashes routes loaded");
 } catch (e) {
-  console.error('❌ Failed to load clashes routes:', e.message);
+  console.error("❌ Failed to load clashes routes:", e.message);
+}
+
+try {
+  const packsRoutes = require("./routes/packs");
+  app.use("/api/packs", packsRoutes);
+  console.log("✅ Pack routes loaded");
+} catch (e) {
+  console.error("❌ Failed to load pack routes:", e.message);
 }
 
 // Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 // Redirect old world.html to map.html
-app.get('/world.html', (req, res) => res.redirect('/map.html'));
+app.get("/world.html", (req, res) => res.redirect("/map.html"));
 
 // Start scheduler for automated tasks
 try {
-  const scheduler = require('./services/scheduler');
-  console.log('✅ Scheduler loaded');
+  const scheduler = require("./services/scheduler");
+  console.log("✅ Scheduler loaded");
 } catch (e) {
-  console.error('❌ Failed to load scheduler:', e.message);
+  console.error("❌ Failed to load scheduler:", e.message);
 }
 
 // Serve index.html for root
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, "0.0.0.0", () => {
   console.log(`🐱 Nine Lives Network server running on port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
 });

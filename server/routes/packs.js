@@ -12,7 +12,7 @@ const packSystem = require('../services/packSystem');
 // Body: { player_id }
 router.post('/open', async (req, res) => {
   try {
-    const { player_id } = req.body;
+    const { player_id } = req.body || {};
     if (!player_id) return res.status(400).json({ error: 'player_id required' });
 
     const result = await packSystem.generateDailyPack(player_id);
