@@ -224,7 +224,7 @@ img { max-width: 100%; display: block; }
 
 /* ── Spell Card — Holo Design ── */
 .spell-card{
-  width:230px;min-height:340px;border-radius:12px;position:relative;cursor:pointer;flex-shrink:0;
+  width:260px;min-height:380px;border-radius:12px;position:relative;cursor:pointer;flex-shrink:0;
   transform-style:preserve-3d;will-change:transform;
   transition:box-shadow 0.3s;opacity:0;transform:translateY(20px)}
 .spell-card.show{opacity:1;transform:translateY(0)}
@@ -290,7 +290,7 @@ img { max-width: 100%; display: block; }
 .sc-particles{position:absolute;inset:0;z-index:6;pointer-events:none;border-radius:10px}
 
 /* Card body content */
-.sc-body{position:relative;z-index:8;padding:0;height:100%}
+.sc-body{position:relative;z-index:8;padding:0;display:flex;flex-direction:column;height:100%}
 .sc-top{padding:8px 10px 8px 40px;display:flex;justify-content:space-between;align-items:flex-start}
 .sc-name-row{display:flex;align-items:center}
 /* House logo — top-left corner of card */
@@ -299,27 +299,27 @@ img { max-width: 100%; display: block; }
   filter:drop-shadow(0 1px 3px rgba(0,0,0,0.9))}
 /* Legacy mini-crest hidden — replaced by sc-house-logo */
 .sc-mini-crest{display:none}
-/* Pin info section to the bottom of the card */
-.sc-info{position:absolute;bottom:0;left:0;right:0;padding:0 12px 10px}
+.sc-info{margin-top:auto;padding:0 12px 10px}
 
-/* Spacer no longer needed — info is position:absolute bottom */
-.sc-art-spacer{display:none}
+/* Spacer — pushes info below art image area (pixel height, no % issues) */
+.sc-art-spacer{flex:0 0 160px}
 
 /* Card grid layout — Scryfall-style */
-.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;justify-items:center;margin-bottom:1.5rem}
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px;justify-items:center;margin-bottom:1.5rem}
 @media(max-width:600px){
   .spell-card{width:170px;min-height:270px}
   .card-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
   .sc-name{font-size:11px}
+  .sc-art-spacer{flex:0 0 90px}
   .sc-art{height:65px}
   .sc-art img{width:40px;height:40px}
 }
 
 /* ── Card header ── */
 .sc-header{display:flex;justify-content:space-between;align-items:flex-start}
-.sc-name{font-family:var(--font-title);font-weight:700;font-size:13px;line-height:1.2;flex:1;padding-right:5px;
-  color:#D4A64B;-webkit-text-stroke:0.5px rgba(255,255,255,0.5);
-  text-shadow:0 1px 2px rgba(0,0,0,1),0 0 12px rgba(0,0,0,0.8)}
+.sc-name{font-family:var(--font-title);font-weight:700;font-size:14px;line-height:1.2;flex:1;padding-right:5px;
+  color:#D4A64B;-webkit-text-stroke:0.3px rgba(0,0,0,0.6);
+  text-shadow:0 0 3px rgba(0,0,0,1),0 0 6px rgba(0,0,0,1),0 1px 4px rgba(0,0,0,0.9),0 0 14px rgba(0,0,0,0.7)}
 .sc-mana{font-family:var(--font-data);font-size:11px;font-weight:700;letter-spacing:1px;
   color:#5bc0ff;background:rgba(0,0,0,0.55);border:1px solid rgba(91,192,255,0.3);
   border-radius:4px;padding:2px 6px;flex-shrink:0;

@@ -48,8 +48,8 @@ function initSpellCard(card){
   function makeP(){
     return{x:Math.random()*w,y:Math.random()*h,
       vx:(Math.random()-0.5)*0.2,vy:-Math.random()*0.3-0.05,
-      size:Math.random()*2.2+0.5,alpha:Math.random()*0.35+0.08,
-      baseAlpha:Math.random()*0.35+0.08,
+      size:Math.random()*2.8+0.8,alpha:Math.random()*0.45+0.12,
+      baseAlpha:Math.random()*0.45+0.12,
       life:Math.random()*400+200,maxLife:Math.random()*400+200,
       pulse:Math.random()*Math.PI*2,pulseSpeed:Math.random()*0.02+0.005,
       trail:[]};
