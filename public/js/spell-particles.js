@@ -1,7 +1,14 @@
 /* ═══════════════════════════════════════════════════════════
    SPELL CARD PARTICLE + HOLO ENGINE
-   Shared by: spellbook, dashboard, map
+   Shared by: spellbook, dashboard, map, arena
    Reads data-* attributes from .spell-card elements
+
+   data-color    = hex color for particles
+   data-glow     = hex color for glow (defaults to color)
+   data-particle  = ember | wisp | spore | stardust
+   data-foil-s   = foil shine strength (0-1)
+   data-foil-w   = foil warmth (0-1)
+   data-num      = particle count (default 50)
    ═══════════════════════════════════════════════════════════ */
 
 function hexToRgb(h){
@@ -29,7 +36,7 @@ function initSpellCard(card){
   var pType=card.dataset.particle||'stardust';
   var foilS=parseFloat(card.dataset.foilS||0.18);
   var foilW=parseFloat(card.dataset.foilW||0.1);
-  var numP=parseInt(card.dataset.num||25);
+  var numP=parseInt(card.dataset.num||50);
   var rgb=hexToRgb(color);
   var glowRgb=hexToRgb(glow);
   var w,h,mouseX=-1,mouseY=-1,normX=0.5,normY=0.5;
@@ -181,6 +188,5 @@ function initAllSpellCards(){
 if(document.readyState==='loading'){
   document.addEventListener('DOMContentLoaded',initAllSpellCards);
 }else{
-  /* If script loaded after DOM, init immediately — but defer to let cards render */
   setTimeout(initAllSpellCards,50);
 }
