@@ -93,9 +93,9 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 
 
 /* ═══════════════════════════════════════════════════════════
-   PACK REVEAL — Hearthstone-style arc fan + click to flip
-   5 cards spread in an arc. Card backs fill entire frame.
-   Rarity burst effect triggers on flip.
+   PACK REVEAL — 5 cards in a row, NO overlap
+   Click triggers enchant glow → then 3D flip → rarity burst
+   Card back uses /assets/images/card-back.png full-bleed
    ═══════════════════════════════════════════════════════════ */
 .pack-reveal{position:fixed;inset:0;z-index:9000;display:none;align-items:center;justify-content:center;
   background:rgba(0,0,0,0.92);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
@@ -109,12 +109,10 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   letter-spacing:1px;margin-bottom:20px;opacity:0;animation:revealTitle 0.5s 0.4s ease forwards}
 @keyframes revealTitle{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
 
-/* ── Arc Fan Container ── */
+/* ── Card Row — flex, NO overlap ── */
 .pack-reveal__cards{
-  position:relative;
-  width:700px;height:340px;
-  margin:0 auto 30px;
-  display:flex;align-items:flex-end;justify-content:center}
+  display:flex;gap:10px;justify-content:center;align-items:flex-end;
+  margin:0 auto 24px;flex-wrap:nowrap}
 
 .pack-reveal__close{font-family:'Cinzel',serif;font-size:14px;font-weight:600;color:var(--gold);
   background:var(--gold-dim);border:1px solid var(--gold-border);padding:10px 30px;border-radius:8px;
@@ -122,21 +120,18 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 .pack-reveal__close.visible{opacity:1;pointer-events:auto;animation:revealTitle 0.4s ease forwards}
 .pack-reveal__close:hover{background:rgba(212,166,75,0.2);border-color:var(--gold)}
 
-/* ── Flip Card — arc-positioned ── */
+/* ── Flip Card — inline, no absolute positioning ── */
 .flip-card{
-  width:160px;height:250px;perspective:900px;cursor:pointer;
-  position:absolute;bottom:0;left:50%;
-  /* Each card sets --fan-rot, --fan-y, --fan-x via inline style */
-  transform:translateX(-50%) translateX(var(--fan-x,0px)) rotate(var(--fan-rot,0deg)) translateY(var(--fan-y,0px));
-  transform-origin:bottom center;
-  opacity:0;animation:arcEntrance 0.5s ease forwards;
-  transition:filter 0.4s}
-.flip-card:hover:not(.flipped){transform:translateX(-50%) translateX(var(--fan-x,0px)) rotate(var(--fan-rot,0deg)) translateY(calc(var(--fan-y,0px) - 16px));z-index:10}
+  width:155px;height:240px;perspective:900px;cursor:pointer;
+  flex-shrink:0;position:relative;
+  opacity:0;animation:cardDrop 0.5s ease forwards;
+  transition:filter 0.4s,transform 0.3s}
+.flip-card:hover:not(.flipped):not(.enchanting){transform:translateY(-8px)}
 
-@keyframes arcEntrance{
-  0%{opacity:0;transform:translateX(-50%) translateX(0px) rotate(0deg) translateY(60px) scale(0.7)}
-  70%{opacity:1;transform:translateX(-50%) translateX(var(--fan-x,0px)) rotate(var(--fan-rot,0deg)) translateY(calc(var(--fan-y,0px) - 8px)) scale(1.02)}
-  100%{opacity:1;transform:translateX(-50%) translateX(var(--fan-x,0px)) rotate(var(--fan-rot,0deg)) translateY(var(--fan-y,0px)) scale(1)}
+@keyframes cardDrop{
+  0%{opacity:0;transform:translateY(-40px) scale(0.85)}
+  70%{opacity:1;transform:translateY(4px) scale(1.01)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
 }
 
 .flip-card__inner{position:relative;width:100%;height:100%;
@@ -171,74 +166,80 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 .flip-card__front .sc-info{padding:0 6px 5px}
 .flip-card__front .sc-crest-watermark{width:30px;height:30px;bottom:4px;right:4px}
 
-/* ── BACK — full-bleed ornate card back ── */
+/* ── BACK — full-bleed PNG image ── */
 .flip-card__back{
-  background:linear-gradient(180deg,#110f1e 0%,#0d0b18 40%,#0a0812 100%);
+  background-image:url('/assets/images/card-back.png');
+  background-size:cover;background-position:center;
   border:1.5px solid rgba(212,166,75,0.25);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
   transition:border-color 0.3s,box-shadow 0.3s}
 
-/* Outer gold frame border */
-.flip-card__back::before{content:'';position:absolute;inset:5px;border-radius:8px;
-  border:1.5px solid rgba(212,166,75,0.18);pointer-events:none}
-
-/* Inner decorative border */
-.flip-card__back::after{content:'';position:absolute;inset:12px;border-radius:6px;
-  border:1px solid rgba(212,166,75,0.08);pointer-events:none}
-
-/* Full-coverage crosshatch pattern */
-.flip-card__back-pattern{position:absolute;inset:0;border-radius:12px;pointer-events:none;
-  background:
-    repeating-linear-gradient(45deg,transparent,transparent 6px,rgba(212,166,75,0.025) 6px,rgba(212,166,75,0.025) 7px),
-    repeating-linear-gradient(-45deg,transparent,transparent 6px,rgba(212,166,75,0.02) 6px,rgba(212,166,75,0.02) 7px)}
-
-/* Radial glow behind logo */
-.flip-card__back-glow{position:absolute;width:140%;height:70%;top:15%;left:-20%;
-  background:radial-gradient(ellipse at center,rgba(212,166,75,0.06),transparent 60%);
-  pointer-events:none}
-
-/* Large centered logo */
-.flip-card__back-img{width:80px;height:80px;object-fit:contain;opacity:0.55;
-  filter:drop-shadow(0 0 16px rgba(212,166,75,0.25));position:relative;z-index:1}
-
-/* Title text */
-.flip-card__back-text{font-family:var(--font-title);font-size:8px;letter-spacing:4px;
-  color:rgba(212,166,75,0.35);text-transform:uppercase;position:relative;z-index:1;margin-top:8px}
-
-/* Tap hint */
-.flip-card__back-hint{font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:1px;
-  color:rgba(212,166,75,0.2);position:relative;z-index:1;margin-top:10px;
-  animation:pulse 2.5s infinite}
-
-/* Corner ornaments */
-.flip-card__back-corner{position:absolute;width:14px;height:14px;z-index:2;
-  border-color:rgba(212,166,75,0.2);border-style:solid;border-width:0}
-.flip-card__back-corner--tl{top:8px;left:8px;border-top-width:1px;border-left-width:1px;border-radius:2px 0 0 0}
-.flip-card__back-corner--tr{top:8px;right:8px;border-top-width:1px;border-right-width:1px;border-radius:0 2px 0 0}
-.flip-card__back-corner--bl{bottom:8px;left:8px;border-bottom-width:1px;border-left-width:1px;border-radius:0 0 0 2px}
-.flip-card__back-corner--br{bottom:8px;right:8px;border-bottom-width:1px;border-right-width:1px;border-radius:0 0 2px 0}
-
 /* Hover glow on unflipped cards */
-.flip-card:not(.flipped):hover .flip-card__back{
+.flip-card:not(.flipped):not(.enchanting):hover .flip-card__back{
   border-color:rgba(212,166,75,0.45);box-shadow:0 0 24px rgba(212,166,75,0.12)}
 
-/* ── RARITY BURST — flash overlay on flip ── */
-.flip-burst{position:absolute;inset:0;border-radius:12px;z-index:50;pointer-events:none;
+/* ── ENCHANT EFFECT — plays BEFORE the flip ── 
+   Gold glow builds around the card, shimmer sweeps across,
+   card shakes gently, then the flip fires. */
+.flip-card__enchant{position:absolute;inset:-3px;border-radius:14px;z-index:50;pointer-events:none;
+  opacity:0;transition:none;
+  border:2px solid transparent;
+  box-shadow:0 0 0 transparent}
+
+/* Phase 1: glow builds (0 → 0.5s) */
+.flip-card.enchanting .flip-card__enchant{
+  animation:enchantBuild 0.6s ease-out forwards}
+@keyframes enchantBuild{
+  0%{opacity:0;border-color:transparent;box-shadow:0 0 0 transparent}
+  40%{opacity:1;border-color:rgba(212,166,75,0.6);box-shadow:0 0 20px rgba(212,166,75,0.25),inset 0 0 20px rgba(212,166,75,0.08)}
+  70%{border-color:rgba(255,255,255,0.5);box-shadow:0 0 35px rgba(212,166,75,0.4),0 0 60px rgba(212,166,75,0.15),inset 0 0 30px rgba(212,166,75,0.12)}
+  100%{opacity:1;border-color:rgba(255,255,255,0.7);box-shadow:0 0 40px rgba(212,166,75,0.5),0 0 80px rgba(212,166,75,0.2),inset 0 0 40px rgba(212,166,75,0.15)}
+}
+
+/* Shimmer sweep across the card during enchant */
+.flip-card__shimmer{position:absolute;inset:0;border-radius:12px;z-index:51;pointer-events:none;
+  opacity:0;overflow:hidden}
+.flip-card__shimmer::after{content:'';position:absolute;top:-50%;left:-60%;
+  width:40%;height:200%;
+  background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,0.25) 45%,rgba(255,230,180,0.4) 50%,rgba(255,255,255,0.25) 55%,transparent 70%);
+  transform:rotate(15deg)}
+.flip-card.enchanting .flip-card__shimmer{opacity:1}
+.flip-card.enchanting .flip-card__shimmer::after{
+  animation:shimmerSweep 0.5s 0.2s ease-in-out forwards}
+@keyframes shimmerSweep{
+  0%{left:-60%}
+  100%{left:120%}
+}
+
+/* Gentle shake during enchant */
+.flip-card.enchanting{
+  animation:enchantShake 0.6s ease-in-out}
+@keyframes enchantShake{
+  0%,100%{transform:translateX(0)}
+  15%{transform:translateX(-2px) rotate(-0.5deg)}
+  30%{transform:translateX(2px) rotate(0.5deg)}
+  45%{transform:translateX(-1.5px) rotate(-0.3deg)}
+  60%{transform:translateX(1.5px) rotate(0.3deg)}
+  75%{transform:translateX(-1px)}
+  90%{transform:translateX(0.5px)}
+}
+
+/* ── RARITY BURST — flash overlay AFTER flip ── */
+.flip-burst{position:absolute;inset:-8px;border-radius:16px;z-index:52;pointer-events:none;
   opacity:0;transition:none}
 .flip-burst.fire{
-  animation:burstFlash 0.7s ease-out forwards}
+  animation:burstFlash 0.8s ease-out forwards}
 @keyframes burstFlash{
   0%{opacity:0;transform:scale(0.8)}
-  20%{opacity:1;transform:scale(1.1)}
-  100%{opacity:0;transform:scale(1.3)}
+  15%{opacity:1;transform:scale(1.05)}
+  100%{opacity:0;transform:scale(1.4)}
 }
 
 /* Rarity-specific burst colors */
-.flip-burst--common{background:radial-gradient(circle,rgba(200,200,200,0.3),transparent 65%)}
-.flip-burst--uncommon{background:radial-gradient(circle,rgba(80,200,80,0.5),transparent 65%)}
-.flip-burst--rare{background:radial-gradient(circle,rgba(0,150,255,0.5),rgba(0,100,200,0.15) 40%,transparent 70%)}
-.flip-burst--epic{background:radial-gradient(circle,rgba(180,100,255,0.6),rgba(120,40,200,0.2) 40%,transparent 70%)}
-.flip-burst--legendary{background:radial-gradient(circle,rgba(255,220,50,0.7),rgba(255,180,0,0.25) 35%,transparent 65%)}
+.flip-burst--common{background:radial-gradient(circle,rgba(200,200,200,0.25),transparent 60%)}
+.flip-burst--uncommon{background:radial-gradient(circle,rgba(80,200,80,0.5),transparent 60%)}
+.flip-burst--rare{background:radial-gradient(circle,rgba(0,150,255,0.55),rgba(0,100,200,0.15) 40%,transparent 65%)}
+.flip-burst--epic{background:radial-gradient(circle,rgba(180,100,255,0.6),rgba(120,40,200,0.2) 40%,transparent 65%)}
+.flip-burst--legendary{background:radial-gradient(circle,rgba(255,220,50,0.7),rgba(255,180,0,0.25) 35%,transparent 60%)}
 
 /* Post-flip rarity glows */
 .flip-card.flipped[data-rarity="uncommon"]{filter:drop-shadow(0 0 8px rgba(80,200,80,0.2))}
@@ -251,7 +252,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   50%{filter:drop-shadow(0 0 32px rgba(255,200,0,0.6))}
 }
 
-/* Legendary gets extra sparkle ring */
+/* Legendary extra sparkle ring */
 .flip-card.flipped[data-rarity="legendary"]::before{
   content:'';position:absolute;inset:-4px;border-radius:15px;z-index:60;pointer-events:none;
   border:1.5px solid rgba(255,200,0,0.3);
@@ -287,28 +288,24 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 .loading{text-align:center;padding:40px;font-family:'Crimson Text',serif;font-style:italic;color:#554E68}
 
 @media(max-width:600px){
-  .pack-reveal__cards{width:100%;height:280px}
-  .flip-card{width:120px;height:190px}
+  .pack-reveal__cards{gap:6px}
+  .flip-card{width:110px;height:175px}
   .flip-card__front .sc-name{font-size:9px}
   .flip-card__front .sc-top{padding:4px 4px;gap:3px}
   .flip-card__front .sc-mana{font-size:6px;padding:1px 3px}
   .flip-card__front .sc-house-logo--inline{width:14px;height:14px}
-  .flip-card__front .sc-art-spacer{flex:0 0 55px}
-  .flip-card__front .sc-art{height:45px}
-  .flip-card__front .sc-art img{width:26px;height:26px}
-  .flip-card__front .sc-info{padding:0 4px 4px}
+  .flip-card__front .sc-art-spacer{flex:0 0 50px}
+  .flip-card__front .sc-art{height:40px}
+  .flip-card__front .sc-art img{width:24px;height:24px}
+  .flip-card__front .sc-info{padding:0 4px 3px}
   .flip-card__front .sc-type{font-size:6px;padding:1px 4px}
-  .flip-card__front .sc-rarity{font-size:5px;padding:1px 4px}
-  .flip-card__front .sc-effect{padding:2px 4px;margin-bottom:1px}
+  .flip-card__front .sc-rarity{font-size:5px;padding:1px 3px}
+  .flip-card__front .sc-effect{padding:2px 3px;margin-bottom:1px}
   .flip-card__front .sc-effect__base{font-size:6px}
   .flip-card__front .sc-pills{display:none}
-  .flip-card__front .sc-flavor{font-size:7px}
+  .flip-card__front .sc-flavor{font-size:6px;padding-top:1px}
   .flip-card__front .sc-bottom{display:none}
-  .flip-card__front .sc-crest-watermark{width:22px;height:22px;bottom:3px;right:3px}
-  .flip-card__back-img{width:50px;height:50px}
-  .flip-card__back-text{font-size:6px;letter-spacing:3px}
-  .flip-card__back-corner{width:10px;height:10px}
-  .pack-reveal__cards{height:250px}
+  .flip-card__front .sc-crest-watermark{width:18px;height:18px;bottom:2px;right:2px}
   .pack-reveal__title{font-size:20px;letter-spacing:2px}
   .pack-reveal__sub{font-size:13px}
   .hand-grid .spell-card{width:170px;min-height:270px}
@@ -324,10 +321,12 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   .transmute-tier__rarity{font-size:11px}
 }
 @media(max-width:380px){
-  .flip-card{width:100px;height:160px}
-  .flip-card__back-img{width:36px;height:36px}
-  .flip-card__back-text{font-size:5px}
-  .pack-reveal__cards{height:210px}
+  .flip-card{width:90px;height:145px}
+  .pack-reveal__cards{gap:4px}
+  .flip-card__front .sc-name{font-size:8px}
+  .flip-card__front .sc-art-spacer{flex:0 0 38px}
+  .flip-card__front .sc-type-row{display:none}
+  .flip-card__front .sc-flavor{display:none}
 }
 </style>
 </head>
@@ -561,17 +560,9 @@ function buildCard(s, delay, rarity){
     +'</div></div></div>';
 }
 
-/* ═══ CARD BACK HTML — ornate full-bleed design ═══ */
+/* ═══ CARD BACK HTML — uses card-back.png, no extra elements needed ═══ */
 function buildCardBack(){
-  return '<div class="flip-card__back-pattern"></div>'
-    +'<div class="flip-card__back-glow"></div>'
-    +'<div class="flip-card__back-corner flip-card__back-corner--tl"></div>'
-    +'<div class="flip-card__back-corner flip-card__back-corner--tr"></div>'
-    +'<div class="flip-card__back-corner flip-card__back-corner--bl"></div>'
-    +'<div class="flip-card__back-corner flip-card__back-corner--br"></div>'
-    +'<img class="flip-card__back-img" src="/assets/images/9lv-logo.png" onerror="this.outerHTML=\'<div style=\\\'font-size:50px;opacity:0.4;position:relative;z-index:1\\\'>&#10022;</div>\'">'
-    +'<div class="flip-card__back-text">Nine Lives</div>'
-    +'<div class="flip-card__back-hint">TAP TO REVEAL</div>';
+  return '';  /* PNG set via CSS background-image on .flip-card__back */
 }
 
 /* ═══ OPEN PACK ═══ */
@@ -593,33 +584,18 @@ async function openPack(){
     totalRevealCards=cards.length;
     document.getElementById('revealClose').classList.remove('visible');
 
-    /* Arc fan positions — tighter on mobile */
-    var isMobile=window.innerWidth<=600;
-    var arcPositions=isMobile?[
-      {rot:'-16deg', y:'18px', x:'-90px'},
-      {rot:'-8deg',  y:'5px',  x:'-45px'},
-      {rot:'0deg',   y:'0px',  x:'0px'},
-      {rot:'8deg',   y:'5px',  x:'45px'},
-      {rot:'16deg',  y:'18px', x:'90px'}
-    ]:[
-      {rot:'-18deg', y:'24px', x:'-140px'},
-      {rot:'-9deg',  y:'6px',  x:'-70px'},
-      {rot:'0deg',   y:'0px',  x:'0px'},
-      {rot:'9deg',   y:'6px',  x:'70px'},
-      {rot:'18deg',  y:'24px', x:'140px'}
-    ];
-
     var revealHTML='';
     cards.forEach(function(c, i){
       var r=c.rarity||'common';
-      var arc=arcPositions[i]||arcPositions[2];
       revealHTML+='<div class="flip-card" data-rarity="'+r+'" data-idx="'+i+'" '
-        +'style="--fan-rot:'+arc.rot+';--fan-y:'+arc.y+';--fan-x:'+arc.x+';animation-delay:'+(0.2+i*0.12)+'s;z-index:'+(i===2?5:i===1||i===3?3:1)+'" '
+        +'style="animation-delay:'+(0.15+i*0.1)+'s" '
         +'onclick="flipCard(this)">'
         +'<div class="flip-card__inner">'
         +'<div class="flip-card__front">'+buildCard(c, 0, r)+'</div>'
         +'<div class="flip-card__back">'+buildCardBack()+'</div>'
         +'</div>'
+        +'<div class="flip-card__enchant"></div>'
+        +'<div class="flip-card__shimmer"></div>'
         +'<div class="flip-burst flip-burst--'+r+'"></div>'
         +'</div>';
     });
@@ -635,33 +611,39 @@ async function openPack(){
   }
 }
 
-/* ═══ FLIP CARD — triggers burst + particles ═══ */
+/* ═══ FLIP CARD — enchant glow → flip → rarity burst ═══ */
 function flipCard(el){
-  if(el.classList.contains('flipped'))return;
-  el.classList.add('flipped');
-  flippedCount++;
+  if(el.classList.contains('flipped')||el.classList.contains('enchanting'))return;
 
-  /* Fire the rarity burst */
-  var burst=el.querySelector('.flip-burst');
-  if(burst){burst.classList.add('fire');
-    setTimeout(function(){burst.classList.remove('fire');},800);}
+  /* Phase 1: Enchant glow + shimmer + shake (0.6s) */
+  el.classList.add('enchanting');
 
-  /* Lift this card above its neighbors briefly */
-  el.style.zIndex='20';
-  setTimeout(function(){el.style.zIndex='';},800);
-
-  /* Init particles on the revealed card */
+  /* Phase 2: After enchant finishes, do the actual flip */
   setTimeout(function(){
-    var sc=el.querySelector('.spell-card');
-    if(sc){sc.classList.add('show');initSpellCard(sc);fitCardNames(el);}
-  },450);
+    el.classList.remove('enchanting');
+    el.classList.add('flipped');
+    flippedCount++;
 
-  /* Show close button after all cards flipped */
-  if(flippedCount>=totalRevealCards){
+    /* Phase 3: Rarity burst fires mid-flip */
     setTimeout(function(){
-      document.getElementById('revealClose').classList.add('visible');
-    },600);
-  }
+      var burst=el.querySelector('.flip-burst');
+      if(burst){burst.classList.add('fire');
+        setTimeout(function(){burst.classList.remove('fire');},900);}
+    },350);
+
+    /* Init particles on the revealed card */
+    setTimeout(function(){
+      var sc=el.querySelector('.spell-card');
+      if(sc){sc.classList.add('show');initSpellCard(sc);fitCardNames(el);}
+    },500);
+
+    /* Show close button after all cards flipped */
+    if(flippedCount>=totalRevealCards){
+      setTimeout(function(){
+        document.getElementById('revealClose').classList.add('visible');
+      },700);
+    }
+  },650);
 }
 
 /* Flip all shortcut — click the title area */
