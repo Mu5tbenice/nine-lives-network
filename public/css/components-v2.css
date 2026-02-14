@@ -305,7 +305,8 @@ img { max-width: 100%; display: block; }
    Name is flex:1, fills space between fixed-width logo & pill.
    Call fitCardNames() after rendering to auto-scale font so
    the title always fits on one line. Never clips or adds ellipsis. */
-.sc-top{display:flex;align-items:center;gap:6px;padding:8px 8px;position:relative}
+.sc-top{display:flex;align-items:center;gap:6px;padding:8px 8px;position:relative;
+  background:linear-gradient(180deg,rgba(0,0,0,0.5) 0%,rgba(0,0,0,0.2) 70%,transparent 100%)}
 
 /* House logo — inline flex item in top row */
 .sc-house-logo--inline{
@@ -330,15 +331,17 @@ img { max-width: 100%; display: block; }
 .sc-header{display:flex;justify-content:space-between;align-items:flex-start}
 
 /* Name — flex child between logo and mana pill.
-   White outline reads cleanly on dark card + any art.
+   Crisp black outline keeps gold readable on any background.
    fitCardNames() scales font down so it always fits. */
 .sc-name{font-family:var(--font-title);font-weight:700;font-size:15px;line-height:1.15;
   flex:1;min-width:0;white-space:nowrap;overflow:hidden;
   color:#D4A64B;
-  -webkit-text-stroke:0.4px rgba(255,255,255,0.25);
   text-shadow:
-    0 0 6px rgba(0,0,0,0.8),
-    0 0 2px rgba(255,255,255,0.1)}
+    -1px -1px 0 rgba(0,0,0,0.95),
+     1px -1px 0 rgba(0,0,0,0.95),
+    -1px  1px 0 rgba(0,0,0,0.95),
+     1px  1px 0 rgba(0,0,0,0.95),
+     0    0  6px rgba(0,0,0,0.7)}
 
 /* Mana pill — static flex item on the right */
 .sc-mana{font-family:var(--font-data);font-size:11px;font-weight:700;letter-spacing:1px;
@@ -430,7 +433,7 @@ img { max-width: 100%; display: block; }
   .spell-card{width:170px;min-height:270px}
   .card-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
   .sc-top{padding:6px 5px;gap:4px}
-  .sc-name{font-size:11px;-webkit-text-stroke:0.3px rgba(255,255,255,0.2)}
+  .sc-name{font-size:11px}
   .sc-mana{font-size:8px;padding:2px 4px}
   .sc-house-logo--inline{width:18px;height:18px}
   .sc-art-spacer{flex:0 0 90px}
@@ -462,8 +465,12 @@ img { max-width: 100%; display: block; }
 .zoom-card .sc-top{padding:14px 14px;gap:10px}
 .zoom-card .sc-info{padding:0 18px 16px}
 .zoom-card .sc-name{font-size:20px;
-  -webkit-text-stroke:0.5px rgba(255,255,255,0.3);
-  text-shadow:0 0 8px rgba(0,0,0,0.9),0 0 3px rgba(255,255,255,0.15)}
+  text-shadow:
+    -1px -1px 0 rgba(0,0,0,0.95),
+     1px -1px 0 rgba(0,0,0,0.95),
+    -1px  1px 0 rgba(0,0,0,0.95),
+     1px  1px 0 rgba(0,0,0,0.95),
+     0    0  8px rgba(0,0,0,0.8)}
 .zoom-card .sc-mana{font-size:12px;padding:5px 10px 5px 8px;min-width:52px}
 .zoom-card .sc-house-logo--inline{width:36px;height:36px}
 .zoom-card .sc-house-logo{display:none}
