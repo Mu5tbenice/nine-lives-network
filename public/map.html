@@ -179,7 +179,7 @@
     .modal-spell-grid-wrap::-webkit-scrollbar{width:3px}
     .modal-spell-grid-wrap::-webkit-scrollbar-thumb{background:rgba(212,166,75,0.2);border-radius:2px}
     .modal-spell-grid-rows{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
-    .modal-spell-grid-rows .spell-card{width:140px;min-height:200px;cursor:pointer;flex-shrink:0}
+    .modal-spell-grid-rows .spell-card{width:140px !important;min-height:200px !important;max-height:260px;cursor:pointer;flex-shrink:0}
     .modal-spell-grid-rows .spell-card:hover{transform:translateY(-4px) scale(1.02)}
     .modal-spell-grid-rows .sc-art{height:60px}
     .modal-spell-grid-rows .sc-name{font-size:10px}
@@ -191,7 +191,7 @@
     .modal-spell-grid{display:flex;gap:10px;overflow-x:auto;padding:4px 0;scroll-snap-type:x mandatory}
     .modal-spell-grid::-webkit-scrollbar{height:3px}
     .modal-spell-grid::-webkit-scrollbar-thumb{background:rgba(212,166,75,0.15);border-radius:2px}
-    .modal-spell-grid .spell-card{width:140px;min-height:200px;cursor:pointer;flex-shrink:0;scroll-snap-align:start}
+    .modal-spell-grid .spell-card{width:140px !important;min-height:200px !important;max-height:260px;cursor:pointer;flex-shrink:0;scroll-snap-align:start}
     .modal-spell-grid .spell-card:hover{transform:translateY(-4px) scale(1.02)}
     .modal-spell-grid .sc-art{height:60px}
     .modal-spell-grid .sc-name{font-size:10px}
@@ -200,6 +200,9 @@
     .modal-spell-grid .pill{font-size:5px;padding:1px 5px}
     .modal-spell-grid .sc-flavor{display:none}
     .modal-spell-grid .sc-bottom{display:none}
+    .modal-card-wrap{display:inline-block;position:relative}
+    .modal-card-wrap .spell-card{width:140px !important;min-height:200px !important;max-height:260px}
+    .modal-card-wrap--disabled{pointer-events:none}
     .pill .tip{display:none;position:fixed;font-family:var(--font-body);font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;white-space:normal;width:max-content;max-width:220px;border-radius:6px;padding:8px 12px;line-height:1.4;z-index:9999;box-shadow:0 8px 28px rgba(0,0,0,0.7);pointer-events:none}
     .modal-action-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-inset);border-radius:8px;margin-bottom:4px;cursor:pointer;transition:background 0.15s}
     .modal-action-row:hover{background:rgba(255,255,255,0.06)}
@@ -269,12 +272,27 @@
 <script>
 var HOUSES={1:{name:'Smoulders',color:'#E03C31',glow:'#ff6b5b',slug:'smoulders',img:'Housesmoulders.png'},2:{name:'Darktide',color:'#00B4D8',glow:'#4de8ff',slug:'darktide',img:'Housedarktide.png'},3:{name:'Stonebark',color:'#5CB338',glow:'#8aef5a',slug:'stonebark',img:'Housestonebark.png'},4:{name:'Ashenvale',color:'#90E0EF',glow:'#b8f0ff',slug:'ashenvale',img:'HouseAshenvale.png'},5:{name:'Stormrage',color:'#FFC800',glow:'#ffe566',slug:'stormrage',img:'Housestormrage.png'},6:{name:'Nighthollow',color:'#7B2D8E',glow:'#c066dd',slug:'nighthollow',img:'Housenighthollow.png'},7:{name:'Dawnbringer',color:'#FF8C00',glow:'#ffb84d',slug:'dawnbringer',img:'HouseDwnbringer.png'},8:{name:'Manastorm',color:'#5B8FE0',glow:'#8bb8ff',slug:'manastorm',img:'Housemanastorm.png'},9:{name:'Plaguemire',color:'#E84393',glow:'#ff7ab8',slug:'plaguemire',img:'Houseplaguemire.png'}};
 var ZONE_IMAGES={1:'/assets/images/environments/ashen-approach.jpg',2:'/assets/images/environments/the-drowning-spiral.png',3:'/assets/images/environments/crimson-overlook.jpg',4:'/assets/images/environments/the-floating-citadel.png',5:'/assets/images/environments/violet-storm.png',6:'/assets/images/environments/the-lone-spire.png',7:'/assets/images/environments/azure-expanse.png',8:'/assets/images/environments/shattered-stream.png',9:'/assets/images/environments/the-quiet-woods.png',10:'/assets/images/environments/the-twin-spires.png',11:'/assets/images/environments/the-veiled-cascade.png',12:'/assets/images/environments/the-sunken-archives.png',13:'/assets/images/environments/the-whispering-woods.png',14:'/assets/images/environments/the-fallen-wyrm.jpg',15:'/assets/images/environments/the-grassy-knoll.png',16:'/assets/images/environments/the-gathering-grove.png',17:'/assets/images/environments/the-breach.png',18:'/assets/images/environments/the-great-divide.png',19:'/assets/images/environments/the-chambers-keep.png',20:'/assets/images/environments/the-eastern-exchange.png',21:'/assets/images/environments/the-memorial-arch.png',22:'/assets/images/environments/lunar-sanctum.png',23:'/assets/images/environments/the-divide.png',24:'/assets/images/environments/the-silent-valley.png',25:'/assets/images/environments/the-torn-veil.png'};
-var zones=[],actionsToday={},influence={},player=null,playerActedZones={},currentSort='activity',houseSpells=[],allHouseSpells=[],communityClashes=[];
+var zones=[],actionsToday={},influence={},player=null,playerActedZones={},currentSort='activity',handData=null,collectionData=[],communityClashes=[];
 var SLUG_MAP={};Object.keys(HOUSES).forEach(function(id){SLUG_MAP[HOUSES[id].slug]={name:HOUSES[id].name,color:HOUSES[id].color,img:'/assets/images/houses/'+HOUSES[id].img};});
 SLUG_MAP.universal={name:'Universal',color:'#D4A64B',img:null};
 var PC={'BURN':'orange','DRAIN':'purple','HEAL':'green','THORNS':'green','HASTE':'cyan','FREE':'cyan','DODGE':'ice','CRIT':'yellow','CHAIN':'blue','AMPLIFY':'purple','HEX':'purple','SILENCE':'gray','PIERCE':'white','ABSORB':'blue','INFECT':'toxic','CORRODE':'toxic','POISON':'toxic','SURGE':'yellow','WARD':'gold','BLESS':'gold','SIPHON':'purple','ANCHOR':'brown','WEAKEN':'orange','SWIFT':'white','INSPIRE':'gold'};
 function pillCol(tag){var k=tag.replace(/[\+\d\s]/g,'').toUpperCase();for(var p in PC){if(k.indexOf(p)!==-1)return PC[p];}return'gray';}
 var PARTICLE_MAP={smoulders:'ember',darktide:'ice',stonebark:'leaf',ashenvale:'ice',stormrage:'lightning',nighthollow:'shadow',dawnbringer:'ember',manastorm:'stardust',plaguemire:'toxic',universal:'stardust'};
+/* Slug-based house lookup for card builder (matches packs/spellbook) */
+var CARD_HOUSES={
+  universal:{name:'Universal',color:'#D4A64B',rgb:'212,166,75',img:null,element:'ALL HOUSES'},
+  smoulders:{name:'Smoulders',color:'#E03C31',rgb:'224,60,49',img:'/assets/images/houses/House-smoulders.png',element:'FIRE'},
+  darktide:{name:'Darktide',color:'#00B4D8',rgb:'0,180,216',img:'/assets/images/houses/House-darktide.png',element:'WATER'},
+  stonebark:{name:'Stonebark',color:'#5CB338',rgb:'92,179,56',img:'/assets/images/houses/House-stonebark.png',element:'EARTH'},
+  ashenvale:{name:'Ashenvale',color:'#90E0EF',rgb:'144,224,239',img:'/assets/images/houses/House-Ashenvale.png',element:'WIND'},
+  stormrage:{name:'Stormrage',color:'#FFC800',rgb:'255,200,0',img:'/assets/images/houses/House-stormrage.png',element:'LIGHTNING'},
+  nighthollow:{name:'Nighthollow',color:'#7B2D8E',rgb:'123,45,142',img:'/assets/images/houses/House-nighthollow.png',element:'SHADOW'},
+  dawnbringer:{name:'Dawnbringer',color:'#FF8C00',rgb:'255,140,0',img:'/assets/images/houses/House-dawnbringer.png',element:'LIGHT'},
+  manastorm:{name:'Manastorm',color:'#5B8FE0',rgb:'91,143,224',img:'/assets/images/houses/House-manastorm.png',element:'ARCANE'},
+  plaguemire:{name:'Plaguemire',color:'#E84393',rgb:'232,67,147',img:'/assets/images/houses/House-plaguemire.png',element:'POISON'}
+};
+var RARITY_COLORS={common:{bg:'rgba(180,180,180,0.08)',border:'rgba(180,180,180,0.2)',color:'#bbb',label:'Common'},uncommon:{bg:'rgba(80,200,80,0.1)',border:'rgba(80,200,80,0.25)',color:'#66dd66',label:'Uncommon'},rare:{bg:'rgba(0,150,255,0.1)',border:'rgba(0,150,255,0.25)',color:'#55bbff',label:'Rare'},epic:{bg:'rgba(160,80,240,0.12)',border:'rgba(160,80,240,0.3)',color:'#bb88ff',label:'Epic'},legendary:{bg:'rgba(255,200,0,0.12)',border:'rgba(255,200,0,0.3)',color:'#ffd700',label:'Legendary'}};
+var RARITY_MULT={common:'x1.0',uncommon:'x1.25',rare:'x1.5',epic:'x2.0',legendary:'x3.0'};
 
 function updateMidnightCountdown(){
   var now=new Date();var utcH=now.getUTCHours(),utcM=now.getUTCMinutes(),utcS=now.getUTCSeconds();
@@ -285,25 +303,63 @@ function updateMidnightCountdown(){
 }
 setInterval(updateMidnightCountdown,1000);updateMidnightCountdown();
 
-/* ===== SPELL CARD BUILDER (FIX 1: added 4th closing </div> at end) ===== */
-function buildMiniSpellCard(s,zoneId){
-  var h=SLUG_MAP[s.house]||SLUG_MAP.universal;
-  var bn=[];try{bn=typeof s.bonus_effects==='string'?JSON.parse(s.bonus_effects):(s.bonus_effects||[]);}catch(e){bn=[];}
-  var tierNames=['BASIC','COMMON','UNCOMMON','RARE','EPIC','LEGENDARY'];
-  var tl=tierNames[s.tier||0]||'BASIC';var manaCost=s.mana_cost||1;
-  var mo='<div class="sc-mana sc-mana--mini">'+manaCost+'MP</div>';
-  var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:18px;position:relative;z-index:1">\u2726</span>';
-  var pl='';if(bn.length>0){pl='<div class="sc-pills">';bn.forEach(function(b){var tag=b.tag||b.key||'';var desc=b.desc||b.description||tag;pl+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';});pl+='</div>';}
+/* ===== CARD BUILDER (shared with packs/spellbook) ===== */
+function buildCard(s,d,rarity){
+  var h=CARD_HOUSES[s.house]||CARD_HOUSES.universal;
+  var bn=[];
+  try{bn=typeof s.effects==='string'?JSON.parse(s.effects):(s.effects||[]);
+    if(!Array.isArray(bn)&&typeof s.bonus_effects!=='undefined'){bn=typeof s.bonus_effects==='string'?JSON.parse(s.bonus_effects):(s.bonus_effects||[]);}
+  }catch(e){bn=[];}
+  var tl=s.tier===0?'BASIC':s.tier>=2?'TIER '+s.tier:'TIER 1';
+  var tc=s.tier>=2?'#00D4FF':s.tier===0?'#847C98':h.color;
+  var mo='<div class="sc-mana">'+(s.cost||s.mana_cost||1)+' MP</div>';
+  var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:28px;position:relative;z-index:1">\u2726</span>';
+  var spellType=s.type||s.spell_type||'attack';
+  var pl='';
+  if(bn.length>0){pl='<div class="sc-pills">';bn.forEach(function(b){
+    var tag=(typeof b==='string')?b:(b.tag||b.key||'');
+    var desc=(typeof b==='string')?tag:(b.desc||b.description||tag);
+    pl+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';
+  });pl+='</div>';}
   var be='';if(s.base_effect&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
-  var spellId=s.id||0;var escName=esc(s.name).replace(/'/g,"\\'");
-  var houseLogo=h.img?'<div class="sc-house-logo" style="background-image:url('+h.img+');width:18px;height:18px;top:5px;left:5px"></div>':'';
   var pType=PARTICLE_MAP[s.house]||'stardust';
-  var canCast=player&&player.mana>=manaCost&&!playerActedZones[zoneId];
-  var disabledStyle=canCast?'':'opacity:0.4;pointer-events:none;filter:grayscale(0.6);';
-  var disabledLabel='';
-  if(player&&player.mana<manaCost)disabledLabel='<div style="position:absolute;bottom:6px;left:0;right:0;text-align:center;font-family:var(--font-data);font-size:7px;color:#ff5555;letter-spacing:1px;z-index:10;">NOT ENOUGH MANA</div>';
-  else if(playerActedZones[zoneId])disabledLabel='<div style="position:absolute;bottom:6px;left:0;right:0;text-align:center;font-family:var(--font-data);font-size:7px;color:#888;letter-spacing:1px;z-index:10;">ALREADY CAST</div>';
-  return '<div class="spell-card show" style="'+disabledStyle+'--hc:'+h.color+';--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810)" onclick="event.stopPropagation();castSpellOnZone('+zoneId+','+spellId+',\''+escName+'\',\''+(s.spell_type||'attack')+'\','+manaCost+')" data-house="'+s.house+'" data-type="'+(s.spell_type||'attack')+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="25"><div class="sc-border"></div><div class="sc-edge"></div><div class="sc-face"><div class="sc-inner-edge"></div></div><div class="sc-foil"></div><div class="sc-rainbow"></div><canvas class="sc-particles"></canvas><div class="sc-glow"></div>'+houseLogo+disabledLabel+'<div class="sc-body"><div class="sc-top" style="padding:6px 8px 6px 26px"><div class="sc-name" style="font-size:10px;color:'+h.color+'">'+esc(s.name)+'</div>'+mo+'</div><div class="sc-art" style="height:60px"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div>'+ai+'<div class="sc-art__tier" style="color:'+h.color+'">'+tl+'</div></div><div class="sc-info"><div class="sc-type-row"><span class="sc-type sc-type--'+(s.spell_type||'attack')+'">'+(s.spell_type||'attack')+'</span>'+be+pl+'<div class="sc-flavor">'+esc(s.flavor_text||s.motto||'')+'</div><div class="sc-bottom" style="color:'+h.color+'">'+h.name.toUpperCase()+'</div></div></div></div></div>';
+  var crestHtml=h.img?'<div class="sc-crest-watermark" style="background-image:url('+h.img+')"></div>':'';
+  var artBlock='<div class="sc-art"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div>'+ai+'<div class="sc-art__tier" style="color:'+tc+'">'+tl+'</div></div>';
+  var rc=RARITY_COLORS[rarity||'common'];
+  var rarityHtml='<div style="position:absolute;top:6px;right:6px;z-index:20;font-family:var(--font-data);font-size:6px;padding:2px 5px;border-radius:3px;background:'+rc.bg+';border:1px solid '+rc.border+';color:'+rc.color+';letter-spacing:0.5px">'+rc.label+' '+RARITY_MULT[rarity||'common']+'</div>';
+  return '<div class="spell-card" data-house="'+s.house+'" data-type="'+spellType+'" data-rarity="'+(rarity||'common')+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="25" style="--hc:'+h.color+';--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810);transition-delay:'+(d||0)+'s">'
+    +'<div class="sc-border"></div><div class="sc-edge"></div>'
+    +'<div class="sc-face"><div class="sc-inner-edge"></div>'+crestHtml
+    +'<div class="sc-foil"></div><div class="sc-rainbow"></div>'
+    +'<canvas class="sc-particles"></canvas><div class="sc-glow"></div></div>'
+    +'<div class="sc-body">'+rarityHtml
+    +'<div class="sc-top"><div class="sc-name" style="color:'+h.color+'">'+esc(s.name)+'</div>'+mo+'</div>'
+    +artBlock
+    +'<div class="sc-info">'
+    +'<div class="sc-type-row"><span class="sc-type sc-type--'+spellType+'">'+spellType+'</span></div>'
+    +be+pl
+    +'<div class="sc-bottom" style="color:'+h.color+'">'+(h.name||'').toUpperCase()+'</div>'
+    +'</div></div></div>';
+}
+/* Wrap a card for use in the modal with onclick casting + disabled states */
+function buildModalCard(card,zoneId){
+  var manaCost=card.cost||card.mana_cost||1;
+  var spellType=card.type||card.spell_type||'attack';
+  var spellId=card.spell_id||card.id||0;
+  var escName=esc(card.name).replace(/'/g,"\\'");
+  var isUsed=!!card.used;
+  var noMana=player&&player.mana<manaCost;
+  var alreadyCast=!!playerActedZones[zoneId];
+  var disabled=isUsed||noMana||alreadyCast;
+  var wrapper='<div class="modal-card-wrap'+(disabled?' modal-card-wrap--disabled':'')+'"';
+  if(!disabled)wrapper+=' onclick="event.stopPropagation();castSpellOnZone('+zoneId+','+spellId+',\''+escName+'\',\''+spellType+'\','+manaCost+')"';
+  wrapper+=' style="cursor:'+(disabled?'not-allowed':'pointer')+';position:relative;'+(disabled?'opacity:0.4;filter:grayscale(0.6);':'')+'display:inline-block;">';
+  wrapper+=buildCard(card,0,card.rarity||'common');
+  if(isUsed)wrapper+='<div style="position:absolute;bottom:8px;left:0;right:0;text-align:center;font-family:var(--font-data);font-size:7px;color:#888;letter-spacing:1px;z-index:20;">ALREADY USED</div>';
+  else if(noMana)wrapper+='<div style="position:absolute;bottom:8px;left:0;right:0;text-align:center;font-family:var(--font-data);font-size:7px;color:#ff5555;letter-spacing:1px;z-index:20;">NOT ENOUGH MANA</div>';
+  else if(alreadyCast)wrapper+='<div style="position:absolute;bottom:8px;left:0;right:0;text-align:center;font-family:var(--font-data);font-size:7px;color:#888;letter-spacing:1px;z-index:20;">ALREADY CAST HERE</div>';
+  wrapper+='</div>';
+  return wrapper;
 }
 
 function toggleMobileMenu(){document.getElementById('hamburger').classList.toggle('active');document.getElementById('mobileMenu').classList.toggle('active');}
@@ -452,22 +508,23 @@ function openZoneModal(zoneId){
     body+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><h4 style="margin:0;">Cast Spells</h4><div style="display:flex;align-items:center;gap:6px;"><span style="font-family:var(--font-data);font-size:7px;color:var(--text-faint);letter-spacing:1px;">MANA</span>';
     for(var mi=0;mi<7;mi++)body+='<div class="mana-orb'+(mi<mana?' mana-orb--filled':'')+'" style="width:12px;height:12px;"></div>';
     body+='</div></div>';
-    /* Tabs */
-    var rotCount=2+(houseSpells.length||0);var collCount=allHouseSpells.length||0;
+    /* Tabs — Hand vs Collection */
+    var handCards=(handData&&handData.cards)?handData.cards:[];
+    var handCount=handCards.length;
+    var collCount=collectionData.length;
     body+='<div class="spell-tabs">';
-    body+='<div class="spell-tab active" onclick="switchSpellTab(\'quick\',this)"><span class="spell-tab__count">'+rotCount+'</span>QUICK CAST</div>';
-    body+='<div class="spell-tab" onclick="switchSpellTab(\'collection\',this)"><span class="spell-tab__count">'+collCount+'</span>HOUSE SPELLS</div>';
+    body+='<div class="spell-tab active" onclick="switchSpellTab(\'quick\',this)"><span class="spell-tab__count">'+handCount+'</span>TODAY\'S HAND</div>';
+    body+='<div class="spell-tab" onclick="switchSpellTab(\'collection\',this)"><span class="spell-tab__count">'+collCount+'</span>COLLECTION</div>';
     body+='</div>';
-    /* Quick Cast tab content */
+    /* Today's Hand tab */
     body+='<div class="spell-tab-content active" id="spellTabQuick"><div class="modal-spell-grid">';
-    body+=buildMiniSpellCard({id:0,name:'Basic Attack',house:'universal',tier:0,mana_cost:1,spell_type:'attack',base_effect:'+10 influence',bonus_effects:[],flavor_text:'Strike first.'},zoneId);
-    body+=buildMiniSpellCard({id:0,name:'Basic Defend',house:'universal',tier:0,mana_cost:1,spell_type:'defend',base_effect:'+10 defense',bonus_effects:[],flavor_text:'Hold the line.'},zoneId);
-    if(houseSpells.length>0){houseSpells.forEach(function(sp){body+=buildMiniSpellCard(sp,zoneId);});}
+    if(handCards.length>0){handCards.forEach(function(card){body+=buildModalCard(card,zoneId);});}
+    else{body+='<div style="text-align:center;padding:16px;width:100%;font-family:var(--font-body);font-size:13px;color:var(--text-faint);font-style:italic;">No pack opened today. <a href="/packs.html" style="color:var(--gold);text-decoration:underline;">Open your daily pack</a></div>';}
     body+='</div></div>';
-    /* Collection tab content */
+    /* Collection tab */
     body+='<div class="spell-tab-content" id="spellTabCollection"><div class="modal-spell-grid-wrap"><div class="modal-spell-grid-rows">';
-    if(allHouseSpells.length>0){allHouseSpells.forEach(function(sp){body+=buildMiniSpellCard(sp,zoneId);});}
-    else{body+='<div style="text-align:center;padding:16px;width:100%;font-family:var(--font-body);font-size:12px;color:var(--text-faint);font-style:italic;">No house spells available yet</div>';}
+    if(collectionData.length>0){collectionData.forEach(function(card){body+=buildModalCard(card,zoneId);});}
+    else{body+='<div style="text-align:center;padding:16px;width:100%;font-family:var(--font-body);font-size:12px;color:var(--text-faint);font-style:italic;">No cards in your collection yet. Open packs to build your collection!</div>';}
     body+='</div></div></div>';
     if(playerActedZones[zoneId])body+='<div style="text-align:center;font-family:var(--font-data);font-size:8px;color:var(--text-faint);letter-spacing:1px;margin-top:8px;padding:6px;background:rgba(255,255,255,0.02);border-radius:6px;">YOU ALREADY CAST ON THIS ZONE TODAY</div>';}
   body+='</div>';
@@ -475,7 +532,7 @@ function openZoneModal(zoneId){
   if(acts.length>0){acts.forEach(function(a){var p=a.player||{};var h=HOUSES[p.school_id]||{img:'',color:'#888'};var typeCls=a.action_type==='attack'?'modal-action-type--attack':'modal-action-type--defend';var tagH=p.community_tag?'<span class="modal-action-tag">'+esc(p.community_tag)+'</span>':'';body+='<div class="modal-action-row" onmouseenter="showPlayerPopup(event,'+JSON.stringify(p).replace(/"/g,'&quot;')+')" onmouseleave="hidePlayerPopup()">'+(p.profile_image?'<img src="'+p.profile_image+'" class="modal-action-avatar">':'<div class="modal-action-avatar" style="background:var(--bg-inset);display:flex;align-items:center;justify-content:center;">'+hImg(h.img,16)+'</div>')+'<div class="modal-action-info"><div class="modal-action-name">@'+esc(p.twitter_handle||'unknown')+tagH+'</div><span class="modal-action-type '+typeCls+'">'+(a.action_type==='attack'?'ATTACK':'DEFEND')+'</span></div><span class="modal-action-time">'+timeAgo(a.created_at)+'</span></div>';});}
   else{body+='<div class="modal-empty">No actions yet today</div>';}
   document.getElementById('modalBody').innerHTML=body;
-  setTimeout(function(){if(typeof initAllSpellCards==='function')initAllSpellCards();var mc=document.querySelector('.modal-dominance-canvas');if(mc)drawSparkline(mc,parseInt(mc.dataset.zid));},50);
+  setTimeout(function(){document.querySelectorAll('#modalBody .spell-card').forEach(function(c){c.classList.add('show');});if(typeof initAllSpellCards==='function')initAllSpellCards();var mc=document.querySelector('.modal-dominance-canvas');if(mc)drawSparkline(mc,parseInt(mc.dataset.zid));},50);
   document.getElementById('zoneModalOverlay').classList.add('active');
 }
 function switchSpellTab(tab,btn){
@@ -484,7 +541,7 @@ function switchSpellTab(tab,btn){
   btn.classList.add('active');
   if(tab==='quick')document.getElementById('spellTabQuick').classList.add('active');
   else document.getElementById('spellTabCollection').classList.add('active');
-  setTimeout(function(){if(typeof initAllSpellCards==='function')initAllSpellCards();},50);
+  setTimeout(function(){document.querySelectorAll('#modalBody .spell-card').forEach(function(c){c.classList.add('show');});if(typeof initAllSpellCards==='function')initAllSpellCards();},50);
 }
 function closeModal(){document.getElementById('zoneModalOverlay').classList.remove('active');var vid=document.querySelector('.modal-header-video');if(vid){vid.pause();vid.remove();}}
 document.getElementById('zoneModalOverlay').addEventListener('click',function(e){if(e.target.id==='zoneModalOverlay')closeModal();});
@@ -499,6 +556,8 @@ function castSpellOnZone(zoneId,spellId,spellName,spellType,manaCost){
   .then(function(r){return r.json();}).then(function(d){
     if(d.success){
       player.mana=d.mana_remaining!=null?d.mana_remaining:(player.mana-(manaCost||1));playerActedZones[zoneId]=true;
+      /* Mark hand card as used */
+      if(handData&&handData.cards){handData.cards.forEach(function(c){if((c.spell_id||c.id)==spellId&&!c.used)c.used=true;});}
       var pts=d.points_earned||10;var msg=spellName+' +'+pts+' pts';
       if(d.effects&&d.effects.length>0){var applied=d.effects.filter(function(e){return e.status==='APPLIED';});if(applied.length>0)msg+=' | '+applied.map(function(e){return e.effect;}).join(', ');}
       if(d.multiplier&&d.multiplier>1)msg+=' (x'+d.multiplier+')';
@@ -517,7 +576,7 @@ async function loadWorld(){
     var fetches=[fetch('/api/zones').then(function(r){return r.json();}),fetch('/api/territory/actions/today').then(function(r){return r.json();}),fetch('/api/territory/influence').then(function(r){return r.json();}),fetch('/api/leaderboards/schools').then(function(r){return r.json();})];
     if(playerId)fetches.push(fetch('/api/players/'+playerId).then(function(r){return r.json();}));
     var results=await Promise.all(fetches);zones=results[0]||[];actionsToday=results[1]||{};influence=results[2]||{};var schoolData=results[3]||[];player=results[4]||null;
-    if(player){Object.keys(actionsToday).forEach(function(zid){actionsToday[zid].forEach(function(a){var p=a.player||{};if(p.id===player.id)playerActedZones[zid]=true;});});renderPlayerHeader();try{var h=HOUSES[player.school_id];if(h){var sr=await fetch('/api/spells/rotation/'+h.slug);var sd=await sr.json();houseSpells=sd.rotation||[];allHouseSpells=sd.all_house_spells||[];}}catch(e){houseSpells=[];allHouseSpells=[];}}
+    if(player){Object.keys(actionsToday).forEach(function(zid){actionsToday[zid].forEach(function(a){var p=a.player||{};if(p.id===player.id)playerActedZones[zid]=true;});});renderPlayerHeader();try{var hr=await fetch('/api/packs/hand/'+playerId);var hd=await hr.json();if(hd.success&&hd.hand)handData=hd.hand;}catch(e){handData=null;}try{var cr2=await fetch('/api/packs/collection/'+playerId);var cd=await cr2.json();collectionData=cd.cards||cd||[];}catch(e){collectionData=[];}}
     renderTowers(schoolData);
     try{var cr=await fetch('/api/clashes');if(cr.ok){communityClashes=await cr.json();renderClashes();}}catch(e){}
     document.getElementById('loadingState').style.display='none';renderZoneGrid();
