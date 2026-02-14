@@ -11,9 +11,11 @@
   -webkit-tap-highlight-color: transparent;
 }
 html { -webkit-font-smoothing: antialiased; }
+
 body {
   background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-mid) 50%, var(--bg-deep) 100%);
   min-height: 100vh;
+  width: 100%;
   font-family: var(--font-body);
   color: var(--text-bright);
   font-size: 16px;
