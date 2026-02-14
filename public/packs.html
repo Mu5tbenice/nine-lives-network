@@ -223,23 +223,11 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
   90%{transform:translateX(0.5px)}
 }
 
-/* ── RARITY BURST — flash overlay AFTER flip ── */
-.flip-burst{position:absolute;inset:-8px;border-radius:16px;z-index:52;pointer-events:none;
-  opacity:0;transition:none}
-.flip-burst.fire{
-  animation:burstFlash 0.8s ease-out forwards}
-@keyframes burstFlash{
-  0%{opacity:0;transform:scale(0.8)}
-  15%{opacity:1;transform:scale(1.05)}
-  100%{opacity:0;transform:scale(1.4)}
-}
+/* ── RARITY BURST — now handled by JS canvas explosion ── */
+.flip-burst{display:none}
 
-/* Rarity-specific burst colors */
-.flip-burst--common{background:radial-gradient(circle,rgba(200,200,200,0.25),transparent 60%)}
-.flip-burst--uncommon{background:radial-gradient(circle,rgba(80,200,80,0.5),transparent 60%)}
-.flip-burst--rare{background:radial-gradient(circle,rgba(0,150,255,0.55),rgba(0,100,200,0.15) 40%,transparent 65%)}
-.flip-burst--epic{background:radial-gradient(circle,rgba(180,100,255,0.6),rgba(120,40,200,0.2) 40%,transparent 65%)}
-.flip-burst--legendary{background:radial-gradient(circle,rgba(255,220,50,0.7),rgba(255,180,0,0.25) 35%,transparent 60%)}
+/* Burst canvas — positioned over the card */
+.burst-canvas{position:absolute;inset:-60px;z-index:55;pointer-events:none}
 
 /* Post-flip rarity glows */
 .flip-card.flipped[data-rarity="uncommon"]{filter:drop-shadow(0 0 8px rgba(80,200,80,0.2))}
@@ -569,6 +557,13 @@ function buildCardBack(){
 async function openPack(){
   var pid=getPlayerId();
   if(!pid){alert('Please log in first');return;}
+
+  /* Prevent re-opening on refresh */
+  if(hasOpenedToday()){
+    document.getElementById('packCTA').style.display='none';
+    loadPage();return;
+  }
+
   var btn=document.getElementById('openPackBtn');
   btn.disabled=true;btn.textContent='Opening...';
 
@@ -578,6 +573,9 @@ async function openPack(){
     if(!res.ok){btn.disabled=false;btn.innerHTML='<span class="open-pack-btn__icon">&#10022;</span> Open Today\u2019s Pack';alert('Pack API not available yet ('+res.status+')');return;}
     var data=await res.json();
     if(!data.success){btn.disabled=false;btn.innerHTML='<span class="open-pack-btn__icon">&#10022;</span> Open Today\u2019s Pack';alert(data.error||'Failed');return;}
+
+    /* Mark opened so refresh won't allow re-opening */
+    markPackOpened();
 
     var cards=data.cards;
     flippedCount=0;
@@ -596,7 +594,6 @@ async function openPack(){
         +'</div>'
         +'<div class="flip-card__enchant"></div>'
         +'<div class="flip-card__shimmer"></div>'
-        +'<div class="flip-burst flip-burst--'+r+'"></div>'
         +'</div>';
     });
 
@@ -611,7 +608,151 @@ async function openPack(){
   }
 }
 
-/* ═══ FLIP CARD — enchant glow → flip → rarity burst ═══ */
+/* ═══ PACK DATE GUARD — prevent re-opening on refresh ═══ */
+function getTodayKey(){return 'pack_opened_'+new Date().toISOString().slice(0,10);}
+function markPackOpened(){try{localStorage.setItem(getTodayKey(),'1');}catch(e){}}
+function hasOpenedToday(){try{return localStorage.getItem(getTodayKey())==='1';}catch(e){return false;}}
+
+/* ═══ CANVAS PARTICLE BURST — fires on card flip ═══
+   Creates a temporary canvas over the card, spawns
+   colored sparks + glowing ring that expand outward.
+   Rarity controls: color, spark count, ring intensity. */
+
+var BURST_COLORS={
+  common:   {sparks:['#ddd','#ccc','#bbb'],ring:'rgba(200,200,200,0.3)',count:12,ringSize:0.6},
+  uncommon: {sparks:['#66dd66','#44cc44','#88ff88','#55ee55'],ring:'rgba(80,200,80,0.4)',count:20,ringSize:0.7},
+  rare:     {sparks:['#55bbff','#3399ff','#77ccff','#2288ee','#aaddff'],ring:'rgba(0,150,255,0.5)',count:30,ringSize:0.8},
+  epic:     {sparks:['#bb88ff','#9955ee','#dd99ff','#7733cc','#cc77ff'],ring:'rgba(160,80,240,0.5)',count:40,ringSize:0.9},
+  legendary:{sparks:['#ffd700','#ffaa00','#ffee55','#ff8800','#ffffff','#ffe066'],ring:'rgba(255,200,0,0.6)',count:55,ringSize:1.0}
+};
+
+function spawnBurst(flipCardEl, rarity){
+  var cfg=BURST_COLORS[rarity]||BURST_COLORS.common;
+  var canvas=document.createElement('canvas');
+  canvas.className='burst-canvas';
+  var rect=flipCardEl.getBoundingClientRect();
+  var pad=60;
+  var w=rect.width+pad*2, h=rect.height+pad*2;
+  canvas.width=w*2;canvas.height=h*2;
+  canvas.style.width=w+'px';canvas.style.height=h+'px';
+  flipCardEl.appendChild(canvas);
+  var ctx=canvas.getContext('2d');
+  ctx.setTransform(2,0,0,2,0,0);
+
+  var cx=w/2, cy=h/2;
+  var sparks=[];
+  var ringR=0, ringAlpha=cfg.ringSize;
+  var maxRing=Math.max(w,h)*0.55;
+  var frame=0, maxFrames=50;
+
+  /* Spawn sparks */
+  for(var i=0;i<cfg.count;i++){
+    var angle=Math.random()*Math.PI*2;
+    var speed=2+Math.random()*4*(rarity==='legendary'?1.4:rarity==='epic'?1.2:1);
+    var size=1.5+Math.random()*2.5;
+    sparks.push({
+      x:cx, y:cy,
+      vx:Math.cos(angle)*speed,
+      vy:Math.sin(angle)*speed,
+      size:size,
+      color:cfg.sparks[Math.floor(Math.random()*cfg.sparks.length)],
+      alpha:0.8+Math.random()*0.2,
+      decay:0.015+Math.random()*0.01,
+      trail:rarity==='legendary'||rarity==='epic'
+    });
+  }
+
+  /* Extra big glowing orbs for epic/legendary */
+  if(rarity==='epic'||rarity==='legendary'){
+    for(var j=0;j<(rarity==='legendary'?8:4);j++){
+      var a2=Math.random()*Math.PI*2;
+      sparks.push({
+        x:cx,y:cy,
+        vx:Math.cos(a2)*(1.5+Math.random()*2),
+        vy:Math.sin(a2)*(1.5+Math.random()*2),
+        size:4+Math.random()*3,
+        color:cfg.sparks[0],
+        alpha:0.6,decay:0.008,trail:true,glow:true
+      });
+    }
+  }
+
+  function animate(){
+    frame++;
+    if(frame>maxFrames){canvas.remove();return;}
+    ctx.clearRect(0,0,w,h);
+
+    /* Expanding ring */
+    if(ringAlpha>0.01){
+      ringR+=maxRing/18;
+      ringAlpha*=0.88;
+      ctx.beginPath();ctx.arc(cx,cy,ringR,0,Math.PI*2);
+      ctx.strokeStyle=cfg.ring.replace(/[\d.]+\)$/,ringAlpha+')');
+      ctx.lineWidth=rarity==='legendary'?4:rarity==='epic'?3:2;
+      ctx.stroke();
+    }
+
+    /* Center flash (first few frames) */
+    if(frame<8){
+      var flashA=(1-frame/8)*0.4;
+      var flashG=ctx.createRadialGradient(cx,cy,0,cx,cy,40+frame*5);
+      flashG.addColorStop(0,'rgba(255,255,255,'+flashA+')');
+      flashG.addColorStop(0.3,cfg.ring.replace(/[\d.]+\)$/,(flashA*0.5)+')'));
+      flashG.addColorStop(1,'transparent');
+      ctx.fillStyle=flashG;ctx.fillRect(0,0,w,h);
+    }
+
+    /* Sparks */
+    for(var i=sparks.length-1;i>=0;i--){
+      var s=sparks[i];
+      s.x+=s.vx;s.y+=s.vy;
+      s.vx*=0.97;s.vy*=0.97;
+      s.vy+=0.04; /* gravity */
+      s.alpha-=s.decay;
+      if(s.alpha<=0){sparks.splice(i,1);continue;}
+
+      ctx.save();
+      ctx.globalAlpha=s.alpha;
+
+      /* Glow halo for big orbs */
+      if(s.glow){
+        var g=ctx.createRadialGradient(s.x,s.y,0,s.x,s.y,s.size*4);
+        g.addColorStop(0,s.color);
+        g.addColorStop(1,'transparent');
+        ctx.fillStyle=g;
+        ctx.fillRect(s.x-s.size*4,s.y-s.size*4,s.size*8,s.size*8);
+      }
+
+      /* Trail streak */
+      if(s.trail){
+        ctx.beginPath();
+        ctx.moveTo(s.x,s.y);
+        ctx.lineTo(s.x-s.vx*3,s.y-s.vy*3);
+        ctx.strokeStyle=s.color;
+        ctx.lineWidth=s.size*0.5;
+        ctx.globalAlpha=s.alpha*0.3;
+        ctx.stroke();
+        ctx.globalAlpha=s.alpha;
+      }
+
+      /* Spark dot */
+      ctx.beginPath();ctx.arc(s.x,s.y,s.size,0,Math.PI*2);
+      ctx.fillStyle=s.color;ctx.fill();
+
+      /* Bright center */
+      if(s.size>2){
+        ctx.beginPath();ctx.arc(s.x,s.y,s.size*0.3,0,Math.PI*2);
+        ctx.fillStyle='rgba(255,255,255,'+s.alpha*0.6+')';ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+/* ═══ FLIP CARD — enchant glow → flip → canvas burst ═══ */
 function flipCard(el){
   if(el.classList.contains('flipped')||el.classList.contains('enchanting'))return;
 
@@ -624,14 +765,14 @@ function flipCard(el){
     el.classList.add('flipped');
     flippedCount++;
 
-    /* Phase 3: Rarity burst fires mid-flip */
-    setTimeout(function(){
-      var burst=el.querySelector('.flip-burst');
-      if(burst){burst.classList.add('fire');
-        setTimeout(function(){burst.classList.remove('fire');},900);}
-    },350);
+    var rarity=el.getAttribute('data-rarity')||'common';
 
-    /* Init particles on the revealed card */
+    /* Phase 3: Canvas particle burst mid-flip */
+    setTimeout(function(){
+      spawnBurst(el, rarity);
+    },300);
+
+    /* Init spell card particles */
     setTimeout(function(){
       var sc=el.querySelector('.spell-card');
       if(sc){sc.classList.add('show');initSpellCard(sc);fitCardNames(el);}
@@ -729,10 +870,13 @@ async function loadPage(){
   try{
     var hr=await fetch('/api/packs/hand/'+pid);
     if(hr.ok){var hd=await hr.json();
-      if(hd.success&&hd.hand){handData=hd.hand;renderHand(handData);}
+      if(hd.success&&hd.hand){handData=hd.hand;renderHand(handData);markPackOpened();}
+      else if(hasOpenedToday()){document.getElementById('packCTA').style.display='none';}
       else{document.getElementById('packCTA').style.display='block';document.getElementById('handSection').style.display='none';}}
+    else if(hasOpenedToday()){document.getElementById('packCTA').style.display='none';}
     else{document.getElementById('packCTA').style.display='block';}
-  }catch(e){console.error('Hand load error:',e);document.getElementById('packCTA').style.display='block';}
+  }catch(e){console.error('Hand load error:',e);
+    if(!hasOpenedToday())document.getElementById('packCTA').style.display='block';}
   renderCollectionStats();
 }
 
