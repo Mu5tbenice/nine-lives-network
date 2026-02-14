@@ -348,7 +348,7 @@
     .toast.active{display:block;animation:fadeUp 0.3s ease}
     @keyframes fadeUp{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
 
-    .main-container{max-width:960px;margin:0 auto;padding:68px 20px 40px}
+    .main-container{width:100%;max-width:960px;margin:0 auto;padding:68px 20px 40px;display:flex;flex-direction:column;gap:14px}
 
     @media(max-width:480px){
       .world-hero__title{font-size:20px}
@@ -665,29 +665,30 @@ async function openZoneModal(zoneId){
   // Battle timeline
   renderZmTimeline(zoneId);
 
-  // Load player's daily hand (from pack system)
+  // Load player's spell collection (all spells from opened packs)
   zmCards=[];
   var pid=getPlayerId();
   if(pid){
     try{
-      var hr=await fetch('/api/packs/hand/'+pid);
-      if(hr.ok){
-        var hd=await hr.json();
-        if(hd.success&&hd.hand&&hd.hand.cards){
-          var mySlug=player&&HOUSES[player.school_id]?HOUSES[player.school_id].slug:'';
-          hd.hand.cards.forEach(function(c){
-            if(c.used)return; // skip already-cast cards
-            var h=SLUG_MAP[c.house]||SLUG_MAP.universal;
-            var bn=[];try{bn=typeof c.bonus_effects==='string'?JSON.parse(c.bonus_effects):(c.bonus_effects||[]);}catch(e){}
-            var effectText=c.base_effect||'';if(bn.length>0)effectText+=(effectText?', ':'')+bn.map(function(b){return(typeof b==='string')?b:(b.tag||b.key||'');}).join(', ');
-            zmCards.push({name:c.name,house:c.house,houseColor:h.color,houseName:h.name,type:c.spell_type||c.type||'attack',cost:c.mana_cost||c.cost||1,rarity:c.rarity||'common',tier:c.tier||1,effect:effectText,flavor:c.flavor_text||c.motto||'',isHand:true,spellId:c.spell_id||c.id});
+      var cr=await fetch('/api/packs/collection/'+pid);
+      if(cr.ok){
+        var cd=await cr.json();
+        if(cd.success&&cd.cards&&cd.cards.length>0){
+          cd.cards.forEach(function(c){
+            var h=SLUG_MAP[c.spell_house]||SLUG_MAP.universal;
+            var effects=c.spell_effects;
+            var effectText='';
+            if(effects){
+              try{var parsed=typeof effects==='string'?JSON.parse(effects):effects;if(Array.isArray(parsed)){effectText=parsed.map(function(e){return(typeof e==='string')?e:(e.tag||e.key||e.description||'');}).join(', ');}else if(typeof parsed==='object'){effectText=parsed.description||parsed.tag||JSON.stringify(parsed);}else{effectText=String(parsed);}}catch(e){effectText=String(effects);}
+            }
+            zmCards.push({name:c.spell_name,house:c.spell_house,houseColor:h.color,houseName:h.name,type:c.spell_type||'attack',cost:c.mana_cost||1,rarity:c.rarity||'common',tier:c.spell_tier||1,effect:effectText,flavor:c.flavor_text||'',isHand:true,spellId:c.spell_id||c.id});
           });
-          console.log('[9LV] Hand: '+hd.hand.cards.length+' cards, '+zmCards.length+' available (unused)');
+          console.log('[9LV] Collection: '+cd.cards.length+' spells loaded');
         }else{
-          console.log('[9LV] No daily hand — pack not opened yet');
+          console.log('[9LV] No spells in collection yet');
         }
       }
-    }catch(e){console.error('[9LV] Hand fetch failed:',e);}
+    }catch(e){console.error('[9LV] Collection fetch failed:',e);}
   }
   // Basics always available at end
   zmCards.push({name:'Basic Attack',house:'universal',houseColor:'#D4A64B',houseName:'Universal',type:'attack',cost:1,rarity:'common',tier:0,effect:'+10 influence',flavor:'Strike first.',isHand:false});
@@ -928,10 +929,10 @@ function renderZmCarousel(){
   var wrap=document.getElementById('zmCarouselWrap');
   var typeColors={attack:'#ff5555',defend:'#5588ff',support:'#ffd700'};
 
-  // No hand cards — show message
-  var handCards=sorted.filter(function(c){return c.isHand;});
-  if(handCards.length===0&&sorted.length<=2){
-    track.innerHTML='<div class="zm-nohand"><div class="zm-nohand__title">No Daily Hand</div><p>Open your daily pack to get cards for casting.</p><a href="/packs.html" class="zm-nohand__link">Open Daily Pack &#8594;</a></div>';
+  // No collection cards — show message
+  var collCards=sorted.filter(function(c){return c.isHand;});
+  if(collCards.length===0&&sorted.length<=2){
+    track.innerHTML='<div class="zm-nohand"><div class="zm-nohand__title">No Spells Collected</div><p>Open packs to build your spell collection.</p><a href="/packs.html" class="zm-nohand__link">Open Packs &#8594;</a></div>';
     track.style.transform='none';
     document.getElementById('zmDots').innerHTML='';
     return;
