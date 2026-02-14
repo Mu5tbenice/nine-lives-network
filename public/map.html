@@ -331,9 +331,6 @@
     .zm-bottom{height:4px;background:linear-gradient(90deg,transparent,rgba(212,166,75,0.3),transparent);border-radius:0 0 4px 4px}
     .zm-empty{font-family:var(--font-body);font-size:14px;font-style:italic;color:var(--text-faint);text-align:center;padding:16px 0}
 
-    /* Pill tooltip */
-    .pill .tip{display:none;position:fixed;font-family:var(--font-body);font-size:12px;font-weight:400;text-transform:none;letter-spacing:0;white-space:normal;width:max-content;max-width:220px;border-radius:6px;padding:8px 12px;line-height:1.4;z-index:9999;box-shadow:0 8px 28px rgba(0,0,0,0.7);pointer-events:none}
-
     /* Toast */
     .toast{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:8px;font-family:var(--font-title);font-size:13px;font-weight:600;z-index:200;letter-spacing:0.5px;box-shadow:0 4px 20px rgba(0,0,0,0.4)}
     .toast--success{background:#1a3a1a;color:#44cc44;border:1px solid #2a5a2a}
@@ -443,7 +440,6 @@
   <div class="zm-popup" id="zmPlayerPopup"></div>
   <div class="zm-card-tip" id="zmCardTip"></div>
 
-<script src="/js/spell-particles.js"></script>
 <script>
 /* ================================================================
    DATA & CONFIG
@@ -453,35 +449,12 @@ var ZONE_IMAGES={1:'/assets/images/environments/ashen-approach.jpg',2:'/assets/i
 var zones=[],actionsToday={},influence={},player=null,playerActedZones={},currentSort='activity',houseSpells=[],communityClashes=[];
 var SLUG_MAP={};Object.keys(HOUSES).forEach(function(id){SLUG_MAP[HOUSES[id].slug]={name:HOUSES[id].name,color:HOUSES[id].color,img:'/assets/images/houses/'+HOUSES[id].img};});
 SLUG_MAP.universal={name:'Universal',color:'#D4A64B',img:null};
-var PC={'BURN':'orange','SCALD':'orange','SPREAD':'red','STRIP':'red','ERUPTION':'red','DRAIN':'purple','PULL':'blue','REFLECT':'cyan','CLOAK':'dark','STEALTH':'dark','SWAP':'pink','WEAKEN':'orange','ANCHOR':'brown','HEAL':'green','THORNS':'green','CONVERT':'cyan','PERSIST':'gold','SWIFT':'white','HASTE':'cyan','FREE':'cyan','DODGE':'ice','REACH':'white','SWEEP':'gray','CRIT':'yellow','FIZZLE':'yellow','CHAIN':'blue','AMPLIFY':'purple','NIGHT':'dark','HEX':'purple','SILENCE':'gray','STEAL':'red','FREEZE':'ice','PIERCE':'white','ABSORB':'blue','RANDOMIZE':'pink','NEGATE':'white','REFUND':'cyan','INFECT':'toxic','WITHER':'brown','CORRODE':'toxic','PLAGUE':'toxic','TOXIC':'toxic','LOCKOUT':'red','UNDERDOG':'gold','AURA':'gold','GIFT':'white','JUSTICE':'gold','SAFE':'gold','RESTORE':'cyan','RESET':'cyan','INSPIRE':'gold','REVEAL':'white','DOT':'green','BONUS':'gold','BLESS':'gold','WARD':'gold','PURGE':'orange','PUSH':'ice','SHUFFLE':'blue','CURSE':'purple','VANISH':'dark','SIPHON':'purple','POISON':'toxic','IMMUNE':'cyan','SURGE':'yellow'};
-function pillCol(tag){var k=tag.replace(/[\+\d\s\u00D7x\.]/g,'').toUpperCase();for(var p in PC){if(k.indexOf(p)!==-1)return PC[p];}return'gray';}
 var RARITY_MAP={common:{color:'#bbb',border:'rgba(180,180,180,0.3)',bg:'rgba(180,180,180,0.06)',label:'C',mult:'\u00D71.0'},uncommon:{color:'#66dd66',border:'rgba(80,200,80,0.35)',bg:'rgba(80,200,80,0.08)',label:'U',mult:'\u00D71.25'},rare:{color:'#55bbff',border:'rgba(0,150,255,0.35)',bg:'rgba(0,150,255,0.08)',label:'R',mult:'\u00D71.5'},epic:{color:'#bb88ff',border:'rgba(160,80,240,0.4)',bg:'rgba(160,80,240,0.1)',label:'E',mult:'\u00D72.0'},legendary:{color:'#ffd700',border:'rgba(255,200,0,0.4)',bg:'rgba(255,200,0,0.12)',label:'L',mult:'\u00D73.0'}};
 var EFFECT_ICONS={BURN:'\u{1F525}',WARD:'\u{1F6E1}',POISON:'\u2620',ANCHOR:'\u2693',SURGE:'\u26A1',HEAL:'\u{1F49A}',FREEZE:'\u2744',HEX:'\u{1F441}',CHAIN:'\u{1F517}',SILENCE:'\u{1F910}',LEECH:'\u{1F9DB}',DRAIN:'\u{1F30A}',THORNS:'\u{1F335}',HASTE:'\u{1F4A8}',CRIT:'\u{1F4A5}',DODGE:'\u{1F4A8}',BLESS:'\u2728',AMPLIFY:'\u{1F50A}',SIPHON:'\u{1F300}',CORRODE:'\u{1F9EA}',INFECT:'\u{1F9A0}'};
 
 /* ================================================================
    HELPERS (shared across page and modal)
    ================================================================ */
-function buildMiniSpellCard(s,zoneId){
-  var h=SLUG_MAP[s.house]||SLUG_MAP.universal;
-  var bn=[];try{bn=typeof s.bonus_effects==='string'?JSON.parse(s.bonus_effects):(s.bonus_effects||[]);}catch(e){bn=[];}
-  var tl=s.tier===0?'BASIC':'TIER '+s.tier;
-  var mo='<div class="sc-mana sc-mana--mini">'+s.mana_cost+'MP</div>';
-  var ai=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:18px;position:relative;z-index:1">\u2726</span>';
-  var pl='';
-  if(bn.length>0){pl='<div class="sc-pills">';bn.forEach(function(b){var tag=b.tag||b.key||'';var desc=b.desc||b.description||tag;pl+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';});pl+='</div>';}
-  var be='';if(s.base_effect&&s.base_effect!=='-')be='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
-  var escName=esc(s.name).replace(/'/g,"\\'");
-  var hasArt=s.image_url&&s.image_url.length>0;
-  var artImg=hasArt?'<div class="sc-art-img" style="background-image:url(/assets/images/spells/'+esc(s.image_url)+')"></div>':'';
-  var artBlock=hasArt?'':'<div class="sc-art" style="height:60px"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div>'+ai+'<div class="sc-art__tier" style="color:'+h.color+'">'+tl+'</div></div>';
-  var houseLogo=h.img?'<div class="sc-house-logo" style="background-image:url('+h.img+');width:18px;height:18px;top:5px;left:5px"></div>':'';
-  var pType=(typeof PARTICLE_MAP!=='undefined'&&PARTICLE_MAP[s.house])||'stardust';
-  return '<div class="spell-card show" style="--hc:'+h.color+';--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810)" onclick="event.stopPropagation();castSpellOnZone(\''+zoneId+'\',\''+escName+'\')" data-house="'+s.house+'" data-type="'+(s.spell_type||'attack')+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="25">'
-    +'<div class="sc-border"></div><div class="sc-edge"></div><div class="sc-face">'+artImg+'<div class="sc-inner-edge"></div></div><div class="sc-foil"></div><div class="sc-rainbow"></div><canvas class="sc-particles"></canvas><div class="sc-glow"></div>'+houseLogo
-    +'<div class="sc-body"><div class="sc-top" style="padding:6px 8px 6px 26px"><div class="sc-name" style="font-size:10px;color:'+h.color+'">'+esc(s.name)+'</div>'+mo+'</div>'+artBlock
-    +'<div class="sc-info"><div class="sc-type-row"><span class="sc-type sc-type--'+(s.spell_type||'attack')+'">'+(s.spell_type||'attack')+'</span>'+be+pl
-    +'<div class="sc-flavor">'+esc(s.flavor_text||s.motto||'')+'</div><div class="sc-bottom" style="color:'+h.color+'">'+h.name.toUpperCase()+'</div></div></div></div>';
-}
 function toggleMobileMenu(){document.getElementById('hamburger').classList.toggle('active');document.getElementById('mobileMenu').classList.toggle('active');}
 function doLogout(){localStorage.removeItem('player_id');window.location.href='/';}
 if(localStorage.getItem('player_id')){var nl=document.getElementById('navLogout'),ml=document.getElementById('mobileLogout');if(nl)nl.style.display='';if(ml)ml.style.display='';}
@@ -1034,22 +1007,6 @@ async function loadWorld(){
   }
 }
 loadWorld();
-
-/* Pill tooltips */
-document.addEventListener('mouseenter',function(e){
-  var pill=e.target.closest('.pill');if(!pill)return;
-  var tip=pill.querySelector('.tip');if(!tip)return;
-  var style=getComputedStyle(pill);
-  tip.style.background='rgba(10,8,18,0.97)';tip.style.borderColor=style.borderColor||'rgba(212,166,75,0.3)';tip.style.color=style.color||'#D4A64B';tip.style.display='block';
-  var r=pill.getBoundingClientRect();var tw=tip.offsetWidth;var th=tip.offsetHeight;
-  var left=r.left+r.width/2-tw/2;var top=r.top-th-10;
-  if(left<8)left=8;if(left+tw>window.innerWidth-8)left=window.innerWidth-tw-8;if(top<8){top=r.bottom+10;}
-  tip.style.left=left+'px';tip.style.top=top+'px';
-},true);
-document.addEventListener('mouseleave',function(e){
-  var pill=e.target.closest('.pill');if(!pill)return;
-  var tip=pill.querySelector('.tip');if(tip)tip.style.display='none';
-},true);
 </script>
 </body>
 </html>
