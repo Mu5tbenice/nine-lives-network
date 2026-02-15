@@ -510,8 +510,8 @@ function buildInfluenceSnapshot(running){
 function renderPlayerHeader(){
   if(!player)return;
   var h=HOUSES[player.school_id]||{name:'?',color:'#888',img:''};
-  var mH='';var mana=player.mana!=null?player.mana:5;
-  for(var i=0;i<5;i++)mH+='<div class="mana-orb'+(i<mana?' mana-orb--filled':'')+'" style="width:14px;height:14px;"></div>';
+  var mH='';var mana=player.mana!=null?player.mana:7;
+  for(var i=0;i<7;i++)mH+='<div class="mana-orb'+(i<mana?' mana-orb--filled':'')+'" style="width:14px;height:14px;"></div>';
   var tagH=player.community_tag?'<span class="player-header__tag">'+esc(player.community_tag)+'</span>':'';
   var el=document.getElementById('playerHeader');
   el.innerHTML='<div class="player-header__left">'+(player.profile_image?'<img src="'+player.profile_image+'" class="player-header__avatar">':'')+'<div><div class="player-header__name">@'+esc(player.twitter_handle||'Unknown')+'</div><div style="display:flex;align-items:center;gap:6px;margin-top:2px;"><span class="player-header__house" style="color:'+h.color+';">'+hImg(h.img,14)+' '+h.name+'</span>'+tagH+'</div></div></div><div class="player-header__mana"><span class="player-header__mana-label">MANA</span><div class="mana-row" style="gap:3px;">'+mH+'</div></div>';
