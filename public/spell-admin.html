@@ -263,7 +263,7 @@
         bonusHTML += '<div class="bonus-row">' +
           '<input class="spell-input spell-input--mono tag-input" value="' + escAttr(b.tag || '') + '" placeholder="Tag" data-spell="' + s.id + '" data-bonus-idx="' + i + '" data-bonus-field="tag" onchange="markChanged(' + s.id + ')">' +
           '<input class="spell-input spell-input--mono" value="' + escAttr(b.desc || '') + '" placeholder="Description" data-spell="' + s.id + '" data-bonus-idx="' + i + '" data-bonus-field="desc" onchange="markChanged(' + s.id + ')">' +
-          '<button class="btn-remove-bonus" onclick="removeBonus(' + s.id + ',' + i + ')">Ã—</button></div>';
+          '<button class="btn-remove-bonus" onclick="removeBonus(' + s.id + ',' + i + ')">×</button></div>';
       });
 
       return '<div class="' + cardClass + '" id="spell-' + s.id + '">' +
