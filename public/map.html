@@ -690,9 +690,11 @@ async function openZoneModal(zoneId){
       }
     }catch(e){console.error('[9LV] Collection fetch failed:',e);}
   }
-  // Basics always available at end
-  zmCards.push({name:'Basic Attack',house:'universal',houseColor:'#D4A64B',houseName:'Universal',type:'attack',cost:1,rarity:'common',tier:0,effect:'+10 influence',flavor:'Strike first.',isHand:false});
-  zmCards.push({name:'Basic Defend',house:'universal',houseColor:'#D4A64B',houseName:'Universal',type:'defend',cost:1,rarity:'common',tier:0,effect:'+10 defense',flavor:'Hold the line.',isHand:false});
+  // Basics only if no collection cards
+  if(zmCards.length===0){
+    zmCards.push({name:'Basic Attack',house:'universal',houseColor:'#D4A64B',houseName:'Universal',type:'attack',cost:1,rarity:'common',tier:0,effect:'+10 influence',flavor:'Strike first.',isHand:false});
+    zmCards.push({name:'Basic Defend',house:'universal',houseColor:'#D4A64B',houseName:'Universal',type:'defend',cost:1,rarity:'common',tier:0,effect:'+10 defense',flavor:'Hold the line.',isHand:false});
+  }
   console.log('[9LV] Carousel: '+zmCards.length+' cards total');
 
   // Mana + sorts + carousel
