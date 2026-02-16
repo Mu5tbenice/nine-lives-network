@@ -74,6 +74,7 @@
     .zone-count{font-family:var(--font-data);font-size:8px;color:var(--text-faint);margin-left:auto}
 
     /* === ZONE CARDS === */
+    .main-container{max-width:680px;margin:0 auto;padding:0 16px}
     .zone-grid{display:flex;flex-direction:column;gap:12px}
     .zone-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;cursor:pointer;transition:all 0.25s ease;overflow:hidden;position:relative}
     .zone-card:hover{border-color:var(--border-medium);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
@@ -310,11 +311,11 @@
     .zm-sort-btn{font-family:var(--font-title);font-size:9px;font-weight:600;padding:5px 10px;border-radius:5px;cursor:pointer;border:none;transition:all 0.2s;background:rgba(255,255,255,0.03);color:var(--text-faint);outline:1px solid var(--border-subtle)}
     .zm-sort-btn.active{background:var(--gold-dim);color:var(--gold);outline-color:var(--gold-border)}
     .zm-sort-count{margin-left:auto;font-family:var(--font-data);font-size:7px;color:var(--text-faint)}
-    .zm-carousel-wrap{position:relative;height:240px;overflow:hidden;display:flex;align-items:center;justify-content:center;touch-action:pan-y}
+    .zm-carousel-wrap{position:relative;height:240px;overflow:hidden;display:flex;align-items:center;justify-content:center;touch-action:pan-y;padding:0 36px}
     .zm-carousel-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:10;background:rgba(0,0,0,0.7);border:1px solid var(--border-subtle);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;transition:all 0.2s}
-    .zm-carousel-arrow--l{left:0}
-    .zm-carousel-arrow--r{right:0}
-    .zm-carousel-cards{display:flex;align-items:center;gap:10px;transition:transform 0.4s cubic-bezier(0.22,1,0.36,1);will-change:transform}
+    .zm-carousel-arrow--l{left:4px}
+    .zm-carousel-arrow--r{right:4px}
+    .zm-carousel-cards{display:flex;align-items:center;gap:10px;transition:transform 0.4s cubic-bezier(0.22,1,0.36,1);will-change:transform;margin:0 auto}
     .zm-cc{width:130px;min-height:185px;flex-shrink:0;border-radius:12px;position:relative;overflow:hidden;cursor:pointer;
       transition:transform 0.4s cubic-bezier(0.22,1,0.36,1),opacity 0.35s ease,filter 0.35s ease,box-shadow 0.35s ease;
       transform:scale(0.82);opacity:0.45;filter:brightness(0.6)}
