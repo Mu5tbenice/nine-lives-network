@@ -303,8 +303,8 @@ router.post('/action', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Territory action error:', error);
-    res.status(500).json({ error: 'Server error' });
+    console.error('Territory action error:', error.message, error.stack);
+    res.status(500).json({ error: 'Server error: ' + error.message });
   }
 });
 
