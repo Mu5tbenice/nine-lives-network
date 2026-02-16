@@ -681,7 +681,7 @@ async function openZoneModal(zoneId){
             if(effects){
               try{var parsed=typeof effects==='string'?JSON.parse(effects):effects;if(Array.isArray(parsed)){effectText=parsed.map(function(e){return(typeof e==='string')?e:(e.tag||e.key||e.description||'');}).join(', ');}else if(typeof parsed==='object'){effectText=parsed.description||parsed.tag||JSON.stringify(parsed);}else{effectText=String(parsed);}}catch(e){effectText=String(effects);}
             }
-            zmCards.push({name:c.spell_name,house:c.spell_house,houseColor:h.color,houseName:h.name,type:c.spell_type||'attack',cost:c.mana_cost||1,rarity:c.rarity||'common',tier:c.spell_tier||1,effect:effectText,flavor:c.flavor_text||'',isHand:true,spellId:c.spell_id||c.id});
+            zmCards.push({cardId:c.id,name:c.spell_name,house:c.spell_house,houseColor:h.color,houseName:h.name,type:c.spell_type||'attack',cost:c.mana_cost||Math.max(1,c.spell_tier||1),rarity:c.rarity||'common',tier:c.spell_tier||1,effect:effectText,flavor:c.flavor_text||'',isHand:true,spellId:c.spell_id||c.id});
           });
           console.log('[9LV] Collection: '+cd.cards.length+' spells loaded');
         }else{
@@ -1026,10 +1026,14 @@ document.getElementById('zmCarouselWrap').addEventListener('touchend',function(e
 document.querySelectorAll('.zm-range-btn').forEach(function(btn){btn.addEventListener('click',function(){document.querySelectorAll('.zm-range-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');});});
 
 /* Cast spell from modal */
-function castSpellOnZone(zoneId,spell){
+function castSpellOnZone(zoneId,card){
   var pid=localStorage.getItem('player_id');if(!pid){alert('Log in first!');return;}
-  if(confirm('Cast '+spell+'?')){
-    fetch('/api/territory/cast',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({player_id:pid,zone_id:zoneId,spell:spell})})
+  var castName=card.name||'spell';
+  if(confirm('Cast '+castName+'?')){
+    var body={player_id:pid,zone_id:zoneId};
+    if(card.cardId){body.card_id=card.cardId;}
+    else{body.action_type=card.type||'attack';}
+    fetch('/api/territory/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
     .then(function(r){return r.json();}).then(function(d){
       if(d.success){showToast(d.message||'Spell cast!','success');closeModal();loadWorld();}
       else{showToast(d.error||d.message||'Cast failed','error');}
@@ -1039,7 +1043,7 @@ function castSpellOnZone(zoneId,spell){
 function doModalCast(){
   var sorted=getZmSorted();var card=sorted[zmCarouselIdx];
   if(!card||!zmZoneId)return;
-  castSpellOnZone(zmZoneId,card.name);
+  castSpellOnZone(zmZoneId,card);
 }
 
 /* ================================================================
