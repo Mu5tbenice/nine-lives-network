@@ -297,6 +297,28 @@ async function applyDecay() {
     }
 
     console.log('  Decayed ' + updated + ' zone_control entries by ' + DECAY_PERCENT + '%');
+
+    // Also decay community influence
+    const { data: commControls } = await supabase
+      .from('zone_community_control')
+      .select('*');
+
+    let commUpdated = 0;
+    if (commControls) {
+      for (const c of commControls) {
+        const decayed = Math.round(c.control_percentage * (1 - DECAY_PERCENT / 100));
+        if (decayed <= 0) {
+          await supabaseAdmin.from('zone_community_control').delete().eq('id', c.id);
+        } else {
+          await supabaseAdmin
+            .from('zone_community_control')
+            .update({ control_percentage: decayed, updated_at: new Date().toISOString() })
+            .eq('id', c.id);
+        }
+        commUpdated++;
+      }
+    }
+    console.log('  Decayed ' + commUpdated + ' community_control entries by ' + DECAY_PERCENT + '%');
   } catch (e) {
     console.error('  applyDecay error:', e.message);
   }
