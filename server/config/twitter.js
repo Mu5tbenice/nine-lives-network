@@ -52,7 +52,7 @@ const zoneLore = {
   'Ancient Ruins': 'Remnants of a civilization that mastered magic before the schools existed. Secrets lie buried.',
   'Twilight Grove': 'A forest where day and night exist simultaneously. Time moves strangely here.',
   'Dragons Rest': 'Where the last dragon fell. Its bones still radiate magical energy.',
-  'The Nexus': 'The heart of Avaloris. All magical paths lead here eventually.',
+  'The Nexus': 'The heart of Nethara. All magical paths lead here eventually.',
   'Shadowmere': 'A realm of perpetual dusk. Light spells flicker and fade.',
   'Stormspire': 'A mountain peak where lightning strikes constantly. Only the bold venture here.',
 };
@@ -72,7 +72,7 @@ const firstBloodBonuses = {
 async function generateFlavorText(zone, type = 'objective') {
   try {
     const client = getAnthropicClient();
-    const lore = zoneLore[zone.name] || 'A contested territory in the realm of Avaloris.';
+    const lore = zoneLore[zone.name] || 'A contested territory in the realm of Nethara.';
 
     let prompt = '';
 
