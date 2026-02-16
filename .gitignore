@@ -45,4 +45,6 @@ temp/
 *.tmp
 
 # Package lock (optional - uncomment if you want to ignore)
-# package-lock.json
+# package-lock.jsonproject.zip
+*.zip
+public/assets/images/wizard-cat.mp4
