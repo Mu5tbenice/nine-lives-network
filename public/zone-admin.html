@@ -341,8 +341,9 @@ async function saveZone(id){
     var url=isNew?'/api/admin/zones':'/api/admin/zone/'+id;
     var res=await fetch(url,{method:isNew?'POST':'PUT',headers:{'Content-Type':'application/json','x-admin-key':ADMIN_KEY},body:JSON.stringify(payload)});
     var result=await res.json();if(result.error)throw new Error(result.error);
-    if(isNew&&result.zone){var idx=zones.findIndex(function(z){return z.id===id;});if(idx!==-1)zones[idx]=result.zone;}
-    else if(result.zone){var idx=zones.findIndex(function(z){return z.id===id;});if(idx!==-1)Object.assign(zones[idx],result.zone);}
+    var saved=result.zone||result;
+    if(isNew&&saved.id){var idx=zones.findIndex(function(z){return z.id===id;});if(idx!==-1)zones[idx]=saved;}
+    else if(saved.id){var idx=zones.findIndex(function(z){return z.id===id;});if(idx!==-1)Object.assign(zones[idx],saved);}
     delete zoneChanges[id];renderZoneStats();renderZones();showToast(isNew?'Zone created!':'Saved!','success');
   }catch(e){showToast('Error: '+e.message,'error');}
   if(btn){btn.textContent=id<0?'Create':'Save';btn.disabled=!zoneChanges[id];}
