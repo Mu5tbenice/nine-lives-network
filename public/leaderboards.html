@@ -208,8 +208,7 @@ function showPlayerPopup(e,p){
     +'<div class="player-popup__stats">'
     +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.seasonal_points||'â€”')+'</div><div class="player-popup__stat-label">POINTS</div></div>'
     +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.streak||'â€”')+'</div><div class="player-popup__stat-label">STREAK</div></div>'
-    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.mana!=null?p.mana:'â€”')+'</div><div class="player-popup__stat-label">MANA</div></div>'
-    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.lives!=null?p.lives:'â€”')+'</div><div class="player-popup__stat-label">LIVES</div></div></div>'
+    +'<div class="player-popup__stat"><div class="player-popup__stat-val">'+(p.mana!=null?p.mana:'â€”')+'</div><div class="player-popup__stat-label">MANA</div></div></div>'
     +'<a href="/profile.html?player_id='+p.id+'" class="player-popup__link">VIEW PROFILE â†’</a>';
   popup.style.left=Math.min(e.clientX+10,window.innerWidth-220)+'px';
   popup.style.top=Math.max(e.clientY-140,10)+'px';

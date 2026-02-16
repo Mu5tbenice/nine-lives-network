@@ -135,7 +135,7 @@ async function render(player,casts,zones,schools){
   var house=HOUSES[player.school_id]||HOUSES[1];
   var obj=Array.isArray(zones)?zones.find(function(z){return z.is_current_objective;}):null;
   var mana=(player.mana!=null)?player.mana:7,maxM=7;
-  var lives=(player.lives!=null)?player.lives:3,maxL=5;
+  // Lives removed in V2
   var pts=player.seasonal_points||0,streak=player.streak||0;
   var now=new Date(),doy=Math.floor((now-new Date(now.getFullYear(),0,0))/86400000);
   var storyImg=STORY_IMAGES[doy%STORY_IMAGES.length];
@@ -143,7 +143,7 @@ async function render(player,casts,zones,schools){
   var sl=Array.isArray(schools)?schools:[];
 
   var mH='';for(var i=0;i<maxM;i++)mH+='<div class="mana-orb '+(i<mana?'mana-orb--filled':'')+'"></div>';
-  var lH='';for(var i=0;i<maxL;i++)lH+='<span class="life-heart '+(i>=lives?'life-heart--empty':'')+'">&#10084;</span>';
+  // Lives hearts removed in V2
   var sH='';for(var i=0;i<7;i++)sH+='<div class="streak-dot '+(i<streak?'streak-dot--filled':'')+'"></div>';
 
   var avH=player.profile_image?'<img src="'+player.profile_image+'" alt="" class="dash-header__avatar">':'<div class="dash-header__avatar--placeholder"><img src="'+house.img+'" style="width:32px;height:32px;object-fit:contain;"></div>';
@@ -155,7 +155,7 @@ async function render(player,casts,zones,schools){
   if(obj){
     var oImg=getZoneImg(obj)||storyImg;
     var tL=obj.objective_tweet_id?'https://twitter.com/9LVNetwork/status/'+obj.objective_tweet_id:'https://twitter.com/9LVNetwork';
-    scH='<div class="story-card fade-up fade-up-1"><div class="story-card__bg"><img src="'+oImg+'" alt=""><div class="story-card__overlay"></div></div><div class="story-card__content"><div class="story-card__top"><span class="label">Today\'s Story</span><span class="badge badge--live">LIVE</span></div><div class="story-card__body"><span class="label">Daily Narrative</span><h2 class="story-card__zone">'+esc(obj.narrative_title||obj.name||'Unknown')+'</h2><p class="story-card__desc">'+esc(obj.description||'A new chapter unfolds in Avaloris.')+'</p><div class="story-card__cta-text">Show up. Represent. Become part of the story.</div><a href="'+tL+'" target="_blank" class="btn-gold">Join the Story</a></div></div></div>';
+    scH='<div class="story-card fade-up fade-up-1"><div class="story-card__bg"><img src="'+oImg+'" alt=""><div class="story-card__overlay"></div></div><div class="story-card__content"><div class="story-card__top"><span class="label">Today\'s Story</span><span class="badge badge--live">LIVE</span></div><div class="story-card__body"><span class="label">Daily Narrative</span><h2 class="story-card__zone">'+esc(obj.narrative_title||obj.name||'Unknown')+'</h2><p class="story-card__desc">'+esc(obj.description||'A new chapter unfolds in Nethara.')+'</p><div class="story-card__cta-text">Show up. Represent. Become part of the story.</div><a href="'+tL+'" target="_blank" class="btn-gold">Join the Story</a></div></div></div>';
   }else{
     scH='<div class="no-story fade-up fade-up-1"><span class="label">Today\'s Story</span><p style="font-family:var(--font-title);font-size:16px;color:var(--text-body);font-style:italic;margin-top:12px;">No active story right now. Check back at 8 AM UTC.</p></div>';
   }
@@ -206,7 +206,7 @@ async function render(player,casts,zones,schools){
   c.innerHTML=''
     +'<div class="dash-header fade-up"><div class="dash-header__left"><div class="dash-header__avatar-wrap">'+avH+'</div><img src="'+house.img+'" class="dash-header__house-bg" onerror="this.style.display=\'none\'"><div><div class="dash-header__house-name" style="color:'+house.color+';">'+house.name+'</div><div class="dash-header__meta"><span class="dash-header__handle">@'+esc(player.twitter_handle||'Unknown')+'</span>'+tagH+'</div></div></div><div class="season-pill"><span class="season-pill__icon">&#9883;</span><span class="season-pill__text">SEASON 0</span></div></div>'
     +scH
-    +'<div class="stats-row fade-up fade-up-2"><div class="stat-card"><span class="label">Mana</span><div class="mana-row">'+mH+'</div></div><div class="stat-card"><span class="label">Lives</span><div class="lives-row">'+lH+'</div></div><div class="stat-card"><span class="label">Points</span><div class="data-value">'+pts+'</div><div class="data-sub">Season 0</div></div></div>'
+    +'<div class="stats-row fade-up fade-up-2"><div class="stat-card"><span class="label">Mana</span><div class="mana-row">'+mH+'</div></div><div class="stat-card"><span class="label">Streak</span><div class="data-value">'+(player.streak||0)+'</div><div class="data-sub">DAYS</div></div><div class="stat-card"><span class="label">Points</span><div class="data-value">'+pts+'</div><div class="data-sub">Season 0</div></div></div>'
     +'<div class="card fade-up fade-up-3"><div class="streak-bar"><span class="streak-bar__icon">'+(streak>=7?'&#128142;':streak>=1?'&#128293;':'&#127761;')+'</span><div class="streak-bar__info"><div class="streak-bar__count">'+streak+' <span>DAY STREAK</span></div><div class="streak-bar__sub">'+(streak<7?(7-streak)+' more for Week Warrior &#128142;':'Week Warrior achieved! &#128142;')+'</div></div><div class="streak-dots">'+sH+'</div></div></div>'
     +spH
     +'<div class="card fade-up fade-up-3"><div class="card-header"><span class="label">Active Zones</span></div><div class="zones-grid">'+zH+'</div></div>'
