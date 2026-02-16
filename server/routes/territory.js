@@ -22,7 +22,7 @@ const supabaseAdmin = createClient(
 // ═══════════════════════════════════════════
 router.post('/action', async (req, res) => {
   try {
-    const { player_id, zone_id, action_type, card_index } = req.body;
+    const { player_id, zone_id, action_type, card_index, card_id } = req.body;
 
     // Validate input
     if (!player_id || !zone_id) {
@@ -77,15 +77,39 @@ router.post('/action', async (req, res) => {
     // ─── DETERMINE CARD ───
     let card = null;
 
-    if (card_index !== undefined && card_index !== null) {
-      // ── NEW: Card from daily hand ──
+    if (card_id) {
+      // ── V2: Cast a card from player's collection ──
+      const { data: playerCard, error: cardErr } = await supabase
+        .from('player_cards')
+        .select('*')
+        .eq('id', card_id)
+        .eq('player_id', player_id)
+        .eq('is_burned', false)
+        .single();
+
+      if (cardErr || !playerCard) {
+        return res.status(400).json({ error: 'Card not found or already used' });
+      }
+
+      card = {
+        id: playerCard.id,
+        name: playerCard.spell_name,
+        house: playerCard.spell_house || 'universal',
+        type: playerCard.spell_type || 'attack',
+        tier: playerCard.spell_tier || 0,
+        cost: Math.max(1, playerCard.spell_tier || 1),
+        rarity: playerCard.rarity || 'common',
+        effects: playerCard.spell_effects || [],
+      };
+    } else if (card_index !== undefined && card_index !== null) {
+      // ── LEGACY: Card from daily hand (backward compat) ──
       const handResult = await packSystem.useCardFromHand(player_id, parseInt(card_index));
       if (!handResult.success) {
         return res.status(400).json({ error: handResult.error });
       }
       card = handResult.card;
     } else {
-      // ── OLD: Basic attack/defend (still works like before) ──
+      // ── BASIC: attack/defend (no card needed) ──
       card = {
         name: action_type === 'defend' ? 'Basic Defend' : 'Basic Attack',
         house: 'universal',
@@ -181,6 +205,14 @@ router.post('/action', async (req, res) => {
       await supabaseAdmin.from('players').update({ mana: player.mana }).eq('id', player_id);
       console.error('Territory action insert error:', actionError);
       return res.status(500).json({ error: 'Failed to record action' });
+    }
+
+    // ─── BURN CARD (mark as consumed) ───
+    if (card_id) {
+      await supabaseAdmin
+        .from('player_cards')
+        .update({ is_burned: true })
+        .eq('id', card_id);
     }
 
     // ─── UPDATE PLAYER POINTS ───
