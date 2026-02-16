@@ -29,9 +29,9 @@ router.post('/action', async (req, res) => {
       return res.status(400).json({ error: 'Need player_id and zone_id' });
     }
 
-    // If no card_index AND no valid action_type, reject
-    if (card_index === undefined && !['attack', 'defend'].includes(action_type)) {
-      return res.status(400).json({ error: 'Need action_type (attack/defend) or card_index' });
+    // If no card_id AND no card_index AND no valid action_type, reject
+    if (card_id === undefined && card_index === undefined && !['attack', 'defend'].includes(action_type)) {
+      return res.status(400).json({ error: 'Need card_id, action_type (attack/defend), or card_index' });
     }
 
     // Get player
