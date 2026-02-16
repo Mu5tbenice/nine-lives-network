@@ -154,6 +154,7 @@ router.post('/action', async (req, res) => {
       action_type: card.type || action_type || 'attack',
       power_contributed: finalPower,
       source: 'website',
+      community_tag: player.community_tag || null,
       game_day: today,
       points_earned: finalPoints,
     };
@@ -219,7 +220,7 @@ router.post('/action', async (req, res) => {
     }
 
     // ─── UPDATE ZONE INFLUENCE ───
-    await updateZoneInfluence(zone_id, player.school_id, card.type || action_type || 'attack');
+    await updateZoneInfluence(zone_id, player.school_id, card.type || action_type || 'attack', player.community_tag);
 
     // ─── CHECK COMBOS ───
     let combos = [];
@@ -421,7 +422,7 @@ router.get('/zone/:id', async (req, res) => {
 // HELPER: Update zone influence in zone_control
 // (UNCHANGED from your original)
 // ═══════════════════════════════════════════
-async function updateZoneInfluence(zoneId, schoolId, actionType) {
+async function updateZoneInfluence(zoneId, schoolId, actionType, communityTag) {
   try {
     var power = actionType === 'attack' ? 2 : 1;
 
@@ -445,6 +446,34 @@ async function updateZoneInfluence(zoneId, schoolId, actionType) {
           school_id: schoolId,
           control_percentage: power
         });
+    }
+    // Also update community influence
+    if (communityTag) {
+      try {
+        var { data: existingComm } = await supabase
+          .from('zone_community_control')
+          .select('*')
+          .eq('zone_id', zoneId)
+          .eq('community_tag', communityTag)
+          .single();
+
+        if (existingComm) {
+          await supabaseAdmin
+            .from('zone_community_control')
+            .update({ control_percentage: existingComm.control_percentage + power, updated_at: new Date().toISOString() })
+            .eq('id', existingComm.id);
+        } else {
+          await supabaseAdmin
+            .from('zone_community_control')
+            .insert({
+              zone_id: zoneId,
+              community_tag: communityTag,
+              control_percentage: power
+            });
+        }
+      } catch (commErr) {
+        console.error('Community influence update error:', commErr.message);
+      }
     }
   } catch (error) {
     console.error('Update zone influence error:', error);
