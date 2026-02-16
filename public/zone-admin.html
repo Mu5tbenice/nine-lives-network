@@ -210,7 +210,7 @@ var nextTempZoneId=-1;
 var HOUSES=['universal','smoulders','darktide','stonebark','ashenvale','stormrage','nighthollow','dawnbringer','manastorm','plaguemire'];
 var TYPES=['attack','defend','support','utility','debuff','reaction','control'];
 var HOUSE_COLORS={universal:'#D4A64B',smoulders:'#E03C31',darktide:'#00B4D8',stonebark:'#5CB338',ashenvale:'#90E0EF',stormrage:'#FFC800',nighthollow:'#7B2D8E',dawnbringer:'#FF8C00',manastorm:'#5B8FE0',plaguemire:'#E84393'};
-var BONUS_OPTIONS=[{value:'',label:'No bonus'},{value:'+50% points',label:'+50% points'},{value:'+100% points',label:'+100% points'},{value:'Double mana regen',label:'Double mana regen'},{value:'+25% attack power',label:'+25% attack power'},{value:'+25% defend power',label:'+25% defend power'},{value:'Triple XP',label:'Triple XP'}];
+var BONUS_OPTIONS=[{value:'',label:'No bonus'},{value:'+25% influence',label:'+25% influence'},{value:'+50% influence',label:'+50% influence'},{value:'+25% points',label:'+25% season points'},{value:'+50% points',label:'+50% season points'},{value:'double_decay_resist',label:'50% decay resistance'},{value:'crit_boost',label:'+10% crit chance'},{value:'affinity_boost',label:'+25% house affinity bonus'}];
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');}
 function showToast(msg,type){var t=document.getElementById('toast');t.textContent=msg;t.className='toast toast--'+(type||'success')+' active';setTimeout(function(){t.classList.remove('active');},3000);}
