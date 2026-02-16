@@ -1070,8 +1070,8 @@ async function loadWorld(){
       fetch('/api/territory/actions/today').then(function(r){return r.json();}),
       fetch('/api/territory/influence').then(function(r){return r.json();}),
       fetch('/api/leaderboards/schools').then(function(r){return r.json();}),
-      fetch('/api/territory/community-influence').then(function(r){return r.json();}),
-      fetch('/api/admin/communities').then(function(r){return r.json();})
+      fetch('/api/territory/community-influence').then(function(r){return r.ok?r.json():{};}).catch(function(){return{};}),
+      fetch('/api/territory/communities').then(function(r){return r.ok?r.json():[];}).catch(function(){return[];})
     ];
     if(playerId)fetches.push(fetch('/api/players/'+playerId).then(function(r){return r.json();}));
     var results=await Promise.all(fetches);
