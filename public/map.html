@@ -456,7 +456,7 @@
    ================================================================ */
 var HOUSES={1:{name:'Smoulders',color:'#E03C31',glow:'#ff6b5b',slug:'smoulders',img:'Housesmoulders.png'},2:{name:'Darktide',color:'#00B4D8',glow:'#4de8ff',slug:'darktide',img:'Housedarktide.png'},3:{name:'Stonebark',color:'#5CB338',glow:'#8aef5a',slug:'stonebark',img:'Housestonebark.png'},4:{name:'Ashenvale',color:'#90E0EF',glow:'#b8f0ff',slug:'ashenvale',img:'HouseAshenvale.png'},5:{name:'Stormrage',color:'#FFC800',glow:'#ffe566',slug:'stormrage',img:'Housestormrage.png'},6:{name:'Nighthollow',color:'#7B2D8E',glow:'#c066dd',slug:'nighthollow',img:'Housenighthollow.png'},7:{name:'Dawnbringer',color:'#FF8C00',glow:'#ffb84d',slug:'dawnbringer',img:'HouseDwnbringer.png'},8:{name:'Manastorm',color:'#5B8FE0',glow:'#8bb8ff',slug:'manastorm',img:'Housemanastorm.png'},9:{name:'Plaguemire',color:'#E84393',glow:'#ff7ab8',slug:'plaguemire',img:'Houseplaguemire.png'}};
 var ZONE_IMAGES={};
-var zones=[],actionsToday={},influence={},player=null,playerActedZones={},currentSort='activity',communityClashes=[];
+var zones=[],actionsToday={},influence={},player=null,playerActedZones={},currentSort='activity',communityClashes=[],communityData={};
 var SLUG_MAP={};Object.keys(HOUSES).forEach(function(id){SLUG_MAP[HOUSES[id].slug]={name:HOUSES[id].name,color:HOUSES[id].color,img:'/assets/images/houses/'+HOUSES[id].img};});
 SLUG_MAP.universal={name:'Universal',color:'#D4A64B',img:null};
 var RARITY_MAP={common:{color:'#bbb',border:'rgba(180,180,180,0.3)',bg:'rgba(180,180,180,0.06)',label:'C',mult:'\u00D71.0'},uncommon:{color:'#66dd66',border:'rgba(80,200,80,0.35)',bg:'rgba(80,200,80,0.08)',label:'U',mult:'\u00D71.25'},rare:{color:'#55bbff',border:'rgba(0,150,255,0.35)',bg:'rgba(0,150,255,0.08)',label:'R',mult:'\u00D71.5'},epic:{color:'#bb88ff',border:'rgba(160,80,240,0.4)',bg:'rgba(160,80,240,0.1)',label:'E',mult:'\u00D72.0'},legendary:{color:'#ffd700',border:'rgba(255,200,0,0.4)',bg:'rgba(255,200,0,0.12)',label:'L',mult:'\u00D73.0'}};
@@ -774,17 +774,30 @@ function renderZmChart(zoneId){
 /* Race bars */
 function renderZmRace(zoneId){
   var el=document.getElementById('zmRace');
-  var inf=influence[zoneId]||{};
-  var entries=[];Object.keys(inf).forEach(function(sid){var h=HOUSES[parseInt(sid)];if(h)entries.push({id:parseInt(sid),pct:inf[sid],house:h});});
+  var commInf=communityInfluence[zoneId]||{};
+  var entries=[];
+  Object.keys(commInf).forEach(function(tag){
+    var cd=communityData[tag]||{};
+    entries.push({tag:tag,pct:commInf[tag],color:cd.color||'#888',name:cd.name||tag,image_url:cd.image_url||null});
+  });
   entries.sort(function(a,b){return b.pct-a.pct;});
+  if(entries.length===0){
+    // Fall back to house data if no community data
+    var inf=influence[zoneId]||{};
+    Object.keys(inf).forEach(function(sid){var h=HOUSES[parseInt(sid)];if(h)entries.push({tag:h.name,pct:inf[sid],color:h.color,name:h.name,image_url:'/assets/images/houses/'+h.img});});
+    entries.sort(function(a,b){return b.pct-a.pct;});
+  }
   if(entries.length===0){el.innerHTML='<div class="zm-empty">No influence data yet</div>';return;}
   var maxPct=entries[0].pct;var html='';
   entries.forEach(function(e,i){
     var fillW=Math.round(e.pct/maxPct*100);
+    var iconHtml=e.image_url
+      ?'<img src="'+e.image_url+'" style="width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid '+e.color+'80;" onerror="this.outerHTML=\'<span style=\\\"font-size:8px;font-family:Press Start 2P;color:'+e.color+'\\\">'+e.tag.replace('$','').substring(0,3).toUpperCase()+'</span>\'">'
+      :'<span style="font-size:8px;font-family:Press Start 2P;color:'+e.color+';">'+e.tag.replace('$','').substring(0,3).toUpperCase()+'</span>';
     html+='<div class="race-row"><span class="race-rank" style="color:'+(i<3?'var(--gold)':'var(--text-faint)')+';">#'+(i+1)+'</span>'
-      +'<div class="race-icon" style="border-color:'+e.house.color+'80;background:'+e.house.color+'15;color:'+e.house.color+';">'+hImg(e.house.img,14)+'</div>'
-      +'<div class="race-info"><div class="race-tag" style="color:'+e.house.color+';">'+e.house.name+'</div>'
-      +'<div class="race-track"><div class="race-fill" style="width:'+fillW+'%;background:linear-gradient(90deg,'+e.house.color+'40,'+e.house.color+');"><span class="race-fill__val">'+e.pct+'%</span><div class="race-fill__glow"></div></div></div></div>'
+      +'<div class="race-icon" style="border-color:'+e.color+'80;background:'+e.color+'15;display:flex;align-items:center;justify-content:center;">'+iconHtml+'</div>'
+      +'<div class="race-info"><div class="race-tag" style="color:'+e.color+';">'+(e.name||e.tag)+'</div>'
+      +'<div class="race-track"><div class="race-fill" style="width:'+fillW+'%;background:linear-gradient(90deg,'+e.color+'40,'+e.color+');"><span class="race-fill__val">'+e.pct+'%</span><div class="race-fill__glow"></div></div></div></div>'
       +'<span class="race-delta" style="color:var(--text-faint);">\u2014</span></div>';
   });
   el.innerHTML=html;
@@ -1056,12 +1069,15 @@ async function loadWorld(){
       fetch('/api/zones').then(function(r){return r.json();}),
       fetch('/api/territory/actions/today').then(function(r){return r.json();}),
       fetch('/api/territory/influence').then(function(r){return r.json();}),
-      fetch('/api/leaderboards/schools').then(function(r){return r.json();})
+      fetch('/api/leaderboards/schools').then(function(r){return r.json();}),
+      fetch('/api/territory/community-influence').then(function(r){return r.json();}),
+      fetch('/api/admin/communities').then(function(r){return r.json();})
     ];
     if(playerId)fetches.push(fetch('/api/players/'+playerId).then(function(r){return r.json();}));
     var results=await Promise.all(fetches);
     zones=results[0]||[];actionsToday=results[1]||{};influence=results[2]||{};
-    var schoolData=results[3]||[];player=results[4]||null;
+    var schoolData=results[3]||[];communityInfluence=results[4]||{};var commList=results[5]||[];player=results[6]||null;
+    if(Array.isArray(commList))commList.forEach(function(c){communityData[c.tag]={name:c.name||c.tag,color:c.color||'#888',image_url:c.image_url};});
     if(player){
       Object.keys(actionsToday).forEach(function(zid){actionsToday[zid].forEach(function(a){var p=a.player||{};if(p.id===player.id)playerActedZones[zid]=true;});});
       renderPlayerHeader();
