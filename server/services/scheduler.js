@@ -14,8 +14,10 @@ const supabase = require('../config/supabase');
 // V3 services (optional — don't crash if missing)
 let manaRegen = null;
 let nineSystem = null;
+let combatEngine = null;
 try { manaRegen = require('./manaRegen'); } catch (e) { console.log('⚠️ manaRegen not loaded'); }
 try { nineSystem = require('./nineSystem'); } catch (e) { console.log('⚠️ nineSystem not loaded'); }
+try { combatEngine = require('./combatEngine'); } catch (e) { console.log('⚠️ combatEngine not loaded'); }
 
 // Optional modules (don't crash if missing)
 let twitterBot = null;
@@ -41,6 +43,7 @@ try { nermBot = require('./nermBot'); } catch (e) { console.log('⚠️ nermBot 
  * 22:05  Narrative: Resolution + winner
  *
  * every 5 min    V3: Mana regeneration (1 per hour for all players)
+ * every 15 min   V3: Combat cycle (all active zones)
  * every 2 min    Process Twitter spell casts (8AM-10PM)
  * every 5 min    Update zone control percentages
  * every 5 min    Save influence snapshot (for dominance charts)
@@ -105,6 +108,23 @@ function initializeScheduledJobs() {
   });
 
   // ════════════════════════════════
+  // V3: COMBAT CYCLE — every 15 min
+  // Resolves zone battles across all active zones
+  // ════════════════════════════════
+  cron.schedule('*/15 * * * *', async () => {
+    try {
+      if (combatEngine) {
+        console.log(`[${ts()}] ⚔️ Running combat cycle...`);
+        const result = await combatEngine.runCombatCycle();
+        console.log(`[${ts()}] ⚔️ Combat done: ${result.zones_processed || 0} zones, ${result.knockouts || 0} KOs`);
+        logJob('combat_cycle');
+      }
+    } catch (e) {
+      console.error('❌ Combat cycle error:', e.message);
+    }
+  });
+
+  // ════════════════════════════════
   // CARD UPGRADES — 00:05 UTC
   // Check yesterday's hands for upgrade eligibility
   // ════════════════════════════════
@@ -142,7 +162,6 @@ function initializeScheduledJobs() {
     console.log(`[${ts()}] 📖 Narrative: Opening`);
     logJob('narrative_opening');
     try {
-      // Set random objective zone for today
       await territoryControl.setRandomObjective();
       await narrativeEngine.postOpening();
     } catch (e) { console.error('❌ Narrative opening:', e.message); }
@@ -273,6 +292,9 @@ function initializeScheduledJobs() {
   console.log('');
   console.log('💧 V3 Mana:');
   console.log('   */5   — Mana regen check (1/hour for all players)');
+  console.log('');
+  console.log('⚔️  V3 Combat:');
+  console.log('   */15  — Combat cycle (all active zones)');
   console.log('');
   console.log('📖 Narrative Raids:');
   console.log('   08:05 — Opening + set objective');

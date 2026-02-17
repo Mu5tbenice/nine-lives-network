@@ -25,13 +25,37 @@ try {
 }
 
 // V3 routes
-const ninesRoutes = require('./routes/nines');
-const manaRoutes = require('./routes/mana');
-const craftingRoutes = require('./routes/crafting');
+try {
+  const ninesRoutes = require('./routes/nines');
+  app.use('/api/nines', ninesRoutes);
+  console.log("✅ Nines routes loaded");
+} catch (e) {
+  console.error("❌ Failed to load nines routes:", e.message);
+}
 
-app.use('/api/nines', ninesRoutes);
-app.use('/api/mana', manaRoutes);
-app.use('/api/crafting', craftingRoutes);
+try {
+  const manaRoutes = require('./routes/mana');
+  app.use('/api/mana', manaRoutes);
+  console.log("✅ Mana routes loaded");
+} catch (e) {
+  console.error("❌ Failed to load mana routes:", e.message);
+}
+
+try {
+  const craftingRoutes = require('./routes/crafting');
+  app.use('/api/crafting', craftingRoutes);
+  console.log("✅ Crafting routes loaded");
+} catch (e) {
+  console.error("❌ Failed to load crafting routes:", e.message);
+}
+
+try {
+  const zonesRoutes = require('./routes/zones');
+  app.use('/api/zones', zonesRoutes);
+  console.log("✅ Zones V3 routes loaded");
+} catch (e) {
+  console.error("❌ Failed to load zones V3 routes:", e.message);
+}
 
 try {
   const playerRoutes = require("./routes/players");
@@ -60,7 +84,7 @@ try {
 try {
   const mapRoutes = require("./routes/map");
   app.use("/api/map", mapRoutes);
-  app.use("/api/zones", mapRoutes);
+  // NOTE: Removed old "/api/zones" alias for map — V3 zones.js now handles that path
   console.log("✅ Map routes loaded");
 } catch (e) {
   console.error("❌ Failed to load map routes:", e.message);
