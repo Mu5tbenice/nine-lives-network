@@ -17,7 +17,7 @@ router.get('/:id', async (req, res) => {
         twitter_handle,
         twitter_id,
         school_id,
-        community_tag,
+        guild_tag,
         profile_image,
         mana,
         lives,
@@ -164,7 +164,7 @@ router.get('/by-twitter/:twitter_id', async (req, res) => {
  */
 router.post('/complete-registration', async (req, res) => {
   try {
-    const { twitter_id, twitter_handle, school_id, community_tag, profile_image } = req.body;
+    const { twitter_id, twitter_handle, school_id, guild_tag, profile_image } = req.body;
 
     if (!twitter_id || !twitter_handle || !school_id) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -188,7 +188,7 @@ router.post('/complete-registration', async (req, res) => {
         twitter_id,
         twitter_handle,
         school_id,
-        community_tag: community_tag || null,
+        guild_tag: guild_tag || null,
         profile_image: profile_image || null,
         mana: 7,
         lives: 3,
