@@ -2,239 +2,168 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quick Duels — Nine Lives Network</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Quick Duels | Nine Lives Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    :root { --bg:#08060e;--surface:#0c0a14;--card:#0e0c16;--border:rgba(212,166,75,0.08);--gold:#d4a64b;--gold-dim:rgba(212,166,75,0.08);--text:#e0ddd8;--muted:rgba(255,255,255,0.4);--red:#ff4444;--green:#44cc66;--blue:#4488ff; }
+    :root{--bg-deep:#120e1e;--bg-warm:#1a1528;--bg-card:rgba(30,22,42,0.7);--border:rgba(212,166,75,0.12);--border-glow:rgba(212,166,75,0.3);--gold:#D4A64B;--gold-dim:rgba(212,166,75,0.15);--text-bright:#F5F0E8;--text-body:#D4C8B8;--text-muted:#9B8E7E;--text-faint:#6B5E50;--sunset:#e8855a;--sky:#8BB4E0;--green:#6acd8a;--red:#e85a6a;--cyan:#6ac8d8;--purple:#b088e8;--font-title:'Cinzel',serif;--font-body:'Crimson Text',Georgia,serif;--font-data:'Press Start 2P',monospace;--font-mono:'JetBrains Mono',monospace}
     *{box-sizing:border-box;margin:0;padding:0}
-    body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
-    .header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(8,6,14,0.95)}
-    .header-title{font-family:'Cinzel',serif;font-size:16px;font-weight:900;letter-spacing:2px;color:var(--gold)}
-    .container{max-width:500px;margin:0 auto;padding:16px}
+    body{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,rgba(232,133,90,0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(139,180,224,0.06) 0%,transparent 40%),linear-gradient(180deg,#1a1528 0%,#120e1e 30%,#0e0a18 100%);font-family:var(--font-body);color:var(--text-body)}
+    a{color:var(--gold);text-decoration:none}
+    ::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:rgba(212,166,75,0.15);border-radius:2px}
+    .top-nav{position:sticky;top:0;z-index:100;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(18,14,30,0.85);backdrop-filter:blur(12px)}
+    .nav-logo{font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--gold);letter-spacing:2px;text-decoration:none}
+    .nav-links{display:flex;gap:4px;list-style:none}
+    .nav-links a{font-family:var(--font-mono);font-size:8px;padding:4px 8px;border-radius:6px;color:var(--text-muted);text-decoration:none;border:1px solid transparent;transition:all 0.15s}
+    .nav-links a:hover,.nav-links a.active{color:var(--gold);border-color:rgba(212,166,75,0.15);background:var(--gold-dim)}
+    .hamburger{display:none;background:none;border:none;cursor:pointer;padding:4px}
+    .hamburger span{display:block;width:18px;height:2px;background:var(--text-muted);margin:3px 0;border-radius:1px}
+    .mobile-menu{display:none;position:fixed;top:44px;left:0;right:0;z-index:99;background:rgba(18,14,30,0.95);backdrop-filter:blur(12px);padding:12px 16px;border-bottom:1px solid var(--border);flex-direction:column;gap:8px}
+    .mobile-menu.active{display:flex}
+    .mobile-menu a{font-family:var(--font-mono);font-size:9px;padding:8px 12px;border-radius:8px;color:var(--text-muted);text-decoration:none;border:1px solid var(--border)}
+    @media(max-width:700px){.nav-links{display:none}.hamburger{display:block}}
+    @media(min-width:701px){.mobile-menu{display:none!important}}
 
-    /* Challenge Section */
-    .section-label{font-family:'Cinzel',serif;font-size:12px;font-weight:900;color:var(--gold);letter-spacing:2px;margin-bottom:8px}
-    .player-search{width:100%;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);color:var(--text);font-size:13px;outline:none;margin-bottom:12px}
-    .player-search::placeholder{color:rgba(255,255,255,0.2)}
-    .player-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;cursor:pointer;transition:all 0.15s}
-    .player-row:hover{border-color:rgba(212,166,75,0.2)}
-    .player-avatar{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:16px}
-    .player-name{font-size:12px;font-weight:700;flex:1}
-    .player-guild{font-size:9px;color:var(--muted);font-family:'Fira Code',monospace}
-    .challenge-btn{padding:6px 14px;border-radius:8px;border:none;background:linear-gradient(135deg,var(--gold),#c49030);color:#0a0810;font-size:10px;font-weight:800;cursor:pointer;letter-spacing:1px}
+    .main{max-width:500px;margin:0 auto;padding:14px}
+    .section-label{display:flex;align-items:center;gap:8px;margin:16px 0 8px}
+    .section-label__text{font-family:var(--font-title);font-size:12px;font-weight:700;color:var(--gold);letter-spacing:2px}
+    .section-label__line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
 
-    /* Card Selection */
-    .card-picker{display:none;margin-top:16px}
-    .card-picker.active{display:block}
-    .hand-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
-    .hand-card{padding:12px 8px;border-radius:10px;background:var(--card);border:2px solid var(--border);cursor:pointer;text-align:center;transition:all 0.2s}
-    .hand-card:hover{border-color:rgba(212,166,75,0.2)}
-    .hand-card.selected{border-color:var(--gold);background:var(--gold-dim)}
-    .hand-card.selected::after{content:'✓';position:absolute;top:4px;right:4px;font-size:10px;color:var(--gold)}
-    .card-name{font-size:10px;font-weight:700;margin-top:4px}
-    .card-stats{font-size:9px;color:var(--muted);font-family:'Fira Code',monospace;margin-top:2px}
-    .card-emoji{font-size:24px}
-    .confirm-duel{width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--red),#cc2222);color:#fff;font-family:'Cinzel',serif;font-size:14px;font-weight:900;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 16px rgba(255,68,68,0.3)}
-    .confirm-duel:disabled{opacity:0.4;cursor:not-allowed}
+    .duel-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+    .duel-stat{padding:12px 10px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);text-align:center}
 
-    /* Duel Arena */
-    .arena{display:none;margin-top:16px}
-    .arena.active{display:block}
-    .round-label{text-align:center;font-family:'Cinzel',serif;font-size:14px;color:var(--gold);margin-bottom:12px;letter-spacing:2px}
-    .versus{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:16px}
-    .vs-card{flex:0 0 140px;padding:16px;border-radius:12px;background:var(--card);border:1px solid var(--border);text-align:center}
-    .vs-card.winner{border-color:var(--green);box-shadow:0 0 20px rgba(68,204,102,0.15)}
-    .vs-card.loser{opacity:0.5}
-    .vs-text{font-family:'Cinzel',serif;font-size:20px;font-weight:900;color:var(--red)}
-    .vs-card-name{font-size:11px;font-weight:700;margin-top:6px}
-    .vs-card-atk{font-size:18px;font-weight:900;font-family:'Fira Code',monospace;margin-top:4px}
+    .card-select{display:flex;gap:8px;overflow-x:auto;padding:4px 0;margin-bottom:12px}
+    .duel-card{min-width:120px;padding:10px 12px;border-radius:10px;background:var(--bg-card);border:1.5px solid var(--border);flex-shrink:0;cursor:pointer;transition:all 0.15s;position:relative}
+    .duel-card.picked{border-color:var(--gold);background:rgba(212,166,75,0.06);transform:translateY(-4px)}
+    .duel-card.picked::after{content:'✓';position:absolute;top:6px;right:8px;font-family:var(--font-data);font-size:8px;color:var(--gold)}
+    .duel-card:hover{border-color:rgba(212,166,75,0.25)}
 
-    /* Score */
-    .score-bar{display:flex;justify-content:center;gap:20px;margin:16px 0;padding:12px;background:var(--card);border-radius:10px;border:1px solid var(--border)}
-    .score-side{text-align:center}
-    .score-label{font-size:9px;color:var(--muted);letter-spacing:1px;font-family:'Fira Code',monospace}
-    .score-value{font-size:24px;font-weight:900;font-family:'Fira Code',monospace}
+    .fight-btn{width:100%;padding:14px;border-radius:10px;border:none;cursor:pointer;font-family:var(--font-title);font-size:14px;font-weight:700;letter-spacing:1px;background:linear-gradient(135deg,var(--red),#c03040);color:#fff;box-shadow:0 4px 0 #8a2030,0 6px 16px rgba(232,90,106,0.25);transition:all 0.2s}
+    .fight-btn:disabled{opacity:0.3;cursor:not-allowed;box-shadow:none}
 
-    /* History */
-    .history-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:4px}
-    .history-result{font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;font-family:'Fira Code',monospace}
-    .history-result.win{background:rgba(68,204,102,0.1);color:var(--green)}
-    .history-result.loss{background:rgba(255,68,68,0.1);color:var(--red)}
-    .history-opponent{font-size:11px;flex:1}
-    .history-score{font-size:10px;color:var(--muted);font-family:'Fira Code',monospace}
+    .duel-result{border-radius:14px;background:var(--bg-card);border:1px solid var(--border);padding:20px;text-align:center;margin-bottom:14px}
+    .round{display:flex;align-items:center;justify-content:center;gap:16px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border);margin-bottom:6px}
 
-    @media(max-width:500px){.hand-grid{grid-template-columns:repeat(3,1fr)}.vs-card{flex:0 0 120px}}
+    .history-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);margin-bottom:4px}
   </style>
 </head>
 <body>
-  <div class="header">
-    <span style="font-size:20px">⚔️</span>
-    <span class="header-title">QUICK DUELS</span>
-    <div style="flex:1"></div>
-    <a href="/nethara-live.html" style="font-size:10px;color:var(--muted);text-decoration:none;font-family:'Fira Code',monospace">← NETHARA LIVE</a>
-  </div>
-  <div class="container">
-    <!-- Challenge -->
-    <div id="challenge-section">
-      <div class="section-label">⚔️ CHALLENGE A PLAYER</div>
-      <input class="player-search" id="player-search" placeholder="Search by name or guild..." oninput="searchPlayers(this.value)">
-      <div id="player-list"></div>
-    </div>
+  <nav class="top-nav">
+    <a href="/" class="nav-logo">Nine Lives Network</a>
+    <ul class="nav-links"><li><a href="/dashboard.html">Dashboard</a></li><li><a href="/nethara-live.html">Nethara Live</a></li><li><a href="/duels.html" class="active">Duels</a></li><li><a href="/gauntlet.html">Gauntlet</a></li><li><a href="/boss.html">Boss</a></li><li><a href="/leaderboards.html">Ranks</a></li><li><a href="/collection.html">Spellbook</a></li></ul>
+    <button class="hamburger" onclick="document.getElementById('mm').classList.toggle('active')"><span></span><span></span><span></span></button>
+  </nav>
+  <div class="mobile-menu" id="mm"><a href="/dashboard.html">Dashboard</a><a href="/nethara-live.html">Nethara Live</a><a href="/duels.html" class="active">Duels</a><a href="/gauntlet.html">Gauntlet</a><a href="/boss.html">Boss</a><a href="/leaderboards.html">Ranks</a><a href="/collection.html">Spellbook</a></div>
 
-    <!-- Card Picker -->
-    <div class="card-picker" id="card-picker">
-      <div class="section-label">PICK 3 CARDS FOR YOUR DUEL</div>
-      <div class="hand-grid" id="hand-grid"></div>
-      <button class="confirm-duel" id="confirm-btn" disabled onclick="startDuel()">SELECT 3 CARDS</button>
-    </div>
-
-    <!-- Arena -->
-    <div class="arena" id="arena"></div>
-
-    <!-- History -->
-    <div style="margin-top:24px">
-      <div class="section-label">📜 RECENT DUELS</div>
-      <div id="history-list"></div>
-    </div>
+  <div class="main" id="content">
+    <div style="text-align:center;padding:60px 20px;"><div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div></div>
   </div>
 
 <script>
-let playerId = null;
-let selectedCards = [];
-let challengeTarget = null;
+var playerId=null,playerCards=[],pickedCards=[];
 
-document.addEventListener('DOMContentLoaded', () => {
-  try {
-    const s = JSON.parse(localStorage.getItem('9lv_session') || '{}');
-    if (s.player_id) playerId = s.player_id;
-  } catch(e){}
-  loadHistory();
-});
+function getPlayerId(){var p=new URLSearchParams(window.location.search);var f=p.get('player_id');if(f){localStorage.setItem('player_id',f);return f;}return localStorage.getItem('player_id');}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 
-async function searchPlayers(q) {
-  if (q.length < 2) { document.getElementById('player-list').innerHTML = ''; return; }
-  try {
-    const res = await fetch(`/api/players/search?q=${encodeURIComponent(q)}`).then(r => r.json());
-    const players = res.players || res || [];
-    document.getElementById('player-list').innerHTML = players.slice(0,8).map(p => `
-      <div class="player-row" onclick="selectOpponent(${p.id},'${(p.twitter_handle||p.username||'').replace(/'/g,'')}','${(p.guild_tag||'').replace(/'/g,'')}')">
-        <div class="player-avatar">🐱</div>
-        <div><div class="player-name">@${p.twitter_handle||p.username||'Player'}</div><div class="player-guild">${p.guild_tag||''}</div></div>
-        <button class="challenge-btn">CHALLENGE</button>
-      </div>
-    `).join('') || '<div style="color:var(--muted);font-size:10px;padding:10px">No players found</div>';
-  } catch(e) { console.error(e); }
+async function loadDuels(){
+  playerId=getPlayerId();
+  if(!playerId){document.getElementById('content').innerHTML='<div style="text-align:center;padding:40px"><a href="/register.html" style="font-family:var(--font-title);font-size:16px;">Register to play →</a></div>';return;}
+
+  var player={},history=[];
+  try{var pR=await fetch('/api/players/'+playerId);if(pR.ok)player=await pR.json();}catch(e){}
+  try{var hR=await fetch('/api/duels/history/'+playerId);if(hR.ok){var hd=await hR.json();history=hd.history||hd||[];}}catch(e){}
+  try{var cR=await fetch('/api/players/'+playerId+'/cards');if(cR.ok){var cd=await cR.json();playerCards=cd.cards||cd||[];}}catch(e){}
+
+  var wins=player.duel_wins||0,losses=player.duel_losses||0;
+  var html='';
+
+  html+='<div class="section-label"><span style="font-size:14px;">⚔️</span><span class="section-label__text">QUICK DUELS</span><span class="section-label__line"></span></div>';
+  html+='<p style="font-family:var(--font-body);font-size:14px;color:var(--text-muted);margin-bottom:14px;">Pick 3 cards. Best of 3 rounds. Higher ATK wins each round.</p>';
+
+  // Stats
+  html+='<div class="duel-stats">';
+  html+='<div class="duel-stat"><div style="font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px;">WINS</div><div style="font-family:var(--font-data);font-size:16px;color:var(--green);">'+wins+'</div></div>';
+  html+='<div class="duel-stat"><div style="font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px;">LOSSES</div><div style="font-family:var(--font-data);font-size:16px;color:var(--red);">'+losses+'</div></div>';
+  html+='<div class="duel-stat"><div style="font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px;">WIN RATE</div><div style="font-family:var(--font-data);font-size:16px;color:var(--gold);">'+(wins+losses>0?Math.round(wins/(wins+losses)*100):0)+'%</div></div>';
+  html+='</div>';
+
+  // Card select
+  html+='<div class="section-label"><span style="font-size:14px;">🃏</span><span class="section-label__text">PICK 3 CARDS</span><span class="section-label__line"></span></div>';
+  html+='<div class="card-select" id="cardSelect">';
+  if(playerCards.length>0){
+    var rCol={common:'#bbb',uncommon:'#6acd8a',rare:'#5588ff',epic:'#b088e8',legendary:'#ffd700'};
+    playerCards.forEach(function(c,i){
+      html+='<div class="duel-card" id="dc'+i+'" onclick="togglePick('+i+')">';
+      html+='<div style="font-family:var(--font-data);font-size:6px;color:'+(rCol[c.rarity]||'#bbb')+';margin-bottom:4px;">'+(c.rarity||'common').toUpperCase()+'</div>';
+      html+='<div style="font-family:var(--font-title);font-size:12px;font-weight:700;color:var(--text-bright);line-height:1.2;margin-bottom:6px;">'+esc(c.name)+'</div>';
+      html+='<div style="display:flex;gap:8px;">';
+      html+='<span style="font-family:var(--font-data);font-size:8px;color:var(--red);">⚔️'+(c.atk||'?')+'</span>';
+      html+='<span style="font-family:var(--font-data);font-size:8px;color:var(--green);">💚'+(c.hp||'?')+'</span>';
+      html+='</div></div>';
+    });
+  }else{
+    html+='<div style="padding:16px;text-align:center;color:var(--text-faint);font-style:italic;font-size:12px;width:100%;">No cards available. Open a pack first!</div>';
+  }
+  html+='</div>';
+
+  html+='<div style="text-align:center;margin-bottom:4px;"><span id="pickCount" style="font-family:var(--font-data);font-size:7px;color:var(--text-faint);">0/3 SELECTED</span></div>';
+  html+='<button class="fight-btn" id="fightBtn" disabled onclick="startDuel()">⚔️ FIND OPPONENT — 1 MANA</button>';
+
+  // History
+  if(history.length>0){
+    html+='<div class="section-label" style="margin-top:20px;"><span style="font-size:14px;">📜</span><span class="section-label__text">RECENT DUELS</span><span class="section-label__line"></span></div>';
+    history.slice(0,5).forEach(function(d){
+      var won=d.winner_id==playerId;
+      html+='<div class="history-row">';
+      html+='<span style="font-size:16px;">'+(won?'🏆':'💀')+'</span>';
+      html+='<div style="flex:1;"><div style="font-family:var(--font-mono);font-size:10px;color:'+(won?'var(--green)':'var(--red)')+';">'+(won?'VICTORY':'DEFEAT')+'</div><div style="font-family:var(--font-mono);font-size:8px;color:var(--text-faint);">vs @'+(d.opponent_handle||'???')+'</div></div>';
+      html+='<span style="font-family:var(--font-data);font-size:7px;color:var(--gold);">+'+(d.points_earned||0)+' pts</span>';
+      html+='</div>';
+    });
+  }
+
+  document.getElementById('content').innerHTML=html;
 }
 
-async function selectOpponent(id, name, guild) {
-  challengeTarget = { id, name, guild };
-  document.getElementById('card-picker').classList.add('active');
-  selectedCards = [];
-  try {
-    const res = await fetch(`/api/packs/collection/${playerId}`).then(r => r.json());
-    const cards = (res.cards || res || []).slice(0, 12);
-    document.getElementById('hand-grid').innerHTML = cards.map(c => `
-      <div class="hand-card" id="hc-${c.id}" onclick="toggleCard(${c.id},'${(c.spell_name||c.name||'Card').replace(/'/g,'')}',${c.base_atk||c.atk||5})">
-        <div class="card-emoji">🃏</div>
-        <div class="card-name">${c.spell_name||c.name||'Card'}</div>
-        <div class="card-stats">ATK ${c.base_atk||c.atk||'?'} · HP ${c.base_hp||c.hp||'?'}</div>
-      </div>
-    `).join('');
-  } catch(e) { console.error(e); }
-  updateConfirmBtn();
+function togglePick(idx){
+  var pos=pickedCards.indexOf(idx);
+  if(pos>-1){pickedCards.splice(pos,1);}
+  else if(pickedCards.length<3){pickedCards.push(idx);}
+  playerCards.forEach(function(_,i){
+    var el=document.getElementById('dc'+i);
+    if(el)el.classList.toggle('picked',pickedCards.indexOf(i)>-1);
+  });
+  var cnt=document.getElementById('pickCount');
+  if(cnt)cnt.textContent=pickedCards.length+'/3 SELECTED';
+  var btn=document.getElementById('fightBtn');
+  if(btn)btn.disabled=pickedCards.length!==3;
 }
 
-function toggleCard(id, name, atk) {
-  const idx = selectedCards.findIndex(c => c.id === id);
-  if (idx >= 0) { selectedCards.splice(idx, 1); document.getElementById('hc-'+id).classList.remove('selected'); }
-  else if (selectedCards.length < 3) { selectedCards.push({id,name,atk}); document.getElementById('hc-'+id).classList.add('selected'); }
-  updateConfirmBtn();
-}
-
-function updateConfirmBtn() {
-  const btn = document.getElementById('confirm-btn');
-  btn.disabled = selectedCards.length !== 3;
-  btn.textContent = selectedCards.length === 3 ? `⚔️ DUEL @${challengeTarget?.name||''}` : `SELECT ${3-selectedCards.length} MORE`;
-}
-
-async function startDuel() {
-  try {
-    const res = await fetch('/api/duels/challenge', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ challenger_id: playerId, defender_id: challengeTarget.id, card_ids: selectedCards.map(c=>c.id) }),
-    }).then(r => r.json());
-
-    if (res.success && res.result) {
-      showDuelResult(res.result);
-    } else {
-      alert(res.error || 'Duel failed');
+async function startDuel(){
+  var btn=document.getElementById('fightBtn');
+  btn.disabled=true;btn.textContent='FINDING OPPONENT...';
+  var cardIds=pickedCards.map(function(i){return playerCards[i].id;});
+  try{
+    var r=await fetch('/api/duels/quick',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({player_id:playerId,card_ids:cardIds})});
+    if(r.ok){
+      var result=await r.json();
+      btn.textContent=result.winner_id==playerId?'🏆 VICTORY!':'💀 DEFEAT';
+      setTimeout(function(){pickedCards=[];loadDuels();},2000);
+    }else{
+      var err=await r.json().catch(function(){return{error:'Failed'};});
+      btn.textContent='❌ '+(err.error||'Failed');
+      setTimeout(function(){btn.textContent='⚔️ FIND OPPONENT — 1 MANA';btn.disabled=false;},2000);
     }
-  } catch(e) { alert('Duel error: '+e.message); }
+  }catch(e){
+    btn.textContent='❌ Network error';
+    setTimeout(function(){btn.textContent='⚔️ FIND OPPONENT — 1 MANA';btn.disabled=false;},2000);
+  }
 }
 
-function showDuelResult(result) {
-  document.getElementById('card-picker').classList.remove('active');
-  const arena = document.getElementById('arena');
-  arena.classList.add('active');
-
-  const rounds = result.rounds || [];
-  const myScore = result.challenger_wins || 0;
-  const theirScore = result.defender_wins || 0;
-  const won = myScore > theirScore;
-
-  arena.innerHTML = `
-    <div class="score-bar">
-      <div class="score-side"><div class="score-label">YOU</div><div class="score-value" style="color:${won?'var(--green)':'var(--red)'}">${myScore}</div></div>
-      <div style="font-family:'Cinzel',serif;font-size:16px;color:var(--muted);padding-top:10px">VS</div>
-      <div class="score-side"><div class="score-label">@${challengeTarget?.name||'OPP'}</div><div class="score-value" style="color:${!won?'var(--green)':'var(--red)'}">${theirScore}</div></div>
-    </div>
-    <div style="text-align:center;font-family:'Cinzel',serif;font-size:20px;font-weight:900;color:${won?'var(--green)':'var(--red)'};margin:12px 0;letter-spacing:3px">${won?'VICTORY':'DEFEAT'}</div>
-    ${rounds.map((r, i) => `
-      <div class="round-label">ROUND ${i+1}</div>
-      <div class="versus">
-        <div class="vs-card ${r.winner==='challenger'?'winner':'loser'}">
-          <div class="card-emoji">🃏</div>
-          <div class="vs-card-name">${r.challenger_card||'Card'}</div>
-          <div class="vs-card-atk" style="color:${r.winner==='challenger'?'var(--green)':'var(--red)'}">${r.challenger_atk||'?'}</div>
-        </div>
-        <div class="vs-text">VS</div>
-        <div class="vs-card ${r.winner==='defender'?'winner':'loser'}">
-          <div class="card-emoji">🃏</div>
-          <div class="vs-card-name">${r.defender_card||'Card'}</div>
-          <div class="vs-card-atk" style="color:${r.winner==='defender'?'var(--green)':'var(--red)'}">${r.defender_atk||'?'}</div>
-        </div>
-      </div>
-    `).join('')}
-    <button onclick="resetDuel()" style="width:100%;padding:12px;border-radius:10px;border:none;background:var(--gold-dim);color:var(--gold);font-family:'Cinzel',serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;margin-top:16px">DUEL AGAIN</button>`;
-  loadHistory();
-}
-
-function resetDuel() {
-  document.getElementById('arena').classList.remove('active');
-  document.getElementById('arena').innerHTML = '';
-  selectedCards = [];
-  challengeTarget = null;
-  document.getElementById('player-search').value = '';
-  document.getElementById('player-list').innerHTML = '';
-}
-
-async function loadHistory() {
-  if (!playerId) return;
-  try {
-    const res = await fetch(`/api/duels/history/${playerId}`).then(r => r.json());
-    const duels = (res.duels || res || []).slice(0, 10);
-    document.getElementById('history-list').innerHTML = duels.map(d => {
-      const isChallenger = d.challenger_id === playerId;
-      const won = isChallenger ? d.winner === 'challenger' : d.winner === 'defender';
-      return `<div class="history-row">
-        <div class="history-result ${won?'win':'loss'}">${won?'WIN':'LOSS'}</div>
-        <div class="history-opponent">vs @${isChallenger?(d.defender_name||'?'):(d.challenger_name||'?')}</div>
-        <div class="history-score">${d.challenger_wins||0}-${d.defender_wins||0}</div>
-      </div>`;
-    }).join('') || '<div style="color:var(--muted);font-size:10px;padding:10px">No duels yet. Challenge someone!</div>';
-  } catch(e) {}
-}
+loadDuels();
 </script>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 </body>
 </html>
