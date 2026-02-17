@@ -131,8 +131,8 @@ function revealCards(cards){
     h+='<div style="font-family:var(--font-title);font-size:11px;font-weight:700;color:var(--text-bright);line-height:1.2;">'+esc(c.name)+'</div>';
     h+='<div style="font-family:var(--font-data);font-size:6px;color:'+rc+';margin:4px 0;">'+(c.rarity||'common').toUpperCase()+'</div>';
     h+='<div style="display:flex;justify-content:center;gap:6px;">';
-    h+='<span style="font-family:var(--font-data);font-size:7px;color:var(--red);">⚔️'+(c.atk||'?')+'</span>';
-    h+='<span style="font-family:var(--font-data);font-size:7px;color:var(--green);">💚'+(c.hp||'?')+'</span>';
+    h+='<span style="font-family:var(--font-data);font-size:7px;color:var(--red);">⚔️'+(c.base_atk||c.atk||'?')+'</span>';
+    h+='<span style="font-family:var(--font-data);font-size:7px;color:var(--green);">💚'+(c.base_hp||c.hp||'?')+'</span>';
     h+='</div></div>';
   });
   h+='</div>';

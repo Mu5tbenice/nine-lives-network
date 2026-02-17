@@ -119,7 +119,7 @@ async function loadNethara(){
     if(!Array.isArray(zones))zones=zones.zones||[];
 
     // Try loading player cards
-    try{var cR=await fetch('/api/players/'+playerId+'/cards');if(cR.ok){var cd=await cR.json();playerCards=cd.cards||cd||[];}}catch(e){}
+    try{var cR=await fetch('/api/packs/collection/'+playerId);if(cR.ok){var cd=await cR.json();playerCards=(cd.cards||cd||[]).map(function(c){return{id:c.id,name:c.spell_name||c.name,spell_type:c.spell_type||'attack',rarity:c.rarity||'common',atk:(c.spell&&c.spell.base_atk)||c.base_atk||0,hp:(c.spell&&c.spell.base_hp)||c.base_hp||0,charges:c.current_charges||0};});}}catch(e){}
 
     render(zones,player);
   }catch(err){

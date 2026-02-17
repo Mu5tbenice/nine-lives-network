@@ -73,8 +73,8 @@ async function loadCollection(){
   if(!playerId){document.getElementById('content').innerHTML='<div style="text-align:center;padding:40px"><a href="/register.html" style="font-family:var(--font-title);font-size:16px;">Register to play →</a></div>';return;}
 
   try{
-    var cR=await fetch('/api/players/'+playerId+'/cards');
-    if(cR.ok){var cd=await cR.json();allCards=cd.cards||cd||[];}
+    var cR=await fetch('/api/packs/collection/'+playerId);
+    if(cR.ok){var cd=await cR.json();allCards=(cd.cards||cd||[]).map(function(c){return{id:c.id,name:c.spell_name||c.name,spell_type:c.spell_type||'attack',rarity:c.rarity||'common',atk:(c.spell&&c.spell.base_atk)||c.base_atk||0,hp:(c.spell&&c.spell.base_hp)||c.base_hp||0,image_url:c.image_url||null,house:c.spell_house||c.house||'universal',effects:c.spell_effects||[],durability:(c.current_charges||0)+'/'+(c.max_charges||0),mana_cost:c.cost||1,description:c.base_effect||''};});}
   }catch(e){}
 
   // Also try spells endpoint as fallback
