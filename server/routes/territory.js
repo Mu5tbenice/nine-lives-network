@@ -84,11 +84,15 @@ router.post('/action', async (req, res) => {
         .select('*')
         .eq('id', card_id)
         .eq('player_id', player_id)
-        .eq('is_burned', false)
         .single();
 
       if (cardErr || !playerCard) {
         return res.status(400).json({ error: 'Card not found or already used' });
+      }
+
+      // V3: Check if card is exhausted
+      if (playerCard.is_exhausted) {
+        return res.status(400).json({ error: 'Card is exhausted — recharge it first' });
       }
 
       card = {
@@ -178,7 +182,7 @@ router.post('/action', async (req, res) => {
       action_type: card.type || action_type || 'attack',
       power_contributed: finalPower,
       source: 'website',
-      community_tag: player.community_tag || null,
+      guild_tag: player.guild_tag || null,  // V3: renamed from community_tag
       game_day: today,
       points_earned: finalPoints,
     };
@@ -208,13 +212,15 @@ router.post('/action', async (req, res) => {
       return res.status(500).json({ error: 'Failed to record action' });
     }
 
-    // ─── BURN CARD (mark as consumed) ───
-    if (card_id) {
-      await supabaseAdmin
-        .from('player_cards')
-        .update({ is_burned: true })
-        .eq('id', card_id);
-    }
+    // ─── V3: Cards are NOT burned anymore ───
+    // Cards now use durability charges instead.
+    // The combat engine (Phase 3) handles charge usage per cycle.
+    // if (card_id) {
+    //   await supabaseAdmin
+    //     .from('player_cards')
+    //     .update({ is_burned: true })
+    //     .eq('id', card_id);
+    // }
 
     // ─── UPDATE PLAYER POINTS ───
     let totalPointsAwarded = finalPoints;
@@ -252,7 +258,7 @@ router.post('/action', async (req, res) => {
     }
 
     // ─── UPDATE ZONE INFLUENCE ───
-    await updateZoneInfluence(zone_id, player.school_id, card.type || action_type || 'attack', player.community_tag);
+    await updateZoneInfluence(zone_id, player.school_id, card.type || action_type || 'attack', player.guild_tag);
 
     // ─── CHECK COMBOS ───
     let combos = [];
@@ -452,9 +458,9 @@ router.get('/zone/:id', async (req, res) => {
 
 // ═══════════════════════════════════════════
 // HELPER: Update zone influence in zone_control
-// (UNCHANGED from your original)
+// V3: renamed community → guild
 // ═══════════════════════════════════════════
-async function updateZoneInfluence(zoneId, schoolId, actionType, communityTag) {
+async function updateZoneInfluence(zoneId, schoolId, actionType, guildTag) {
   try {
     var power = actionType === 'attack' ? 2 : 1;
 
@@ -479,32 +485,32 @@ async function updateZoneInfluence(zoneId, schoolId, actionType, communityTag) {
           control_percentage: power
         });
     }
-    // Also update community influence
-    if (communityTag) {
+    // Also update guild influence (V3: renamed from community)
+    if (guildTag) {
       try {
-        var { data: existingComm } = await supabase
-          .from('zone_community_control')
+        var { data: existingGuild } = await supabase
+          .from('zone_guild_control')
           .select('*')
           .eq('zone_id', zoneId)
-          .eq('community_tag', communityTag)
+          .eq('guild_tag', guildTag)
           .single();
 
-        if (existingComm) {
+        if (existingGuild) {
           await supabaseAdmin
-            .from('zone_community_control')
-            .update({ control_percentage: existingComm.control_percentage + power, updated_at: new Date().toISOString() })
-            .eq('id', existingComm.id);
+            .from('zone_guild_control')
+            .update({ control_percentage: existingGuild.control_percentage + power, updated_at: new Date().toISOString() })
+            .eq('id', existingGuild.id);
         } else {
           await supabaseAdmin
-            .from('zone_community_control')
+            .from('zone_guild_control')
             .insert({
               zone_id: zoneId,
-              community_tag: communityTag,
+              guild_tag: guildTag,
               control_percentage: power
             });
         }
       } catch (commErr) {
-        console.error('Community influence update error:', commErr.message);
+        console.error('Guild influence update error:', commErr.message);
       }
     }
   } catch (error) {

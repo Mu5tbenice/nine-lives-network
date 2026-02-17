@@ -14,6 +14,15 @@ const RARITIES = {
   legendary: { weight: 2,  pointMult: 3.0,  infMult: 2.0  },
 };
 
+// V3: Durability charges by rarity
+const CHARGES_BY_RARITY = {
+  common: 5,
+  uncommon: 8,
+  rare: 12,
+  epic: 18,
+  legendary: 30,
+};
+
 // ── HOUSE ALLIANCES ──
 const ALLIANCES = {
   smoulders: 'stormrage',
@@ -138,17 +147,24 @@ async function generateDailyPack(playerId) {
       }, { onConflict: 'player_id,game_day' });
 
     // Add cards to permanent collection
-    const collectionCards = cards.map(c => ({
-      player_id: playerId,
-      spell_id: c.spell_id,
-      spell_name: c.name,
-      spell_house: c.house,
-      spell_type: c.type,
-      spell_tier: c.tier,
-      spell_effects: c.effects,
-      rarity: c.rarity,
-      source: 'pack',
-    }));
+    // V3: Now includes durability charges!
+    const collectionCards = cards.map(c => {
+      const maxCharges = CHARGES_BY_RARITY[c.rarity] || 5;
+      return {
+        player_id: playerId,
+        spell_id: c.spell_id,
+        spell_name: c.name,
+        spell_house: c.house,
+        spell_type: c.type,
+        spell_tier: c.tier,
+        spell_effects: c.effects,
+        rarity: c.rarity,
+        source: 'pack',
+        current_charges: maxCharges,   // V3: starts fully charged
+        max_charges: maxCharges,       // V3: max charges for this rarity
+        is_exhausted: false,           // V3: not exhausted
+      };
+    });
 
     await supabase.from('player_cards').insert(collectionCards);
 
@@ -184,6 +200,9 @@ function buildCard(spell, rarity) {
     point_multiplier: rarityConfig.pointMult,
     influence_multiplier: rarityConfig.infMult,
     image_url: spell.image_url || null,
+    // V3: Include ATK/HP from spell (for display in pack opening)
+    base_atk: spell.base_atk || 3,
+    base_hp: spell.base_hp || 2,
   };
 }
 
@@ -228,12 +247,13 @@ async function useCardFromHand(playerId, cardIndex) {
 }
 
 // ── GET PLAYER COLLECTION ──
+// V3: Removed is_burned filter (cards no longer burn)
+// V3: Joins with spells table to get ATK/HP stats
 async function getCollection(playerId, filters = {}) {
   let query = supabase
     .from('player_cards')
-    .select('*')
+    .select('*, spell:spell_id(name, base_atk, base_hp)')
     .eq('player_id', playerId)
-    .eq('is_burned', false)
     .order('acquired_at', { ascending: false });
 
   if (filters.rarity) query = query.eq('rarity', filters.rarity);
@@ -252,12 +272,17 @@ async function getCollectionStats(playerId) {
     byRarity: { common: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0 },
     byHouse: {},
     byType: { attack: 0, defend: 0, support: 0, utility: 0, debuff: 0, control: 0 },
+    // V3: Durability stats
+    exhausted: 0,
+    totalCharges: 0,
   };
 
   cards.forEach(c => {
     if (stats.byRarity[c.rarity] !== undefined) stats.byRarity[c.rarity]++;
     stats.byHouse[c.spell_house] = (stats.byHouse[c.spell_house] || 0) + 1;
     if (stats.byType[c.spell_type] !== undefined) stats.byType[c.spell_type]++;
+    if (c.is_exhausted) stats.exhausted++;
+    stats.totalCharges += (c.current_charges || 0);
   });
 
   return stats;
@@ -294,9 +319,15 @@ async function processUpgrades() {
     const newRarity = rarityOrder[Math.min(currentIdx + 1, rarityOrder.length - 1)];
 
     // Update the card in player_cards collection
+    // V3: Also update max_charges when rarity changes
+    const newMaxCharges = CHARGES_BY_RARITY[newRarity] || 5;
     await supabase
       .from('player_cards')
-      .update({ rarity: newRarity })
+      .update({
+        rarity: newRarity,
+        max_charges: newMaxCharges,
+        current_charges: newMaxCharges,  // fully recharge on upgrade
+      })
       .eq('player_id', hand.player_id)
       .eq('spell_name', target.name)
       .eq('rarity', target.rarity)
@@ -327,4 +358,5 @@ module.exports = {
   processUpgrades,
   RARITIES,
   ALLIANCES,
+  CHARGES_BY_RARITY,
 };
