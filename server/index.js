@@ -24,6 +24,15 @@ try {
   console.error("❌ Failed to load auth routes:", e.message);
 }
 
+// V3 routes
+const ninesRoutes = require('./routes/nines');
+const manaRoutes = require('./routes/mana');
+const craftingRoutes = require('./routes/crafting');
+
+app.use('/api/nines', ninesRoutes);
+app.use('/api/mana', manaRoutes);
+app.use('/api/crafting', craftingRoutes);
+
 try {
   const playerRoutes = require("./routes/players");
   app.use("/api/players", playerRoutes);
