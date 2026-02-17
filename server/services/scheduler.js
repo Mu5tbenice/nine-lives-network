@@ -11,6 +11,14 @@ const effectEngine = require('./effectEngine');
 const packSystem = require('./packSystem');
 const supabase = require('../config/supabase');
 
+// V3 services (optional — don't crash if missing)
+let manaRegen = null;
+let nineSystem = null;
+let combatEngine = null;
+try { manaRegen = require('./manaRegen'); } catch (e) { console.log('⚠️ manaRegen not loaded'); }
+try { nineSystem = require('./nineSystem'); } catch (e) { console.log('⚠️ nineSystem not loaded'); }
+try { combatEngine = require('./combatEngine'); } catch (e) { console.log('⚠️ combatEngine not loaded'); }
+
 // Optional modules (don't crash if missing)
 let twitterBot = null;
 let nermBot = null;
@@ -23,7 +31,8 @@ try { nermBot = require('./nermBot'); } catch (e) { console.log('⚠️ nermBot 
  * 00:00  MIDNIGHT BANKING — the big one:
  *        snapshot influence → process flags (POISON/CORRODE)
  *        → flip zones → award bonuses → decay 40%
- *        → reset mana to 7 → update streaks → clear flags
+ *        → heal all Nines → clear flags
+ *        NOTE: V3 removed mana reset — mana now regens hourly
  *
  * 00:05  Process card upgrades (mana + energy check)
  * 01:30  Activity decay (inactive players)
@@ -33,10 +42,12 @@ try { nermBot = require('./nermBot'); } catch (e) { console.log('⚠️ nermBot 
  * 18:00  Narrative: Last call
  * 22:05  Narrative: Resolution + winner
  *
-  every 2 min    Process Twitter spell casts (8AM-10PM)
-  every 5 min    Update zone control percentages
-  every 5 min    Save influence snapshot (for dominance charts)
-  every 10 min   Scrape narrative replies (8AM-10PM)
+ * every 5 min    V3: Mana regeneration (1 per hour for all players)
+ * every 15 min   V3: Combat cycle (all active zones)
+ * every 2 min    Process Twitter spell casts (8AM-10PM)
+ * every 5 min    Update zone control percentages
+ * every 5 min    Save influence snapshot (for dominance charts)
+ * every 10 min   Scrape narrative replies (8AM-10PM)
  */
 
 let jobsInitialized = false;
@@ -57,6 +68,8 @@ function initializeScheduledJobs() {
   // ════════════════════════════════
   // MIDNIGHT BANKING — 00:00 UTC
   // This is the main daily reset
+  // V3: Also heals all Nines to full HP
+  // V3: NO LONGER resets mana (hourly regen now)
   // ════════════════════════════════
   cron.schedule('0 0 * * *', async () => {
     console.log(`[${ts()}] 🏦 MIDNIGHT BANKING`);
@@ -66,6 +79,48 @@ function initializeScheduledJobs() {
       console.log('✅ Midnight banking complete:', JSON.stringify(result));
     } catch (e) {
       console.error('❌ Midnight banking error:', e.message);
+    }
+
+    // V3: Heal all Nines to full HP at midnight
+    try {
+      if (nineSystem) {
+        await nineSystem.midnightResetAllNines();
+        console.log('✅ All Nines healed to full HP');
+      }
+    } catch (e) {
+      console.error('❌ Nine midnight reset error:', e.message);
+    }
+  });
+
+  // ════════════════════════════════
+  // V3: MANA REGENERATION — every 5 min
+  // Awards 1 mana per hour elapsed
+  // ════════════════════════════════
+  cron.schedule('*/5 * * * *', async () => {
+    try {
+      if (manaRegen) {
+        await manaRegen.regenMana();
+        logJob('mana_regen');
+      }
+    } catch (e) {
+      console.error('❌ Mana regen error:', e.message);
+    }
+  });
+
+  // ════════════════════════════════
+  // V3: COMBAT CYCLE — every 15 min
+  // Resolves zone battles across all active zones
+  // ════════════════════════════════
+  cron.schedule('*/15 * * * *', async () => {
+    try {
+      if (combatEngine) {
+        console.log(`[${ts()}] ⚔️ Running combat cycle...`);
+        const result = await combatEngine.runCombatCycle();
+        console.log(`[${ts()}] ⚔️ Combat done: ${result.zones_processed || 0} zones, ${result.knockouts || 0} KOs`);
+        logJob('combat_cycle');
+      }
+    } catch (e) {
+      console.error('❌ Combat cycle error:', e.message);
     }
   });
 
@@ -107,7 +162,6 @@ function initializeScheduledJobs() {
     console.log(`[${ts()}] 📖 Narrative: Opening`);
     logJob('narrative_opening');
     try {
-      // Set random objective zone for today
       await territoryControl.setRandomObjective();
       await narrativeEngine.postOpening();
     } catch (e) { console.error('❌ Narrative opening:', e.message); }
@@ -232,9 +286,15 @@ function initializeScheduledJobs() {
   console.log('✅ Scheduler initialized:');
   console.log('');
   console.log('🏦 Midnight Banking:');
-  console.log('   00:00 — Full midnight banking (snapshot, flags, flip, decay, reset)');
+  console.log('   00:00 — Full midnight banking (snapshot, flags, flip, decay) + heal all Nines');
   console.log('   00:05 — Card upgrades');
   console.log('   01:30 — Activity decay');
+  console.log('');
+  console.log('💧 V3 Mana:');
+  console.log('   */5   — Mana regen check (1/hour for all players)');
+  console.log('');
+  console.log('⚔️  V3 Combat:');
+  console.log('   */15  — Combat cycle (all active zones)');
   console.log('');
   console.log('📖 Narrative Raids:');
   console.log('   08:05 — Opening + set objective');
