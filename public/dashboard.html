@@ -110,8 +110,15 @@ let activity = [];
 
 const HOUSE_COLORS = {smoulders:'#ff4422',darktide:'#3388dd',stonebark:'#55aa44',ashenvale:'#88bbdd',nighthollow:'#8855cc',dawnbringer:'#ffcc33',plaguemire:'#77bb33',stormrage:'#ffaa00',manastorm:'#44cccc'};
 
-document.addEventListener('DOMContentLoaded', async () => {
-  try { const s=JSON.parse(localStorage.getItem('9lv_session')||'{}'); if(s.player_id) playerId=s.player_id; } catch(e){}
+  document.addEventListener('DOMContentLoaded', async () => {
+  // Check URL params first (from auth redirect), then localStorage
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('player_id')) {
+    playerId = parseInt(params.get('player_id'));
+    localStorage.setItem('9lv_session', JSON.stringify({ player_id: playerId }));
+  } else {
+    try { const s=JSON.parse(localStorage.getItem('9lv_session')||'{}'); if(s.player_id) playerId=s.player_id; } catch(e){}
+  }
   if (!playerId) { document.getElementById('content').innerHTML='<div style="text-align:center;padding:40px"><a href="/register.html" style="color:var(--gold);font-family:Cinzel,serif;font-size:16px">Register to play →</a></div>'; return; }
   await loadAll();
   render();
