@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weekly Boss — Nine Lives Network</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#08060e;--surface:#0c0a14;--card:#0e0c16;--border:rgba(212,166,75,0.08);--gold:#d4a64b;--gold-dim:rgba(212,166,75,0.08);--text:#e0ddd8;--muted:rgba(255,255,255,0.4);--red:#ff4444;--green:#44cc66;--blue:#4488ff;--purple:#aa55ff;--orange:#ffaa00}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+    .header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(8,6,14,0.95)}
+    .header-title{font-family:'Cinzel',serif;font-size:16px;font-weight:900;letter-spacing:2px;color:var(--red)}
+    .container{max-width:500px;margin:0 auto;padding:16px}
+    .section-label{font-family:'Cinzel',serif;font-size:12px;font-weight:900;color:var(--gold);letter-spacing:2px;margin:16px 0 8px}
+
+    /* Boss Card */
+    .boss-card{background:linear-gradient(180deg,rgba(100,20,20,0.12),var(--card));border:1px solid rgba(255,68,68,0.15);border-radius:16px;padding:20px;text-align:center;margin-bottom:16px;position:relative;overflow:hidden}
+    .boss-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(255,68,68,0.06),transparent 70%);pointer-events:none}
+    .boss-icon{font-size:64px;position:relative;z-index:1}
+    .boss-name{font-family:'Cinzel',serif;font-size:24px;font-weight:900;color:#ff6644;margin:8px 0;position:relative;z-index:1}
+    .boss-phase{font-size:10px;color:var(--orange);font-family:'Fira Code',monospace;letter-spacing:1px;position:relative;z-index:1}
+    .boss-phase-effects{display:flex;gap:4px;justify-content:center;margin-top:6px;flex-wrap:wrap;position:relative;z-index:1}
+    .phase-effect{font-size:8px;padding:2px 6px;border-radius:4px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.15);color:var(--red);font-family:'Fira Code',monospace}
+
+    /* HP Bar */
+    .hp-section{position:relative;z-index:1;margin-top:16px}
+    .hp-bar-outer{height:24px;border-radius:12px;background:rgba(255,255,255,0.06);overflow:hidden;position:relative}
+    .hp-bar-fill{height:100%;border-radius:12px;transition:width 1s ease;background:linear-gradient(90deg,#cc2200,#ff4444,#ff6644)}
+    .hp-bar-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'Fira Code',monospace;color:#fff;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,0.8)}
+    .hp-label{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-family:'Fira Code',monospace;margin-top:4px}
+
+    /* Phase milestones */
+    .phases-track{display:flex;align-items:center;gap:0;margin:12px 0;position:relative;z-index:1}
+    .phase-seg{flex:1;height:4px;background:rgba(255,255,255,0.06)}
+    .phase-seg.active{background:var(--red)}
+    .phase-seg.cleared{background:var(--green)}
+    .phase-marker{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;font-family:'Fira Code',monospace;flex-shrink:0}
+    .phase-marker.active{background:var(--red);color:#fff;box-shadow:0 0 10px rgba(255,68,68,0.4)}
+    .phase-marker.cleared{background:var(--green);color:#fff}
+    .phase-marker.locked{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.2)}
+
+    /* Your Contribution */
+    .contrib-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px}
+    .contrib-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
+    .contrib-label{font-size:10px;color:var(--muted);font-family:'Fira Code',monospace}
+    .contrib-value{font-size:12px;font-weight:700;font-family:'Fira Code',monospace}
+
+    /* Deploy section */
+    .deploy-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px}
+    .card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+    .boss-pick{padding:10px 6px;border-radius:8px;background:rgba(255,255,255,0.02);border:2px solid var(--border);cursor:pointer;text-align:center;transition:all 0.15s;font-size:9px}
+    .boss-pick:hover{border-color:rgba(212,166,75,0.2)}
+    .boss-pick.selected{border-color:var(--gold);background:var(--gold-dim)}
+    .boss-pick-name{font-weight:700;margin-top:3px}
+    .boss-pick-stats{font-size:8px;color:var(--muted);font-family:'Fira Code',monospace}
+    .deploy-btn{width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--gold),#c49030);color:#0a0810;font-family:'Cinzel',serif;font-size:14px;font-weight:900;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 16px rgba(212,166,75,0.3)}
+    .deploy-btn:disabled{opacity:0.4;cursor:not-allowed}
+
+    /* Leaderboard */
+    .contrib-list{margin-bottom:16px}
+    .contrib-entry{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:4px}
+    .contrib-rank{width:20px;font-size:10px;font-weight:900;color:var(--gold);font-family:'Fira Code',monospace;text-align:center}
+    .contrib-name{font-size:11px;font-weight:700;flex:1}
+    .contrib-guild{font-size:9px;color:var(--muted);font-family:'Fira Code',monospace}
+    .contrib-dmg{font-size:11px;font-weight:700;color:var(--red);font-family:'Fira Code',monospace}
+
+    /* Next cycle */
+    .cycle-info{text-align:center;padding:8px;font-size:10px;color:var(--muted);font-family:'Fira Code',monospace}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span style="font-size:20px">🐉</span>
+    <span class="header-title">WEEKLY BOSS</span>
+    <div style="flex:1"></div>
+    <a href="/nethara-live.html" style="font-size:10px;color:var(--muted);text-decoration:none;font-family:'Fira Code',monospace">← NETHARA LIVE</a>
+  </div>
+  <div class="container" id="content">
+    <div style="text-align:center;color:var(--muted);padding:40px">Loading boss...</div>
+  </div>
+
+<script>
+let playerId = null;
+let boss = null;
+let playerCards = [];
+let selectedCard = null;
+let myContrib = 0;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  try { const s=JSON.parse(localStorage.getItem('9lv_session')||'{}'); if(s.player_id) playerId=s.player_id; } catch(e){}
+  await loadBoss();
+  renderBoss();
+  setInterval(async()=>{ await loadBoss(); renderBoss(); }, 30000);
+});
+
+async function loadBoss() {
+  try {
+    boss = await fetch('/api/boss/status').then(r=>r.json());
+  } catch(e) { boss = null; }
+  if (playerId) {
+    try {
+      const res = await fetch(`/api/packs/collection/${playerId}`).then(r=>r.json());
+      playerCards = (res.cards||res||[]).slice(0,9);
+    } catch(e){}
+    try {
+      const res = await fetch(`/api/boss/contribution/${playerId}`).then(r=>r.json());
+      myContrib = res.total_damage || 0;
+    } catch(e){}
+  }
+}
+
+function renderBoss() {
+  const el = document.getElementById('content');
+  if (!boss || !boss.name) {
+    el.innerHTML = `<div style="text-align:center;padding:40px">
+      <div style="font-size:48px;margin-bottom:12px">💤</div>
+      <div style="font-family:'Cinzel',serif;font-size:16px;color:var(--muted)">No Active Boss</div>
+      <div style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:8px;font-family:'Fira Code',monospace">Next boss spawns Monday at 00:00 UTC</div>
+    </div>`;
+    return;
+  }
+
+  const hpPct = boss.max_hp ? Math.max(0, (boss.current_hp / boss.max_hp)*100) : 0;
+  const phase = boss.phase || 1;
+  const phaseEffects = boss.phase_effects || boss.active_effects || [];
+  const topContribs = boss.top_contributors || [];
+
+  el.innerHTML = `
+    <div class="boss-card">
+      <div class="boss-icon">🐉</div>
+      <div class="boss-name">${boss.name}</div>
+      <div class="boss-phase">PHASE ${phase} OF 3</div>
+      ${phaseEffects.length ? `<div class="boss-phase-effects">${phaseEffects.map(e=>`<span class="phase-effect">${e}</span>`).join('')}</div>` : ''}
+
+      <div class="hp-section">
+        <div class="hp-bar-outer">
+          <div class="hp-bar-fill" style="width:${hpPct}%"></div>
+          <div class="hp-bar-text">${(boss.current_hp||0).toLocaleString()} / ${(boss.max_hp||0).toLocaleString()} HP</div>
+        </div>
+        <div class="hp-label">
+          <span>${hpPct.toFixed(1)}% remaining</span>
+          <span>Phase ${phase}</span>
+        </div>
+      </div>
+
+      <div class="phases-track" style="margin-top:12px">
+        <div class="phase-marker ${phase>=1?'active':'locked'}">1</div>
+        <div class="phase-seg ${phase>=2?'cleared':''}"></div>
+        <div class="phase-marker ${phase>=2?'active':phase>2?'cleared':'locked'}">2</div>
+        <div class="phase-seg ${phase>=3?'cleared':''}"></div>
+        <div class="phase-marker ${phase>=3?'active':'locked'}">3</div>
+      </div>
+    </div>
+
+    <div class="cycle-info" id="cycle-timer">Next cycle: --:--</div>
+
+    <div class="section-label">YOUR CONTRIBUTION</div>
+    <div class="contrib-card">
+      <div class="contrib-row">
+        <span class="contrib-label">Total Damage</span>
+        <span class="contrib-value" style="color:var(--red)">${myContrib.toLocaleString()}</span>
+      </div>
+      <div class="contrib-row">
+        <span class="contrib-label">Cards Deployed</span>
+        <span class="contrib-value">${boss.my_deploys || '—'}</span>
+      </div>
+      <div class="contrib-row">
+        <span class="contrib-label">Season Points Earned</span>
+        <span class="contrib-value" style="color:var(--gold)">${boss.my_points || '—'}</span>
+      </div>
+    </div>
+
+    <div class="section-label">⚔️ DEPLOY CARD TO BOSS</div>
+    <div class="deploy-card">
+      <div class="card-grid">
+        ${playerCards.map(c=>`
+          <div class="boss-pick ${selectedCard===c.id?'selected':''}" onclick="pickBossCard(${c.id})">
+            <div>🃏</div>
+            <div class="boss-pick-name">${c.spell_name||c.name||'Card'}</div>
+            <div class="boss-pick-stats">ATK ${c.base_atk||c.atk||'?'}</div>
+          </div>
+        `).join('')}
+      </div>
+      <button class="deploy-btn" ${selectedCard?'':'disabled'} onclick="deployToBoss()">⚔️ ATTACK BOSS</button>
+    </div>
+
+    <div class="section-label">🏆 TOP CONTRIBUTORS</div>
+    <div class="contrib-list">
+      ${topContribs.length > 0 ? topContribs.slice(0,10).map((c,i)=>`
+        <div class="contrib-entry">
+          <div class="contrib-rank">${i+1}</div>
+          <div class="contrib-name">${c.player_name||c.name||'Player'}</div>
+          <div class="contrib-guild">${c.guild_tag||''}</div>
+          <div class="contrib-dmg">${(c.total_damage||c.damage||0).toLocaleString()} dmg</div>
+        </div>
+      `).join('') : '<div style="color:var(--muted);font-size:10px;padding:10px">No contributions yet. Be the first!</div>'}
+    </div>`;
+
+  startBossTimer();
+}
+
+function pickBossCard(id) {
+  selectedCard = selectedCard===id ? null : id;
+  renderBoss();
+}
+
+async function deployToBoss() {
+  if (!selectedCard || !playerId) return;
+  try {
+    const res = await fetch('/api/boss/deploy', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ player_id:playerId, card_id:selectedCard }),
+    }).then(r=>r.json());
+    if (res.success) {
+      selectedCard = null;
+      await loadBoss();
+      renderBoss();
+    } else { alert(res.error||'Deploy failed'); }
+  } catch(e) { alert('Error: '+e.message); }
+}
+
+let timerInt;
+function startBossTimer() {
+  if(timerInt) clearInterval(timerInt);
+  const el = document.getElementById('cycle-timer');
+  if(!el) return;
+  function tick(){
+    const now=new Date();
+    const m=now.getMinutes(); const s=now.getSeconds();
+    const next=15-(m%15)-1; const sec=59-s;
+    el.textContent=`⏱ Next boss cycle: ${next}:${sec.toString().padStart(2,'0')}`;
+  }
+  tick(); timerInt=setInterval(tick,1000);
+}
+</script>
+</body>
+</html>
