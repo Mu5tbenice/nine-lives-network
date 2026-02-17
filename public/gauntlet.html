@@ -2,217 +2,138 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Gauntlet — Nine Lives Network</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>The Gauntlet | Nine Lives Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    :root{--bg:#08060e;--surface:#0c0a14;--card:#0e0c16;--border:rgba(212,166,75,0.08);--gold:#d4a64b;--gold-dim:rgba(212,166,75,0.08);--text:#e0ddd8;--muted:rgba(255,255,255,0.4);--red:#ff4444;--green:#44cc66;--blue:#4488ff;--purple:#aa55ff}
+    :root{--bg-deep:#120e1e;--bg-warm:#1a1528;--bg-card:rgba(30,22,42,0.7);--border:rgba(212,166,75,0.12);--border-glow:rgba(212,166,75,0.3);--gold:#D4A64B;--gold-dim:rgba(212,166,75,0.15);--text-bright:#F5F0E8;--text-body:#D4C8B8;--text-muted:#9B8E7E;--text-faint:#6B5E50;--sunset:#e8855a;--sky:#8BB4E0;--green:#6acd8a;--red:#e85a6a;--cyan:#6ac8d8;--purple:#b088e8;--font-title:'Cinzel',serif;--font-body:'Crimson Text',Georgia,serif;--font-data:'Press Start 2P',monospace;--font-mono:'JetBrains Mono',monospace}
     *{box-sizing:border-box;margin:0;padding:0}
-    body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
-    .header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(8,6,14,0.95)}
-    .header-title{font-family:'Cinzel',serif;font-size:16px;font-weight:900;letter-spacing:2px;color:var(--gold)}
-    .container{max-width:500px;margin:0 auto;padding:16px}
-    .section-label{font-family:'Cinzel',serif;font-size:12px;font-weight:900;color:var(--gold);letter-spacing:2px;margin-bottom:8px}
+    body{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,rgba(176,136,232,0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 50%,rgba(232,133,90,0.06) 0%,transparent 40%),linear-gradient(180deg,#1a1528 0%,#120e1e 30%,#0e0a18 100%);font-family:var(--font-body);color:var(--text-body)}
+    a{color:var(--gold);text-decoration:none}
+    ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(212,166,75,0.15);border-radius:2px}
+    .top-nav{position:sticky;top:0;z-index:100;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(18,14,30,0.85);backdrop-filter:blur(12px)}
+    .nav-logo{font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--gold);letter-spacing:2px;text-decoration:none}
+    .nav-links{display:flex;gap:4px;list-style:none}
+    .nav-links a{font-family:var(--font-mono);font-size:8px;padding:4px 8px;border-radius:6px;color:var(--text-muted);text-decoration:none;border:1px solid transparent;transition:all 0.15s}
+    .nav-links a:hover,.nav-links a.active{color:var(--gold);border-color:rgba(212,166,75,0.15);background:var(--gold-dim)}
+    .hamburger{display:none;background:none;border:none;cursor:pointer;padding:4px}
+    .hamburger span{display:block;width:18px;height:2px;background:var(--text-muted);margin:3px 0;border-radius:1px}
+    .mobile-menu{display:none;position:fixed;top:44px;left:0;right:0;z-index:99;background:rgba(18,14,30,0.95);backdrop-filter:blur(12px);padding:12px 16px;border-bottom:1px solid var(--border);flex-direction:column;gap:8px}
+    .mobile-menu.active{display:flex}
+    .mobile-menu a{font-family:var(--font-mono);font-size:9px;padding:8px 12px;border-radius:8px;color:var(--text-muted);text-decoration:none;border:1px solid var(--border)}
+    @media(max-width:700px){.nav-links{display:none}.hamburger{display:block}}
+    @media(min-width:701px){.mobile-menu{display:none!important}}
 
-    /* Floor Progress */
-    .floor-track{display:flex;align-items:center;gap:4px;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:16px;overflow-x:auto}
-    .floor-node{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;font-family:'Fira Code',monospace;flex-shrink:0;transition:all 0.2s}
-    .floor-node.cleared{background:rgba(68,204,102,0.15);border:2px solid var(--green);color:var(--green)}
-    .floor-node.current{background:rgba(212,166,75,0.15);border:2px solid var(--gold);color:var(--gold);box-shadow:0 0 12px rgba(212,166,75,0.3);transform:scale(1.15)}
-    .floor-node.locked{background:rgba(255,255,255,0.03);border:2px solid rgba(255,255,255,0.06);color:rgba(255,255,255,0.15)}
-    .floor-conn{width:12px;height:2px;background:rgba(255,255,255,0.06);flex-shrink:0}
-    .floor-conn.cleared{background:var(--green)}
+    .main{max-width:500px;margin:0 auto;padding:14px}
+    .section-label{display:flex;align-items:center;gap:8px;margin:16px 0 8px}
+    .section-label__text{font-family:var(--font-title);font-size:12px;font-weight:700;color:var(--gold);letter-spacing:2px}
+    .section-label__line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
 
-    /* Current Floor Card */
-    .floor-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;text-align:center}
-    .floor-number{font-family:'Cinzel',serif;font-size:12px;color:var(--muted);letter-spacing:2px}
-    .floor-enemy-name{font-family:'Cinzel',serif;font-size:20px;font-weight:900;color:#fff;margin:6px 0}
-    .floor-enemy-icon{font-size:48px;margin:8px 0}
-    .enemy-stats{display:flex;justify-content:center;gap:16px;margin:10px 0}
-    .enemy-stat{text-align:center}
-    .enemy-stat-val{font-size:18px;font-weight:900;font-family:'Fira Code',monospace}
-    .enemy-stat-label{font-size:8px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-family:'Fira Code',monospace}
-    .enemy-effects{display:flex;gap:4px;justify-content:center;margin-top:8px;flex-wrap:wrap}
-    .enemy-effect{font-size:8px;padding:2px 6px;border-radius:4px;background:rgba(170,85,255,0.08);border:1px solid rgba(170,85,255,0.15);color:var(--purple);font-family:'Fira Code',monospace}
+    .floor-card{border-radius:12px;background:var(--bg-card);border:1px solid var(--border);padding:16px;margin-bottom:8px;position:relative;overflow:hidden}
+    .floor-card.current{border-color:var(--gold);box-shadow:0 0 20px rgba(212,166,75,0.1)}
+    .floor-card.cleared{opacity:0.5}
+    .floor-number{font-family:var(--font-data);font-size:20px;color:var(--gold)}
+    .floor-enemy{font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--text-bright)}
+    .floor-stats{display:flex;gap:8px;margin-top:6px}
 
-    /* Card Selection */
-    .pick-label{font-size:11px;color:var(--muted);text-align:center;margin-bottom:8px}
-    .card-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
-    .pick-card{padding:12px 8px;border-radius:10px;background:var(--card);border:2px solid var(--border);cursor:pointer;text-align:center;transition:all 0.2s;position:relative}
-    .pick-card:hover{border-color:rgba(212,166,75,0.2)}
-    .pick-card.selected{border-color:var(--gold);background:var(--gold-dim)}
-    .pick-card-emoji{font-size:20px}
-    .pick-card-name{font-size:9px;font-weight:700;margin-top:4px}
-    .pick-card-stats{font-size:8px;color:var(--muted);font-family:'Fira Code',monospace;margin-top:2px}
-
-    .fight-btn{width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--red),#cc2222);color:#fff;font-family:'Cinzel',serif;font-size:14px;font-weight:900;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 16px rgba(255,68,68,0.3)}
-    .fight-btn:disabled{opacity:0.4;cursor:not-allowed}
-
-    /* Result */
-    .result-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;margin:16px 0}
-    .result-icon{font-size:48px}
-    .result-text{font-family:'Cinzel',serif;font-size:22px;font-weight:900;letter-spacing:3px;margin:8px 0}
-    .result-detail{font-size:11px;color:var(--muted);font-family:'Fira Code',monospace}
-    .result-actions{display:flex;gap:8px;margin-top:16px;justify-content:center}
-    .result-btn{padding:10px 24px;border-radius:10px;border:none;font-family:'Cinzel',serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px}
-    .result-btn.next{background:linear-gradient(135deg,var(--gold),#c49030);color:#0a0810}
-    .result-btn.retreat{background:var(--gold-dim);color:var(--gold);border:1px solid rgba(212,166,75,0.2)}
-
-    /* Best Run */
-    .best-run{display:flex;align-items:center;gap:12px;padding:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:16px}
-    .best-run-label{font-size:9px;color:var(--muted);letter-spacing:1px;font-family:'Fira Code',monospace}
-    .best-run-value{font-size:20px;font-weight:900;color:var(--gold);font-family:'Fira Code',monospace}
-    .reset-timer{font-size:9px;color:var(--muted);font-family:'Fira Code',monospace;margin-left:auto}
+    .start-btn{width:100%;padding:14px;border-radius:10px;border:none;cursor:pointer;font-family:var(--font-title);font-size:14px;font-weight:700;letter-spacing:1px;background:linear-gradient(135deg,var(--purple),#8050b0);color:#fff;box-shadow:0 4px 0 #5a3080,0 6px 16px rgba(176,136,232,0.25);margin-bottom:14px}
+    .start-btn:disabled{opacity:0.3;cursor:not-allowed;box-shadow:none}
   </style>
 </head>
 <body>
-  <div class="header">
-    <span style="font-size:20px">🏰</span>
-    <span class="header-title">THE GAUNTLET</span>
-    <div style="flex:1"></div>
-    <a href="/nethara-live.html" style="font-size:10px;color:var(--muted);text-decoration:none;font-family:'Fira Code',monospace">← NETHARA LIVE</a>
-  </div>
-  <div class="container">
-    <div class="best-run">
-      <div><div class="best-run-label">BEST RUN</div><div class="best-run-value" id="best-floor">—</div></div>
-      <div class="reset-timer" id="reset-timer">Resets daily at midnight UTC</div>
-    </div>
-    <div id="floor-track" class="floor-track"></div>
-    <div id="game-area"></div>
+  <nav class="top-nav">
+    <a href="/" class="nav-logo">Nine Lives Network</a>
+    <ul class="nav-links"><li><a href="/dashboard.html">Dashboard</a></li><li><a href="/nethara-live.html">Nethara Live</a></li><li><a href="/duels.html">Duels</a></li><li><a href="/gauntlet.html" class="active">Gauntlet</a></li><li><a href="/boss.html">Boss</a></li><li><a href="/leaderboards.html">Ranks</a></li><li><a href="/collection.html">Spellbook</a></li></ul>
+    <button class="hamburger" onclick="document.getElementById('mm').classList.toggle('active')"><span></span><span></span><span></span></button>
+  </nav>
+  <div class="mobile-menu" id="mm"><a href="/dashboard.html">Dashboard</a><a href="/nethara-live.html">Nethara Live</a><a href="/duels.html">Duels</a><a href="/gauntlet.html" class="active">Gauntlet</a><a href="/boss.html">Boss</a><a href="/leaderboards.html">Ranks</a><a href="/collection.html">Spellbook</a></div>
+
+  <div class="main" id="content">
+    <div style="text-align:center;padding:60px 20px;"><div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div></div>
   </div>
 
 <script>
-let playerId = null;
-let currentFloor = 1;
-let bestFloor = 0;
-let runActive = false;
-let selectedCard = null;
-let playerCards = [];
+var playerId=null;
+function getPlayerId(){var p=new URLSearchParams(window.location.search);var f=p.get('player_id');if(f){localStorage.setItem('player_id',f);return f;}return localStorage.getItem('player_id');}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 
-const ENEMIES = [
-  {name:'Shadow Rat',icon:'🐀',atk:3,hp:8,effects:[]},
-  {name:'Cave Spider',icon:'🕷️',atk:5,hp:10,effects:[]},
-  {name:'Mana Wraith',icon:'👻',atk:6,hp:12,effects:['SILENCE']},
-  {name:'Stone Golem',icon:'🗿',atk:4,hp:20,effects:['ANCHOR']},
-  {name:'Fire Elemental',icon:'🔥',atk:8,hp:14,effects:['BURN +3']},
-  {name:'Void Stalker',icon:'👁️',atk:9,hp:16,effects:['HEX']},
-  {name:'Storm Drake',icon:'🐉',atk:10,hp:18,effects:['CHAIN ×2']},
-  {name:'Crystal Titan',icon:'💎',atk:7,hp:25,effects:['WARD','THORNS']},
-  {name:'Nethara Shade',icon:'🌑',atk:12,hp:20,effects:['SILENCE','WEAKEN']},
-  {name:'The Veilbreaker',icon:'💀',atk:15,hp:30,effects:['BURN +5','ANCHOR','HEX']},
+var FLOOR_ENEMIES=[
+  {name:'Feral Shade',icon:'👤',atk:4,hp:8},{name:'Mana Wisp',icon:'✨',atk:6,hp:6},{name:'Stone Golem',icon:'🪨',atk:5,hp:14},
+  {name:'Ember Wraith',icon:'🔥',atk:10,hp:8},{name:'Crystal Guardian',icon:'💎',atk:8,hp:12},{name:'Void Stalker',icon:'🌑',atk:12,hp:10},
+  {name:'Storm Elemental',icon:'⚡',atk:14,hp:12},{name:'Ancient Treant',icon:'🌳',atk:10,hp:20},{name:'Shadow Dragon',icon:'🐉',atk:16,hp:16},
+  {name:'The Nethara King',icon:'👑',atk:20,hp:24}
 ];
 
-document.addEventListener('DOMContentLoaded', async () => {
-  try { const s=JSON.parse(localStorage.getItem('9lv_session')||'{}'); if(s.player_id) playerId=s.player_id; } catch(e){}
-  await loadState();
-  renderAll();
-});
+async function loadGauntlet(){
+  playerId=getPlayerId();
+  if(!playerId){document.getElementById('content').innerHTML='<div style="text-align:center;padding:40px"><a href="/register.html" style="font-family:var(--font-title);font-size:16px;">Register to play →</a></div>';return;}
 
-async function loadState() {
-  if (!playerId) return;
-  try {
-    const res = await fetch(`/api/gauntlet/status/${playerId}`).then(r=>r.json());
-    if (res.current_floor) currentFloor = res.current_floor;
-    if (res.best_floor) bestFloor = res.best_floor;
-    runActive = res.run_active || false;
-  } catch(e) { console.log('No gauntlet state, starting fresh'); }
-  try {
-    const res = await fetch(`/api/packs/collection/${playerId}`).then(r=>r.json());
-    playerCards = (res.cards||res||[]).slice(0,9);
-  } catch(e) {}
-}
+  var player={},gauntlet={};
+  try{var pR=await fetch('/api/players/'+playerId);if(pR.ok)player=await pR.json();}catch(e){}
+  try{var gR=await fetch('/api/gauntlet/'+playerId);if(gR.ok)gauntlet=await gR.json();}catch(e){}
 
-function renderAll() {
-  document.getElementById('best-floor').textContent = bestFloor > 0 ? `Floor ${bestFloor}` : '—';
-  renderFloorTrack();
-  renderGameArea();
-}
+  var currentFloor=gauntlet.current_floor||1;
+  var bestFloor=gauntlet.best_floor||player.best_gauntlet||0;
+  var html='';
 
-function renderFloorTrack() {
-  const track = document.getElementById('floor-track');
-  let html = '';
-  for (let i=1; i<=10; i++) {
-    if (i>1) html += `<div class="floor-conn ${i<=currentFloor?'cleared':''}"></div>`;
-    const state = i<currentFloor ? 'cleared' : i===currentFloor ? 'current' : 'locked';
-    html += `<div class="floor-node ${state}">${i}</div>`;
+  html+='<div class="section-label"><span style="font-size:14px;">🏰</span><span class="section-label__text">THE GAUNTLET</span><span class="section-label__line"></span></div>';
+  html+='<p style="font-family:var(--font-body);font-size:14px;color:var(--text-muted);margin-bottom:14px;">Climb the tower solo. Each floor harder than the last. Resets daily.</p>';
+
+  // Stats
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">';
+  html+='<div style="padding:14px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);text-align:center;"><div style="font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px;">CURRENT FLOOR</div><div style="font-family:var(--font-data);font-size:22px;color:var(--purple);">'+currentFloor+'</div></div>';
+  html+='<div style="padding:14px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);text-align:center;"><div style="font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px;">BEST EVER</div><div style="font-family:var(--font-data);font-size:22px;color:var(--gold);">'+bestFloor+'</div></div>';
+  html+='</div>';
+
+  // Start button
+  html+='<button class="start-btn" id="startBtn" onclick="startFloor()">⚔️ CHALLENGE FLOOR '+currentFloor+'</button>';
+
+  // Floor tower
+  html+='<div class="section-label"><span style="font-size:14px;">🗼</span><span class="section-label__text">TOWER</span><span class="section-label__line"></span></div>';
+
+  for(var i=FLOOR_ENEMIES.length;i>=1;i--){
+    var enemy=FLOOR_ENEMIES[i-1];
+    var isCurrent=i===currentFloor;
+    var isCleared=i<currentFloor;
+    html+='<div class="floor-card '+(isCurrent?'current':'')+(isCleared?' cleared':'')+'">';
+    html+='<div style="display:flex;align-items:center;gap:12px;">';
+    html+='<div class="floor-number">'+(isCleared?'✅':i)+'</div>';
+    html+='<div style="flex:1;"><div class="floor-enemy">'+enemy.icon+' '+enemy.name+'</div>';
+    html+='<div class="floor-stats">';
+    html+='<span style="font-family:var(--font-data);font-size:7px;color:var(--red);">⚔️'+enemy.atk+'</span>';
+    html+='<span style="font-family:var(--font-data);font-size:7px;color:var(--green);">💚'+enemy.hp+'</span>';
+    html+='</div></div>';
+    if(isCurrent)html+='<span style="font-family:var(--font-data);font-size:6px;color:var(--gold);letter-spacing:1px;">NEXT →</span>';
+    html+='</div></div>';
   }
-  track.innerHTML = html;
+
+  document.getElementById('content').innerHTML=html;
 }
 
-function renderGameArea() {
-  const area = document.getElementById('game-area');
-  const enemy = ENEMIES[Math.min(currentFloor-1, ENEMIES.length-1)];
-  const scaled = { name:enemy.name, icon:enemy.icon, atk:enemy.atk+Math.floor((currentFloor-1)*1.5), hp:enemy.hp+Math.floor((currentFloor-1)*3), effects:enemy.effects };
-
-  area.innerHTML = `
-    <div class="floor-card">
-      <div class="floor-number">FLOOR ${currentFloor}</div>
-      <div class="floor-enemy-icon">${scaled.icon}</div>
-      <div class="floor-enemy-name">${scaled.name}</div>
-      <div class="enemy-stats">
-        <div class="enemy-stat"><div class="enemy-stat-val" style="color:var(--red)">${scaled.atk}</div><div class="enemy-stat-label">ATK</div></div>
-        <div class="enemy-stat"><div class="enemy-stat-val" style="color:var(--green)">${scaled.hp}</div><div class="enemy-stat-label">HP</div></div>
-      </div>
-      ${scaled.effects.length ? `<div class="enemy-effects">${scaled.effects.map(e=>`<span class="enemy-effect">${e}</span>`).join('')}</div>` : ''}
-    </div>
-    <div class="section-label">CHOOSE YOUR CARD</div>
-    <div class="pick-label">Pick 1 card to fight this floor</div>
-    <div class="card-row">
-      ${playerCards.map(c => `
-        <div class="pick-card ${selectedCard===c.id?'selected':''}" onclick="selectGauntletCard(${c.id})">
-          <div class="pick-card-emoji">🃏</div>
-          <div class="pick-card-name">${c.spell_name||c.name||'Card'}</div>
-          <div class="pick-card-stats">ATK ${c.base_atk||c.atk||'?'} · HP ${c.base_hp||c.hp||'?'}</div>
-        </div>
-      `).join('')}
-    </div>
-    <button class="fight-btn" id="fight-btn" ${selectedCard?'':'disabled'} onclick="fightFloor()">⚔️ FIGHT FLOOR ${currentFloor}</button>`;
-}
-
-function selectGauntletCard(id) {
-  selectedCard = selectedCard===id ? null : id;
-  renderGameArea();
-}
-
-async function fightFloor() {
-  if (!selectedCard || !playerId) return;
-  try {
-    const res = await fetch('/api/gauntlet/fight', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ player_id:playerId, card_id:selectedCard, floor:currentFloor }),
-    }).then(r=>r.json());
-
-    const area = document.getElementById('game-area');
-    if (res.won) {
-      currentFloor++;
-      if (currentFloor-1 > bestFloor) bestFloor = currentFloor-1;
-      area.innerHTML = `
-        <div class="result-card">
-          <div class="result-icon">⚔️</div>
-          <div class="result-text" style="color:var(--green)">VICTORY</div>
-          <div class="result-detail">Floor ${currentFloor-1} cleared! You dealt ${res.damage_dealt||'?'} damage.</div>
-          <div class="result-actions">
-            <button class="result-btn next" onclick="selectedCard=null;renderAll()">NEXT FLOOR →</button>
-            <button class="result-btn retreat" onclick="endRun()">RETREAT</button>
-          </div>
-        </div>`;
-    } else {
-      area.innerHTML = `
-        <div class="result-card">
-          <div class="result-icon">💀</div>
-          <div class="result-text" style="color:var(--red)">DEFEATED</div>
-          <div class="result-detail">Fell on floor ${currentFloor}. Best run: Floor ${bestFloor}.</div>
-          <div class="result-actions">
-            <button class="result-btn next" onclick="currentFloor=1;selectedCard=null;renderAll()">TRY AGAIN</button>
-          </div>
-        </div>`;
+async function startFloor(){
+  var btn=document.getElementById('startBtn');
+  btn.disabled=true;btn.textContent='FIGHTING...';
+  try{
+    var r=await fetch('/api/gauntlet/'+playerId+'/fight',{method:'POST',headers:{'Content-Type':'application/json'}});
+    if(r.ok){
+      var res=await r.json();
+      btn.textContent=res.won?'🏆 FLOOR CLEARED!':'💀 DEFEATED';
+      setTimeout(function(){loadGauntlet();},2000);
+    }else{
+      var err=await r.json().catch(function(){return{error:'Failed'};});
+      btn.textContent='❌ '+(err.error||'Failed');
+      setTimeout(function(){loadGauntlet();},2000);
     }
-    document.getElementById('best-floor').textContent = bestFloor > 0 ? `Floor ${bestFloor}` : '—';
-    renderFloorTrack();
-  } catch(e) { alert('Fight error: '+e.message); }
+  }catch(e){
+    btn.textContent='❌ Network error';
+    setTimeout(function(){loadGauntlet();},2000);
+  }
 }
 
-function endRun() { currentFloor=1; selectedCard=null; renderAll(); }
+loadGauntlet();
 </script>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 </body>
 </html>

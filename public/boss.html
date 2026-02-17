@@ -2,237 +2,127 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Weekly Boss — Nine Lives Network</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Boss Raid | Nine Lives Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    :root{--bg:#08060e;--surface:#0c0a14;--card:#0e0c16;--border:rgba(212,166,75,0.08);--gold:#d4a64b;--gold-dim:rgba(212,166,75,0.08);--text:#e0ddd8;--muted:rgba(255,255,255,0.4);--red:#ff4444;--green:#44cc66;--blue:#4488ff;--purple:#aa55ff;--orange:#ffaa00}
+    :root{--bg-deep:#120e1e;--bg-warm:#1a1528;--bg-card:rgba(30,22,42,0.7);--border:rgba(212,166,75,0.12);--border-glow:rgba(212,166,75,0.3);--gold:#D4A64B;--gold-dim:rgba(212,166,75,0.15);--text-bright:#F5F0E8;--text-body:#D4C8B8;--text-muted:#9B8E7E;--text-faint:#6B5E50;--sunset:#e8855a;--sky:#8BB4E0;--green:#6acd8a;--red:#e85a6a;--cyan:#6ac8d8;--purple:#b088e8;--font-title:'Cinzel',serif;--font-body:'Crimson Text',Georgia,serif;--font-data:'Press Start 2P',monospace;--font-mono:'JetBrains Mono',monospace}
     *{box-sizing:border-box;margin:0;padding:0}
-    body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
-    .header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(8,6,14,0.95)}
-    .header-title{font-family:'Cinzel',serif;font-size:16px;font-weight:900;letter-spacing:2px;color:var(--red)}
-    .container{max-width:500px;margin:0 auto;padding:16px}
-    .section-label{font-family:'Cinzel',serif;font-size:12px;font-weight:900;color:var(--gold);letter-spacing:2px;margin:16px 0 8px}
-
-    /* Boss Card */
-    .boss-card{background:linear-gradient(180deg,rgba(100,20,20,0.12),var(--card));border:1px solid rgba(255,68,68,0.15);border-radius:16px;padding:20px;text-align:center;margin-bottom:16px;position:relative;overflow:hidden}
-    .boss-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(255,68,68,0.06),transparent 70%);pointer-events:none}
-    .boss-icon{font-size:64px;position:relative;z-index:1}
-    .boss-name{font-family:'Cinzel',serif;font-size:24px;font-weight:900;color:#ff6644;margin:8px 0;position:relative;z-index:1}
-    .boss-phase{font-size:10px;color:var(--orange);font-family:'Fira Code',monospace;letter-spacing:1px;position:relative;z-index:1}
-    .boss-phase-effects{display:flex;gap:4px;justify-content:center;margin-top:6px;flex-wrap:wrap;position:relative;z-index:1}
-    .phase-effect{font-size:8px;padding:2px 6px;border-radius:4px;background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.15);color:var(--red);font-family:'Fira Code',monospace}
-
-    /* HP Bar */
-    .hp-section{position:relative;z-index:1;margin-top:16px}
-    .hp-bar-outer{height:24px;border-radius:12px;background:rgba(255,255,255,0.06);overflow:hidden;position:relative}
-    .hp-bar-fill{height:100%;border-radius:12px;transition:width 1s ease;background:linear-gradient(90deg,#cc2200,#ff4444,#ff6644)}
-    .hp-bar-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-family:'Fira Code',monospace;color:#fff;font-weight:700;text-shadow:0 1px 4px rgba(0,0,0,0.8)}
-    .hp-label{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-family:'Fira Code',monospace;margin-top:4px}
-
-    /* Phase milestones */
-    .phases-track{display:flex;align-items:center;gap:0;margin:12px 0;position:relative;z-index:1}
-    .phase-seg{flex:1;height:4px;background:rgba(255,255,255,0.06)}
-    .phase-seg.active{background:var(--red)}
-    .phase-seg.cleared{background:var(--green)}
-    .phase-marker{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;font-family:'Fira Code',monospace;flex-shrink:0}
-    .phase-marker.active{background:var(--red);color:#fff;box-shadow:0 0 10px rgba(255,68,68,0.4)}
-    .phase-marker.cleared{background:var(--green);color:#fff}
-    .phase-marker.locked{background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.2)}
-
-    /* Your Contribution */
-    .contrib-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px}
-    .contrib-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
-    .contrib-label{font-size:10px;color:var(--muted);font-family:'Fira Code',monospace}
-    .contrib-value{font-size:12px;font-weight:700;font-family:'Fira Code',monospace}
-
-    /* Deploy section */
-    .deploy-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px}
-    .card-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
-    .boss-pick{padding:10px 6px;border-radius:8px;background:rgba(255,255,255,0.02);border:2px solid var(--border);cursor:pointer;text-align:center;transition:all 0.15s;font-size:9px}
-    .boss-pick:hover{border-color:rgba(212,166,75,0.2)}
-    .boss-pick.selected{border-color:var(--gold);background:var(--gold-dim)}
-    .boss-pick-name{font-weight:700;margin-top:3px}
-    .boss-pick-stats{font-size:8px;color:var(--muted);font-family:'Fira Code',monospace}
-    .deploy-btn{width:100%;padding:12px;border-radius:10px;border:none;background:linear-gradient(135deg,var(--gold),#c49030);color:#0a0810;font-family:'Cinzel',serif;font-size:14px;font-weight:900;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 16px rgba(212,166,75,0.3)}
-    .deploy-btn:disabled{opacity:0.4;cursor:not-allowed}
-
-    /* Leaderboard */
-    .contrib-list{margin-bottom:16px}
-    .contrib-entry{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:4px}
-    .contrib-rank{width:20px;font-size:10px;font-weight:900;color:var(--gold);font-family:'Fira Code',monospace;text-align:center}
-    .contrib-name{font-size:11px;font-weight:700;flex:1}
-    .contrib-guild{font-size:9px;color:var(--muted);font-family:'Fira Code',monospace}
-    .contrib-dmg{font-size:11px;font-weight:700;color:var(--red);font-family:'Fira Code',monospace}
-
-    /* Next cycle */
-    .cycle-info{text-align:center;padding:8px;font-size:10px;color:var(--muted);font-family:'Fira Code',monospace}
+    body{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,rgba(232,90,106,0.08) 0%,transparent 50%),radial-gradient(ellipse at 20% 60%,rgba(176,136,232,0.06) 0%,transparent 40%),linear-gradient(180deg,#1a1528 0%,#120e1e 30%,#0e0a18 100%);font-family:var(--font-body);color:var(--text-body)}
+    a{color:var(--gold);text-decoration:none}
+    ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(212,166,75,0.15);border-radius:2px}
+    .top-nav{position:sticky;top:0;z-index:100;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(18,14,30,0.85);backdrop-filter:blur(12px)}
+    .nav-logo{font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--gold);letter-spacing:2px;text-decoration:none}
+    .nav-links{display:flex;gap:4px;list-style:none}
+    .nav-links a{font-family:var(--font-mono);font-size:8px;padding:4px 8px;border-radius:6px;color:var(--text-muted);text-decoration:none;border:1px solid transparent;transition:all 0.15s}
+    .nav-links a:hover,.nav-links a.active{color:var(--gold);border-color:rgba(212,166,75,0.15);background:var(--gold-dim)}
+    .hamburger{display:none;background:none;border:none;cursor:pointer;padding:4px}
+    .hamburger span{display:block;width:18px;height:2px;background:var(--text-muted);margin:3px 0;border-radius:1px}
+    .mobile-menu{display:none;position:fixed;top:44px;left:0;right:0;z-index:99;background:rgba(18,14,30,0.95);backdrop-filter:blur(12px);padding:12px 16px;border-bottom:1px solid var(--border);flex-direction:column;gap:8px}
+    .mobile-menu.active{display:flex}
+    .mobile-menu a{font-family:var(--font-mono);font-size:9px;padding:8px 12px;border-radius:8px;color:var(--text-muted);text-decoration:none;border:1px solid var(--border)}
+    @media(max-width:700px){.nav-links{display:none}.hamburger{display:block}}
+    @media(min-width:701px){.mobile-menu{display:none!important}}
+    .main{max-width:500px;margin:0 auto;padding:14px}
+    .section-label{display:flex;align-items:center;gap:8px;margin:16px 0 8px}
+    .section-label__text{font-family:var(--font-title);font-size:12px;font-weight:700;color:var(--gold);letter-spacing:2px}
+    .section-label__line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}
+    .boss-card{border-radius:16px;background:var(--bg-card);border:1px solid var(--red);padding:20px;text-align:center;margin-bottom:14px;position:relative;overflow:hidden}
+    .boss-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,rgba(232,90,106,0.08) 0%,transparent 60%);pointer-events:none}
+    .hp-bar-bg{width:100%;height:16px;border-radius:8px;background:rgba(255,255,255,0.06);overflow:hidden;margin:12px 0}
+    .hp-bar-fill{height:100%;border-radius:8px;background:linear-gradient(90deg,var(--red),#c03040);transition:width 1s}
+    .dmg-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);margin-bottom:4px}
+    .attack-btn{width:100%;padding:14px;border-radius:10px;border:none;cursor:pointer;font-family:var(--font-title);font-size:14px;font-weight:700;letter-spacing:1px;background:linear-gradient(135deg,var(--sunset),#c06030);color:#fff;box-shadow:0 4px 0 #8a4020,0 6px 16px rgba(232,133,90,0.25)}
+    .attack-btn:disabled{opacity:0.3;cursor:not-allowed;box-shadow:none}
   </style>
 </head>
 <body>
-  <div class="header">
-    <span style="font-size:20px">🐉</span>
-    <span class="header-title">WEEKLY BOSS</span>
-    <div style="flex:1"></div>
-    <a href="/nethara-live.html" style="font-size:10px;color:var(--muted);text-decoration:none;font-family:'Fira Code',monospace">← NETHARA LIVE</a>
-  </div>
-  <div class="container" id="content">
-    <div style="text-align:center;color:var(--muted);padding:40px">Loading boss...</div>
-  </div>
-
+  <nav class="top-nav">
+    <a href="/" class="nav-logo">Nine Lives Network</a>
+    <ul class="nav-links"><li><a href="/dashboard.html">Dashboard</a></li><li><a href="/nethara-live.html">Nethara Live</a></li><li><a href="/duels.html">Duels</a></li><li><a href="/gauntlet.html">Gauntlet</a></li><li><a href="/boss.html" class="active">Boss</a></li><li><a href="/leaderboards.html">Ranks</a></li><li><a href="/collection.html">Spellbook</a></li></ul>
+    <button class="hamburger" onclick="document.getElementById('mm').classList.toggle('active')"><span></span><span></span><span></span></button>
+  </nav>
+  <div class="mobile-menu" id="mm"><a href="/dashboard.html">Dashboard</a><a href="/nethara-live.html">Nethara Live</a><a href="/duels.html">Duels</a><a href="/gauntlet.html">Gauntlet</a><a href="/boss.html" class="active">Boss</a><a href="/leaderboards.html">Ranks</a><a href="/collection.html">Spellbook</a></div>
+  <div class="main" id="content"><div style="text-align:center;padding:60px 20px;"><div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div></div></div>
 <script>
-let playerId = null;
-let boss = null;
-let playerCards = [];
-let selectedCard = null;
-let myContrib = 0;
+var playerId=null;
+function getPlayerId(){var p=new URLSearchParams(window.location.search);var f=p.get('player_id');if(f){localStorage.setItem('player_id',f);return f;}return localStorage.getItem('player_id');}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 
-document.addEventListener('DOMContentLoaded', async () => {
-  try { const s=JSON.parse(localStorage.getItem('9lv_session')||'{}'); if(s.player_id) playerId=s.player_id; } catch(e){}
-  await loadBoss();
-  renderBoss();
-  setInterval(async()=>{ await loadBoss(); renderBoss(); }, 30000);
-});
+async function loadBoss(){
+  playerId=getPlayerId();
+  if(!playerId){document.getElementById('content').innerHTML='<div style="text-align:center;padding:40px"><a href="/register.html" style="font-family:var(--font-title);font-size:16px;">Register to play →</a></div>';return;}
 
-async function loadBoss() {
-  try {
-    boss = await fetch('/api/boss/status').then(r=>r.json());
-  } catch(e) { boss = null; }
-  if (playerId) {
-    try {
-      const res = await fetch(`/api/packs/collection/${playerId}`).then(r=>r.json());
-      playerCards = (res.cards||res||[]).slice(0,9);
-    } catch(e){}
-    try {
-      const res = await fetch(`/api/boss/contribution/${playerId}`).then(r=>r.json());
-      myContrib = res.total_damage || 0;
-    } catch(e){}
+  var boss=null,leaderboard=[];
+  try{var bR=await fetch('/api/boss/current');if(bR.ok)boss=await bR.json();}catch(e){}
+  try{var lR=await fetch('/api/boss/leaderboard');if(lR.ok){var ld=await lR.json();leaderboard=ld.leaderboard||ld||[];}}catch(e){}
+
+  var html='';
+  html+='<div class="section-label"><span style="font-size:14px;">🐉</span><span class="section-label__text">WEEKLY BOSS RAID</span><span class="section-label__line"></span></div>';
+  html+='<p style="font-family:var(--font-body);font-size:14px;color:var(--text-muted);margin-bottom:14px;">All guilds unite against the weekly boss. Deal damage with your cards. Top damage dealers earn bonus rewards.</p>';
+
+  if(boss&&boss.name){
+    var hpPct=boss.max_hp?Math.max(0,Math.round((boss.current_hp/boss.max_hp)*100)):100;
+    html+='<div class="boss-card">';
+    html+='<div style="font-size:64px;margin-bottom:8px;animation:pulse 3s ease-in-out infinite;">🐉</div>';
+    html+='<div style="font-family:var(--font-title);font-size:22px;font-weight:900;color:var(--text-bright);letter-spacing:2px;">'+esc(boss.name)+'</div>';
+    if(boss.title)html+='<div style="font-family:var(--font-mono);font-size:9px;color:var(--red);margin-top:4px;">'+esc(boss.title)+'</div>';
+    html+='<div class="hp-bar-bg"><div class="hp-bar-fill" style="width:'+hpPct+'%;"></div></div>';
+    html+='<div style="font-family:var(--font-data);font-size:9px;color:var(--red);">💀 '+(boss.current_hp||0).toLocaleString()+' / '+(boss.max_hp||0).toLocaleString()+' HP</div>';
+    html+='<div style="display:flex;justify-content:center;gap:16px;margin-top:12px;">';
+    html+='<div><div style="font-family:var(--font-data);font-size:10px;color:var(--sunset);">⚔️ '+(boss.atk||'?')+'</div><div style="font-family:var(--font-mono);font-size:7px;color:var(--text-faint);">ATK</div></div>';
+    html+='<div><div style="font-family:var(--font-data);font-size:10px;color:var(--purple);">🛡️ '+(boss.def||'?')+'</div><div style="font-family:var(--font-mono);font-size:7px;color:var(--text-faint);">DEF</div></div>';
+    html+='</div></div>';
+    html+='<button class="attack-btn" id="atkBtn" onclick="attackBoss()">🔥 ATTACK BOSS — 2 MANA</button>';
+  }else{
+    html+='<div class="boss-card">';
+    html+='<div style="font-size:48px;margin-bottom:12px;opacity:0.3;">🐉</div>';
+    html+='<div style="font-family:var(--font-title);font-size:18px;color:var(--text-muted);">No Active Boss</div>';
+    html+='<p style="font-size:13px;color:var(--text-faint);margin-top:8px;">The next boss spawns Monday at 00:30 UTC.</p>';
+    html+='</div>';
+  }
+
+  // Damage leaderboard
+  if(leaderboard.length>0){
+    html+='<div class="section-label" style="margin-top:16px;"><span style="font-size:14px;">🏆</span><span class="section-label__text">TOP DAMAGE</span><span class="section-label__line"></span></div>';
+    leaderboard.slice(0,10).forEach(function(d,i){
+      var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
+      html+='<div class="dmg-row">';
+      html+='<span style="font-family:var(--font-data);font-size:8px;min-width:28px;">'+medal+'</span>';
+      html+='<span style="flex:1;font-family:var(--font-mono);font-size:10px;color:var(--text-bright);">@'+esc(d.twitter_handle||'???')+'</span>';
+      html+='<span style="font-family:var(--font-data);font-size:8px;color:var(--sunset);">'+(d.total_damage||0).toLocaleString()+' DMG</span>';
+      html+='</div>';
+    });
+  }
+
+  document.getElementById('content').innerHTML=html;
+}
+
+async function attackBoss(){
+  var btn=document.getElementById('atkBtn');
+  btn.disabled=true;btn.textContent='ATTACKING...';
+  try{
+    var r=await fetch('/api/boss/attack',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({player_id:playerId})});
+    if(r.ok){
+      var res=await r.json();
+      btn.textContent='💥 '+(res.damage||0)+' DAMAGE!';
+      setTimeout(function(){loadBoss();},2000);
+    }else{
+      var err=await r.json().catch(function(){return{error:'Failed'};});
+      btn.textContent='❌ '+(err.error||'Failed');
+      setTimeout(function(){loadBoss();},2000);
+    }
+  }catch(e){
+    btn.textContent='❌ Network error';
+    setTimeout(function(){loadBoss();},2000);
   }
 }
 
-function renderBoss() {
-  const el = document.getElementById('content');
-  if (!boss || !boss.name) {
-    el.innerHTML = `<div style="text-align:center;padding:40px">
-      <div style="font-size:48px;margin-bottom:12px">💤</div>
-      <div style="font-family:'Cinzel',serif;font-size:16px;color:var(--muted)">No Active Boss</div>
-      <div style="font-size:10px;color:rgba(255,255,255,0.2);margin-top:8px;font-family:'Fira Code',monospace">Next boss spawns Monday at 00:00 UTC</div>
-    </div>`;
-    return;
-  }
-
-  const hpPct = boss.max_hp ? Math.max(0, (boss.current_hp / boss.max_hp)*100) : 0;
-  const phase = boss.phase || 1;
-  const phaseEffects = boss.phase_effects || boss.active_effects || [];
-  const topContribs = boss.top_contributors || [];
-
-  el.innerHTML = `
-    <div class="boss-card">
-      <div class="boss-icon">🐉</div>
-      <div class="boss-name">${boss.name}</div>
-      <div class="boss-phase">PHASE ${phase} OF 3</div>
-      ${phaseEffects.length ? `<div class="boss-phase-effects">${phaseEffects.map(e=>`<span class="phase-effect">${e}</span>`).join('')}</div>` : ''}
-
-      <div class="hp-section">
-        <div class="hp-bar-outer">
-          <div class="hp-bar-fill" style="width:${hpPct}%"></div>
-          <div class="hp-bar-text">${(boss.current_hp||0).toLocaleString()} / ${(boss.max_hp||0).toLocaleString()} HP</div>
-        </div>
-        <div class="hp-label">
-          <span>${hpPct.toFixed(1)}% remaining</span>
-          <span>Phase ${phase}</span>
-        </div>
-      </div>
-
-      <div class="phases-track" style="margin-top:12px">
-        <div class="phase-marker ${phase>=1?'active':'locked'}">1</div>
-        <div class="phase-seg ${phase>=2?'cleared':''}"></div>
-        <div class="phase-marker ${phase>=2?'active':phase>2?'cleared':'locked'}">2</div>
-        <div class="phase-seg ${phase>=3?'cleared':''}"></div>
-        <div class="phase-marker ${phase>=3?'active':'locked'}">3</div>
-      </div>
-    </div>
-
-    <div class="cycle-info" id="cycle-timer">Next cycle: --:--</div>
-
-    <div class="section-label">YOUR CONTRIBUTION</div>
-    <div class="contrib-card">
-      <div class="contrib-row">
-        <span class="contrib-label">Total Damage</span>
-        <span class="contrib-value" style="color:var(--red)">${myContrib.toLocaleString()}</span>
-      </div>
-      <div class="contrib-row">
-        <span class="contrib-label">Cards Deployed</span>
-        <span class="contrib-value">${boss.my_deploys || '—'}</span>
-      </div>
-      <div class="contrib-row">
-        <span class="contrib-label">Season Points Earned</span>
-        <span class="contrib-value" style="color:var(--gold)">${boss.my_points || '—'}</span>
-      </div>
-    </div>
-
-    <div class="section-label">⚔️ DEPLOY CARD TO BOSS</div>
-    <div class="deploy-card">
-      <div class="card-grid">
-        ${playerCards.map(c=>`
-          <div class="boss-pick ${selectedCard===c.id?'selected':''}" onclick="pickBossCard(${c.id})">
-            <div>🃏</div>
-            <div class="boss-pick-name">${c.spell_name||c.name||'Card'}</div>
-            <div class="boss-pick-stats">ATK ${c.base_atk||c.atk||'?'}</div>
-          </div>
-        `).join('')}
-      </div>
-      <button class="deploy-btn" ${selectedCard?'':'disabled'} onclick="deployToBoss()">⚔️ ATTACK BOSS</button>
-    </div>
-
-    <div class="section-label">🏆 TOP CONTRIBUTORS</div>
-    <div class="contrib-list">
-      ${topContribs.length > 0 ? topContribs.slice(0,10).map((c,i)=>`
-        <div class="contrib-entry">
-          <div class="contrib-rank">${i+1}</div>
-          <div class="contrib-name">${c.player_name||c.name||'Player'}</div>
-          <div class="contrib-guild">${c.guild_tag||''}</div>
-          <div class="contrib-dmg">${(c.total_damage||c.damage||0).toLocaleString()} dmg</div>
-        </div>
-      `).join('') : '<div style="color:var(--muted);font-size:10px;padding:10px">No contributions yet. Be the first!</div>'}
-    </div>`;
-
-  startBossTimer();
-}
-
-function pickBossCard(id) {
-  selectedCard = selectedCard===id ? null : id;
-  renderBoss();
-}
-
-async function deployToBoss() {
-  if (!selectedCard || !playerId) return;
-  try {
-    const res = await fetch('/api/boss/deploy', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ player_id:playerId, card_id:selectedCard }),
-    }).then(r=>r.json());
-    if (res.success) {
-      selectedCard = null;
-      await loadBoss();
-      renderBoss();
-    } else { alert(res.error||'Deploy failed'); }
-  } catch(e) { alert('Error: '+e.message); }
-}
-
-let timerInt;
-function startBossTimer() {
-  if(timerInt) clearInterval(timerInt);
-  const el = document.getElementById('cycle-timer');
-  if(!el) return;
-  function tick(){
-    const now=new Date();
-    const m=now.getMinutes(); const s=now.getSeconds();
-    const next=15-(m%15)-1; const sec=59-s;
-    el.textContent=`⏱ Next boss cycle: ${next}:${sec.toString().padStart(2,'0')}`;
-  }
-  tick(); timerInt=setInterval(tick,1000);
-}
+loadBoss();
 </script>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 </body>
 </html>
