@@ -97,13 +97,13 @@
 <script>
 var HOUSES={1:{name:'Smoulders',color:'#E03C31',icon:'🔥'},2:{name:'Darktide',color:'#00B4D8',icon:'🌊'},3:{name:'Stonebark',color:'#5CB338',icon:'🌿'},4:{name:'Ashenvale',color:'#90E0EF',icon:'💨'},5:{name:'Stormrage',color:'#FFC800',icon:'⚡'},6:{name:'Nighthollow',color:'#7B2D8E',icon:'🌙'},7:{name:'Dawnbringer',color:'#FF8C00',icon:'☀️'},8:{name:'Manastorm',color:'#5B8FE0',icon:'🔮'},9:{name:'Plaguemire',color:'#E84393',icon:'☠️'}};
 
-var ZONE_IMAGES={1:'/assets/images/environments/ashen-approach.jpg',2:'/assets/images/environments/the-drowning-spiral.png',3:'/assets/images/environments/crimson-overlook.jpg',4:'/assets/images/environments/the-floating-citadel.png',5:'/assets/images/environments/violet-storm.png',6:'/assets/images/environments/the-lone-spire.png',7:'/assets/images/environments/azure-expanse.png',8:'/assets/images/environments/shattered-stream.png',9:'/assets/images/environments/the-quiet-woods.png',10:'/assets/images/environments/the-twin-spires.png',11:'/assets/images/environments/the-veiled-cascade.png',12:'/assets/images/environments/the-sunken-archives.png',13:'/assets/images/environments/the-whispering-woods.png',14:'/assets/images/environments/the-fallen-wyrm.jpg',15:'/assets/images/environments/the-grassy-knoll.png',16:'/assets/images/environments/the-gathering-grove.png',17:'/assets/images/environments/the-breach.png',18:'/assets/images/environments/the-great-divide.png',19:'/assets/images/environments/the-chambers-keep.png',20:'/assets/images/environments/the-eastern-exchange.png',21:'/assets/images/environments/the-memorial-arch.png',22:'/assets/images/environments/lunar-sanctum.png',23:'/assets/images/environments/the-divide.png',24:'/assets/images/environments/the-silent-valley.png',25:'/assets/images/environments/the-torn-veil.png'};
+var ZONE_IMAGES={};
 
 var playerId=null,selectedZone=null,selectedCard=null,playerCards=[];
 
 function getPlayerId(){var p=new URLSearchParams(window.location.search);var f=p.get('player_id');if(f){localStorage.setItem('player_id',f);return f;}return localStorage.getItem('player_id');}
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
-function getZoneImg(z){return(z.image_url?(z.image_url.startsWith('/')?z.image_url:'/assets/images/zones/'+z.image_url):'')||ZONE_IMAGES[z.id]||'';}
+function getZoneImg(z){if(z.image_url){if(z.image_url.startsWith('http')||z.image_url.startsWith('/'))return z.image_url;return'/assets/images/zones/'+z.image_url;}if(z.environment_image){return'/assets/images/zones/'+z.environment_image;}return'';}
 
 async function loadNethara(){
   playerId=getPlayerId();

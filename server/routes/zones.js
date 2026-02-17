@@ -368,4 +368,38 @@ router.get('/my-deployments/:playerId', async (req, res) => {
   }
 });
 
+
+// GET /api/zones - List all active zones
+router.get("/", async (req, res) => {
+  try {
+    const { data: zones, error } = await supabase
+      .from("zones")
+      .select("*")
+      .eq("is_active", true)
+      .order("id");
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(zones || []);
+  } catch (err) {
+    console.error("Error fetching zones:", err);
+    res.status(500).json({ error: "Failed to fetch zones" });
+  }
+});
 module.exports = router;
+// ═══════════════════════════════════════════
+// GET /api/zones
+// List all active zones
+// ═══════════════════════════════════════════
+router.get('/', async (req, res) => {
+  try {
+    const { data: zones, error } = await supabase
+      .from('zones')
+      .select('*')
+      .eq('is_active', true)
+      .order('id');
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(zones || []);
+  } catch (err) {
+    console.error('Error fetching zones:', err);
+    res.status(500).json({ error: 'Failed to fetch zones' });
+  }
+});
