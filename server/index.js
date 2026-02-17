@@ -165,6 +165,15 @@ try {
   console.error("❌ Failed to load packs routes:", e.message);
 }
 
+// Sorting Hat
+try {
+  const sortingHatRoutes = require("./routes/sortingHat");
+  app.use("/api/sorting-hat", sortingHatRoutes);
+  console.log("✅ Sorting Hat routes loaded");
+} catch (e) {
+  console.error("❌ Failed to load sorting hat routes:", e.message);
+}
+
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
