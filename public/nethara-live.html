@@ -105,8 +105,6 @@ function getPlayerId(){var p=new URLSearchParams(window.location.search);var f=p
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function getZoneImg(z){return(z.image_url?(z.image_url.startsWith('/')?z.image_url:'/assets/images/zones/'+z.image_url):'')||ZONE_IMAGES[z.id]||'';}
 
-@keyframes spin{to{transform:rotate(360deg)}}
-
 async function loadNethara(){
   playerId=getPlayerId();
   if(!playerId){document.getElementById('content').innerHTML='<div style="text-align:center;padding:40px"><a href="/register.html" style="font-family:var(--font-title);font-size:16px;">Register to play →</a></div>';return;}
