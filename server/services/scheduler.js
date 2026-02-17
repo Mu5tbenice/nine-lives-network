@@ -15,9 +15,11 @@ const supabase = require('../config/supabase');
 let manaRegen = null;
 let nineSystem = null;
 let combatEngine = null;
+let bossEngine = null;
 try { manaRegen = require('./manaRegen'); } catch (e) { console.log('⚠️ manaRegen not loaded'); }
 try { nineSystem = require('./nineSystem'); } catch (e) { console.log('⚠️ nineSystem not loaded'); }
 try { combatEngine = require('./combatEngine'); } catch (e) { console.log('⚠️ combatEngine not loaded'); }
+try { bossEngine = require('./bossEngine'); } catch (e) { console.log('⚠️ bossEngine not loaded'); }
 
 // Optional modules (don't crash if missing)
 let twitterBot = null;
@@ -25,33 +27,8 @@ let nermBot = null;
 try { twitterBot = require('./twitterBot'); } catch (e) { console.log('⚠️ twitterBot not loaded'); }
 try { nermBot = require('./nermBot'); } catch (e) { console.log('⚠️ nermBot not loaded'); }
 
-/**
- * SCHEDULE OVERVIEW (all times UTC)
- *
- * 00:00  MIDNIGHT BANKING — the big one:
- *        snapshot influence → process flags (POISON/CORRODE)
- *        → flip zones → award bonuses → decay 40%
- *        → heal all Nines → clear flags
- *        NOTE: V3 removed mana reset — mana now regens hourly
- *
- * 00:05  Process card upgrades (mana + energy check)
- * 01:30  Activity decay (inactive players)
- *
- * 08:05  Narrative: Opening tweet + set objective
- * 14:05  Narrative: Midday standings
- * 18:00  Narrative: Last call
- * 22:05  Narrative: Resolution + winner
- *
- * every 5 min    V3: Mana regeneration (1 per hour for all players)
- * every 15 min   V3: Combat cycle (all active zones)
- * every 2 min    Process Twitter spell casts (8AM-10PM)
- * every 5 min    Update zone control percentages
- * every 5 min    Save influence snapshot (for dominance charts)
- * every 10 min   Scrape narrative replies (8AM-10PM)
- */
-
 let jobsInitialized = false;
-const jobLog = {}; // Track last run times
+const jobLog = {};
 
 function logJob(name) {
   jobLog[name] = new Date().toISOString();
@@ -67,9 +44,6 @@ function initializeScheduledJobs() {
 
   // ════════════════════════════════
   // MIDNIGHT BANKING — 00:00 UTC
-  // This is the main daily reset
-  // V3: Also heals all Nines to full HP
-  // V3: NO LONGER resets mana (hourly regen now)
   // ════════════════════════════════
   cron.schedule('0 0 * * *', async () => {
     console.log(`[${ts()}] 🏦 MIDNIGHT BANKING`);
@@ -94,7 +68,6 @@ function initializeScheduledJobs() {
 
   // ════════════════════════════════
   // V3: MANA REGENERATION — every 5 min
-  // Awards 1 mana per hour elapsed
   // ════════════════════════════════
   cron.schedule('*/5 * * * *', async () => {
     try {
@@ -109,7 +82,6 @@ function initializeScheduledJobs() {
 
   // ════════════════════════════════
   // V3: COMBAT CYCLE — every 15 min
-  // Resolves zone battles across all active zones
   // ════════════════════════════════
   cron.schedule('*/15 * * * *', async () => {
     try {
@@ -125,8 +97,40 @@ function initializeScheduledJobs() {
   });
 
   // ════════════════════════════════
+  // V3: BOSS SPAWN — Monday 00:30 UTC
+  // ════════════════════════════════
+  cron.schedule('30 0 * * 1', async () => {
+    try {
+      if (bossEngine) {
+        console.log(`[${ts()}] 👑 Spawning weekly boss...`);
+        const result = await bossEngine.spawnBoss();
+        console.log(`[${ts()}] 👑 Boss spawn:`, result.success ? result.boss?.name : result.error);
+        logJob('boss_spawn');
+      }
+    } catch (e) {
+      console.error('❌ Boss spawn error:', e.message);
+    }
+  });
+
+  // ════════════════════════════════
+  // V3: BOSS COMBAT — every 15 min
+  // ════════════════════════════════
+  cron.schedule('*/15 * * * *', async () => {
+    try {
+      if (bossEngine) {
+        const result = await bossEngine.bossCombatCycle();
+        if (!result.skipped) {
+          console.log(`[${ts()}] 👑 Boss cycle: ${result.damage_dealt || 0} dmg, HP: ${result.boss_hp || 'defeated'}`);
+          logJob('boss_combat');
+        }
+      }
+    } catch (e) {
+      console.error('❌ Boss combat error:', e.message);
+    }
+  });
+
+  // ════════════════════════════════
   // CARD UPGRADES — 00:05 UTC
-  // Check yesterday's hands for upgrade eligibility
   // ════════════════════════════════
   cron.schedule('5 0 * * *', async () => {
     console.log("[" + ts() + "] Processing card upgrades");
@@ -157,7 +161,6 @@ function initializeScheduledJobs() {
   // NARRATIVE RAIDS — Daily story arc
   // ════════════════════════════════
 
-  // Tweet 1: Story opening + set today's objective
   cron.schedule('5 8 * * *', async () => {
     console.log(`[${ts()}] 📖 Narrative: Opening`);
     logJob('narrative_opening');
@@ -167,7 +170,6 @@ function initializeScheduledJobs() {
     } catch (e) { console.error('❌ Narrative opening:', e.message); }
   });
 
-  // Tweet 2: Midday standings
   cron.schedule('5 14 * * *', async () => {
     console.log(`[${ts()}] 📊 Narrative: Midday`);
     logJob('narrative_midday');
@@ -176,7 +178,6 @@ function initializeScheduledJobs() {
     } catch (e) { console.error('❌ Narrative midday:', e.message); }
   });
 
-  // Tweet 3: Last call
   cron.schedule('0 18 * * *', async () => {
     console.log(`[${ts()}] ⏰ Narrative: Last call`);
     logJob('narrative_lastcall');
@@ -185,7 +186,6 @@ function initializeScheduledJobs() {
     } catch (e) { console.error('❌ Narrative last call:', e.message); }
   });
 
-  // Tweet 4: Resolution + winner
   cron.schedule('5 22 * * *', async () => {
     console.log(`[${ts()}] 🏆 Narrative: Resolution`);
     logJob('narrative_resolution');
@@ -194,7 +194,6 @@ function initializeScheduledJobs() {
     } catch (e) { console.error('❌ Narrative resolution:', e.message); }
   });
 
-  // Scrape narrative replies every 10 min (8AM-10PM)
   cron.schedule('*/10 8-21 * * *', async () => {
     try {
       await narrativeEngine.periodicScrape();
@@ -206,7 +205,6 @@ function initializeScheduledJobs() {
   // TERRITORY — Real-time updates
   // ════════════════════════════════
 
-  // Process Twitter spell casts every 2 min (during active hours)
   cron.schedule('*/2 8-22 * * *', async () => {
     try {
       if (!twitterBot) return;
@@ -219,7 +217,6 @@ function initializeScheduledJobs() {
       console.log(`[${ts()}] ⚡ Processed ${casts.length} casts`);
       logJob('cast_processing');
 
-      // Nerm reply guy — reacts to noticed casts
       if (nermBot) {
         const noticed = casts.filter(c => c.nermNoticed);
         for (const cast of noticed) {
@@ -241,7 +238,6 @@ function initializeScheduledJobs() {
     } catch (e) { console.error('❌ Cast processing:', e.message); }
   });
 
-  // Update zone control every 5 min
   cron.schedule('*/5 * * * *', async () => {
     try {
       const updated = await territoryControl.updateAllZoneControl();
@@ -249,7 +245,6 @@ function initializeScheduledJobs() {
     } catch (e) { console.error('❌ Zone control update:', e.message); }
   });
 
-  // Save influence snapshot every 5 min (for dominance sparkline charts)
   cron.schedule('2,7,12,17,22,27,32,37,42,47,52,57 * * * *', async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
@@ -296,6 +291,10 @@ function initializeScheduledJobs() {
   console.log('⚔️  V3 Combat:');
   console.log('   */15  — Combat cycle (all active zones)');
   console.log('');
+  console.log('👑 V3 Boss:');
+  console.log('   Mon   — Boss spawn (00:30 UTC)');
+  console.log('   */15  — Boss combat cycle');
+  console.log('');
   console.log('📖 Narrative Raids:');
   console.log('   08:05 — Opening + set objective');
   console.log('   14:05 — Midday standings');
@@ -312,10 +311,8 @@ function initializeScheduledJobs() {
   console.log('');
 }
 
-// Timestamp helper
 function ts() { return new Date().toISOString(); }
 
-// Get job status (used by admin health endpoint)
 function getJobStatus() {
   return {
     initialized: jobsInitialized,

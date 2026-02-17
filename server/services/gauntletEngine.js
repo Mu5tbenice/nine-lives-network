@@ -24,6 +24,80 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Optional: pack system for bonus packs
+let packSystem = null;
+try { packSystem = require('./packSystem'); } catch (e) {}
+
+// ── REWARD MILESTONES ──
+// Floor 5:  Get 1 mana back (entry fee refunded)
+// Floor 10: Bonus pack + 1 extra mana
+// Floor 15: 2 bonus mana + bonus pack + 50 season points
+// Every floor: +2 season points
+const FLOOR_REWARDS = {
+  5:  { mana: 1, message: '💧 Mana refunded! Entry fee paid back.' },
+  10: { mana: 1, pack: true, message: '🎁 Bonus pack + 1 mana!' },
+  15: { mana: 2, pack: true, seasonPoints: 50, message: '👑 GRAND PRIZE: 2 mana + bonus pack + 50 season points!' },
+};
+const POINTS_PER_FLOOR = 2;
+
+// ── Award rewards for clearing a floor ──
+async function processRewards(playerId, floorCleared) {
+  const rewards = { mana: 0, pack: false, seasonPoints: POINTS_PER_FLOOR, messages: [] };
+
+  // Per-floor season points
+  rewards.messages.push(`+${POINTS_PER_FLOOR} season points`);
+
+  // Milestone reward
+  const milestone = FLOOR_REWARDS[floorCleared];
+  if (milestone) {
+    if (milestone.mana) rewards.mana += milestone.mana;
+    if (milestone.pack) rewards.pack = true;
+    if (milestone.seasonPoints) rewards.seasonPoints += milestone.seasonPoints;
+    rewards.messages.push(milestone.message);
+  }
+
+  // Award mana
+  if (rewards.mana > 0) {
+    try {
+      const { earnMana } = require('./manaRegen');
+      await earnMana(playerId, rewards.mana, 'gauntlet_reward');
+    } catch (e) {
+      console.error('Gauntlet mana reward error:', e.message);
+    }
+  }
+
+  // Award bonus pack
+  if (rewards.pack && packSystem) {
+    try {
+      await packSystem.generateDailyHand(playerId, true); // true = bonus pack
+    } catch (e) {
+      console.error('Gauntlet pack reward error:', e.message);
+    }
+  }
+
+  // Award season points
+  if (rewards.seasonPoints > 0) {
+    try {
+      await supabaseAdmin
+        .from('players')
+        .update({ season_points: supabase.rpc ? undefined : undefined })
+        .eq('id', playerId);
+      // Use raw SQL increment since supabase JS doesn't have easy increment
+      await supabaseAdmin.rpc('increment_season_points', {
+        p_player_id: playerId,
+        p_points: rewards.seasonPoints,
+      }).catch(() => {
+        // If RPC doesn't exist yet, just log it
+        console.log(`[Gauntlet] Would award ${rewards.seasonPoints} season points to player ${playerId}`);
+      });
+    } catch (e) {
+      console.log(`[Gauntlet] Season points: ${rewards.seasonPoints} for player ${playerId}`);
+    }
+  }
+
+  return rewards;
+}
+
 // ── AI ENEMY TEMPLATES ──
 const ENEMY_TEMPLATES = [
   { name: 'Stray Kitten',        type: 'basic',    emoji: '🐱' },
@@ -310,6 +384,9 @@ async function fightFloor(runId, playerId, cardId) {
 
   // ── Player defeated ──
   if (pHp <= 0) {
+    // Still award season points for floors cleared before dying
+    const totalPoints = Math.max(0, (run.current_floor - 1)) * POINTS_PER_FLOOR;
+
     await supabaseAdmin
       .from('gauntlet_runs')
       .update({
@@ -325,6 +402,7 @@ async function fightFloor(runId, playerId, cardId) {
       result: 'defeated',
       floor: run.current_floor,
       floor_result: floorResult,
+      season_points_earned: totalPoints,
       message: `${enemy.emoji} ${enemy.name} defeated you on floor ${run.current_floor}!`,
     };
   }
@@ -337,6 +415,8 @@ async function fightFloor(runId, playerId, cardId) {
 
     // Floor 15 = final boss victory
     if (run.current_floor >= 15) {
+      const rewards = await processRewards(playerId, 15);
+
       await supabaseAdmin
         .from('gauntlet_runs')
         .update({
@@ -352,12 +432,14 @@ async function fightFloor(runId, playerId, cardId) {
         result: 'victory',
         floor: 15,
         floor_result: floorResult,
+        rewards,
         message: '👑 You defeated The Veilbreaker! Gauntlet COMPLETE!',
       };
     }
 
     const nextFloor = run.current_floor + 1;
     const nextEnemy = generateAI(nextFloor);
+    const rewards = await processRewards(playerId, run.current_floor);
 
     await supabaseAdmin
       .from('gauntlet_runs')
@@ -377,6 +459,7 @@ async function fightFloor(runId, playerId, cardId) {
       nine_hp: healedHp,
       next_enemy: nextEnemy,
       floor_result: floorResult,
+      rewards,
       message: `Floor ${run.current_floor} cleared! Next: ${nextEnemy.emoji} ${nextEnemy.name}`,
     };
   }
