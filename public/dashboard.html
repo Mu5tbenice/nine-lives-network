@@ -2,225 +2,433 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard — Nine Lives Network</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Dashboard | Nine Lives Network</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    :root{--bg:#08060e;--surface:#0c0a14;--card:#0e0c16;--border:rgba(212,166,75,0.08);--gold:#d4a64b;--gold-dim:rgba(212,166,75,0.08);--text:#e0ddd8;--muted:rgba(255,255,255,0.4);--faint:rgba(255,255,255,0.12);--red:#ff4444;--green:#44cc66;--blue:#4488ff}
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+    /* ═══ WARM NIGHT DESIGN SYSTEM ═══ */
+    :root {
+      --bg-deep: #120e1e;
+      --bg-warm: #1a1528;
+      --bg-card: rgba(30, 22, 42, 0.7);
+      --bg-card-solid: #1e1630;
+      --bg-glass: rgba(255, 240, 220, 0.04);
 
-    .header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(8,6,14,0.95)}
-    .header-title{font-family:'Cinzel',serif;font-size:16px;font-weight:900;letter-spacing:2px;color:var(--gold)}
-    .nav{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
-    .nav a{font-size:9px;padding:4px 8px;border-radius:6px;color:var(--muted);text-decoration:none;font-family:'Fira Code',monospace;border:1px solid var(--border);transition:all 0.15s}
-    .nav a:hover{color:var(--gold);border-color:rgba(212,166,75,0.2)}
+      --border: rgba(212, 166, 75, 0.12);
+      --border-warm: rgba(255, 180, 100, 0.1);
+      --border-glow: rgba(212, 166, 75, 0.3);
 
-    .container{max-width:600px;margin:0 auto;padding:16px}
-    .section-label{font-family:'Cinzel',serif;font-size:12px;font-weight:900;color:var(--gold);letter-spacing:2px;margin:16px 0 8px}
+      --gold: #D4A64B;
+      --gold-soft: #e8c675;
+      --gold-dim: rgba(212, 166, 75, 0.15);
 
-    /* Nine Identity Card */
-    .nine-card{background:linear-gradient(135deg,var(--gold-dim),rgba(212,166,75,0.02));border:1px solid rgba(212,166,75,0.15);border-radius:14px;padding:16px;display:flex;gap:14px;align-items:center;margin-bottom:16px}
-    .nine-avatar{width:56px;height:56px;border-radius:12px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:32px;border:2px solid rgba(212,166,75,0.2)}
-    .nine-info{flex:1}
-    .nine-name{font-family:'Cinzel',serif;font-size:16px;font-weight:900;color:#fff}
-    .nine-handle{font-size:10px;color:var(--muted);font-family:'Fira Code',monospace}
-    .nine-stats-row{display:flex;gap:8px;margin-top:6px}
-    .nine-stat{padding:2px 8px;border-radius:6px;font-size:9px;font-weight:700;font-family:'Fira Code',monospace}
-    .stat-atk{background:rgba(255,68,68,0.08);color:var(--red);border:1px solid rgba(255,68,68,0.15)}
-    .stat-hp{background:rgba(68,204,102,0.08);color:var(--green);border:1px solid rgba(68,204,102,0.15)}
-    .stat-spd{background:rgba(68,136,255,0.08);color:var(--blue);border:1px solid rgba(68,136,255,0.15)}
-    .house-badge{padding:3px 8px;border-radius:6px;font-size:8px;font-weight:800;letter-spacing:1px;font-family:'Fira Code',monospace}
-    .guild-tag{font-size:9px;color:var(--muted);font-family:'Fira Code',monospace;margin-top:4px}
+      --text-bright: #F5F0E8;
+      --text-body: #D4C8B8;
+      --text-muted: #9B8E7E;
+      --text-faint: #6B5E50;
 
-    /* Mana + Regen */
-    .mana-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;margin-bottom:12px}
-    .mana-orbs{display:flex;gap:4px}
-    .mana-orb{width:14px;height:14px;border-radius:50%;transition:all 0.3s}
-    .mana-orb.full{background:#00ccff;box-shadow:0 0 8px rgba(0,204,255,0.4);border:1px solid rgba(0,204,255,0.5)}
-    .mana-orb.empty{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08)}
-    .mana-label{font-size:11px;font-weight:700;color:#00ccff;font-family:'Fira Code',monospace}
-    .mana-regen{font-size:9px;color:var(--muted);font-family:'Fira Code',monospace;margin-left:auto}
+      --sunset: #e8855a;
+      --sunset-glow: rgba(232, 133, 90, 0.15);
+      --sky: #8BB4E0;
+      --green: #6acd8a;
+      --red: #e85a6a;
+      --cyan: #6ac8d8;
+      --purple: #b088e8;
 
-    /* Quick Actions */
-    .actions-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
-    .action-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:10px;background:var(--card);border:1px solid var(--border);cursor:pointer;text-decoration:none;transition:all 0.15s;text-align:center}
-    .action-btn:hover{border-color:rgba(212,166,75,0.2);transform:translateY(-1px)}
-    .action-icon{font-size:22px}
-    .action-label{font-size:8px;font-weight:700;color:var(--muted);letter-spacing:0.5px;font-family:'Fira Code',monospace}
+      --font-title: 'Cinzel', serif;
+      --font-body: 'Crimson Text', Georgia, serif;
+      --font-data: 'Press Start 2P', monospace;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
 
-    /* Active Deployments */
-    .deploy-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:4px}
-    .deploy-zone{font-size:11px;font-weight:700;flex:1}
-    .deploy-card{font-size:9px;color:var(--muted);font-family:'Fira Code',monospace}
-    .deploy-hp{width:50px;height:6px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden}
-    .deploy-hp-fill{height:100%;border-radius:3px;background:var(--green)}
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(ellipse at 50% 0%, rgba(232,133,90,0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(139,180,224,0.06) 0%, transparent 40%),
+        radial-gradient(ellipse at 20% 80%, rgba(176,136,232,0.04) 0%, transparent 40%),
+        linear-gradient(180deg, #1a1528 0%, #120e1e 30%, #0e0a18 100%);
+      font-family: var(--font-body);
+      color: var(--text-body);
+      -webkit-font-smoothing: antialiased;
+    }
+    ::-webkit-scrollbar { width: 3px; height: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(212,166,75,0.15); border-radius: 2px; }
+    a { color: var(--gold); text-decoration: none; }
 
-    /* Quests */
-    .quest-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:4px}
-    .quest-icon{font-size:16px}
-    .quest-info{flex:1}
-    .quest-name{font-size:10px;font-weight:700}
-    .quest-progress{font-size:8px;color:var(--muted);font-family:'Fira Code',monospace}
-    .quest-bar{width:60px;height:4px;border-radius:2px;background:rgba(255,255,255,0.06);overflow:hidden}
-    .quest-bar-fill{height:100%;border-radius:2px;background:var(--gold)}
-    .quest-reward{font-size:8px;color:var(--gold);font-family:'Fira Code',monospace}
+    /* ═══ NAV ═══ */
+    .top-nav {
+      position: sticky; top: 0; z-index: 100;
+      padding: 10px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(18, 14, 30, 0.85);
+      backdrop-filter: blur(12px);
+    }
+    .nav-logo {
+      font-family: var(--font-title); font-size: 14px; font-weight: 700;
+      color: var(--gold); letter-spacing: 2px; text-decoration: none;
+    }
+    .nav-links { display: flex; gap: 4px; list-style: none; }
+    .nav-links a {
+      font-family: var(--font-mono); font-size: 8px; padding: 4px 8px;
+      border-radius: 6px; color: var(--text-muted); text-decoration: none;
+      border: 1px solid transparent; transition: all 0.15s; letter-spacing: 0.5px;
+    }
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--gold); border-color: rgba(212,166,75,0.15);
+      background: var(--gold-dim);
+    }
+    .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 4px; }
+    .hamburger span { display: block; width: 18px; height: 2px; background: var(--text-muted); margin: 3px 0; border-radius: 1px; transition: 0.2s; }
+    .mobile-menu {
+      display: none; position: fixed; top: 44px; left: 0; right: 0; z-index: 99;
+      background: rgba(18,14,30,0.95); backdrop-filter: blur(12px);
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      flex-direction: column; gap: 8px;
+    }
+    .mobile-menu.active { display: flex; }
+    .mobile-menu a {
+      font-family: var(--font-mono); font-size: 9px; padding: 8px 12px;
+      border-radius: 8px; color: var(--text-muted); text-decoration: none;
+      border: 1px solid var(--border);
+    }
+    .mobile-menu a:hover { color: var(--gold); border-color: rgba(212,166,75,0.15); }
+    @media(max-width:700px) {
+      .nav-links { display: none; }
+      .hamburger { display: block; }
+    }
+    @media(min-width:701px) {
+      .mobile-menu { display: none !important; }
+    }
 
-    /* Activity Feed */
-    .activity-entry{padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:4px;font-size:10px;display:flex;align-items:center;gap:8px}
-    .activity-icon{font-size:14px;flex-shrink:0}
-    .activity-text{flex:1;color:rgba(255,255,255,0.6)}
-    .activity-time{font-size:8px;color:var(--muted);font-family:'Fira Code',monospace;flex-shrink:0}
-    .activity-pts{font-size:9px;color:var(--gold);font-weight:700;font-family:'Fira Code',monospace}
+    /* ═══ LAYOUT ═══ */
+    .main-container { max-width: 500px; margin: 0 auto; padding: 0 14px 40px; }
 
-    /* Season Points */
-    .points-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;justify-content:space-around;margin-bottom:16px}
-    .points-item{text-align:center}
-    .points-val{font-size:20px;font-weight:900;font-family:'Fira Code',monospace}
-    .points-label{font-size:8px;color:var(--muted);letter-spacing:1px;font-family:'Fira Code',monospace;margin-top:2px}
+    /* ═══ ANIMATIONS ═══ */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes glowPulse { 0%,100% { box-shadow: 0 0 20px rgba(212,166,75,0.08); } 50% { box-shadow: 0 0 30px rgba(212,166,75,0.15); } }
+    @keyframes crystalGlow { 0% { opacity: 0.4; } 100% { opacity: 1; } }
+    .fade-up { animation: fadeUp 0.4s ease both; }
+    .fade-up-1 { animation-delay: 0.05s; }
+    .fade-up-2 { animation-delay: 0.1s; }
+    .fade-up-3 { animation-delay: 0.15s; }
+    .fade-up-4 { animation-delay: 0.2s; }
 
-    @media(max-width:500px){.actions-grid{grid-template-columns:repeat(2,1fr)}.nav{display:none}}
+    /* ═══ SECTION LABEL ═══ */
+    .section-label {
+      display: flex; align-items: center; gap: 8px;
+      margin: 16px 0 8px;
+    }
+    .section-label__text {
+      font-family: var(--font-title); font-size: 12px; font-weight: 700;
+      color: var(--gold); letter-spacing: 2px;
+    }
+    .section-label__line {
+      flex: 1; height: 1px;
+      background: linear-gradient(90deg, var(--border), transparent);
+    }
+
+    /* ═══ CARDS ═══ */
+    .card {
+      border-radius: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      margin-bottom: 8px;
+    }
+
+    /* ═══ LOADING / ERROR ═══ */
+    .loading-state { text-align: center; padding: 60px 20px; }
+    .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-state { text-align: center; padding: 60px 20px; }
+    .error-state p { margin-bottom: 8px; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <span style="font-size:20px">🐱</span>
-    <span class="header-title">DASHBOARD</span>
-    <div class="nav">
-      <a href="/nethara-live.html">Nethara Live</a>
-      <a href="/duels.html">Duels</a>
-      <a href="/gauntlet.html">Gauntlet</a>
-      <a href="/boss.html">Boss</a>
-      <a href="/leaderboards.html">Ranks</a>
-      <a href="/builder.html">Builder</a>
+
+  <!-- NAV -->
+  <nav class="top-nav">
+    <a href="/" class="nav-logo">Nine Lives Network</a>
+    <ul class="nav-links">
+      <li><a href="/dashboard.html" class="active">Dashboard</a></li>
+      <li><a href="/nethara-live.html">Nethara Live</a></li>
+      <li><a href="/duels.html">Duels</a></li>
+      <li><a href="/gauntlet.html">Gauntlet</a></li>
+      <li><a href="/boss.html">Boss</a></li>
+      <li><a href="/leaderboards.html">Ranks</a></li>
+      <li><a href="/collection.html">Spellbook</a></li>
+      <li><a href="/how-to-play.html">Help</a></li>
+    </ul>
+    <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button>
+  </nav>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="/dashboard.html" class="active">Dashboard</a>
+    <a href="/nethara-live.html">Nethara Live</a>
+    <a href="/duels.html">Duels</a>
+    <a href="/gauntlet.html">Gauntlet</a>
+    <a href="/boss.html">Boss</a>
+    <a href="/leaderboards.html">Ranks</a>
+    <a href="/collection.html">Spellbook</a>
+    <a href="/how-to-play.html">Help</a>
+    <a href="#" onclick="doLogout()" id="mobileLogout" style="display:none;">Logout</a>
+  </div>
+
+  <!-- LOADING -->
+  <div class="main-container" id="loadingState">
+    <div class="loading-state"><div class="spinner"></div><span style="font-family:var(--font-mono);font-size:8px;color:var(--text-faint);letter-spacing:1px;">LOADING...</span></div>
+  </div>
+
+  <!-- ERROR -->
+  <div class="main-container" id="errorState" style="display:none;">
+    <div class="error-state">
+      <p style="font-size:48px;">🐱</p>
+      <p style="font-family:var(--font-title);font-size:18px;color:var(--text-bright);">No player found</p>
+      <p style="font-size:14px;color:var(--text-muted);">You need to <a href="/register.html">register</a> first.</p>
     </div>
   </div>
-  <div class="container" id="content">
-    <div style="text-align:center;padding:40px;color:var(--muted)">Loading...</div>
-  </div>
+
+  <!-- DASHBOARD CONTENT -->
+  <div class="main-container" id="dashContent" style="display:none;"></div>
 
 <script>
-let playerId = null;
-let playerData = {};
-let nineData = {};
-let manaData = {};
-let deployments = [];
-let quests = [];
-let activity = [];
+/* ═══ DATA ═══ */
+var HOUSES={1:{name:'Smoulders',color:'#E03C31',slug:'smoulders',icon:'🔥',img:'/assets/images/houses/Housesmoulders.png'},2:{name:'Darktide',color:'#00B4D8',slug:'darktide',icon:'🌊',img:'/assets/images/houses/Housedarktide.png'},3:{name:'Stonebark',color:'#5CB338',slug:'stonebark',icon:'🌿',img:'/assets/images/houses/Housestonebark.png'},4:{name:'Ashenvale',color:'#90E0EF',slug:'ashenvale',icon:'💨',img:'/assets/images/houses/HouseAshenvale.png'},5:{name:'Stormrage',color:'#FFC800',slug:'stormrage',icon:'⚡',img:'/assets/images/houses/Housestormrage.png'},6:{name:'Nighthollow',color:'#7B2D8E',slug:'nighthollow',icon:'🌙',img:'/assets/images/houses/Housenighthollow.png'},7:{name:'Dawnbringer',color:'#FF8C00',slug:'dawnbringer',icon:'☀️',img:'/assets/images/houses/HouseDwnbringer.png'},8:{name:'Manastorm',color:'#5B8FE0',slug:'manastorm',icon:'🔮',img:'/assets/images/houses/Housemanastorm.png'},9:{name:'Plaguemire',color:'#E84393',slug:'plaguemire',icon:'☠️',img:'/assets/images/houses/Houseplaguemire.png'}};
 
-const HOUSE_COLORS = {smoulders:'#ff4422',darktide:'#3388dd',stonebark:'#55aa44',ashenvale:'#88bbdd',nighthollow:'#8855cc',dawnbringer:'#ffcc33',plaguemire:'#77bb33',stormrage:'#ffaa00',manastorm:'#44cccc'};
+var ZONE_IMAGES={1:'/assets/images/environments/ashen-approach.jpg',2:'/assets/images/environments/the-drowning-spiral.png',3:'/assets/images/environments/crimson-overlook.jpg',4:'/assets/images/environments/the-floating-citadel.png',5:'/assets/images/environments/violet-storm.png',6:'/assets/images/environments/the-lone-spire.png',7:'/assets/images/environments/azure-expanse.png',8:'/assets/images/environments/shattered-stream.png',9:'/assets/images/environments/the-quiet-woods.png',10:'/assets/images/environments/the-twin-spires.png',11:'/assets/images/environments/the-veiled-cascade.png',12:'/assets/images/environments/the-sunken-archives.png',13:'/assets/images/environments/the-whispering-woods.png',14:'/assets/images/environments/the-fallen-wyrm.jpg',15:'/assets/images/environments/the-grassy-knoll.png',16:'/assets/images/environments/the-gathering-grove.png',17:'/assets/images/environments/the-breach.png',18:'/assets/images/environments/the-great-divide.png',19:'/assets/images/environments/the-chambers-keep.png',20:'/assets/images/environments/the-eastern-exchange.png',21:'/assets/images/environments/the-memorial-arch.png',22:'/assets/images/environments/lunar-sanctum.png',23:'/assets/images/environments/the-divide.png',24:'/assets/images/environments/the-silent-valley.png',25:'/assets/images/environments/the-torn-veil.png'};
 
-  document.addEventListener('DOMContentLoaded', async () => {
-  // Check URL params first (from auth redirect), then localStorage
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('player_id')) {
-    playerId = parseInt(params.get('player_id'));
-    localStorage.setItem('9lv_session', JSON.stringify({ player_id: playerId }));
-  } else {
-    try { const s=JSON.parse(localStorage.getItem('9lv_session')||'{}'); if(s.player_id) playerId=s.player_id; } catch(e){}
+var STORY_IMAGES=['https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=800&q=80','https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&q=80','https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80'];
+
+function getTagColor(tag){if(!tag)return null;var colors={'$BONK':'#F0A030','$WIF':'#8B5CF6','$POPCAT':'#FF6B6B','$DEGEN':'#00D4FF','$NPC':'#44cc44','$MYRO':'#FF8C00','$MOG':'#E84393','$PEPE':'#5CB338','$FLOKI':'#FFC800','$SHIB':'#FF4500','$9LV':'#D4A64B'};var u=tag.toUpperCase();if(colors[u])return colors[u];var h=0;for(var i=0;i<u.length;i++)h=u.charCodeAt(i)+((h<<5)-h);return'hsl('+Math.abs(h)%360+',60%,55%)';}
+
+/* ═══ AUTH — same pattern as old dashboard ═══ */
+function getPlayerId(){var p=new URLSearchParams(window.location.search);var f=p.get('player_id');if(f){localStorage.setItem('player_id',f);return f;}return localStorage.getItem('player_id');}
+function toggleMobileMenu(){document.getElementById('hamburger').classList.toggle('active');document.getElementById('mobileMenu').classList.toggle('active');}
+function doLogout(){localStorage.removeItem('player_id');window.location.href='/';}
+if(localStorage.getItem('player_id')){var ml=document.getElementById('mobileLogout');if(ml)ml.style.display='';}
+function timeAgo(d){var diff=Date.now()-new Date(d).getTime(),m=Math.floor(diff/60000);if(m<60)return m+'m ago';var h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+function getZoneImg(z){return(z.image_url?(z.image_url.startsWith('/')?z.image_url:'/assets/images/zones/'+z.image_url):'')||ZONE_IMAGES[z.id]||'';}
+
+/* ═══ LOAD ═══ */
+async function loadDashboard(){
+  var pid=getPlayerId();
+  if(!pid){document.getElementById('loadingState').style.display='none';document.getElementById('errorState').style.display='block';return;}
+  try{
+    var[pR,cR,zR,sR]=await Promise.all([
+      fetch('/api/players/'+pid),
+      fetch('/api/players/'+pid+'/casts'),
+      fetch('/api/zones'),
+      fetch('/api/leaderboards/schools')
+    ]);
+    var player=pR.ok?await pR.json():null;
+    var casts=cR.ok?await cR.json():[];
+    var zones=zR.ok?await zR.json():[];
+    var schools=sR.ok?await sR.json():[];
+    if(!player||player.error){document.getElementById('loadingState').style.display='none';document.getElementById('errorState').style.display='block';return;}
+
+    // Try loading Nine data + quests (new V3 endpoints — graceful fallback)
+    var nineData=null,quests=[];
+    try{var nr=await fetch('/api/players/'+pid+'/nine');nineData=nr.ok?await nr.json():null;}catch(e){}
+    try{var qr=await fetch('/api/quests/'+pid);if(qr.ok){var qd=await qr.json();quests=qd.quests||[];}}catch(e){}
+
+    render(player,casts||[],zones||[],schools||[],nineData,quests);
+  }catch(err){
+    console.error('Dashboard load error:',err);
+    document.getElementById('loadingState').style.display='none';
+    document.getElementById('errorState').style.display='block';
   }
-  if (!playerId) { document.getElementById('content').innerHTML='<div style="text-align:center;padding:40px"><a href="/register.html" style="color:var(--gold);font-family:Cinzel,serif;font-size:16px">Register to play →</a></div>'; return; }
-  await loadAll();
-  render();
-});
-
-async function loadAll() {
-  const fetches = [
-    fetch(`/api/players/${playerId}`).then(r=>r.json()).catch(()=>({})),
-    fetch(`/api/players/${playerId}/nine`).then(r=>r.json()).catch(()=>({})),
-    fetch(`/api/mana/${playerId}`).then(r=>r.json()).catch(()=>({current_mana:0,max_mana:7})),
-    fetch(`/api/zones/player/${playerId}/deployments`).then(r=>r.json()).catch(()=>[]),
-    fetch(`/api/events/quests/${playerId}`).then(r=>r.json()).catch(()=>[]),
-  ];
-  const [p, n, m, d, q] = await Promise.all(fetches);
-  playerData = p.player || p || {};
-  nineData = n.nine || n || {};
-  manaData = m || {};
-  deployments = d.deployments || d || [];
-  quests = q.quests || q || [];
 }
 
-function render() {
-  const houseColor = HOUSE_COLORS[(nineData.house||playerData.school_name||'').toLowerCase()] || '#888';
-  const mana = manaData.current_mana || 0;
-  const maxMana = manaData.max_mana || 7;
+/* ═══ RENDER ═══ */
+function render(player,casts,zones,schools,nineData,quests){
+  var house=HOUSES[player.school_id]||HOUSES[1];
+  var obj=Array.isArray(zones)?zones.find(function(z){return z.is_current_objective;}):null;
+  var mana=(player.mana!=null)?player.mana:5,maxM=7;
+  var pts=player.seasonal_points||0,streak=player.streak||0;
+  var rc=Array.isArray(casts)?casts.slice(0,5):[];
+  var now=new Date(),doy=Math.floor((now-new Date(now.getFullYear(),0,0))/86400000);
+  var storyImg=STORY_IMAGES[doy%STORY_IMAGES.length];
 
-  document.getElementById('content').innerHTML = `
-    <!-- Nine Identity -->
-    <div class="nine-card">
-      <div class="nine-avatar">🐱</div>
-      <div class="nine-info">
-        <div class="nine-name">${nineData.nine_name || playerData.twitter_handle || 'Your Nine'}</div>
-        <div class="nine-handle">@${playerData.twitter_handle || '???'}</div>
-        <div class="nine-stats-row">
-          <span class="nine-stat stat-atk">⚔️ ${nineData.base_atk || '?'} ATK</span>
-          <span class="nine-stat stat-hp">💚 ${nineData.base_hp || '?'} HP</span>
-          <span class="nine-stat stat-spd">💨 ${nineData.base_spd || '?'} SPD</span>
-          <span class="house-badge" style="background:${houseColor}15;color:${houseColor};border:1px solid ${houseColor}25">${nineData.house || playerData.school_name || '?'}</span>
-        </div>
-        ${playerData.guild_tag ? `<div class="guild-tag">🏰 ${playerData.guild_tag}</div>` : ''}
-      </div>
-    </div>
+  // Nine stats (fallback to house defaults)
+  var nine=nineData||{};
+  var nAtk=nine.base_atk||'?',nHp=nine.base_hp||'?',nSpd=nine.base_spd||'?';
 
-    <!-- Mana -->
-    <div class="mana-card">
-      <div class="mana-label">💧 ${mana}/${maxMana}</div>
-      <div class="mana-orbs">${Array.from({length:maxMana},(_,i)=>`<div class="mana-orb ${i<mana?'full':'empty'}"></div>`).join('')}</div>
-      <div class="mana-regen" id="regen-timer">+1 in --:--</div>
-    </div>
+  // Mana orbs
+  var mH='';for(var i=0;i<maxM;i++){
+    mH+='<div style="width:11px;height:11px;border-radius:50%;'+(i<mana?'background:var(--cyan);border:1px solid #8DD4F0;box-shadow:0 0 6px rgba(106,200,216,0.4);':'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);')+'"></div>';
+  }
 
-    <!-- Season Points -->
-    <div class="points-card">
-      <div class="points-item"><div class="points-val" style="color:var(--gold)">${(playerData.season_points||0).toLocaleString()}</div><div class="points-label">SEASON PTS</div></div>
-      <div class="points-item"><div class="points-val">${playerData.duels_won||0}</div><div class="points-label">DUELS WON</div></div>
-      <div class="points-item"><div class="points-val">${playerData.best_gauntlet||0}</div><div class="points-label">BEST FLOOR</div></div>
-      <div class="points-item"><div class="points-val">${deployments.length}</div><div class="points-label">DEPLOYED</div></div>
-    </div>
+  // Streak dots
+  var sH='';for(var i=0;i<7;i++){
+    sH+='<div style="width:8px;height:8px;border-radius:50%;'+(i<streak?'background:linear-gradient(135deg,var(--sunset),var(--gold));border:1px solid rgba(232,133,90,0.5);box-shadow:0 0 6px rgba(232,133,90,0.3);':'background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);')+'"></div>';
+  }
 
-    <!-- Quick Actions -->
-    <div class="actions-grid">
-      <a class="action-btn" href="/nethara-live.html"><span class="action-icon">🔥</span><span class="action-label">NETHARA LIVE</span></a>
-      <a class="action-btn" href="/packs.html"><span class="action-icon">🎴</span><span class="action-label">OPEN PACK</span></a>
-      <a class="action-btn" href="/duels.html"><span class="action-icon">⚔️</span><span class="action-label">QUICK DUEL</span></a>
-      <a class="action-btn" href="/gauntlet.html"><span class="action-icon">🏰</span><span class="action-label">GAUNTLET</span></a>
-    </div>
+  // Avatar
+  var avH=player.profile_image
+    ?'<img src="'+player.profile_image+'" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid '+house.color+';box-shadow:0 0 20px '+house.color+'25;">'
+    :'<div style="width:48px;height:48px;border-radius:50%;border:2px solid '+house.color+';background:'+house.color+'18;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 0 20px '+house.color+'25;">'+house.icon+'</div>';
 
-    <!-- Daily Quests -->
-    <div class="section-label">📋 DAILY QUESTS</div>
-    ${quests.length > 0 ? quests.map(q => {
-      const pct = q.target ? Math.min(100, (q.progress/q.target)*100) : 0;
-      return `<div class="quest-row">
-        <span class="quest-icon">${q.completed?'✅':'📋'}</span>
-        <div class="quest-info">
-          <div class="quest-name">${q.quest_name||q.quest_desc||'Quest'}</div>
-          <div class="quest-progress">${q.progress||0}/${q.target||1}</div>
-        </div>
-        <div class="quest-bar"><div class="quest-bar-fill" style="width:${pct}%"></div></div>
-        <div class="quest-reward">+${q.reward_mana||0}💧 +${q.reward_points||0}pts</div>
-      </div>`;
-    }).join('') : '<div style="color:var(--muted);font-size:10px;padding:8px">No quests today</div>'}
+  // Guild tag
+  var tc=getTagColor(player.community_tag);
+  var tagH=player.community_tag?'<span style="font-family:var(--font-data);font-size:7px;padding:3px 10px;border-radius:8px;background:'+tc+'12;color:'+tc+';border:1px solid '+tc+'30;letter-spacing:1px;">🏰 '+esc(player.community_tag)+'</span>':'';
 
-    <!-- Active Deployments -->
-    <div class="section-label">📍 ACTIVE DEPLOYMENTS</div>
-    ${deployments.length > 0 ? deployments.map(d => `
-      <div class="deploy-row">
-        <span>📍</span>
-        <div class="deploy-zone">${d.zone_name||'Zone'}</div>
-        <div class="deploy-card">${d.card_name||'No card'}</div>
-        <div class="deploy-hp"><div class="deploy-hp-fill" style="width:${d.max_hp?(d.current_hp/d.max_hp*100):100}%"></div></div>
-      </div>
-    `).join('') : '<div style="color:var(--muted);font-size:10px;padding:8px">No active deployments. Head to Nethara Live!</div>'}
-  `;
+  // Story card
+  var scH='';
+  if(obj){
+    var oImg=getZoneImg(obj)||storyImg;
+    var tL=obj.objective_tweet_id?'https://twitter.com/9LVNetwork/status/'+obj.objective_tweet_id:'https://twitter.com/9LVNetwork';
+    scH='<div class="fade-up fade-up-1" style="position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--border-glow);margin-bottom:14px;animation:glowPulse 4s ease-in-out infinite;">'
+      +'<div style="position:absolute;inset:0;"><img src="'+oImg+'" style="width:100%;height:100%;object-fit:cover;filter:brightness(0.25) saturate(1.3);"><div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(26,21,40,0.3) 0%,rgba(18,14,30,0.92) 100%);"></div></div>'
+      +'<div style="position:relative;z-index:1;padding:16px 14px;">'
+      +'<div style="display:flex;justify-content:space-between;margin-bottom:10px;"><span style="font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:1px;">TODAY\'S STORY</span><span style="font-family:var(--font-data);font-size:7px;color:var(--green);letter-spacing:1px;">● LIVE</span></div>'
+      +'<div style="text-align:center;padding:8px 0;">'
+      +'<div style="font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:2px;margin-bottom:8px;">DAILY NARRATIVE</div>'
+      +'<div style="font-family:var(--font-title);font-size:22px;font-weight:700;color:var(--text-bright);letter-spacing:2px;text-shadow:0 2px 20px rgba(0,0,0,0.6);">'+esc(obj.narrative_title||obj.name)+'</div>'
+      +'<div style="font-family:var(--font-body);font-size:14px;font-style:italic;color:var(--text-muted);margin-top:4px;">'+esc(obj.description||'')+'</div>'
+      +'<div style="font-family:var(--font-title);font-size:12px;color:var(--gold);letter-spacing:1px;margin:16px 0 12px;">Show up. Represent. Become part of the story.</div>'
+      +'<a href="'+tL+'" target="_blank" style="display:inline-block;font-family:var(--font-title);font-size:13px;font-weight:700;padding:10px 28px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#c49030);color:#0a0810;letter-spacing:1.5px;text-decoration:none;box-shadow:0 4px 0 #8a6d2f,0 6px 16px rgba(212,166,75,0.25);">𝕏 Join the Story</a>'
+      +'</div></div></div>';
+  }else{
+    scH='<div class="card fade-up fade-up-1" style="text-align:center;padding:30px 20px;border:1px solid var(--border);"><span style="font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:1px;">TODAY\'S STORY</span><p style="font-family:var(--font-title);font-size:16px;color:var(--text-body);font-style:italic;margin-top:12px;">No active story right now. Check back at 8 AM UTC.</p></div>';
+  }
 
-  // Mana regen timer
-  setInterval(() => {
-    const now = new Date();
-    const minsLeft = 59 - now.getMinutes();
-    const secsLeft = 59 - now.getSeconds();
-    const el = document.getElementById('regen-timer');
-    if (el) el.textContent = `+1 in ${minsLeft}:${secsLeft.toString().padStart(2,'0')}`;
-  }, 1000);
+  // Quests
+  var qH='';
+  if(quests&&quests.length>0){
+    quests.forEach(function(q){
+      var pct=q.target?Math.min(100,(q.progress/q.target)*100):0;
+      var done=q.completed||q.progress>=q.target;
+      qH+='<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:'+(done?'rgba(106,205,138,0.06)':'var(--bg-card)')+';border:1px solid '+(done?'rgba(106,205,138,0.15)':'var(--border)')+';margin-bottom:4px;">'
+        +'<span style="font-size:16px;">'+(done?'✅':'📋')+'</span>'
+        +'<div style="flex:1;"><div style="font-family:var(--font-body);font-size:13px;font-weight:600;color:'+(done?'var(--green)':'var(--text-bright)')+';text-decoration:'+(done?'line-through':'none')+';opacity:'+(done?'0.6':'1')+';">'+esc(q.quest_desc||q.quest_name||'Quest')+'</div>'
+        +'<div style="font-family:var(--font-data);font-size:6px;color:var(--text-faint);margin-top:2px;">'+(q.progress||0)+'/'+(q.target||1)+'</div></div>'
+        +'<div style="width:50px;height:4px;border-radius:2px;background:rgba(255,255,255,0.06);overflow:hidden;"><div style="width:'+pct+'%;height:100%;border-radius:2px;background:'+(done?'var(--green)':'var(--gold)')+';"></div></div>'
+        +'<span style="font-family:var(--font-data);font-size:6px;color:var(--gold);">+'+(q.reward_mana?q.reward_mana+'💧':'')+(q.reward_points?q.reward_points+'pts':'')+'</span>'
+        +'</div>';
+    });
+  }else{
+    qH='<div style="text-align:center;padding:12px;color:var(--text-faint);font-style:italic;font-size:12px;">No quests today</div>';
+  }
+
+  // Active zones
+  var az=(Array.isArray(zones)?zones:[]).filter(function(z){return z.is_active!==false&&z.zone_type!=='home';}).slice(0,4);
+  var zH='';
+  az.forEach(function(z){
+    var img=getZoneImg(z);
+    var ctrl=z.controlling_school_id&&HOUSES[z.controlling_school_id]?HOUSES[z.controlling_school_id]:null;
+    zH+='<a href="/nethara-live.html" style="display:block;position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);transition:transform 0.2s;">';
+    if(img){
+      zH+='<div style="height:80px;background-image:url(\''+img+'\');background-size:cover;background-position:center;position:relative;">'
+        +'<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(18,14,30,0.95) 0%,rgba(18,14,30,0.1) 60%);"></div>'
+        +'<div style="position:absolute;bottom:0;left:0;right:0;padding:8px 10px;z-index:2;">'
+        +'<div style="font-family:var(--font-title);font-size:11px;font-weight:600;color:var(--text-bright);letter-spacing:1px;">'+esc(z.name)+'</div>'
+        +(ctrl?'<span style="font-family:var(--font-data);font-size:6px;color:'+ctrl.color+';">'+ctrl.name+'</span>':'')
+        +'</div></div>';
+    }else{
+      zH+='<div style="height:80px;background:var(--bg-card-solid);display:flex;align-items:flex-end;padding:8px 10px;"><div style="font-family:var(--font-title);font-size:11px;color:var(--text-bright);">'+esc(z.name)+'</div></div>';
+    }
+    zH+='</a>';
+  });
+
+  // Activity
+  var aH='';
+  if(rc.length>0){
+    rc.forEach(function(c){
+      aH+='<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid rgba(212,166,75,0.05);">'
+        +'<span style="font-size:12px;">⚔️</span>'
+        +'<span style="flex:1;font-family:var(--font-body);font-size:12px;color:rgba(255,255,255,0.45);">'+esc(c.spell_name||c.zone_name||'Spell Cast')+'</span>'
+        +'<span style="font-family:var(--font-data);font-size:7px;color:var(--gold);">+'+(c.points_earned||0)+'</span>'
+        +'<span style="font-family:var(--font-data);font-size:5px;color:var(--text-faint);">'+(c.created_at?timeAgo(c.created_at):'')+'</span>'
+        +'</div>';
+    });
+  }else{
+    aH='<p style="text-align:center;color:var(--text-faint);font-style:italic;padding:16px 0;font-size:13px;">No activity yet. Join today\'s story!</p>';
+  }
+
+  /* ═══ ASSEMBLE ═══ */
+  var c=document.getElementById('dashContent');
+  c.innerHTML=''
+
+    /* ── PLAYER HERO ── */
+    +'<div class="fade-up" style="position:relative;border-radius:16px;overflow:hidden;margin:14px 0;border:1px solid var(--border);">'
+    +'<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 30%,rgba(232,133,90,0.12) 0%,transparent 50%),radial-gradient(ellipse at 70% 50%,rgba(139,180,224,0.08) 0%,transparent 50%),linear-gradient(180deg,#2a2040 0%,#1a1528 100%);"></div>'
+    +'<div style="position:relative;z-index:1;padding:20px 16px 16px;">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
+    +'<div style="display:flex;align-items:center;gap:12px;">'+avH+'<div><div style="font-family:var(--font-title);font-size:17px;font-weight:700;color:'+house.color+';letter-spacing:1px;">'+house.name+'</div><div style="font-family:var(--font-data);font-size:8px;color:var(--text-muted);margin-top:2px;">@'+esc(player.twitter_handle||'')+'</div></div></div>'
+    +'<span style="font-family:var(--font-data);font-size:7px;padding:4px 10px;border-radius:8px;border:1px solid rgba(212,166,75,0.25);background:var(--gold-dim);color:var(--gold);letter-spacing:1px;">SEASON 0</span>'
+    +'</div>'
+    +tagH
+    +'<div style="display:flex;gap:8px;margin-top:12px;background:rgba(0,0,0,0.2);border-radius:10px;padding:8px 10px;">'
+    +'<div style="flex:1;text-align:center;"><div style="font-family:var(--font-data);font-size:12px;color:var(--red);">⚔️ '+nAtk+'</div><div style="font-family:var(--font-data);font-size:6px;color:var(--text-faint);margin-top:2px;">ATK</div></div>'
+    +'<div style="width:1px;background:var(--border);"></div>'
+    +'<div style="flex:1;text-align:center;"><div style="font-family:var(--font-data);font-size:12px;color:var(--green);">💚 '+nHp+'</div><div style="font-family:var(--font-data);font-size:6px;color:var(--text-faint);margin-top:2px;">HP</div></div>'
+    +'<div style="width:1px;background:var(--border);"></div>'
+    +'<div style="flex:1;text-align:center;"><div style="font-family:var(--font-data);font-size:12px;color:var(--sky);">💨 '+nSpd+'</div><div style="font-family:var(--font-data);font-size:6px;color:var(--text-faint);margin-top:2px;">SPD</div></div>'
+    +'</div></div></div>'
+
+    /* ── STORY ── */
+    +scH
+
+    /* ── STATS ROW ── */
+    +'<div class="fade-up fade-up-2" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">'
+    +'<div style="padding:12px 10px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);text-align:center;"><div style="font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px;">MANA</div><div style="display:flex;justify-content:center;gap:3px;flex-wrap:wrap;">'+mH+'</div><div id="manaTimer" style="font-family:var(--font-data);font-size:6px;color:var(--cyan);margin-top:4px;opacity:0.6;">+1 in --:--</div></div>'
+    +'<div style="padding:12px 10px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);text-align:center;"><div style="font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px;">STREAK</div><div style="font-size:22px;">'+(streak>=7?'💎':streak>=1?'🔥':'🌑')+'</div><div style="font-family:var(--font-data);font-size:10px;color:var(--text-bright);">'+streak+'</div><div style="font-family:var(--font-data);font-size:5px;color:var(--text-faint);margin-top:2px;">DAYS</div></div>'
+    +'<div style="padding:12px 10px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);text-align:center;"><div style="font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px;">POINTS</div><div style="font-family:var(--font-data);font-size:18px;color:var(--gold);text-shadow:0 0 12px rgba(212,166,75,0.3);">'+pts+'</div><div style="font-family:var(--font-data);font-size:5px;color:var(--text-faint);margin-top:2px;">Season 0</div></div>'
+    +'</div>'
+
+    /* ── STREAK BAR ── */
+    +'<div class="fade-up fade-up-2" style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);margin-bottom:14px;">'
+    +'<span style="font-size:24px;filter:drop-shadow(0 0 8px rgba(255,150,0,0.5));">'+(streak>=7?'💎':'🔥')+'</span>'
+    +'<div style="flex:1;"><div style="font-family:var(--font-data);font-size:9px;color:var(--text-bright);">'+streak+' <span style="font-size:6px;color:var(--text-muted);">DAY STREAK</span></div><div style="font-size:12px;color:var(--text-muted);margin-top:2px;">'+(streak<7?(7-streak)+' more for Week Warrior 💎':'Week Warrior achieved! 💎')+'</div></div>'
+    +'<div style="display:flex;gap:4px;">'+sH+'</div></div>'
+
+    /* ── QUICK ACTIONS ── */
+    +'<div class="fade-up fade-up-3" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">'
+    +'<a href="/nethara-live.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;transition:all 0.2s;"><span style="font-size:22px;">🔥</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);letter-spacing:0.5px;">NETHARA</span></a>'
+    +'<a href="/packs.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;transition:all 0.2s;"><span style="font-size:22px;">🎴</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);letter-spacing:0.5px;">PACKS</span></a>'
+    +'<a href="/duels.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;transition:all 0.2s;"><span style="font-size:22px;">⚔️</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);letter-spacing:0.5px;">DUELS</span></a>'
+    +'<a href="/gauntlet.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;transition:all 0.2s;"><span style="font-size:22px;">🏰</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);letter-spacing:0.5px;">GAUNTLET</span></a>'
+    +'</div>'
+
+    /* ── QUESTS ── */
+    +'<div class="section-label fade-up fade-up-3"><span style="font-size:14px;">📋</span><span class="section-label__text">DAILY QUESTS</span><div class="section-label__line"></div></div>'
+    +qH
+
+    /* ── ZONES ── */
+    +'<div class="section-label fade-up fade-up-3"><span style="font-size:14px;">📍</span><span class="section-label__text">ACTIVE ZONES</span><div class="section-label__line"></div></div>'
+    +'<div class="fade-up fade-up-3" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">'+zH+'</div>'
+
+    /* ── QUICK LINKS ── */
+    +'<div class="fade-up fade-up-4" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;">'
+    +'<a href="/leaderboards.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 14px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;min-width:65px;"><span style="font-size:18px;">🏆</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);">Ranks</span></a>'
+    +'<a href="/boss.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 14px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;min-width:65px;"><span style="font-size:18px;">🐉</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);">Boss</span></a>'
+    +'<a href="/builder.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 14px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;min-width:65px;"><span style="font-size:18px;">🐱</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);">Builder</span></a>'
+    +'<a href="/how-to-play.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 14px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;min-width:65px;"><span style="font-size:18px;">📖</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);">Help</span></a>'
+    +'</div>'
+
+    /* ── ACTIVITY ── */
+    +'<div class="section-label fade-up fade-up-4"><span style="font-size:14px;">⚡</span><span class="section-label__text">RECENT ACTIVITY</span><div class="section-label__line"></div></div>'
+    +'<div class="card fade-up fade-up-4">'+aH+'</div>';
+
+  document.getElementById('loadingState').style.display='none';
+  c.style.display='block';
+
+  // Mana timer
+  setInterval(function(){
+    var n=new Date();
+    var el=document.getElementById('manaTimer');
+    if(el)el.textContent='+1 in '+(59-n.getMinutes())+':'+(59-n.getSeconds()).toString().padStart(2,'0');
+  },1000);
 }
+
+loadDashboard();
 </script>
 </body>
 </html>
