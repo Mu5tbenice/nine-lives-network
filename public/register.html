@@ -2,980 +2,200 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Choose Your House | Nine Lives Network</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/variables-v2.css">
-  <link rel="stylesheet" href="/css/components-v2.css">
-  <link rel="stylesheet" href="/css/nav-v2.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join the Realm — Nine Lives Network</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    /* - Connect Screen - */
-    .connect-screen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 40px 20px;
-      text-align: center;
-    }
-    .connect-screen.hidden { display: none; }
+    :root{--bg:#08060e;--card:#0e0c16;--border:rgba(212,166,75,0.08);--gold:#d4a64b;--gold-dim:rgba(212,166,75,0.08);--text:#e0ddd8;--muted:rgba(255,255,255,0.4);--red:#ff4444;--green:#44cc66}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+    .container{max-width:500px;width:100%;padding:20px 16px}
 
-    .connect-logo {
-      width: 100px;
-      height: 100px;
-      object-fit: contain;
-      margin-bottom: 24px;
-      filter: drop-shadow(0 0 30px rgba(212, 166, 75, 0.3));
-    }
-    .connect-title {
-      font-family: var(--font-title);
-      font-size: 1.8rem;
-      font-weight: 700;
-      color: var(--gold);
-      letter-spacing: 4px;
-      margin-bottom: 8px;
-    }
-    .connect-subtitle {
-      font-family: var(--font-body);
-      font-size: 1rem;
-      color: var(--text-muted);
-      margin-bottom: 36px;
-      max-width: 400px;
-      line-height: 1.6;
-    }
-    .connect-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      padding: 16px 40px;
-      background: #fff;
-      color: #000;
-      border: none;
-      border-radius: 12px;
-      font-family: var(--font-title);
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.3s;
-      letter-spacing: 1px;
-    }
-    .connect-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 30px rgba(255, 255, 255, 0.15);
-    }
-    .connect-btn svg { width: 22px; height: 22px; }
+    .logo{text-align:center;margin:30px 0 10px}
+    .logo-icon{font-size:48px}
+    .logo-title{font-family:'Cinzel',serif;font-size:22px;font-weight:900;letter-spacing:3px;background:linear-gradient(135deg,#d4a64b,#f0d080);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-top:6px}
+    .logo-sub{font-size:10px;color:var(--muted);font-family:'Fira Code',monospace;letter-spacing:1px}
 
-    .connect-features {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 40px;
-      max-width: 320px;
-    }
-    .connect-feature {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      text-align: left;
-    }
-    .connect-feature__icon {
-      width: 32px;
-      height: 32px;
-      object-fit: contain;
-      flex-shrink: 0;
-    }
-    .connect-feature__icon--text {
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-family: var(--font-data);
-      font-size: 10px;
-      color: var(--gold);
-      background: var(--gold-dim);
-      border: 1px solid var(--gold-border);
-      border-radius: 8px;
-      flex-shrink: 0;
-    }
-    .connect-feature__text {
-      font-family: var(--font-body);
-      font-size: 14px;
-      color: var(--text-body);
-    }
+    /* Steps */
+    .step{display:none;animation:fadeIn 0.3s ease}
+    .step.active{display:block}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .step-label{font-family:'Cinzel',serif;font-size:14px;font-weight:900;color:var(--gold);letter-spacing:2px;margin-bottom:12px;text-align:center}
+    .step-desc{font-size:11px;color:var(--muted);text-align:center;margin-bottom:16px}
 
-    .legal-links {
-      margin-top: 30px;
-      font-family: var(--font-body);
-      font-size: 12px;
-      color: var(--text-faint);
-    }
-    .legal-links a { color: var(--gold-dim); text-decoration: none; }
-    .legal-links a:hover { text-decoration: underline; }
+    /* Twitter Connect */
+    .twitter-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;padding:14px;border-radius:12px;border:none;background:#1DA1F2;color:#fff;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:1px;font-family:'Cinzel',serif;box-shadow:0 4px 16px rgba(29,161,242,0.3);margin-bottom:12px}
+    .twitter-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(29,161,242,0.4)}
 
-    /* - House Selection Screen - */
-    .house-select-screen {
-      display: none;
-      min-height: 100vh;
-      padding: 80px 20px 60px;
-    }
-    .house-select-screen.active { display: block; }
+    /* House Selection */
+    .house-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+    .house-option{padding:12px 8px;border-radius:10px;background:var(--card);border:2px solid var(--border);cursor:pointer;text-align:center;transition:all 0.2s;position:relative}
+    .house-option:hover{transform:translateY(-2px)}
+    .house-option.selected{border-color:var(--gold);background:var(--gold-dim);box-shadow:0 0 16px rgba(212,166,75,0.15)}
+    .house-icon{font-size:24px;margin-bottom:4px}
+    .house-name{font-size:10px;font-weight:800;letter-spacing:0.5px}
+    .house-style{font-size:7px;color:var(--muted);font-family:'Fira Code',monospace;margin-top:2px}
+    .house-stats{font-size:7px;font-family:'Fira Code',monospace;margin-top:4px;color:rgba(255,255,255,0.3)}
+    .selected-check{position:absolute;top:4px;right:4px;width:14px;height:14px;border-radius:50%;background:var(--gold);display:none;align-items:center;justify-content:center;font-size:8px;color:#0a0810;font-weight:900}
+    .house-option.selected .selected-check{display:flex}
 
-    .section-header { text-align: center; margin-bottom: 32px; }
-    .section-title {
-      font-family: var(--font-title);
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--gold);
-      letter-spacing: 4px;
-      margin-bottom: 8px;
-    }
-    .section-desc {
-      font-family: var(--font-body);
-      font-size: 15px;
-      color: var(--text-muted);
-      max-width: 500px;
-      margin: 0 auto;
-      line-height: 1.6;
-    }
-    .lock-warning {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--gold-dim);
-      border: 1px solid var(--gold-border);
-      border-radius: 8px;
-      padding: 8px 16px;
-      margin: 14px auto 0;
-      font-family: var(--font-data);
-      font-size: 8px;
-      color: var(--gold);
-      letter-spacing: 1px;
-    }
+    /* Nine Preview */
+    .nine-preview{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center;margin-bottom:16px}
+    .nine-preview-icon{font-size:48px;margin-bottom:8px}
+    .nine-preview-title{font-family:'Cinzel',serif;font-size:14px;font-weight:900;color:#fff}
+    .nine-preview-stats{display:flex;justify-content:center;gap:12px;margin-top:8px}
+    .preview-stat{font-size:10px;font-weight:700;font-family:'Fira Code',monospace}
 
-    /* - House Grid - */
-    .house-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      max-width: 900px;
-      margin: 0 auto 36px;
-    }
-    @media (max-width: 768px) {
-      .house-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
-      .section-title { font-size: 1.2rem; }
-    }
-    @media (max-width: 480px) {
-      .house-grid { grid-template-columns: 1fr; max-width: 340px; }
-    }
+    /* Guild input */
+    .input-field{width:100%;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.03);border:1px solid var(--border);color:var(--text);font-size:13px;outline:none;margin-bottom:8px}
+    .input-field::placeholder{color:rgba(255,255,255,0.2)}
+    .input-hint{font-size:9px;color:var(--muted);font-family:'Fira Code',monospace;margin-bottom:16px}
 
-    /* - House Card - */
-    .house-card {
-      position: relative;
-      border-radius: 14px;
-      overflow: hidden;
-      cursor: pointer;
-      transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      border: 2px solid var(--border-subtle);
-      background: var(--bg-card);
-    }
-    .house-card:hover {
-      transform: translateY(-5px);
-      border-color: var(--card-color);
-      box-shadow: 0 10px 35px rgba(0,0,0,0.5), 0 0 25px var(--card-glow);
-    }
-    .house-card.selected {
-      border-color: var(--card-color);
-      box-shadow: 0 0 0 3px var(--card-color), 0 10px 35px rgba(0,0,0,0.5);
-      transform: translateY(-3px);
-    }
-    .house-card.selected .house-card-check {
-      opacity: 1;
-      transform: scale(1);
-    }
-    .house-card-check {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 26px;
-      height: 26px;
-      border-radius: 50%;
-      background: var(--card-color);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      color: #fff;
-      z-index: 5;
-      opacity: 0;
-      transform: scale(0.5);
-      transition: all 0.3s;
-      font-weight: bold;
-    }
+    /* Buttons */
+    .primary-btn{width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,var(--gold),#c49030);color:#0a0810;font-family:'Cinzel',serif;font-size:14px;font-weight:900;letter-spacing:2px;cursor:pointer;box-shadow:0 4px 16px rgba(212,166,75,0.3)}
+    .primary-btn:disabled{opacity:0.3;cursor:not-allowed}
+    .primary-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 24px rgba(212,166,75,0.4)}
+    .secondary-btn{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;cursor:pointer;margin-top:8px;font-family:'Fira Code',monospace}
 
-    .house-card-crest-area {
-      height: 150px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-    }
-    .house-card-crest-area::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse at center, var(--card-color-20) 0%, transparent 70%);
-    }
-    .house-card-crest-area::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 50px;
-      background: linear-gradient(transparent, var(--bg-card));
-    }
-    .house-card-crest {
-      width: 100px;
-      height: 100px;
-      object-fit: contain;
-      filter: drop-shadow(0 4px 16px rgba(0,0,0,0.5));
-      transition: transform 0.35s;
-      position: relative;
-      z-index: 1;
-    }
-    .house-card:hover .house-card-crest { transform: scale(1.08); }
-
-    .house-card-info {
-      padding: 14px;
-      text-align: center;
-    }
-    .house-card-name {
-      font-family: var(--font-title);
-      font-weight: 700;
-      font-size: 14px;
-      color: var(--text-bright);
-      margin-bottom: 3px;
-      letter-spacing: 1px;
-    }
-    .house-card-element {
-      font-family: var(--font-body);
-      font-size: 12px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      margin-bottom: 10px;
-    }
-    .house-card-bonus {
-      font-family: var(--font-body);
-      font-size: 12px;
-      color: var(--card-color);
-      background: var(--bg-inset);
-      border-radius: 6px;
-      padding: 8px 10px;
-      line-height: 1.4;
-    }
-    .house-card-bonus strong {
-      display: block;
-      font-family: var(--font-data);
-      font-size: 7px;
-      color: var(--gold);
-      margin-bottom: 3px;
-      letter-spacing: 1px;
-    }
-
-    /* - Detail Overlay - */
-    .house-detail-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.92);
-      z-index: 100;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-    .house-detail-overlay.active { display: flex; }
-
-    .house-detail {
-      max-width: 420px;
-      width: 100%;
-      border-radius: 16px;
-      overflow: hidden;
-      animation: slideUp 0.35s ease;
-    }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(25px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .house-detail-banner {
-      height: 170px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
-    }
-    .house-detail-banner::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 70px;
-      background: linear-gradient(transparent, var(--bg-card));
-    }
-    .house-detail-crest {
-      width: 130px;
-      height: 130px;
-      object-fit: contain;
-      filter: drop-shadow(0 4px 25px rgba(0,0,0,0.6));
-      z-index: 1;
-    }
-    .house-detail-body {
-      background: var(--bg-card);
-      padding: 22px;
-      text-align: center;
-    }
-    .house-detail-name {
-      font-family: var(--font-title);
-      font-weight: 700;
-      font-size: 1.3rem;
-      letter-spacing: 3px;
-      margin-bottom: 4px;
-    }
-    .house-detail-element {
-      font-family: var(--font-body);
-      font-size: 13px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 3px;
-      margin-bottom: 18px;
-    }
-    .house-detail-desc {
-      font-family: var(--font-body);
-      font-size: 15px;
-      color: var(--text-body);
-      line-height: 1.7;
-      margin-bottom: 20px;
-      font-style: italic;
-      opacity: 0.85;
-    }
-    .house-detail-bonuses {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 22px;
-      text-align: left;
-    }
-    .house-bonus-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 12px;
-      background: var(--bg-inset);
-      border-radius: 8px;
-      border-left: 3px solid var(--detail-color);
-    }
-    .house-bonus-icon {
-      width: 24px;
-      height: 24px;
-      object-fit: contain;
-      flex-shrink: 0;
-    }
-    .house-bonus-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--detail-color);
-      flex-shrink: 0;
-    }
-    .house-bonus-text {
-      font-family: var(--font-body);
-      font-size: 13px;
-      color: var(--text-body);
-      line-height: 1.4;
-    }
-    .house-bonus-text strong { color: var(--detail-color); }
-
-    .house-detail-actions { display: flex; gap: 10px; }
-    .house-detail-btn {
-      flex: 1;
-      padding: 13px;
-      border: none;
-      border-radius: 10px;
-      font-family: var(--font-title);
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      transition: all 0.3s;
-      letter-spacing: 1px;
-    }
-    .house-detail-btn.cancel {
-      background: var(--bg-inset);
-      color: var(--text-muted);
-    }
-    .house-detail-btn.confirm { color: #fff; }
-    .house-detail-btn:hover { transform: translateY(-2px); }
-
-    /* - Confirm Section - */
-    .confirm-section {
-      display: none;
-      max-width: 500px;
-      margin: 0 auto;
-      text-align: center;
-    }
-    .confirm-section.active { display: block; }
-
-    .selected-house-preview {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      margin-bottom: 22px;
-      padding: 18px;
-      background: var(--bg-card);
-      border-radius: 14px;
-      border: 2px solid var(--gold-border);
-    }
-    .selected-house-crest-sm {
-      width: 56px;
-      height: 56px;
-      object-fit: contain;
-    }
-    .selected-house-text h3 {
-      font-family: var(--font-title);
-      font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: 2px;
-      margin-bottom: 3px;
-    }
-    .selected-house-text p {
-      font-family: var(--font-body);
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .form-group { margin-bottom: 18px; text-align: left; }
-    .form-label {
-      display: block;
-      font-family: var(--font-title);
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--gold);
-      margin-bottom: 8px;
-      letter-spacing: 1px;
-    }
-    .form-input {
-      width: 100%;
-      padding: 14px 16px;
-      background: var(--bg-inset);
-      border: 1px solid var(--border-subtle);
-      border-radius: 10px;
-      color: var(--text-bright);
-      font-family: var(--font-body);
-      font-size: 16px;
-      transition: border-color 0.3s;
-    }
-    .form-input:focus {
-      outline: none;
-      border-color: var(--gold);
-    }
-    .form-input::placeholder { color: var(--text-faint); }
-    .form-hint {
-      font-family: var(--font-body);
-      font-size: 12px;
-      color: var(--text-faint);
-      margin-top: 6px;
-    }
-
-    .confirm-lock-notice {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: rgba(255, 80, 80, 0.06);
-      border: 1px solid rgba(255, 80, 80, 0.15);
-      border-radius: 10px;
-      padding: 12px 14px;
-      margin-bottom: 20px;
-      font-family: var(--font-body);
-      font-size: 13px;
-      color: #ff8888;
-      text-align: left;
-    }
-
-    .submit-btn {
-      width: 100%;
-      padding: 16px;
-      background: linear-gradient(180deg, #D4A64B 0%, #b8903d 100%);
-      color: var(--bg-deep);
-      border: none;
-      border-radius: 10px;
-      font-family: var(--font-title);
-      font-weight: 700;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: all 0.2s;
-      letter-spacing: 2px;
-      box-shadow: 0 4px 0 #8a6d2f, 0 6px 20px rgba(212,166,75,0.3);
-    }
-    .submit-btn:active {
-      transform: translateY(2px);
-      box-shadow: 0 2px 0 #8a6d2f;
-    }
-    .submit-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    .back-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      font-family: var(--font-title);
-      font-size: 14px;
-      cursor: pointer;
-      margin-bottom: 16px;
-      transition: color 0.3s;
-    }
-    .back-btn:hover { color: var(--gold); }
-
-    /* Error banner */
-    .error-banner {
-      display: none;
-      max-width: 400px;
-      margin: 0 auto 20px;
-      padding: 12px 16px;
-      background: rgba(255, 60, 60, 0.08);
-      border: 1px solid rgba(255, 60, 60, 0.2);
-      border-radius: 10px;
-      font-family: var(--font-body);
-      font-size: 14px;
-      color: #ff6666;
-      text-align: center;
-    }
-    .error-banner.active { display: block; }
+    .step-indicator{display:flex;justify-content:center;gap:6px;margin-bottom:20px}
+    .step-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.08)}
+    .step-dot.active{background:var(--gold)}
+    .step-dot.done{background:rgba(212,166,75,0.3)}
   </style>
 </head>
 <body>
-
-  <!-- STEP 1: Connect X -->
-  <div class="connect-screen" id="connectScreen">
-    <img src="/assets/images/Mustbenice_Base_model.png" alt="Nine Lives Network" class="connect-logo"
-         onerror="this.style.display='none'">
-    <h1 class="connect-title">Nine Lives Network</h1>
-    <p class="connect-subtitle">Join the realm of Nethara. Choose your house. Cast spells. Conquer territory.</p>
-
-    <div class="error-banner" id="errorBanner"></div>
-
-    <button class="connect-btn" onclick="connectTwitter()">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-      Connect with X
-    </button>
-
-    <div class="connect-features">
-      <div class="connect-feature">
-        <div class="connect-feature__icon--text">1</div>
-        <span class="connect-feature__text">Connect your X account</span>
-      </div>
-      <div class="connect-feature">
-        <div class="connect-feature__icon--text">2</div>
-        <span class="connect-feature__text">Choose a house to represent</span>
-      </div>
-      <div class="connect-feature">
-        <div class="connect-feature__icon--text">3</div>
-        <span class="connect-feature__text">Reply to daily stories to earn points</span>
-      </div>
+  <div class="container">
+    <div class="logo">
+      <div class="logo-icon">🐱</div>
+      <div class="logo-title">NINE LIVES NETWORK</div>
+      <div class="logo-sub">JOIN THE REALM OF NETHARA</div>
     </div>
 
-    <div class="legal-links">
-      By registering you agree to our <a href="/terms.html">Terms of Service</a> and <a href="/privacy.html">Privacy Policy</a>
-    </div>
-  </div>
-
-  <!-- STEP 2: Choose House -->
-  <div class="house-select-screen" id="houseSelectScreen">
-
-    <!-- Nav bar (only shows on house selection step) -->
-    <nav class="top-nav">
-      <div class="top-nav-content">
-        <a href="/" class="nav-logo">Nine Lives Network</a>
-      </div>
-    </nav>
-
-    <div class="section-header">
-      <h1 class="section-title">Choose Your House</h1>
-      <p class="section-desc">Each house brings unique strengths to the battlefield. Your allegiance shapes your path through Nethara.</p>
-      <div class="lock-warning">
-        LOCKED UNTIL END OF SEASON
-      </div>
+    <div class="step-indicator">
+      <div class="step-dot active" id="dot-0"></div>
+      <div class="step-dot" id="dot-1"></div>
+      <div class="step-dot" id="dot-2"></div>
     </div>
 
-    <div class="house-grid" id="houseGrid"></div>
+    <!-- Step 1: Connect X -->
+    <div class="step active" id="step-0">
+      <div class="step-label">STEP 1: CONNECT</div>
+      <div class="step-desc">Link your X (Twitter) account to enter Nethara</div>
+      <button class="twitter-btn" onclick="connectTwitter()">🐦 CONNECT WITH X</button>
+      <div style="font-size:9px;color:var(--muted);text-align:center;font-family:'Fira Code',monospace">Your account needs 50+ followers and 30+ days age</div>
+    </div>
 
-    <div class="confirm-section" id="confirmSection">
-      <button class="back-btn" onclick="deselectHouse()">&#8592; Change House</button>
+    <!-- Step 2: Choose House -->
+    <div class="step" id="step-1">
+      <div class="step-label">STEP 2: CHOOSE YOUR HOUSE</div>
+      <div class="step-desc">Your house determines your Nine's base stats and playstyle</div>
+      <div class="house-grid" id="house-grid"></div>
+      <div class="nine-preview" id="nine-preview" style="display:none"></div>
+      <button class="primary-btn" id="house-confirm-btn" disabled onclick="goStep(2)">CHOOSE HOUSE</button>
+    </div>
 
-      <div class="selected-house-preview" id="selectedPreview">
-        <img src="" alt="" class="selected-house-crest-sm" id="selectedCrest">
-        <div class="selected-house-text">
-          <h3 id="selectedName">House Name</h3>
-          <p id="selectedElement">Element</p>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Community Tag (optional)</label>
-        <input type="text" class="form-input" id="communityTag" placeholder="e.g. $BONK, $WIF, $DEGEN" maxlength="20">
-        <p class="form-hint">Represent your crypto community on the leaderboards</p>
-      </div>
-
-      <div class="confirm-lock-notice">
-        This choice is <strong>permanent</strong> until the end of the current season. Choose wisely.
-      </div>
-
-      <button class="submit-btn" id="submitBtn" disabled onclick="completeRegistration()">
-        PLEDGE ALLEGIANCE
-      </button>
-
-      <div class="legal-links">
-        By registering you agree to our <a href="/terms.html">Terms</a> and <a href="/privacy.html">Privacy Policy</a>
-      </div>
+    <!-- Step 3: Guild Tag -->
+    <div class="step" id="step-2">
+      <div class="step-label">STEP 3: JOIN A GUILD</div>
+      <div class="step-desc">Enter your guild tag (crypto community, clan, DAO, etc.)</div>
+      <input class="input-field" id="guild-input" placeholder="e.g. $BONK, Shadow Paws, DegenDAO..." maxlength="30">
+      <div class="input-hint">Optional — you can join or change guilds later</div>
+      <button class="primary-btn" onclick="submitRegistration()">⚔️ ENTER NETHARA</button>
+      <button class="secondary-btn" onclick="submitRegistration()">Skip — I'll join a guild later</button>
     </div>
   </div>
 
-  <!-- House Detail Overlay -->
-  <div class="house-detail-overlay" id="houseDetailOverlay">
-    <div class="house-detail" id="houseDetail">
-      <div class="house-detail-banner" id="detailBanner">
-        <img src="" alt="" class="house-detail-crest" id="detailCrest">
-      </div>
-      <div class="house-detail-body">
-        <h2 class="house-detail-name" id="detailName">House Name</h2>
-        <div class="house-detail-element" id="detailElement">Element</div>
-        <p class="house-detail-desc" id="detailDesc">Description</p>
-        <div class="house-detail-bonuses" id="detailBonuses"></div>
-        <div class="house-detail-actions">
-          <button class="house-detail-btn cancel" onclick="closeDetail()">Back</button>
-          <button class="house-detail-btn confirm" id="detailConfirmBtn" onclick="confirmFromDetail()">Choose This House</button>
-        </div>
-      </div>
-    </div>
+<script>
+const HOUSES = [
+  {id:1,name:'Smoulders',icon:'🔥',color:'#ff4422',style:'Glass cannon',atk:14,hp:10,spd:6},
+  {id:2,name:'Darktide',icon:'🌊',color:'#3388dd',style:'Steal & disrupt',atk:8,hp:12,spd:10},
+  {id:3,name:'Stonebark',icon:'🌿',color:'#55aa44',style:'Unkillable tank',atk:6,hp:18,spd:4},
+  {id:4,name:'Ashenvale',icon:'💨',color:'#88bbdd',style:'Speed & evasion',atk:8,hp:8,spd:14},
+  {id:5,name:'Nighthollow',icon:'🌙',color:'#8855cc',style:'Intel & control',atk:10,hp:10,spd:10},
+  {id:6,name:'Dawnbringer',icon:'☀️',color:'#ffcc33',style:'Support & heals',atk:6,hp:16,spd:8},
+  {id:7,name:'Plaguemire',icon:'☠️',color:'#77bb33',style:'DOT & attrition',atk:10,hp:14,spd:6},
+  {id:8,name:'Stormrage',icon:'⚡',color:'#ffaa00',style:'Crit or bust',atk:12,hp:8,spd:10},
+  {id:9,name:'Manastorm',icon:'💎',color:'#44cccc',style:'Mana efficiency',atk:8,hp:12,spd:10},
+];
+
+let currentStep = 0;
+let selectedHouse = null;
+let twitterData = null;
+
+// Render houses
+document.getElementById('house-grid').innerHTML = HOUSES.map(h => `
+  <div class="house-option" id="house-${h.id}" onclick="selectHouse(${h.id})">
+    <div class="selected-check">✓</div>
+    <div class="house-icon">${h.icon}</div>
+    <div class="house-name" style="color:${h.color}">${h.name}</div>
+    <div class="house-style">${h.style}</div>
+    <div class="house-stats">ATK ${h.atk} · HP ${h.hp} · SPD ${h.spd}</div>
   </div>
+`).join('');
 
-  <script>
-    // - HOUSE DATA (no emojis) â•â•â•
-    var houses = {
-      1: {
-        name: 'House Smoulders', element: 'Fire', color: '#E03C31',
-        crest: '/assets/images/houses/House-smoulders.png',
-        desc: 'Born of ash and ember, House Smoulders burns brightest in the heart of battle. Their fury is unmatched, their resolve unbreakable.',
-        bonuses: [
-          { text: '<strong>Firestarter</strong> - +20% influence when attacking zones your house doesn\'t control' },
-          { text: '<strong>Aggression</strong> - BURN effects on your spells are 10% stronger' },
-          { text: '<strong>Playstyle:</strong> Aggressive, offensive, territory conqueror' }
-        ],
-        shortBonus: '+20% attack on uncontrolled zones'
-      },
-      2: {
-        name: 'House Darktide', element: 'Water', color: '#00B4D8',
-        crest: '/assets/images/houses/House-darktide.png',
-        desc: 'From the crushing depths they rise. House Darktide commands the currents of war, building momentum that becomes unstoppable.',
-        bonuses: [
-          { text: '<strong>Rising Tide</strong> - DRAIN effects steal 10% more influence' },
-          { text: '<strong>Undertow</strong> - Defending a zone you control costs 10% less influence to maintain' },
-          { text: '<strong>Playstyle:</strong> Strategic, patient, resource control' }
-        ],
-        shortBonus: 'Stronger drain effects'
-      },
-      3: {
-        name: 'House Stonebark', element: 'Earth', color: '#5CB338',
-        crest: '/assets/images/houses/House-stonebark.png',
-        desc: 'Rooted deep in the ancient soil, House Stonebark endures what others cannot. Their shields are living wood, their walls grown from the earth itself.',
-        bonuses: [
-          { text: '<strong>Deep Roots</strong> - HEAL and ANCHOR effects are 15% stronger' },
-          { text: '<strong>Endurance</strong> - Your house loses 10% less influence from enemy attacks' },
-          { text: '<strong>Playstyle:</strong> Defensive, resilient, hold territory' }
-        ],
-        shortBonus: '+15% stronger defense effects'
-      },
-      4: {
-        name: 'House Ashenvale', element: 'Air', color: '#90E0EF',
-        crest: '/assets/images/houses/House-Ashenvale.png',
-        desc: 'Whispered into being from the winds between worlds, House Ashenvale moves unseen. They strike where least expected.',
-        bonuses: [
-          { text: '<strong>Windborne</strong> - HASTE and SWIFT effects trigger 15% more often' },
-          { text: '<strong>Agility</strong> - 10% chance to refund 1 mana on any cast' },
-          { text: '<strong>Playstyle:</strong> Fast, efficient, more casts per day' }
-        ],
-        shortBonus: '10% mana refund chance'
-      },
-      5: {
-        name: 'House Stormrage', element: 'Lightning', color: '#FFC800',
-        crest: '/assets/images/houses/House-stormrage.png',
-        desc: 'When the sky cracks and thunder speaks, House Stormrage answers. Raw power channeled into devastating strikes.',
-        bonuses: [
-          { text: '<strong>Lightning Rod</strong> - CRIT chance increased from 25% to 30%' },
-          { text: '<strong>Overcharge</strong> - CHAIN effects deal 10% more bonus influence' },
-          { text: '<strong>Playstyle:</strong> High risk, high reward, explosive plays' }
-        ],
-        shortBonus: '+5% crit chance on spells'
-      },
-      6: {
-        name: 'House Nighthollow', element: 'Shadow', color: '#7B2D8E',
-        crest: '/assets/images/houses/House-nighthollow.png',
-        desc: 'What light cannot reach, House Nighthollow commands. Masters of misdirection, they thrive where others fear to tread.',
-        bonuses: [
-          { text: '<strong>Shadow Veil</strong> - HEX and SILENCE effects last 15% longer' },
-          { text: '<strong>Disruption</strong> - Enemy effects on your zone have 10% chance to fizzle' },
-          { text: '<strong>Playstyle:</strong> Disruptive, debuffer, chaos agent' }
-        ],
-        shortBonus: 'Stronger disruption effects'
-      },
-      7: {
-        name: 'House Dawnbringer', element: 'Light', color: '#FF8C00',
-        crest: '/assets/images/houses/House-dawnbringer.png',
-        desc: 'The first light of morning given form. House Dawnbringer stands as a beacon, strengthening all who fight alongside them.',
-        bonuses: [
-          { text: '<strong>Guiding Light</strong> - AMPLIFY and BLESS effects are 15% stronger' },
-          { text: '<strong>Beacon</strong> - House Resonance combo triggers at 2 members instead of 3' },
-          { text: '<strong>Playstyle:</strong> Supportive, team player, combo enabler' }
-        ],
-        shortBonus: 'Easier house combos'
-      },
-      8: {
-        name: 'House Manastorm', element: 'Arcane', color: '#5B8FE0',
-        crest: '/assets/images/houses/House-manastorm.png',
-        desc: 'Knowledge is the ultimate weapon. House Manastorm bends the rules of magic itself, wielding power others can only dream of.',
-        bonuses: [
-          { text: '<strong>Arcane Mastery</strong> - Tier 2+ spells cost 1 less influence to cast' },
-          { text: '<strong>Spell Weaver</strong> - 10% bonus points when casting spells from other houses' },
-          { text: '<strong>Playstyle:</strong> Versatile, spell collector, cross-house synergy' }
-        ],
-        shortBonus: '+10% cross-house spell bonus'
-      },
-      9: {
-        name: 'House Plaguemire', element: 'Chaos', color: '#E84393',
-        crest: '/assets/images/houses/House-plaguemire.png',
-        desc: 'From rot comes renewal. House Plaguemire understands that true power lies in persistence - what is dead may never die.',
-        bonuses: [
-          { text: '<strong>Festering</strong> - POISON and CORRODE effects deal 15% more damage' },
-          { text: '<strong>Persistence</strong> - Streak multiplier grows 1 day faster (x1.1 at day 2)' },
-          { text: '<strong>Playstyle:</strong> Consistent, grinder, long-game dominance' }
-        ],
-        shortBonus: 'Faster streak growth'
-      }
-    };
+function goStep(n) {
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('step-'+n).classList.add('active');
+  for(let i=0;i<3;i++){
+    const d=document.getElementById('dot-'+i);
+    d.className='step-dot'+(i===n?' active':i<n?' done':'');
+  }
+  currentStep = n;
+}
 
-    var selectedHouse = null;
-    var oauthData = {};
+function connectTwitter() {
+  // Redirect to Twitter OAuth
+  window.location.href = '/auth/twitter';
+}
 
-    // - RENDER HOUSE GRID â•â•â•
-    function renderHouseGrid() {
-      var grid = document.getElementById('houseGrid');
-      var html = '';
-      for (var id in houses) {
-        var h = houses[id];
-        html += '<div class="house-card" '
-          + 'style="--card-color:' + h.color + '; --card-glow:' + h.color + '44; --card-color-20:' + h.color + '33;" '
-          + 'onclick="openDetail(' + id + ')" '
-          + 'data-house-id="' + id + '">'
-          + '<div class="house-card-check">&#10003;</div>'
-          + '<div class="house-card-crest-area">'
-          + '  <img src="' + h.crest + '" alt="' + h.name + '" class="house-card-crest" loading="lazy">'
-          + '</div>'
-          + '<div class="house-card-info">'
-          + '  <div class="house-card-name">' + h.name + '</div>'
-          + '  <div class="house-card-element">' + h.element + '</div>'
-          + '  <div class="house-card-bonus">'
-          + '    <strong>HOUSE BONUS</strong>'
-          + '    ' + h.shortBonus
-          + '  </div>'
-          + '</div>'
-          + '</div>';
-      }
-      grid.innerHTML = html;
+// Check if returning from OAuth
+const params = new URLSearchParams(window.location.search);
+if (params.get('twitter_id')) {
+  twitterData = { id: params.get('twitter_id'), handle: params.get('handle') };
+  goStep(1);
+}
+
+function selectHouse(id) {
+  selectedHouse = id;
+  document.querySelectorAll('.house-option').forEach(el=>el.classList.remove('selected'));
+  document.getElementById('house-'+id).classList.add('selected');
+  document.getElementById('house-confirm-btn').disabled = false;
+
+  const h = HOUSES.find(x=>x.id===id);
+  const preview = document.getElementById('nine-preview');
+  preview.style.display = 'block';
+  preview.innerHTML = `
+    <div class="nine-preview-icon">🐱</div>
+    <div class="nine-preview-title">Your ${h.name} Nine</div>
+    <div class="nine-preview-stats">
+      <span class="preview-stat" style="color:var(--red)">⚔️ ${h.atk} ATK</span>
+      <span class="preview-stat" style="color:var(--green)">💚 ${h.hp} HP</span>
+      <span class="preview-stat" style="color:var(--blue)">💨 ${h.spd} SPD</span>
+    </div>
+    <div style="font-size:9px;color:var(--muted);margin-top:6px;font-family:'Fira Code',monospace">${h.style} playstyle</div>
+  `;
+}
+
+async function submitRegistration() {
+  const guild = document.getElementById('guild-input').value.trim();
+  try {
+    const res = await fetch('/auth/register', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        twitter_id: twitterData?.id,
+        twitter_handle: twitterData?.handle,
+        school_id: selectedHouse,
+        guild_tag: guild || null,
+      }),
+    }).then(r=>r.json());
+    if (res.player_id) {
+      localStorage.setItem('9lv_session', JSON.stringify({ player_id: res.player_id }));
+      window.location.href = '/dashboard.html';
+    } else {
+      alert(res.error || 'Registration failed');
     }
-
-    // - DETAIL MODAL â•â•â•
-    function openDetail(id) {
-      var h = houses[id];
-      if (!h) return;
-
-      document.getElementById('detailBanner').style.background = 'linear-gradient(180deg, ' + h.color + '33, var(--bg-card))';
-      document.getElementById('houseDetail').style.setProperty('--detail-color', h.color);
-      document.getElementById('houseDetail').style.border = '2px solid ' + h.color;
-      document.getElementById('detailCrest').src = h.crest;
-      document.getElementById('detailName').textContent = h.name;
-      document.getElementById('detailName').style.color = h.color;
-      document.getElementById('detailElement').textContent = h.element;
-      document.getElementById('detailDesc').textContent = h.desc;
-      document.getElementById('detailConfirmBtn').style.background = h.color;
-      document.getElementById('detailConfirmBtn').dataset.houseId = id;
-
-      var bonusHTML = '';
-      for (var i = 0; i < h.bonuses.length; i++) {
-        bonusHTML += '<div class="house-bonus-row">'
-          + '<div class="house-bonus-dot"></div>'
-          + '<span class="house-bonus-text">' + h.bonuses[i].text + '</span>'
-          + '</div>';
-      }
-      document.getElementById('detailBonuses').innerHTML = bonusHTML;
-      document.getElementById('houseDetailOverlay').classList.add('active');
-    }
-
-    function closeDetail() {
-      document.getElementById('houseDetailOverlay').classList.remove('active');
-    }
-
-    function confirmFromDetail() {
-      var id = document.getElementById('detailConfirmBtn').dataset.houseId;
-      selectHouse(parseInt(id));
-      closeDetail();
-    }
-
-    // - SELECT / DESELECT â•â•â•
-    function selectHouse(id) {
-      selectedHouse = id;
-      var h = houses[id];
-
-      var cards = document.querySelectorAll('.house-card');
-      for (var i = 0; i < cards.length; i++) cards[i].classList.remove('selected');
-      var card = document.querySelector('[data-house-id="' + id + '"]');
-      if (card) card.classList.add('selected');
-
-      document.getElementById('selectedCrest').src = h.crest;
-      document.getElementById('selectedName').textContent = h.name;
-      document.getElementById('selectedName').style.color = h.color;
-      document.getElementById('selectedElement').textContent = h.element;
-      document.getElementById('confirmSection').classList.add('active');
-      document.getElementById('submitBtn').disabled = false;
-
-      setTimeout(function() {
-        document.getElementById('confirmSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 200);
-    }
-
-    function deselectHouse() {
-      selectedHouse = null;
-      var cards = document.querySelectorAll('.house-card');
-      for (var i = 0; i < cards.length; i++) cards[i].classList.remove('selected');
-      document.getElementById('confirmSection').classList.remove('active');
-      document.getElementById('submitBtn').disabled = true;
-    }
-
-    // - TWITTER CONNECT â•â•â•
-    function connectTwitter() {
-      window.location.href = '/auth/twitter';
-    }
-
-    // - COMPLETE REGISTRATION â•â•â•
-    async function completeRegistration() {
-      if (!selectedHouse) return;
-
-      var btn = document.getElementById('submitBtn');
-      btn.disabled = true;
-      btn.textContent = 'PLEDGING...';
-
-      try {
-        var community = document.getElementById('communityTag').value.trim();
-
-        var body = {
-          twitter_id: oauthData.twitter_id,
-          twitter_handle: oauthData.twitter_handle,
-          profile_image: oauthData.profile_image,
-          school_id: selectedHouse,
-          community_tag: community || null
-        };
-
-        var res = await fetch('/auth/complete-registration', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-
-        if (res.ok) {
-          var data = await res.json();
-          if (data.player && data.player.id) {
-            localStorage.setItem('player_id', data.player.id);
-          }
-          window.location.href = '/dashboard.html?player_id=' + (data.player ? data.player.id : '');
-        } else {
-          var err = await res.json();
-          alert(err.error || 'Registration failed. Please try again.');
-          btn.disabled = false;
-          btn.textContent = 'PLEDGE ALLEGIANCE';
-        }
-      } catch (e) {
-        console.error(e);
-        alert('Connection error. Please try again.');
-        btn.disabled = false;
-        btn.textContent = 'PLEDGE ALLEGIANCE';
-      }
-    }
-
-    // - CHECK OAUTH RETURN â•â•â•
-    function checkOAuthReturn() {
-      var params = new URLSearchParams(window.location.search);
-
-      // Check for errors
-      var error = params.get('error');
-      if (error) {
-        var banner = document.getElementById('errorBanner');
-        var messages = {
-          'oauth_failed': 'Could not connect to X. Please try again.',
-          'invalid_state': 'Session expired. Please try again.',
-          'callback_failed': 'Authentication failed. Please try again.',
-          'account_too_new': 'Your X account must be at least 30 days old.',
-          'not_enough_followers': 'You need at least 50 followers to register.',
-          'not_enough_tweets': 'You need at least 10 tweets to register.',
-          'access_denied': 'You cancelled the login. Try again when ready.'
-        };
-        banner.textContent = messages[error] || 'An error occurred. Please try again.';
-        banner.classList.add('active');
-        return;
-      }
-
-      // Check if coming back from OAuth with choose_school step
-      var step = params.get('step');
-      if (step === 'choose_school' || step === 'choose_house') {
-        oauthData = {
-          twitter_id: params.get('twitter_id'),
-          twitter_handle: params.get('twitter_handle'),
-          profile_image: params.get('profile_image') || ''
-        };
-
-        if (oauthData.twitter_id && oauthData.twitter_handle) {
-          document.getElementById('connectScreen').classList.add('hidden');
-          document.getElementById('houseSelectScreen').classList.add('active');
-        }
-      }
-
-      // If already registered, go to dashboard
-      var pid = localStorage.getItem('player_id');
-      if (pid && !step) {
-        window.location.href = '/dashboard.html?player_id=' + pid;
-      }
-    }
-
-    // Close detail on overlay click
-    document.getElementById('houseDetailOverlay').addEventListener('click', function(e) {
-      if (e.target.id === 'houseDetailOverlay') closeDetail();
-    });
-
-    // Init
-    renderHouseGrid();
-    checkOAuthReturn();
-  </script>
+  } catch(e) { alert('Error: '+e.message); }
+}
+</script>
 </body>
 </html>
