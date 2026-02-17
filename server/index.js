@@ -2,8 +2,24 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const http = require("http");
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Create HTTP server (needed for Socket.io)
+const server = http.createServer(app);
+
+// Socket.io setup
+let io = null;
+try {
+  const { Server } = require("socket.io");
+  io = new Server(server, {
+    cors: { origin: "*", methods: ["GET", "POST"] }
+  });
+  console.log("✅ Socket.io initialized");
+} catch (e) {
+  console.log("⚠️ Socket.io not installed — duels will use REST only");
+}
 
 // Middleware
 app.use(cors());
@@ -76,6 +92,10 @@ try {
 try {
   const duelRoutes = require("./routes/duels");
   app.use("/api/duels", duelRoutes);
+  // Wire up Socket.io for real-time duels
+  if (io && duelRoutes.setupDuelSockets) {
+    duelRoutes.setupDuelSockets(io);
+  }
   console.log("✅ Duel routes loaded");
 } catch (e) {
   console.error("❌ Failed to load duel routes:", e.message);
@@ -84,7 +104,6 @@ try {
 try {
   const mapRoutes = require("./routes/map");
   app.use("/api/map", mapRoutes);
-  // NOTE: Removed old "/api/zones" alias for map — V3 zones.js now handles that path
   console.log("✅ Map routes loaded");
 } catch (e) {
   console.error("❌ Failed to load map routes:", e.message);
@@ -151,10 +170,11 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
-// Start server
-app.listen(PORT, "0.0.0.0", () => {
+// Start server (use `server` instead of `app` for Socket.io)
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`🐱 Nine Lives Network server running on port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
+  if (io) console.log(`⚔️ Real-time duels active (Socket.io)`);
 });
 
 module.exports = app;
