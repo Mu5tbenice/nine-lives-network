@@ -462,7 +462,7 @@
    ================================================================ */
 var HOUSES={1:{name:'Smoulders',color:'#E03C31',glow:'#ff6b5b',slug:'smoulders',img:'Housesmoulders.png'},2:{name:'Darktide',color:'#00B4D8',glow:'#4de8ff',slug:'darktide',img:'Housedarktide.png'},3:{name:'Stonebark',color:'#5CB338',glow:'#8aef5a',slug:'stonebark',img:'Housestonebark.png'},4:{name:'Ashenvale',color:'#90E0EF',glow:'#b8f0ff',slug:'ashenvale',img:'HouseAshenvale.png'},5:{name:'Stormrage',color:'#FFC800',glow:'#ffe566',slug:'stormrage',img:'Housestormrage.png'},6:{name:'Nighthollow',color:'#7B2D8E',glow:'#c066dd',slug:'nighthollow',img:'Housenighthollow.png'},7:{name:'Dawnbringer',color:'#FF8C00',glow:'#ffb84d',slug:'dawnbringer',img:'HouseDwnbringer.png'},8:{name:'Manastorm',color:'#5B8FE0',glow:'#8bb8ff',slug:'manastorm',img:'Housemanastorm.png'},9:{name:'Plaguemire',color:'#E84393',glow:'#ff7ab8',slug:'plaguemire',img:'Houseplaguemire.png'}};
 var ZONE_IMAGES={};
-var zones=[],actionsToday={},influence={},player=null,playerActedZones={},currentSort='activity',communityClashes=[],communityData={};
+var zones=[],actionsToday={},influence={},player=null,playerActedZones={},currentSort='activity',guildClashes=[],guildData={};
 var SLUG_MAP={};Object.keys(HOUSES).forEach(function(id){SLUG_MAP[HOUSES[id].slug]={name:HOUSES[id].name,color:HOUSES[id].color,img:'/assets/images/houses/'+HOUSES[id].img};});
 SLUG_MAP.universal={name:'Universal',color:'#D4A64B',img:null};
 var RARITY_MAP={common:{color:'#bbb',border:'rgba(180,180,180,0.3)',bg:'rgba(180,180,180,0.06)',label:'C',mult:'\u00D71.0'},uncommon:{color:'#66dd66',border:'rgba(80,200,80,0.35)',bg:'rgba(80,200,80,0.08)',label:'U',mult:'\u00D71.25'},rare:{color:'#55bbff',border:'rgba(0,150,255,0.35)',bg:'rgba(0,150,255,0.08)',label:'R',mult:'\u00D71.5'},epic:{color:'#bb88ff',border:'rgba(160,80,240,0.4)',bg:'rgba(160,80,240,0.1)',label:'E',mult:'\u00D72.0'},legendary:{color:'#ffd700',border:'rgba(255,200,0,0.4)',bg:'rgba(255,200,0,0.12)',label:'L',mult:'\u00D73.0'}};
@@ -484,9 +484,9 @@ function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace
    COMMUNITY CLASH (page-level)
    ================================================================ */
 function renderClashes(){
-  if(!communityClashes||!communityClashes.length){document.getElementById('clashCard').style.display='none';return;}
+  if(!guildClashes||!guildClashes.length){document.getElementById('clashCard').style.display='none';return;}
   var html='';
-  communityClashes.forEach(function(clash){
+  guildClashes.forEach(function(clash){
     var a=clash.team_a||{};var b=clash.team_b||{};
     var apts=a.points||0;var bpts=b.points||0;var total=apts+bpts||1;
     var apct=Math.round(apts/total*100);var bpct=100-apct;
@@ -518,7 +518,7 @@ function renderPlayerHeader(){
   var h=HOUSES[player.school_id]||{name:'?',color:'#888',img:''};
   var mH='';var mana=player.mana!=null?player.mana:7;
   for(var i=0;i<7;i++)mH+='<div class="mana-orb'+(i<mana?' mana-orb--filled':'')+'" style="width:14px;height:14px;"></div>';
-  var tagH=player.community_tag?'<span class="player-header__tag">'+esc(player.community_tag)+'</span>':'';
+  var tagH=player.guild_tag?'<span class="player-header__tag">'+esc(player.guild_tag)+'</span>':'';
   var el=document.getElementById('playerHeader');
   el.innerHTML='<div class="player-header__left">'+(player.profile_image?'<img src="'+player.profile_image+'" class="player-header__avatar">':'')+'<div><div class="player-header__name">@'+esc(player.twitter_handle||'Unknown')+'</div><div style="display:flex;align-items:center;gap:6px;margin-top:2px;"><span class="player-header__house" style="color:'+h.color+';">'+hImg(h.img,14)+' '+h.name+'</span>'+tagH+'</div></div></div><div class="player-header__mana"><span class="player-header__mana-label">MANA</span><div class="mana-row" style="gap:3px;">'+mH+'</div></div>';
   el.style.display='flex';
@@ -742,7 +742,7 @@ function renderZmTicker(zone){
   }
 }
 
-/* Chart - uses house influence data to generate mock community chart */
+/* Chart - uses house influence data to generate mock guild chart */
 function renderZmChart(zoneId){
   var ctx=document.getElementById('zmChart').getContext('2d');
   if(zmChart){zmChart.destroy();zmChart=null;}
@@ -782,15 +782,15 @@ function renderZmChart(zoneId){
 /* Race bars */
 function renderZmRace(zoneId){
   var el=document.getElementById('zmRace');
-  var commInf=communityInfluence[zoneId]||{};
+  var commInf=guildInfluence[zoneId]||{};
   var entries=[];
   Object.keys(commInf).forEach(function(tag){
-    var cd=communityData[tag]||{};
+    var cd=guildData[tag]||{};
     entries.push({tag:tag,pct:commInf[tag],color:cd.color||'#888',name:cd.name||tag,image_url:cd.image_url||null});
   });
   entries.sort(function(a,b){return b.pct-a.pct;});
   if(entries.length===0){
-    // Fall back to house data if no community data
+    // Fall back to house data if no guild data
     var inf=influence[zoneId]||{};
     Object.keys(inf).forEach(function(sid){var h=HOUSES[parseInt(sid)];if(h)entries.push({tag:h.name,pct:inf[sid],color:h.color,name:h.name,image_url:'/assets/images/houses/'+h.img});});
     entries.sort(function(a,b){return b.pct-a.pct;});
@@ -855,7 +855,7 @@ function renderZmTimeline(zoneId){
       +'<div class="zm-tl-avatar" style="border-color:'+h.color+';background:radial-gradient(circle,'+h.color+'18,#0a0812);">'
       +(p.profile_image?'<img src="'+p.profile_image+'">':h.name.charAt(0))+'</div>'
       +'<div class="zm-tl-handle" style="color:'+h.color+';">@'+esc((p.twitter_handle||'?').substring(0,9))+'</div>'
-      +(p.community_tag?'<div class="zm-tl-comm" style="color:var(--gold);">'+esc(p.community_tag)+'</div>':'')
+      +(p.guild_tag?'<div class="zm-tl-comm" style="color:var(--gold);">'+esc(p.guild_tag)+'</div>':'')
       +'<div class="zm-tl-pts" style="background:'+h.color+'15;border:1px solid '+h.color+'25;">'+typeCol.substring(0,1).toUpperCase()+'</div>'
       +'<div class="zm-tl-time">'+timeAgo(a.created_at)+'</div></div>';
     // Connector
@@ -882,7 +882,7 @@ function showZmPopup(e,el){
     +(p.profile_image?'<img src="'+p.profile_image+'">':h.name.charAt(0))+'</div>'
     +'<div><div class="zm-popup__name">@'+esc(p.twitter_handle||'unknown')+'</div>'
     +'<div class="zm-popup__house" style="color:'+h.color+';">'+hImg(h.img,14)+h.name+'</div>'
-    +(p.community_tag?'<div class="zm-popup__tag" style="background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border);">'+esc(p.community_tag)+'</div>':'')
+    +(p.guild_tag?'<div class="zm-popup__tag" style="background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border);">'+esc(p.guild_tag)+'</div>':'')
     +'</div></div>'
     +'<div class="zm-popup__stats"><div class="zm-popup__stat"><div class="zm-popup__stat-val">'+(p.seasonal_points||'\u2014')+'</div><div class="zm-popup__stat-label">POINTS</div></div>'
     +'<div class="zm-popup__stat"><div class="zm-popup__stat-val">'+(p.streak||'\u2014')+'</div><div class="zm-popup__stat-label">STREAK</div></div>'
@@ -1078,20 +1078,20 @@ async function loadWorld(){
       fetch('/api/territory/actions/today').then(function(r){return r.json();}),
       fetch('/api/territory/influence').then(function(r){return r.json();}),
       fetch('/api/leaderboards/schools').then(function(r){return r.json();}),
-      fetch('/api/territory/community-influence').then(function(r){return r.ok?r.json():{};}).catch(function(){return{};}),
+      fetch('/api/territory/guild-influence').then(function(r){return r.ok?r.json():{};}).catch(function(){return{};}),
       fetch('/api/territory/communities').then(function(r){return r.ok?r.json():[];}).catch(function(){return[];})
     ];
     if(playerId)fetches.push(fetch('/api/players/'+playerId).then(function(r){return r.json();}));
     var results=await Promise.all(fetches);
     zones=results[0]||[];actionsToday=results[1]||{};influence=results[2]||{};
-    var schoolData=results[3]||[];communityInfluence=results[4]||{};var commList=results[5]||[];player=results[6]||null;
-    if(Array.isArray(commList))commList.forEach(function(c){communityData[c.tag]={name:c.name||c.tag,color:c.color||'#888',image_url:c.image_url};});
+    var schoolData=results[3]||[];guildInfluence=results[4]||{};var commList=results[5]||[];player=results[6]||null;
+    if(Array.isArray(commList))commList.forEach(function(c){guildData[c.tag]={name:c.name||c.tag,color:c.color||'#888',image_url:c.image_url};});
     if(player){
       Object.keys(actionsToday).forEach(function(zid){actionsToday[zid].forEach(function(a){var p=a.player||{};if(p.id===player.id)playerActedZones[zid]=true;});});
       renderPlayerHeader();
     }
     renderTowers(schoolData);
-    try{var cr=await fetch('/api/admin/clashes');if(cr.ok){var cd=await cr.json();communityClashes=cd||[];renderClashes();}}catch(e){communityClashes=[];}
+    try{var cr=await fetch('/api/admin/clashes');if(cr.ok){var cd=await cr.json();guildClashes=cd||[];renderClashes();}}catch(e){guildClashes=[];}
     var loader=document.getElementById('loadingState');if(loader)loader.style.display='none';
     renderZoneGrid();
   }catch(e){
