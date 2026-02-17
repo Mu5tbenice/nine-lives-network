@@ -190,18 +190,18 @@
         <div class="your-stats" id="yourStats"></div>
       </div>
 
-      <!-- Community Race -->
+      <!-- Guild Race -->
       <div class="section fade-up fade-up-1">
         <div class="section-label">COMMUNITY RACE — TODAY</div>
-        <div class="race-card" id="communityRace"></div>
+        <div class="race-card" id="guildRace"></div>
       </div>
 
-      <!-- Community Trend Chart -->
+      <!-- Guild Trend Chart -->
       <div class="section fade-up fade-up-1">
         <div class="section-label">COMMUNITY TREND</div>
         <div class="chart-card">
-          <div class="chart-canvas-wrap"><canvas id="communityChart"></canvas></div>
-          <div class="chart-legend" id="communityChartLegend"></div>
+          <div class="chart-canvas-wrap"><canvas id="guildChart"></canvas></div>
+          <div class="chart-legend" id="guildChartLegend"></div>
         </div>
       </div>
 
@@ -291,7 +291,7 @@
         + (player.profile_image ? '<img src="' + player.profile_image + '" class="your-stats__avatar">' : '')
         + '<div>'
         + '<div class="your-stats__name">@' + player.twitter_handle + '</div>'
-        + '<div class="your-stats__sub">House ' + h.name + (player.community_tag ? ' &middot; ' + player.community_tag : '') + '</div>'
+        + '<div class="your-stats__sub">House ' + h.name + (player.guild_tag ? ' &middot; ' + player.guild_tag : '') + '</div>'
         + '</div></div>'
         + '<div class="your-stats__grid">'
         + '<div class="your-stat"><div class="your-stat__val">' + todayPts + '</div><div class="your-stat__label">TODAY PTS</div></div>'
@@ -303,10 +303,10 @@
     }
 
     // ═══ RENDER COMMUNITY RACE ═══
-    function renderCommunityRace(communities) {
-      var el = document.getElementById('communityRace');
+    function renderGuildRace(communities) {
+      var el = document.getElementById('guildRace');
       if (!communities || communities.length === 0) {
-        el.innerHTML = '<div class="race-empty">No community activity today yet. Rep your tag and be first!</div>';
+        el.innerHTML = '<div class="race-empty">No guild activity today yet. Rep your tag and be first!</div>';
         return;
       }
 
@@ -320,7 +320,7 @@
 
         html += '<div class="race-row">'
           + '<div class="race-rank ' + rankClass + '">' + (i + 1) + '</div>'
-          + '<div class="race-tag">' + c.community_tag + '</div>'
+          + '<div class="race-tag">' + c.guild_tag + '</div>'
           + '<div class="race-bar-wrap"><div class="race-bar ' + barClass + '" style="width:' + pct + '%;"></div></div>'
           + '<div class="race-pts">' + c.today_points + ' PTS</div>'
           + '<div class="race-members">' + c.member_count + ' wiz</div>'
@@ -439,8 +439,8 @@
     }
 
     // ═══ RENDER COMMUNITY CHART ═══
-    function renderCommunityChart(history) {
-      var canvas = document.getElementById('communityChart');
+    function renderGuildChart(history) {
+      var canvas = document.getElementById('guildChart');
       var ctx = canvas.getContext('2d');
       var wrap = canvas.parentElement;
       canvas.width = wrap.offsetWidth * 2;
@@ -449,7 +449,7 @@
       var H = canvas.height;
       var pad = { top: 20, right: 20, bottom: 40, left: 50 };
 
-      // Collect all community tags that appear
+      // Collect all guild tags that appear
       var tagSet = {};
       history.forEach(function(d) {
         Object.keys(d.communities || {}).forEach(function(tag) { tagSet[tag] = true; });
@@ -460,11 +460,11 @@
         ctx.fillStyle = '#606070';
         ctx.font = '24px Crimson Text';
         ctx.textAlign = 'center';
-        ctx.fillText('More data needed for community trend', W / 2, H / 2);
+        ctx.fillText('More data needed for guild trend', W / 2, H / 2);
         return;
       }
 
-      // Community colors — bright distinct palette
+      // Guild colors — bright distinct palette
       var COMMUNITY_COLORS = ['#FFD700', '#00BFFF', '#FF6B6B', '#50FA7B', '#BD93F9', '#FFB86C', '#FF79C6', '#8BE9FD', '#F1FA8C', '#FF5555'];
 
       // Find max value
@@ -502,7 +502,7 @@
         ctx.fillText(label, x, H - 10);
       });
 
-      // Draw lines for each community
+      // Draw lines for each guild
       tags.forEach(function(tag, ti) {
         var color = COMMUNITY_COLORS[ti % COMMUNITY_COLORS.length];
         ctx.strokeStyle = color;
@@ -530,7 +530,7 @@
       });
 
       // Legend
-      var legendEl = document.getElementById('communityChartLegend');
+      var legendEl = document.getElementById('guildChartLegend');
       var legendHTML = '';
       tags.forEach(function(tag, ti) {
         var color = COMMUNITY_COLORS[ti % COMMUNITY_COLORS.length];
@@ -566,7 +566,7 @@
           + (p.profile_image ? '<img src="' + p.profile_image + '" class="tp-avatar">' : '<div class="tp-avatar" style="background:var(--bg-inset);display:flex;align-items:center;justify-content:center;">' + hImg(h.img, 18) + '</div>')
           + '<div class="tp-info">'
           + '  <div class="tp-handle">@' + (p.twitter_handle || 'anon') + (isYou ? ' (you)' : '') + '</div>'
-          + '  <div class="tp-meta">' + hImg(h.img, 12) + (p.community_tag ? '<span class="tp-meta-tag">' + p.community_tag + '</span>' : '') + '</div>'
+          + '  <div class="tp-meta">' + hImg(h.img, 12) + (p.guild_tag ? '<span class="tp-meta-tag">' + p.guild_tag + '</span>' : '') + '</div>'
           + '</div>'
           + '<div class="tp-bar-wrap"><div class="tp-bar" style="width:' + pct + '%;"></div></div>'
           + '<div class="tp-pts">' + p.today_points + '</div>'
@@ -642,8 +642,8 @@
         document.getElementById('wrContent').style.display = 'block';
 
         if (player) renderYourStats(todayData);
-        renderCommunityRace(todayData.communities || []);
-        renderCommunityChart(historyData);
+        renderGuildRace(todayData.communities || []);
+        renderGuildChart(historyData);
         renderHouseChart(historyData);
         renderTopPlayers(todayData.players || []);
         renderFeed(actionsData);
