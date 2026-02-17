@@ -3,6 +3,10 @@ const router = express.Router();
 const { authClient, createUserClient } = require('../config/twitter');
 const supabase = require('../config/supabase');
 
+// V3: Nine creation on registration
+let nineSystem = null;
+try { nineSystem = require('../services/nineSystem'); } catch (e) { console.log('⚠️ nineSystem not loaded'); }
+
 // Store OAuth states temporarily (in production, use Redis or database)
 const oauthStates = new Map();
 
@@ -234,11 +238,13 @@ router.get('/twitter/callback', async (req, res) => {
 
 /**
  * POST /auth/complete-registration
- * Completes registration with school selection and optional community tag
+ * Completes registration with school selection and optional guild tag
  */
 router.post('/complete-registration', express.json(), async (req, res) => {
   try {
-    const { twitter_id, twitter_handle, school_id, community_tag, profile_image } = req.body;
+    // V3: Accept both community_tag (old frontend) and guild_tag (new frontend)
+    const { twitter_id, twitter_handle, school_id, community_tag, guild_tag, profile_image } = req.body;
+    const playerGuildTag = guild_tag || community_tag || null;
 
     // Validate required fields
     if (!twitter_id || !twitter_handle || !school_id) {
@@ -274,9 +280,11 @@ router.post('/complete-registration', express.json(), async (req, res) => {
         twitter_id,
         twitter_handle,
         school_id: parseInt(school_id),
-        community_tag: community_tag || null,
+        guild_tag: playerGuildTag,  // V3: renamed from community_tag
         profile_image: profile_image || null,
         mana: 3,
+        max_mana: 10,                // V3: new column
+        last_mana_regen: new Date().toISOString(),  // V3: new column
         lifetime_points: 0,
         seasonal_points: 0,
         is_active: true
@@ -288,6 +296,20 @@ router.post('/complete-registration', express.json(), async (req, res) => {
       console.error('Error creating player:', error);
       return res.status(500).json({ error: 'Failed to create player' });
     }
+
+    // ========================================
+    // V3: CREATE THEIR NINE
+    // ========================================
+    try {
+      if (nineSystem) {
+        await nineSystem.createNine(player.id, parseInt(school_id), twitter_handle);
+        console.log(`⚔️ Nine created for @${twitter_handle}`);
+      }
+    } catch (nineError) {
+      // Non-critical — don't fail registration if Nine creation fails
+      console.error('⚔️ Nine creation failed:', nineError.message);
+    }
+    // ========================================
 
     // ========================================
     // NERM AUTO-FOLLOW: Always watching...
