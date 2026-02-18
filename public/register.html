@@ -117,6 +117,8 @@ function checkOAuthReturn(){
   }
 }
 
+var nermRecommendedHouse=null;
+var nermSass=["oh, you think you know better than me? cute.","sure. ignore the magical cat. everyone does.","wow. rejecting a sorting by a floating immortal cat. bold.","fine. but when you lose, remember I tried to help.","interesting choice. wrong, but interesting.","I literally read your soul and you said nah. okay.","you know I am always right, right? ...whatever.","that house? really? I mean... okay I guess.","betrayal noted. moving on.","your funeral. I mean your sorting. same thing."];
 async function startSortingHat(){
   showStep('step2');
   try{
@@ -151,6 +153,7 @@ function showRoastAndReveal(data){
 }
 
 function revealHouse(data){
+  nermRecommendedHouse=data.house_id;
   var house=HOUSES[data.house_id];
   var h='<div class="house-reveal">';
   h+='<img src="'+house.img+'" style="width:100px;height:100px;object-fit:contain;margin:8px auto;display:block;" onerror="this.style.display=\'none\'">';
@@ -162,41 +165,57 @@ function revealHouse(data){
 }
 
 function renderHouseGrid(){
-  var g=document.getElementById('houseGrid');var h='';
+  var g=document.getElementById("houseGrid");var h="";
   var counts=Object.values(houseCounts);var minCount=counts.length>0?Math.min(...counts):0;
   Object.keys(HOUSES).forEach(function(id){
     var house=HOUSES[id];var isSel=parseInt(id)===selectedHouse;
     var cnt=houseCounts[id]||0;var isUnderdog=counts.length>0&&cnt<=minCount;
-    h+='<div class="house-btn'+(isSel?' selected':'')+'" id="hb'+id+'" onclick="pickHouse('+id+')" style="border-color:'+(isSel?house.color:house.color+'20')+';'+(isSel?'background:'+house.color+'10;box-shadow:0 4px 16px '+house.color+'20;':'background:rgba(255,255,255,0.02);')+';position:relative;padding:10px 6px 8px;">';
-    if(isUnderdog)h+='<div style="position:absolute;top:-6px;right:-4px;font-family:var(--font-data);font-size:6px;background:#6acd8a;color:#080810;padding:2px 6px;border-radius:3px;z-index:2;" title="Least played house gets +15% bonus points!">+15%</div>';
-    h+='<img src="'+house.img+'" style="width:36px;height:36px;object-fit:contain;margin:0 auto 4px;display:block;" onerror="this.outerHTML=\'<div style=font-size:24px>'+house.icon+'</div>\'">';
-    h+='<div style="font-family:var(--font-title);font-size:10px;font-weight:700;color:'+house.color+';letter-spacing:0.5px;margin-bottom:2px;">'+house.name+'</div>';
-    h+='<div style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);margin-bottom:6px;">'+house.role+'</div>';
-    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 6px;margin-bottom:4px;">';
-    h+='<div style="font-family:var(--font-data);font-size:7px;color:#e85a6a;text-align:center;">⚔'+house.atk+'</div>';
-    h+='<div style="font-family:var(--font-data);font-size:7px;color:#6acd8a;text-align:center;">♥'+house.hp+'</div>';
-    h+='<div style="font-family:var(--font-data);font-size:7px;color:#6ac8d8;text-align:center;">»'+house.spd+'</div>';
-    h+='<div style="font-family:var(--font-data);font-size:7px;color:#b088e8;text-align:center;">🛡'+house.def+'</div>';
-    h+='</div>';
-    h+='<div style="font-family:var(--font-data);font-size:7px;color:#D4A64B;text-align:center;margin-bottom:4px;">☘'+house.luck+'</div>';
-    h+='<div style="font-family:var(--font-data);font-size:5px;color:var(--text-faint);">'+cnt+' player'+(cnt!==1?'s':'')+'</div>';
-    h+='</div>';
+    var glowStyle=isSel?"border-color:"+house.color+";background:"+house.color+"12;box-shadow:0 0 20px "+house.color+"30, 0 4px 16px "+house.color+"20, inset 0 0 30px "+house.color+"08;":"border-color:"+house.color+"25;background:rgba(255,255,255,0.02);";
+    h+="<div class=\"house-btn"+(isSel?" selected":"")+ "\" id=\"hb"+id+"\" onclick=\"pickHouse("+id+")\" style=\""+glowStyle+"position:relative;padding:14px 8px 10px;\">";
+    if(isUnderdog)h+="<div style=\"position:absolute;top:-8px;right:-4px;font-family:var(--font-data);font-size:7px;background:linear-gradient(135deg,#6acd8a,#4ab868);color:#080810;padding:3px 7px;border-radius:4px;z-index:2;box-shadow:0 2px 6px rgba(106,205,138,0.3);\">+15%</div>";
+    h+="<img src=\""+house.img+"\" style=\"width:44px;height:44px;object-fit:contain;margin:0 auto 6px;display:block;filter:"+(isSel?"drop-shadow(0 0 8px "+house.color+"60)":"none")+";\" onerror=\"this.outerHTML='<div style=font-size:28px>"+house.icon+"</div>'\"/>";
+    h+="<div style=\"font-family:var(--font-title);font-size:11px;font-weight:900;color:"+house.color+";letter-spacing:1px;margin-bottom:2px;text-transform:uppercase;\">"+house.name+"</div>";
+    h+="<div style=\"font-family:var(--font-mono);font-size:6px;color:var(--text-muted);margin-bottom:8px;letter-spacing:0.5px;\">"+house.role+"</div>";
+    h+="<div style=\"display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;margin-bottom:6px;\">";
+    h+="<div style=\"font-family:var(--font-data);font-size:8px;color:#e85a6a;text-align:right;\">⚔ "+house.atk+"</div>";
+    h+="<div style=\"font-family:var(--font-data);font-size:8px;color:#6acd8a;text-align:left;\">♥ "+house.hp+"</div>";
+    h+="<div style=\"font-family:var(--font-data);font-size:8px;color:#6ac8d8;text-align:right;\">» "+house.spd+"</div>";
+    h+="<div style=\"font-family:var(--font-data);font-size:8px;color:#b088e8;text-align:left;\">🛡 "+house.def+"</div>";
+    h+="</div>";
+    h+="<div style=\"font-family:var(--font-data);font-size:8px;color:#D4A64B;text-align:center;margin-bottom:6px;\">☘ "+house.luck+"</div>";
+    h+="<div style=\"font-family:var(--font-data);font-size:6px;color:var(--text-faint);\">"+cnt+" player"+(cnt!==1?"s":"")+"</div>";
+    h+="</div>";
   });
-  h+='<div style="grid-column:1/-1;text-align:center;margin-top:6px;font-family:var(--font-data);font-size:6px;color:#6acd8a;cursor:help;" title="Houses with the fewest players get a +15% bonus to all points earned. This rebalances every week.">🌱 UNDERDOG BONUS: least played houses get +15% points</div>';
+  h+="<div style=\"grid-column:1/-1;text-align:center;margin-top:8px;font-family:var(--font-data);font-size:7px;color:#6acd8a;cursor:help;\" title=\"Houses with the fewest players get a +15% bonus to all points earned. This rebalances every week.\">🌱 UNDERDOG BONUS: least played houses get +15% points</div>";
   g.innerHTML=h;
 }
 
 function pickHouse(id){
   selectedHouse=id;var house=HOUSES[id];
-  var h='<div class="house-reveal">';
-  h+='<img src="'+house.img+'" style="width:100px;height:100px;object-fit:contain;margin:8px auto;display:block;" onerror="this.style.display=\'none\'">';
-  h+='<div style="font-family:var(--font-title);font-size:20px;font-weight:900;color:'+house.color+';letter-spacing:2px;">'+house.name.toUpperCase()+'</div>';
-  h+='<div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-top:4px;">your choice. sure. whatever.</div>';
-  h+='</div>';
-  document.getElementById('houseRevealArea').innerHTML=h;
+  var h="<div class=\"house-reveal\">";
+  h+="<img src=\""+house.img+"\" style=\"width:100px;height:100px;object-fit:contain;margin:8px auto;display:block;filter:drop-shadow(0 0 12px "+house.color+"50);\" onerror=\"this.style.display='none'\"/>";
+  h+="<div style=\"font-family:var(--font-title);font-size:22px;font-weight:900;color:"+house.color+";letter-spacing:3px;text-shadow:0 0 20px "+house.color+"40;\">"+house.name.toUpperCase()+"</div>";
+  if(nermRecommendedHouse&&id!==nermRecommendedHouse){
+    var sass=nermSass[Math.floor(Math.random()*nermSass.length)];
+    h+="<div style=\"margin-top:10px;padding:8px 14px;background:rgba(212,166,75,0.08);border:1px solid rgba(212,166,75,0.15);border-radius:8px;display:inline-block;\">";
+    h+="<div style=\"font-family:var(--font-mono);font-size:8px;color:var(--gold);font-style:italic;\">🐱 "+sass+"</div>";
+    h+="</div>";
+  }else if(nermRecommendedHouse&&id===nermRecommendedHouse){
+    h+="<div style=\"margin-top:10px;padding:8px 14px;background:rgba(106,205,138,0.08);border:1px solid rgba(106,205,138,0.15);border-radius:8px;display:inline-block;\">";
+    h+="<div style=\"font-family:var(--font-mono);font-size:8px;color:#6acd8a;font-style:italic;\">🐱 wise choice. I knew you had taste.</div>";
+    h+="</div>";
+  }
+  h+="</div>";
+  document.getElementById("houseRevealArea").innerHTML=h;
   Object.keys(HOUSES).forEach(function(hid){
-    var el=document.getElementById('hb'+hid);var isSel=parseInt(hid)===id;
-    if(el){el.className='house-btn'+(isSel?' selected':'');el.style.borderColor=isSel?HOUSES[hid].color:HOUSES[hid].color+'20';el.style.background=isSel?HOUSES[hid].color+'10':'rgba(255,255,255,0.02)';el.style.boxShadow=isSel?'0 4px 16px '+HOUSES[hid].color+'20':'none';}
+    var el=document.getElementById("hb"+hid);var isSel=parseInt(hid)===id;
+    if(el){
+      el.className="house-btn"+(isSel?" selected":"");
+      el.style.borderColor=isSel?HOUSES[hid].color:HOUSES[hid].color+"25";
+      el.style.background=isSel?HOUSES[hid].color+"12":"rgba(255,255,255,0.02)";
+      el.style.boxShadow=isSel?"0 0 20px "+HOUSES[hid].color+"30, 0 4px 16px "+HOUSES[hid].color+"20, inset 0 0 30px "+HOUSES[hid].color+"08":"none";
+      var img=el.querySelector("img");if(img)img.style.filter=isSel?"drop-shadow(0 0 8px "+HOUSES[hid].color+"60)":"none";
+    }
   });
 }
 
