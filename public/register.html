@@ -193,7 +193,7 @@ async function confirmRegistration(){
   var guild=document.getElementById('guildInput').value.trim();
   try{
     var r=await fetch('/auth/complete-registration',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({twitter_id:twitterData.twitter_id,twitter_handle:twitterData.twitter_handle,profile_image:twitterData.profile_image,access_token:twitterData.access_token,refresh_token:twitterData.refresh_token,school_id:selectedHouse,guild_tag:guild||null})});
-    if(r.ok){var data=await r.json();var pid=data.player_id||data.id||(data.player&&data.player.id);if(pid){localStorage.setItem('player_id',pid);window.location.href='/dashboard.html?player_id='+pid;}else{showError('registered but no player id returned. weird.');}}
+    if(r.ok){var data=await r.json();var pid=data.player_id||data.id||(data.player&&data.player.id);if(pid){localStorage.setItem('player_id',pid);window.location.href='/builder.html?player_id='+pid;}else{showError('registered but no player id returned. weird.');}}
     else{var err=await r.json().catch(function(){return{error:'unknown'};});showError(err.error||'registration failed. the void rejects you.');}
   }catch(e){console.error(e);showError('network error. even the internet is against you.');}
 }
