@@ -32,6 +32,7 @@
     /* ── EQUIPMENT GRID ── */
     .equip-title{font-family:var(--font-data);font-size:8px;color:var(--gold);letter-spacing:2px;margin-bottom:10px;text-align:center}
     .equip-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;max-width:360px;margin-left:auto;margin-right:auto}
+    .save-btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 #8a6d2f,0 0 40px rgba(212,166,75,0.5)}
     .equip-slot{aspect-ratio:1;border-radius:10px;background:rgba(0,0,0,0.3);border:2px dashed var(--border);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;transition:all 0.15s;overflow:hidden}
     .equip-slot:hover{border-color:var(--gold);transform:translateY(-2px)}
     .equip-slot.filled{border-style:solid;border-color:rgba(212,166,75,0.25)}
@@ -81,6 +82,7 @@
       <div class="stats-bar" id="statsBar"></div>
       <div class="equip-title">⚔ EQUIPMENT ⚔</div>
       <div class="equip-grid" id="equipGrid"></div>
+      <a href="/dashboard.html" id="saveBtn" style="display:block;max-width:360px;margin:0 auto 20px;padding:14px;border-radius:10px;border:none;cursor:pointer;font-family:var(--font-data);font-size:10px;letter-spacing:2px;text-align:center;text-decoration:none;background:linear-gradient(180deg,#D4A64B 0%,#b8903d 100%);color:#080810;box-shadow:0 4px 0 #8a6d2f,0 0 30px rgba(212,166,75,0.3);">SAVE &amp; ENTER WORLD</a>
     </div>
   </div>
 
@@ -130,9 +132,25 @@ async function init(){
 
     // Auto-grant starters if empty inventory
     if(inventory.length===0){
+      // Auto-equip random starters after granting
+      var autoEquip=true;
       await fetch('/api/items/grant-starters',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({player_id:parseInt(playerId)})});
       var iR2=await fetch('/api/items/inventory/'+playerId);
       if(iR2.ok){inventory=await iR2.json();}
+      // Auto-equip one random item per slot
+      if(autoEquip && inventory.length>0){
+        var slots=["fur","expression","headwear","outfit","weapon"];
+        for(var si=0;si<slots.length;si++){
+          var slot=slots[si];
+          var candidates=inventory.filter(function(pi){return pi.item && pi.item.slot===slot;});
+          if(candidates.length>0){
+            var pick=candidates[Math.floor(Math.random()*candidates.length)];
+            await fetch("/api/items/equip",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({player_id:parseInt(playerId),item_slug:pick.item.slug})});
+          }
+        }
+        var eR2=await fetch("/api/items/equipped/"+playerId);
+        if(eR2.ok){var eD2=await eR2.json();nineData=eD2.nine;equipped=eD2.equipped;}
+      }
     }
 
     document.getElementById('loading').style.display='none';
