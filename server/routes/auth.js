@@ -339,6 +339,14 @@ router.post('/complete-registration', express.json(), async (req, res) => {
  * GET /auth/check
  * Check if a Twitter user is already registered
  */
+router.get("/house-counts", async (req, res) => {
+  try {
+    const { data } = await supabase.from("players").select("school_id");
+    var counts = {};
+    (data || []).forEach(p => { if(p.school_id) counts[p.school_id] = (counts[p.school_id] || 0) + 1; });
+    res.json(counts);
+  } catch (e) { res.json({}); }
+});
 router.get('/check/:twitter_id', async (req, res) => {
   try {
     const { twitter_id } = req.params;

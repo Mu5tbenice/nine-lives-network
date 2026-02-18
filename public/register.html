@@ -101,7 +101,9 @@
   </div>
 
 <script>
-var HOUSES={1:{name:'Smoulders',color:'#E03C31',icon:'🔥',img:'/assets/images/houses/House-smoulders.png'},2:{name:'Darktide',color:'#00B4D8',icon:'🌊',img:'/assets/images/houses/House-darktide.png'},3:{name:'Stonebark',color:'#5CB338',icon:'🌿',img:'/assets/images/houses/House-stonebark.png'},4:{name:'Ashenvale',color:'#90E0EF',icon:'💨',img:'/assets/images/houses/House-Ashenvale.png'},5:{name:'Stormrage',color:'#FFC800',icon:'⚡',img:'/assets/images/houses/House-stormrage.png'},6:{name:'Nighthollow',color:'#7B2D8E',icon:'🌙',img:'/assets/images/houses/House-nighthollow.png'},7:{name:'Dawnbringer',color:'#FF8C00',icon:'☀️',img:'/assets/images/houses/House-dawnbringer.png'},8:{name:'Manastorm',color:'#5B8FE0',icon:'🔮',img:'/assets/images/houses/House-manastorm.png'},9:{name:'Plaguemire',color:'#E84393',icon:'☠️',img:'/assets/images/houses/House-plaguemire.png'}};
+var HOUSES={1:{name:'Smoulders',color:'#E03C31',icon:'🔥',img:'/assets/images/houses/House-smoulders.png',role:'Glass Cannon',atk:8,hp:18,spd:6,def:1,luck:3},2:{name:'Darktide',color:'#00B4D8',icon:'🌊',img:'/assets/images/houses/House-darktide.png',role:'Thief',atk:6,hp:22,spd:5,def:3,luck:4},3:{name:'Stonebark',color:'#5CB338',icon:'🌿',img:'/assets/images/houses/House-stonebark.png',role:'Wall',atk:4,hp:28,spd:3,def:6,luck:1},4:{name:'Ashenvale',color:'#90E0EF',icon:'💨',img:'/assets/images/houses/House-Ashenvale.png',role:'Rogue',atk:5,hp:20,spd:8,def:2,luck:6},5:{name:'Stormrage',color:'#FFC800',icon:'⚡',img:'/assets/images/houses/House-stormrage.png',role:'Glass Cannon',atk:9,hp:16,spd:7,def:1,luck:3},6:{name:'Nighthollow',color:'#7B2D8E',icon:'🌙',img:'/assets/images/houses/House-nighthollow.png',role:'Disruptor',atk:7,hp:20,spd:5,def:3,luck:5},7:{name:'Dawnbringer',color:'#FF8C00',icon:'☀️',img:'/assets/images/houses/House-dawnbringer.png',role:'Healer',atk:5,hp:24,spd:4,def:5,luck:2},8:{name:'Manastorm',color:'#5B8FE0',icon:'🔮',img:'/assets/images/houses/House-manastorm.png',role:'Controller',atk:6,hp:20,spd:6,def:3,luck:3},9:{name:'Plaguemire',color:'#E84393',icon:'☠️',img:'/assets/images/houses/House-plaguemire.png',role:'DOT',atk:6,hp:22,spd:4,def:3,luck:3}};
+var houseCounts={};
+(async function(){try{var r=await fetch("/auth/house-counts");if(r.ok)houseCounts=await r.json();}catch(e){}})();
 var selectedHouse=null,twitterData={};
 
 function showStep(n){document.querySelectorAll('.step').forEach(function(el){el.classList.remove('active');});document.getElementById(n).classList.add('active');}
@@ -163,13 +165,28 @@ function revealHouse(data){
 
 function renderHouseGrid(){
   var g=document.getElementById('houseGrid');var h='';
+  // Find lowest count for underdog
+  var counts=Object.values(houseCounts);var minCount=counts.length>0?Math.min(...counts):0;
   Object.keys(HOUSES).forEach(function(id){
     var house=HOUSES[id];var isSel=parseInt(id)===selectedHouse;
-    h+='<div class="house-btn'+(isSel?' selected':'')+'" id="hb'+id+'" onclick="pickHouse('+id+')" style="border-color:'+(isSel?house.color:house.color+'20')+';'+(isSel?'background:'+house.color+'10;box-shadow:0 4px 16px '+house.color+'20;':'background:rgba(255,255,255,0.02);')+'">';
-    h+='<img src="'+house.img+'" style="width:32px;height:32px;object-fit:contain;margin:0 auto 4px;display:block;" onerror="this.outerHTML=\'<div style=font-size:24px>'+house.icon+'</div>\'">';
-    h+='<div style="font-family:var(--font-title);font-size:9px;font-weight:700;color:'+house.color+';letter-spacing:0.5px;">'+house.name+'</div>';
+    var cnt=houseCounts[id]||0;var isUnderdog=counts.length>0&&cnt<=minCount;
+    h+='<div class="house-btn'+(isSel?' selected':'')+'" id="hb'+id+'" onclick="pickHouse('+id+')" style="border-color:'+(isSel?house.color:house.color+'20')+';'+(isSel?'background:'+house.color+'10;box-shadow:0 4px 16px '+house.color+'20;':'background:rgba(255,255,255,0.02);')+';position:relative;padding:8px 4px 6px;">';
+    if(isUnderdog)h+='<div style="position:absolute;top:-6px;right:-4px;font-family:var(--font-data);font-size:5px;background:#6acd8a;color:#080810;padding:2px 5px;border-radius:3px;z-index:2;" title="Least played house gets +15% bonus points!">+15%</div>';
+    h+='<img src="'+house.img+'" style="width:28px;height:28px;object-fit:contain;margin:0 auto 3px;display:block;" onerror="this.outerHTML=\'<div style=font-size:20px>'+house.icon+'</div>\'">';
+    h+='<div style="font-family:var(--font-title);font-size:8px;font-weight:700;color:'+house.color+';letter-spacing:0.5px;margin-bottom:2px;">'+house.name+'</div>';
+    h+='<div style="font-family:var(--font-data);font-size:5px;color:var(--text-muted);margin-bottom:3px;">'+house.role+'</div>';
+    h+='<div style="display:flex;justify-content:center;gap:3px;flex-wrap:wrap;">';
+    h+='<span style="font-family:var(--font-data);font-size:5px;color:#e85a6a;">'+house.atk+'A</span>';
+    h+='<span style="font-family:var(--font-data);font-size:5px;color:#6acd8a;">'+house.hp+'H</span>';
+    h+='<span style="font-family:var(--font-data);font-size:5px;color:#6ac8d8;">'+house.spd+'S</span>';
+    h+='<span style="font-family:var(--font-data);font-size:5px;color:#b088e8;">'+house.def+'D</span>';
+    h+='<span style="font-family:var(--font-data);font-size:5px;color:#D4A64B;">'+house.luck+'L</span>';
+    h+='</div>';
+    h+='<div style="font-family:var(--font-data);font-size:5px;color:var(--text-faint);margin-top:2px;">'+cnt+' player'+(cnt!==1?'s':'')+'</div>';
     h+='</div>';
   });
+  h+='</div>';
+  h+='<div style="text-align:center;margin-top:6px;font-family:var(--font-data);font-size:5px;color:#6acd8a;cursor:help;" title="Houses with the fewest players get a +15% bonus to all points earned. This rebalances every week.">🌱 UNDERDOG BONUS: least played houses get +15% points</div>';
   g.innerHTML=h;
 }
 
