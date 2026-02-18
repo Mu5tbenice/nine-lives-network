@@ -120,7 +120,7 @@ function checkOAuthReturn(){
 async function startSortingHat(){
   showStep('step2');
   try{
-    var r=await fetch('/api/sorting-hat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({twitter_handle:twitterData.twitter_handle,bio:'',followers:null,following:null})});
+    var r=await fetch('/api/sorting-hat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({twitter_handle:twitterData.twitter_handle,bio:twitterData.bio,followers:twitterData.followers,following:twitterData.following})});
     var data;
     if(r.ok){data=await r.json();}
     else{data={roast:"i tried to judge you but the magic failed. typical tuesday.",house_id:Math.floor(Math.random()*9)+1,house_reason:"random assignment. you get what you get."};}
