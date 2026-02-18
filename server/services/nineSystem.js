@@ -5,15 +5,15 @@ const supabase = require('../config/supabase');
 
 // Base stats per house (from V3 Game Design doc section 5)
 const HOUSE_BASE_STATS = {
-  1: { name: 'Smoulders',   atk: 8, hp: 18, spd: 6, def: 1, luck: 3 },
-  2: { name: 'Darktide',    atk: 6, hp: 22, spd: 5, def: 3, luck: 4 },
-  3: { name: 'Stonebark',   atk: 4, hp: 28, spd: 3, def: 6, luck: 1 },
-  4: { name: 'Ashenvale',   atk: 5, hp: 20, spd: 8, def: 2, luck: 6 },
-  5: { name: 'Stormrage',   atk: 9, hp: 16, spd: 7, def: 1, luck: 3 },
-  6: { name: 'Nighthollow', atk: 7, hp: 20, spd: 5, def: 3, luck: 5 },
-  7: { name: 'Dawnbringer', atk: 5, hp: 24, spd: 4, def: 5, luck: 2 },
-  8: { name: 'Manastorm',   atk: 6, hp: 20, spd: 6, def: 3, luck: 3 },
-  9: { name: 'Plaguemire',  atk: 6, hp: 22, spd: 4, def: 3, luck: 3 },
+  1: { name: 'Smoulders',    atk: 8, hp: 18, spd: 6, def: 2, luck: 4 },
+  2: { name: 'Darktide',     atk: 6, hp: 20, spd: 5, def: 3, luck: 4 },
+  3: { name: 'Stonebark',    atk: 3, hp: 24, spd: 2, def: 6, luck: 3 },
+  4: { name: 'Ashenvale',    atk: 5, hp: 18, spd: 8, def: 2, luck: 5 },
+  5: { name: 'Stormrage',    atk: 9, hp: 16, spd: 7, def: 2, luck: 4 },
+  6: { name: 'Nighthollow',  atk: 7, hp: 18, spd: 5, def: 3, luck: 5 },
+  7: { name: 'Dawnbringer',  atk: 5, hp: 22, spd: 4, def: 5, luck: 2 },
+  8: { name: 'Manastorm',    atk: 6, hp: 20, spd: 6, def: 3, luck: 3 },
+  9: { name: 'Plaguemire',   atk: 6, hp: 20, spd: 4, def: 4, luck: 4 },
 };
 
 /**
