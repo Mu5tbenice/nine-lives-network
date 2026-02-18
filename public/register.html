@@ -112,7 +112,7 @@ function checkOAuthReturn(){
   var p=new URLSearchParams(window.location.search);
   if(p.get('error')){showError('twitter said no. '+p.get('error'));return;}
   if(p.get('step')==='choose_school'){
-    twitterData={twitter_id:p.get('twitter_id'),twitter_handle:p.get('twitter_handle'),profile_image:p.get('profile_image'),access_token:p.get('access_token'),refresh_token:p.get('refresh_token')};
+    twitterData={twitter_id:p.get('twitter_id'),twitter_handle:p.get('twitter_handle'),profile_image:p.get('profile_image'),access_token:p.get('access_token'),refresh_token:p.get('refresh_token'),bio:p.get('bio')||'',followers:p.get('followers')||'0',following:p.get('following')||'0'};
     startSortingHat();
   }
 }

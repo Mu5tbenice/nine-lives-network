@@ -223,6 +223,9 @@ router.get('/twitter/callback', async (req, res) => {
       profile_image: twitterUser.profile_image_url?.replace('_normal', '_400x400') || '',
       access_token: accessToken,
       refresh_token: refreshToken || '',
+      bio: twitterUser.description || "",
+      followers: String(twitterUser.public_metrics?.followers_count || 0),
+      following: String(twitterUser.public_metrics?.following_count || 0),
       step: 'choose_school'
     });
 
