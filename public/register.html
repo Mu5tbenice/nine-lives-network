@@ -76,8 +76,6 @@
       <div id="houseRevealArea"></div>
       <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-faint);margin:12px 0 4px;">not feeling it? pick your own:</div>
       <div class="house-grid" id="houseGrid"></div>
-      <div style="font-family:var(--font-data);font-size:8px;color:var(--gold);letter-spacing:1px;margin:16px 0 4px;">GUILD TAG (OPTIONAL)</div>
-      <input class="guild-input" id="guildInput" type="text" placeholder="e.g. $9LV, $BONK, $WIF" maxlength="20">
       <div style="font-size:11px;color:var(--text-faint);margin-bottom:14px;">Your community token ticker</div>
       <button class="twitter-btn" id="confirmBtn" onclick="confirmRegistration()">⚔️ JOIN NETHARA</button>
     </div>
@@ -165,28 +163,26 @@ function revealHouse(data){
 
 function renderHouseGrid(){
   var g=document.getElementById('houseGrid');var h='';
-  // Find lowest count for underdog
   var counts=Object.values(houseCounts);var minCount=counts.length>0?Math.min(...counts):0;
   Object.keys(HOUSES).forEach(function(id){
     var house=HOUSES[id];var isSel=parseInt(id)===selectedHouse;
     var cnt=houseCounts[id]||0;var isUnderdog=counts.length>0&&cnt<=minCount;
-    h+='<div class="house-btn'+(isSel?' selected':'')+'" id="hb'+id+'" onclick="pickHouse('+id+')" style="border-color:'+(isSel?house.color:house.color+'20')+';'+(isSel?'background:'+house.color+'10;box-shadow:0 4px 16px '+house.color+'20;':'background:rgba(255,255,255,0.02);')+';position:relative;padding:8px 4px 6px;">';
-    if(isUnderdog)h+='<div style="position:absolute;top:-6px;right:-4px;font-family:var(--font-data);font-size:5px;background:#6acd8a;color:#080810;padding:2px 5px;border-radius:3px;z-index:2;" title="Least played house gets +15% bonus points!">+15%</div>';
-    h+='<img src="'+house.img+'" style="width:28px;height:28px;object-fit:contain;margin:0 auto 3px;display:block;" onerror="this.outerHTML=\'<div style=font-size:20px>'+house.icon+'</div>\'">';
-    h+='<div style="font-family:var(--font-title);font-size:8px;font-weight:700;color:'+house.color+';letter-spacing:0.5px;margin-bottom:2px;">'+house.name+'</div>';
-    h+='<div style="font-family:var(--font-data);font-size:5px;color:var(--text-muted);margin-bottom:3px;">'+house.role+'</div>';
-    h+='<div style="display:flex;justify-content:center;gap:3px;flex-wrap:wrap;">';
-    h+='<span style="font-family:var(--font-data);font-size:5px;color:#e85a6a;">'+house.atk+'A</span>';
-    h+='<span style="font-family:var(--font-data);font-size:5px;color:#6acd8a;">'+house.hp+'H</span>';
-    h+='<span style="font-family:var(--font-data);font-size:5px;color:#6ac8d8;">'+house.spd+'S</span>';
-    h+='<span style="font-family:var(--font-data);font-size:5px;color:#b088e8;">'+house.def+'D</span>';
-    h+='<span style="font-family:var(--font-data);font-size:5px;color:#D4A64B;">'+house.luck+'L</span>';
+    h+='<div class="house-btn'+(isSel?' selected':'')+'" id="hb'+id+'" onclick="pickHouse('+id+')" style="border-color:'+(isSel?house.color:house.color+'20')+';'+(isSel?'background:'+house.color+'10;box-shadow:0 4px 16px '+house.color+'20;':'background:rgba(255,255,255,0.02);')+';position:relative;padding:10px 6px 8px;">';
+    if(isUnderdog)h+='<div style="position:absolute;top:-6px;right:-4px;font-family:var(--font-data);font-size:6px;background:#6acd8a;color:#080810;padding:2px 6px;border-radius:3px;z-index:2;" title="Least played house gets +15% bonus points!">+15%</div>';
+    h+='<img src="'+house.img+'" style="width:36px;height:36px;object-fit:contain;margin:0 auto 4px;display:block;" onerror="this.outerHTML=\'<div style=font-size:24px>'+house.icon+'</div>\'">';
+    h+='<div style="font-family:var(--font-title);font-size:10px;font-weight:700;color:'+house.color+';letter-spacing:0.5px;margin-bottom:2px;">'+house.name+'</div>';
+    h+='<div style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);margin-bottom:6px;">'+house.role+'</div>';
+    h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 6px;margin-bottom:4px;">';
+    h+='<div style="font-family:var(--font-data);font-size:7px;color:#e85a6a;text-align:center;">⚔'+house.atk+'</div>';
+    h+='<div style="font-family:var(--font-data);font-size:7px;color:#6acd8a;text-align:center;">♥'+house.hp+'</div>';
+    h+='<div style="font-family:var(--font-data);font-size:7px;color:#6ac8d8;text-align:center;">»'+house.spd+'</div>';
+    h+='<div style="font-family:var(--font-data);font-size:7px;color:#b088e8;text-align:center;">🛡'+house.def+'</div>';
     h+='</div>';
-    h+='<div style="font-family:var(--font-data);font-size:5px;color:var(--text-faint);margin-top:2px;">'+cnt+' player'+(cnt!==1?'s':'')+'</div>';
+    h+='<div style="font-family:var(--font-data);font-size:7px;color:#D4A64B;text-align:center;margin-bottom:4px;">☘'+house.luck+'</div>';
+    h+='<div style="font-family:var(--font-data);font-size:5px;color:var(--text-faint);">'+cnt+' player'+(cnt!==1?'s':'')+'</div>';
     h+='</div>';
   });
-  h+='</div>';
-  h+='<div style="text-align:center;margin-top:6px;font-family:var(--font-data);font-size:5px;color:#6acd8a;cursor:help;" title="Houses with the fewest players get a +15% bonus to all points earned. This rebalances every week.">🌱 UNDERDOG BONUS: least played houses get +15% points</div>';
+  h+='<div style="grid-column:1/-1;text-align:center;margin-top:6px;font-family:var(--font-data);font-size:6px;color:#6acd8a;cursor:help;" title="Houses with the fewest players get a +15% bonus to all points earned. This rebalances every week.">🌱 UNDERDOG BONUS: least played houses get +15% points</div>';
   g.innerHTML=h;
 }
 
@@ -207,9 +203,8 @@ function pickHouse(id){
 async function confirmRegistration(){
   if(!selectedHouse||!twitterData.twitter_id){showError('missing data. refresh and try again.');return;}
   showStep('step4');
-  var guild=document.getElementById('guildInput').value.trim();
   try{
-    var r=await fetch('/auth/complete-registration',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({twitter_id:twitterData.twitter_id,twitter_handle:twitterData.twitter_handle,profile_image:twitterData.profile_image,access_token:twitterData.access_token,refresh_token:twitterData.refresh_token,school_id:selectedHouse,guild_tag:guild||null})});
+    var r=await fetch('/auth/complete-registration',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({twitter_id:twitterData.twitter_id,twitter_handle:twitterData.twitter_handle,profile_image:twitterData.profile_image,access_token:twitterData.access_token,refresh_token:twitterData.refresh_token,school_id:selectedHouse,guild_tag:null})});
     if(r.ok){var data=await r.json();var pid=data.player_id||data.id||(data.player&&data.player.id);if(pid){localStorage.setItem('player_id',pid);window.location.href='/builder.html?player_id='+pid;}else{showError('registered but no player id returned. weird.');}}
     else{var err=await r.json().catch(function(){return{error:'unknown'};});showError(err.error||'registration failed. the void rejects you.');}
   }catch(e){console.error(e);showError('network error. even the internet is against you.');}
