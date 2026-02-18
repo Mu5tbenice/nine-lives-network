@@ -163,7 +163,7 @@
       <li><a href="/gauntlet.html">Gauntlet</a></li>
       <li><a href="/boss.html">Boss</a></li>
       <li><a href="/leaderboards.html">Ranks</a></li>
-      <li><a href="/builder.html">Your Nine</a> <a href="/packs.html">Packs</a></li><li><a href="/collection.html">Spellbook</a></li>
+      <li><a href="/builder.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;transition:all 0.2s;"><span style="font-size:22px;">🐱</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);letter-spacing:0.5px;">YOUR NINE</span></a><a href="/packs.html">Packs</a></li><li><a href="/collection.html">Spellbook</a></li>
       <li><a href="/how-to-play.html">Help</a></li>
     </ul>
     <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button>
@@ -175,7 +175,7 @@
     <a href="/gauntlet.html">Gauntlet</a>
     <a href="/boss.html">Boss</a>
     <a href="/leaderboards.html">Ranks</a>
-    <a href="/builder.html">Your Nine</a> <a href="/packs.html">Packs</a></li><li><a href="/collection.html">Spellbook</a>
+    <a href="/builder.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;transition:all 0.2s;"><span style="font-size:22px;">🐱</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);letter-spacing:0.5px;">YOUR NINE</span></a><a href="/packs.html">Packs</a></li><li><a href="/collection.html">Spellbook</a>
     <a href="/how-to-play.html">Help</a>
     <a href="#" onclick="doLogout()" id="mobileLogout" style="display:none;">Logout</a>
   </div>
@@ -389,10 +389,16 @@ function render(player,casts,zones,schools,nineData,quests){
     +'<div style="flex:1;"><div style="font-family:var(--font-data);font-size:9px;color:var(--text-bright);">'+streak+' <span style="font-size:6px;color:var(--text-muted);">DAY STREAK</span></div><div style="font-size:12px;color:var(--text-muted);margin-top:2px;">'+(streak<7?(7-streak)+' more for Week Warrior 💎':'Week Warrior achieved! 💎')+'</div></div>'
     +'<div style="display:flex;gap:4px;">'+sH+'</div></div>'
 
+    /* ── YOUR NINE MINI ── */
+    +'<div class="fade-up fade-up-3" style="display:flex;gap:12px;padding:14px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);margin-bottom:14px;align-items:center;">'
+    +'<div style="position:relative;width:100px;height:100px;flex-shrink:0;border-radius:10px;overflow:hidden;border:1.5px solid var(--border-glow);background:radial-gradient(circle,rgba(30,22,42,0.9),rgba(18,14,30,1));"><canvas id="dashNineCanvas" width="200" height="200" style="width:100%;height:100%;"></canvas></div>'
+    +'<div style="flex:1;"><div id="dashNineStats" style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:8px;"></div><a href="/builder.html" style="display:block;padding:8px;border-radius:6px;background:var(--gold-dim);border:1px solid var(--border-glow);text-align:center;text-decoration:none;font-family:var(--font-data);font-size:7px;color:var(--gold);letter-spacing:1px;">EDIT YOUR NINE</a></div>'
+    +'</div>'
+
     /* ── QUICK ACTIONS ── */
     +'<div class="fade-up fade-up-3" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;">'
     +'<a href="/nethara-live.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;transition:all 0.2s;"><span style="font-size:22px;">🔥</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);letter-spacing:0.5px;">NETHARA</span></a>'
-    +'<a href="/builder.html">Your Nine</a> <a href="/packs.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;transition:all 0.2s;"><span style="font-size:22px;">🎴</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);letter-spacing:0.5px;">PACKS</span></a>'
+    +'<a href="/builder.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;transition:all 0.2s;"><span style="font-size:22px;">🐱</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);letter-spacing:0.5px;">YOUR NINE</span></a><a href="/packs.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;transition:all 0.2s;"><span style="font-size:22px;">🎴</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);letter-spacing:0.5px;">PACKS</span></a>'
     +'<a href="/duels.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;transition:all 0.2s;"><span style="font-size:22px;">⚔️</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);letter-spacing:0.5px;">DUELS</span></a>'
     +'<a href="/gauntlet.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;transition:all 0.2s;"><span style="font-size:22px;">🏰</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);letter-spacing:0.5px;">GAUNTLET</span></a>'
     +'</div>'
@@ -429,6 +435,48 @@ function render(player,casts,zones,schools,nineData,quests){
 }
 
 loadDashboard();
+// ── DASHBOARD NINE MINI PREVIEW ──
+async function loadNinePreview(){
+  var pid=getPlayerId();if(!pid)return;
+  try{
+    var r=await fetch("/api/items/equipped/"+pid);
+    if(!r.ok)return;
+    var d=await r.json();
+    var nine=d.nine,eq=d.equipped;
+    var SLOT_PATHS={fur:"/assets/nine/fur/",expression:"/assets/nine/expression/",headwear:"/assets/nine/headwear/",outfit:"/assets/nine/outfit/",weapon:"/assets/nine/weapon/",familiar:"/assets/nine/familiar/"};
+    var LAYER_ORDER=["fur","expression","headwear","outfit","weapon","familiar"];
+    var STAT_COLORS={atk:"#e85a6a",hp:"#6acd8a",spd:"#6ac8d8",def:"#b088e8",luck:"#D4A64B"};
+    var items=d.items||[];
+    function findI(slug){for(var i=0;i<items.length;i++){if(items[i].slug===slug)return items[i];}return null;}
+    var canvas=document.getElementById("dashNineCanvas");
+    if(!canvas)return;
+    var ctx=canvas.getContext("2d");
+    var layers=[];
+    LAYER_ORDER.forEach(function(slot){
+      var slug=eq[slot];if(!slug)return;
+      var item=findI(slug);if(!item||!item.image_file)return;
+      layers.push((SLOT_PATHS[slot]||"")+item.image_file);
+    });
+    if(layers.length>0){
+      var loaded=0,imgs=[];
+      layers.forEach(function(src,i){
+        var img=new Image();img.onload=function(){imgs[i]=img;loaded++;if(loaded===layers.length){ctx.clearRect(0,0,200,200);imgs.forEach(function(im){if(im)ctx.drawImage(im,0,0,200,200);});}};
+        img.onerror=function(){loaded++;if(loaded===layers.length){ctx.clearRect(0,0,200,200);imgs.forEach(function(im){if(im)ctx.drawImage(im,0,0,200,200);});}};
+        img.src=src;
+      });
+    }
+    var statsEl=document.getElementById("dashNineStats");
+    if(statsEl&&nine){
+      var h="";
+      ["atk","hp","spd","def","luck"].forEach(function(s){
+        var labels={atk:"ATK",hp:"HP",spd:"SPD",def:"DEF",luck:"LCK"};
+        h+="<div style=\"text-align:center;\"><div style=\"font-family:var(--font-data);font-size:10px;color:"+STAT_COLORS[s]+";\">"+((nine.total&&nine.total[s])||0)+"</div><div style=\"font-family:var(--font-data);font-size:5px;color:var(--text-faint);\">"+labels[s]+"</div></div>";
+      });
+      statsEl.innerHTML=h;
+    }
+  }catch(e){console.error("Nine preview error:",e);}
+}
+loadNinePreview();
 </script>
 </body>
 </html>
