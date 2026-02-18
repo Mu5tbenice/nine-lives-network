@@ -21,4 +21,4 @@ deploymentTarget = "gce"
 run = ["sh", "-c", "node server/index.js"]
 
 [nix]
-packages = ["zip"]
+packages = ["zip", "file"]

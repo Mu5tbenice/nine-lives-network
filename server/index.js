@@ -170,6 +170,24 @@ try {
   const sortingHatRoutes = require("./routes/sortingHat");
   app.use("/api/sorting-hat", sortingHatRoutes);
   console.log("✅ Sorting Hat routes loaded");
+
+// Items
+try {
+  const itemsRoutes = require("./routes/items");
+  app.use("/api/items", itemsRoutes);
+  console.log("✅ Items routes loaded");
+} catch (e) {
+  console.error("❌ Failed to load items routes:", e.message);
+}
+
+// Items
+try {
+  const itemsRoutes = require("./routes/items");
+  app.use("/api/items", itemsRoutes);
+  console.log("✅ Items routes loaded");
+} catch (e) {
+  console.error("❌ Failed to load items routes:", e.message);
+}
 } catch (e) {
   console.error("❌ Failed to load sorting hat routes:", e.message);
 }
