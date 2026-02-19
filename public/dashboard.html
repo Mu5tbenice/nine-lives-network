@@ -247,7 +247,7 @@ async function loadDashboard(){
 }
 
 /* ═══ RENDER ═══ */
-function render(player,casts,zones,schools,nineData,quests){
+async function render(player,casts,zones,schools,nineData,quests){
   var house=HOUSES[player.school_id]||HOUSES[1];
   var obj=Array.isArray(zones)?zones.find(function(z){return z.is_current_objective;}):null;
   var mana=5,maxM=10; try{var mr=await fetch("/api/mana/"+pid);if(mr.ok){var md=await mr.json();mana=md.mana||0;maxM=md.maxMana||10;}}catch(e){}
