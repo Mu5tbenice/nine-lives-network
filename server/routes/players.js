@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
+const supabaseAdmin = require('../config/supabaseAdmin');
 
 /**
  * GET /api/players/:id
@@ -213,4 +214,57 @@ router.post('/complete-registration', async (req, res) => {
   }
 });
 
+// ═══════════════════════════════════════════
+// ADD THIS to server/routes/players.js (or any route file mounted in index.js)
+// POST /api/players/update-guild
+// Update a player's guild tag (or set to null for Lone Wolf)
+// Body: { player_id, guild_tag }
+// ═══════════════════════════════════════════
+
+router.post('/update-guild', async (req, res) => {
+  try {
+    const { player_id, guild_tag } = req.body;
+    if (!player_id) {
+      return res.status(400).json({ error: 'player_id required' });
+    }
+
+    // Clean the tag — allow null for Lone Wolf
+    const cleanTag = guild_tag ? guild_tag.trim().substring(0, 16) : null;
+
+    // Update player
+    const { data, error } = await supabaseAdmin
+      .from('players')
+      .update({ guild_tag: cleanTag })
+      .eq('id', player_id)
+      .select('id, guild_tag')
+      .single();
+
+    if (error) {
+      console.error('Guild tag update error:', error);
+      return res.status(500).json({ error: 'Failed to update guild tag' });
+    }
+
+    // Also update any active zone deployments with new tag
+    // (so combat engine uses the right faction)
+    const newDeployTag = cleanTag || ('@' + (data.twitter_handle || 'lone_wolf'));
+    await supabaseAdmin
+      .from('zone_deployments')
+      .update({ 
+        guild_tag: newDeployTag,
+        is_mercenary: !cleanTag 
+      })
+      .eq('player_id', player_id)
+      .eq('is_active', true);
+
+    res.json({
+      success: true,
+      guild_tag: cleanTag,
+      is_lone_wolf: !cleanTag,
+      message: cleanTag ? `Guild set to ${cleanTag}` : 'Gone Lone Wolf! 1.5x ATK in zones.',
+    });
+  } catch (err) {
+    console.error('Update guild error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 module.exports = router;

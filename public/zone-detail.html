@@ -279,7 +279,7 @@ function render(zone,deployments,guildPower){
     nH+='<div class="nine-avatar-ph" style="background:'+house.c+'20;border:2px solid '+house.c+';">'+house.i+'</div>';
     nH+='<div class="nine-info"><div class="nine-name" style="color:'+house.c+';">'+(d.player?esc(d.player.twitter_handle):'?')+(isMe?' <span style="color:var(--gold);font-size:8px;">(YOU)</span>':'')+'</div>';
     nH+='<div class="nine-meta"><span>'+esc(d.guild_tag||'unaffiliated')+'</span>';
-    if(isMerc)nH+='<span class="merc-badge">MERC</span>';
+    if(isMerc||d.guild_tag&&d.guild_tag.startsWith('@'))nH+='<span class="merc-badge" style="background:rgba(106,200,216,0.15);color:var(--cyan);border-color:rgba(106,200,216,0.3);">LONE WOLF 1.5x</span>';
     nH+='</div><div class="hp-bar"><div class="hp-fill" style="width:'+hpPct+'%;background:'+hpClr+';"></div></div>';
     nH+='<div class="hp-text">'+d.current_hp+'/'+d.max_hp+' HP</div></div>';
     nH+='<div class="nine-stats">';
@@ -375,7 +375,7 @@ async function doDeploy(){
   try{
     var r=await fetch('/api/zones/deploy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({player_id:parseInt(playerId),zone_id:parseInt(zoneId)})});
     var d=await r.json();
-    if(r.ok&&d.success){btn.textContent=d.is_mercenary?(d.hired_by?'HIRED BY '+d.hired_by:'FREE MERC'):'DEPLOYED!';setTimeout(function(){closeHand();loadZone();},1500);}
+    if(r.ok&&d.success){btn.textContent=d.is_lone_wolf?'LONE WOLF DEPLOYED!':'DEPLOYED!';setTimeout(function(){closeHand();loadZone();},1500);}
     else{btn.textContent=(d.error||'Failed');setTimeout(function(){btn.textContent='DEPLOY - 1 MANA';btn.disabled=false;},2000);}
   }catch(e){btn.textContent='Error';setTimeout(function(){btn.textContent='DEPLOY - 1 MANA';btn.disabled=false;},2000);}
 }
@@ -384,7 +384,7 @@ async function doPlayCard(){
   var card=sorted[carouselIdx];if(!card||!myDeployment)return;
   var btn=document.getElementById('playBtn');btn.disabled=true;btn.textContent='CASTING...';
   try{
-    var r=await fetch('/api/zones/play-card',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({player_id:parseInt(playerId),deployment_id:myDeployment.id,card_id:card.id})});
+    var r=await fetch('/api/zones/play-card',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({player_id:parseInt(playerId),zone_id:parseInt(zoneId),card_id:card.id})});
     var d=await r.json();
     if(r.ok){btn.textContent=card.name+' CAST!';setTimeout(function(){closeHand();loadZone();},1200);}
     else{btn.textContent=(d.error||'Failed');setTimeout(function(){btn.textContent='CAST '+card.name.toUpperCase();btn.disabled=false;},2000);}
@@ -393,7 +393,7 @@ async function doPlayCard(){
 
 async function doWithdraw(){
   if(!myDeployment||!confirm('Withdraw from this zone?'))return;
-  try{var r=await fetch('/api/zones/withdraw',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({player_id:parseInt(playerId),deployment_id:myDeployment.id})});if(r.ok)loadZone();}catch(e){alert('Error');}
+  try{var r=await fetch('/api/zones/withdraw',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({player_id:parseInt(playerId),zone_id:parseInt(zoneId)})});if(r.ok)loadZone();}catch(e){alert('Error');}
 }
 
 function updateTimer(){var now=new Date(),min=now.getMinutes(),sec=now.getSeconds();var rem=(15-min%15)*60-sec;if(rem<=0)rem+=900;var m=Math.floor(rem/60),s=rem%60;document.getElementById('cycleTimer').textContent=m+':'+s.toString().padStart(2,'0');}

@@ -172,6 +172,9 @@ async function processZoneCombat(zoneId, regionBonuses) {
       effects = Array.isArray(card.spell_effects) ? card.spell_effects : [];
     }
 
+    // Lone Wolf bonus: solo players get 1.5x ATK
+    const isLoneWolf = (d.guild_tag || "").startsWith("@");
+    if (isLoneWolf) atk = Math.round(atk * 1.5);
     return {
       deployment_id: d.id,
       player_id: d.player_id,

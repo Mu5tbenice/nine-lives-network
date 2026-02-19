@@ -143,6 +143,42 @@
       margin-bottom: 8px;
     }
 
+    /* ═══ GUILD TAG ═══ */
+    .guild-tag-row {
+      display: flex; align-items: center; gap: 6px; margin-top: 8px; flex-wrap: wrap;
+    }
+    .guild-tag-input {
+      font-family: var(--font-data); font-size: 8px; letter-spacing: 1px;
+      padding: 5px 10px; border-radius: 8px;
+      background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+      color: var(--text-bright); outline: none; width: 120px;
+      transition: border-color 0.2s;
+    }
+    .guild-tag-input:focus { border-color: var(--gold); }
+    .guild-tag-input::placeholder { color: var(--text-faint); font-size: 7px; }
+    .guild-tag-save {
+      font-family: var(--font-data); font-size: 6px; letter-spacing: 0.5px;
+      padding: 5px 10px; border-radius: 6px; border: none; cursor: pointer;
+      background: var(--gold-dim); color: var(--gold); border: 1px solid var(--border-glow);
+      transition: all 0.2s;
+    }
+    .guild-tag-save:hover { background: rgba(212,166,75,0.25); }
+    .guild-tag-save:disabled { opacity: 0.4; cursor: not-allowed; }
+    .lone-wolf-badge {
+      font-family: var(--font-data); font-size: 7px; padding: 3px 10px;
+      border-radius: 8px; background: rgba(106,200,216,0.1);
+      color: var(--cyan); border: 1px solid rgba(106,200,216,0.25);
+      letter-spacing: 1px;
+    }
+    .guild-badge {
+      font-family: var(--font-data); font-size: 7px; padding: 3px 10px;
+      border-radius: 8px; letter-spacing: 1px;
+    }
+    .guild-tag-msg {
+      font-family: var(--font-data); font-size: 6px; letter-spacing: 0.5px;
+      padding: 2px 0;
+    }
+
     /* ═══ LOADING / ERROR ═══ */
     .loading-state { text-align: center; padding: 60px 20px; }
     .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
@@ -207,7 +243,7 @@ var STORY_IMAGES=['https://images.unsplash.com/photo-1518709268805-4e9042af9f23?
 
 function getTagColor(tag){if(!tag)return null;var colors={'$BONK':'#F0A030','$WIF':'#8B5CF6','$POPCAT':'#FF6B6B','$DEGEN':'#00D4FF','$NPC':'#44cc44','$MYRO':'#FF8C00','$MOG':'#E84393','$PEPE':'#5CB338','$FLOKI':'#FFC800','$SHIB':'#FF4500','$9LV':'#D4A64B'};var u=tag.toUpperCase();if(colors[u])return colors[u];var h=0;for(var i=0;i<u.length;i++)h=u.charCodeAt(i)+((h<<5)-h);return'hsl('+Math.abs(h)%360+',60%,55%)';}
 
-/* ═══ AUTH — same pattern as old dashboard ═══ */
+/* ═══ AUTH ═══ */
 function getPlayerId(){var p=new URLSearchParams(window.location.search);var f=p.get('player_id');if(f){localStorage.setItem('player_id',f);return f;}return localStorage.getItem('player_id');}
 function toggleMobileMenu(){document.getElementById('hamburger').classList.toggle('active');document.getElementById('mobileMenu').classList.toggle('active');}
 function doLogout(){localStorage.removeItem('player_id');window.location.href='/';}
@@ -215,6 +251,54 @@ if(localStorage.getItem('player_id')){var ml=document.getElementById('mobileLogo
 function timeAgo(d){var diff=Date.now()-new Date(d).getTime(),m=Math.floor(diff/60000);if(m<60)return m+'m ago';var h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
 function getZoneImg(z){return(z.image_url?(z.image_url.startsWith('/')?z.image_url:'/assets/images/zones/'+z.image_url):'')||ZONE_IMAGES[z.id]||'';}
+
+/* ═══ GUILD TAG SAVE ═══ */
+async function saveGuildTag(){
+  var pid=getPlayerId();if(!pid)return;
+  var input=document.getElementById('guildTagInput');
+  var btn=document.getElementById('guildTagSave');
+  var msg=document.getElementById('guildTagMsg');
+  var tag=(input.value||'').trim();
+  if(!tag){msg.textContent='Enter a tag or leave blank for Lone Wolf';msg.style.color='var(--red)';return;}
+  btn.disabled=true;btn.textContent='SAVING...';
+  try{
+    var r=await fetch('/api/players/update-guild',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({player_id:parseInt(pid),guild_tag:tag})});
+    var d=await r.json();
+    if(r.ok&&d.success){
+      msg.textContent='Guild tag saved!';msg.style.color='var(--green)';
+      btn.textContent='SAVED ✓';
+      // Update the display badge
+      var badge=document.getElementById('guildBadgeDisplay');
+      if(badge){
+        var tc=getTagColor(tag);
+        badge.innerHTML='<span class="guild-badge" style="background:'+tc+'12;color:'+tc+';border:1px solid '+tc+'30;">🏰 '+esc(tag)+'</span>';
+      }
+      setTimeout(function(){btn.textContent='SAVE';btn.disabled=false;msg.textContent='';},2000);
+    }else{
+      msg.textContent=d.error||'Failed to save';msg.style.color='var(--red)';
+      btn.textContent='SAVE';btn.disabled=false;
+    }
+  }catch(e){
+    msg.textContent='Network error';msg.style.color='var(--red)';
+    btn.textContent='SAVE';btn.disabled=false;
+  }
+}
+
+async function clearGuildTag(){
+  var pid=getPlayerId();if(!pid)return;
+  var msg=document.getElementById('guildTagMsg');
+  try{
+    var r=await fetch('/api/players/update-guild',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({player_id:parseInt(pid),guild_tag:null})});
+    var d=await r.json();
+    if(r.ok&&d.success){
+      document.getElementById('guildTagInput').value='';
+      var badge=document.getElementById('guildBadgeDisplay');
+      if(badge)badge.innerHTML='<span class="lone-wolf-badge">🐺 LONE WOLF</span>';
+      msg.textContent='Gone solo! 1.5x ATK in zones.';msg.style.color='var(--cyan)';
+      setTimeout(function(){msg.textContent='';},3000);
+    }
+  }catch(e){msg.textContent='Error';msg.style.color='var(--red)';}
+}
 
 /* ═══ LOAD ═══ */
 async function loadDashboard(){
@@ -233,7 +317,7 @@ async function loadDashboard(){
     var schools=sR.ok?await sR.json():[];
     if(!player||player.error){document.getElementById('loadingState').style.display='none';document.getElementById('errorState').style.display='block';return;}
 
-    // Try loading Nine data + quests (new V3 endpoints — graceful fallback)
+    // Try loading Nine data + quests
     var nineData=null,quests=[];
     try{var nr=await fetch('/api/players/'+pid+'/nine');nineData=nr.ok?await nr.json():null;}catch(e){}
     try{var qr=await fetch('/api/quests/'+pid);if(qr.ok){var qd=await qr.json();quests=qd.quests||[];}}catch(e){}
@@ -250,13 +334,14 @@ async function loadDashboard(){
 async function render(player,casts,zones,schools,nineData,quests){
   var house=HOUSES[player.school_id]||HOUSES[1];
   var obj=Array.isArray(zones)?zones.find(function(z){return z.is_current_objective;}):null;
+  var pid=getPlayerId();
   var mana=5,maxM=10; try{var mr=await fetch("/api/mana/"+pid);if(mr.ok){var md=await mr.json();mana=md.mana||0;maxM=md.maxMana||10;}}catch(e){}
   var pts=player.seasonal_points||0,streak=player.streak||0;
   var rc=Array.isArray(casts)?casts.slice(0,5):[];
   var now=new Date(),doy=Math.floor((now-new Date(now.getFullYear(),0,0))/86400000);
   var storyImg=STORY_IMAGES[doy%STORY_IMAGES.length];
 
-  // Nine stats (fallback to house defaults)
+  // Nine stats (fallback)
   var nine=nineData||{};
   var nAtk=nine.base_atk||'?',nHp=nine.base_hp||'?',nSpd=nine.base_spd||'?';
 
@@ -275,9 +360,23 @@ async function render(player,casts,zones,schools,nineData,quests){
     ?'<img src="'+player.profile_image+'" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid '+house.color+';box-shadow:0 0 20px '+house.color+'25;">'
     :'<div style="width:48px;height:48px;border-radius:50%;border:2px solid '+house.color+';background:'+house.color+'18;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 0 20px '+house.color+'25;">'+house.icon+'</div>';
 
-  // Guild tag
-  var tc=getTagColor(player.community_tag);
-  var tagH=player.community_tag?'<span style="font-family:var(--font-data);font-size:7px;padding:3px 10px;border-radius:8px;background:'+tc+'12;color:'+tc+';border:1px solid '+tc+'30;letter-spacing:1px;">🏰 '+esc(player.community_tag)+'</span>':'';
+  // Guild tag — supports both old community_tag and new guild_tag field
+  var guildTag=player.guild_tag||player.community_tag||'';
+  var tc=getTagColor(guildTag);
+  var guildBadgeH=guildTag
+    ?'<span class="guild-badge" style="background:'+tc+'12;color:'+tc+';border:1px solid '+tc+'30;">🏰 '+esc(guildTag)+'</span>'
+    :'<span class="lone-wolf-badge">🐺 LONE WOLF</span>';
+
+  // Guild tag editor row
+  var guildEditorH='<div class="guild-tag-row">'
+    +'<span id="guildBadgeDisplay">'+guildBadgeH+'</span>'
+    +'<input type="text" id="guildTagInput" class="guild-tag-input" placeholder="$GUILD TAG" value="'+esc(guildTag)+'" maxlength="16">'
+    +'<button id="guildTagSave" class="guild-tag-save" onclick="saveGuildTag()">SAVE</button>'
+    +(guildTag?'<button class="guild-tag-save" onclick="clearGuildTag()" style="background:rgba(106,200,216,0.1);color:var(--cyan);border-color:rgba(106,200,216,0.2);">GO SOLO 🐺</button>':'')
+    +'</div>'
+    +'<div id="guildTagMsg" class="guild-tag-msg" style="margin-top:3px;">'
+    +(!guildTag?'<span style="color:var(--cyan);font-size:6px;">🐺 Lone Wolves get 1.5x ATK in zone battles</span>':'')
+    +'</div>';
 
   // Story card
   var scH='';
@@ -364,7 +463,8 @@ async function render(player,casts,zones,schools,nineData,quests){
     +'<div style="display:flex;align-items:center;gap:12px;">'+avH+'<div><div style="font-family:var(--font-title);font-size:17px;font-weight:700;color:'+house.color+';letter-spacing:1px;">'+house.name+'</div><div style="font-family:var(--font-data);font-size:8px;color:var(--text-muted);margin-top:2px;">@'+esc(player.twitter_handle||'')+'</div></div></div>'
     +'<span style="font-family:var(--font-data);font-size:7px;padding:4px 10px;border-radius:8px;border:1px solid rgba(212,166,75,0.25);background:var(--gold-dim);color:var(--gold);letter-spacing:1px;">SEASON 0</span>'
     +'</div>'
-    +tagH
+    /* ── GUILD TAG EDITOR ── */
+    +guildEditorH
     +'<div style="display:flex;gap:8px;margin-top:12px;background:rgba(0,0,0,0.2);border-radius:10px;padding:8px 10px;">'
     +'<div style="flex:1;text-align:center;"><div style="font-family:var(--font-data);font-size:12px;color:var(--red);">⚔️ '+nAtk+'</div><div style="font-family:var(--font-data);font-size:6px;color:var(--text-faint);margin-top:2px;">ATK</div></div>'
     +'<div style="width:1px;background:var(--border);"></div>'
@@ -431,6 +531,7 @@ async function render(player,casts,zones,schools,nineData,quests){
 }
 
 loadDashboard();
+
 // ── DASHBOARD NINE MINI PREVIEW ──
 async function loadNinePreview(){
   var pid=getPlayerId();if(!pid)return;
