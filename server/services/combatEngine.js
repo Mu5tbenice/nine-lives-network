@@ -1,4 +1,4 @@
-module.exports// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // server/services/combatEngine.js
 // V3 Combat Engine — 15-Minute Cycle Resolution
 //

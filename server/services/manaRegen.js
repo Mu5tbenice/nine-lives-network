@@ -1,4 +1,4 @@
-api/mana// server/services/manaRegen.js
+// server/services/manaRegen.js
 // Handles hourly mana regeneration and social earn methods
 
 const supabase = require('../config/supabase');
@@ -188,4 +188,4 @@ module.exports = {
   earnMana,
   getManaInfo,
   spendMana,
-};api/manaapi/mana
+};

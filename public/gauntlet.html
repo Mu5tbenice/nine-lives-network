@@ -72,7 +72,7 @@ async function loadGauntlet(){
 
   var player={},gauntlet={};
   try{var pR=await fetch('/api/players/'+playerId);if(pR.ok)player=await pR.json();}catch(e){}
-  try{var gR=await fetch('/api/gauntlet/'+playerId);if(gR.ok)gauntlet=await gR.json();}catch(e){}
+  try{var gR=await fetch('/api/gauntlet/active/'+playerId);if(gR.ok)gauntlet=await gR.json();}catch(e){}
 
   var currentFloor=gauntlet.current_floor||1;
   var bestFloor=gauntlet.best_floor||player.best_gauntlet||0;
@@ -116,7 +116,7 @@ async function startFloor(){
   var btn=document.getElementById('startBtn');
   btn.disabled=true;btn.textContent='FIGHTING...';
   try{
-    var r=await fetch('/api/gauntlet/'+playerId+'/fight',{method:'POST',headers:{'Content-Type':'application/json'}});
+    var r=await fetch('/api/gauntlet/fight',{method:'POST',headers:{'Content-Type':'application/json'}});
     if(r.ok){
       var res=await r.json();
       btn.textContent=res.won?'🏆 FLOOR CLEARED!':'💀 DEFEATED';

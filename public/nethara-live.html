@@ -276,10 +276,10 @@ document.getElementById('deployBtn').addEventListener('click',async function(){
   if(!selectedZone||selectedCard===null||!playerCards[selectedCard])return;
   var btn=this;btn.disabled=true;btn.textContent='DEPLOYING...';
   try{
-    var r=await fetch('/api/zones/'+selectedZone+'/deploy',{
+    var r=await fetch('/api/zones/deploy',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({player_id:playerId,card_id:playerCards[selectedCard].id})
+      body:JSON.stringify({player_id:playerId,zone_id:selectedZone,card_id:playerCards[selectedCard].id})
     });
     if(r.ok){
       btn.textContent='✅ DEPLOYED!';

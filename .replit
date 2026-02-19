@@ -1,4 +1,4 @@
-modules = ["nodejs-20"]
+modules = ["nodejs-20", "python-3.11"]
 run = "node server/index.js"
 
 [[ports]]
@@ -21,4 +21,4 @@ deploymentTarget = "gce"
 run = ["sh", "-c", "node server/index.js"]
 
 [nix]
-packages = ["zip", "file"]
+packages = ["file", "zip"]
