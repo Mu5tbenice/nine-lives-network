@@ -175,7 +175,7 @@ function renderZoneCard(z,isObj){
   var ctrl=z.controlling_school_id&&HOUSES[z.controlling_school_id]?HOUSES[z.controlling_school_id]:null;
   var h='';
 
-  h+='<div class="zone-card fade-up" onclick="openDeploy('+z.id+',\''+esc(z.name)+'\')">';
+  h+='<div class="zone-card fade-up" onclick="window.location.href='/zone-detail.html?id='+z.id;return;void('\''+esc(z.name)+'\')">';
 
   // Objective banner
   if(isObj){
