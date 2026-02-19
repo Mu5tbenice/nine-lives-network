@@ -175,7 +175,7 @@ function renderZoneCard(z,isObj){
   var ctrl=z.controlling_school_id&&HOUSES[z.controlling_school_id]?HOUSES[z.controlling_school_id]:null;
   var h='';
 
-  h+='<div class="zone-card fade-up" onclick="openDeploy('+z.id+',\''+esc(z.name)+'\')">';
+  h+='<div class="zone-card fade-up" onclick="goZone('+z.id+')">';
 
   // Objective banner
   if(isObj){
@@ -232,6 +232,7 @@ function renderZoneCard(z,isObj){
   return h;
 }
 
+function goZone(id){window.location.href="/zone-detail.html?id="+id;}
 function openDeploy(zoneId,zoneName){
   selectedZone=zoneId;
   selectedCard=null;
