@@ -146,7 +146,7 @@ async function startDuel(){
   btn.disabled=true;btn.textContent='FINDING OPPONENT...';
   var cardIds=pickedCards.map(function(i){return playerCards[i].id;});
   try{
-    var r=await fetch('/api/duels/quick',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({player_id:playerId,card_ids:cardIds})});
+    var r=await fetch('/api/duels/challenge',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({player_id:playerId,card_ids:cardIds})});
     if(r.ok){
       var result=await r.json();
       btn.textContent=result.winner_id==playerId?'🏆 VICTORY!':'💀 DEFEAT';

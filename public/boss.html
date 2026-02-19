@@ -57,8 +57,8 @@ async function loadBoss(){
   if(!playerId){document.getElementById('content').innerHTML='<div style="text-align:center;padding:40px"><a href="/register.html" style="font-family:var(--font-title);font-size:16px;">Register to play →</a></div>';return;}
 
   var boss=null,leaderboard=[];
-  try{var bR=await fetch('/api/boss/current');if(bR.ok)boss=await bR.json();}catch(e){}
-  try{var lR=await fetch('/api/boss/leaderboard');if(lR.ok){var ld=await lR.json();leaderboard=ld.leaderboard||ld||[];}}catch(e){}
+  try{var bR=await fetch('/api/boss/status');if(bR.ok)boss=await bR.json();}catch(e){}
+  try{var lR=await fetch('/api/boss/contributions/'+playerId+'');if(lR.ok){var ld=await lR.json();leaderboard=ld.leaderboard||ld||[];}}catch(e){}
 
   var html='';
   html+='<div class="section-label"><span style="font-size:14px;">🐉</span><span class="section-label__text">WEEKLY BOSS RAID</span><span class="section-label__line"></span></div>';
