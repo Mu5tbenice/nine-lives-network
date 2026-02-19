@@ -250,7 +250,7 @@ async function loadDashboard(){
 function render(player,casts,zones,schools,nineData,quests){
   var house=HOUSES[player.school_id]||HOUSES[1];
   var obj=Array.isArray(zones)?zones.find(function(z){return z.is_current_objective;}):null;
-  var mana=(player.mana!=null)?player.mana:5,maxM=7;
+  var mana=5,maxM=10; try{var mr=await fetch("/api/mana/"+pid);if(mr.ok){var md=await mr.json();mana=md.mana||0;maxM=md.maxMana||10;}}catch(e){}
   var pts=player.seasonal_points||0,streak=player.streak||0;
   var rc=Array.isArray(casts)?casts.slice(0,5):[];
   var now=new Date(),doy=Math.floor((now-new Date(now.getFullYear(),0,0))/86400000);
@@ -427,11 +427,7 @@ function render(player,casts,zones,schools,nineData,quests){
   c.style.display='block';
 
   // Mana timer
-  setInterval(function(){
-    var n=new Date();
-    var el=document.getElementById('manaTimer');
-    if(el)el.textContent='+1 in '+(59-n.getMinutes())+':'+(59-n.getSeconds()).toString().padStart(2,'0');
-  },1000);
+  async function updateManaTimer(){try{var r=await fetch("/api/mana/"+getPlayerId());if(r.ok){var d=await r.json();var el=document.getElementById("manaTimer");if(el){if(d.isFull){el.textContent="FULL";}else{el.textContent="+1 in "+d.nextRegenInMinutes+"m";}}}}catch(e){}}updateManaTimer();setInterval(updateManaTimer,30000);
 }
 
 loadDashboard();
