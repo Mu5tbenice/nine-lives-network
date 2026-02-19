@@ -386,7 +386,7 @@ router.get("/", async (req, res) => {
 });
 module.exports = router;
 // ═══════════════════════════════════════════
-// GET /api/zones
+// GET /api/zonesdeploy
 // List all active zones
 // ═══════════════════════════════════════════
 router.get('/', async (req, res) => {
