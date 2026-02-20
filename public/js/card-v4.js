@@ -423,3 +423,27 @@ function initCards(container) {
 }
 /* ═══ BACKWARD COMPAT — aliases for existing pages ═══ */
 var buildSpellCard = buildCardV4;
+
+/* ═══ AUTO-INIT — watches for new cards, inits them automatically ═══ */
+(function(){
+  if (!('MutationObserver' in window)) return;
+  var timer = null;
+  var obs = new MutationObserver(function(mutations) {
+    var found = false;
+    for (var i = 0; i < mutations.length; i++) {
+      var added = mutations[i].addedNodes;
+      for (var j = 0; j < added.length; j++) {
+        var n = added[j];
+        if (n.nodeType === 1 && (n.classList && n.classList.contains('spell-card') || n.querySelector && n.querySelector('.spell-card'))) {
+          found = true; break;
+        }
+      }
+      if (found) break;
+    }
+    if (found) {
+      clearTimeout(timer);
+      timer = setTimeout(function(){ initCards(); }, 120);
+    }
+  });
+  obs.observe(document.body, { childList: true, subtree: true });
+})();
