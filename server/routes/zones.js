@@ -57,7 +57,7 @@ router.post('/deploy', async (req, res) => {
     // Get player's guild tag
     const { data: player } = await supabase
       .from('players')
-      .select('guild_tag')
+      .select('guild_tag, twitter_handle')
       .eq('id', player_id)
       .single();
 
@@ -71,10 +71,11 @@ router.post('/deploy', async (req, res) => {
         player_id: player_id,
         nine_id: nine.id,
         zone_id: zone_id,
-        guild_tag: player?.guild_tag || null,
+        guild_tag: player?.guild_tag || ('@' + (player?.twitter_handle || 'lone_wolf')),
         current_hp: nine.base_hp,
         max_hp: nine.base_hp,
         is_active: true,
+        is_mercenary: !(player?.guild_tag),
       })
       .select()
       .single();
@@ -88,7 +89,10 @@ router.post('/deploy', async (req, res) => {
       success: true,
       deployment,
       mana_remaining: manaResult.mana,
-      message: `Deployed to zone ${zone_id}! Your Nine healed to full HP.`,
+      message: player?.guild_tag
+        ? `Deployed to zone ${zone_id}! Fighting for ${player.guild_tag}`
+        : `Lone Wolf deployed! 1.5x ATK bonus active.`,
+      is_lone_wolf: player?.guild_tag ? false : true,
     });
 
   } catch (err) {
@@ -230,6 +234,7 @@ router.post('/play-card', async (req, res) => {
         deployment_id: deployment.id,
         card_id: card_id,
         is_active: true,
+        is_mercenary: !(player?.guild_tag),
       })
       .select()
       .single();
