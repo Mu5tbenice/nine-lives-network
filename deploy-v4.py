@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-Card V4 Deploy Script v2 — Nine Lives Network
+Card V4 Deploy Script v3 — Nine Lives Network
 Run in Replit Shell:   python3 deploy-v4.py
 
-What it does for EACH page:
-  1. Removes old <script src="/js/spell-particles.js"> tag
-  2. Removes old <script src="/js/card-builder-v4.js"> tag
-  3. Removes old <link href="/css/card-v4-patch.css"> tag
-  4. Removes any previously-added card-particles.js / card-v4.js tags
-  5. Adds card-particles.js + card-v4.js BEFORE the first inline <script> block
-     (so initSpellCard is defined before the page code needs it)
+KEY INSIGHT — script load order matters:
+  - card-particles.js must load BEFORE the inline <script>
+    (because the inline code calls initSpellCard)
+  - card-v4.js must load AFTER the inline <script>
+    (so the new buildCard overrides the old inline one)
+
+The fetch('/api/spells') in the inline code is async, so card-v4.js
+will always finish loading before the fetch callback fires.
 """
 
 import os, sys, re
@@ -24,8 +25,6 @@ PAGES = [
     'public/zone-detail.html',
 ]
 
-NEW_SCRIPTS = '<script src="/js/card-particles.js"></script>\n<script src="/js/card-v4.js"></script>\n'
-
 def process_page(path):
     with open(path, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -33,42 +32,43 @@ def process_page(path):
     original = content
     changes = []
 
-    # 1. Remove old spell-particles.js script tag
-    if 'spell-particles.js' in content:
-        content = re.sub(r'<script\s+src="/js/spell-particles\.js"\s*>\s*</script>\s*\n?', '', content)
-        changes.append('removed spell-particles.js')
+    # 1. Remove ALL old/new script tags we might have added before
+    old_tags = [
+        r'<script\s+src="/js/spell-particles\.js"\s*>\s*</script>\s*\n?',
+        r'<script\s+src="/js/card-builder-v4\.js"\s*>\s*</script>\s*\n?',
+        r'<script\s+src="/js/card-particles\.js"\s*>\s*</script>\s*\n?',
+        r'<script\s+src="/js/card-v4\.js"\s*>\s*</script>\s*\n?',
+    ]
+    for pat in old_tags:
+        if re.search(pat, content):
+            content = re.sub(pat, '', content)
+            changes.append('removed old script tag')
 
-    # 2. Remove old card-builder-v4.js script tag
-    if 'card-builder-v4.js' in content:
-        content = re.sub(r'<script\s+src="/js/card-builder-v4\.js"\s*>\s*</script>\s*\n?', '', content)
-        changes.append('removed card-builder-v4.js')
-
-    # 3. Remove old card-v4-patch.css link tag
+    # 2. Remove old card-v4-patch.css link
     if 'card-v4-patch.css' in content:
         content = re.sub(r'<link[^>]*card-v4-patch\.css[^>]*>\s*\n?', '', content)
         changes.append('removed card-v4-patch.css')
 
-    # 4. Remove any previously-added new script tags (from old deploy or manual add)
-    if 'card-particles.js' in content:
-        content = re.sub(r'<script\s+src="/js/card-particles\.js"\s*>\s*</script>\s*\n?', '', content)
-    if 'card-v4.js' in content:
-        content = re.sub(r'<script\s+src="/js/card-v4\.js"\s*>\s*</script>\s*\n?', '', content)
-
-    # 5. Find the FIRST inline <script> block (not a src= script)
-    #    and insert our 2 new scripts BEFORE it
+    # 3. Find the FIRST inline <script> block (not a src= script)
+    #    Add card-particles.js BEFORE it
     match = re.search(r'<script>(?!\s*</script>)', content)
     if match:
         pos = match.start()
-        content = content[:pos] + NEW_SCRIPTS + content[pos:]
-        changes.append('added card-particles.js + card-v4.js before inline script')
+        content = content[:pos] + '<script src="/js/card-particles.js"></script>\n' + content[pos:]
+        changes.append('added card-particles.js before inline script')
     else:
-        # Fallback: add before </body>
+        # Fallback: before </body>
         pos = content.rfind('</body>')
         if pos != -1:
-            content = content[:pos] + NEW_SCRIPTS + content[pos:]
-            changes.append('added card-particles.js + card-v4.js before </body>')
-        else:
-            return 'ERROR: no <script> or </body> found'
+            content = content[:pos] + '<script src="/js/card-particles.js"></script>\n' + content[pos:]
+            changes.append('added card-particles.js before </body>')
+
+    # 4. Find </body> and add card-v4.js right before it
+    #    This means it loads AFTER the inline script block
+    body_pos = content.rfind('</body>')
+    if body_pos != -1:
+        content = content[:body_pos] + '<script src="/js/card-v4.js"></script>\n' + content[body_pos:]
+        changes.append('added card-v4.js before </body> (after inline script)')
 
     if content != original:
         with open(path, 'w', encoding='utf-8') as f:
@@ -80,7 +80,7 @@ def process_page(path):
 
 def main():
     print('')
-    print('=== Card V4 Deploy Script v2 ===')
+    print('=== Card V4 Deploy Script v3 ===')
     print('')
 
     # Safety check

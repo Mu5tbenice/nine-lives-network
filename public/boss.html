@@ -50,7 +50,6 @@
   <div class="mobile-menu" id="mm"><a href="/dashboard.html">Dashboard</a><a href="/nethara-live.html">Nethara Live</a><a href="/duels.html">Duels</a><a href="/gauntlet.html">Gauntlet</a><a href="/boss.html" class="active">Boss</a><a href="/leaderboards.html">Ranks</a><a href="/builder.html">Your Nine</a> <a href="/packs.html">Packs</a></li><li><a href="/collection.html">Spellbook</a></div>
   <div class="main" id="content"><div style="text-align:center;padding:60px 20px;"><div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div></div></div>
 <script src="/js/card-particles.js"></script>
-<script src="/js/card-v4.js"></script>
 <script>
 var playerId=null;
 function getPlayerId(){var p=new URLSearchParams(window.location.search);var f=p.get('player_id');if(f){localStorage.setItem('player_id',f);return f;}return localStorage.getItem('player_id');}
@@ -129,5 +128,6 @@ loadBoss();
 </script>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 <script src="/js/card-slot-helper.js"></script>
+<script src="/js/card-v4.js"></script>
 </body>
 </html>
