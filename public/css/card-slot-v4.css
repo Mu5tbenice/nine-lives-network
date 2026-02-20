@@ -1,0 +1,67 @@
+/* ═══════════════════════════════════════════════════════
+   card-slot-v4.css — V4 color upgrade for selection cards
+   Used on: duels, gauntlet, boss (small picker tiles)
+   ═══════════════════════════════════════════════════════ */
+
+/* Stat colors matching card-v4-patch.css */
+.card-slot .stat-atk { color: #e85a6a; text-shadow: 0 0 6px rgba(232,90,106,0.3); }
+.card-slot .stat-hp  { color: #6acd8a; text-shadow: 0 0 6px rgba(106,205,138,0.3); }
+
+/* Type colors */
+.card-slot .card-type[style*="attack"],
+.card-slot .card-type.t-attack { color: #e85a6a !important; }
+.card-slot .card-type[style*="defend"],
+.card-slot .card-type.t-defend { color: #6ac8d8 !important; }
+.card-slot .card-type[style*="support"],
+.card-slot .card-type.t-support { color: #6acd8a !important; }
+.card-slot .card-type[style*="manipulation"],
+.card-slot .card-type.t-manip { color: #b088e8 !important; }
+
+/* Rarity border glow */
+.card-slot[data-rarity="common"]    { border-color: rgba(136,136,136,0.2); }
+.card-slot[data-rarity="uncommon"]  { border-color: rgba(102,221,102,0.25); }
+.card-slot[data-rarity="rare"]      { border-color: rgba(85,187,255,0.3); }
+.card-slot[data-rarity="epic"]      { border-color: rgba(187,136,255,0.35); }
+.card-slot[data-rarity="legendary"] { border-color: rgba(255,215,0,0.4); box-shadow: 0 0 8px rgba(255,215,0,0.15); }
+
+/* Card name — Cinzel for that fantasy feel */
+.card-slot .card-name {
+  font-family: 'Cinzel', serif;
+  font-weight: 600;
+  font-size: 8px;
+  letter-spacing: 0.3px;
+}
+
+/* Rarity label color */
+.card-slot .card-rarity.r-common    { color: #888; }
+.card-slot .card-rarity.r-uncommon  { color: #66dd66; }
+.card-slot .card-rarity.r-rare      { color: #55bbff; }
+.card-slot .card-rarity.r-epic      { color: #bb88ff; }
+.card-slot .card-rarity.r-legendary { color: #ffd700; }
+
+/* House-colored left accent stripe */
+.card-slot[data-house]::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 6px; bottom: 6px;
+  width: 2px;
+  border-radius: 1px;
+  opacity: 0.6;
+}
+.card-slot[data-house="smoulders"]::before   { background: #E03C31; }
+.card-slot[data-house="darktide"]::before    { background: #00B4D8; }
+.card-slot[data-house="stonebark"]::before   { background: #5CB338; }
+.card-slot[data-house="ashenvale"]::before   { background: #90E0EF; }
+.card-slot[data-house="stormrage"]::before   { background: #FFC800; }
+.card-slot[data-house="nighthollow"]::before { background: #7B2D8E; }
+.card-slot[data-house="dawnbringer"]::before { background: #FF8C00; }
+.card-slot[data-house="manastorm"]::before   { background: #5B8FE0; }
+.card-slot[data-house="plaguemire"]::before  { background: #E84393; }
+.card-slot[data-house="universal"]::before   { background: #D4A64B; }
+
+/* Selected state upgrade */
+.card-slot.selected {
+  border-color: var(--gold, #D4A64B);
+  background: rgba(212,166,75,0.08);
+  box-shadow: 0 0 12px rgba(212,166,75,0.15);
+}
