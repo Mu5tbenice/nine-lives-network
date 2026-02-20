@@ -129,5 +129,13 @@ loadBoss();
 </script>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 <script src="/js/card-slot-helper.js"></script>
+<script>
+/* ═══ V4 OVERRIDE — forces all card rendering through card-v4.js ═══ */
+if(typeof buildCardV4==='function'){
+  buildCard=function(s,d){return buildCardV4(s,{delay:d||0});};
+  buildSpellCard=function(s,opts){return buildCardV4(s,opts);};
+}
+</script>
+
 </body>
 </html>

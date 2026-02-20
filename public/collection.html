@@ -341,5 +341,13 @@ document.getElementById('filters').addEventListener('click', function(e) {
 /* ═══ INIT ═══ */
 loadCollection();
 </script>
+<script>
+/* ═══ V4 OVERRIDE — forces all card rendering through card-v4.js ═══ */
+if(typeof buildCardV4==='function'){
+  buildCard=function(s,d){return buildCardV4(s,{delay:d||0});};
+  buildSpellCard=function(s,opts){return buildCardV4(s,opts);};
+}
+</script>
+
 </body>
 </html>

@@ -58,7 +58,7 @@
   <div class="main" id="content"><div style="text-align:center;padding:60px 20px;"><div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div></div></div>
 
 <script>
-var HOUSES={1:{name:'Smoulders',color:'#E03C31',icon:'🔥'},2:{name:'Darktide',color:'#00B4D8',icon:'🌊'},3:{name:'Stonebark',color:'#5CB338',icon:'🌿'},4:{name:'Ashenvale',color:'#90E0EF',icon:'💨'},5:{name:'Stormrage',color:'#FFC800',icon:'⚡'},6:{name:'Nighthollow',color:'#7B2D8E',icon:'🌙'},7:{name:'Dawnbringer',color:'#FF8C00',icon:'☀️'},8:{name:'Manastorm',color:'#5B8FE0',icon:'🔮'},9:{name:'Plaguemire',color:'#E84393',icon:'☠️'}};
+var HOUSES={1:{name:'Smoulders',color:'#E03C31',icon:'🔥'},2:{name:'Darktide',color:'#00B4D8',icon:'🌊'},3:{name:'Stonebark',color:'#5CB338',icon:'🌿'},4:{name:'Ashenvale',color:'#B0C4DE',icon:'💨'},5:{name:'Stormrage',color:'#FFC800',icon:'⚡'},6:{name:'Nighthollow',color:'#7B2D8E',icon:'🌙'},7:{name:'Dawnbringer',color:'#FF8C00',icon:'☀️'},8:{name:'Manastorm',color:'#5B8FE0',icon:'🔮'},9:{name:'Plaguemire',color:'#E84393',icon:'☠️'}};
 var playerId=null,currentTab='season',data={};
 
 function getPlayerId(){var p=new URLSearchParams(window.location.search);var f=p.get('player_id');if(f){localStorage.setItem('player_id',f);return f;}return localStorage.getItem('player_id');}

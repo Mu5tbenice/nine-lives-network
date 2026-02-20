@@ -127,7 +127,7 @@ var HOUSES={
   smoulders:{name:'Smoulders',color:'#E03C31',rgb:'224,60,49',img:'/assets/images/houses/House-smoulders.png',element:'FIRE \u00b7 AGGRESSION'},
   darktide:{name:'Darktide',color:'#00B4D8',rgb:'0,180,216',img:'/assets/images/houses/House-darktide.png',element:'WATER \u00b7 CONTROL'},
   stonebark:{name:'Stonebark',color:'#5CB338',rgb:'92,179,56',img:'/assets/images/houses/House-stonebark.png',element:'EARTH \u00b7 ENDURANCE'},
-  ashenvale:{name:'Ashenvale',color:'#90E0EF',rgb:'144,224,239',img:'/assets/images/houses/House-Ashenvale.png',element:'WIND \u00b7 SPEED'},
+  ashenvale:{name:'Ashenvale',color:'#B0C4DE',rgb:'144,224,239',img:'/assets/images/houses/House-Ashenvale.png',element:'WIND \u00b7 SPEED'},
   stormrage:{name:'Stormrage',color:'#FFC800',rgb:'255,200,0',img:'/assets/images/houses/House-stormrage.png',element:'LIGHTNING \u00b7 HIGH RISK'},
   nighthollow:{name:'Nighthollow',color:'#7B2D8E',rgb:'123,45,142',img:'/assets/images/houses/House-nighthollow.png',element:'SHADOW \u00b7 DISRUPTION'},
   dawnbringer:{name:'Dawnbringer',color:'#FF8C00',rgb:'255,140,0',img:'/assets/images/houses/House-dawnbringer.png',element:'LIGHT \u00b7 SUPPORT'},
@@ -310,5 +310,13 @@ buildTabs();
 if(localStorage.getItem('player_id')){var nl=document.getElementById('navLogout');if(nl)nl.style.display='';var ml=document.getElementById('mobileLogout');if(ml)ml.style.display='';}
 load();
 </script>
+<script>
+/* ═══ V4 OVERRIDE — forces all card rendering through card-v4.js ═══ */
+if(typeof buildCardV4==='function'){
+  buildCard=function(s,d){return buildCardV4(s,{delay:d||0});};
+  buildSpellCard=function(s,opts){return buildCardV4(s,opts);};
+}
+</script>
+
 </body>
 </html>

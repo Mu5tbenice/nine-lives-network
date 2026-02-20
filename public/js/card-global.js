@@ -9,7 +9,7 @@
     smoulders:   { name:'Smoulders',   color:'#E03C31', rgb:'224,60,49',   img:'/assets/images/houses/House-smoulders.png', element:'FIRE' },
     darktide:    { name:'Darktide',    color:'#00B4D8', rgb:'0,180,216',   img:'/assets/images/houses/House-darktide.png',  element:'WATER' },
     stonebark:   { name:'Stonebark',   color:'#5CB338', rgb:'92,179,56',   img:'/assets/images/houses/House-stonebark.png', element:'EARTH' },
-    ashenvale:   { name:'Ashenvale',   color:'#90E0EF', rgb:'144,224,239', img:'/assets/images/houses/House-Ashenvale.png', element:'WIND' },
+    ashenvale:   { name:'Ashenvale',   color:'#B0C4DE', rgb:'144,224,239', img:'/assets/images/houses/House-Ashenvale.png', element:'WIND' },
     stormrage:   { name:'Stormrage',   color:'#FFC800', rgb:'255,200,0',   img:'/assets/images/houses/House-stormrage.png', element:'LIGHTNING' },
     nighthollow: { name:'Nighthollow', color:'#7B2D8E', rgb:'123,45,142',  img:'/assets/images/houses/House-nighthollow.png', element:'SHADOW' },
     dawnbringer: { name:'Dawnbringer', color:'#FF8C00', rgb:'255,140,0',   img:'/assets/images/houses/House-dawnbringer.png', element:'LIGHT' },

@@ -51,7 +51,7 @@
 .card-slot[data-house="smoulders"]::before   { background: #E03C31; }
 .card-slot[data-house="darktide"]::before    { background: #00B4D8; }
 .card-slot[data-house="stonebark"]::before   { background: #5CB338; }
-.card-slot[data-house="ashenvale"]::before   { background: #90E0EF; }
+.card-slot[data-house="ashenvale"]::before   { background: #B0C4DE; }
 .card-slot[data-house="stormrage"]::before   { background: #FFC800; }
 .card-slot[data-house="nighthollow"]::before { background: #7B2D8E; }
 .card-slot[data-house="dawnbringer"]::before { background: #FF8C00; }

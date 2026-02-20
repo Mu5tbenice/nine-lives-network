@@ -20,7 +20,7 @@ var CARD_HOUSES = {
   smoulders:   { name: "Smoulders",   color: "#E03C31", img: "/assets/images/houses/smoulders.png" },
   darktide:    { name: "Darktide",    color: "#00B4D8", img: "/assets/images/houses/darktide.png" },
   stonebark:   { name: "Stonebark",   color: "#5CB338", img: "/assets/images/houses/stonebark.png" },
-  ashenvale:   { name: "Ashenvale",   color: "#90E0EF", img: "/assets/images/houses/ashenvale.png" },
+  ashenvale:   { name: "Ashenvale",   color: "#B0C4DE", img: "/assets/images/houses/ashenvale.png" },
   stormrage:   { name: "Stormrage",   color: "#FFC800", img: "/assets/images/houses/stormrage.png" },
   nighthollow: { name: "Nighthollow", color: "#7B2D8E", img: "/assets/images/houses/nighthollow.png" },
   dawnbringer: { name: "Dawnbringer", color: "#FF8C00", img: "/assets/images/houses/dawnbringer.png" },
