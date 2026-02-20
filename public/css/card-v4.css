@@ -405,10 +405,9 @@
 /* Pill tooltip */
 .pill .tip {
   display: none;
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
+  position: fixed;
+  top: 0;
+  left: 0;
   white-space: normal;
   max-width: 240px;
   font-family: var(--font-body);

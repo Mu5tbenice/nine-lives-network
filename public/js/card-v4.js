@@ -254,7 +254,7 @@ function buildCardV4(s, options) {
     var durColor = ({ common:'#bbb', uncommon:'#66dd66', rare:'#55bbff', epic:'#bb88ff', legendary:'#ffd700' })[rarity] || '#888';
     durHtml = '<div class="sc-durability">'
       + '<div class="sc-dur-track"><div class="sc-dur-fill" style="width:' + pct + '%;background:linear-gradient(90deg,' + durColor + ',' + durColor + '88)"></div></div>'
-      + '<span class="sc-dur-text">' + cur + '/' + s.max_charges + '</span>'
+      + '<span class="sc-dur-text"></span>'
       + '</div>';
   }
 
@@ -310,7 +310,7 @@ function buildCardV4(s, options) {
         + pillsHtml
         + durHtml
         + flavorHtml
-        + '<div class="sc-bottom" style="color:' + hc + '">' + houseName.toUpperCase() + ' · NETHARA</div>'
+    + '<div class="sc-bottom" style="color:' + hc + '">' + houseName.toUpperCase() + '</div>'
       + '</div>'
       + '<div style="height:4px"></div>'
     + '</div>'
@@ -361,7 +361,7 @@ function initCardFoil(container) {
       }
       if (glow) {
         var hc = card.dataset.color || '#D4A64B';
-        glow.style.background = 'radial-gradient(circle at ' + (mx * 100) + '% ' + (my * 100) + '%,' + hc + '1a,transparent 45%)';
+        glow.style.background = 'radial-gradient(circle at ' + (mx * 100) + '% ' + (my * 100) + '%,' + hc + '08,transparent 45%)';
       }
       if (border) {
         var hc2 = card.dataset.color || '#D4A64B';
@@ -404,12 +404,22 @@ function fixTooltipPositions(container) {
     pill.addEventListener('mouseenter', function() {
       var tip = pill.querySelector('.tip');
       if (!tip) return;
-      var rect = pill.getBoundingClientRect();
-      if (rect.top < 120) {
-        tip.classList.add('tip--below');
-      } else {
-        tip.classList.remove('tip--below');
-      }
+      tip.style.display = 'block';
+      tip.style.visibility = 'hidden';
+      var pr = pill.getBoundingClientRect();
+      var tr = tip.getBoundingClientRect();
+      var top = pr.top - tr.height - 8;
+      var left = pr.left + (pr.width / 2) - (tr.width / 2);
+      if (top < 8) top = pr.bottom + 8;
+      if (left < 8) left = 8;
+      if (left + tr.width > window.innerWidth - 8) left = window.innerWidth - tr.width - 8;
+      tip.style.top = top + 'px';
+      tip.style.left = left + 'px';
+      tip.style.visibility = 'visible';
+    });
+    pill.addEventListener('mouseleave', function() {
+      var tip = pill.querySelector('.tip');
+      if (tip) tip.style.display = 'none';
     });
   });
 }
