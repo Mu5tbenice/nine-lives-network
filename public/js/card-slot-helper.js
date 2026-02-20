@@ -15,6 +15,10 @@ var SLOT_RARITY_COLORS = {
   epic: '#bb88ff', legendary: '#ffd700'
 };
 
+function _safeEsc(s) {
+  return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+}
+
 function buildCardSlot(c, onclick) {
   var house = (c.house || c.spell_house || c.school_id || 'universal').toString().toLowerCase();
   var type = (c.card_type || c.spell_type || 'attack').toLowerCase();
@@ -24,15 +28,16 @@ function buildCardSlot(c, onclick) {
   var name = c.name || c.spell_name || 'Unknown';
   var tc = SLOT_TYPE_COLORS[type] || '#9B8E7E';
   var rc = SLOT_RARITY_COLORS[rarity] || '#888';
+  var e = typeof esc === 'function' ? esc : _safeEsc;
 
   var h = '<div class="card-slot" data-house="' + house + '" data-rarity="' + rarity + '"';
   if (onclick) h += ' onclick="' + onclick + '"';
   h += '>';
-  h += '<div class="card-name">' + esc(name) + '</div>';
+  h += '<div class="card-name">' + e(name) + '</div>';
   h += '<div class="card-type" style="color:' + tc + '">' + type.toUpperCase() + '</div>';
   h += '<div class="card-stats">';
-  h += '<span class="card-stat stat-atk">⚔' + atk + '</span>';
-  h += '<span class="card-stat stat-hp">♥' + hp + '</span>';
+  h += '<span class="card-stat stat-atk">\u2694' + atk + '</span>';
+  h += '<span class="card-stat stat-hp">\u2665' + hp + '</span>';
   h += '</div>';
   h += '<div class="card-rarity r-' + rarity + '" style="color:' + rc + '">' + rarity.toUpperCase() + '</div>';
   h += '</div>';
