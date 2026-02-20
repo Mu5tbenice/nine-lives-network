@@ -1,0 +1,595 @@
+/* ═══════════════════════════════════════════════════════════
+   CARD V4.2 — COMPLETE STANDALONE CSS
+   Nine Lives Network
+
+   This is NOT a patch. This is the ONLY card CSS file you need.
+   Drop it into: public/css/card-v4.css
+   Link it AFTER components-v2.css on every page that shows cards.
+
+   Matches: card-v4.jsx prototype exactly
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── ROOT VARIABLES ── */
+:root {
+  --stat-atk:  #e85a6a;
+  --stat-hp:   #6acd8a;
+  --stat-spd:  #6ac8d8;
+  --stat-def:  #b088e8;
+  --stat-luck: #D4A64B;
+  --font-title: 'Cinzel', serif;
+  --font-data:  'Press Start 2P', monospace;
+  --font-body:  'Crimson Text', serif;
+  --card-gold:  #D4A64B;
+}
+
+/* ═══ CARD SHELL ═══ */
+.spell-card {
+  position: relative;
+  width: 240px;
+  height: 380px;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.25s ease, box-shadow 0.3s ease;
+  background: var(--card-bg, linear-gradient(180deg, #12101a, #0c0a14, #0a0810));
+}
+.spell-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 25px 60px rgba(0,0,0,0.5), 0 0 35px var(--hc-shadow, rgba(212,166,75,0.08));
+}
+
+/* ═══ BORDER / SHIMMER ═══ */
+.sc-border {
+  position: absolute;
+  inset: -2px;
+  border-radius: 14px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 0.5s;
+  background: conic-gradient(from 135deg, transparent, var(--hc, #D4A64B) 8%, transparent 16%);
+}
+.spell-card:hover .sc-border { opacity: 0.5; }
+.spell-card--legendary .sc-border { opacity: 0.2; }
+.spell-card--legendary:hover .sc-border { opacity: 0.8; }
+
+/* ═══ CARD FACE (inner bg) ═══ */
+.sc-face {
+  position: absolute;
+  inset: 2px;
+  border-radius: 10px;
+  overflow: hidden;
+  z-index: 1;
+  background: linear-gradient(180deg, #12101a 0%, #0c0a14 50%, #0a0810 100%);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  transition: border-color 0.3s;
+}
+.spell-card:hover .sc-face {
+  border-color: var(--edge-hover, rgba(255,255,255,0.15));
+}
+
+/* ═══ ART AREA — gradient fade from house color ═══ */
+.sc-art-area {
+  position: absolute;
+  top: 2px; left: 2px; right: 2px; bottom: 2px;
+  z-index: 2;
+  border-radius: 10px;
+  overflow: hidden;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 20%, var(--hc, #D4A64B)40, transparent 60%),
+              linear-gradient(180deg, var(--hc, #D4A64B)25 0%, var(--hc, #D4A64B)08 40%, transparent 60%);
+  -webkit-mask-image: linear-gradient(to bottom, black 35%, transparent 65%);
+  mask-image: linear-gradient(to bottom, black 35%, transparent 65%);
+}
+
+/* Art image (if card has art) */
+.sc-art-img {
+  position: absolute;
+  top: 2px; left: 2px; right: 2px;
+  height: 55%;
+  z-index: 2;
+  border-radius: 10px 10px 0 0;
+  background-size: cover;
+  background-position: center;
+  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  pointer-events: none;
+}
+
+/* ═══ INNER EDGE GLOW ═══ */
+.sc-inner-edge {
+  position: absolute;
+  inset: 2px;
+  border-radius: 10px;
+  z-index: 2;
+  pointer-events: none;
+  box-shadow: inset 0 0 20px 2px rgba(255,255,255,0.03);
+  transition: box-shadow 0.3s;
+}
+.spell-card:hover .sc-inner-edge {
+  box-shadow: inset 0 0 20px 2px var(--inner-glow-hover, rgba(255,255,255,0.06));
+}
+
+/* ═══ FOIL (mouse-follow) ═══ */
+.sc-foil {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.spell-card:hover .sc-foil {
+  opacity: var(--foil-mult, 0);
+}
+.spell-card--legendary .sc-foil { opacity: 0.25; }
+
+/* ═══ RAINBOW (mouse-follow) ═══ */
+.sc-rainbow {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  border-radius: inherit;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.spell-card:hover .sc-rainbow {
+  opacity: var(--foil-mult, 0);
+}
+
+/* ═══ CURSOR GLOW ═══ */
+.sc-glow {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  border-radius: 10px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.spell-card:hover .sc-glow { opacity: 1; }
+
+/* ═══ PARTICLES CANVAS ═══ */
+.sc-particles {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* ═══ CREST WATERMARK ═══ */
+.sc-crest-watermark {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90px;
+  height: 90px;
+  opacity: 0.04;
+  z-index: 2;
+  pointer-events: none;
+  filter: grayscale(100%);
+}
+
+/* ═══ BODY (content layer) ═══ */
+.sc-body {
+  position: relative;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* ═══ TOP ROW — logo + name + mana ═══ */
+.sc-top {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 8px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 70%, transparent 100%);
+}
+
+.sc-house-logo--inline {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.9));
+  object-fit: contain;
+}
+
+.sc-name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1.15;
+  color: var(--card-gold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow:
+    -1px -1px 0 rgba(0,0,0,0.95),
+     1px -1px 0 rgba(0,0,0,0.95),
+    -1px  1px 0 rgba(0,0,0,0.95),
+     1px  1px 0 rgba(0,0,0,0.95),
+     0 0 6px rgba(0,0,0,0.7);
+}
+
+/* ═══ MANA PILL ═══ */
+.sc-mana {
+  font-family: var(--font-data);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #5bc0ff;
+  background: rgba(0,0,0,0.75);
+  border: 1px solid rgba(91,192,255,0.3);
+  border-radius: 4px;
+  padding: 3px 8px 3px 6px;
+  line-height: 1;
+  flex-shrink: 0;
+  text-shadow: 0 0 8px rgba(91,192,255,0.5);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.sc-mana-icon { font-size: 0.9em; line-height: 1; display: inline-flex; align-items: center; }
+.sc-mana-num  { line-height: 1; }
+
+/* ═══ STAT ROW — colored numbers with dividers ═══ */
+.sc-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 0 8px;
+  margin-bottom: 5px;
+}
+.sc-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 7px;
+}
+.sc-stat-divider {
+  width: 1px;
+  height: 22px;
+  background: rgba(255,255,255,0.06);
+}
+.sc-stat-val {
+  font-family: var(--font-data);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+}
+.sc-stat-val--atk  { color: var(--stat-atk); text-shadow: 0 0 10px rgba(232,90,106,0.4); }
+.sc-stat-val--hp   { color: var(--stat-hp);  text-shadow: 0 0 10px rgba(106,205,138,0.4); }
+.sc-stat-val--spd  { color: var(--stat-spd); text-shadow: 0 0 10px rgba(106,200,216,0.4); }
+.sc-stat-val--def  { color: var(--stat-def); text-shadow: 0 0 10px rgba(176,136,232,0.4); }
+.sc-stat-val--luck { color: var(--stat-luck);text-shadow: 0 0 10px rgba(212,166,75,0.4); }
+
+.sc-stat-label {
+  font-family: var(--font-data);
+  font-size: 6px;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  margin-top: 2px;
+}
+.sc-stat-label--atk  { color: rgba(232,90,106,0.5); }
+.sc-stat-label--hp   { color: rgba(106,205,138,0.5); }
+.sc-stat-label--spd  { color: rgba(106,200,216,0.5); }
+.sc-stat-label--def  { color: rgba(176,136,232,0.5); }
+.sc-stat-label--luck { color: rgba(212,166,75,0.5); }
+
+/* ═══ THIN HOUSE RULE ═══ */
+.sc-rule {
+  margin: 0 14px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--hc-rule, rgba(212,166,75,0.15)), transparent);
+}
+
+/* ═══ INFO SECTION ═══ */
+.sc-info {
+  padding: 5px 10px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* ═══ TYPE + RARITY ROW ═══ */
+.sc-type-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+}
+.sc-type-spacer { flex: 1; min-width: 4px; }
+
+/* TYPE LABEL — plain gold text, NO box */
+.sc-type {
+  font-family: var(--font-title);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--card-gold);
+  opacity: 0.7;
+  padding: 0;
+  border: none;
+  background: none;
+  white-space: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* RARITY BADGE */
+.sc-rarity {
+  font-family: var(--font-data);
+  font-size: 8px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  cursor: default;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.sc-rarity--common    { background: rgba(180,180,180,0.08); border: 1px solid rgba(180,180,180,0.2);  color: #bbb; }
+.sc-rarity--uncommon  { background: rgba(80,200,80,0.1);    border: 1px solid rgba(80,200,80,0.25);   color: #66dd66; }
+.sc-rarity--rare      { background: rgba(0,150,255,0.1);    border: 1px solid rgba(0,150,255,0.25);   color: #55bbff; }
+.sc-rarity--epic      { background: rgba(160,80,240,0.12);  border: 1px solid rgba(160,80,240,0.3);   color: #bb88ff; }
+.sc-rarity--legendary { background: rgba(255,200,0,0.12);   border: 1px solid rgba(255,200,0,0.3);    color: #ffd700; box-shadow: 0 0 6px rgba(255,200,0,0.15); }
+
+/* ═══ EFFECT TEXT ═══ */
+.sc-effect {
+  padding: 0;
+}
+.sc-effect__base {
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+/* ═══ EFFECT PILLS — with tooltip ═══ */
+.sc-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 3px;
+}
+
+.pill {
+  font-family: var(--font-data);
+  font-size: 9px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: default;
+  transition: transform 0.15s;
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+  line-height: 1;
+}
+.pill:hover {
+  transform: translateY(-2px);
+}
+
+/* Pill color classes */
+.pill.p-orange  { color: #ffaa55; background: rgba(255,170,85,0.1);  border: 1px solid rgba(255,170,85,0.25); }
+.pill.p-red     { color: #ff7b6b; background: rgba(255,123,107,0.1); border: 1px solid rgba(255,123,107,0.25); }
+.pill.p-yellow  { color: #ffdd44; background: rgba(255,221,68,0.1);  border: 1px solid rgba(255,221,68,0.25); }
+.pill.p-green   { color: #44cc88; background: rgba(68,204,136,0.1);  border: 1px solid rgba(68,204,136,0.25); }
+.pill.p-blue    { color: #55bbff; background: rgba(85,187,255,0.1);  border: 1px solid rgba(85,187,255,0.25); }
+.pill.p-purple  { color: #bb88ff; background: rgba(187,136,255,0.1); border: 1px solid rgba(187,136,255,0.25); }
+.pill.p-cyan    { color: #6ac8d8; background: rgba(106,200,216,0.1); border: 1px solid rgba(106,200,216,0.25); }
+.pill.p-dark    { color: #b088cc; background: rgba(176,136,204,0.1); border: 1px solid rgba(176,136,204,0.25); }
+.pill.p-pink    { color: #ff88aa; background: rgba(255,136,170,0.1); border: 1px solid rgba(255,136,170,0.25); }
+.pill.p-brown   { color: #ccaa66; background: rgba(204,170,102,0.1); border: 1px solid rgba(204,170,102,0.25); }
+.pill.p-gold    { color: #D4A64B; background: rgba(212,166,75,0.1);  border: 1px solid rgba(212,166,75,0.25); }
+.pill.p-white   { color: #ddd;    background: rgba(221,221,221,0.08);border: 1px solid rgba(221,221,221,0.2); }
+.pill.p-ice     { color: #88ddff; background: rgba(136,221,255,0.1); border: 1px solid rgba(136,221,255,0.25); }
+.pill.p-toxic   { color: #aaee55; background: rgba(170,238,85,0.1);  border: 1px solid rgba(170,238,85,0.25); }
+.pill.p-gray    { color: #aaa;    background: rgba(170,170,170,0.08);border: 1px solid rgba(170,170,170,0.2); }
+
+/* Pill tooltip */
+.pill .tip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: normal;
+  max-width: 240px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 400;
+  color: #e8e4d9;
+  background: rgba(10,8,18,0.97);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 5px;
+  padding: 6px 12px;
+  z-index: 999;
+  pointer-events: none;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+  line-height: 1.3;
+}
+.pill:hover .tip { display: block; }
+/* Tooltip below (for zoom overlay / top-of-screen cards) */
+.pill .tip--below {
+  bottom: auto;
+  top: calc(100% + 8px);
+}
+
+/* ═══ DURABILITY BAR ═══ */
+.sc-durability {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sc-dur-track {
+  width: 60px;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.06);
+  overflow: hidden;
+}
+.sc-dur-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+.sc-dur-text {
+  font-family: var(--font-data);
+  font-size: 6px;
+  color: rgba(255,255,255,0.22);
+  line-height: 1;
+}
+
+/* ═══ FLAVOR TEXT ═══ */
+.sc-flavor {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 11px;
+  color: rgba(255,255,255,0.25);
+  line-height: 1.3;
+}
+
+/* ═══ HOUSE FOOTER ═══ */
+.sc-bottom {
+  padding-top: 3px;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  text-align: center;
+  font-family: var(--font-data);
+  font-size: 4px;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.08);
+}
+
+/* ═══ LEGENDARY ALWAYS-ON SHIMMER ═══ */
+.spell-card--legendary {
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3), 0 0 12px var(--hc-shadow, rgba(212,166,75,0.1));
+}
+
+/* ═══════════════════════════════════
+   SIZE VARIANTS — use parent class
+   ═══════════════════════════════════ */
+
+/* ZOOM (1.4x) — overlay detail view */
+.zoom-card .spell-card,
+.spell-card.sc-zoom { width: 340px; height: 530px; }
+.zoom-card .sc-stat-val,  .sc-zoom .sc-stat-val  { font-size: 22px; }
+.zoom-card .sc-stat-label,.sc-zoom .sc-stat-label { font-size: 8px; }
+.zoom-card .sc-stat-divider,.sc-zoom .sc-stat-divider { height: 28px; }
+.zoom-card .sc-stat-item, .sc-zoom .sc-stat-item { padding: 0 10px; }
+.zoom-card .pill,         .sc-zoom .pill          { font-size: 11px; padding: 5px 12px; }
+.zoom-card .sc-type,      .sc-zoom .sc-type       { font-size: 14px; }
+.zoom-card .sc-rule,      .sc-zoom .sc-rule       { margin: 0 20px; }
+.zoom-card .sc-name,      .sc-zoom .sc-name       { font-size: 20px; }
+.zoom-card .sc-mana,      .sc-zoom .sc-mana       { font-size: 14px; }
+.zoom-card .sc-flavor,    .sc-zoom .sc-flavor     { font-size: 13px; }
+
+/* MINI (grid/spellbook) — 200px wide */
+.sc-mini .spell-card,
+.spell-card.sc-mini-card { width: 200px; height: 316px; }
+.sc-mini .sc-stat-val,   .sc-mini-card .sc-stat-val   { font-size: 11px; }
+.sc-mini .sc-stat-label, .sc-mini-card .sc-stat-label  { font-size: 5px; }
+.sc-mini .sc-stat-divider,.sc-mini-card .sc-stat-divider { height: 14px; }
+.sc-mini .sc-stat-item,  .sc-mini-card .sc-stat-item   { padding: 0 4px; }
+.sc-mini .sc-rule,       .sc-mini-card .sc-rule        { margin: 0 8px; }
+.sc-mini .sc-type,       .sc-mini-card .sc-type        { font-size: 9px; }
+.sc-mini .pill,          .sc-mini-card .pill            { font-size: 7px; padding: 3px 6px; }
+.sc-mini .sc-stat-row,   .sc-mini-card .sc-stat-row    { margin-bottom: 3px; }
+.sc-mini .sc-name,       .sc-mini-card .sc-name        { font-size: 12px; }
+.sc-mini .sc-mana,       .sc-mini-card .sc-mana        { font-size: 9px; }
+.sc-mini .sc-flavor,     .sc-mini-card .sc-flavor      { font-size: 9px; }
+
+/* TINY (dashboard preview / hand) — 160px wide */
+.sc-tiny .spell-card,
+.spell-card.sc-tiny-card { width: 160px; height: 252px; }
+.sc-tiny .sc-stat-val,   .sc-tiny-card .sc-stat-val   { font-size: 8px; }
+.sc-tiny .sc-stat-label, .sc-tiny-card .sc-stat-label  { font-size: 4px; }
+.sc-tiny .sc-stat-divider,.sc-tiny-card .sc-stat-divider { height: 10px; }
+.sc-tiny .sc-stat-item,  .sc-tiny-card .sc-stat-item   { padding: 0 2px; }
+.sc-tiny .sc-name,       .sc-tiny-card .sc-name        { font-size: 11px; }
+.sc-tiny .sc-mana,       .sc-tiny-card .sc-mana        { font-size: 8px; padding: 2px 5px; }
+.sc-tiny .pill,          .sc-tiny-card .pill            { font-size: 6px; padding: 2px 5px; }
+.sc-tiny .sc-type,       .sc-tiny-card .sc-type        { font-size: 8px; }
+.sc-tiny .sc-flavor,     .sc-tiny-card .sc-flavor      { display: none; }
+.sc-tiny .sc-bottom,     .sc-tiny-card .sc-bottom      { display: none; }
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 600px) {
+  .spell-card { width: 200px; height: 316px; }
+  .sc-stat-val { font-size: 12px; }
+  .sc-stat-label { font-size: 5px; }
+  .sc-stat-divider { height: 16px; }
+  .sc-stat-item { padding: 0 5px; }
+  .pill { font-size: 7px; padding: 3px 7px; }
+  .sc-name { font-size: 13px; }
+}
+
+/* ═══ CARD GRID HELPERS ═══ */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  justify-items: center;
+}
+.card-grid--mini {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+}
+.card-grid--tiny {
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+}
+
+/* ═══ EXHAUSTED OVERLAY ═══ */
+.spell-card--exhausted {
+  filter: grayscale(0.7) brightness(0.6);
+  pointer-events: none;
+}
+.spell-card--exhausted::after {
+  content: 'EXHAUSTED';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotate(-15deg);
+  font-family: var(--font-data);
+  font-size: 14px;
+  color: rgba(255,80,80,0.6);
+  letter-spacing: 3px;
+  z-index: 20;
+  pointer-events: none;
+}
+
+/* ═══ DEPLOYED BADGE ═══ */
+.spell-card--deployed::before {
+  content: '⚔ DEPLOYED';
+  position: absolute;
+  top: 6px; right: 6px;
+  font-family: var(--font-data);
+  font-size: 6px;
+  color: #ffd700;
+  background: rgba(0,0,0,0.8);
+  border: 1px solid rgba(255,215,0,0.3);
+  border-radius: 3px;
+  padding: 2px 6px;
+  z-index: 20;
+  letter-spacing: 0.5px;
+}
+
+/* ═══ SELECTED HIGHLIGHT ═══ */
+.spell-card--selected {
+  box-shadow: 0 0 0 3px #ffd700, 0 0 25px rgba(255,215,0,0.3);
+  transform: translateY(-6px) scale(1.03);
+}
