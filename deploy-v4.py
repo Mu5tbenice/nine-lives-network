@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 """
-Card V4 Deploy Script — Nine Lives Network
-Run this in Replit Shell:   python3 deploy-v4.py
+Card V4 Deploy Script v2 — Nine Lives Network
+Run in Replit Shell:   python3 deploy-v4.py
 
-What it does:
-  - Adds <script src="/js/card-particles.js"> to each page (if not already there)
-  - Adds <script src="/js/card-v4.js"> to each page (if not already there)
-  - That's it! No deletions, no risky edits.
+What it does for EACH page:
+  1. Removes old <script src="/js/spell-particles.js"> tag
+  2. Removes old <script src="/js/card-builder-v4.js"> tag
+  3. Removes old <link href="/css/card-v4-patch.css"> tag
+  4. Removes any previously-added card-particles.js / card-v4.js tags
+  5. Adds card-particles.js + card-v4.js BEFORE the first inline <script> block
+     (so initSpellCard is defined before the page code needs it)
 """
 
-import os
-import sys
+import os, sys, re
 
 PAGES = [
     'public/spellbook.html',
@@ -22,14 +24,66 @@ PAGES = [
     'public/zone-detail.html',
 ]
 
-SCRIPTS_TO_ADD = '<script src="/js/card-particles.js"></script>\n<script src="/js/card-v4.js"></script>'
+NEW_SCRIPTS = '<script src="/js/card-particles.js"></script>\n<script src="/js/card-v4.js"></script>\n'
+
+def process_page(path):
+    with open(path, 'r', encoding='utf-8') as f:
+        content = f.read()
+
+    original = content
+    changes = []
+
+    # 1. Remove old spell-particles.js script tag
+    if 'spell-particles.js' in content:
+        content = re.sub(r'<script\s+src="/js/spell-particles\.js"\s*>\s*</script>\s*\n?', '', content)
+        changes.append('removed spell-particles.js')
+
+    # 2. Remove old card-builder-v4.js script tag
+    if 'card-builder-v4.js' in content:
+        content = re.sub(r'<script\s+src="/js/card-builder-v4\.js"\s*>\s*</script>\s*\n?', '', content)
+        changes.append('removed card-builder-v4.js')
+
+    # 3. Remove old card-v4-patch.css link tag
+    if 'card-v4-patch.css' in content:
+        content = re.sub(r'<link[^>]*card-v4-patch\.css[^>]*>\s*\n?', '', content)
+        changes.append('removed card-v4-patch.css')
+
+    # 4. Remove any previously-added new script tags (from old deploy or manual add)
+    if 'card-particles.js' in content:
+        content = re.sub(r'<script\s+src="/js/card-particles\.js"\s*>\s*</script>\s*\n?', '', content)
+    if 'card-v4.js' in content:
+        content = re.sub(r'<script\s+src="/js/card-v4\.js"\s*>\s*</script>\s*\n?', '', content)
+
+    # 5. Find the FIRST inline <script> block (not a src= script)
+    #    and insert our 2 new scripts BEFORE it
+    match = re.search(r'<script>(?!\s*</script>)', content)
+    if match:
+        pos = match.start()
+        content = content[:pos] + NEW_SCRIPTS + content[pos:]
+        changes.append('added card-particles.js + card-v4.js before inline script')
+    else:
+        # Fallback: add before </body>
+        pos = content.rfind('</body>')
+        if pos != -1:
+            content = content[:pos] + NEW_SCRIPTS + content[pos:]
+            changes.append('added card-particles.js + card-v4.js before </body>')
+        else:
+            return 'ERROR: no <script> or </body> found'
+
+    if content != original:
+        with open(path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        return ', '.join(changes)
+    else:
+        return 'no changes needed'
+
 
 def main():
     print('')
-    print('=== Card V4 Deploy Script ===')
+    print('=== Card V4 Deploy Script v2 ===')
     print('')
 
-    # Safety check — are the new files present?
+    # Safety check
     missing = []
     if not os.path.exists('public/js/card-particles.js'):
         missing.append('public/js/card-particles.js')
@@ -42,70 +96,34 @@ def main():
         for m in missing:
             print('  MISSING: ' + m)
         print('')
-        print('  Add those files first, then run this script again.')
+        print('  Add those files first, then run this again.')
         sys.exit(1)
 
     print('  All required files found.')
     print('')
 
-    changed = 0
-    skipped = 0
-
     for page in PAGES:
         if not os.path.exists(page):
-            print('  SKIP: ' + page + ' (file not found)')
-            skipped += 1
+            print('  SKIP: ' + page + ' (not found)')
             continue
-
-        with open(page, 'r', encoding='utf-8') as f:
-            content = f.read()
-
-        # Check if already deployed
-        if 'card-v4.js' in content:
-            print('  SKIP: ' + page + ' (already has card-v4.js)')
-            skipped += 1
-            continue
-
-        # Find </body> and insert scripts before it
-        body_pos = content.rfind('</body>')
-        if body_pos == -1:
-            print('  SKIP: ' + page + ' (no </body> found)')
-            skipped += 1
-            continue
-
-        # Insert the 2 script tags on the line before </body>
-        new_content = content[:body_pos] + SCRIPTS_TO_ADD + '\n' + content[body_pos:]
-
-        with open(page, 'w', encoding='utf-8') as f:
-            f.write(new_content)
-
-        print('  DONE: ' + page)
-        changed += 1
+        result = process_page(page)
+        print('  ' + page + ' -> ' + result)
 
     print('')
-    print('=== Results ===')
-    print('  Updated: ' + str(changed) + ' pages')
-    print('  Skipped: ' + str(skipped) + ' pages')
+    print('Done! Now:')
+    print('  1. Click Run in Replit to test')
+    print('  2. Check spellbook + collection pages')
+    print('  3. If working, commit:')
     print('')
-
-    if changed > 0:
-        print('  Next steps:')
-        print('  1. Click Run in Replit to test')
-        print('  2. Check the spellbook page — cards should show the v4 design')
-        print('  3. If it works, commit:')
-        print('')
-        print('     git add -A')
-        print('     git commit -m "feat: card v4 deployed across all pages"')
-        print('     git push origin cleanup/card-v4-unified')
-        print('     git checkout main')
-        print('     git merge cleanup/card-v4-unified')
-        print('     git push origin main')
-        print('     git branch -d cleanup/card-v4-unified')
-        print('')
-        print('  4. Publish on Replit (Deployments tab)')
-    else:
-        print('  Nothing to do — all pages already updated!')
-
+    print('     git add -A')
+    print('     git commit -m "feat: card v4 deployed across all pages"')
+    print('     git push origin cleanup/card-v4-unified')
+    print('     git checkout main')
+    print('     git merge cleanup/card-v4-unified')
+    print('     git push origin main')
+    print('     git branch -d cleanup/card-v4-unified')
+    print('')
+    print('  4. Publish on Replit (Deployments tab)')
     print('')
 
 if __name__ == '__main__':
