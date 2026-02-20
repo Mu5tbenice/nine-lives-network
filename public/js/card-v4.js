@@ -421,3 +421,5 @@ function initCards(container) {
   fitCardNames(container);
   fixTooltipPositions(container);
 }
+/* ═══ BACKWARD COMPAT — aliases for existing pages ═══ */
+var buildSpellCard = buildCardV4;

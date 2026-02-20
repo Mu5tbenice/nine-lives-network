@@ -57,6 +57,7 @@
   </div>
 
 <script src="/js/card-particles.js"></script>
+<script src="/js/card-v4.js"></script>
 <script>
 var playerId=null;
 function getPlayerId(){var p=new URLSearchParams(window.location.search);var f=p.get('player_id');if(f){localStorage.setItem('player_id',f);return f;}return localStorage.getItem('player_id');}
@@ -139,6 +140,5 @@ loadGauntlet();
 </script>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 <script src="/js/card-slot-helper.js"></script>
-<script src="/js/card-v4.js"></script>
 </body>
 </html>

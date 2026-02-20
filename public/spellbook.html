@@ -119,6 +119,7 @@ body{font-family:'Crimson Text',Georgia,serif;background:var(--bg-deep);color:#e
 </div>
 
 <script src="/js/card-particles.js"></script>
+<script src="/js/card-v4.js"></script>
 <script>
 /* ═══ HOUSES ═══ */
 var HOUSES={
@@ -135,9 +136,6 @@ var HOUSES={
 };
 var HO=['universal','smoulders','darktide','stonebark','ashenvale','stormrage','nighthollow','dawnbringer','manastorm','plaguemire'];
 
-var PC={'BURN':'orange','SCALD':'orange','SPREAD':'red','STRIP':'red','ERUPTION':'red','DRAIN':'purple','PULL':'blue','REFLECT':'cyan','CLOAK':'dark','STEALTH':'dark','SWAP':'pink','WEAKEN':'orange','ANCHOR':'brown','HEAL':'green','THORNS':'green','CONVERT':'cyan','PERSIST':'gold','SWIFT':'white','HASTE':'cyan','FREE':'cyan','DODGE':'ice','REACH':'white','SWEEP':'gray','CRIT':'yellow','FIZZLE':'yellow','CHAIN':'blue','AMPLIFY':'purple','NIGHT':'dark','HEX':'purple','SILENCE':'gray','STEAL':'red','FREEZE':'ice','PIERCE':'white','ABSORB':'blue','RANDOMIZE':'pink','NEGATE':'white','REFUND':'cyan','INFECT':'toxic','WITHER':'brown','CORRODE':'toxic','PLAGUE':'toxic','TOXIC':'toxic','LOCKOUT':'red','UNDERDOG':'gold','AURA':'gold','GIFT':'white','JUSTICE':'gold','SAFE':'gold','RESTORE':'cyan','RESET':'cyan','INSPIRE':'gold','REVEAL':'white','DOT':'green','BONUS':'gold','BLESS':'gold','WARD':'gold','PURGE':'orange','PUSH':'ice','SHUFFLE':'blue','CURSE':'purple','VANISH':'dark','SIPHON':'purple','POISON':'toxic','IMMUNE':'cyan','SURGE':'yellow'};
-function pillCol(tag){var k=tag.replace(/[^A-Z]/g,'').toUpperCase();for(var p in PC){if(k.indexOf(p)!==-1)return PC[p];}return'gray';}
-var PARTICLE_MAP={smoulders:'ember',darktide:'rain',stonebark:'leaf',ashenvale:'wind',stormrage:'spark',nighthollow:'shadow',dawnbringer:'light',manastorm:'arcane',plaguemire:'toxic',universal:'stardust'};
 
 var RARITY_LADDER=[
   {key:'basic',     label:'BASIC',     mult:1.0,  infMult:1.0, cls:'sc-rarity--basic',     manaAdd:0, tipColor:'#aaa'},
@@ -176,50 +174,6 @@ function buildTabs(){
 }
 
 /* ═══ buildCard(spell, delay) — shared card builder ═══ */
-function buildCard(s,delay){
-  var h=HOUSES[s.house]||HOUSES.universal;
-  var bn=[];
-  try{bn=typeof s.bonus_effects==='string'?JSON.parse(s.bonus_effects):(s.bonus_effects||[]);}catch(e){bn=[];}
-  if(!Array.isArray(bn))bn=[];
-  var pType=PARTICLE_MAP[s.house]||'stardust';
-  var spellType=s.spell_type||'attack';
-
-  var logoInline=h.img
-    ?'<img class="sc-house-logo--inline" src="'+h.img+'" onerror="this.style.display=\'none\'">'
-    :'<span class="sc-house-logo--inline" style="display:flex;align-items:center;justify-content:center;font-size:16px;opacity:0.5">&#10022;</span>';
-  var crestWM=h.img?'<img class="sc-crest-watermark" src="'+h.img+'" onerror="this.style.display=\'none\'">':'';
-  var manaHtml='<div class="sc-mana" data-base-mana="'+s.mana_cost+'">'+s.mana_cost+' MP</div>';
-
-  var hasArt=s.image_url&&s.image_url.length>0;
-  var artImg=hasArt?'<div class="sc-art-img" style="background-image:url(/assets/images/spells/'+esc(s.image_url)+')"></div>':'';
-  var artIcon=h.img?'<img src="'+h.img+'" onerror="this.style.display=\'none\'">':'<span style="font-size:28px;position:relative;z-index:1">&#10022;</span>';
-  var artBlock=hasArt?'<div class="sc-art-spacer"></div>'
-    :'<div class="sc-art"><div class="sc-art__bg" style="background:radial-gradient(ellipse at 50% 40%,'+h.color+'12,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7))"></div><div class="sc-art__glow" style="background:radial-gradient(circle,'+h.color+'0A,transparent 70%)"></div>'+artIcon+'<div class="sc-art__corner sc-art__corner--tl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--tr" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--bl" style="background:'+h.color+'25"></div><div class="sc-art__corner sc-art__corner--br" style="background:'+h.color+'25"></div></div>';
-
-  var r0=RARITY_LADDER[0];
-  var rarityHtml='<span class="sc-rarity '+r0.cls+'" data-rarity-idx="0" data-base-effect="'+esc(s.base_effect||'')+'" data-base-mana="'+s.mana_cost+'">'+r0.label+'<span class="sc-rarity__tip" style="color:'+r0.tipColor+'">\u00d71.0 power \u00b7 \u00d71.0 influence</span></span>';
-
-  var effectHtml='';
-  if(s.base_effect&&s.base_effect!=='\u2014'&&s.base_effect!=='-')effectHtml='<div class="sc-effect"><div class="sc-effect__base" style="color:'+h.color+'">'+esc(s.base_effect)+'</div></div>';
-
-  var pillsHtml='';
-  if(bn.length>0){pillsHtml='<div class="sc-pills">';bn.forEach(function(b){var tag=b.tag||b.key||'';var desc=b.desc||b.description||tag;pillsHtml+='<span class="pill p-'+pillCol(tag)+'">'+esc(tag)+'<span class="tip">'+esc(desc)+'</span></span>';});pillsHtml+='</div>';}
-
-  return '<div class="spell-card" data-house="'+s.house+'" data-type="'+spellType+'" data-color="'+h.color+'" data-glow="'+h.color+'" data-particle="'+pType+'" data-foil-s="0.18" data-foil-w="0.1" data-num="50" style="--hc:'+h.color+';--hc-shadow:'+h.color+'30;--edge-color:'+h.color+'20;--edge-hover:'+h.color+'40;--inner-glow:'+h.color+'08;--inner-glow-hover:'+h.color+'15;--card-bg:linear-gradient(180deg,'+h.color+'0A,#0c0a14 35%,#0a0810);transition-delay:'+delay+'s">'
-    +'<div class="sc-border"></div><div class="sc-edge"></div>'
-    +'<div class="sc-face">'+artImg+'<div class="sc-inner-edge"></div><div class="sc-foil"></div><div class="sc-rainbow"></div><canvas class="sc-particles"></canvas><div class="sc-glow"></div></div>'
-    +crestWM
-    +'<div class="sc-body">'
-    +'<div class="sc-top">'+logoInline+'<div class="sc-name">'+esc(s.name)+'</div>'+manaHtml+'</div>'
-    +artBlock
-    +'<div class="sc-info">'
-    +'<div class="sc-type-row"><span class="sc-type sc-type--'+spellType+'">'+spellType+'</span><span class="sc-type-spacer"></span>'+rarityHtml+'</div>'
-    +effectHtml+pillsHtml
-    +'<div class="sc-flavor">"'+esc(s.flavor_text||s.motto||'')+'"</div>'
-    +'<div class="sc-bottom" style="color:'+h.color+'">'+h.name.toUpperCase()+'</div>'
-    +'</div></div></div>';
-}
-
 /* ═══ RENDER ═══ */
 function render(){
   var f=allSpells.filter(function(s){
@@ -356,6 +310,5 @@ buildTabs();
 if(localStorage.getItem('player_id')){var nl=document.getElementById('navLogout');if(nl)nl.style.display='';var ml=document.getElementById('mobileLogout');if(ml)ml.style.display='';}
 load();
 </script>
-<script src="/js/card-v4.js"></script>
 </body>
 </html>
