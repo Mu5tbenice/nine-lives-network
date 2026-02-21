@@ -85,12 +85,39 @@
     .thinking-dots{display:flex;gap:4px;justify-content:center;margin-top:14px}
     .thinking-dot{width:3px;height:3px;border-radius:50%;background:var(--text-body);animation:dotPulse 1.2s ease-in-out infinite}
 
+    /* ── Stat bars (house grid cards) ── */
+    .stat-bar-row{display:flex;align-items:center;gap:5px;margin-bottom:2px}
+    .stat-bar-label{font-family:var(--font-data);font-size:5px;width:28px;text-align:right;opacity:0.8}
+    .stat-bar-track{flex:1;height:4px;background:rgba(255,255,255,0.04);border-radius:2px;overflow:hidden}
+    .stat-bar-fill{height:100%;border-radius:2px;transition:width 0.4s ease}
+    .stat-bar-val{font-family:var(--font-data);font-size:7px;width:14px;text-align:right;font-weight:700}
+
+    /* ── Stat tooltips (house reveal) ── */
+    .stat-pill{text-align:center;position:relative;cursor:help}
+    .stat-pill-val{font-family:var(--font-data);font-size:16px;font-weight:800;transition:text-shadow 0.2s}
+    .stat-pill-label{font-family:var(--font-data);font-size:6px;opacity:0.6;letter-spacing:1px;margin-top:3px}
+    .stat-tooltip{position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);white-space:nowrap;background:rgba(10,8,18,0.96);border-radius:8px;padding:8px 12px;z-index:10;pointer-events:none;animation:tooltipIn 0.15s ease;display:none}
+    .stat-tooltip.show{display:block}
+    .stat-tooltip-name{font-family:var(--font-data);font-size:7px;font-weight:700;margin-bottom:4px}
+    .stat-tooltip-desc{font-family:var(--font-mono);font-size:10px;color:var(--text-body);line-height:1.4}
+    .stat-tooltip-arrow{position:absolute;bottom:-5px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent}
+    @keyframes tooltipIn{from{opacity:0;transform:translateX(-50%) translateY(4px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+    /* ── Reveal stats row ── */
+    .reveal-stats{display:flex;justify-content:center;gap:14px;margin:16px 0 4px;flex-wrap:wrap}
+    .reveal-hint{font-family:var(--font-mono);font-size:9px;color:var(--text-faint);font-style:italic;text-align:center;margin-top:8px}
+
+    /* ── House description ── */
+    .house-desc{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic}
+
     /* ── Mobile ── */
     @media(max-width:400px){
       .card{padding:20px 14px}
       .house-grid{grid-template-columns:repeat(2,1fr)}
       .progress-label{display:none}
-      .confirm-stats{gap:12px}
+      .confirm-stats{gap:10px}
+      .reveal-stats{gap:10px}
+      .stat-pill-val{font-size:14px}
     }
   </style>
 </head>
@@ -198,18 +225,28 @@
 </div>
 
 <script>
-/* ── House Data ── */
+/* ── House Data (matches nineSystem.js) ── */
 var HOUSES = {
-  1: { name:'Smoulders', color:'#E03C31', icon:'🔥', img:'/assets/images/houses/House-smoulders.png', role:'Glass Cannon', fontClass:'house-name-smoulders', atk:8, hp:18, spd:6, def:2, luck:4 },
-  2: { name:'Darktide', color:'#00B4D8', icon:'🌊', img:'/assets/images/houses/House-darktide.png', role:'Thief', fontClass:'house-name-darktide', atk:6, hp:20, spd:5, def:3, luck:4 },
-  3: { name:'Stonebark', color:'#5CB338', icon:'🌿', img:'/assets/images/houses/House-stonebark.png', role:'Wall', fontClass:'house-name-stonebark', atk:4, hp:24, spd:3, def:6, luck:1 },
-  4: { name:'Ashenvale', color:'#B0C4DE', icon:'💨', img:'/assets/images/houses/House-Ashenvale.png', role:'Rogue', fontClass:'house-name-ashenvale', atk:5, hp:18, spd:8, def:2, luck:5 },
-  5: { name:'Stormrage', color:'#FFC800', icon:'⚡', img:'/assets/images/houses/House-stormrage.png', role:'Glass Cannon', fontClass:'house-name-stormrage', atk:9, hp:16, spd:7, def:2, luck:4 },
-  6: { name:'Nighthollow', color:'#7B2D8E', icon:'🌙', img:'/assets/images/houses/House-nighthollow.png', role:'Disruptor', fontClass:'house-name-nighthollow', atk:7, hp:18, spd:5, def:3, luck:5 },
-  7: { name:'Dawnbringer', color:'#FF8C00', icon:'☀️', img:'/assets/images/houses/House-dawnbringer.png', role:'Healer / Tank', fontClass:'house-name-dawnbringer', atk:5, hp:22, spd:4, def:5, luck:2 },
-  8: { name:'Manastorm', color:'#5B8FE0', icon:'🔮', img:'/assets/images/houses/House-manastorm.png', role:'Controller', fontClass:'house-name-manastorm', atk:6, hp:20, spd:6, def:3, luck:3 },
-  9: { name:'Plaguemire', color:'#E84393', icon:'☠️', img:'/assets/images/houses/House-plaguemire.png', role:'DOT', fontClass:'house-name-plaguemire', atk:6, hp:20, spd:4, def:4, luck:4 }
+  1: { name:'Smoulders', color:'#E03C31', icon:'🔥', img:'/assets/images/houses/House-smoulders.png', role:'Glass Cannon', fontClass:'house-name-smoulders', atk:8, hp:18, spd:6, def:2, luck:4, desc:'Kills fast, dies fast' },
+  2: { name:'Darktide', color:'#00B4D8', icon:'🌊', img:'/assets/images/houses/House-darktide.png', role:'Thief', fontClass:'house-name-darktide', atk:6, hp:20, spd:5, def:3, luck:4, desc:'Steals HP and buffs' },
+  3: { name:'Stonebark', color:'#5CB338', icon:'🌿', img:'/assets/images/houses/House-stonebark.png', role:'Wall', fontClass:'house-name-stonebark', atk:3, hp:24, spd:2, def:6, luck:3, desc:'Barely scratches but never dies' },
+  4: { name:'Ashenvale', color:'#B0C4DE', icon:'💨', img:'/assets/images/houses/House-Ashenvale.png', role:'Rogue', fontClass:'house-name-ashenvale', atk:5, hp:18, spd:8, def:2, luck:5, desc:'Always acts first, dodges' },
+  5: { name:'Stormrage', color:'#FFC800', icon:'⚡', img:'/assets/images/houses/House-stormrage.png', role:'Glass Cannon', fontClass:'house-name-stormrage', atk:9, hp:16, spd:7, def:2, luck:4, desc:'Highest damage, lowest survival' },
+  6: { name:'Nighthollow', color:'#7B2D8E', icon:'🌙', img:'/assets/images/houses/House-nighthollow.png', role:'Disruptor', fontClass:'house-name-nighthollow', atk:7, hp:18, spd:5, def:3, luck:5, desc:'Shuts down enemy abilities' },
+  7: { name:'Dawnbringer', color:'#FF8C00', icon:'☀️', img:'/assets/images/houses/House-dawnbringer.png', role:'Healer / Tank', fontClass:'house-name-dawnbringer', atk:5, hp:22, spd:4, def:5, luck:2, desc:'Keeps allies alive' },
+  8: { name:'Manastorm', color:'#5B8FE0', icon:'🔮', img:'/assets/images/houses/House-manastorm.png', role:'Controller', fontClass:'house-name-manastorm', atk:6, hp:20, spd:6, def:3, luck:3, desc:'Cancels and drains' },
+  9: { name:'Plaguemire', color:'#E84393', icon:'☠️', img:'/assets/images/houses/House-plaguemire.png', role:'DOT', fontClass:'house-name-plaguemire', atk:6, hp:20, spd:4, def:4, luck:4, desc:'Poisons everything slowly' }
 };
+
+/* ── Stat metadata for bars & tooltips ── */
+var STAT_META = {
+  atk:  { label:'ATK',  color:'#e85a6a', max:10, tip:'Attack — damage dealt each combat cycle' },
+  hp:   { label:'HP',   color:'#6acd8a', max:28, tip:'Hit Points — damage you can take before KO' },
+  spd:  { label:'SPD',  color:'#6ac8d8', max:10, tip:'Speed — who acts first (highest goes first)' },
+  def:  { label:'DEF',  color:'#b088e8', max:8,  tip:'Defense — reduces incoming damage' },
+  luck: { label:'LUCK', color:'#D4A64B', max:8,  tip:'Luck — crit chance, dodge, and loot drops' }
+};
+var STAT_KEYS = ['atk','hp','spd','def','luck'];
 
 var houseCounts = {};
 (async function(){
@@ -383,6 +420,31 @@ function showRoastAndReveal(data) {
   showStep('step3');
 }
 
+/* ── Build stat pill HTML with tooltip ── */
+function buildStatPill(key, value) {
+  var m = STAT_META[key];
+  return '<div class="stat-pill" onmouseenter="this.querySelector(\'.stat-tooltip\').classList.add(\'show\');this.querySelector(\'.stat-pill-val\').style.textShadow=\'0 0 12px '+m.color+'50\'" onmouseleave="this.querySelector(\'.stat-tooltip\').classList.remove(\'show\');this.querySelector(\'.stat-pill-val\').style.textShadow=\'none\'" onclick="var t=this.querySelector(\'.stat-tooltip\');t.classList.toggle(\'show\')">'
+    + '<div class="stat-tooltip" style="border:1px solid '+m.color+'40;box-shadow:0 4px 20px rgba(0,0,0,0.6),0 0 12px '+m.color+'15;">'
+    + '<div class="stat-tooltip-name" style="color:'+m.color+';">'+m.label+'</div>'
+    + '<div class="stat-tooltip-desc">'+m.tip+'</div>'
+    + '<div class="stat-tooltip-arrow" style="border-top:5px solid '+m.color+'40;"></div>'
+    + '</div>'
+    + '<div class="stat-pill-val" style="color:'+m.color+';">'+value+'</div>'
+    + '<div class="stat-pill-label" style="color:'+m.color+';">'+m.label+'</div>'
+    + '</div>';
+}
+
+/* ── Build stat bar HTML for grid cards ── */
+function buildStatBar(key, value) {
+  var m = STAT_META[key];
+  var pct = Math.min((value / m.max) * 100, 100);
+  return '<div class="stat-bar-row">'
+    + '<div class="stat-bar-label" style="color:'+m.color+';">'+m.label+'</div>'
+    + '<div class="stat-bar-track"><div class="stat-bar-fill" style="width:'+pct+'%;background:linear-gradient(90deg,'+m.color+','+m.color+'80);"></div></div>'
+    + '<div class="stat-bar-val" style="color:'+m.color+';">'+value+'</div>'
+    + '</div>';
+}
+
 /* ── House reveal ── */
 function revealHouse(data) {
   nermRecommendedHouse = data.house_id;
@@ -391,7 +453,13 @@ function revealHouse(data) {
   h += '<img src="' + house.img + '" style="width:100px;height:100px;object-fit:contain;margin:8px auto;display:block;filter:drop-shadow(0 0 10px ' + house.color + '40);" onerror="this.style.display=\'none\'">';
   h += '<div class="' + house.fontClass + '" style="font-weight:900;color:' + house.color + ';letter-spacing:2px;text-transform:uppercase;font-size:24px;">' + house.name + '</div>';
   h += '<div style="font-family:var(--font-data);font-size:6px;color:' + house.color + ';opacity:0.7;letter-spacing:1px;margin-top:2px;">' + house.role + '</div>';
+  h += '<div class="house-desc">' + house.desc + '</div>';
   h += '<div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-top:6px;">' + data.house_reason + '</div>';
+  // Stat pills with tooltips
+  h += '<div class="reveal-stats">';
+  STAT_KEYS.forEach(function(k) { h += buildStatPill(k, house[k]); });
+  h += '</div>';
+  h += '<div class="reveal-hint">hover or tap stats to learn more</div>';
   h += '</div>';
   document.getElementById('houseRevealArea').innerHTML = h;
 
@@ -406,8 +474,8 @@ function shareOnX() {
   if (!selectedHouse || !HOUSES[selectedHouse]) return;
   var house = HOUSES[selectedHouse];
   var roast = document.getElementById('roastText').textContent || '';
-  var shortRoast = roast.length > 120 ? roast.substring(0, 120) + '...' : roast;
-  var text = 'Nerm sorted me into ' + house.name + '\n\n"' + shortRoast + '"\n\nFind out where YOU belong\nnine-lives-network.replit.app\n\n@NineLivesNetwork #NineLives #Nethara';
+  var shortRoast = roast.length > 140 ? roast.substring(0, 140) + '...' : roast;
+  var text = 'Nerm sorted me into ' + house.name + '\n\n"' + shortRoast + '"\n\nFind out where YOU belong\n9LV.net\n\n@9LVNetwork $9LV';
   var url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
   window.open(url, '_blank');
 }
@@ -431,24 +499,20 @@ function renderHouseGrid() {
 
     h += "<div class=\"house-btn" + (isSel ? " selected" : "") + "\" id=\"hb" + id + "\" onclick=\"pickHouse(" + id + ")\" style=\"" + glowStyle + "position:relative;padding:14px 8px 10px;\">";
 
-    if (isUnderdog) h += "<div style=\"position:absolute;top:-8px;right:-4px;font-family:var(--font-data);font-size:6px;background:var(--gold);color:var(--bg-deep);padding:2px 6px;border-radius:4px;z-index:2;animation:subtlePulse 3s ease-in-out infinite;\">UNDERDOG</div>";
+    if (isUnderdog) h += "<div style=\"position:absolute;top:-8px;right:-4px;font-family:var(--font-data);font-size:5px;background:var(--gold);color:var(--bg-deep);padding:2px 6px;border-radius:4px;z-index:2;animation:subtlePulse 3s ease-in-out infinite;\">UNDERDOG</div>";
 
     h += "<img src=\"" + house.img + "\" style=\"width:44px;height:44px;object-fit:contain;margin:0 auto 6px;display:block;filter:" + (isSel ? "drop-shadow(0 0 8px " + house.color + "60)" : "none") + ";\" onerror=\"this.outerHTML='<div style=font-size:28px>" + house.icon + "</div>'\"/>";
 
     // House name in unique font
     h += "<div class=\"" + house.fontClass + "\" style=\"color:" + house.color + ";letter-spacing:1px;margin-bottom:2px;text-transform:uppercase;\">" + house.name + "</div>";
-    h += "<div style=\"font-family:var(--font-data);font-size:5px;color:var(--text-muted);margin-bottom:8px;letter-spacing:0.5px;\">" + house.role + "</div>";
+    h += "<div style=\"font-family:var(--font-data);font-size:5px;color:var(--text-muted);margin-bottom:6px;letter-spacing:0.5px;\">" + house.role + "</div>";
 
-    // Stats grid
-    h += "<div style=\"display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;margin-bottom:4px;\">";
-    h += "<div style=\"font-family:var(--font-data);font-size:7px;color:var(--red);text-align:right;\">⚔ " + house.atk + "</div>";
-    h += "<div style=\"font-family:var(--font-data);font-size:7px;color:var(--green);text-align:left;\">♥ " + house.hp + "</div>";
-    h += "<div style=\"font-family:var(--font-data);font-size:7px;color:var(--cyan);text-align:right;\">» " + house.spd + "</div>";
-    h += "<div style=\"font-family:var(--font-data);font-size:7px;color:var(--purple);text-align:left;\">🛡 " + house.def + "</div>";
+    // Stat bars
+    h += "<div style=\"padding:0 1px;\">";
+    STAT_KEYS.forEach(function(k) { h += buildStatBar(k, house[k]); });
     h += "</div>";
-    h += "<div style=\"font-family:var(--font-data);font-size:7px;color:var(--gold);text-align:center;margin-bottom:4px;\">☘ " + house.luck + "</div>";
 
-    h += "<div style=\"font-family:var(--font-data);font-size:5px;color:var(--text-faint);\">" + cnt + " player" + (cnt !== 1 ? "s" : "") + "</div>";
+    h += "<div style=\"font-family:var(--font-data);font-size:5px;color:var(--text-faint);margin-top:5px;\">" + cnt + " player" + (cnt !== 1 ? "s" : "") + "</div>";
     h += "</div>";
   });
 
@@ -464,6 +528,13 @@ function pickHouse(id) {
   h += "<img src=\"" + house.img + "\" style=\"width:100px;height:100px;object-fit:contain;margin:8px auto;display:block;filter:drop-shadow(0 0 12px " + house.color + "50);\" onerror=\"this.style.display='none'\"/>";
   h += "<div class=\"" + house.fontClass + "\" style=\"font-size:24px;font-weight:900;color:" + house.color + ";letter-spacing:3px;text-shadow:0 0 20px " + house.color + "40;text-transform:uppercase;\">" + house.name + "</div>";
   h += "<div style=\"font-family:var(--font-data);font-size:6px;color:" + house.color + ";opacity:0.7;letter-spacing:1px;margin-top:2px;\">" + house.role + "</div>";
+  h += "<div class=\"house-desc\">" + house.desc + "</div>";
+
+  // Stat pills with tooltips
+  h += "<div class=\"reveal-stats\">";
+  STAT_KEYS.forEach(function(k) { h += buildStatPill(k, house[k]); });
+  h += "</div>";
+  h += "<div class=\"reveal-hint\">hover or tap stats to learn more</div>";
 
   if (nermRecommendedHouse && id !== nermRecommendedHouse) {
     var sass = nermSass[Math.floor(Math.random() * nermSass.length)];
@@ -512,16 +583,10 @@ function showConfirmation() {
   nameEl.textContent = house.name;
 
   // Stats
-  var stats = [
-    { l: 'ATK', v: house.atk, c: 'var(--red)' },
-    { l: 'HP', v: house.hp, c: 'var(--green)' },
-    { l: 'SPD', v: house.spd, c: 'var(--gold)' },
-    { l: 'DEF', v: house.def, c: 'var(--sky)' },
-    { l: 'LCK', v: house.luck, c: 'var(--purple)' }
-  ];
   var statsHTML = '';
-  stats.forEach(function(s) {
-    statsHTML += '<div class="confirm-stat"><div class="confirm-stat-val" style="color:' + s.c + ';">' + s.v + '</div><div class="confirm-stat-label">' + s.l + '</div></div>';
+  STAT_KEYS.forEach(function(k) {
+    var m = STAT_META[k];
+    statsHTML += '<div class="confirm-stat"><div class="confirm-stat-val" style="color:' + m.color + ';">' + house[k] + '</div><div class="confirm-stat-label">' + m.label + '</div></div>';
   });
   document.getElementById('confirmStats').innerHTML = statsHTML;
 
