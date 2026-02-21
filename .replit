@@ -10,7 +10,8 @@ PORT = "5000"
 
 [deployment]
 deploymentTarget = "gce"
-run = ["sh", "-c", "node server/index.js"]
+run = ["sh", "-c", "npm install && node server/index.js"]
+build = ["sh", "-c", "npm install"]
 
 [nix]
 packages = ["file", "zip"]
