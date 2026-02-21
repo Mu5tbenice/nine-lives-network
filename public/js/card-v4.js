@@ -254,7 +254,7 @@ function buildCardV4(s, options) {
     var durColor = ({ common:'#bbb', uncommon:'#66dd66', rare:'#55bbff', epic:'#bb88ff', legendary:'#ffd700' })[rarity] || '#888';
     durHtml = '<div class="sc-durability">'
       + '<div class="sc-dur-track"><div class="sc-dur-fill" style="width:' + pct + '%;background:linear-gradient(90deg,' + durColor + ',' + durColor + '88)"></div></div>'
-      + '<span class="sc-dur-text"></span>'
+      + '<span class="sc-dur-text">' + cur + '/' + s.max_charges + '</span>'
       + '</div>';
   }
 
@@ -310,7 +310,7 @@ function buildCardV4(s, options) {
         + pillsHtml
         + durHtml
         + flavorHtml
-    + '<div class="sc-bottom" style="color:' + hc + '">' + houseName.toUpperCase() + '</div>'
+    + '<div class="sc-bottom sc-bottom--' + s.house + '" style="color:' + hc + '">' + houseName.toUpperCase() + '</div>'
       + '</div>'
       + '<div style="height:4px"></div>'
     + '</div>'

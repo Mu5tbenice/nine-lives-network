@@ -10,6 +10,9 @@
    come from variables-v2.css. Do NOT redefine them here.
    ═══════════════════════════════════════════════════════════ */
 
+/* House-specific fonts */
+@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cormorant+SC:wght@400;600;700&family=Fondamento&family=Almendra&family=Pirata+One&family=Grenze+Gotisch:wght@400;700&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English+SC&family=Griffy&display=swap');
+
 /* ═══ CARD SHELL ═══ */
 .spell-card {
   position: relative;
@@ -425,7 +428,8 @@
   gap: 4px;
 }
 .sc-dur-track {
-  width: 60px;
+  flex: 1;
+  max-width: 80px;
   height: 3px;
   border-radius: 3px;
   background: rgba(255,255,255,0.06);
@@ -437,8 +441,8 @@
 }
 .sc-dur-text {
   font-family: var(--font-data);
-  font-size: 6px;
-  color: rgba(255,255,255,0.22);
+  font-size: 7px;
+  color: rgba(255,255,255,0.35);
   line-height: 1;
 }
 
@@ -453,14 +457,27 @@
 
 /* ═══ HOUSE FOOTER ═══ */
 .sc-bottom {
-  padding-top: 3px;
-  border-top: 1px solid rgba(255,255,255,0.04);
+  padding-top: 5px;
+  border-top: 1px solid rgba(255,255,255,0.06);
   text-align: center;
-  font-family: var(--font-data);
-  font-size: 4px;
-  letter-spacing: 2px;
-  color: rgba(255,255,255,0.08);
+  font-family: var(--font-title);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  /* color set inline per-house via style attribute */
 }
+
+/* House-specific footer fonts */
+.sc-bottom--smoulders   { font-family: 'MedievalSharp', var(--font-title); font-size: 11px; }
+.sc-bottom--darktide    { font-family: 'Cormorant SC', var(--font-title); font-size: 11px; font-weight: 600; }
+.sc-bottom--stonebark   { font-family: 'Fondamento', var(--font-title); font-size: 10px; }
+.sc-bottom--ashenvale   { font-family: 'Almendra', var(--font-title); font-size: 11px; }
+.sc-bottom--stormrage   { font-family: 'Pirata One', var(--font-title); font-size: 12px; }
+.sc-bottom--nighthollow { font-family: 'Grenze Gotisch', var(--font-title); font-size: 12px; }
+.sc-bottom--dawnbringer { font-family: 'Cinzel Decorative', var(--font-title); font-size: 9px; }
+.sc-bottom--manastorm   { font-family: 'IM Fell English SC', var(--font-title); font-size: 10px; }
+.sc-bottom--plaguemire  { font-family: 'Griffy', var(--font-title); font-size: 11px; }
+.sc-bottom--universal   { font-family: var(--font-title); font-size: 9px; }
 
 /* ═══ LEGENDARY ALWAYS-ON SHIMMER ═══ */
 .spell-card--legendary {
@@ -484,6 +501,7 @@
 .zoom-card .sc-name,      .sc-zoom .sc-name       { font-size: 20px; }
 .zoom-card .sc-mana,      .sc-zoom .sc-mana       { font-size: 14px; }
 .zoom-card .sc-flavor,    .sc-zoom .sc-flavor     { font-size: 13px; }
+.zoom-card .sc-bottom,    .sc-zoom .sc-bottom     { font-size: 12px; letter-spacing: 4px; }
 
 /* MINI (grid/spellbook) — 200px wide */
 .sc-mini .spell-card,
@@ -499,6 +517,7 @@
 .sc-mini .sc-name,       .sc-mini-card .sc-name        { font-size: 12px; }
 .sc-mini .sc-mana,       .sc-mini-card .sc-mana        { font-size: 9px; }
 .sc-mini .sc-flavor,     .sc-mini-card .sc-flavor      { font-size: 9px; }
+.sc-mini .sc-bottom,     .sc-mini-card .sc-bottom      { font-size: 7px; letter-spacing: 2px; }
 
 /* TINY (dashboard preview / hand) — 160px wide */
 .sc-tiny .spell-card,
@@ -512,7 +531,7 @@
 .sc-tiny .pill,          .sc-tiny-card .pill            { font-size: 6px; padding: 2px 5px; }
 .sc-tiny .sc-type,       .sc-tiny-card .sc-type        { font-size: 8px; }
 .sc-tiny .sc-flavor,     .sc-tiny-card .sc-flavor      { display: none; }
-.sc-tiny .sc-bottom,     .sc-tiny-card .sc-bottom      { display: none; }
+.sc-tiny .sc-bottom,     .sc-tiny-card .sc-bottom      { font-size: 6px; letter-spacing: 1.5px; }
 
 /* ═══ MOBILE ═══ */
 @media (max-width: 600px) {

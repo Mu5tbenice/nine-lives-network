@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Card Design Lab | Nine Lives Network</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&family=MedievalSharp&family=Cormorant+SC:wght@400;600;700&family=Fondamento&family=Almendra&family=Pirata+One&family=Grenze+Gotisch:wght@400;700&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English+SC&family=Griffy&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/variables-v2.css">
+  <link rel="stylesheet" href="/css/components-v2.css">
+  <link rel="stylesheet" href="/css/card-v4.css">
+  <style>
+    body {
+      min-height: 100vh;
+      background: radial-gradient(ellipse at 50% 0%, rgba(232,133,90,0.08) 0%, transparent 50%),
+                  radial-gradient(ellipse at 80% 20%, rgba(139,180,224,0.06) 0%, transparent 40%),
+                  linear-gradient(180deg, #1a1528 0%, #120e1e 30%, #0e0a18 100%);
+      font-family: 'Crimson Text', Georgia, serif;
+      color: #D4C8B8;
+      padding: 24px;
+    }
+
+    .lab-title {
+      font-family: 'Cinzel', serif;
+      font-size: 28px;
+      font-weight: 700;
+      color: #D4A64B;
+      text-align: center;
+      letter-spacing: 3px;
+      margin-bottom: 4px;
+    }
+    .lab-sub {
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #6B5E50;
+      margin-bottom: 32px;
+    }
+
+    .section-label {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      color: #6B5E50;
+      letter-spacing: 2px;
+      margin: 32px 0 14px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .section-label:first-of-type { margin-top: 0; }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .note {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #9B8E7E;
+      text-align: center;
+      margin: 4px 0 20px;
+    }
+
+    /* ═══ CSS OVERRIDES WE'RE TESTING ═══ */
+
+    /* FIX 2: Stats anchored to consistent position */
+    /* The sc-body uses flex with flex:1 spacer pushing stats down.
+       We ensure stat-row + info section have fixed spacing */
+    .sc-stat-row {
+      padding: 0 8px;
+      margin-bottom: 6px;
+    }
+
+    /* FIX 3: Durability bar — add the charge count text back */
+    .sc-dur-text {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 6px;
+      color: rgba(255,255,255,0.3);
+      line-height: 1;
+    }
+
+  </style>
+</head>
+<body>
+
+<div class="lab-title">CARD DESIGN LAB</div>
+<div class="lab-sub">Testing card renderer fixes before deploying everywhere</div>
+
+<div id="content"></div>
+
+<script src="/js/card-global.js"></script>
+<script src="/js/card-particles.js"></script>
+<script src="/js/card-v4.js"></script>
+<script>
+/* ═══ SAMPLE CARDS — covers all edge cases ═══ */
+var SAMPLES = [
+  // 2 stats — basic universal
+  {
+    name: "Mana Bolt",
+    house: "universal",
+    spell_type: "attack",
+    rarity: "common",
+    mana_cost: 1,
+    base_atk: 3, base_hp: 2, base_spd: 0, base_def: 0, base_luck: 0,
+    base_effect: '',
+    bonus_effects: [],
+    flavor_text: "The first spell every Nine learns.",
+    image_url: '',
+    current_charges: 5, max_charges: 5
+  },
+  // 3 stats + effect
+  {
+    name: "Petrify",
+    house: "stonebark",
+    spell_type: "manipulation",
+    rarity: "uncommon",
+    mana_cost: 2,
+    base_atk: 3, base_hp: 4, base_spd: 0, base_def: 1, base_luck: 0,
+    base_effect: '',
+    bonus_effects: [{ tag: "HEX", desc: "Target loses 2 ATK this cycle" }],
+    flavor_text: "Roots hold faster than chains.",
+    image_url: '',
+    current_charges: 8, max_charges: 8
+  },
+  // 5 stats — legendary showcase
+  {
+    name: "Nethara's Judgment",
+    house: "universal",
+    spell_type: "manipulation",
+    rarity: "legendary",
+    mana_cost: 3,
+    base_atk: 5, base_hp: 4, base_spd: 0, base_def: 0, base_luck: 2,
+    base_effect: '',
+    bonus_effects: [
+      { tag: "SILENCE", desc: "Target's card effect doesn't activate" },
+      { tag: "WEAKEN", desc: "Target deals 50% damage this cycle" }
+    ],
+    flavor_text: "The realm itself demands order. Facts were checked.",
+    image_url: '',
+    current_charges: 30, max_charges: 30
+  },
+  // Speed house — Ashenvale
+  {
+    name: "Tempest",
+    house: "ashenvale",
+    spell_type: "attack",
+    rarity: "epic",
+    mana_cost: 3,
+    base_atk: 7, base_hp: 2, base_spd: 3, base_def: 0, base_luck: 0,
+    base_effect: '',
+    bonus_effects: [
+      { tag: "CHAIN", desc: "Attack hits 2 targets instead of 1" },
+      { tag: "HASTE", desc: "+3 SPD this cycle" }
+    ],
+    flavor_text: "Wind doesn't warn. It arrives.",
+    image_url: '',
+    current_charges: 18, max_charges: 18
+  },
+  // Tank — Stonebark
+  {
+    name: "Bastion",
+    house: "stonebark",
+    spell_type: "defend",
+    rarity: "rare",
+    mana_cost: 3,
+    base_atk: 1, base_hp: 9, base_spd: 0, base_def: 3, base_luck: 0,
+    base_effect: '',
+    bonus_effects: [
+      { tag: "ANCHOR", desc: "Can't drop below 1 HP this cycle" },
+      { tag: "WARD", desc: "Absorb next hit" },
+      { tag: "HEAL", desc: "Restore HP to self or ally" }
+    ],
+    flavor_text: "The earth remembers every footstep.",
+    image_url: '',
+    current_charges: 12, max_charges: 12
+  },
+  // Fire — Smoulders
+  {
+    name: "Eruption",
+    house: "smoulders",
+    spell_type: "attack",
+    rarity: "rare",
+    mana_cost: 3,
+    base_atk: 8, base_hp: 1, base_spd: 2, base_def: 0, base_luck: 0,
+    base_effect: '',
+    bonus_effects: [
+      { tag: "CHAIN", desc: "Attack hits 2 targets" },
+      { tag: "BURN +5", desc: "5 extra damage per cycle" }
+    ],
+    flavor_text: "Everything burns eventually.",
+    image_url: '',
+    current_charges: 9, max_charges: 12
+  },
+  // Nighthollow — Disruptor with LUCK
+  {
+    name: "Oblivion",
+    house: "nighthollow",
+    spell_type: "manipulation",
+    rarity: "epic",
+    mana_cost: 3,
+    base_atk: 5, base_hp: 4, base_spd: 0, base_def: 0, base_luck: 2,
+    base_effect: '',
+    bonus_effects: [
+      { tag: "SILENCE", desc: "Target's card effect doesn't activate" },
+      { tag: "WEAKEN", desc: "Target deals 50% damage" },
+      { tag: "HEX", desc: "Target loses 2 ATK this cycle" }
+    ],
+    flavor_text: "Forget the light. Forget everything.",
+    image_url: '',
+    current_charges: 14, max_charges: 18
+  },
+  // Plaguemire DOT
+  {
+    name: "Pandemic",
+    house: "plaguemire",
+    spell_type: "attack",
+    rarity: "common",
+    mana_cost: 3,
+    base_atk: 7, base_hp: 3, base_spd: 0, base_def: 0, base_luck: 1,
+    base_effect: '',
+    bonus_effects: [
+      { tag: "POISON", desc: "Damage per cycle, stacks" },
+      { tag: "CORRODE", desc: "Enemies lose 1 max HP" },
+      { tag: "INFECT", desc: "On KO, poison spreads" }
+    ],
+    flavor_text: "Patient zero was a cat.",
+    image_url: '',
+    current_charges: 3, max_charges: 5
+  },
+  // Stormrage — glass cannon
+  {
+    name: "Overload",
+    house: "stormrage",
+    spell_type: "attack",
+    rarity: "legendary",
+    mana_cost: 3,
+    base_atk: 9, base_hp: 1, base_spd: 0, base_def: 0, base_luck: 2,
+    base_effect: '',
+    bonus_effects: [
+      { tag: "CRIT", desc: "25% chance double ATK" },
+      { tag: "CHAIN", desc: "Hits 2 targets" },
+      { tag: "SURGE", desc: "+50% ATK, costs +1 mana" }
+    ],
+    flavor_text: "Too much power is never enough.",
+    image_url: '',
+    current_charges: 30, max_charges: 30
+  },
+  // Dawnbringer — healer
+  {
+    name: "Ascension",
+    house: "dawnbringer",
+    spell_type: "support",
+    rarity: "uncommon",
+    mana_cost: 3,
+    base_atk: 3, base_hp: 7, base_spd: 0, base_def: 0, base_luck: 2,
+    base_effect: '',
+    bonus_effects: [
+      { tag: "BLESS", desc: "Allies heal +2 HP per cycle" },
+      { tag: "INSPIRE", desc: "Allies get +1 ATK next cycle" },
+      { tag: "HEAL", desc: "Restore HP" }
+    ],
+    flavor_text: "Rise. The world needs you standing.",
+    image_url: '',
+    current_charges: 6, max_charges: 8
+  },
+  // Darktide — thief
+  {
+    name: "Sovereign Tide",
+    house: "darktide",
+    spell_type: "manipulation",
+    rarity: "rare",
+    mana_cost: 3,
+    base_atk: 6, base_hp: 3, base_spd: 0, base_def: 0, base_luck: 2,
+    base_effect: '',
+    bonus_effects: [
+      { tag: "DRAIN 12%", desc: "Steal 12% HP from target" },
+      { tag: "SIPHON", desc: "Steal HP from ALL enemies" }
+    ],
+    flavor_text: "The tide takes what it wants.",
+    image_url: '',
+    current_charges: 10, max_charges: 12
+  },
+  // Manastorm — controller
+  {
+    name: "Unravel",
+    house: "manastorm",
+    spell_type: "manipulation",
+    rarity: "epic",
+    mana_cost: 3,
+    base_atk: 6, base_hp: 3, base_spd: 1, base_def: 0, base_luck: 1,
+    base_effect: '',
+    bonus_effects: [
+      { tag: "SIPHON", desc: "Steal HP from ALL enemies" },
+      { tag: "DRAIN 10%", desc: "Steal 10% HP" },
+      { tag: "SILENCE", desc: "Target's effect doesn't activate" }
+    ],
+    flavor_text: "Reality is negotiable.",
+    image_url: '',
+    current_charges: 15, max_charges: 18
+  }
+];
+
+/* ═══ RENDER ALL SECTIONS ═══ */
+var html = '';
+
+// ── NORMAL SIZE (240×380) ──
+html += '<div class="section-label">NORMAL SIZE — 240×380 — Default card size</div>';
+html += '<div class="row">';
+SAMPLES.slice(0, 5).forEach(function(s, i) {
+  html += buildCardV4(s, { delay: i * 0.05 });
+});
+html += '</div>';
+html += '<div class="note">Hover over effect pills to test tooltips. Hover cards for foil + particles.</div>';
+
+// ── ALL HOUSES at normal size ──
+html += '<div class="section-label">ALL HOUSES — One card per house</div>';
+html += '<div class="row">';
+['smoulders','darktide','stonebark','ashenvale','stormrage','nighthollow','dawnbringer','manastorm','plaguemire'].forEach(function(house, i) {
+  var card = null;
+  for (var j = 0; j < SAMPLES.length; j++) {
+    if (SAMPLES[j].house === house) { card = SAMPLES[j]; break; }
+  }
+  if (card) html += buildCardV4(card, { delay: i * 0.04 });
+});
+html += '</div>';
+
+// ── MINI SIZE (200×316) ──
+html += '<div class="section-label">MINI SIZE — 200×316 — Collection grid</div>';
+html += '<div class="row">';
+SAMPLES.slice(0, 6).forEach(function(s, i) {
+  html += buildCardV4(s, { size: 'mini', delay: i * 0.04 });
+});
+html += '</div>';
+
+// ── TINY SIZE (160×252) ──
+html += '<div class="section-label">TINY SIZE — 160×252 — Dashboard / Hand preview</div>';
+html += '<div class="row">';
+SAMPLES.slice(0, 6).forEach(function(s, i) {
+  html += buildCardV4(s, { size: 'tiny', delay: i * 0.04 });
+});
+html += '</div>';
+
+// ── ZOOM SIZE (340×530) ──
+html += '<div class="section-label">ZOOM SIZE — 340×530 — Detail overlay</div>';
+html += '<div class="row">';
+SAMPLES.slice(0, 3).forEach(function(s, i) {
+  html += buildCardV4(s, { size: 'zoom', delay: i * 0.06 });
+});
+html += '</div>';
+
+// ── DURABILITY STATES ──
+html += '<div class="section-label">DURABILITY STATES — Full, partial, nearly exhausted</div>';
+html += '<div class="row">';
+[
+  { charges: [12,12], rarity: 'rare', name: 'Full Charges' },
+  { charges: [6,12], rarity: 'rare', name: 'Half Used' },
+  { charges: [1,12], rarity: 'rare', name: 'Nearly Dead' },
+  { charges: [0,12], rarity: 'rare', name: 'Exhausted', exhausted: true },
+].forEach(function(state, i) {
+  var s = Object.assign({}, SAMPLES[1]);
+  s.name = state.name;
+  s.rarity = state.rarity;
+  s.current_charges = state.charges[0];
+  s.max_charges = state.charges[1];
+  s.is_exhausted = state.exhausted || false;
+  html += buildCardV4(s, { delay: i * 0.04 });
+});
+html += '</div>';
+
+// ── RARITY COMPARISON ──
+html += '<div class="section-label">RARITY LEVELS — Same card at each rarity</div>';
+html += '<div class="row">';
+['common','uncommon','rare','epic','legendary'].forEach(function(r, i) {
+  var s = Object.assign({}, SAMPLES[0]);
+  s.rarity = r;
+  s.current_charges = [5,8,12,18,30][i];
+  s.max_charges = [5,8,12,18,30][i];
+  html += buildCardV4(s, { delay: i * 0.05 });
+});
+html += '</div>';
+
+document.getElementById('content').innerHTML = html;
+
+// Init everything
+setTimeout(function() {
+  if (typeof initCards === 'function') initCards();
+}, 150);
+</script>
+
+</body>
+</html>
