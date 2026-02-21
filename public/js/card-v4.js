@@ -311,8 +311,8 @@ function buildCardV4(s, options) {
         + pillsHtml
         + durHtml
         + flavorHtml
-    + '<div class="sc-bottom sc-bottom--' + s.house + '" style="color:' + hc + '">' + houseName.toUpperCase() + '</div>'
       + '</div>'
+      + '<div class="sc-bottom house-name-' + s.house + '" style="color:' + hc + '">' + houseName.toUpperCase() + '</div>'
       + '</div>'
     + '</div>'
 
@@ -409,11 +409,14 @@ function fixTooltipPositions(container) {
       tip.style.visibility = 'hidden';
       var pr = pill.getBoundingClientRect();
       var tr = tip.getBoundingClientRect();
-      var top = pr.top - tr.height - 8;
-      var left = pr.left + (pr.width / 2) - (tr.width / 2);
-      if (top < 8) top = pr.bottom + 8;
-      if (left < 8) left = 8;
-      if (left + tr.width > window.innerWidth - 8) left = window.innerWidth - tr.width - 8;
+      // Account for card transform creating a containing block
+      var card = pill.closest('.spell-card');
+      var cr = card ? card.getBoundingClientRect() : { left: 0, top: 0 };
+      var top = pr.top - tr.height - 8 - cr.top;
+      var left = pr.left + (pr.width / 2) - (tr.width / 2) - cr.left;
+      if (pr.top - tr.height - 8 < 8) top = pr.bottom + 8 - cr.top;
+      if (pr.left + (pr.width / 2) - (tr.width / 2) < 8) left = 8 - cr.left;
+      if (pr.left + (pr.width / 2) + (tr.width / 2) > window.innerWidth - 8) left = window.innerWidth - tr.width - 8 - cr.left;
       tip.style.top = top + 'px';
       tip.style.left = left + 'px';
       tip.style.visibility = 'visible';

@@ -290,8 +290,18 @@ var GM = [
 ];
 
 /* STATE */
-var step=1,aSlot=null,pSlot=null,pItem=null,revd=[],oMode=null;
-var eq={};SLOTS.forEach(function(s){eq[s.id]=ITEMS[s.id][0]});
+  /* STATE */
+  var step=1,aSlot=null,pSlot=null,pItem=null,revd=[],oMode=null;
+  var eq={};SLOTS.forEach(function(s){
+    var pool=ITEMS[s.id];
+    if(pool.length>1){
+      // Pick a random item (skip index 0 which is "None")
+      var idx=1+Math.floor(Math.random()*(pool.length-1));
+      eq[s.id]=pool[idx];
+    } else {
+      eq[s.id]=pool[0];
+    }
+  });
 
 /* NAV */
 function goStep(n){

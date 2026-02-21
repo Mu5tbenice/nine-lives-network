@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gauntlet Face-Off Test | Nine Lives Network</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #120e1e;
+      --gold: #D4A64B;
+      --bright: #F5F0E8;
+      --body: #D4C8B8;
+      --muted: #9B8E7E;
+      --faint: #6B5E50;
+      --red: #e85a6a;
+      --green: #6acd8a;
+      --cyan: #6ac8d8;
+      --purple: #b088e8;
+      --font-title: 'Cinzel', serif;
+      --font-data: 'Press Start 2P', monospace;
+      --font-body: 'Crimson Text', Georgia, serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      background: var(--bg-deep);
+      color: var(--body);
+      font-family: var(--font-body);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .arena {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      aspect-ratio: 16/10;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.06);
+      margin: 16px;
+    }
+
+    /* Zone backdrop */
+    .arena-bg {
+      position: absolute;
+      inset: 0;
+      background-size: cover;
+      background-position: center;
+      filter: brightness(0.4) saturate(0.7);
+      z-index: 0;
+    }
+    .arena-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 80%, transparent 30%, rgba(18,14,30,0.8) 80%);
+    }
+
+    /* Floor banner */
+    .floor-banner {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      text-align: center;
+    }
+    .floor-num {
+      font-family: var(--font-data);
+      font-size: 8px;
+      color: var(--gold);
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(212,166,75,0.5);
+    }
+    .floor-label {
+      font-family: var(--font-title);
+      font-size: 10px;
+      color: var(--faint);
+      letter-spacing: 1px;
+    }
+
+    /* VS badge */
+    .vs-badge {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 15;
+      font-family: var(--font-title);
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--gold);
+      text-shadow: 0 0 20px rgba(212,166,75,0.6), 0 2px 8px rgba(0,0,0,0.8);
+      letter-spacing: 4px;
+    }
+
+    /* Fighter containers */
+    .fighter {
+      position: absolute;
+      bottom: 0;
+      width: 45%;
+      height: 85%;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+    }
+    .fighter--player { left: 2%; }
+    .fighter--enemy { right: 2%; }
+
+    .fighter-portrait {
+      position: relative;
+      width: 100%;
+      height: 80%;
+    }
+    .fighter-portrait img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center bottom;
+    }
+    .fighter--enemy .fighter-portrait {
+      transform: scaleX(-1);
+    }
+
+    /* Name plates */
+    .name-plate {
+      position: relative;
+      text-align: center;
+      padding: 4px 12px;
+      z-index: 12;
+      margin-bottom: 8px;
+    }
+    .name-plate__name {
+      font-family: var(--font-title);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--bright);
+      text-shadow: 0 1px 6px rgba(0,0,0,0.8);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
+    }
+    .name-plate__house {
+      font-family: var(--font-data);
+      font-size: 5px;
+      letter-spacing: 1px;
+      margin-top: 2px;
+    }
+
+    /* Stat comparison panel */
+    .stats-panel {
+      width: 100%;
+      max-width: 500px;
+      padding: 16px;
+      margin: 0 16px 16px;
+    }
+    .stats-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .stats-header span {
+      font-family: var(--font-data);
+      font-size: 6px;
+      letter-spacing: 1px;
+    }
+    .stat-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+    .stat-label {
+      font-family: var(--font-data);
+      font-size: 6px;
+      width: 32px;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+    .stat-val {
+      font-family: var(--font-data);
+      font-size: 10px;
+      width: 28px;
+      text-align: right;
+      font-weight: 700;
+    }
+    .stat-bar-wrap {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 3px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-bar {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+    .stat-bar--left { left: 0; }
+    .stat-bar--right { right: 0; }
+    .power-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin: 0 16px 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .ctrl-btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1px solid var(--gold);
+      background: rgba(212,166,75,0.08);
+      color: var(--gold);
+      font-family: var(--font-title);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 2px;
+      transition: all 0.2s;
+    }
+    .ctrl-btn:hover {
+      background: rgba(212,166,75,0.15);
+      box-shadow: 0 0 12px rgba(212,166,75,0.2);
+    }
+    .floor-select {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      color: var(--bright);
+      font-family: var(--font-data);
+      font-size: 8px;
+    }
+
+    @keyframes slideInLeft {
+      from { transform: translateX(-40px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideInRight {
+      from { transform: translateX(40px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .fighter--player { animation: slideInLeft 0.5s ease both; }
+    .fighter--enemy { animation: slideInRight 0.5s ease 0.2s both; }
+  </style>
+</head>
+<body>
+
+  <div style="text-align:center;padding:16px">
+    <div style="font-family:var(--font-title);font-size:24px;font-weight:700;color:var(--gold);letter-spacing:3px">GAUNTLET FACE-OFF</div>
+    <div style="font-family:var(--font-data);font-size:6px;color:var(--faint);margin-top:4px">ENEMY GENERATOR TEST</div>
+  </div>
+
+  <div class="controls">
+    <select id="floorSelect" class="floor-select" onchange="regenerate()">
+      <option value="1">FLOOR 1</option>
+      <option value="2">FLOOR 2</option>
+      <option value="3">FLOOR 3</option>
+      <option value="5" selected>FLOOR 5</option>
+      <option value="8">FLOOR 8</option>
+      <option value="10">FLOOR 10</option>
+      <option value="12">FLOOR 12</option>
+      <option value="15">FLOOR 15</option>
+    </select>
+    <button class="ctrl-btn" onclick="regenerate()">⚔️ NEW ENEMY</button>
+  </div>
+
+  <div class="arena" id="arena"></div>
+  <div class="stats-panel" id="statsPanel"></div>
+
+  <script src="/js/enemy-generator.js"></script>
+  <script>
+    // Fake player data (in real game, this comes from their saved profile)
+    var PLAYER = {
+      name: 'Shadowfang',
+      house: 'nighthollow',
+      houseData: EnemyGenerator.HOUSES['nighthollow'],
+      stats: { atk: 10, hp: 20, spd: 9, def: 5, luck: 6 },
+      totalPower: 50,
+      // Use some default layers for the player preview
+      layers: [
+        { slot: 'fur', path: '/assets/nine/fur/VOIDPURPLE.png', z: 1 },
+        { slot: 'outfit', path: '/assets/nine/outfit/TATTERED%20CLOAK.png', z: 2 },
+        { slot: 'weapon', path: '/assets/nine/weapon/CRYSTALSTAFF_PURPLE.png', z: 3 },
+        { slot: 'headwear', path: '/assets/nine/headwear/WORNHOOD_PURPLE.png', z: 4 },
+        { slot: 'expression', path: '/assets/nine/expression/GLOWING_PURPLE.png', z: 5 }
+      ]
+    };
+
+    var STAT_META = {
+      atk:  { label: 'ATK',  color: '#e85a6a' },
+      hp:   { label: 'HP',   color: '#6acd8a' },
+      spd:  { label: 'SPD',  color: '#6ac8d8' },
+      def:  { label: 'DEF',  color: '#b088e8' },
+      luck: { label: 'LUCK', color: '#D4A64B' }
+    };
+
+    function buildPortrait(layers) {
+      var html = '';
+      layers.forEach(function(l) {
+        html += '<img src="' + l.path + '" style="z-index:' + l.z + '" onerror="this.style.display=\'none\'">';
+      });
+      return html;
+    }
+
+    function regenerate() {
+      var floor = parseInt(document.getElementById('floorSelect').value);
+      var enemy = EnemyGenerator.generate(floor);
+
+      // ─── ARENA ───
+      var arenaHTML = '';
+
+      // Background — use house color as gradient fallback
+      // (replace with zone art when you have it)
+      arenaHTML += '<div class="arena-bg" style="background:' +
+        'radial-gradient(ellipse at 30% 60%, ' + PLAYER.houseData.color + '20, transparent 50%),' +
+        'radial-gradient(ellipse at 70% 60%, ' + enemy.houseData.color + '20, transparent 50%),' +
+        'linear-gradient(180deg, #1a1528, #0e0a18)' +
+        '"></div>';
+
+      // Floor banner
+      arenaHTML += '<div class="floor-banner">' +
+        '<div class="floor-num">FLOOR ' + floor + '</div>' +
+        '<div class="floor-label">The Gauntlet</div>' +
+        '</div>';
+
+      // VS
+      arenaHTML += '<div class="vs-badge">VS</div>';
+
+      // Player
+      arenaHTML += '<div class="fighter fighter--player">' +
+        '<div class="name-plate">' +
+          '<div class="name-plate__name">' + PLAYER.name + '</div>' +
+          '<div class="name-plate__house" style="color:' + PLAYER.houseData.color + '">' +
+            PLAYER.houseData.icon + ' ' + PLAYER.houseData.name.toUpperCase() +
+          '</div>' +
+        '</div>' +
+        '<div class="fighter-portrait">' + buildPortrait(PLAYER.layers) + '</div>' +
+        '</div>';
+
+      // Enemy
+      arenaHTML += '<div class="fighter fighter--enemy">' +
+        '<div class="name-plate">' +
+          '<div class="name-plate__name">' + enemy.name + '</div>' +
+          '<div class="name-plate__house" style="color:' + enemy.houseData.color + '">' +
+            enemy.houseData.icon + ' ' + enemy.houseData.name.toUpperCase() +
+          '</div>' +
+        '</div>' +
+        '<div class="fighter-portrait">' + buildPortrait(enemy.layers) + '</div>' +
+        '</div>';
+
+      document.getElementById('arena').innerHTML = arenaHTML;
+
+      // ─── STATS COMPARISON ───
+      var statsHTML = '<div class="stats-header">' +
+        '<span style="color:' + PLAYER.houseData.color + '">' + PLAYER.houseData.icon + ' ' + PLAYER.name.toUpperCase() + '</span>' +
+        '<span style="color:var(--faint)">STATS</span>' +
+        '<span style="color:' + enemy.houseData.color + '">' + enemy.name.split(' ')[0].toUpperCase() + ' ' + enemy.houseData.icon + '</span>' +
+        '</div>';
+
+      ['atk', 'hp', 'spd', 'def', 'luck'].forEach(function(k) {
+        var m = STAT_META[k];
+        var pv = PLAYER.stats[k];
+        var ev = enemy.stats[k];
+        var max = Math.max(pv, ev, 1);
+        var pPct = Math.round((pv / max) * 48);
+        var ePct = Math.round((ev / max) * 48);
+        var pWin = pv > ev, eWin = ev > pv;
+
+        statsHTML += '<div class="stat-row">' +
+          '<div class="stat-val" style="color:' + (pWin ? m.color : 'rgba(255,255,255,0.25)') + '">' + pv + '</div>' +
+          '<div class="stat-bar-wrap">' +
+            '<div class="stat-bar stat-bar--left" style="width:' + pPct + '%;background:' + m.color + ';opacity:' + (pWin ? '1' : '0.35') + '"></div>' +
+            '<div class="stat-bar stat-bar--right" style="width:' + ePct + '%;background:' + m.color + ';opacity:' + (eWin ? '1' : '0.35') + '"></div>' +
+          '</div>' +
+          '<div class="stat-label" style="color:' + m.color + '">' + m.label + '</div>' +
+          '<div class="stat-bar-wrap">' +
+            '<div class="stat-bar stat-bar--left" style="width:' + pPct + '%;background:' + m.color + ';opacity:' + (pWin ? '1' : '0.35') + '"></div>' +
+            '<div class="stat-bar stat-bar--right" style="width:' + ePct + '%;background:' + m.color + ';opacity:' + (eWin ? '1' : '0.35') + '"></div>' +
+          '</div>' +
+          '<div class="stat-val" style="color:' + (eWin ? m.color : 'rgba(255,255,255,0.25)') + '">' + ev + '</div>' +
+          '</div>';
+      });
+
+      // Power totals
+      statsHTML += '<div class="power-row">' +
+        '<span style="font-family:var(--font-data);font-size:10px;color:' +
+          (PLAYER.totalPower >= enemy.totalPower ? 'var(--gold)' : 'var(--faint)') + '">' +
+          PLAYER.totalPower + ' PWR</span>' +
+        '<span style="font-family:var(--font-data);font-size:6px;color:var(--faint)">TOTAL</span>' +
+        '<span style="font-family:var(--font-data);font-size:10px;color:' +
+          (enemy.totalPower >= PLAYER.totalPower ? 'var(--gold)' : 'var(--faint)') + '">' +
+          enemy.totalPower + ' PWR</span>' +
+        '</div>';
+
+      document.getElementById('statsPanel').innerHTML = statsHTML;
+    }
+
+    // Initial render
+    regenerate();
+  </script>
+</body>
+</html>

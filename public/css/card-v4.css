@@ -10,13 +10,16 @@
    come from variables-v2.css. Do NOT redefine them here.
    ═══════════════════════════════════════════════════════════ */
 
+/* ── House footer fonts (auto-loaded everywhere cards appear) ── */
+@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Cormorant+SC:wght@400;600;700&family=Fondamento&family=Almendra&family=Pirata+One&family=Grenze+Gotisch:wght@400;700&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English+SC&family=Griffy&display=swap');
+
 /* ═══ CARD SHELL ═══ */
 .spell-card {
   position: relative;
   width: 240px;
   height: 380px;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   cursor: pointer;
   flex-shrink: 0;
   transition: transform 0.25s ease, box-shadow 0.3s ease;
@@ -71,17 +74,17 @@
   mask-image: linear-gradient(to bottom, black 35%, transparent 65%);
 }
 
-/* Art image (if card has art) — dominant layout */
+/* Art image (if card has art) */
 .sc-art-img {
   position: absolute;
   top: 2px; left: 2px; right: 2px;
-  height: 80%;
+  height: 55%;
   z-index: 2;
   border-radius: 10px 10px 0 0;
   background-size: cover;
-  background-position: center top;
-  -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
-  mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+  background-position: center;
+  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
   pointer-events: none;
 }
 
@@ -172,20 +175,6 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-}
-
-/* ═══ INFO PANEL — fixed-height bottom section, locks stat line ═══ */
-.sc-info-panel {
-  height: 170px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  background: linear-gradient(to bottom,
-    transparent 0%,
-    rgba(10,8,18,0.6) 12%,
-    rgba(10,8,18,0.92) 28%,
-    rgba(10,8,18,0.98) 45%);
-  padding-top: 4px;
 }
 
 /* ═══ TOP ROW — logo + name + mana ═══ */
@@ -467,14 +456,27 @@
 
 /* ═══ HOUSE FOOTER ═══ */
 .sc-bottom {
-  padding-top: 3px;
-  border-top: 1px solid rgba(255,255,255,0.04);
+  margin-top: auto;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255,255,255,0.06);
   text-align: center;
-  font-family: var(--font-data);
-  font-size: 4px;
-  letter-spacing: 2px;
-  color: rgba(255,255,255,0.08);
+  font-family: var(--font-title);
+  font-size: 8px;
+  letter-spacing: 3px;
+  padding-bottom: 4px;
 }
+
+/* ── House-specific footer fonts ── */
+.sc-bottom.house-name-smoulders   { font-family: 'MedievalSharp', var(--font-title); font-size: 12px; }
+.sc-bottom.house-name-darktide    { font-family: 'Cormorant SC', var(--font-title); font-size: 11px; font-weight: 600; }
+.sc-bottom.house-name-stonebark   { font-family: 'Fondamento', var(--font-title); font-size: 10px; }
+.sc-bottom.house-name-ashenvale   { font-family: 'Almendra', var(--font-title); font-size: 11px; }
+.sc-bottom.house-name-stormrage   { font-family: 'Pirata One', var(--font-title); font-size: 12px; }
+.sc-bottom.house-name-nighthollow { font-family: 'Grenze Gotisch', var(--font-title); font-size: 13px; }
+.sc-bottom.house-name-dawnbringer { font-family: 'Cinzel Decorative', var(--font-title); font-size: 9px; }
+.sc-bottom.house-name-manastorm   { font-family: 'IM Fell English SC', var(--font-title); font-size: 10px; }
+.sc-bottom.house-name-plaguemire  { font-family: 'Griffy', var(--font-title); font-size: 11px; }
+.sc-bottom.house-name-universal   { font-family: var(--font-title); font-size: 8px; }
 
 /* ═══ LEGENDARY ALWAYS-ON SHIMMER ═══ */
 .spell-card--legendary {
@@ -488,7 +490,6 @@
 /* ZOOM (1.4x) — overlay detail view */
 .zoom-card .spell-card,
 .spell-card.sc-zoom { width: 340px; height: 530px; }
-.zoom-card .sc-info-panel, .sc-zoom .sc-info-panel { height: 236px; }
 .zoom-card .sc-stat-val,  .sc-zoom .sc-stat-val  { font-size: 22px; }
 .zoom-card .sc-stat-label,.sc-zoom .sc-stat-label { font-size: 8px; }
 .zoom-card .sc-stat-divider,.sc-zoom .sc-stat-divider { height: 28px; }
@@ -503,7 +504,6 @@
 /* MINI (grid/spellbook) — 200px wide */
 .sc-mini .spell-card,
 .spell-card.sc-mini-card { width: 200px; height: 316px; }
-.sc-mini .sc-info-panel, .sc-mini-card .sc-info-panel { height: 142px; }
 .sc-mini .sc-stat-val,   .sc-mini-card .sc-stat-val   { font-size: 11px; }
 .sc-mini .sc-stat-label, .sc-mini-card .sc-stat-label  { font-size: 5px; }
 .sc-mini .sc-stat-divider,.sc-mini-card .sc-stat-divider { height: 14px; }
@@ -519,7 +519,6 @@
 /* TINY (dashboard preview / hand) — 160px wide */
 .sc-tiny .spell-card,
 .spell-card.sc-tiny-card { width: 160px; height: 252px; }
-.sc-tiny .sc-info-panel, .sc-tiny-card .sc-info-panel { height: 115px; }
 .sc-tiny .sc-stat-val,   .sc-tiny-card .sc-stat-val   { font-size: 8px; }
 .sc-tiny .sc-stat-label, .sc-tiny-card .sc-stat-label  { font-size: 4px; }
 .sc-tiny .sc-stat-divider,.sc-tiny-card .sc-stat-divider { height: 10px; }
@@ -534,7 +533,6 @@
 /* ═══ MOBILE ═══ */
 @media (max-width: 600px) {
   .spell-card { width: 200px; height: 316px; }
-  .sc-info-panel { height: 142px; }
   .sc-stat-val { font-size: 12px; }
   .sc-stat-label { font-size: 5px; }
   .sc-stat-divider { height: 16px; }
