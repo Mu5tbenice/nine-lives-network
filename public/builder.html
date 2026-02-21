@@ -12,46 +12,25 @@
     *{box-sizing:border-box;margin:0;padding:0}
     body{min-height:100vh;background:radial-gradient(ellipse at 50% 15%,rgba(123,45,142,0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(212,166,75,0.04) 0%,transparent 40%),linear-gradient(180deg,#1a1528 0%,#120e1e 50%,#0e0a18 100%);font-family:var(--font-body);color:var(--body);display:flex;flex-direction:column;align-items:center;padding:16px}
     .wrap{max-width:480px;width:100%}
-
-    /* Steps */
     .step{display:none}.step.active{display:block;animation:fadeUp 0.35s ease}
-
-    /* Card component */
     .card-frame{border-radius:20px;background:var(--bg-card);border:1px solid var(--border-glow);padding:16px;position:relative;overflow:hidden;margin-bottom:12px}
     .card-frame::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 20%,rgba(212,166,75,0.04) 0%,transparent 60%);pointer-events:none}
-
-    /* Progress bar */
     .prog-bar{display:flex;gap:4px;margin-bottom:20px}
-    .prog-seg{flex:1}
-    .prog-fill{height:3px;border-radius:2px;background:rgba(255,255,255,0.06);transition:background 0.4s,box-shadow 0.4s;margin-bottom:4px}
+    .prog-seg{flex:1}.prog-fill{height:3px;border-radius:2px;background:rgba(255,255,255,0.06);transition:background 0.4s,box-shadow 0.4s;margin-bottom:4px}
     .prog-fill.done{background:var(--gold);box-shadow:0 0 6px rgba(212,166,75,0.3)}
-    .prog-label{font-family:var(--font-data);font-size:5px;color:var(--faint);text-align:center;transition:color 0.3s}
-    .prog-label.done{color:var(--gold)}
-
-    /* Name input */
-    .name-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;color:var(--bright);font-family:var(--font-title);font-size:16px;font-weight:600;padding:10px 14px;letter-spacing:1px;outline:none;transition:border-color 0.2s}
-    .name-input:focus{border-color:rgba(123,45,142,0.5)}
-
-    /* Slot buttons */
+    .prog-label{font-family:var(--font-data);font-size:5px;color:var(--faint);text-align:center;transition:color 0.3s}.prog-label.done{color:var(--gold)}
+    .name-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;color:var(--bright);font-family:var(--font-title);font-size:16px;font-weight:600;padding:10px 14px;letter-spacing:1px;outline:none;transition:border-color 0.2s}.name-input:focus{border-color:rgba(123,45,142,0.5)}
     .slot-col{display:flex;flex-direction:column;gap:4px;width:155px;flex-shrink:0}
-    .slot-btn{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.015);border:1.5px solid rgba(255,255,255,0.06);transition:all 0.15s}
-    .slot-btn:hover{border-color:rgba(123,45,142,0.3)}
-    .slot-btn.active{background:rgba(123,45,142,0.08);border-color:#7B2D8E}
-    .slot-btn.locked{opacity:0.4;cursor:default}
-    .slot-icon{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);position:relative}
-
-    /* Item picker */
+    .slot-btn{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.015);border:1.5px solid rgba(255,255,255,0.06);transition:all 0.15s}.slot-btn:hover{border-color:rgba(123,45,142,0.3)}.slot-btn.active{background:rgba(123,45,142,0.08);border-color:#7B2D8E}.slot-btn.locked{opacity:0.4;cursor:default}
+    .slot-icon{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);position:relative;overflow:hidden}
+    .slot-icon img{width:100%;height:100%;object-fit:cover;border-radius:4px}
     .picker{background:rgba(18,14,30,0.95);border:1px solid rgba(123,45,142,0.2);border-radius:12px;padding:12px;margin-bottom:12px;animation:fadeUp 0.2s ease}
-    .pick-row{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.04);transition:all 0.12s;margin-bottom:4px}
-    .pick-row:hover{background:rgba(255,255,255,0.03)}
-    .pick-row.equipped{background:rgba(123,45,142,0.07);border-color:rgba(123,45,142,0.3)}
-
-    /* Character preview */
-    .char-preview{height:200px;border-radius:12px;background:linear-gradient(180deg,#2a2240 0%,#221c38 60%,transparent 100%);border:1px solid rgba(123,45,142,0.15);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
-    .char-preview .fade-bottom{position:absolute;bottom:0;left:0;right:0;height:50px;background:linear-gradient(to top,#1a1528,transparent);pointer-events:none;z-index:2}
-    .char-preview .vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(60,50,80,0.4) 0%,transparent 70%);pointer-events:none}
-
-    /* Stat bar */
+    .pick-row{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.04);transition:all 0.12s;margin-bottom:4px}.pick-row:hover{background:rgba(255,255,255,0.03)}.pick-row.equipped{background:rgba(123,45,142,0.07);border-color:rgba(123,45,142,0.3)}
+    .pick-thumb{width:40px;height:40px;border-radius:6px;flex-shrink:0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;overflow:hidden}.pick-thumb img{width:100%;height:100%;object-fit:cover}
+    .char-preview{width:100%;aspect-ratio:1/1;max-height:280px;border-radius:12px;background:linear-gradient(180deg,#2a2240 0%,#221c38 60%,#1a1528 100%);border:1px solid rgba(123,45,142,0.15);position:relative;overflow:hidden}
+    .char-preview .layer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transition:opacity 0.25s ease}
+    .char-preview .fade-bottom{position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(to top,#1a1528,transparent);pointer-events:none;z-index:20}
+    .char-preview .vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(60,50,80,0.3) 0%,transparent 70%);pointer-events:none;z-index:19}
     .stat-row{display:flex;align-items:center;gap:5px;margin-bottom:5px}
     .stat-label{font-family:var(--font-data);font-size:6px;width:30px;text-align:right;opacity:0.7}
     .stat-val{font-family:var(--font-data);font-size:11px;width:20px;text-align:right;font-weight:800}
@@ -59,96 +38,61 @@
     .stat-track{flex:1;height:4px;background:rgba(255,255,255,0.04);border-radius:2px;overflow:hidden}
     .stat-fill{height:100%;border-radius:2px;transition:width 0.3s,background 0.3s}
     .stat-bonus{font-family:var(--font-data);font-size:5px;opacity:0.7;width:20px}
-
-    /* Golden CTA */
-    .cta-btn{display:block;width:100%;padding:16px 28px;border-radius:12px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--gold),#c49a3a);font-family:var(--font-title);font-size:15px;font-weight:700;color:var(--bg-deep);letter-spacing:3px;box-shadow:0 4px 20px rgba(212,166,75,0.3);transition:all 0.3s}
-    .cta-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(212,166,75,0.4)}
-    .cta-btn:disabled{opacity:0.3;cursor:not-allowed;box-shadow:none;background:rgba(255,255,255,0.05);color:var(--faint)}
-
-    /* Mini card */
-    .mini-card{min-width:110px;padding:10px;border-radius:12px;background:linear-gradient(160deg,rgba(30,22,42,0.95),rgba(18,14,30,0.98));border:1.5px solid rgba(255,255,255,0.06);box-shadow:0 2px 8px rgba(0,0,0,0.3);flex-shrink:0}
-    .mini-card.glow{border-color:rgba(85,153,255,0.3);box-shadow:0 0 16px rgba(85,153,255,0.15),0 4px 16px rgba(0,0,0,0.4)}
-
-    /* Pack card flip */
-    .flip-container{perspective:600px;cursor:pointer;display:inline-block}
-    .flip-inner{transition:transform 0.6s ease;transform-style:preserve-3d;position:relative;width:110px;min-height:155px}
-    .flip-inner.flipped{transform:rotateY(180deg)}
-    .flip-front,.flip-back{backface-visibility:hidden}
-    .flip-front{position:absolute;inset:0;width:110px;min-height:155px;border-radius:12px;background:linear-gradient(135deg,rgba(212,166,75,0.08),rgba(123,45,142,0.08));border:1.5px solid rgba(212,166,75,0.2);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
-    .flip-back{transform:rotateY(180deg)}
-
-    /* Game mode card */
-    .mode-card{padding:14px 16px;border-radius:12px;cursor:pointer;background:rgba(255,255,255,0.02);border:1px solid var(--border);transition:all 0.2s;margin-bottom:8px}
-    .mode-card:hover,.mode-card.open{border-color:rgba(212,166,75,0.2)}
-    .mode-card.open{background:rgba(255,255,255,0.03)}
+    .cta-btn{display:block;width:100%;padding:16px 28px;border-radius:12px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--gold),#c49a3a);font-family:var(--font-title);font-size:15px;font-weight:700;color:var(--bg-deep);letter-spacing:3px;box-shadow:0 4px 20px rgba(212,166,75,0.3);transition:all 0.3s}.cta-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(212,166,75,0.4)}.cta-btn:disabled{opacity:0.3;cursor:not-allowed;box-shadow:none;background:rgba(255,255,255,0.05);color:var(--faint);transform:none}
+    .mini-card{min-width:110px;padding:10px;border-radius:12px;background:linear-gradient(160deg,rgba(30,22,42,0.95),rgba(18,14,30,0.98));border:1.5px solid rgba(255,255,255,0.06);box-shadow:0 2px 8px rgba(0,0,0,0.3);flex-shrink:0}.mini-card.glow{border-color:rgba(85,153,255,0.3);box-shadow:0 0 16px rgba(85,153,255,0.15),0 4px 16px rgba(0,0,0,0.4)}
+    .flip-container{perspective:600px;cursor:pointer;display:inline-block}.flip-inner{transition:transform 0.6s ease;transform-style:preserve-3d;position:relative;width:110px;min-height:155px}.flip-inner.flipped{transform:rotateY(180deg)}.flip-front,.flip-back{backface-visibility:hidden}
+    .flip-front{position:absolute;inset:0;width:110px;min-height:155px;border-radius:12px;background:linear-gradient(135deg,rgba(212,166,75,0.08),rgba(123,45,142,0.08));border:1.5px solid rgba(212,166,75,0.2);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3)}.flip-back{transform:rotateY(180deg)}
+    .mode-card{padding:14px 16px;border-radius:12px;cursor:pointer;background:rgba(255,255,255,0.02);border:1px solid var(--border);transition:all 0.2s;margin-bottom:8px}.mode-card:hover,.mode-card.open{border-color:rgba(212,166,75,0.2)}.mode-card.open{background:rgba(255,255,255,0.03)}
     .mode-desc{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-family:var(--font-mono);font-size:10px;color:var(--body);line-height:1.7;animation:fadeUp 0.2s ease}
-
-    /* Annotation */
-    .anno-row{padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border);margin-bottom:6px;transition:all 0.2s}
-    .anno-row:hover{border-color:rgba(232,90,106,0.25);background:rgba(232,90,106,0.04)}
-
-    /* Keyframes */
+    .anno-row{padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border);margin-bottom:6px;transition:all 0.2s}.anno-row:hover{border-color:rgba(232,90,106,0.25);background:rgba(232,90,106,0.04)}
     @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes subtlePulse{0%,100%{opacity:1}50%{opacity:0.65}}
-
-    @media(max-width:400px){
-      .wrap{padding:0 2px}
-      .slot-col{width:135px}
-      .char-preview{height:170px}
-    }
+    @media(max-width:400px){.wrap{padding:0 2px}.slot-col{width:135px}}
   </style>
 </head>
 <body>
 <div class="wrap">
-  <!-- ═══════ HEADER ═══════ -->
-  <div id="headerArea" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <div style="display:flex;align-items:center;gap:10px">
-      <div id="houseIcon" style="width:40px;height:40px;border-radius:50%;border:2px solid #7B2D8E;background:rgba(123,45,142,0.1);display:flex;align-items:center;justify-content:center;font-size:20px">🌙</div>
+      <div style="width:40px;height:40px;border-radius:50%;border:2px solid #7B2D8E;background:rgba(123,45,142,0.1);display:flex;align-items:center;justify-content:center;font-size:20px">🌙</div>
       <div>
         <div style="font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--bright)">Welcome, Nine</div>
-        <div id="houseSubtitle" style="font-family:var(--font-data);font-size:6px;color:#7B2D8E">NIGHTHOLLOW · DISRUPTOR</div>
+        <div style="font-family:var(--font-data);font-size:6px;color:#7B2D8E">NIGHTHOLLOW · DISRUPTOR</div>
       </div>
     </div>
     <div id="stepCounter" style="font-family:var(--font-data);font-size:6px;color:var(--faint)">1/4</div>
   </div>
-
-  <!-- Progress -->
-  <div class="prog-bar" id="progBar">
+  <div class="prog-bar">
     <div class="prog-seg"><div class="prog-fill done" id="pf1"></div><div class="prog-label done" id="pl1">Character</div></div>
     <div class="prog-seg"><div class="prog-fill" id="pf2"></div><div class="prog-label" id="pl2">Cards</div></div>
     <div class="prog-seg"><div class="prog-fill" id="pf3"></div><div class="prog-label" id="pl3">Pack</div></div>
     <div class="prog-seg"><div class="prog-fill" id="pf4"></div><div class="prog-label" id="pl4">Modes</div></div>
   </div>
 
-  <!-- ═══════ STEP 1: CHARACTER CREATION ═══════ -->
+  <!-- ═══ STEP 1 ═══ -->
   <div id="step1" class="step active">
     <div style="text-align:center;margin-bottom:14px">
       <div style="font-family:var(--font-title);font-size:22px;font-weight:700;color:var(--gold);letter-spacing:3px">CREATE YOUR NINE</div>
       <div id="slotCountLabel" style="font-family:var(--font-data);font-size:6px;color:#7B2D8E;margin-top:4px">🌙 NIGHTHOLLOW · 0/8 SLOTS</div>
     </div>
-
-    <!-- Name input -->
     <div class="card-frame" style="padding:12px 16px;margin-bottom:12px">
       <label style="font-family:var(--font-data);font-size:6px;color:var(--gold);letter-spacing:1px;display:block;margin-bottom:6px">NAME YOUR NINE</label>
       <input type="text" id="nineName" maxlength="20" placeholder="e.g. Shadowfang the Unseen" class="name-input">
       <div id="nameCount" style="font-family:var(--font-mono);font-size:8px;color:var(--faint);margin-top:3px;text-align:right">0/20</div>
     </div>
-
-    <!-- Equipment area -->
     <div class="card-frame" style="padding:16px">
       <div style="display:flex;gap:12px;position:relative;z-index:1">
-        <!-- Slot column -->
         <div class="slot-col" id="slotCol"></div>
-        <!-- Character + Stats -->
         <div style="flex:1;display:flex;flex-direction:column;gap:12px">
           <div class="char-preview" id="charPreview">
             <div class="vignette"></div>
             <div class="fade-bottom"></div>
-            <div style="position:absolute;inset:0;opacity:0.04;background-image:radial-gradient(circle at 20% 50%,white 1px,transparent 1px),radial-gradient(circle at 80% 30%,white 1px,transparent 1px);background-size:30px 30px"></div>
-            <div id="charEmoji" style="font-size:72px;line-height:1;filter:drop-shadow(0 0 20px rgba(123,45,142,0.4));transition:filter 0.3s;z-index:1">🐱</div>
-            <div id="charNameDisplay" style="font-family:var(--font-title);font-size:12px;font-weight:700;color:#7B2D8E;margin-top:6px;letter-spacing:1px;z-index:1;display:none"></div>
-            <div id="layerDots" style="display:flex;gap:3px;margin-top:6px;z-index:1"></div>
-            <div style="position:absolute;bottom:6px;font-family:var(--font-data);font-size:4px;color:var(--faint);opacity:0.5;z-index:3">RENDERER PREVIEW</div>
+            <div id="charLayers" style="position:absolute;inset:0;z-index:10"></div>
+            <div id="charNameDisplay" style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-family:var(--font-title);font-size:12px;font-weight:700;color:#7B2D8E;letter-spacing:1px;z-index:21;display:none;text-shadow:0 1px 4px rgba(0,0,0,0.6)"></div>
+            <div id="charEmpty" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:5">
+              <div style="font-size:48px;opacity:0.3;margin-bottom:6px">🐱</div>
+              <div style="font-family:var(--font-data);font-size:5px;color:var(--faint);opacity:0.5">SELECT SKIN TO START</div>
+            </div>
           </div>
           <div>
             <div style="font-family:var(--font-data);font-size:5px;color:var(--faint);letter-spacing:1px;margin-bottom:6px">BASE + EQUIPMENT STATS</div>
@@ -161,579 +105,333 @@
         </div>
       </div>
     </div>
-
     <div id="pickerArea"></div>
     <div id="trinketCallout" style="display:none;padding:12px 16px;border-radius:10px;margin-bottom:12px;background:rgba(106,200,216,0.05);border:1px solid rgba(106,200,216,0.15);text-align:center">
       <div style="font-family:var(--font-data);font-size:6px;color:var(--cyan);margin-bottom:4px">💎 TRINKET SLOTS</div>
       <div style="font-family:var(--font-mono);font-size:10px;color:var(--body);line-height:1.6">Trinkets are powerful stat items found in chests, boss drops, and season rewards. These slots unlock when you find your first one.</div>
     </div>
-
     <div style="padding:10px 14px;border-radius:8px;margin-bottom:16px;background:rgba(212,166,75,0.05);border:1px solid var(--border);text-align:center">
       <div style="font-family:var(--font-mono);font-size:9px;color:var(--gold)">💡 Starter items give base stat bonuses. Rarer gear drops from chests, boss loot, and the collectables shop.</div>
     </div>
-
     <button class="cta-btn" id="step1Btn" disabled onclick="goStep(2)">NAME YOUR NINE TO CONTINUE</button>
     <div style="text-align:center;margin-top:8px;font-family:var(--font-mono);font-size:8px;color:var(--faint)">you can change your look anytime from your profile</div>
   </div>
 
-  <!-- ═══════ STEP 2: CARD LESSON ═══════ -->
+  <!-- ═══ STEP 2 ═══ -->
   <div id="step2" class="step">
     <div style="text-align:center;margin-bottom:20px">
       <div style="font-family:var(--font-title);font-size:20px;font-weight:700;color:var(--gold);letter-spacing:2px">YOUR WEAPONS</div>
       <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:4px">Cards are how your Nine fights. Here's what they look like:</div>
     </div>
-
     <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;align-items:flex-start">
-      <!-- Sample card -->
       <div class="mini-card glow" style="width:160px;min-height:200px;padding:12px">
-        <div style="font-family:var(--font-data);font-size:6px;color:var(--red);font-weight:700;letter-spacing:0.5px;margin-bottom:4px;background:rgba(232,90,106,0.1);padding:2px 6px;border-radius:4px;display:inline-block">ATTACK</div>
+        <div style="font-family:var(--font-data);font-size:6px;color:var(--red);font-weight:700;margin-bottom:4px;background:rgba(232,90,106,0.1);padding:2px 6px;border-radius:4px;display:inline-block">ATTACK</div>
         <div style="font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--bright);line-height:1.2;margin-bottom:6px">Shadow Bolt</div>
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-          <span style="font-family:var(--font-mono);font-size:8px;color:#7B2D8E">Nighthollow</span>
-          <span style="font-family:var(--font-data);font-size:6px;color:var(--faint)">T1</span>
-          <span style="font-family:var(--font-data);font-size:6px;color:#5599ff;text-transform:uppercase">RARE</span>
-        </div>
-        <div style="display:flex;gap:10px;margin-bottom:8px">
-          <div style="text-align:center"><div style="font-family:var(--font-data);font-size:14px;font-weight:800;color:#e85a6a">5</div><div style="font-family:var(--font-data);font-size:5px;color:#e85a6a;opacity:0.6">ATK</div></div>
-          <div style="text-align:center"><div style="font-family:var(--font-data);font-size:14px;font-weight:800;color:#6acd8a">3</div><div style="font-family:var(--font-data);font-size:5px;color:#6acd8a;opacity:0.6">HP</div></div>
-        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap"><span style="font-family:var(--font-mono);font-size:8px;color:#7B2D8E">Nighthollow</span><span style="font-family:var(--font-data);font-size:6px;color:var(--faint)">T1</span><span style="font-family:var(--font-data);font-size:6px;color:#5599ff;text-transform:uppercase">RARE</span></div>
+        <div style="display:flex;gap:10px;margin-bottom:8px"><div style="text-align:center"><div style="font-family:var(--font-data);font-size:14px;font-weight:800;color:#e85a6a">5</div><div style="font-family:var(--font-data);font-size:5px;color:#e85a6a;opacity:0.6">ATK</div></div><div style="text-align:center"><div style="font-family:var(--font-data);font-size:14px;font-weight:800;color:#6acd8a">3</div><div style="font-family:var(--font-data);font-size:5px;color:#6acd8a;opacity:0.6">HP</div></div></div>
         <div style="margin-bottom:8px"><span style="font-family:var(--font-data);font-size:7px;color:var(--red);background:rgba(232,90,106,0.1);padding:2px 5px;border-radius:3px;border:1px solid rgba(232,90,106,0.2)">WEAKEN</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <span style="font-family:var(--font-data);font-size:8px;color:#00D4FF;font-weight:700">1MP</span>
-          <span style="font-family:var(--font-mono);font-size:8px;color:var(--faint)">12 charges</span>
-        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-data);font-size:8px;color:#00D4FF;font-weight:700">1MP</span><span style="font-family:var(--font-mono);font-size:8px;color:var(--faint)">12 charges</span></div>
       </div>
-
-      <!-- Annotations -->
       <div style="max-width:220px;text-align:left">
-        <div class="anno-row">
-          <div style="font-family:var(--font-data);font-size:6px;color:var(--red);font-weight:700;margin-bottom:3px;letter-spacing:0.5px">TYPE</div>
-          <div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">Attack, Defend, Support, or Manipulation — determines what your card does in battle</div>
-        </div>
-        <div class="anno-row">
-          <div style="font-family:var(--font-data);font-size:6px;color:#e85a6a;font-weight:700;margin-bottom:3px;letter-spacing:0.5px">STATS</div>
-          <div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">ATK adds damage, HP adds durability. Cards boost your Nine's base stats during combat</div>
-        </div>
-        <div class="anno-row">
-          <div style="font-family:var(--font-data);font-size:6px;color:var(--purple);font-weight:700;margin-bottom:3px;letter-spacing:0.5px">EFFECTS</div>
-          <div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">Special abilities like BURN, WARD, or WEAKEN that trigger during combat cycles</div>
-        </div>
-        <div class="anno-row">
-          <div style="font-family:var(--font-data);font-size:6px;color:#00D4FF;font-weight:700;margin-bottom:3px;letter-spacing:0.5px">MANA COST</div>
-          <div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">How much mana to play. You regenerate 1 mana per hour, max 10</div>
-        </div>
-        <div class="anno-row">
-          <div style="font-family:var(--font-data);font-size:6px;color:var(--faint);font-weight:700;margin-bottom:3px;letter-spacing:0.5px">CHARGES</div>
-          <div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">Zone battles use 1 charge per cycle. When empty, the card returns for recharging</div>
-        </div>
+        <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:var(--red);font-weight:700;margin-bottom:3px">TYPE</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">Attack, Defend, Support, or Manipulation — determines what your card does in battle</div></div>
+        <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:#e85a6a;font-weight:700;margin-bottom:3px">STATS</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">ATK adds damage, HP adds durability. Cards boost your Nine's base stats during combat</div></div>
+        <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:var(--purple);font-weight:700;margin-bottom:3px">EFFECTS</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">Special abilities like BURN, WARD, or WEAKEN that trigger during combat cycles</div></div>
+        <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:#00D4FF;font-weight:700;margin-bottom:3px">MANA COST</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">How much mana to play. You regenerate 1 mana per hour, max 10</div></div>
+        <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:var(--faint);font-weight:700;margin-bottom:3px">CHARGES</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">Zone battles use 1 charge per cycle. When empty, the card returns for recharging</div></div>
       </div>
     </div>
-
-    <div style="margin-top:16px;padding:10px 16px;border-radius:8px;display:inline-block;background:rgba(212,166,75,0.06);border:1px solid var(--border);text-align:center;width:100%">
+    <div style="margin-top:16px;padding:10px 16px;border-radius:8px;background:rgba(212,166,75,0.06);border:1px solid var(--border);text-align:center;width:100%">
       <div style="font-family:var(--font-mono);font-size:10px;color:var(--gold)">💡 Your house cards get ×1.3 effect strength — your WEAKEN hits harder</div>
     </div>
-
-    <div style="margin-top:20px;text-align:center">
-      <button class="cta-btn" onclick="goStep(3)">OPEN YOUR FIRST PACK →</button>
-    </div>
+    <div style="margin-top:20px;text-align:center"><button class="cta-btn" onclick="goStep(3)">OPEN YOUR FIRST PACK →</button></div>
   </div>
 
-  <!-- ═══════ STEP 3: PACK OPENING ═══════ -->
+  <!-- ═══ STEP 3 ═══ -->
   <div id="step3" class="step">
     <div style="text-align:center;margin-bottom:6px">
       <div style="font-family:var(--font-title);font-size:20px;font-weight:700;color:var(--gold);letter-spacing:2px">DAILY PACK</div>
       <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:4px">You get one free pack every day. Here's your first:</div>
       <div style="font-family:var(--font-data);font-size:6px;color:var(--faint);margin-top:6px">2 BASIC STARTERS + 3 RANDOM SPELLS WITH RARITY ROLLS</div>
     </div>
-
     <div id="packCards" style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:20px 0;min-height:170px"></div>
-
-    <div style="text-align:center" id="packActions">
-      <button id="revealAllBtn" onclick="revealAllCards()" style="padding:10px 28px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.04);cursor:pointer;font-family:var(--font-data);font-size:7px;color:var(--body);letter-spacing:1px">REVEAL ALL</button>
-    </div>
+    <div style="text-align:center" id="packActions"><button onclick="revealAllCards()" style="padding:10px 28px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.04);cursor:pointer;font-family:var(--font-data);font-size:7px;color:var(--body);letter-spacing:1px">REVEAL ALL</button></div>
     <div id="packDone" style="display:none;text-align:center;animation:fadeUp 0.4s ease">
-      <div style="padding:10px 16px;border-radius:8px;display:inline-block;background:rgba(106,205,138,0.08);border:1px solid rgba(106,205,138,0.15);margin-bottom:16px">
-        <div style="font-family:var(--font-mono);font-size:10px;color:var(--green)">✨ 5 cards added to your collection! You'll get a new pack every day.</div>
-      </div>
-      <br>
+      <div style="padding:10px 16px;border-radius:8px;display:inline-block;background:rgba(106,205,138,0.08);border:1px solid rgba(106,205,138,0.15);margin-bottom:16px"><div style="font-family:var(--font-mono);font-size:10px;color:var(--green)">✨ 5 cards added to your collection! You'll get a new pack every day.</div></div><br>
       <button class="cta-btn" onclick="goStep(4)">HOW DO I FIGHT? →</button>
     </div>
   </div>
 
-  <!-- ═══════ STEP 4: GAME MODES ═══════ -->
+  <!-- ═══ STEP 4 ═══ -->
   <div id="step4" class="step">
     <div style="text-align:center;margin-bottom:20px">
       <div style="font-family:var(--font-title);font-size:20px;font-weight:700;color:var(--gold);letter-spacing:2px">FOUR WAYS TO FIGHT</div>
       <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:4px">Your Nine. Your cards. Pick your battleground.</div>
     </div>
-
     <div style="max-width:400px;margin:0 auto" id="modesArea"></div>
-
-    <!-- Chronicle callout -->
     <div style="margin-top:16px;padding:12px 16px;border-radius:10px;max-width:400px;margin-left:auto;margin-right:auto;background:rgba(212,166,75,0.06);border:1px solid var(--border);text-align:left">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <span style="font-size:16px">📜</span>
-        <span style="font-family:var(--font-title);font-size:13px;font-weight:700;color:var(--gold)">The Chronicle</span>
-      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:16px">📜</span><span style="font-family:var(--font-title);font-size:13px;font-weight:700;color:var(--gold)">The Chronicle</span></div>
       <div style="font-family:var(--font-mono);font-size:10px;color:var(--body);line-height:1.6">Every day, @9LVNetwork posts a four-act story on X. Reply as your Nine to earn points and get named in the narrative. No web app required.</div>
     </div>
-
     <div style="margin-top:24px;text-align:center">
       <button class="cta-btn" onclick="enterNethara()" style="font-size:16px;letter-spacing:3px">⚔️ ENTER NETHARA</button>
       <div style="font-family:var(--font-mono);font-size:9px;color:var(--faint);margin-top:8px">→ takes you to your dashboard</div>
     </div>
   </div>
 
-  <!-- Skip link (steps 1-3) -->
-  <div id="skipLink" style="text-align:center;margin-top:12px">
-    <button onclick="goStep(4)" style="background:none;border:none;cursor:pointer;font-family:var(--font-mono);font-size:10px;color:var(--faint);text-decoration:underline;text-underline-offset:3px">skip to dashboard →</button>
-  </div>
+  <div id="skipLink" style="text-align:center;margin-top:12px"><button onclick="goStep(4)" style="background:none;border:none;cursor:pointer;font-family:var(--font-mono);font-size:10px;color:var(--faint);text-decoration:underline;text-underline-offset:3px">skip to dashboard →</button></div>
 </div>
 
 <script>
 /* ══════════════════════════════════════ */
 /*  DATA                                 */
 /* ══════════════════════════════════════ */
-var HOUSE_COLOR = '#7B2D8E';
-var STAT_META = {
-  atk:  { label:'ATK',  color:'#e85a6a', max:15 },
-  hp:   { label:'HP',   color:'#6acd8a', max:30 },
-  spd:  { label:'SPD',  color:'#6ac8d8', max:15 },
-  def:  { label:'DEF',  color:'#b088e8', max:15 },
-  luck: { label:'LUCK', color:'#D4A64B', max:15 }
-};
-var STAT_KEYS = ['atk','hp','spd','def','luck'];
-
-// Will be loaded from user session — hardcoded for now
-var BASE_STATS = { atk:7, hp:18, spd:5, def:3, luck:5 };
+var IMG = '/assets/nine/';
+var SM = {atk:{l:'ATK',c:'#e85a6a',m:15},hp:{l:'HP',c:'#6acd8a',m:30},spd:{l:'SPD',c:'#6ac8d8',m:15},def:{l:'DEF',c:'#b088e8',m:15},luck:{l:'LUCK',c:'#D4A64B',m:15}};
+var SK = ['atk','hp','spd','def','luck'];
+var BS = {atk:7,hp:18,spd:5,def:3,luck:5}; // Nighthollow base
+var RC = {none:'#6B5E50',common:'#888',uncommon:'#6acd8a',rare:'#5599ff',epic:'#b088e8',legendary:'#D4A64B'};
 
 var SLOTS = [
-  { id:'head',    label:'Head',       icon:'👑', layer:'GEAR' },
-  { id:'eyes',    label:'Eyes & Face',icon:'👁',  layer:'GEAR' },
-  { id:'outfit',  label:'Outfit',     icon:'👘', layer:'GEAR' },
-  { id:'weapon',  label:'Weapon',     icon:'⚔️',  layer:'GEAR' },
-  { id:'fur',     label:'Fur',        icon:'🐾', layer:'GEAR' },
-  { id:'offhand', label:'Off-Hand',   icon:'🛡',  layer:'GEAR' },
-  { id:'trinket1',label:'Trinket',    icon:'💎', layer:'LOOT' },
-  { id:'trinket2',label:'Trinket',    icon:'🔮', layer:'LOOT' }
+  {id:'fur',       label:'Skin',       icon:'🐾', layer:'GEAR',z:1},
+  {id:'outfit',    label:'Armour',     icon:'👘', layer:'GEAR',z:2},
+  {id:'weapon',    label:'Weapon',     icon:'⚔️', layer:'GEAR',z:3},
+  {id:'expression',label:'Face',       icon:'👁', layer:'GEAR',z:5},
+  {id:'headwear',  label:'Helm',       icon:'👑', layer:'GEAR',z:4},
+  {id:'familiar',  label:'Off-Hand',   icon:'🛡', layer:'GEAR',z:6},
+  {id:'trinket1',  label:'Trinket',    icon:'💎', layer:'LOOT',z:0},
+  {id:'trinket2',  label:'Trinket',    icon:'🔮', layer:'LOOT',z:0}
 ];
+var LO = ['fur','outfit','weapon','headwear','expression','familiar'];
 
 var ITEMS = {
-  head:[
-    {id:'none',name:'None',stats:{},rarity:'none',desc:'No headgear'},
-    {id:'apprentice_hat',name:'Apprentice Hat',stats:{def:1},rarity:'common',desc:'Standard issue. Slightly pointy.'},
-    {id:'veil_hood',name:'Veil Hood',stats:{luck:1,spd:1},rarity:'uncommon',desc:'Shadows cling to the fabric'},
-    {id:'witch_hat',name:"Witch's Peak",stats:{atk:1,luck:1},rarity:'rare',desc:'Crackles with dark energy'}
-  ],
-  eyes:[
-    {id:'none',name:'Default',stats:{},rarity:'none',desc:'Default expression'},
-    {id:'glowing',name:'Glowing Eyes',stats:{atk:1},rarity:'common',desc:'Faintly luminous'},
-    {id:'void_gaze',name:'Void Gaze',stats:{luck:2},rarity:'uncommon',desc:'Sees between dimensions'},
-    {id:'crimson_stare',name:'Crimson Stare',stats:{atk:2},rarity:'rare',desc:'Enemies flinch on eye contact'}
+  fur:[
+    {id:'none',name:'None',f:null,s:{},r:'none',d:'No fur selected'},
+    {id:'grey',name:'Grey',f:'GREY.png',s:{hp:1},r:'common',d:'Classic grey coat'},
+    {id:'smoke',name:'Smoke Grey',f:'SMOKEGREY.png',s:{def:1},r:'common',d:'Dark smoky fur'},
+    {id:'calico',name:'Calico',f:'CALICO.png',s:{luck:1},r:'common',d:'Patchy and proud'},
+    {id:'tuxedo',name:'Tuxedo',f:'TUXEDO.png',s:{spd:1},r:'common',d:'Dapper black and white'},
+    {id:'snow',name:'Snowwhite',f:'SNOWWHITE.png',s:{hp:1,def:1},r:'uncommon',d:'Pure as freshly fallen snow'},
+    {id:'pink',name:'Dusty Pink',f:'DUSTYPINK.png',s:{luck:1,spd:1},r:'uncommon',d:'Soft rosy fur'},
+    {id:'ember',name:'Ember Orange',f:'EMBERORANGE.png',s:{atk:1,hp:1},r:'uncommon',d:'Warm like smouldering coals'},
+    {id:'ocean',name:'Ocean Blue',f:'OCEANBLUE.png',s:{spd:1,def:1},r:'uncommon',d:'Cool as deep water'},
+    {id:'void',name:'Void Purple',f:'VOIDPURPLE.png',s:{atk:1,luck:1},r:'rare',d:'Infused with void energy'},
+    {id:'alien',name:'Alien Green',f:'ALIENGREEN.png',s:{spd:2,luck:1},r:'rare',d:'Otherworldly and unsettling'},
+    {id:'gold',name:'Golden',f:'GOLDEN.png',s:{luck:2,atk:1},r:'rare',d:'Radiates wealth and power'}
   ],
   outfit:[
-    {id:'none',name:'Basic Garb',stats:{},rarity:'none',desc:'Default clothing'},
-    {id:'cloth_robe',name:'Cloth Robe',stats:{hp:1,def:1},rarity:'common',desc:'Comfortable. Unremarkable.'},
-    {id:'shadow_cloak',name:'Shadow Cloak',stats:{hp:2,spd:1},rarity:'uncommon',desc:'Hard to see in dim light'},
-    {id:'voidweave',name:'Voidweave Mantle',stats:{hp:3,def:1,luck:1},rarity:'rare',desc:'Stitched from pure darkness'}
+    {id:'none',name:'None',f:null,s:{},r:'none',d:'No outfit'},
+    {id:'apprentice',name:'Apprentice Robe',f:'APPRENTICE.png',s:{hp:1,def:1},r:'common',d:'Standard issue robes'},
+    {id:'tunic_b',name:'Blue Tunic',f:'SIMPLETUNIC_BLUE.png',s:{hp:2},r:'common',d:'Simple but comfortable'},
+    {id:'tunic_g',name:'Green Tunic',f:'SIMPLETUNIC_GREEN.png',s:{hp:1,spd:1},r:'common',d:'Forest-coloured garb'},
+    {id:'tunic_r',name:'Red Tunic',f:'SIMPLETUNIC_RED.png',s:{atk:1,hp:1},r:'common',d:'Bold and battle-ready'},
+    {id:'tunic_p',name:'Pink Tunic',f:'SIMPLETUNIC_PINK.png',s:{luck:1,hp:1},r:'uncommon',d:'Stylish and eye-catching'},
+    {id:'mantle',name:'Red Mantle',f:'MANTLE_RED.png',s:{atk:1,def:1,hp:1},r:'uncommon',d:"A commander's cloak"},
+    {id:'tattered',name:'Tattered Cloak',f:'TATTERED%20CLOAK.png',s:{atk:2,spd:1,luck:1},r:'rare',d:'Worn by something ancient'}
   ],
   weapon:[
-    {id:'none',name:'Bare Paws',stats:{},rarity:'none',desc:'No weapon'},
-    {id:'wood_staff',name:'Wooden Staff',stats:{atk:1},rarity:'common',desc:'Gets the job done'},
-    {id:'crystal_staff',name:'Crystal Staff',stats:{atk:2,spd:1},rarity:'uncommon',desc:'Hums with stored mana'},
-    {id:'shadow_scythe',name:'Shadow Scythe',stats:{atk:3,luck:1},rarity:'rare',desc:'Cuts through wards like butter'}
+    {id:'none',name:'Bare Paws',f:null,s:{},r:'none',d:'No weapon equipped'},
+    {id:'sword',name:'Short Sword',f:'SHORTSWORD.png',s:{atk:2},r:'common',d:'Reliable steel blade'},
+    {id:'orb',name:'Mystic Orb',f:'ORB.png',s:{luck:1,atk:1},r:'common',d:'Floats with inner light'},
+    {id:'crystal',name:'Crystal Staff',f:'CRYSTALSTAFF.png',s:{atk:2,spd:1},r:'uncommon',d:'Hums with stored mana'},
+    {id:'crystal_g',name:'Emerald Staff',f:'CRYSTALSTAFF_GREEN.png',s:{atk:2,hp:1},r:'uncommon',d:'Infused with nature magic'},
+    {id:'crystal_p',name:'Amethyst Staff',f:'CRYSTALSTAFF_PURPLE.png',s:{atk:2,luck:1},r:'uncommon',d:'Crackles with void energy'},
+    {id:'crystal_k',name:'Rose Staff',f:'CRYSTALSTAFF_PINK.png',s:{atk:2,def:1},r:'uncommon',d:'Shimmers with dawn light'},
+    {id:'daggers',name:'Dual Daggers',f:'DUALDAGGERS.png',s:{atk:3,spd:1},r:'rare',d:'Fast and deadly'}
   ],
-  fur:[
-    {id:'none',name:'Default',stats:{},rarity:'none',desc:'Natural fur'},
-    {id:'green',name:'Verdant',stats:{hp:1},rarity:'common',desc:'Mossy green coat'},
-    {id:'shadow',name:'Shadowfur',stats:{spd:1,luck:1},rarity:'uncommon',desc:'Blends into darkness'},
-    {id:'spectral',name:'Spectral',stats:{luck:2,def:1},rarity:'rare',desc:'Semi-transparent. Unsettling.'}
+  expression:[
+    {id:'none',name:'Default',f:null,s:{},r:'none',d:'Neutral expression'},
+    {id:'grumpy',name:'Grumpy',f:'GRUMPY.png',s:{atk:1},r:'common',d:'Permanently unimpressed'},
+    {id:'happy',name:'Happy',f:'HAPPY.png',s:{luck:1},r:'common',d:'A rare genuine smile'},
+    {id:'derp',name:'Derp',f:'DERP.png',s:{luck:2},r:'common',d:'Something went wrong'},
+    {id:'laugh',name:'Laughing',f:'LAUGH.png',s:{hp:1,luck:1},r:'uncommon',d:'Finds everything amusing'},
+    {id:'glow',name:'Glowing',f:'GLOWING.png',s:{atk:1,spd:1},r:'uncommon',d:'Eyes bright with power'},
+    {id:'glow_r',name:'Crimson Glow',f:'GLOWING_RED.png',s:{atk:2},r:'uncommon',d:'Eyes burning with fury'},
+    {id:'glow_g',name:'Emerald Glow',f:'GLOWING_GREEN.png',s:{hp:2},r:'uncommon',d:'Eyes pulsing with life force'},
+    {id:'glow_p',name:'Void Glow',f:'GLOWING_PURPLE.png',s:{atk:1,luck:1},r:'rare',d:'Sees between dimensions'},
+    {id:'glow_y',name:'Golden Glow',f:'GLOWING_YELLOW.png',s:{luck:2,atk:1},r:'rare',d:'Radiates ancient wisdom'}
   ],
-  offhand:[
-    {id:'none',name:'None',stats:{},rarity:'none',desc:'No off-hand item'},
-    {id:'wisp',name:'Mana Wisp',stats:{luck:1},rarity:'common',desc:'A small familiar that scouts ahead'},
-    {id:'buckler',name:'Buckler',stats:{def:2},rarity:'common',desc:'Small but sturdy shield'},
-    {id:'bat',name:'Shadow Bat',stats:{spd:1,luck:1},rarity:'uncommon',desc:'Familiar — scouts ahead in battle'},
-    {id:'ward_shield',name:'Ward Shield',stats:{def:2,hp:1},rarity:'uncommon',desc:'Absorbs incoming magic'},
-    {id:'skull',name:'Floating Skull',stats:{atk:1,def:1,luck:1},rarity:'rare',desc:'Chatters its teeth menacingly'}
+  headwear:[
+    {id:'none',name:'None',f:null,s:{},r:'none',d:'No headwear'},
+    {id:'app',name:'Apprentice Hat',f:'APPRENTICE.png',s:{def:1},r:'common',d:'Standard pointy hat'},
+    {id:'app_b',name:'Blue Wizard Hat',f:'APPRENTICE_BLUE.png',s:{def:1,spd:1},r:'common',d:'Enchanted with wind'},
+    {id:'app_r',name:'Red Wizard Hat',f:'APPRENTICE_RED.png',s:{def:1,atk:1},r:'common',d:'Singed at the edges'},
+    {id:'app_g',name:'Green Wizard Hat',f:'APPRENTICE_GREEN.png',s:{def:1,hp:1},r:'common',d:'Smells faintly of moss'},
+    {id:'app_pu',name:'Purple Wizard Hat',f:'APPRENTICE_PURPLE.png',s:{def:1,luck:1},r:'uncommon',d:'Whispers dark secrets'},
+    {id:'app_pk',name:'Pink Wizard Hat',f:'APPRENTICE_PINK.png',s:{def:1,luck:1},r:'uncommon',d:'Sparkles in moonlight'},
+    {id:'hood',name:'Worn Hood',f:'WORNHOOD.png',s:{spd:1,def:1},r:'uncommon',d:'Low profile, high stealth'},
+    {id:'hood_b',name:'Blue Hood',f:'WORNHOOD_BLUE.png',s:{spd:1,def:1},r:'uncommon',d:'Carries the chill of the deep'},
+    {id:'hood_r',name:'Red Hood',f:'WORNHOOD_RED.png',s:{atk:1,def:1},r:'uncommon',d:'Stained from past battles'},
+    {id:'hood_pu',name:'Void Hood',f:'WORNHOOD_PURPLE.png',s:{luck:1,def:1,spd:1},r:'rare',d:'Shadows cling to the fabric'},
+    {id:'hood_g',name:'Forest Hood',f:'WORNHOOD_GREEN.png',s:{hp:1,def:1,spd:1},r:'rare',d:'Woven from living vines'},
+    {id:'hood_pk',name:'Rose Hood',f:'WORNHOOD_PINK.png',s:{luck:2,def:1},r:'rare',d:'Radiates a faint warmth'}
   ],
-  trinket1:[{id:'none',name:'Empty',stats:{},rarity:'none',desc:'Find trinkets in chests & drops'}],
-  trinket2:[{id:'none',name:'Empty',stats:{},rarity:'none',desc:'Find trinkets in chests & drops'}]
+  familiar:[
+    {id:'none',name:'None',f:null,s:{},r:'none',d:'No off-hand item'},
+    {id:'orb',name:'Arcane Orb',f:'ORB.png',s:{luck:1,atk:1},r:'uncommon',d:'A floating familiar orb'}
+  ],
+  trinket1:[{id:'none',name:'Empty',f:null,s:{},r:'none',d:'Find trinkets in chests & drops'}],
+  trinket2:[{id:'none',name:'Empty',f:null,s:{},r:'none',d:'Find trinkets in chests & drops'}]
 };
 
-var RARITY_COLORS = {none:'#6B5E50',common:'#888',uncommon:'#6acd8a',rare:'#5599ff',epic:'#b088e8',legendary:'#D4A64B'};
-var TYPE_COLORS = {Attack:'#e85a6a',Defend:'#5599ff',Support:'#6acd8a',Manipulation:'#b088e8',Utility:'#6ac8d8'};
-
-var PACK_CARDS = [
-  {name:'Mana Bolt',house:'Universal',type:'Attack',tier:'T0',rarity:'common',atk:3,hp:2,effects:[],cost:1,charges:5},
-  {name:'Hold the Line',house:'Universal',type:'Defend',tier:'T0',rarity:'common',atk:3,hp:2,effects:[],cost:1,charges:5},
-  {name:'Veil of Dusk',house:'Nighthollow',type:'Defend',tier:'T1',rarity:'uncommon',atk:1,hp:6,effects:['WARD'],cost:1,charges:8},
-  {name:'Ember Strike',house:'Smoulders',type:'Attack',tier:'T1',rarity:'rare',atk:6,hp:2,effects:['BURN +3'],cost:1,charges:12},
-  {name:'Cyclone Strike',house:'Ashenvale',type:'Attack',tier:'T2',rarity:'uncommon',atk:6,hp:1,effects:['HASTE','BURN +3'],cost:2,charges:8}
+var TC = {Attack:'#e85a6a',Defend:'#5599ff',Support:'#6acd8a',Manipulation:'#b088e8',Utility:'#6ac8d8'};
+var PACK = [
+  {n:'Mana Bolt',h:'Universal',t:'Attack',ti:'T0',r:'common',a:3,hp:2,e:[],c:1,ch:5},
+  {n:'Hold the Line',h:'Universal',t:'Defend',ti:'T0',r:'common',a:3,hp:2,e:[],c:1,ch:5},
+  {n:'Veil of Dusk',h:'Nighthollow',t:'Defend',ti:'T1',r:'uncommon',a:1,hp:6,e:['WARD'],c:1,ch:8},
+  {n:'Ember Strike',h:'Smoulders',t:'Attack',ti:'T1',r:'rare',a:6,hp:2,e:['BURN +3'],c:1,ch:12},
+  {n:'Cyclone Strike',h:'Ashenvale',t:'Attack',ti:'T2',r:'uncommon',a:6,hp:1,e:['HASTE','BURN +3'],c:2,ch:8}
+];
+var GM = [
+  {i:'⚔️',n:'Zone Battles',t:'15min cycles',d:'Deploy your Nine to zones on the map. Every 15 minutes, all Nines fight. Your guild controls zones by having the most surviving HP.',c:'#e85a6a'},
+  {i:'🗡️',n:'Quick Duels',t:'Free · 30 sec',d:'1v1 card battles. Both players reveal a card — higher ATK wins. Best of 3. No mana cost, no card charges used.',c:'#D4A64B'},
+  {i:'🏔️',n:'The Gauntlet',t:'1 mana · solo',d:'Fight AI opponents that get harder each floor. Daily reset — how far can you get? Great for learning card combos.',c:'#6ac8d8'},
+  {i:'👹',n:'Weekly Boss',t:'Mon–Fri',d:'A massive boss appears Monday. Your whole guild attacks together. Phases get harder at 50% and 25% HP.',c:'#b088e8'}
 ];
 
-var GAME_MODES = [
-  {icon:'⚔️',name:'Zone Battles',time:'15min cycles',desc:'Deploy your Nine to zones on the map. Every 15 minutes, all Nines fight. Your guild controls zones by having the most surviving HP.',color:'#e85a6a'},
-  {icon:'🗡️',name:'Quick Duels',time:'Free · 30 sec',desc:'1v1 card battles. Both players reveal a card — higher ATK wins. Best of 3. No mana cost, no card charges used.',color:'#D4A64B'},
-  {icon:'🏔️',name:'The Gauntlet',time:'1 mana · solo',desc:'Fight AI opponents that get harder each floor. Daily reset — how far can you get? Great for learning card combos.',color:'#6ac8d8'},
-  {icon:'👹',name:'Weekly Boss',time:'Mon–Fri',desc:'A massive boss appears Monday. Your whole guild attacks together. Phases get harder at 50% and 25% HP.',color:'#b088e8'}
-];
+/* STATE */
+var step=1,aSlot=null,pSlot=null,pItem=null,revd=[],oMode=null;
+var eq={};SLOTS.forEach(function(s){eq[s.id]=ITEMS[s.id][0]});
 
-/* ══════════════════════════════════════ */
-/*  STATE                                */
-/* ══════════════════════════════════════ */
-var currentStep = 1;
-var activeSlot = null;
-var equipped = {};
-SLOTS.forEach(function(s){ equipped[s.id] = ITEMS[s.id][0]; });
-var previewSlot = null, previewItem = null;
-var revealedCards = [];
-
-/* ══════════════════════════════════════ */
-/*  STEP NAVIGATION                      */
-/* ══════════════════════════════════════ */
-function goStep(n) {
-  currentStep = n;
-  for (var i = 1; i <= 4; i++) {
-    var el = document.getElementById('step'+i);
-    el.classList.remove('active');
-    var pf = document.getElementById('pf'+i);
-    var pl = document.getElementById('pl'+i);
-    if (i <= n) { pf.classList.add('done'); pl.classList.add('done'); }
-    else { pf.classList.remove('done'); pl.classList.remove('done'); }
-  }
+/* NAV */
+function goStep(n){
+  step=n;
+  for(var i=1;i<=4;i++){document.getElementById('step'+i).classList.remove('active');var pf=document.getElementById('pf'+i),pl=document.getElementById('pl'+i);if(i<=n){pf.classList.add('done');pl.classList.add('done')}else{pf.classList.remove('done');pl.classList.remove('done')}}
   document.getElementById('step'+n).classList.add('active');
-  document.getElementById('stepCounter').textContent = n + '/4';
-  document.getElementById('skipLink').style.display = n < 4 ? 'block' : 'none';
+  document.getElementById('stepCounter').textContent=n+'/4';
+  document.getElementById('skipLink').style.display=n<4?'block':'none';
   window.scrollTo({top:0,behavior:'smooth'});
-  if (n === 3) initPack();
-  if (n === 4) initModes();
+  if(n===3)initPack();if(n===4)initModes();
 }
 
-/* ══════════════════════════════════════ */
-/*  STEP 1: CHARACTER CREATION           */
-/* ══════════════════════════════════════ */
-function getEquipBonuses(eq) {
-  var t = {atk:0,hp:0,spd:0,def:0,luck:0};
-  Object.values(eq).forEach(function(item){
-    if(item && item.stats) Object.keys(item.stats).forEach(function(k){ t[k] += item.stats[k]; });
+/* EQUIP BONUSES */
+function gEB(e){var t={atk:0,hp:0,spd:0,def:0,luck:0};Object.values(e).forEach(function(i){if(i&&i.s)Object.keys(i.s).forEach(function(k){t[k]+=i.s[k]})});return t}
+function gPB(){if(!pItem||!pSlot)return null;var p=Object.assign({},eq);p[pSlot]=pItem;return gEB(p)}
+
+/* LAYER RENDER */
+function renderLayers(){
+  var c=document.getElementById('charLayers'),emp=document.getElementById('charEmpty'),has=false,h='';
+  LO.forEach(function(sid){
+    var it=eq[sid],sl=SLOTS.find(function(s){return s.id===sid});
+    if(it&&it.f){has=true;h+='<img class="layer" src="'+IMG+sid+'/'+it.f+'" alt="'+it.name+'" style="z-index:'+sl.z+'" onerror="this.style.display=\'none\'">'}
   });
-  return t;
+  c.innerHTML=h;emp.style.display=has?'none':'flex';
 }
 
-function getPreviewBonuses() {
-  if (!previewItem || !previewSlot) return null;
-  var preview = Object.assign({}, equipped);
-  preview[previewSlot] = previewItem;
-  return getEquipBonuses(preview);
-}
-
-function renderSlots() {
-  var col = document.getElementById('slotCol');
-  var h = '';
-  SLOTS.forEach(function(slot, i){
-    var item = equipped[slot.id];
-    var hasItem = item && item.id !== 'none';
-    var isTrinket = slot.id.indexOf('trinket') === 0;
-    var isLocked = isTrinket && !hasItem;
-    var rc = hasItem ? RARITY_COLORS[item.rarity] : '#6B5E50';
-    var isActive = activeSlot === slot.id;
-
-    h += '<div class="slot-btn' + (isActive ? ' active' : '') + (isLocked ? ' locked' : '') + '" onclick="' + (isLocked ? 'showTrinketInfo()' : "toggleSlot('"+slot.id+"')") + '" style="animation:fadeUp 0.3s ease '+(i*0.04)+'s both;'+(hasItem?'border-color:'+rc+'40;':'')+(isActive?'background:rgba(123,45,142,0.08);border-color:#7B2D8E;':'')+'">';
-    h += '<div class="slot-icon" style="'+(isActive?'background:rgba(123,45,142,0.15);border-color:rgba(123,45,142,0.4);':hasItem?'background:'+rc+'10;border-color:'+rc+'30;':'')+'">'+slot.icon;
-    if(hasItem) h += '<div style="position:absolute;bottom:-2px;right:-2px;width:6px;height:6px;border-radius:50%;background:'+rc+';border:1px solid rgba(0,0,0,0.4)"></div>';
-    h += '</div>';
-    h += '<div style="flex:1;min-width:0;overflow:hidden">';
-    h += '<div style="font-family:var(--font-data);font-size:5px;color:'+(isActive?'#7B2D8E':'var(--faint)')+';letter-spacing:0.5px">'+slot.label.toUpperCase()+'</div>';
-    h += '<div style="font-family:var(--font-mono);font-size:8px;color:'+(hasItem?rc:'var(--faint)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'+(isLocked?'font-style:italic;':'')+'">'+(isLocked?'Locked':hasItem?item.name:'Empty')+'</div>';
-    h += '</div>';
-    if(!isLocked) h += '<div style="font-family:var(--font-data);font-size:4px;color:'+(isTrinket?'var(--cyan)':'#7B2D8E')+';opacity:0.5">'+slot.layer+'</div>';
-    h += '</div>';
+/* SLOTS */
+function renderSlots(){
+  var c=document.getElementById('slotCol'),h='';
+  SLOTS.forEach(function(sl,i){
+    var it=eq[sl.id],has=it&&it.id!=='none',isTr=sl.id.indexOf('trinket')===0,lock=isTr&&!has;
+    var rc=has?RC[it.r]:'#6B5E50',act=aSlot===sl.id;
+    var thumb='';
+    if(has&&it.f)thumb='<img src="'+IMG+sl.id+'/'+it.f+'" style="width:100%;height:100%;object-fit:cover;border-radius:4px" onerror="this.style.display=\'none\'">';
+    else thumb=sl.icon;
+    h+='<div class="slot-btn'+(act?' active':'')+(lock?' locked':'')+'" onclick="'+(lock?'showTI()':"tSlot('"+sl.id+"')")+'" style="animation:fadeUp .3s ease '+(i*.04)+'s both;'+(has?'border-color:'+rc+'40;':'')+(act?'background:rgba(123,45,142,.08);border-color:#7B2D8E;':'')+'">';
+    h+='<div class="slot-icon" style="'+(act?'background:rgba(123,45,142,.15);border-color:rgba(123,45,142,.4);':has?'background:'+rc+'10;border-color:'+rc+'30;':'')+'">'+thumb+'</div>';
+    h+='<div style="flex:1;min-width:0;overflow:hidden"><div style="font-family:var(--font-data);font-size:5px;color:'+(act?'#7B2D8E':'var(--faint)')+';letter-spacing:.5px">'+sl.label.toUpperCase()+'</div>';
+    h+='<div style="font-family:var(--font-mono);font-size:8px;color:'+(has?rc:'var(--faint)')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'+(lock?'font-style:italic;':'')+'">'+(lock?'Locked':has?it.name:'Empty')+'</div></div>';
+    if(!lock)h+='<div style="font-family:var(--font-data);font-size:4px;color:'+(isTr?'var(--cyan)':'#7B2D8E')+';opacity:.5">'+sl.layer+'</div>';
+    h+='</div>';
   });
-  col.innerHTML = h;
+  c.innerHTML=h;
 }
 
-function renderStats() {
-  var bonuses = getEquipBonuses(equipped);
-  var pBonuses = getPreviewBonuses();
-  var panel = document.getElementById('statsPanel');
-  var total = 0;
-  var h = '';
-
-  STAT_KEYS.forEach(function(k){
-    var m = STAT_META[k];
-    var base = BASE_STATS[k] || 0;
-    var bonus = bonuses[k] || 0;
-    var current = base + bonus;
-    total += current;
-    var delta = 0;
-    if (pBonuses) delta = (base + pBonuses[k]) - current;
-    var barPct = Math.min((current / m.max) * 100, 100);
-    var barBg = delta > 0 ? 'linear-gradient(90deg,'+m.color+',#6acd8a)' :
-                delta < 0 ? 'linear-gradient(90deg,'+m.color+',#e85a6a)' :
-                'linear-gradient(90deg,'+m.color+','+m.color+'60)';
-
-    h += '<div class="stat-row">';
-    h += '<div class="stat-label" style="color:'+m.color+'">'+m.label+'</div>';
-    h += '<div class="stat-val" style="color:'+m.color+'">'+current+'</div>';
-    if (delta !== 0) {
-      h += '<div class="stat-delta" style="color:'+(delta>0?'var(--green)':'var(--red)')+';">'+(delta>0?'▲':'▼')+Math.abs(delta)+'</div>';
-    } else {
-      h += '<div style="min-width:22px"></div>';
-    }
-    h += '<div class="stat-track"><div class="stat-fill" style="width:'+barPct+'%;background:'+barBg+'"></div></div>';
-    if (bonus > 0) {
-      h += '<div class="stat-bonus" style="color:var(--green)">+'+bonus+'</div>';
-    } else {
-      h += '<div style="width:20px"></div>';
-    }
-    h += '</div>';
+/* STATS */
+function renderStats(){
+  var bon=gEB(eq),pb=gPB(),p=document.getElementById('statsPanel'),tot=0,h='';
+  SK.forEach(function(k){
+    var m=SM[k],b=BS[k]||0,bo=bon[k]||0,cur=b+bo;tot+=cur;
+    var d=0;if(pb)d=(b+pb[k])-cur;
+    var pct=Math.min((cur/m.m)*100,100);
+    var bg=d>0?'linear-gradient(90deg,'+m.c+',#6acd8a)':d<0?'linear-gradient(90deg,'+m.c+',#e85a6a)':'linear-gradient(90deg,'+m.c+','+m.c+'60)';
+    h+='<div class="stat-row"><div class="stat-label" style="color:'+m.c+'">'+m.l+'</div><div class="stat-val" style="color:'+m.c+'">'+cur+'</div>';
+    if(d!==0)h+='<div class="stat-delta" style="color:'+(d>0?'var(--green)':'var(--red)')+';">'+(d>0?'▲':'▼')+Math.abs(d)+'</div>';else h+='<div style="min-width:22px"></div>';
+    h+='<div class="stat-track"><div class="stat-fill" style="width:'+pct+'%;background:'+bg+'"></div></div>';
+    if(bo>0)h+='<div class="stat-bonus" style="color:var(--green)">+'+bo+'</div>';else h+='<div style="width:20px"></div>';
+    h+='</div>';
   });
-
-  panel.innerHTML = h;
-  document.getElementById('totalPower').textContent = total;
+  p.innerHTML=h;document.getElementById('totalPower').textContent=tot;
 }
 
-function renderLayerDots() {
-  var dots = document.getElementById('layerDots');
-  var h = '';
-  SLOTS.forEach(function(s){
-    var item = equipped[s.id];
-    var hasItem = item && item.id !== 'none';
-    var rc = hasItem ? RARITY_COLORS[item.rarity] : 'rgba(255,255,255,0.08)';
-    h += '<div title="'+s.label+'" style="width:5px;height:5px;border-radius:50%;background:'+rc+';transition:background 0.3s;border:1px solid '+(hasItem?'rgba(0,0,0,0.3)':'transparent')+'"></div>';
+function updCount(){var c=Object.values(eq).filter(function(i){return i.id!=='none'}).length;document.getElementById('slotCountLabel').textContent='🌙 NIGHTHOLLOW · '+c+'/8 SLOTS'}
+function tSlot(id){aSlot=aSlot===id?null:id;renderSlots();renderPicker();document.getElementById('trinketCallout').style.display='none'}
+function showTI(){aSlot=null;renderSlots();renderPicker();document.getElementById('trinketCallout').style.display='block'}
+
+/* PICKER */
+function renderPicker(){
+  var a=document.getElementById('pickerArea');document.getElementById('trinketCallout').style.display='none';
+  if(!aSlot||!ITEMS[aSlot]||ITEMS[aSlot].length<=1){a.innerHTML='';return}
+  var sl=SLOTS.find(function(s){return s.id===aSlot}),its=ITEMS[aSlot];
+  var h='<div class="picker"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-family:var(--font-data);font-size:7px;color:#7B2D8E;letter-spacing:1px">'+sl.icon+' '+sl.label.toUpperCase()+'</div><div style="font-family:var(--font-data);font-size:5px;color:var(--faint)">'+(its.length-1)+' items</div></div>';
+  its.forEach(function(it){
+    var isE=eq[aSlot]&&eq[aSlot].id===it.id,rc=RC[it.r],hs=it.s&&Object.keys(it.s).length>0;
+    var th=it.f?'<img src="'+IMG+aSlot+'/'+it.f+'" style="width:100%;height:100%;object-fit:cover;border-radius:4px" onerror="this.parentElement.textContent=\''+sl.icon+'\'">':(it.id==='none'?'—':sl.icon);
+    h+='<div class="pick-row'+(isE?' equipped':'')+'" onclick="eqIt(\''+aSlot+"','"+it.id+"')\" onmouseenter=\"pvOn('"+aSlot+"','"+it.id+"')\" onmouseleave=\"pvOff()\">";
+    h+='<div class="pick-thumb" style="background:'+rc+'10;border-color:'+rc+'25">'+th+'</div>';
+    h+='<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font-family:var(--font-title);font-size:13px;font-weight:700;color:'+(it.id==='none'?'var(--faint)':'var(--bright)')+'">'+it.name+'</span>';
+    if(it.r!=='none')h+='<span style="font-family:var(--font-data);font-size:6px;color:'+rc+';text-transform:uppercase;background:'+rc+'15;padding:2px 5px;border-radius:3px">'+it.r+'</span>';
+    h+='</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:2px">'+it.d+'</div>';
+    if(hs){h+='<div style="display:flex;gap:8px;margin-top:4px">';Object.keys(it.s).forEach(function(k){h+='<span style="font-family:var(--font-data);font-size:8px;color:'+SM[k].c+'">+'+it.s[k]+' '+SM[k].l+'</span>'});h+='</div>'}
+    h+='</div>';if(isE)h+='<div style="font-family:var(--font-data);font-size:7px;color:var(--green)">✓</div>';
+    h+='</div>';
   });
-  dots.innerHTML = h;
+  h+='</div>';a.innerHTML=h;
 }
 
-function updateSlotCount() {
-  var count = Object.values(equipped).filter(function(i){return i.id!=='none'}).length;
-  document.getElementById('slotCountLabel').textContent = '🌙 NIGHTHOLLOW · '+count+'/8 SLOTS';
-}
+function eqIt(sid,iid){var it=ITEMS[sid].find(function(i){return i.id===iid});if(it)eq[sid]=it;pSlot=null;pItem=null;renderSlots();renderPicker();renderStats();renderLayers();updCount()}
+function pvOn(sid,iid){pItem=ITEMS[sid].find(function(i){return i.id===iid});pSlot=sid;renderStats()}
+function pvOff(){pItem=null;pSlot=null;renderStats()}
 
-function toggleSlot(slotId) {
-  activeSlot = activeSlot === slotId ? null : slotId;
-  renderSlots();
-  renderPicker();
-  document.getElementById('trinketCallout').style.display = 'none';
-}
-
-function showTrinketInfo() {
-  activeSlot = null;
-  renderSlots();
-  renderPicker();
-  document.getElementById('trinketCallout').style.display = 'block';
-}
-
-function renderPicker() {
-  var area = document.getElementById('pickerArea');
-  document.getElementById('trinketCallout').style.display = 'none';
-  if (!activeSlot || !ITEMS[activeSlot] || ITEMS[activeSlot].length <= 1) { area.innerHTML = ''; return; }
-
-  var slot = SLOTS.find(function(s){return s.id===activeSlot});
-  var items = ITEMS[activeSlot];
-  var h = '<div class="picker">';
-  h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
-  h += '<div style="font-family:var(--font-data);font-size:7px;color:#7B2D8E;letter-spacing:1px">'+slot.icon+' '+slot.label.toUpperCase()+'</div>';
-  h += '<div style="font-family:var(--font-data);font-size:5px;color:var(--faint)">'+(items.length-1)+' items</div>';
-  h += '</div>';
-
-  items.forEach(function(item){
-    var isEq = equipped[activeSlot] && equipped[activeSlot].id === item.id;
-    var rc = RARITY_COLORS[item.rarity];
-    var hasStats = item.stats && Object.keys(item.stats).length > 0;
-
-    h += '<div class="pick-row'+(isEq?' equipped':'')+'" onclick="equipItem(\''+activeSlot+'\',\''+item.id+'\')" onmouseenter="previewOn(\''+activeSlot+'\',\''+item.id+'\')" onmouseleave="previewOff()">';
-    h += '<div style="width:36px;height:36px;border-radius:6px;flex-shrink:0;background:'+rc+'10;border:1px solid '+rc+'25;display:flex;align-items:center;justify-content:center;font-size:16px">'+(item.id==='none'?'—':slot.icon)+'</div>';
-    h += '<div style="flex:1;min-width:0">';
-    h += '<div style="display:flex;align-items:center;gap:6px">';
-    h += '<span style="font-family:var(--font-title);font-size:13px;font-weight:700;color:'+(item.id==='none'?'var(--faint)':'var(--bright)')+'">'+item.name+'</span>';
-    if (item.rarity !== 'none') h += '<span style="font-family:var(--font-data);font-size:6px;color:'+rc+';text-transform:uppercase;background:'+rc+'15;padding:2px 5px;border-radius:3px">'+item.rarity+'</span>';
-    h += '</div>';
-    h += '<div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:2px">'+item.desc+'</div>';
-    if (hasStats) {
-      h += '<div style="display:flex;gap:8px;margin-top:4px">';
-      Object.keys(item.stats).forEach(function(k){
-        h += '<span style="font-family:var(--font-data);font-size:8px;color:'+STAT_META[k].color+'">+'+item.stats[k]+' '+STAT_META[k].label+'</span>';
-      });
-      h += '</div>';
-    }
-    h += '</div>';
-    if (isEq) h += '<div style="font-family:var(--font-data);font-size:7px;color:var(--green)">✓</div>';
-    h += '</div>';
-  });
-  h += '</div>';
-  area.innerHTML = h;
-}
-
-function equipItem(slotId, itemId) {
-  var items = ITEMS[slotId];
-  var item = items.find(function(i){return i.id===itemId});
-  if (item) equipped[slotId] = item;
-  previewSlot = null; previewItem = null;
-  renderSlots(); renderPicker(); renderStats(); renderLayerDots(); updateSlotCount();
-}
-
-function previewOn(slotId, itemId) {
-  var items = ITEMS[slotId];
-  previewItem = items.find(function(i){return i.id===itemId});
-  previewSlot = slotId;
-  renderStats();
-}
-
-function previewOff() {
-  previewItem = null; previewSlot = null;
-  renderStats();
-}
-
-/* Name input */
-document.getElementById('nineName').addEventListener('input', function(){
-  var val = this.value;
-  document.getElementById('nameCount').textContent = val.length + '/20';
-  var btn = document.getElementById('step1Btn');
-  var display = document.getElementById('charNameDisplay');
-  if (val.trim()) {
-    btn.disabled = false;
-    btn.textContent = val.trim().toUpperCase() + ' IS READY →';
-    display.textContent = val.trim();
-    display.style.display = 'block';
-  } else {
-    btn.disabled = true;
-    btn.textContent = 'NAME YOUR NINE TO CONTINUE';
-    display.style.display = 'none';
-  }
+/* NAME INPUT */
+document.getElementById('nineName').addEventListener('input',function(){
+  var v=this.value;document.getElementById('nameCount').textContent=v.length+'/20';
+  var b=document.getElementById('step1Btn'),d=document.getElementById('charNameDisplay');
+  if(v.trim()){b.disabled=false;b.textContent=v.trim().toUpperCase()+' IS READY →';d.textContent=v.trim();d.style.display='block'}
+  else{b.disabled=true;b.textContent='NAME YOUR NINE TO CONTINUE';d.style.display='none'}
 });
 
-/* ══════════════════════════════════════ */
-/*  STEP 3: PACK OPENING                */
-/* ══════════════════════════════════════ */
-function initPack() {
-  revealedCards = [];
-  var area = document.getElementById('packCards');
-  var h = '';
-  PACK_CARDS.forEach(function(card, i){
-    var tc = TYPE_COLORS[card.type] || '#999';
-    var rc = RARITY_COLORS[card.rarity];
-    var isGlow = card.rarity === 'rare' || card.rarity === 'epic';
-
-    h += '<div class="flip-container" onclick="revealCard('+i+')">';
-    h += '<div class="flip-inner" id="flipCard'+i+'">';
-    // Front (face down)
-    h += '<div class="flip-front">';
-    h += '<div style="font-size:28px;margin-bottom:6px;opacity:0.6">🃏</div>';
-    h += '<div style="font-family:var(--font-data);font-size:5px;color:var(--gold);opacity:0.5">TAP TO REVEAL</div>';
-    h += '</div>';
-    // Back (card)
-    h += '<div class="flip-back">';
-    h += '<div class="mini-card'+(isGlow?' glow':'')+'" style="width:110px;min-height:150px;padding:8px 8px 6px">';
-    h += '<div style="font-family:var(--font-data);font-size:5px;color:'+tc+';font-weight:700;letter-spacing:0.5px;margin-bottom:3px;background:'+tc+'15;padding:2px 6px;border-radius:4px;display:inline-block">'+card.type.toUpperCase()+'</div>';
-    h += '<div style="font-family:var(--font-title);font-size:11px;font-weight:700;color:var(--bright);line-height:1.2;margin-bottom:4px">'+card.name+'</div>';
-    h += '<div style="display:flex;gap:6px;margin-bottom:4px;flex-wrap:wrap">';
-    h += '<span style="font-family:var(--font-mono);font-size:7px;color:var(--muted)">'+card.house+'</span>';
-    h += '<span style="font-family:var(--font-data);font-size:5px;color:var(--faint)">'+card.tier+'</span>';
-    h += '<span style="font-family:var(--font-data);font-size:5px;color:'+rc+';text-transform:uppercase">'+card.rarity+'</span>';
-    h += '</div>';
-    h += '<div style="display:flex;gap:6px;margin-bottom:4px">';
-    h += '<div style="text-align:center"><div style="font-family:var(--font-data);font-size:9px;font-weight:800;color:#e85a6a">'+card.atk+'</div><div style="font-family:var(--font-data);font-size:4px;color:#e85a6a;opacity:0.6">ATK</div></div>';
-    h += '<div style="text-align:center"><div style="font-family:var(--font-data);font-size:9px;font-weight:800;color:#6acd8a">'+card.hp+'</div><div style="font-family:var(--font-data);font-size:4px;color:#6acd8a;opacity:0.6">HP</div></div>';
-    h += '</div>';
-    if (card.effects.length > 0) {
-      h += '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">';
-      card.effects.forEach(function(e){ h += '<span style="font-family:var(--font-data);font-size:5px;color:'+tc+';background:'+tc+'15;padding:2px 5px;border-radius:3px;border:1px solid '+tc+'25">'+e+'</span>'; });
-      h += '</div>';
-    }
-    h += '<div style="display:flex;justify-content:space-between;align-items:center">';
-    h += '<span style="font-family:var(--font-data);font-size:7px;color:#00D4FF;font-weight:700">'+card.cost+'MP</span>';
-    h += '<span style="font-family:var(--font-mono);font-size:7px;color:var(--faint)">'+card.charges+' ch</span>';
-    h += '</div>';
-    h += '</div></div></div></div>';
+/* PACK */
+function initPack(){
+  revd=[];var a=document.getElementById('packCards'),h='';
+  PACK.forEach(function(cd,i){
+    var tc=TC[cd.t]||'#999',rc=RC[cd.r],gl=cd.r==='rare'||cd.r==='epic';
+    h+='<div class="flip-container" onclick="rC('+i+')"><div class="flip-inner" id="fc'+i+'">';
+    h+='<div class="flip-front"><div style="font-size:28px;margin-bottom:6px;opacity:.6">🃏</div><div style="font-family:var(--font-data);font-size:5px;color:var(--gold);opacity:.5">TAP TO REVEAL</div></div>';
+    h+='<div class="flip-back"><div class="mini-card'+(gl?' glow':'')+'" style="width:110px;min-height:150px;padding:8px 8px 6px">';
+    h+='<div style="font-family:var(--font-data);font-size:5px;color:'+tc+';font-weight:700;margin-bottom:3px;background:'+tc+'15;padding:2px 6px;border-radius:4px;display:inline-block">'+cd.t.toUpperCase()+'</div>';
+    h+='<div style="font-family:var(--font-title);font-size:11px;font-weight:700;color:var(--bright);line-height:1.2;margin-bottom:4px">'+cd.n+'</div>';
+    h+='<div style="display:flex;gap:6px;margin-bottom:4px;flex-wrap:wrap"><span style="font-family:var(--font-mono);font-size:7px;color:var(--muted)">'+cd.h+'</span><span style="font-family:var(--font-data);font-size:5px;color:var(--faint)">'+cd.ti+'</span><span style="font-family:var(--font-data);font-size:5px;color:'+rc+';text-transform:uppercase">'+cd.r+'</span></div>';
+    h+='<div style="display:flex;gap:6px;margin-bottom:4px"><div style="text-align:center"><div style="font-family:var(--font-data);font-size:9px;font-weight:800;color:#e85a6a">'+cd.a+'</div><div style="font-family:var(--font-data);font-size:4px;color:#e85a6a;opacity:.6">ATK</div></div><div style="text-align:center"><div style="font-family:var(--font-data);font-size:9px;font-weight:800;color:#6acd8a">'+cd.hp+'</div><div style="font-family:var(--font-data);font-size:4px;color:#6acd8a;opacity:.6">HP</div></div></div>';
+    if(cd.e.length){h+='<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">';cd.e.forEach(function(e){h+='<span style="font-family:var(--font-data);font-size:5px;color:'+tc+';background:'+tc+'15;padding:2px 5px;border-radius:3px;border:1px solid '+tc+'25">'+e+'</span>'});h+='</div>'}
+    h+='<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-data);font-size:7px;color:#00D4FF;font-weight:700">'+cd.c+'MP</span><span style="font-family:var(--font-mono);font-size:7px;color:var(--faint)">'+cd.ch+' ch</span></div>';
+    h+='</div></div></div></div>';
   });
-  area.innerHTML = h;
-  document.getElementById('packActions').style.display = 'block';
-  document.getElementById('packDone').style.display = 'none';
+  a.innerHTML=h;document.getElementById('packActions').style.display='block';document.getElementById('packDone').style.display='none';
 }
+function rC(i){if(revd.indexOf(i)!==-1)return;revd.push(i);document.getElementById('fc'+i).classList.add('flipped');if(revd.length>=PACK.length)setTimeout(function(){document.getElementById('packActions').style.display='none';document.getElementById('packDone').style.display='block'},500)}
+function revealAllCards(){var x=revd.length;var iv=setInterval(function(){if(x>=PACK.length){clearInterval(iv);return}rC(x);x++},350)}
 
-function revealCard(i) {
-  if (revealedCards.indexOf(i) !== -1) return;
-  revealedCards.push(i);
-  document.getElementById('flipCard'+i).classList.add('flipped');
-  checkAllRevealed();
-}
-
-function revealAllCards() {
-  var idx = revealedCards.length;
-  var interval = setInterval(function(){
-    if (idx >= PACK_CARDS.length) { clearInterval(interval); return; }
-    revealCard(idx);
-    idx++;
-  }, 350);
-}
-
-function checkAllRevealed() {
-  if (revealedCards.length >= PACK_CARDS.length) {
-    setTimeout(function(){
-      document.getElementById('packActions').style.display = 'none';
-      document.getElementById('packDone').style.display = 'block';
-    }, 500);
-  }
-}
-
-/* ══════════════════════════════════════ */
-/*  STEP 4: GAME MODES                  */
-/* ══════════════════════════════════════ */
-var openMode = null;
-function initModes() {
-  openMode = null;
-  var area = document.getElementById('modesArea');
-  var h = '';
-  GAME_MODES.forEach(function(mode, i){
-    h += '<div class="mode-card" id="mode'+i+'" onclick="toggleMode('+i+')">';
-    h += '<div style="display:flex;align-items:center;gap:10px">';
-    h += '<div style="font-size:22px;flex-shrink:0">'+mode.icon+'</div>';
-    h += '<div style="flex:1">';
-    h += '<div style="font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--bright)">'+mode.name+'</div>';
-    h += '<div style="font-family:var(--font-data);font-size:6px;color:'+mode.color+';margin-top:2px">'+mode.time+'</div>';
-    h += '</div>';
-    h += '<div id="modeChev'+i+'" style="font-family:var(--font-mono);font-size:14px;color:var(--faint);transition:transform 0.2s">›</div>';
-    h += '</div>';
-    h += '<div class="mode-desc" id="modeDesc'+i+'" style="display:none">'+mode.desc+'</div>';
-    h += '</div>';
+/* MODES */
+function initModes(){
+  oMode=null;var a=document.getElementById('modesArea'),h='';
+  GM.forEach(function(m,i){
+    h+='<div class="mode-card" id="mc'+i+'" onclick="tM('+i+')">';
+    h+='<div style="display:flex;align-items:center;gap:10px"><div style="font-size:22px;flex-shrink:0">'+m.i+'</div><div style="flex:1"><div style="font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--bright)">'+m.n+'</div><div style="font-family:var(--font-data);font-size:6px;color:'+m.c+';margin-top:2px">'+m.t+'</div></div>';
+    h+='<div id="mv'+i+'" style="font-family:var(--font-mono);font-size:14px;color:var(--faint);transition:transform .2s">›</div></div>';
+    h+='<div class="mode-desc" id="md'+i+'" style="display:none">'+m.d+'</div></div>';
   });
-  area.innerHTML = h;
+  a.innerHTML=h;
+}
+function tM(i){GM.forEach(function(_,j){var d=document.getElementById('md'+j),c=document.getElementById('mc'+j),v=document.getElementById('mv'+j);if(j===i&&oMode!==i){d.style.display='block';c.classList.add('open');v.style.transform='rotate(90deg)'}else{d.style.display='none';c.classList.remove('open');v.style.transform='none'}});oMode=oMode===i?null:i}
+
+function enterNethara(){
+  var name=document.getElementById('nineName').value.trim()||'Unnamed Nine';
+  // TODO: POST to /api/builder with name + JSON.stringify(eq)
+  window.location.href='/dashboard.html';
 }
 
-function toggleMode(i) {
-  GAME_MODES.forEach(function(_, j){
-    var desc = document.getElementById('modeDesc'+j);
-    var card = document.getElementById('mode'+j);
-    var chev = document.getElementById('modeChev'+j);
-    if (j === i && openMode !== i) {
-      desc.style.display = 'block';
-      card.classList.add('open');
-      chev.style.transform = 'rotate(90deg)';
-    } else {
-      desc.style.display = 'none';
-      card.classList.remove('open');
-      chev.style.transform = 'none';
-    }
-  });
-  openMode = openMode === i ? null : i;
-}
-
-function enterNethara() {
-  // Save character data and redirect
-  var name = document.getElementById('nineName').value.trim() || 'Unnamed Nine';
-  // TODO: POST to /api/builder with name + equipped items
-  window.location.href = '/dashboard.html';
-}
-
-/* ══════════════════════════════════════ */
-/*  INIT                                 */
-/* ══════════════════════════════════════ */
-renderSlots();
-renderStats();
-renderLayerDots();
-updateSlotCount();
+/* INIT */
+renderSlots();renderStats();renderLayers();updCount();
 </script>
 </body>
 </html>
