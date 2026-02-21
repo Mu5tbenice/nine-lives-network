@@ -19,7 +19,7 @@
   width: 240px;
   height: 380px;
   border-radius: 12px;
-  overflow: visible;
+  overflow: hidden;
   cursor: pointer;
   flex-shrink: 0;
   transition: transform 0.25s ease, box-shadow 0.3s ease;
@@ -175,6 +175,22 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+/* ═══ INFO PANEL — fixed-height bottom section, locks stat line ═══ */
+.sc-info-panel {
+  height: 170px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(to bottom,
+    transparent 0%,
+    rgba(10,8,18,0.6) 12%,
+    rgba(10,8,18,0.92) 28%,
+    rgba(10,8,18,0.98) 45%);
+  padding-top: 4px;
 }
 
 /* ═══ TOP ROW — logo + name + mana ═══ */
@@ -183,6 +199,7 @@
   align-items: center;
   gap: 6px;
   padding: 8px 8px;
+  border-radius: 12px 12px 0 0;
   background: linear-gradient(180deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.2) 70%, transparent 100%);
 }
 
@@ -393,32 +410,28 @@
 .pill.p-toxic   { color: #aaee55; background: rgba(170,238,85,0.1);  border: 1px solid rgba(170,238,85,0.25); }
 .pill.p-gray    { color: #aaa;    background: rgba(170,170,170,0.08);border: 1px solid rgba(170,170,170,0.2); }
 
-/* Pill tooltip */
+/* Pill tooltip — hidden inside card, content copied to body-level tooltip by JS */
 .pill .tip {
-  display: none;
+  display: none !important;
+}
+
+/* Body-level tooltip — appended to <body> by JS, escapes card overflow */
+.sc-tooltip {
   position: fixed;
-  top: 0;
-  left: 0;
   white-space: normal;
   max-width: 240px;
-  font-family: var(--font-body);
+  font-family: var(--font-body, 'Crimson Text', serif);
   font-size: 13px;
   font-weight: 400;
   color: #e8e4d9;
   background: rgba(14,10,24,0.97);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 5px;
-  padding: 6px 12px;
-  z-index: 999;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  padding: 8px 12px;
+  z-index: 99999;
   pointer-events: none;
-  box-shadow: 0 6px 20px rgba(0,0,0,0.6);
-  line-height: 1.3;
-}
-.pill:hover .tip { display: block; }
-/* Tooltip below (for zoom overlay / top-of-screen cards) */
-.pill .tip--below {
-  bottom: auto;
-  top: calc(100% + 8px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.7);
+  line-height: 1.4;
 }
 
 /* ═══ DURABILITY BAR ═══ */
@@ -490,6 +503,7 @@
 /* ZOOM (1.4x) — overlay detail view */
 .zoom-card .spell-card,
 .spell-card.sc-zoom { width: 340px; height: 530px; }
+.zoom-card .sc-info-panel, .sc-zoom .sc-info-panel { height: 240px; }
 .zoom-card .sc-stat-val,  .sc-zoom .sc-stat-val  { font-size: 22px; }
 .zoom-card .sc-stat-label,.sc-zoom .sc-stat-label { font-size: 8px; }
 .zoom-card .sc-stat-divider,.sc-zoom .sc-stat-divider { height: 28px; }
@@ -504,6 +518,7 @@
 /* MINI (grid/spellbook) — 200px wide */
 .sc-mini .spell-card,
 .spell-card.sc-mini-card { width: 200px; height: 316px; }
+.sc-mini .sc-info-panel, .sc-mini-card .sc-info-panel { height: 145px; }
 .sc-mini .sc-stat-val,   .sc-mini-card .sc-stat-val   { font-size: 11px; }
 .sc-mini .sc-stat-label, .sc-mini-card .sc-stat-label  { font-size: 5px; }
 .sc-mini .sc-stat-divider,.sc-mini-card .sc-stat-divider { height: 14px; }
@@ -519,6 +534,7 @@
 /* TINY (dashboard preview / hand) — 160px wide */
 .sc-tiny .spell-card,
 .spell-card.sc-tiny-card { width: 160px; height: 252px; }
+.sc-tiny .sc-info-panel, .sc-tiny-card .sc-info-panel { height: 118px; }
 .sc-tiny .sc-stat-val,   .sc-tiny-card .sc-stat-val   { font-size: 8px; }
 .sc-tiny .sc-stat-label, .sc-tiny-card .sc-stat-label  { font-size: 4px; }
 .sc-tiny .sc-stat-divider,.sc-tiny-card .sc-stat-divider { height: 10px; }
@@ -533,6 +549,7 @@
 /* ═══ MOBILE ═══ */
 @media (max-width: 600px) {
   .spell-card { width: 200px; height: 316px; }
+  .sc-info-panel { height: 145px; }
   .sc-stat-val { font-size: 12px; }
   .sc-stat-label { font-size: 5px; }
   .sc-stat-divider { height: 16px; }

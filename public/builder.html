@@ -482,6 +482,119 @@ function enterNethara(){
 
 /* INIT */
 renderSlots();renderStats();renderLayers();updCount();
+  
+  /* ══════════════════════════════════════ */
+  /*  SKIP INTRO — EDIT MODE              */
+  /*  When arriving from dashboard with    */
+  /*  ?skip_intro=1, hide tutorial flow    */
+  /*  and show just the character editor   */
+  /* ══════════════════════════════════════ */
+  (function(){
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('skip_intro') !== '1') return;
+
+    // Hide tutorial progress bar and step counter
+    var progBar = document.querySelector('.prog-bar');
+    if (progBar) progBar.style.display = 'none';
+    var stepCounter = document.getElementById('stepCounter');
+    if (stepCounter) stepCounter.style.display = 'none';
+
+    // Hide "skip to dashboard" link
+    var skipLink = document.getElementById('skipLink');
+    if (skipLink) skipLink.style.display = 'none';
+
+    // Change header text
+    var headerDiv = document.querySelector('.wrap > div:first-child');
+    if (headerDiv) {
+      headerDiv.innerHTML =
+        '<div style="display:flex;align-items:center;gap:10px">'
+        + '<a href="/dashboard.html" style="text-decoration:none;font-size:20px;color:var(--muted);padding:4px 8px;cursor:pointer">←</a>'
+        + '<div>'
+        + '<div style="font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--bright)">Edit Your Nine</div>'
+        + '<div style="font-family:var(--font-data);font-size:6px;color:var(--faint)">CHANGE APPEARANCE & GEAR</div>'
+        + '</div></div>';
+    }
+
+    // Change title
+    var titleEl = document.querySelector('#step1 div[style*="text-align:center"] div[style*="font-size:22px"]');
+    if (titleEl) titleEl.textContent = 'EDIT YOUR NINE';
+
+    // Change step1 CTA button — save and go back
+    var btn = document.getElementById('step1Btn');
+    if (btn) {
+      // Enable button immediately (they already have a name)
+      btn.disabled = false;
+      btn.textContent = '💾 SAVE & BACK TO DASHBOARD';
+      btn.onclick = function() {
+        // TODO: POST equipment changes to API here
+        window.location.href = '/dashboard.html';
+      };
+    }
+
+    // Hide the "name your nine" requirement text
+    var nameHint = document.querySelector('#step1 div[style*="text-align:center"][style*="margin-top:8px"]');
+    if (nameHint) nameHint.style.display = 'none';
+
+    // Override the name input handler to not change button text
+    var nameInput = document.getElementById('nineName');
+    if (nameInput) {
+      // Try to pre-fill with existing name
+      try {
+        var pStr = localStorage.getItem('9lv_player');
+        if (pStr) {
+          var pObj = JSON.parse(pStr);
+          if (pObj.nine_name) {
+            nameInput.value = pObj.nine_name;
+            document.getElementById('nameCount').textContent = pObj.nine_name.length + '/20';
+            var charName = document.getElementById('charNameDisplay');
+            if (charName) { charName.textContent = pObj.nine_name; charName.style.display = 'block'; }
+          }
+        }
+      } catch(e) {}
+
+      nameInput.addEventListener('input', function() {
+        var v = this.value;
+        document.getElementById('nameCount').textContent = v.length + '/20';
+        var d = document.getElementById('charNameDisplay');
+        if (v.trim()) { d.textContent = v.trim(); d.style.display = 'block'; }
+        else { d.style.display = 'none'; }
+        // Keep button always enabled in edit mode
+        var b = document.getElementById('step1Btn');
+        b.disabled = false;
+        b.textContent = '💾 SAVE & BACK TO DASHBOARD';
+      });
+    }
+
+    // Load actual equipped items from API
+    var pid = null;
+    try {
+      var pStr = localStorage.getItem('9lv_player');
+      if (pStr) pid = JSON.parse(pStr).id;
+    } catch(e) {}
+    if (!pid) {
+      var sp = new URLSearchParams(window.location.search);
+      pid = sp.get('player_id');
+    }
+
+    if (pid) {
+      fetch('/api/items/equipped/' + pid)
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(d) {
+          if (!d || !d.equipped) return;
+          var equipped = d.equipped;
+          var items = d.items || [];
+          // Map equipped slugs to actual item objects in ITEMS
+          Object.keys(equipped).forEach(function(slot) {
+            var slug = equipped[slot];
+            if (!slug || !ITEMS[slot]) return;
+            var found = ITEMS[slot].find(function(it) { return it.id === slug; });
+            if (found) eq[slot] = found;
+          });
+          renderSlots(); renderStats(); renderLayers(); updCount();
+        })
+        .catch(function(e) { console.log('Edit mode: could not load equipment', e); });
+    }
+  })();
 </script>
 </body>
 </html>

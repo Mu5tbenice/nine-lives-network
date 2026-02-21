@@ -396,35 +396,54 @@ function fitCardNames(container) {
   });
 }
 
-/* ═══ FIX 3: Flip tooltips below when card is near top of screen ═══ */
+/* ═══ TOOLTIPS — render at body level to escape card overflow:hidden ═══ */
+var _scTooltip = null;
+
+function _showTooltip(pill) {
+  var tip = pill.querySelector('.tip');
+  if (!tip) return;
+
+  // Create or reuse body-level tooltip
+  if (!_scTooltip) {
+    _scTooltip = document.createElement('div');
+    _scTooltip.className = 'sc-tooltip';
+    document.body.appendChild(_scTooltip);
+  }
+
+  // Copy content and show
+  _scTooltip.innerHTML = tip.innerHTML;
+  _scTooltip.style.display = 'block';
+  _scTooltip.style.visibility = 'hidden';
+
+  // Position above the pill
+  var pr = pill.getBoundingClientRect();
+  var tr = _scTooltip.getBoundingClientRect();
+
+  var top = pr.top - tr.height - 8;
+  var left = pr.left + (pr.width / 2) - (tr.width / 2);
+
+  // Flip below if near top of screen
+  if (top < 8) top = pr.bottom + 8;
+  // Keep on screen horizontally
+  if (left < 8) left = 8;
+  if (left + tr.width > window.innerWidth - 8) left = window.innerWidth - tr.width - 8;
+
+  _scTooltip.style.top = top + 'px';
+  _scTooltip.style.left = left + 'px';
+  _scTooltip.style.visibility = 'visible';
+}
+
+function _hideTooltip() {
+  if (_scTooltip) _scTooltip.style.display = 'none';
+}
+
 function fixTooltipPositions(container) {
   var pills = (container || document).querySelectorAll('.spell-card .pill');
   pills.forEach(function(pill) {
     if (pill._tipFixed) return;
     pill._tipFixed = true;
-    pill.addEventListener('mouseenter', function() {
-      var tip = pill.querySelector('.tip');
-      if (!tip) return;
-      tip.style.display = 'block';
-      tip.style.visibility = 'hidden';
-      var pr = pill.getBoundingClientRect();
-      var tr = tip.getBoundingClientRect();
-      // Account for card transform creating a containing block
-      var card = pill.closest('.spell-card');
-      var cr = card ? card.getBoundingClientRect() : { left: 0, top: 0 };
-      var top = pr.top - tr.height - 8 - cr.top;
-      var left = pr.left + (pr.width / 2) - (tr.width / 2) - cr.left;
-      if (pr.top - tr.height - 8 < 8) top = pr.bottom + 8 - cr.top;
-      if (pr.left + (pr.width / 2) - (tr.width / 2) < 8) left = 8 - cr.left;
-      if (pr.left + (pr.width / 2) + (tr.width / 2) > window.innerWidth - 8) left = window.innerWidth - tr.width - 8 - cr.left;
-      tip.style.top = top + 'px';
-      tip.style.left = left + 'px';
-      tip.style.visibility = 'visible';
-    });
-    pill.addEventListener('mouseleave', function() {
-      var tip = pill.querySelector('.tip');
-      if (tip) tip.style.display = 'none';
-    });
+    pill.addEventListener('mouseenter', function() { _showTooltip(pill); });
+    pill.addEventListener('mouseleave', _hideTooltip);
   });
 }
 

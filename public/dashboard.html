@@ -31,7 +31,7 @@
     a { color: var(--gold); text-decoration: none; }
 
     /* ═══ LAYOUT ═══ */
-    .main-container { max-width: 500px; margin: 0 auto; padding: 0 14px 40px; }
+    .main-container { max-width: 500px; margin: 0 auto; padding: 80px 14px 40px !important; }
 
     /* ═══ ANIMATIONS ═══ */
     @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -125,7 +125,7 @@
 <script src="/js/card-v4.js"></script>
 <script>
 /* ═══ DATA ═══ */
-var HOUSES={1:{name:'Smoulders',color:'#E03C31',slug:'smoulders',icon:'🔥',img:'/assets/images/houses/Housesmoulders.png'},2:{name:'Darktide',color:'#00B4D8',slug:'darktide',icon:'🌊',img:'/assets/images/houses/Housedarktide.png'},3:{name:'Stonebark',color:'#5CB338',slug:'stonebark',icon:'🌿',img:'/assets/images/houses/Housestonebark.png'},4:{name:'Ashenvale',color:'#B0C4DE',slug:'ashenvale',icon:'💨',img:'/assets/images/houses/HouseAshenvale.png'},5:{name:'Stormrage',color:'#FFC800',slug:'stormrage',icon:'⚡',img:'/assets/images/houses/Housestormrage.png'},6:{name:'Nighthollow',color:'#7B2D8E',slug:'nighthollow',icon:'🌙',img:'/assets/images/houses/Housenighthollow.png'},7:{name:'Dawnbringer',color:'#FF8C00',slug:'dawnbringer',icon:'☀️',img:'/assets/images/houses/HouseDwnbringer.png'},8:{name:'Manastorm',color:'#5B8FE0',slug:'manastorm',icon:'🔮',img:'/assets/images/houses/Housemanastorm.png'},9:{name:'Plaguemire',color:'#E84393',slug:'plaguemire',icon:'☠️',img:'/assets/images/houses/Houseplaguemire.png'}};
+var HOUSES={1:{name:'Smoulders',color:'#E03C31',slug:'smoulders',icon:'🔥',img:'/assets/images/houses/Housesmoulders.png',atk:6,hp:12,spd:5},2:{name:'Darktide',color:'#00B4D8',slug:'darktide',icon:'🌊',img:'/assets/images/houses/Housedarktide.png',atk:4,hp:16,spd:4},3:{name:'Stonebark',color:'#5CB338',slug:'stonebark',icon:'🌿',img:'/assets/images/houses/Housestonebark.png',atk:2,hp:24,spd:2},4:{name:'Ashenvale',color:'#B0C4DE',slug:'ashenvale',icon:'💨',img:'/assets/images/houses/HouseAshenvale.png',atk:3,hp:14,spd:8},5:{name:'Stormrage',color:'#FFC800',slug:'stormrage',icon:'⚡',img:'/assets/images/houses/Housestormrage.png',atk:7,hp:10,spd:6},6:{name:'Nighthollow',color:'#7B2D8E',slug:'nighthollow',icon:'🌙',img:'/assets/images/houses/Housenighthollow.png',atk:4,hp:13,spd:7},7:{name:'Dawnbringer',color:'#FF8C00',slug:'dawnbringer',icon:'☀️',img:'/assets/images/houses/HouseDwnbringer.png',atk:3,hp:18,spd:3},8:{name:'Manastorm',color:'#5B8FE0',slug:'manastorm',icon:'🔮',img:'/assets/images/houses/Housemanastorm.png',atk:5,hp:14,spd:5},9:{name:'Plaguemire',color:'#E84393',slug:'plaguemire',icon:'☠️',img:'/assets/images/houses/Houseplaguemire.png',atk:3,hp:15,spd:4}};
 
 var STAT_COLORS={atk:'#e85a6a',hp:'#6acd8a',spd:'#6ac8d8',def:'#b088e8',luck:'#D4A64B'};
 
@@ -250,9 +250,9 @@ async function render(player,casts,zones,schools,nineData,quests){
 
   // Nine stats
   var nine=nineData||{};
-  var nAtk=nine.base_atk||'?';
-  var nHp=nine.base_hp||'?';
-  var nSpd=nine.base_spd||'?';
+  var nAtk=nine.base_atk||house.atk||'?';
+  var nHp=nine.base_hp||house.hp||'?';
+  var nSpd=nine.base_spd||house.spd||'?';
   var nDef=nine.base_def||0;
   var nLuck=nine.base_luck||0;
 
@@ -441,7 +441,7 @@ async function render(player,casts,zones,schools,nineData,quests){
     +'<div style="display:flex;align-items:center;gap:12px;">'
 
     // Nine character — click to edit
-    +'<a href="/builder.html" style="display:block;width:56px;height:56px;border-radius:10px;border:2px solid '+house.color+';background:radial-gradient(circle,rgba(30,22,42,0.9),rgba(18,14,30,1));box-shadow:0 0 20px '+house.color+'25;overflow:hidden;position:relative;flex-shrink:0;cursor:pointer;text-decoration:none;">'
+    +'<a href="/builder.html?skip_intro=1" style="display:block;width:56px;height:56px;border-radius:10px;border:2px solid '+house.color+';background:radial-gradient(circle,rgba(30,22,42,0.9),rgba(18,14,30,1));box-shadow:0 0 20px '+house.color+'25;overflow:hidden;position:relative;flex-shrink:0;cursor:pointer;text-decoration:none;">'
     +'<canvas id="dashNineCanvas" width="200" height="200" style="width:100%;height:100%;"></canvas>'
     +'<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);padding:2px 0;text-align:center;font-family:var(--font-data);font-size:4px;color:var(--gold);letter-spacing:0.5px;">EDIT</div>'
     +'</a>'
@@ -580,6 +580,17 @@ async function loadNinePreview(){
         img.onerror=function(){loaded++;if(loaded===layers.length){ctx.clearRect(0,0,200,200);imgs.forEach(function(im){if(im)ctx.drawImage(im,0,0,200,200);});}};
         img.src=src;
       });
+    } else {
+      // No equipment — show house crest as fallback
+      var houseId=null;
+      try{var pStr=localStorage.getItem("9lv_player");if(pStr){var pObj=JSON.parse(pStr);houseId=pObj.school_id;}}catch(e){}
+      if(!houseId){try{var r2=await fetch("/api/players/"+pid);if(r2.ok){var p2=await r2.json();houseId=p2.school_id;}}catch(e){}}
+      var h=HOUSES[houseId]||HOUSES[1];
+      if(h&&h.img){
+        var crestImg=new Image();
+        crestImg.onload=function(){ctx.clearRect(0,0,200,200);var s=Math.min(200/crestImg.width,200/crestImg.height)*0.7;var w=crestImg.width*s;var ht=crestImg.height*s;ctx.globalAlpha=0.6;ctx.drawImage(crestImg,(200-w)/2,(200-ht)/2,w,ht);ctx.globalAlpha=1;};
+        crestImg.src=h.img;
+      }
     }
   }catch(e){console.error("Nine preview error:",e);}
 }
