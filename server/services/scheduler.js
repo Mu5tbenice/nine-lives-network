@@ -157,48 +157,53 @@ function initializeScheduledJobs() {
     }
   });
 
-  // ════════════════════════════════
-  // NARRATIVE RAIDS — Daily story arc
-  // ════════════════════════════════
+  // ════════════════════════════════════════════════
+  // 📜 THE CHRONICLE — 4-Act Daily Story
+  // ════════════════════════════════════════════════
 
+  // Act 1: The Call — 08:05 UTC
   cron.schedule('5 8 * * *', async () => {
-    console.log(`[${ts()}] 📖 Narrative: Opening`);
-    logJob('narrative_opening');
+    console.log(`[${ts()}] 📜 Chronicle Act 1: The Call`);
+    logJob('chronicle_act1');
     try {
       await territoryControl.setRandomObjective();
-      await narrativeEngine.postOpening();
-    } catch (e) { console.error('❌ Narrative opening:', e.message); }
+      await narrativeEngine.postAct1();
+    } catch (e) { console.error('❌ Chronicle Act 1:', e.message); }
   });
 
-  cron.schedule('5 14 * * *', async () => {
-    console.log(`[${ts()}] 📊 Narrative: Midday`);
-    logJob('narrative_midday');
+  // Act 2: The March — 12:05 UTC
+  cron.schedule('5 12 * * *', async () => {
+    console.log(`[${ts()}] 📜 Chronicle Act 2: The March`);
+    logJob('chronicle_act2');
     try {
-      await narrativeEngine.postMidDay();
-    } catch (e) { console.error('❌ Narrative midday:', e.message); }
+      await narrativeEngine.postAct2();
+    } catch (e) { console.error('❌ Chronicle Act 2:', e.message); }
   });
 
-  cron.schedule('0 18 * * *', async () => {
-    console.log(`[${ts()}] ⏰ Narrative: Last call`);
-    logJob('narrative_lastcall');
+  // Act 3: The Storm — 16:05 UTC
+  cron.schedule('5 16 * * *', async () => {
+    console.log(`[${ts()}] 📜 Chronicle Act 3: The Storm`);
+    logJob('chronicle_act3');
     try {
-      await narrativeEngine.postLastCall();
-    } catch (e) { console.error('❌ Narrative last call:', e.message); }
+      await narrativeEngine.postAct3();
+    } catch (e) { console.error('❌ Chronicle Act 3:', e.message); }
   });
 
-  cron.schedule('5 22 * * *', async () => {
-    console.log(`[${ts()}] 🏆 Narrative: Resolution`);
-    logJob('narrative_resolution');
+  // Act 4: The Reckoning — 20:05 UTC
+  cron.schedule('5 20 * * *', async () => {
+    console.log(`[${ts()}] 📜 Chronicle Act 4: The Reckoning`);
+    logJob('chronicle_act4');
     try {
-      await narrativeEngine.postResolution();
-    } catch (e) { console.error('❌ Narrative resolution:', e.message); }
+      await narrativeEngine.postAct4();
+    } catch (e) { console.error('❌ Chronicle Act 4:', e.message); }
   });
 
+  // Reply scraping — every 10 min during story hours (8AM-9PM UTC)
   cron.schedule('*/10 8-21 * * *', async () => {
     try {
       await narrativeEngine.periodicScrape();
-      logJob('narrative_scrape');
-    } catch (e) { console.error('❌ Narrative scrape:', e.message); }
+      logJob('chronicle_scrape');
+    } catch (e) { console.error('❌ Chronicle scrape:', e.message); }
   });
 
   // ════════════════════════════════
@@ -213,7 +218,6 @@ function initializeScheduledJobs() {
 
       const casts = await twitterBot.processSpellCasts();
       if (!casts || casts.length === 0) return;
-      console.log("[" + ts() + "] Processed " + casts.length + " casts");
       console.log(`[${ts()}] ⚡ Processed ${casts.length} casts`);
       logJob('cast_processing');
 
@@ -280,34 +284,20 @@ function initializeScheduledJobs() {
   console.log('');
   console.log('✅ Scheduler initialized:');
   console.log('');
-  console.log('🏦 Midnight Banking:');
-  console.log('   00:00 — Full midnight banking (snapshot, flags, flip, decay) + heal all Nines');
-  console.log('   00:05 — Card upgrades');
-  console.log('   01:30 — Activity decay');
+  console.log('🏦 Midnight:  00:00 banking + heal | 00:05 upgrades | 01:30 decay');
+  console.log('💧 Mana:      */5 regen');
+  console.log('⚔️  Combat:    */15 zone cycles + boss cycles');
+  console.log('👑 Boss:      Mon 00:30 spawn');
   console.log('');
-  console.log('💧 V3 Mana:');
-  console.log('   */5   — Mana regen check (1/hour for all players)');
+  console.log('📜 Chronicle:');
+  console.log('   08:05 — Act 1: The Call (pre-written hook)');
+  console.log('   12:05 — Act 2: The March (AI + player names)');
+  console.log('   16:05 — Act 3: The Storm (AI + escalation)');
+  console.log('   20:05 — Act 4: The Reckoning (AI + wildcard ending)');
+  console.log('   */10  — Reply scraping + quality scoring (8AM-9PM)');
   console.log('');
-  console.log('⚔️  V3 Combat:');
-  console.log('   */15  — Combat cycle (all active zones)');
-  console.log('');
-  console.log('👑 V3 Boss:');
-  console.log('   Mon   — Boss spawn (00:30 UTC)');
-  console.log('   */15  — Boss combat cycle');
-  console.log('');
-  console.log('📖 Narrative Raids:');
-  console.log('   08:05 — Opening + set objective');
-  console.log('   14:05 — Midday standings');
-  console.log('   18:00 — Last call');
-  console.log('   22:05 — Resolution');
-  console.log('   */10  — Scrape replies (8AM-10PM)');
-  console.log('');
-  console.log('🗺️  Territory:');
-  console.log('   */2   — Process casts (8AM-10PM)');
-  console.log('   */5   — Update zone control');
-  console.log('   */5   — Influence snapshots (for charts)');
-  console.log('');
-  console.log('🐱 Nerm: Reply guy (reacts to noticed casts)');
+  console.log('🗺️  Territory: */2 casts | */5 control | */5 snapshots');
+  console.log('🐱 Nerm:      Reply guy (reacts to noticed casts)');
   console.log('');
 }
 

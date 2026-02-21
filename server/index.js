@@ -165,6 +165,15 @@ try {
   console.error("❌ Failed to load packs routes:", e.message);
 }
 
+// Chronicle
+try {
+  const chronicleRoutes = require("./routes/chronicle");
+  app.use("/api/chronicle", chronicleRoutes);
+  console.log("✅ Chronicle routes loaded");
+} catch (e) {
+  console.error("❌ Failed to load chronicle routes:", e.message);
+}
+
 // Sorting Hat
 try {
   const sortingHatRoutes = require("./routes/sortingHat");

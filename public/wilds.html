@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Wilds | Nine Lives Network</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=Grenze+Gotisch:wght@400;700&family=Cormorant+SC:wght@400;600;700&family=Almendra&family=Fondamento&family=Pirata+One&family=IM+Fell+English+SC&family=MedievalSharp&family=Griffy&display=swap" rel="stylesheet">
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0812; overflow-x: hidden; }
+    #root { min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
+
+// ═══ ZONE BACKDROPS ═══
+const ZONES = [
+  {img:"abysal-edge.png",name:"The Abyssal Edge"},{img:"ancient-ruins.png",name:"Ancient Ruins"},
+  {img:"ancient-waygate.png",name:"The Ancient Waygate"},{img:"chaos-rift.png",name:"The Chaos Rift"},
+  {img:"crystal-creek.png",name:"Crystal Creek"},{img:"dragons-rest.jpg",name:"Dragon's Rest"},
+  {img:"grassy-gnoll.png",name:"The Grassy Knoll"},{img:"Hanwu-Boglands.png",name:"Hanwu Boglands"},
+  {img:"misty-falls.png",name:"Misty Falls"},{img:"mystic-falls.png",name:"The Mystic Falls"},
+  {img:"red-canyon.png",name:"Red Canyon"},{img:"scorched-plains.jpg",name:"The Scorched Plains"},
+  {img:"skycastle.png",name:"Skycastle"},{img:"tidal-depths.png",name:"Tidal Depths"},
+  {img:"time-lost-oasis.png",name:"Time-Lost Oasis"},{img:"twilight-grove.png",name:"Twilight Grove"},
+  {img:"twin-crystals.png",name:"Twin Crystals"},{img:"umbral-wall.png",name:"The Umbral Wall"},
+  {img:"void-tear.png",name:"The Void Tear"},
+];
+const ZP="/assets/images/zones/";
+
+// ═══ HOUSES ═══
+const HS={
+  smoulders:{name:"Smoulders",color:"#E03C31",icon:"🔥",atk:6,hp:12,spd:5,def:0,luck:0,font:"'Grenze Gotisch',cursive"},
+  darktide:{name:"Darktide",color:"#00B4D8",icon:"🌊",atk:4,hp:16,spd:4,def:0,luck:0,font:"'Cormorant SC',serif"},
+  stonebark:{name:"Stonebark",color:"#5CB338",icon:"🌿",atk:2,hp:24,spd:2,def:0,luck:0,font:"'Almendra',serif"},
+  ashenvale:{name:"Ashenvale",color:"#90E0EF",icon:"💨",atk:3,hp:14,spd:8,def:0,luck:0,font:"'Fondamento',cursive"},
+  stormrage:{name:"Stormrage",color:"#FFC800",icon:"⚡",atk:7,hp:10,spd:6,def:0,luck:0,font:"'Pirata One',cursive"},
+  nighthollow:{name:"Nighthollow",color:"#7B2D8E",icon:"🌙",atk:4,hp:13,spd:7,def:0,luck:0,font:"'IM Fell English SC',serif"},
+  dawnbringer:{name:"Dawnbringer",color:"#FF8C00",icon:"☀️",atk:3,hp:18,spd:3,def:0,luck:0,font:"'Cinzel Decorative',cursive"},
+  manastorm:{name:"Manastorm",color:"#5B8FE0",icon:"🔮",atk:5,hp:14,spd:5,def:0,luck:0,font:"'MedievalSharp',cursive"},
+  plaguemire:{name:"Plaguemire",color:"#E84393",icon:"☠️",atk:3,hp:15,spd:4,def:0,luck:0,font:"'Griffy',cursive"},
+};
+const HK=Object.keys(HS);
+
+// ═══ ENCOUNTER MODIFIERS ═══
+const MODIFIERS = [
+  {id:"none",name:"No Modifier",desc:"Standard combat rules.",icon:"—",apply:s=>s,color:"#6B5E50"},
+  {id:"burn_zone",name:"Scorched Earth",desc:"All BURN effects deal double damage.",icon:"🔥",apply:s=>s,color:"#ffaa55",burnMult:2},
+  {id:"heal_dampened",name:"Cursed Ground",desc:"HEAL effects reduced by 50%.",icon:"💀",apply:s=>s,color:"#e85a6a",healMult:0.5},
+  {id:"glass_cannon",name:"Berserker Rage",desc:"All ATK +40%. All HP -30%.",icon:"⚔️",apply:s=>({...s,atk:Math.floor(s.atk*1.4),hp:Math.floor(s.hp*0.7)}),color:"#ff5555"},
+  {id:"fortress",name:"Fortified Zone",desc:"All DEF doubled. ATK -20%.",icon:"🛡️",apply:s=>({...s,def:s.def*2,atk:Math.floor(s.atk*0.8)}),color:"#5599ff"},
+  {id:"lucky",name:"Fortune's Favor",desc:"CRIT and DODGE chances doubled.",icon:"🍀",apply:s=>s,color:"#D4A64B",luckMult:2},
+  {id:"speed_chaos",name:"Temporal Flux",desc:"Initiative is random (SPD ignored).",icon:"⏳",apply:s=>s,color:"#6ac8d8",randomInit:true},
+  {id:"thorns",name:"Bramble Field",desc:"Attackers take 2 damage back.",icon:"🌿",apply:s=>s,color:"#5CB338",thorns:2},
+  {id:"fog",name:"Fog of War",desc:"Enemy stats hidden until combat starts.",icon:"🌫️",apply:s=>s,color:"#847C98",hideStats:true},
+  {id:"attrition",name:"War of Attrition",desc:"Max 8 combat rounds instead of 6.",icon:"⏰",apply:s=>s,color:"#ccaa66",maxRounds:8},
+  {id:"fragile",name:"Shattered Realm",desc:"All HP -40%. Combat is fast and brutal.",icon:"💥",apply:s=>({...s,hp:Math.floor(s.hp*0.6)}),color:"#e85a6a"},
+  {id:"empowered",name:"Ley Line Surge",desc:"All card stat bonuses +50%.",icon:"✨",apply:s=>s,color:"#bb88ff",cardBonus:1.5},
+];
+
+// ═══ TYPE + RARITY COLORS ═══
+const TC={attack:"#e85a6a",defend:"#5599ff",support:"#6acd8a",manipulation:"#b088e8",utility:"#6ac8d8"};
+const RC_C={common:"#888",uncommon:"#6acd8a",rare:"#5599ff",epic:"#b088e8",legendary:"#D4A64B"};
+
+// ═══ FULL CARD POOL (player's collection — 24 cards) ═══
+const FULL_COLLECTION = [
+  {id:1,name:"Mana Bolt",house:"universal",type:"attack",rarity:"common",atk:3,hp:2,spd:0,def:0,luck:0,effects:[]},
+  {id:2,name:"Hold the Line",house:"universal",type:"defend",rarity:"common",atk:3,hp:2,spd:0,def:0,luck:0,effects:[]},
+  {id:3,name:"Arcane Bolt",house:"universal",type:"attack",rarity:"uncommon",atk:5,hp:1,spd:0,def:0,luck:0,effects:[{tag:"BURN +2",color:"#ffaa55"}]},
+  {id:4,name:"Arcane Shield",house:"universal",type:"defend",rarity:"uncommon",atk:1,hp:5,spd:0,def:0,luck:0,effects:[{tag:"WARD",color:"#D4A64B"}]},
+  {id:5,name:"Ley Surge",house:"universal",type:"utility",rarity:"common",atk:2,hp:3,spd:1,def:0,luck:0,effects:[{tag:"SWIFT",color:"#6ac8d8"}]},
+  {id:6,name:"Hex Bolt",house:"universal",type:"attack",rarity:"common",atk:4,hp:2,spd:0,def:0,luck:0,effects:[{tag:"WEAKEN",color:"#bb88ff"}]},
+  {id:7,name:"Shadow Bolt",house:"nighthollow",type:"attack",rarity:"rare",atk:4,hp:2,spd:0,def:0,luck:0,effects:[{tag:"WEAKEN",color:"#bb88ff"}]},
+  {id:8,name:"Veil of Dusk",house:"nighthollow",type:"defend",rarity:"uncommon",atk:1,hp:5,spd:0,def:0,luck:0,effects:[{tag:"WARD",color:"#D4A64B"}]},
+  {id:9,name:"Sealed Decree",house:"nighthollow",type:"utility",rarity:"uncommon",atk:3,hp:3,spd:0,def:0,luck:1,effects:[{tag:"HEX",color:"#bb88ff"}]},
+  {id:10,name:"Oblivion",house:"nighthollow",type:"manipulation",rarity:"epic",atk:5,hp:4,spd:0,def:0,luck:2,effects:[{tag:"SILENCE",color:"#bb88ff"},{tag:"WEAKEN",color:"#bb88ff"},{tag:"HEX",color:"#bb88ff"}]},
+  {id:11,name:"Ember Strike",house:"smoulders",type:"attack",rarity:"rare",atk:5,hp:1,spd:0,def:0,luck:0,effects:[{tag:"BURN +3",color:"#ffaa55"}]},
+  {id:12,name:"Cyclone Strike",house:"ashenvale",type:"attack",rarity:"uncommon",atk:6,hp:1,spd:2,def:0,luck:0,effects:[{tag:"HASTE",color:"#6ac8d8"}]},
+  {id:13,name:"Regrowth",house:"stonebark",type:"support",rarity:"common",atk:1,hp:5,spd:0,def:0,luck:0,effects:[{tag:"HEAL +4",color:"#6acd8a"}]},
+  {id:14,name:"Cinder Guard",house:"smoulders",type:"defend",rarity:"common",atk:2,hp:4,spd:0,def:0,luck:0,effects:[{tag:"THORNS",color:"#ffaa55"}]},
+  {id:15,name:"Spark",house:"stormrage",type:"attack",rarity:"uncommon",atk:5,hp:1,spd:0,def:0,luck:0,effects:[{tag:"CRIT",color:"#D4A64B"}]},
+  {id:16,name:"Voltaic Ward",house:"stormrage",type:"defend",rarity:"common",atk:2,hp:4,spd:0,def:0,luck:0,effects:[{tag:"THORNS",color:"#ffaa55"}]},
+  {id:17,name:"Riptide",house:"darktide",type:"attack",rarity:"uncommon",atk:4,hp:2,spd:0,def:0,luck:0,effects:[{tag:"DRAIN 3%",color:"#00B4D8"}]},
+  {id:18,name:"Toxic Dart",house:"plaguemire",type:"attack",rarity:"common",atk:4,hp:2,spd:0,def:0,luck:0,effects:[{tag:"POISON",color:"#aaee55"}]},
+  {id:19,name:"Solace",house:"dawnbringer",type:"defend",rarity:"common",atk:1,hp:5,spd:0,def:0,luck:0,effects:[{tag:"HEAL +3",color:"#6acd8a"}]},
+  {id:20,name:"Blessing of Light",house:"dawnbringer",type:"support",rarity:"uncommon",atk:2,hp:4,spd:0,def:0,luck:1,effects:[{tag:"BLESS",color:"#6acd8a"}]},
+  {id:21,name:"Mana Barrier",house:"manastorm",type:"defend",rarity:"common",atk:1,hp:5,spd:0,def:0,luck:0,effects:[{tag:"WARD",color:"#D4A64B"}]},
+  {id:22,name:"Root Strike",house:"stonebark",type:"attack",rarity:"common",atk:4,hp:2,spd:0,def:0,luck:0,effects:[{tag:"BURN +2",color:"#ffaa55"}]},
+  {id:23,name:"Verdant Mend",house:"stonebark",type:"defend",rarity:"uncommon",atk:1,hp:5,spd:0,def:1,luck:0,effects:[{tag:"HEAL +3",color:"#6acd8a"}]},
+  {id:24,name:"Chaos Rift",house:"universal",type:"attack",rarity:"epic",atk:8,hp:2,spd:1,def:0,luck:0,effects:[{tag:"CRIT",color:"#D4A64B"},{tag:"BURN +5",color:"#ffaa55"}]},
+];
+
+// ═══ REWARD CARD POOL (cards you can earn during a run) ═══
+const REWARD_POOL = [
+  {id:101,name:"Phoenix Veil",house:"smoulders",type:"support",rarity:"rare",atk:3,hp:7,spd:0,def:0,luck:2,effects:[{tag:"HEAL +8",color:"#6acd8a"},{tag:"AMPLIFY",color:"#6acd8a"}]},
+  {id:102,name:"Overload",house:"stormrage",type:"attack",rarity:"epic",atk:9,hp:1,spd:0,def:0,luck:2,effects:[{tag:"CRIT",color:"#D4A64B"},{tag:"CHAIN",color:"#e85a6a"}]},
+  {id:103,name:"Bastion",house:"stonebark",type:"defend",rarity:"rare",atk:1,hp:9,spd:0,def:3,luck:0,effects:[{tag:"ANCHOR",color:"#ccaa66"},{tag:"WARD",color:"#D4A64B"}]},
+  {id:104,name:"Tempest",house:"ashenvale",type:"attack",rarity:"epic",atk:7,hp:2,spd:3,def:0,luck:0,effects:[{tag:"CHAIN",color:"#e85a6a"},{tag:"HASTE",color:"#6ac8d8"}]},
+  {id:105,name:"Sovereign Tide",house:"darktide",type:"manipulation",rarity:"rare",atk:6,hp:3,spd:0,def:0,luck:2,effects:[{tag:"DRAIN 12%",color:"#00B4D8"},{tag:"SIPHON",color:"#00B4D8"}]},
+  {id:106,name:"Pandemic",house:"plaguemire",type:"attack",rarity:"rare",atk:7,hp:3,spd:0,def:0,luck:1,effects:[{tag:"POISON",color:"#aaee55"},{tag:"CORRODE",color:"#aaee55"}]},
+  {id:107,name:"Ascension",house:"dawnbringer",type:"support",rarity:"rare",atk:3,hp:7,spd:0,def:0,luck:2,effects:[{tag:"BLESS",color:"#6acd8a"},{tag:"HEAL +6",color:"#6acd8a"}]},
+  {id:108,name:"Counterspell",house:"manastorm",type:"manipulation",rarity:"uncommon",atk:4,hp:4,spd:0,def:0,luck:0,effects:[{tag:"SILENCE",color:"#bb88ff"},{tag:"WEAKEN",color:"#bb88ff"}]},
+  {id:109,name:"Adamant Grip",house:"universal",type:"defend",rarity:"uncommon",atk:1,hp:7,spd:0,def:1,luck:0,effects:[{tag:"ANCHOR",color:"#ccaa66"}]},
+  {id:110,name:"War Banner",house:"universal",type:"support",rarity:"uncommon",atk:2,hp:5,spd:0,def:0,luck:1,effects:[{tag:"BLESS",color:"#6acd8a"}]},
+  {id:111,name:"Divine Wrath",house:"dawnbringer",type:"attack",rarity:"epic",atk:7,hp:3,spd:0,def:0,luck:1,effects:[{tag:"BURN +5",color:"#ffaa55"},{tag:"AMPLIFY",color:"#6acd8a"}]},
+  {id:112,name:"Eruption",house:"smoulders",type:"attack",rarity:"rare",atk:8,hp:1,spd:2,def:0,luck:0,effects:[{tag:"CHAIN",color:"#e85a6a"},{tag:"BURN +5",color:"#ffaa55"}]},
+];
+
+// ═══ ENEMY CARD POOLS ═══
+const E_CARDS=[
+  {name:"Mana Bolt",type:"attack",atk:3,hp:2,spd:0,def:0,luck:0,effects:[]},
+  {name:"Hold the Line",type:"defend",atk:3,hp:2,spd:0,def:0,luck:0,effects:[]},
+  {name:"Arcane Bolt",type:"attack",atk:5,hp:1,spd:0,def:0,luck:0,effects:[{tag:"BURN +2",color:"#ffaa55"}]},
+  {name:"Hex Bolt",type:"attack",atk:4,hp:2,spd:0,def:0,luck:0,effects:[{tag:"WEAKEN",color:"#bb88ff"}]},
+  {name:"Arcane Shield",type:"defend",atk:1,hp:5,spd:0,def:0,luck:0,effects:[{tag:"WARD",color:"#D4A64B"}]},
+  {name:"War Banner",type:"support",atk:2,hp:5,spd:0,def:0,luck:1,effects:[{tag:"BLESS",color:"#6acd8a"}]},
+  {name:"Void Rend",type:"attack",atk:6,hp:2,spd:0,def:0,luck:0,effects:[{tag:"DRAIN 5%",color:"#bb88ff"}]},
+  {name:"Chaos Rift",type:"attack",atk:8,hp:2,spd:1,def:0,luck:0,effects:[{tag:"CRIT",color:"#D4A64B"},{tag:"BURN +5",color:"#ffaa55"}]},
+  {name:"Regrowth",type:"support",atk:1,hp:5,spd:0,def:0,luck:0,effects:[{tag:"HEAL +4",color:"#6acd8a"}]},
+  {name:"Spark",type:"attack",atk:5,hp:1,spd:0,def:0,luck:0,effects:[{tag:"CRIT",color:"#D4A64B"}]},
+];
+
+// ═══ GENERATORS ═══
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const pickN=(a,n)=>{const s=[...a];const r=[];for(let i=0;i<n&&s.length;i++){const x=Math.floor(Math.random()*s.length);r.push(s.splice(x,1)[0])}return r};
+const N1=["Grim","Shadow","Ember","Void","Storm","Iron","Ash","Thorn","Dusk","Fang","Rune","Hex","Blight","Frost","Night","Bone","Soot","Cinder","Mire","Wrath","Gloom","Smoke","Briar","Sable","Onyx"];
+const N2=["fang","claw","paw","whisker","tail","mane","tooth","shade","strike","prowl","stalk","bite","snarl","howl","scratch","hiss","spine","bolt","spark","root","bark","horn","veil"];
+const TIT=["the Relentless","the Cunning","the Hollow","the Wretched","the Unyielding","the Cursed","the Silent","the Burning","the Cruel","the Forgotten","the Unbroken","the Dread","the Defiant"];
+const FLAV=["A shadow moves between the trees...","You hear a twig crack.","The air thickens. Someone watches.","A figure steps from the mist.","Eyes glow in the dark.","The ground trembles.","'You don't belong here, Nine.'","Laughter echoes, then silence.","The path narrows. No way around.","A lone Nine blocks the road.","You stumble into a clearing. A trap.","Lightning splits the sky. You see them.","This territory is claimed."];
+
+const ESLOTS=["fur","outfit","weapon","headwear","expression"];
+const EQ={
+  fur:[{id:"grey",s:{hp:1},r:"common"},{id:"smoke",s:{def:1},r:"common"},{id:"ember",s:{atk:1,hp:1},r:"uncommon"},{id:"void",s:{atk:1,luck:1},r:"rare"}],
+  outfit:[{id:"tunic",s:{hp:2},r:"common"},{id:"mantle",s:{atk:1,def:1,hp:1},r:"uncommon"},{id:"tattered",s:{atk:2,spd:1,luck:1},r:"rare"}],
+  weapon:[{id:"sword",s:{atk:2},r:"common"},{id:"crystal",s:{atk:2,spd:1},r:"uncommon"},{id:"daggers",s:{atk:3,spd:1},r:"rare"}],
+  expression:[{id:"grumpy",s:{atk:1},r:"common"},{id:"glow",s:{atk:1,spd:1},r:"uncommon"}],
+  headwear:[{id:"hat",s:{def:1},r:"common"},{id:"hood",s:{spd:1,def:1},r:"uncommon"},{id:"void_hood",s:{luck:1,def:1,spd:1},r:"rare"}],
+};
+const RO=["common","uncommon","rare"];
+const getRW=f=>{f=Math.max(1,Math.min(f,15));if(f<=3)return{common:70,uncommon:25,rare:5};if(f<=6)return{common:40,uncommon:40,rare:20};if(f<=9)return{common:15,uncommon:45,rare:40};return{common:5,uncommon:25,rare:70}};
+const wPick=(items,w)=>{const p=[];RO.forEach(r=>{const wt=w[r]||0;items.filter(i=>i.r===r).forEach(it=>{for(let i=0;i<wt;i++)p.push(it)})});return p.length?pick(p):pick(items)};
+const floorB=f=>{const b=Math.max(1,f)-1;return{atk:Math.floor(b*.55),hp:Math.floor(b*1.1),spd:Math.floor(b*.25),def:Math.floor(b*.25),luck:Math.floor(b*.15)}};
+
+function genEnemy(enc){
+  const hk=pick(HK),h=HS[hk];let name=pick(N1)+pick(N2);
+  if(enc>=6||Math.random()<.3)name+=" "+pick(TIT);
+  const w=getRW(enc),eq={};
+  ESLOTS.forEach(s=>{const c=EQ[s];if(!c?.length){eq[s]=null;return}eq[s]=wPick(c,w)});
+  const st={atk:h.atk,hp:h.hp,spd:h.spd,def:h.def||0,luck:h.luck||0};
+  ESLOTS.forEach(s=>{const it=eq[s];if(it?.s)Object.keys(it.s).forEach(k=>{st[k]=(st[k]||0)+it.s[k]})});
+  const b=floorB(enc);Object.keys(b).forEach(k=>{st[k]=(st[k]||0)+b[k]});
+  const numCards=enc<=2?1:enc<=5?2:3;
+  const cards=pickN(E_CARDS,numCards);
+  cards.forEach(c=>{st.atk+=c.atk;st.hp+=c.hp;st.spd+=c.spd;st.def+=c.def;st.luck+=c.luck});
+  return{name,house:hk,houseData:h,equipped:eq,stats:{...st},cards};
+}
+
+function getModifier(enc){
+  if(enc<=1)return MODIFIERS[0];
+  if(enc<=3&&Math.random()<.4)return MODIFIERS[0];
+  const pool=MODIFIERS.filter(m=>m.id!=="none");
+  return pick(pool);
+}
+
+// ═══ PLAYER BASE ═══
+const PB={name:"Shadowfang",house:"nighthollow",houseData:HS.nighthollow,
+  baseStats:{atk:4,hp:13,spd:7,def:0,luck:0},gearStats:{atk:6,hp:0,spd:2,def:2,luck:3}};
+const PLAYER_BASE_HP=PB.baseStats.hp+PB.gearStats.hp;
+function calcPS(cards,mod){
+  const s={atk:PB.baseStats.atk+PB.gearStats.atk,hp:PB.baseStats.hp+PB.gearStats.hp,spd:PB.baseStats.spd+PB.gearStats.spd,def:PB.baseStats.def+PB.gearStats.def,luck:PB.baseStats.luck+PB.gearStats.luck};
+  const mult=mod?.cardBonus||1;
+  cards.forEach(c=>{s.atk+=Math.floor(c.atk*mult);s.hp+=Math.floor(c.hp*mult);s.spd+=Math.floor(c.spd*mult);s.def+=Math.floor(c.def*mult);s.luck+=Math.floor(c.luck*mult)});
+  return mod?.apply?mod.apply(s):s;
+}
+
+const STATS=[{key:"atk",label:"ATK",color:"#e85a6a"},{key:"hp",label:"HP",color:"#6acd8a"},{key:"spd",label:"SPD",color:"#6ac8d8"},{key:"def",label:"DEF",color:"#b088e8"},{key:"luck",label:"LUCK",color:"#D4A64B"}];
+
+// ═══ COMBAT ═══
+function simulate(pS,eS,pCards,eCards,mod){
+  let php=pS.hp,ehp=eS.hp;const rounds=[];
+  const pEff=pCards.flatMap(c=>c.effects.map(e=>e.tag));
+  const eEff=eCards.flatMap(c=>c.effects.map(e=>e.tag));
+  const bMult=mod?.burnMult||1;const hMult=mod?.healMult||1;const lMult=mod?.luckMult||1;const thorns=mod?.thorns||0;
+  const maxR=mod?.maxRounds||6;
+
+  const burnV=t=>{const b=t.find(e=>e.startsWith("BURN"));if(!b)return 0;return(parseInt(b.replace(/\D/g,""))||2)*bMult};
+  const healV=t=>{const h=t.find(e=>e.startsWith("HEAL"));if(!h)return 0;return Math.floor((parseInt(h.replace(/\D/g,""))||3)*hMult)};
+
+  for(let r=0;r<maxR;r++){
+    if(php<=0||ehp<=0)break;
+    const pFirst=mod?.randomInit?Math.random()<.5:Math.random()<(pS.spd/Math.max(pS.spd+eS.spd,1));
+    const round={num:r+1,pFirst,events:[]};
+
+    const doAtk=(aS,dS,isP,eff)=>{
+      const weakened=((isP?eEff:pEff).includes("WEAKEN"));
+      if(Math.random()<dS.luck*.015*lMult)return{type:"dodge",isPlayer:isP,dmg:0};
+      let dmg=Math.max(1,aS.atk-Math.floor(dS.def*.5));
+      if(weakened&&!isP)dmg=Math.floor(dmg*.5);
+      const hasCrit=eff.includes("CRIT");
+      const crit=Math.random()<(hasCrit?.25:aS.luck*.02)*lMult;
+      if(crit)dmg=Math.floor(dmg*1.8);
+      return{type:crit?"crit":"hit",isPlayer:isP,dmg};
+    };
+
+    const order=pFirst?[{s:pS,p:true,e:pEff},{s:eS,p:false,e:eEff}]:[{s:eS,p:false,e:eEff},{s:pS,p:true,e:pEff}];
+    for(const f of order){
+      if(php<=0||ehp<=0)break;
+      const res=doAtk(f.s,f.p?eS:pS,f.p,f.e);
+      round.events.push(res);
+      if(res.dmg>0){
+        if(f.p){ehp=Math.max(0,ehp-res.dmg)}else{php=Math.max(0,php-res.dmg)}
+        if(thorns>0){round.events.push({type:"thorns",isPlayer:f.p,dmg:thorns});if(f.p)php=Math.max(0,php-thorns);else ehp=Math.max(0,ehp-thorns)}
+      }
+      const bv=burnV(f.e);
+      if(bv>0){round.events.push({type:"burn",isPlayer:f.p,dmg:bv});if(f.p)ehp=Math.max(0,ehp-bv);else php=Math.max(0,php-bv)}
+    }
+    const phv=healV(pEff);if(phv>0&&php>0){php=Math.min(pS.hp,php+phv);round.events.push({type:"heal",isPlayer:true,dmg:phv})}
+    const ehv=healV(eEff);if(ehv>0&&ehp>0){ehp=Math.min(eS.hp,ehp+ehv);round.events.push({type:"heal",isPlayer:false,dmg:ehv})}
+    round.phpAfter=php;round.ehpAfter=ehp;rounds.push(round);
+  }
+  return{rounds,playerWon:php>ehp,finalPhp:Math.max(0,php),finalEhp:Math.max(0,ehp)};
+}
+
+// ═══ PILL COLOR MAP ═══
+const PILL_C={BURN:"#ffaa55",CHAIN:"#e85a6a",CRIT:"#D4A64B",SURGE:"#ffdd44",PIERCE:"#ff7b6b",
+  HEAL:"#6acd8a",WARD:"#D4A64B",ANCHOR:"#ccaa66",THORNS:"#ffaa55",
+  DRAIN:"#00B4D8",SIPHON:"#00B4D8",WEAKEN:"#bb88ff",HEX:"#bb88ff",SILENCE:"#bb88ff",
+  HASTE:"#6ac8d8",SWIFT:"#6ac8d8",DODGE:"#6ac8d8",FREE:"#6acd8a",
+  POISON:"#aaee55",CORRODE:"#aaee55",INFECT:"#aaee55",
+  AMPLIFY:"#6acd8a",INSPIRE:"#6acd8a",BLESS:"#6acd8a"};
+const getPillColor=tag=>{const k=tag.split(" ")[0].replace(/[+\d%]/g,"");return PILL_C[k]||"#888"};
+
+// ═══ SPELL CARD COMPONENT — v4 styled ═══
+// size: "pool" (100×150), "slot" (96×140), "reward" (130×200)
+function SpellCard({card,size="pool",onClick,disabled,fatigued,isNew,isSelected}){
+  const hc=HS[card.house]?.color||"#D4A64B";
+  const hi=HS[card.house]?.icon||"✦";
+  const tc=TC[card.type]||"#888";
+  const rc=RC_C[card.rarity]||"#888";
+  const isLeg=card.rarity==="legendary";
+  const isEpic=card.rarity==="epic";
+
+  const dims={pool:{w:100,h:150},slot:{w:96,h:140},reward:{w:130,h:200}};
+  const d=dims[size]||dims.pool;
+  const s=size==="reward"?1.3:1; // scale factor for text
+
+  return(
+    <div onClick={disabled?undefined:onClick} style={{
+      width:d.w,height:d.h,borderRadius:10,position:"relative",overflow:"hidden",cursor:disabled?"default":"pointer",
+      flexShrink:0,transition:"all .2s",
+      opacity:disabled?.3:1,
+      filter:fatigued?"grayscale(.6) brightness(.5)":"none",
+      boxShadow:isSelected?`0 0 0 2px #ffd700, 0 0 16px rgba(255,215,0,.25)`:isLeg?`0 4px 16px rgba(0,0,0,.3), 0 0 10px ${hc}18`:"0 4px 12px rgba(0,0,0,.3)",
+      transform:isSelected?"translateY(-4px) scale(1.03)":"none",
+    }}
+    onMouseEnter={e=>{if(!disabled){e.currentTarget.style.transform="translateY(-3px) scale(1.02)";e.currentTarget.style.boxShadow=`0 8px 24px rgba(0,0,0,.4), 0 0 20px ${hc}20`}}}
+    onMouseLeave={e=>{if(!disabled){e.currentTarget.style.transform=isSelected?"translateY(-4px) scale(1.03)":"none";e.currentTarget.style.boxShadow=isSelected?`0 0 0 2px #ffd700, 0 0 16px rgba(255,215,0,.25)`:isLeg?`0 4px 16px rgba(0,0,0,.3), 0 0 10px ${hc}18`:"0 4px 12px rgba(0,0,0,.3)"}}}
+    >
+      {/* Card background */}
+      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg, #12101a 0%, #0c0a14 50%, #0a0810 100%)",
+        border:`1.5px solid ${isLeg?hc+"40":isEpic?hc+"25":"rgba(255,255,255,.08)"}`,borderRadius:10}} />
+
+      {/* House color art glow */}
+      <div style={{position:"absolute",top:0,left:0,right:0,height:"55%",borderRadius:"10px 10px 0 0",
+        background:`radial-gradient(ellipse at 50% 15%, ${hc}30, transparent 65%), linear-gradient(180deg, ${hc}18 0%, transparent 50%)`,
+        WebkitMaskImage:"linear-gradient(to bottom, black 30%, transparent 70%)",maskImage:"linear-gradient(to bottom, black 30%, transparent 70%)",
+        pointerEvents:"none"}} />
+
+      {/* Legendary shimmer border */}
+      {isLeg&&<div style={{position:"absolute",inset:-1,borderRadius:11,pointerEvents:"none",
+        background:`conic-gradient(from 135deg, transparent, ${hc} 8%, transparent 16%)`,opacity:.2}} />}
+
+      {/* Content */}
+      <div style={{position:"relative",zIndex:2,height:"100%",display:"flex",flexDirection:"column",padding:`${4*s}px`}}>
+        {/* Top: house icon + mana */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2*s}}>
+          <span style={{fontSize:10*s,filter:`drop-shadow(0 0 3px ${hc}60)`}}>{hi}</span>
+          <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:6*s,color:"#5bc0ff",
+            textShadow:"0 0 6px rgba(91,192,255,.4)"}}>{card.mana_cost||Math.ceil((card.atk+card.hp+card.spd+card.def+card.luck)/4)}M</span>
+        </div>
+
+        {/* Spacer — pushes everything to bottom */}
+        <div style={{flex:1}} />
+
+        {/* Info panel — fixed at bottom like v4 */}
+        <div style={{background:"linear-gradient(to bottom, transparent 0%, rgba(10,8,18,.85) 20%, rgba(10,8,18,.98) 40%)"}}>
+          {/* Card name */}
+          <div style={{fontFamily:"'Cinzel',serif",fontWeight:700,fontSize:10*s,color:"#D4A64B",lineHeight:1.15,
+            whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",marginBottom:2*s,
+            textShadow:"0 0 6px rgba(0,0,0,.8)"}}>{card.name}</div>
+
+          {/* Stat row */}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:1,marginBottom:3*s}}>
+            {[{v:card.atk,l:"ATK",c:"#e85a6a"},{v:card.hp,l:"HP",c:"#6acd8a"},{v:card.spd,l:"SPD",c:"#6ac8d8"},
+              {v:card.def,l:"DEF",c:"#b088e8"},{v:card.luck,l:"LCK",c:"#D4A64B"}].filter(st=>st.v>0).map((st,i,arr)=>(
+              <div key={st.l} style={{display:"flex",alignItems:"center"}}>
+                <div style={{textAlign:"center",padding:`0 ${3*s}px`}}>
+                  <div style={{fontFamily:"'Press Start 2P',monospace",fontSize:8*s,fontWeight:700,color:st.c,lineHeight:1,
+                    textShadow:`0 0 8px ${st.c}40`}}>{st.v}</div>
+                  <div style={{fontFamily:"'Press Start 2P',monospace",fontSize:3*s,color:`${st.c}70`,marginTop:1,lineHeight:1}}>{st.l}</div>
+                </div>
+                {i<arr.length-1&&<div style={{width:1,height:12*s,background:"rgba(255,255,255,.06)"}} />}
+              </div>
+            ))}
+          </div>
+
+          {/* House rule line */}
+          <div style={{height:1,margin:`0 ${6*s}px`,marginBottom:2*s,
+            background:`linear-gradient(90deg, transparent, ${hc}20, transparent)`}} />
+
+          {/* Type + Rarity row */}
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:2*s}}>
+            <span style={{fontFamily:"'Cinzel',serif",fontSize:7*s,fontWeight:700,textTransform:"uppercase",letterSpacing:.5,
+              color:"#D4A64B",opacity:.7}}>{card.type}</span>
+            <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:5*s,padding:`${1*s}px ${4*s}px`,borderRadius:2,
+              color:rc,background:`${rc}12`,border:`1px solid ${rc}25`,lineHeight:1}}>{card.rarity.slice(0,3).toUpperCase()}</span>
+          </div>
+
+          {/* Effect pills */}
+          {card.effects.length>0&&<div style={{display:"flex",flexWrap:"wrap",gap:2*s}}>
+            {card.effects.map((e,i)=>{
+              const pc=e.color||getPillColor(e.tag);
+              return <span key={i} style={{fontFamily:"'Press Start 2P',monospace",fontSize:5*s,padding:`${2*s}px ${4*s}px`,
+                borderRadius:3,color:pc,background:`${pc}10`,border:`1px solid ${pc}22`,lineHeight:1,
+                whiteSpace:"nowrap"}}>{e.tag}</span>
+            })}
+          </div>}
+        </div>
+      </div>
+
+      {/* Status overlays */}
+      {fatigued&&<div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%) rotate(-12deg)",
+        fontFamily:"'Press Start 2P',monospace",fontSize:7*s,color:"rgba(232,90,106,.6)",letterSpacing:2,zIndex:10,
+        textShadow:"0 1px 4px rgba(0,0,0,.8)",pointerEvents:"none"}}>TIRED</div>}
+      {isNew&&<div style={{position:"absolute",top:3,right:3,fontFamily:"'Press Start 2P',monospace",fontSize:4*s,
+        color:"#6acd8a",background:"rgba(106,205,138,.12)",border:"1px solid rgba(106,205,138,.25)",
+        borderRadius:3,padding:"1px 4px",zIndex:10,lineHeight:1}}>NEW</div>}
+    </div>
+  );
+}
+
+// ═══ EMPTY SLOT ═══
+function EmptySlot({i}){
+  return(<div style={{width:96,height:140,borderRadius:10,border:"1px dashed rgba(255,255,255,.06)",
+    display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flexShrink:0,
+    background:"rgba(255,255,255,.01)"}}>
+    <span style={{fontSize:16,opacity:.15,marginBottom:2}}>🃏</span>
+    <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:4,color:"#6B5E50"}}>SLOT {i+1}</span>
+  </div>);
+}
+
+function Fighter({color,shake,flash,flashColor}){
+  return(<div style={{width:72,height:105,borderRadius:"45% 45% 10px 10px",display:"flex",alignItems:"center",justifyContent:"center",
+    background:flash?`radial-gradient(ellipse at 50% 30%,${flashColor}55,transparent 75%)`:`radial-gradient(ellipse at 50% 30%,${color}28,transparent 70%)`,
+    border:`2px solid ${flash?flashColor+'55':color+'20'}`,transition:"all .25s",animation:shake?"shake .3s":"none"}}>
+    <span style={{fontSize:28,filter:`drop-shadow(0 0 5px ${color})`}}>🐱</span>
+  </div>);
+}
+
+function HpBar({current,max,color,side}){
+  const pct=Math.max(0,(current/max)*100);const low=pct<30;
+  return(<div style={{width:"100%",marginTop:2}}>
+    <div style={{display:"flex",justifyContent:side==="left"?"flex-start":"flex-end",gap:2,marginBottom:1}}>
+      <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:7,color:low?"#e85a6a":"#6acd8a",fontWeight:700}}>{current}</span>
+      <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:4,color:"#6B5E50"}}>/{max}</span>
+    </div>
+    <div style={{height:5,background:"rgba(255,255,255,.04)",borderRadius:3,overflow:"hidden",direction:side==="right"?"rtl":"ltr"}}>
+      <div style={{width:`${pct}%`,height:"100%",borderRadius:3,background:low?"linear-gradient(90deg,#e85a6a,#ff6b6b)":`linear-gradient(90deg,${color},${color}70)`,transition:"width .5s"}}/>
+    </div>
+  </div>);
+}
+
+function StatBar({s,pv,ev}){const max=Math.max(pv,ev,1);return(
+  <div style={{display:"flex",alignItems:"center",gap:3,marginBottom:2}}>
+    <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:7,width:20,textAlign:"right",fontWeight:700,color:pv>=ev?s.color:"rgba(255,255,255,.12)"}}>{pv}</span>
+    <div style={{flex:1,height:3,background:"rgba(255,255,255,.03)",borderRadius:2,overflow:"hidden",direction:"rtl"}}><div style={{width:`${(pv/max)*100}%`,height:"100%",borderRadius:2,background:`linear-gradient(270deg,${s.color},${s.color}30)`,opacity:pv>=ev?1:.2}}/></div>
+    <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:4,color:s.color,width:24,textAlign:"center",opacity:.45}}>{s.label}</span>
+    <div style={{flex:1,height:3,background:"rgba(255,255,255,.03)",borderRadius:2,overflow:"hidden"}}><div style={{width:`${(ev/max)*100}%`,height:"100%",borderRadius:2,background:`linear-gradient(90deg,${s.color},${s.color}30)`,opacity:ev>=pv?1:.2}}/></div>
+    <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:7,width:20,textAlign:"left",fontWeight:700,color:ev>=pv?s.color:"rgba(255,255,255,.12)"}}>{ev}</span>
+  </div>
+);}
+
+function BattleLog({events}){
+  const ref=useRef(null);
+  useEffect(()=>{if(ref.current)ref.current.scrollTop=ref.current.scrollHeight},[events]);
+  return(<div ref={ref} style={{margin:"4px 0",padding:"5px 7px",borderRadius:6,background:"rgba(0,0,0,.3)",border:"1px solid rgba(255,255,255,.03)",maxHeight:90,overflowY:"auto"}}>
+    {events.map((ev,i)=><div key={i} style={{fontFamily:"'Press Start 2P',monospace",fontSize:5,lineHeight:2,color:ev.color||"#9B8E7E"}}>{ev.text}</div>)}
+  </div>);
+}
+
+// ═══ PHASES ═══
+const PH={DRAFT:0,APPROACH:1,FACEOFF:2,BATTLE:3,REWARD:4,RESULT:5};
+
+function TheWilds(){
+  // Run state
+  const[phase,setPhase]=useState(PH.DRAFT);
+  const[enc,setEnc]=useState(1);
+  const[runPool,setRunPool]=useState([]);
+  const[newCardIds,setNewCardIds]=useState([]);
+  const[fatigued,setFatigued]=useState({});// {cardId: encountersLeft}
+  const[selected,setSelected]=useState([]);
+  const[currentHp,setCurrentHp]=useState(0);
+  const[maxHp,setMaxHp]=useState(0);
+  const[enemy,setEnemy]=useState(null);
+  const[zone,setZone]=useState(()=>pick(ZONES));
+  const[mod,setMod]=useState(MODIFIERS[0]);
+  const[flavor,setFlavor]=useState(()=>pick(FLAV));
+  const[journey,setJourney]=useState([]);
+  const[score,setScore]=useState(0);
+
+  // Battle state
+  const[battleLog,setBattleLog]=useState([]);
+  const[playerHp,setPlayerHp]=useState(0);
+  const[enemyHp,setEnemyHp]=useState(0);
+  const[curRound,setCurRound]=useState(0);
+  const[pShake,setPShake]=useState(false);
+  const[eShake,setEShake]=useState(false);
+  const[pFlash,setPFlash]=useState(null);
+  const[eFlash,setEFlash]=useState(null);
+  const[battleResult,setBattleResult]=useState(null);
+  const[rewards,setRewards]=useState([]);
+  const[animKey,setAnimKey]=useState(0);
+
+  const pColor=PB.houseData.color,eColor=enemy?.houseData?.color||"#888";
+  const pStats=calcPS(selected,mod);
+  const hpForCombat=phase===PH.APPROACH?Math.min(currentHp,pStats.hp):playerHp;
+
+  // ═══ ACTIONS ═══
+  const startRun=()=>{
+    const draft=pickN(FULL_COLLECTION,12);
+    const baseS=calcPS([],null);
+    setRunPool(draft);setNewCardIds([]);setFatigued({});setSelected([]);
+    setCurrentHp(baseS.hp);setMaxHp(baseS.hp);setEnc(1);setJourney([]);setScore(0);
+    const e=genEnemy(1);const z=pick(ZONES);const m=getModifier(1);
+    setEnemy(e);setZone(z);setMod(m);setFlavor(pick(FLAV));
+    setBattleLog([]);setBattleResult(null);setRewards([]);
+    setPhase(PH.APPROACH);setAnimKey(k=>k+1);
+  };
+
+  const selectCard=c=>{if(selected.find(s=>s.id===c.id)||selected.length>=3||fatigued[c.id])return;setSelected([...selected,c])};
+  const removeCard=i=>setSelected(selected.filter((_,j)=>j!==i));
+
+  const approach=()=>{
+    const ps=calcPS(selected,mod);
+    const hp=Math.min(currentHp,ps.hp);
+    setPlayerHp(hp);setEnemyHp(enemy.stats.hp);
+    setPhase(PH.FACEOFF);
+  };
+
+  const fight=()=>{
+    setPhase(PH.BATTLE);
+    const ps=calcPS(selected,mod);
+    const esMod=mod?.apply?mod.apply({...enemy.stats}):{...enemy.stats};
+    const initHp=Math.min(currentHp,ps.hp);
+    const result=simulate({...ps,hp:initHp},esMod,selected,enemy.cards,mod);
+    let php=initHp,ehp=esMod.hp;const log=[];let delay=0;
+
+    result.rounds.forEach(round=>{
+      delay+=400;setTimeout(()=>{setCurRound(round.num);log.push({text:`── ROUND ${round.num} ──`,color:"#D4A64B"});setBattleLog([...log])},delay);
+      delay+=450;setTimeout(()=>{log.push({text:round.pFirst?"⚡ You seize initiative!":"⚡ Enemy strikes first!",color:round.pFirst?"#6acd8a":"#e85a6a"});setBattleLog([...log])},delay);
+      round.events.forEach(ev=>{
+        delay+=450;setTimeout(()=>{
+          const who=ev.isPlayer?PB.name:enemy.name.split(" ")[0];const tgt=ev.isPlayer?enemy.name.split(" ")[0]:PB.name;
+          if(ev.type==="dodge")log.push({text:`${tgt} dodged! 🌀`,color:"#6ac8d8"});
+          else if(ev.type==="crit")log.push({text:`${who} CRITS for ${ev.dmg}! 💥`,color:"#D4A64B"});
+          else if(ev.type==="burn")log.push({text:`🔥 BURN ${ev.dmg} → ${ev.isPlayer?enemy.name.split(" ")[0]:PB.name}`,color:"#ffaa55"});
+          else if(ev.type==="heal")log.push({text:`✨ ${ev.isPlayer?PB.name:enemy.name.split(" ")[0]} heals ${ev.dmg}`,color:"#6acd8a"});
+          else if(ev.type==="thorns")log.push({text:`🌿 Thorns reflect ${ev.dmg}!`,color:"#5CB338"});
+          else log.push({text:`${who} → ${ev.dmg} dmg`,color:ev.isPlayer?"#6acd8a":"#e85a6a"});
+          setBattleLog([...log]);
+          if(ev.dmg>0&&ev.type!=="heal"){
+            if(ev.isPlayer){ehp=Math.max(0,ehp-ev.dmg);setEnemyHp(ehp);setEShake(true);setEFlash(ev.type==="crit"?"#D4A64B":ev.type==="burn"?"#ffaa55":"#e85a6a");setTimeout(()=>{setEShake(false);setEFlash(null)},220)}
+            else{php=Math.max(0,php-ev.dmg);setPlayerHp(php);setPShake(true);setPFlash(ev.type==="crit"?"#D4A64B":"#e85a6a");setTimeout(()=>{setPShake(false);setPFlash(null)},220)}
+          }
+          if(ev.type==="heal"){if(ev.isPlayer){php=Math.min(ps.hp,php+ev.dmg);setPlayerHp(php)}else{ehp=Math.min(esMod.hp,ehp+ev.dmg);setEnemyHp(ehp)}}
+          if(ev.type==="thorns"){if(ev.isPlayer){php=Math.max(0,php-ev.dmg);setPlayerHp(php)}else{ehp=Math.max(0,ehp-ev.dmg);setEnemyHp(ehp)}}
+        },delay);
+      });
+    });
+
+    delay+=600;
+    setTimeout(()=>{
+      const won=result.playerWon;
+      setBattleResult(won?"win":"lose");
+      log.push({text:won?"🏆 VICTORY!":"💀 DEFEATED",color:won?"#D4A64B":"#e85a6a"});
+      setBattleLog([...log]);
+      setJourney(j=>[...j,{enc,zone:zone.name,enemy:enemy.name,house:enemy.house,won}]);
+      if(won){
+        const newFat={...fatigued};selected.forEach(c=>{newFat[c.id]=1});
+        Object.keys(newFat).forEach(k=>{if(newFat[k]!==undefined){newFat[k]--;if(newFat[k]<=0)delete newFat[k]}});
+        // Wait actually: selected cards get fatigue=1, existing fatigue decrements
+        const updatedFat={};
+        // First decrement existing
+        Object.keys(fatigued).forEach(k=>{const v=fatigued[k]-1;if(v>0)updatedFat[k]=v});
+        // Then add new fatigue for played cards
+        selected.forEach(c=>{updatedFat[c.id]=1});
+        setFatigued(updatedFat);
+
+        const heal=Math.floor(ps.hp*.2);
+        const newHp=Math.min(ps.hp,result.finalPhp+heal);
+        setCurrentHp(newHp);setScore(s=>s+enc*10+5);
+
+        const rw=pickN(REWARD_POOL.filter(c=>!runPool.find(p=>p.id===c.id)),3);
+        setRewards(rw);
+        setPhase(PH.REWARD);
+      } else {
+        setCurrentHp(0);setPhase(PH.RESULT);
+      }
+    },delay);
+  };
+
+  const pickReward=(card)=>{
+    setRunPool(p=>[...p,card]);setNewCardIds(n=>[...n,card.id]);setRewards([]);
+    const e=genEnemy(enc+1);const z=pick(ZONES);const m=getModifier(enc+1);
+    setEnemy(e);setZone(z);setMod(m);setFlavor(pick(FLAV));setEnc(enc+1);
+    setSelected([]);setBattleLog([]);setCurRound(0);setBattleResult(null);
+    setAnimKey(k=>k+1);setPhase(PH.APPROACH);
+  };
+
+  const skipReward=()=>{
+    setRewards([]);
+    const e=genEnemy(enc+1);const z=pick(ZONES);const m=getModifier(enc+1);
+    setEnemy(e);setZone(z);setMod(m);setFlavor(pick(FLAV));setEnc(enc+1);
+    setSelected([]);setBattleLog([]);setCurRound(0);setBattleResult(null);
+    setAnimKey(k=>k+1);setPhase(PH.APPROACH);
+  };
+
+  const diff=enc<=3?"Quiet Path":enc<=5?"Contested Trail":enc<=8?"Dangerous Territory":enc<=11?"The Deep Wilds":"Edge of Nethara";
+  const canFight=selected.length>=1;
+  const fatiguedCount=Object.keys(fatigued).length;
+  const availCount=runPool.filter(c=>!fatigued[c.id]).length;
+
+  // ═══ DRAFT SCREEN ═══
+  if(phase===PH.DRAFT){
+    return(<div style={{minHeight:"100vh",background:"#0a0812",color:"#D4C8B8",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,fontFamily:"'Crimson Text',serif"}}>
+      <div style={{fontFamily:"'Cinzel',serif",fontSize:24,fontWeight:700,color:"#D4A64B",letterSpacing:4,marginBottom:4}}>THE WILDS</div>
+      <div style={{fontFamily:"'Press Start 2P',monospace",fontSize:5,color:"#6B5E50",marginBottom:20,letterSpacing:1}}>A ROGUELIKE ADVENTURE THROUGH NETHARA</div>
+      <div style={{maxWidth:400,textAlign:"center",marginBottom:20}}>
+        <div style={{fontFamily:"'Crimson Text',serif",fontSize:15,color:"#9B8E7E",lineHeight:1.6,marginBottom:12}}>
+          Your Nine wanders The Wilds — unknown lands where danger lurks at every turn. You'll be dealt a random hand of cards from your collection. Choose wisely — cards get <span style={{color:"#e85a6a"}}>tired after use</span>, your <span style={{color:"#6acd8a"}}>HP carries between fights</span>, and each zone has its own rules.
+        </div>
+        <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",marginBottom:16}}>
+          {[{icon:"🃏",label:"12 random cards",desc:"from your collection"},{icon:"❤️",label:"HP carries over",desc:"+20% heal between fights"},{icon:"😴",label:"Card fatigue",desc:"used cards rest 1 encounter"},{icon:"🎁",label:"Win rewards",desc:"pick new cards after wins"},{icon:"⚡",label:"Zone modifiers",desc:"change combat rules"}].map((f,i)=>
+            <div key={i} style={{padding:"6px 10px",borderRadius:6,background:"rgba(255,255,255,.02)",border:"1px solid rgba(255,255,255,.04)",textAlign:"center",width:130}}>
+              <div style={{fontSize:16,marginBottom:2}}>{f.icon}</div>
+              <div style={{fontFamily:"'Press Start 2P',monospace",fontSize:5,color:"#D4A64B",marginBottom:1}}>{f.label}</div>
+              <div style={{fontFamily:"'Press Start 2P',monospace",fontSize:4,color:"#6B5E50"}}>{f.desc}</div>
+            </div>
+          )}
+        </div>
+      </div>
+      <button onClick={startRun} style={{padding:"14px 40px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:16,fontWeight:700,letterSpacing:4,background:"linear-gradient(135deg,#D4A64B,#c49a3a)",color:"#120e1e",boxShadow:"0 4px 20px rgba(212,166,75,.3)"}}>
+        BEGIN JOURNEY
+      </button>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=Grenze+Gotisch:wght@400;700&family=Cormorant+SC:wght@400;600;700&family=Almendra&family=Fondamento&family=Pirata+One&family=IM+Fell+English+SC&family=MedievalSharp&family=Griffy&display=swap');`}</style>
+    </div>);
+  }
+
+  // ═══ RESULT SCREEN (death) ═══
+  if(phase===PH.RESULT&&battleResult==="lose"){
+    return(<div style={{minHeight:"100vh",background:"#0a0812",color:"#D4C8B8",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,fontFamily:"'Crimson Text',serif"}}>
+      <div style={{fontFamily:"'Cinzel',serif",fontSize:22,fontWeight:900,color:"#e85a6a",letterSpacing:3,marginBottom:4}}>JOURNEY'S END</div>
+      <div style={{fontFamily:"'Press Start 2P',monospace",fontSize:5,color:"#6B5E50",marginBottom:16}}>DEFEATED AT ENCOUNTER {enc} · {zone.name.toUpperCase()}</div>
+      <div style={{display:"flex",gap:3,marginBottom:16,flexWrap:"wrap",justifyContent:"center"}}>
+        {journey.map((j,i)=><div key={i} style={{width:10,height:10,borderRadius:"50%",background:j.won?HS[j.house].color:"#e85a6a40",border:`1px solid ${j.won?HS[j.house].color+"50":"#e85a6a30"}`}} title={`${j.zone}: ${j.enemy}`}/>)}
+      </div>
+      <div style={{display:"flex",gap:16,marginBottom:20}}>
+        <div style={{textAlign:"center"}}><div style={{fontFamily:"'Press Start 2P',monospace",fontSize:16,color:"#D4A64B",fontWeight:700}}>{enc-1}</div><div style={{fontFamily:"'Press Start 2P',monospace",fontSize:5,color:"#6B5E50"}}>VICTORIES</div></div>
+        <div style={{textAlign:"center"}}><div style={{fontFamily:"'Press Start 2P',monospace",fontSize:16,color:"#6acd8a",fontWeight:700}}>{score}</div><div style={{fontFamily:"'Press Start 2P',monospace",fontSize:5,color:"#6B5E50"}}>POINTS</div></div>
+        <div style={{textAlign:"center"}}><div style={{fontFamily:"'Press Start 2P',monospace",fontSize:16,color:"#6ac8d8",fontWeight:700}}>{runPool.length}</div><div style={{fontFamily:"'Press Start 2P',monospace",fontSize:5,color:"#6B5E50"}}>CARDS</div></div>
+      </div>
+      <div style={{display:"flex",gap:10}}>
+        <button onClick={()=>setPhase(PH.DRAFT)} style={{padding:"12px 30px",borderRadius:10,border:"none",cursor:"pointer",fontFamily:"'Cinzel',serif",fontSize:14,fontWeight:700,letterSpacing:3,background:"linear-gradient(135deg,#D4A64B,#c49a3a)",color:"#120e1e"}}>NEW JOURNEY</button>
+      </div>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Press+Start+2P&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');`}</style>
+    </div>);
+  }
+
+  // ═══ MAIN GAME LOOP ═══
+  return(
+    <div style={{minHeight:"100vh",background:"#0a0812",color:"#D4C8B8",fontFamily:"'Crimson Text',serif",display:"flex",flexDirection:"column",alignItems:"center",maxWidth:520,margin:"0 auto"}}>
+      {/* Header */}
+      <div style={{width:"100%",padding:"8px 12px 2px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        <div>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:18,fontWeight:700,color:"#D4A64B",letterSpacing:3}}>THE WILDS</div>
+          <div style={{fontFamily:"'Press Start 2P',monospace",fontSize:4,color:"#6B5E50"}}>ENC {enc} · {diff.toUpperCase()}</div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <div style={{display:"flex",alignItems:"center",gap:3,justifyContent:"flex-end"}}>
+            <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:4,color:"#6B5E50"}}>HP</span>
+            <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:8,color:currentHp<maxHp*.3?"#e85a6a":"#6acd8a",fontWeight:700}}>{phase>=PH.BATTLE?playerHp:currentHp}</span>
+            <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:4,color:"#6B5E50"}}>/{maxHp}</span>
+          </div>
+          <div style={{fontFamily:"'Press Start 2P',monospace",fontSize:4,color:"#D4A64B",marginTop:1}}>🃏 {runPool.length} cards · ⭐ {score} pts</div>
+        </div>
+      </div>
+
+      {/* Journey dots */}
+      {journey.length>0&&<div style={{display:"flex",gap:2,padding:"2px 12px",flexWrap:"wrap"}}>
+        {journey.map((j,i)=><div key={i} style={{width:6,height:6,borderRadius:"50%",background:j.won?HS[j.house].color:"#e85a6a35",border:`1px solid ${j.won?HS[j.house].color+"40":"#e85a6a20"}`}}/>)}
+        <div style={{width:6,height:6,borderRadius:"50%",border:"1px solid #D4A64B30",animation:"pulse 1.5s infinite"}}/>
+      </div>}
+
+      {/* ═══ ARENA ═══ */}
+      <div key={animKey} style={{width:"100%",aspectRatio:"16/9",position:"relative",overflow:"hidden",borderRadius:12,margin:"5px 10px",border:"1px solid rgba(255,255,255,.04)",background:"#0e0a18"}}>
+        <div style={{position:"absolute",inset:0,backgroundImage:`url(${ZP}${zone.img})`,backgroundSize:"cover",backgroundPosition:"center",filter:phase===PH.APPROACH||phase===PH.REWARD?"brightness(.5) saturate(.55)":"brightness(.28) saturate(.4)",transition:"filter .7s"}}>
+          <div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse at 50% 80%,transparent 15%,rgba(10,8,18,.7) 60%)"}}/>
+        </div>
+
+        {/* Zone name */}
+        <div style={{position:"absolute",bottom:3,left:"50%",transform:"translateX(-50%)",zIndex:20,fontFamily:"'Cinzel',serif",fontSize:7,color:"rgba(255,255,255,.18)",letterSpacing:2}}>{zone.name.toUpperCase()}</div>
+
+        {/* Modifier banner */}
+        {mod.id!=="none"&&<div style={{position:"absolute",top:4,left:4,right:4,zIndex:20,display:"flex",justifyContent:"center"}}>
+          <div style={{padding:"3px 10px",borderRadius:5,background:`${mod.color}12`,border:`1px solid ${mod.color}25`,textAlign:"center",maxWidth:"90%"}}>
+            <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:5,color:mod.color}}>{mod.icon} {mod.name.toUpperCase()}</span>
+            <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:4,color:"#9B8E7E",marginLeft:4}}>{mod.desc}</span>
+          </div>
+        </div>}
+
+        {/* Encounter # */}
+        {mod.id==="none"&&<div style={{position:"absolute",top:5,left:"50%",transform:"translateX(-50%)",zIndex:20,fontFamily:"'Press Start 2P',monospace",fontSize:6,color:"#D4A64B",letterSpacing:2,textShadow:"0 0 6px rgba(212,166,75,.3)"}}>ENCOUNTER {enc}</div>}
+        {curRound>0&&phase===PH.BATTLE&&<div style={{position:"absolute",top:mod.id!=="none"?22:16,left:"50%",transform:"translateX(-50%)",zIndex:20,fontFamily:"'Press Start 2P',monospace",fontSize:4,color:"#6ac8d8",animation:"pulse .8s infinite"}}>ROUND {curRound}</div>}
+
+        {/* Approach flavor */}
+        {phase===PH.APPROACH&&<div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",zIndex:15,textAlign:"center",maxWidth:"80%",animation:"fadeUp .6s ease"}}>
+          <div style={{fontFamily:"'Crimson Text',serif",fontSize:14,fontStyle:"italic",color:"rgba(255,255,255,.45)",lineHeight:1.5,textShadow:"0 2px 6px rgba(0,0,0,.8)"}}>"{flavor}"</div>
+        </div>}
+
+        {/* Reward overlay */}
+        {phase===PH.REWARD&&<div style={{position:"absolute",top:"42%",left:"50%",transform:"translate(-50%,-50%)",zIndex:25,textAlign:"center",animation:"fadeUp .5s ease"}}>
+          <div style={{fontFamily:"'Cinzel',serif",fontSize:20,fontWeight:900,color:"#D4A64B",letterSpacing:3,textShadow:"0 0 20px rgba(212,166,75,.4)"}}>VICTORY</div>
+          <div style={{fontFamily:"'Press Start 2P',monospace",fontSize:4,color:"#6acd8a",marginTop:2}}>+{Math.floor(pStats.hp*.2)} HP healed · +{enc*10+5} pts</div>
+        </div>}
+
+        {/* VS / Result */}
+        {phase===PH.FACEOFF&&<div style={{position:"absolute",top:"48%",left:"50%",transform:"translate(-50%,-50%)",zIndex:15,fontFamily:"'Cinzel',serif",fontSize:24,fontWeight:900,color:"#D4A64B",textShadow:"0 0 15px rgba(212,166,75,.35)",letterSpacing:5}}>VS</div>}
+        {phase===PH.BATTLE&&battleResult&&<div style={{position:"absolute",top:"44%",left:"50%",transform:"translate(-50%,-50%)",zIndex:25,fontFamily:"'Cinzel',serif",fontSize:22,fontWeight:900,color:battleResult==="win"?"#D4A64B":"#e85a6a",textShadow:`0 0 20px ${battleResult==="win"?"rgba(212,166,75,.4)":"rgba(232,90,106,.35)"}`,animation:"fadeUp .5s ease"}}>{battleResult==="win"?"VICTORY":"DEFEATED"}</div>}
+
+        {phase!==PH.APPROACH&&phase!==PH.REWARD&&<div style={{position:"absolute",top:"8%",bottom:"8%",left:"50%",width:1,background:"linear-gradient(180deg,transparent,rgba(212,166,75,.05),transparent)",zIndex:4}}/>}
+
+        {/* Player fighter */}
+        {phase!==PH.APPROACH&&phase!==PH.REWARD&&<div style={{position:"absolute",bottom:10,left:"4%",width:"42%",height:"76%",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",animation:"slideInLeft .5s ease both"}}>
+          <div style={{textAlign:"center",marginBottom:2}}>
+            <div style={{fontFamily:PB.houseData.font,fontSize:12,fontWeight:700,color:"#F5F0E8",textShadow:`0 0 8px ${pColor}40`}}>{PB.name}</div>
+            <div style={{fontFamily:"'Press Start 2P',monospace",fontSize:3,color:pColor}}>{PB.houseData.icon} {PB.houseData.name.toUpperCase()}</div>
+          </div>
+          <Fighter color={pColor} shake={pShake} flash={pFlash!==null} flashColor={pFlash}/>
+          {phase>=PH.BATTLE&&<HpBar current={playerHp} max={pStats.hp} color={pColor} side="left"/>}
+        </div>}
+
+        {/* Enemy fighter */}
+        {phase!==PH.APPROACH&&phase!==PH.REWARD&&enemy&&<div style={{position:"absolute",bottom:10,right:"4%",width:"42%",height:"76%",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",animation:"slideInRight .5s ease .12s both"}}>
+          <div style={{textAlign:"center",marginBottom:2}}>
+            <div style={{fontFamily:enemy.houseData.font,fontSize:12,fontWeight:700,color:"#F5F0E8",textShadow:`0 0 8px ${eColor}40`}}>{enemy.name}</div>
+            <div style={{fontFamily:"'Press Start 2P',monospace",fontSize:3,color:eColor}}>{enemy.houseData.icon} {enemy.houseData.name.toUpperCase()}</div>
+          </div>
+          <Fighter color={eColor} shake={eShake} flash={eFlash!==null} flashColor={eFlash}/>
+          {phase>=PH.BATTLE&&<HpBar current={enemyHp} max={enemy.stats.hp} color={eColor} side="right"/>}
+        </div>}
+      </div>
+
+      {/* ═══ BELOW ARENA ═══ */}
+      <div style={{width:"100%",padding:"0 10px"}}>
+
+        {/* CARD SELECT — approach */}
+        {phase===PH.APPROACH&&<div style={{marginTop:4}}>
+          <div style={{fontFamily:"'Press Start 2P',monospace",fontSize:5,color:"#D4A64B",letterSpacing:1,marginBottom:3}}>YOUR HAND — {selected.length}/3 CARDS</div>
+          <div style={{display:"flex",gap:6,minHeight:145,marginBottom:4,justifyContent:"center"}}>
+            {[0,1,2].map(i=>selected[i]?<SpellCard key={i} card={selected[i]} size="slot" onClick={()=>removeCard(i)}/>:<EmptySlot key={i} i={i}/>)}
+          </div>
+          {selected.length>0&&<div style={{fontFamily:"'Press Start 2P',monospace",fontSize:4,color:"#6B5E50",marginBottom:4}}>
+            BONUS: <span style={{color:"#e85a6a"}}>+{selected.reduce((a,c)=>a+c.atk,0)}A</span> <span style={{color:"#6acd8a"}}>+{selected.reduce((a,c)=>a+c.hp,0)}H</span>
+            {selected.reduce((a,c)=>a+c.spd,0)>0&&<span style={{color:"#6ac8d8"}}> +{selected.reduce((a,c)=>a+c.spd,0)}S</span>}
+            {selected.reduce((a,c)=>a+c.luck,0)>0&&<span style={{color:"#D4A64B"}}> +{selected.reduce((a,c)=>a+c.luck,0)}L</span>}
+          </div>}
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:2}}>
+            <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:5,color:"#6B5E50"}}>YOUR POOL — {availCount} AVAILABLE{fatiguedCount>0?` · ${fatiguedCount} TIRED`:""}</span>
+          </div>
+          <div style={{maxHeight:340,overflowY:"auto",paddingRight:3}}>
+            <div style={{display:"flex",flexWrap:"wrap",gap:6,justifyContent:"center"}}>
+            {runPool.map(c=><SpellCard key={c.id} card={c} size="pool" onClick={()=>selectCard(c)} disabled={!!selected.find(s=>s.id===c.id)||!!fatigued[c.id]} fatigued={!!fatigued[c.id]} isNew={newCardIds.includes(c.id)} isSelected={!!selected.find(s=>s.id===c.id)}/>)}
+            </div>
+          </div>
+        </div>}
+
+        {/* Battle log */}
+        {battleLog.length>0&&<BattleLog events={battleLog}/>}
+
+        {/* Stat compare (faceoff) */}
+        {phase===PH.FACEOFF&&<div style={{marginTop:3}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+            <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:4,color:pColor}}>{PB.houseData.icon} YOU ({selected.length} cards)</span>
+            <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:4,color:eColor}}>ENEMY ({enemy.cards.length}) {enemy.houseData.icon}</span>
+          </div>
+          {mod.hideStats?
+            <div style={{textAlign:"center",padding:12,fontFamily:"'Press Start 2P',monospace",fontSize:5,color:"#847C98"}}>🌫️ FOG OF WAR — Enemy stats hidden</div>
+          : STATS.map(s=><StatBar key={s.key} s={s} pv={pStats[s.key]} ev={(mod?.apply?mod.apply({...enemy.stats}):enemy.stats)[s.key]}/>)}
+
+          {/* Effects */}
+          {selected.some(c=>c.effects.length>0)&&<div style={{display:"flex",gap:2,flexWrap:"wrap",marginTop:3}}>
+            <span style={{fontFamily:"'Press Start 2P',monospace",fontSize:4,color:"#6B5E50"}}>YOUR FX:</span>
+            {selected.flatMap(c=>c.effects).map((e,i)=><span key={i} style={{fontSize:5,padding:"1px 4px",borderRadius:3,background:`${e.color}12`,color:e.color,fontFamily:"'Press Start 2P',monospace"}}>{e.tag}</span>)}
+          </div>}
+        </div>}
+
+        {/* REWARD PICK */}
+        {phase===PH.REWARD&&<div style={{marginTop:6}}>
+          <div style={{fontFamily:"'Press Start 2P',monospace",fontSize:5,color:"#D4A64B",letterSpacing:1,textAlign:"center",marginBottom:6}}>🎁 PICK A REWARD CARD</div>
+          <div style={{display:"flex",gap:8,justifyContent:"center"}}>
+            {rewards.map((c,i)=><SpellCard key={i} card={c} size="reward" onClick={()=>pickReward(c)}/>)}
+          </div>
+          <div style={{textAlign:"center",marginTop:6}}>
+            <button onClick={skipReward} style={{fontFamily:"'Press Start 2P',monospace",fontSize:4,color:"#6B5E50",background:"none",border:"1px solid rgba(255,255,255,.06)",borderRadius:4,padding:"4px 12px",cursor:"pointer"}}>SKIP →</button>
+          </div>
+        </div>}
+
+        {/* ACTIONS */}
+        <div style={{textAlign:"center",margin:"10px 0 16px"}}>
+          {phase===PH.APPROACH&&<button onClick={approach} disabled={!canFight} style={{
+            padding:"11px 34px",borderRadius:10,border:`1px solid ${canFight?"rgba(255,255,255,.1)":"rgba(255,255,255,.04)"}`,cursor:canFight?"pointer":"not-allowed",
+            fontFamily:"'Cinzel',serif",fontSize:14,fontWeight:700,letterSpacing:3,
+            background:canFight?"linear-gradient(135deg,rgba(255,255,255,.08),rgba(255,255,255,.03))":"rgba(255,255,255,.02)",
+            color:canFight?"#D4C8B8":"#6B5E50",opacity:canFight?1:.4}}>
+            🐾 APPROACH{!canFight?" — PICK CARDS":""}
+          </button>}
+
+          {phase===PH.FACEOFF&&<button onClick={fight} style={{
+            padding:"11px 34px",borderRadius:10,border:"none",cursor:"pointer",
+            fontFamily:"'Cinzel',serif",fontSize:14,fontWeight:700,letterSpacing:3,
+            background:"linear-gradient(135deg,#D4A64B,#c49a3a)",color:"#120e1e",boxShadow:"0 4px 16px rgba(212,166,75,.25)"}}>
+            ⚔️ FIGHT
+          </button>}
+        </div>
+      </div>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=Grenze+Gotisch:wght@400;700&family=Cormorant+SC:wght@400;600;700&family=Almendra&family=Fondamento&family=Pirata+One&family=IM+Fell+English+SC&family=MedievalSharp&family=Griffy&display=swap');
+        @keyframes slideInLeft{from{transform:translateX(-25px);opacity:0}to{transform:translateX(0);opacity:1}}
+        @keyframes slideInRight{from{transform:translateX(25px);opacity:0}to{transform:translateX(0);opacity:1}}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+        @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-2px)}80%{transform:translateX(2px)}}
+        ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.06);border-radius:2px}
+      `}</style>
+    </div>
+  );
+}
+
+ReactDOM.render(React.createElement(TheWilds), document.getElementById("root"));
+  </script>
+</body>
+</html>
