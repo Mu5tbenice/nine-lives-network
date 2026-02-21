@@ -7,6 +7,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/variables-v2.css">
+  <link rel="stylesheet" href="/css/components-v2.css">
+  <link rel="stylesheet" href="/css/card-v4.css">
   <style>
     :root{--bg-deep:#120e1e;--bg-warm:#1a1528;--bg-card:rgba(30,22,42,0.7);--border:rgba(212,166,75,0.12);--border-glow:rgba(212,166,75,0.3);--gold:#D4A64B;--bright:#F5F0E8;--body:#D4C8B8;--muted:#9B8E7E;--faint:#6B5E50;--red:#e85a6a;--green:#6acd8a;--cyan:#6ac8d8;--purple:#b088e8;--font-title:'Cinzel',serif;--font-body:'Crimson Text',Georgia,serif;--font-data:'Press Start 2P',monospace;--font-mono:'JetBrains Mono',monospace}
     *{box-sizing:border-box;margin:0;padding:0}
@@ -40,8 +43,8 @@
     .stat-bonus{font-family:var(--font-data);font-size:5px;opacity:0.7;width:20px}
     .cta-btn{display:block;width:100%;padding:16px 28px;border-radius:12px;border:none;cursor:pointer;background:linear-gradient(135deg,var(--gold),#c49a3a);font-family:var(--font-title);font-size:15px;font-weight:700;color:var(--bg-deep);letter-spacing:3px;box-shadow:0 4px 20px rgba(212,166,75,0.3);transition:all 0.3s}.cta-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(212,166,75,0.4)}.cta-btn:disabled{opacity:0.3;cursor:not-allowed;box-shadow:none;background:rgba(255,255,255,0.05);color:var(--faint);transform:none}
     .mini-card{min-width:110px;padding:10px;border-radius:12px;background:linear-gradient(160deg,rgba(30,22,42,0.95),rgba(18,14,30,0.98));border:1.5px solid rgba(255,255,255,0.06);box-shadow:0 2px 8px rgba(0,0,0,0.3);flex-shrink:0}.mini-card.glow{border-color:rgba(85,153,255,0.3);box-shadow:0 0 16px rgba(85,153,255,0.15),0 4px 16px rgba(0,0,0,0.4)}
-    .flip-container{perspective:600px;cursor:pointer;display:inline-block}.flip-inner{transition:transform 0.6s ease;transform-style:preserve-3d;position:relative;width:110px;min-height:155px}.flip-inner.flipped{transform:rotateY(180deg)}.flip-front,.flip-back{backface-visibility:hidden}
-    .flip-front{position:absolute;inset:0;width:110px;min-height:155px;border-radius:12px;background:linear-gradient(135deg,rgba(212,166,75,0.08),rgba(123,45,142,0.08));border:1.5px solid rgba(212,166,75,0.2);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3)}.flip-back{transform:rotateY(180deg)}
+    .flip-container{perspective:600px;cursor:pointer;display:inline-block}.flip-inner{transition:transform 0.6s ease;transform-style:preserve-3d;position:relative;width:160px;min-height:252px}.flip-inner.flipped{transform:rotateY(180deg)}.flip-front,.flip-back{backface-visibility:hidden}
+    .flip-front{position:absolute;inset:0;width:160px;min-height:252px;border-radius:12px;background:linear-gradient(135deg,rgba(212,166,75,0.08),rgba(123,45,142,0.08));border:1.5px solid rgba(212,166,75,0.2);display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3)}.flip-back{transform:rotateY(180deg)}
     .mode-card{padding:14px 16px;border-radius:12px;cursor:pointer;background:rgba(255,255,255,0.02);border:1px solid var(--border);transition:all 0.2s;margin-bottom:8px}.mode-card:hover,.mode-card.open{border-color:rgba(212,166,75,0.2)}.mode-card.open{background:rgba(255,255,255,0.03)}
     .mode-desc{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-family:var(--font-mono);font-size:10px;color:var(--body);line-height:1.7;animation:fadeUp 0.2s ease}
     .anno-row{padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border);margin-bottom:6px;transition:all 0.2s}.anno-row:hover{border-color:rgba(232,90,106,0.25);background:rgba(232,90,106,0.04)}
@@ -124,14 +127,9 @@
       <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:4px">Cards are how your Nine fights. Here's what they look like:</div>
     </div>
     <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;align-items:flex-start">
-      <div class="mini-card glow" style="width:160px;min-height:200px;padding:12px">
-        <div style="font-family:var(--font-data);font-size:6px;color:var(--red);font-weight:700;margin-bottom:4px;background:rgba(232,90,106,0.1);padding:2px 6px;border-radius:4px;display:inline-block">ATTACK</div>
-        <div style="font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--bright);line-height:1.2;margin-bottom:6px">Shadow Bolt</div>
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap"><span style="font-family:var(--font-mono);font-size:8px;color:#7B2D8E">Nighthollow</span><span style="font-family:var(--font-data);font-size:6px;color:var(--faint)">T1</span><span style="font-family:var(--font-data);font-size:6px;color:#5599ff;text-transform:uppercase">RARE</span></div>
-        <div style="display:flex;gap:10px;margin-bottom:8px"><div style="text-align:center"><div style="font-family:var(--font-data);font-size:14px;font-weight:800;color:#e85a6a">5</div><div style="font-family:var(--font-data);font-size:5px;color:#e85a6a;opacity:0.6">ATK</div></div><div style="text-align:center"><div style="font-family:var(--font-data);font-size:14px;font-weight:800;color:#6acd8a">3</div><div style="font-family:var(--font-data);font-size:5px;color:#6acd8a;opacity:0.6">HP</div></div></div>
-        <div style="margin-bottom:8px"><span style="font-family:var(--font-data);font-size:7px;color:var(--red);background:rgba(232,90,106,0.1);padding:2px 5px;border-radius:3px;border:1px solid rgba(232,90,106,0.2)">WEAKEN</span></div>
-        <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-data);font-size:8px;color:#00D4FF;font-weight:700">1MP</span><span style="font-family:var(--font-mono);font-size:8px;color:var(--faint)">12 charges</span></div>
-      </div>
+      <!-- Real rendered card -->
+      <div id="builderCardPreview" style="flex-shrink:0"></div>
+      <!-- Annotation boxes -->
       <div style="max-width:220px;text-align:left">
         <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:var(--red);font-weight:700;margin-bottom:3px">TYPE</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">Attack, Defend, Support, or Manipulation — determines what your card does in battle</div></div>
         <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:#e85a6a;font-weight:700;margin-bottom:3px">STATS</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">ATK adds damage, HP adds durability. Cards boost your Nine's base stats during combat</div></div>
@@ -141,7 +139,7 @@
       </div>
     </div>
     <div style="margin-top:16px;padding:10px 16px;border-radius:8px;background:rgba(212,166,75,0.06);border:1px solid var(--border);text-align:center;width:100%">
-      <div style="font-family:var(--font-mono);font-size:10px;color:var(--gold)">💡 Your house cards get ×1.3 effect strength — your WEAKEN hits harder</div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--gold)">💡 Your house cards get ×1.3 effect strength — your POISON hits harder</div>
     </div>
     <div style="margin-top:20px;text-align:center"><button class="cta-btn" onclick="goStep(3)">OPEN YOUR FIRST PACK →</button></div>
   </div>
@@ -153,7 +151,7 @@
       <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:4px">You get one free pack every day. Here's your first:</div>
       <div style="font-family:var(--font-data);font-size:6px;color:var(--faint);margin-top:6px">2 BASIC STARTERS + 3 RANDOM SPELLS WITH RARITY ROLLS</div>
     </div>
-    <div id="packCards" style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:20px 0;min-height:170px"></div>
+    <div id="packCards" style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:20px 0;min-height:270px"></div>
     <div style="text-align:center" id="packActions"><button onclick="revealAllCards()" style="padding:10px 28px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,0.04);cursor:pointer;font-family:var(--font-data);font-size:7px;color:var(--body);letter-spacing:1px">REVEAL ALL</button></div>
     <div id="packDone" style="display:none;text-align:center;animation:fadeUp 0.4s ease">
       <div style="padding:10px 16px;border-radius:8px;display:inline-block;background:rgba(106,205,138,0.08);border:1px solid rgba(106,205,138,0.15);margin-bottom:16px"><div style="font-family:var(--font-mono);font-size:10px;color:var(--green)">✨ 5 cards added to your collection! You'll get a new pack every day.</div></div><br>
@@ -181,6 +179,9 @@
   <div id="skipLink" style="text-align:center;margin-top:12px"><button onclick="goStep(4)" style="background:none;border:none;cursor:pointer;font-family:var(--font-mono);font-size:10px;color:var(--faint);text-decoration:underline;text-underline-offset:3px">skip to dashboard →</button></div>
 </div>
 
+<script src="/js/card-global.js"></script>
+<script src="/js/card-particles.js"></script>
+<script src="/js/card-v4.js"></script>
 <script>
 /* ══════════════════════════════════════ */
 /*  DATA                                 */
@@ -273,13 +274,13 @@ var ITEMS = {
   trinket2:[{id:'none',name:'Empty',f:null,s:{},r:'none',d:'Find trinkets in chests & drops'}]
 };
 
-var TC = {Attack:'#e85a6a',Defend:'#5599ff',Support:'#6acd8a',Manipulation:'#b088e8',Utility:'#6ac8d8'};
-var PACK = [
-  {n:'Mana Bolt',h:'Universal',t:'Attack',ti:'T0',r:'common',a:3,hp:2,e:[],c:1,ch:5},
-  {n:'Hold the Line',h:'Universal',t:'Defend',ti:'T0',r:'common',a:3,hp:2,e:[],c:1,ch:5},
-  {n:'Veil of Dusk',h:'Nighthollow',t:'Defend',ti:'T1',r:'uncommon',a:1,hp:6,e:['WARD'],c:1,ch:8},
-  {n:'Ember Strike',h:'Smoulders',t:'Attack',ti:'T1',r:'rare',a:6,hp:2,e:['BURN +3'],c:1,ch:12},
-  {n:'Cyclone Strike',h:'Ashenvale',t:'Attack',ti:'T2',r:'uncommon',a:6,hp:1,e:['HASTE','BURN +3'],c:2,ch:8}
+var TC = {Attack:'#e85a6a',attack:'#e85a6a',Defend:'#5599ff',defend:'#5599ff',Support:'#6acd8a',support:'#6acd8a',Manipulation:'#b088e8',manipulation:'#b088e8',Utility:'#6ac8d8',utility:'#6ac8d8'};
+var PACK_V4 = [
+  {name:'Mana Bolt',house:'universal',spell_type:'attack',rarity:'common',mana_cost:1,base_atk:3,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[],flavor_text:'The first spell every Nine learns.',image_url:'',current_charges:5,max_charges:5},
+  {name:'Hold the Line',house:'universal',spell_type:'defend',rarity:'common',mana_cost:1,base_atk:3,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[],flavor_text:'Stand your ground.',image_url:'',current_charges:5,max_charges:5},
+  {name:'Veil of Dusk',house:'nighthollow',spell_type:'defend',rarity:'uncommon',mana_cost:1,base_atk:1,base_hp:5,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'WARD',desc:'Absorb next hit (shield)'}],flavor_text:'Darkness is the best armour.',image_url:'',current_charges:8,max_charges:8},
+  {name:'Ember Strike',house:'smoulders',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'BURN +3',desc:'3 extra damage per cycle'}],flavor_text:'Everything burns eventually.',image_url:'',current_charges:12,max_charges:12},
+  {name:'Cyclone Strike',house:'ashenvale',spell_type:'attack',rarity:'uncommon',mana_cost:2,base_atk:6,base_hp:1,base_spd:2,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'HASTE',desc:'+3 SPD this cycle'},{tag:'BURN +3',desc:'3 extra damage per cycle'}],flavor_text:'Wind doesn\'t warn. It arrives.',image_url:'',current_charges:8,max_charges:8}
 ];
 var GM = [
   {i:'⚔️',n:'Zone Battles',t:'15min cycles',d:'Deploy your Nine to zones on the map. Every 15 minutes, all Nines fight. Your guild controls zones by having the most surviving HP.',c:'#e85a6a'},
@@ -300,7 +301,7 @@ function goStep(n){
   document.getElementById('stepCounter').textContent=n+'/4';
   document.getElementById('skipLink').style.display=n<4?'block':'none';
   window.scrollTo({top:0,behavior:'smooth'});
-  if(n===3)initPack();if(n===4)initModes();
+  if(n===2)renderBuilderCard();if(n===3)initPack();if(n===4)initModes();
 }
 
 /* EQUIP BONUSES */
@@ -390,26 +391,65 @@ document.getElementById('nineName').addEventListener('input',function(){
   else{b.disabled=true;b.textContent='NAME YOUR NINE TO CONTINUE';d.style.display='none'}
 });
 
-/* PACK */
+/* HOUSE PREVIEW CARD — shown on the Cards tab */
+var HOUSE_PREVIEW_CARDS = {
+  smoulders:{name:'Ember Strike',house:'smoulders',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'BURN +3',desc:'3 extra damage per cycle'}],flavor_text:'Everything burns eventually.',image_url:'',current_charges:12,max_charges:12},
+  darktide:{name:'Riptide',house:'darktide',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'DRAIN 3%',desc:'Steal 3% HP from target'}],flavor_text:'The current remembers what the shore forgets.',image_url:'',current_charges:12,max_charges:12},
+  stonebark:{name:'Root Strike',house:'stonebark',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'BURN +2',desc:'2 extra damage per cycle'}],flavor_text:'The roots remember what the storm forgets.',image_url:'',current_charges:12,max_charges:12},
+  ashenvale:{name:'Gust Blade',house:'ashenvale',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:1,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'HASTE',desc:'+3 SPD this cycle'}],flavor_text:'Wind doesn\'t ask permission.',image_url:'',current_charges:12,max_charges:12},
+  stormrage:{name:'Spark',house:'stormrage',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'CRIT',desc:'25% chance to deal double ATK'}],flavor_text:'One spark is all it takes.',image_url:'',current_charges:12,max_charges:12},
+  nighthollow:{name:'Shadow Bolt',house:'nighthollow',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'WEAKEN',desc:'Target deals 50% damage this cycle'}],flavor_text:'You won\'t see it coming. That\'s the point.',image_url:'',current_charges:12,max_charges:12},
+  dawnbringer:{name:'Radiant Strike',house:'dawnbringer',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'BURN +2',desc:'2 extra damage per cycle'}],flavor_text:'Light reveals. Light destroys.',image_url:'',current_charges:12,max_charges:12},
+  manastorm:{name:'Arcane Siphon',house:'manastorm',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'DRAIN 3%',desc:'Steal 3% HP from target'}],flavor_text:'Power flows to those who take it.',image_url:'',current_charges:12,max_charges:12},
+  plaguemire:{name:'Plague Doctor',house:'plaguemire',spell_type:'support',rarity:'epic',mana_cost:3,base_atk:3,base_hp:6,base_spd:0,base_def:1,base_luck:1,base_effect:'',bonus_effects:[{tag:'HEAL +6',desc:'Restore 6 HP to self or ally'},{tag:'THORNS',desc:'Attackers take damage back'},{tag:'POISON',desc:'Damage per cycle, stacks'}],flavor_text:'The cure is worse than the disease.',image_url:'/assets/images/spells/PLAGUEDOCTOR.JPEG',current_charges:18,max_charges:18},
+  universal:{name:'Arcane Bolt',house:'universal',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'BURN +2',desc:'2 extra damage per cycle'}],flavor_text:'Pure mana, shaped by will.',image_url:'',current_charges:12,max_charges:12}
+};
+
+function renderBuilderCard(){
+  var el=document.getElementById('builderCardPreview');
+  if(!el||typeof buildCardV4!=='function')return;
+  // TODO: use actual player house when house selection is dynamic
+  var house='plaguemire';
+  var card=HOUSE_PREVIEW_CARDS[house]||HOUSE_PREVIEW_CARDS['plaguemire'];
+  el.innerHTML=buildCardV4(card,{delay:0});
+  setTimeout(function(){if(typeof initCards==='function')initCards()},150);
+}
+
+/* PACK — real card renders with flip reveal */
 function initPack(){
   revd=[];var a=document.getElementById('packCards'),h='';
-  PACK.forEach(function(cd,i){
-    var tc=TC[cd.t]||'#999',rc=RC[cd.r],gl=cd.r==='rare'||cd.r==='epic';
-    h+='<div class="flip-container" onclick="rC('+i+')"><div class="flip-inner" id="fc'+i+'">';
-    h+='<div class="flip-front"><div style="font-size:28px;margin-bottom:6px;opacity:.6">🃏</div><div style="font-family:var(--font-data);font-size:5px;color:var(--gold);opacity:.5">TAP TO REVEAL</div></div>';
-    h+='<div class="flip-back"><div class="mini-card'+(gl?' glow':'')+'" style="width:110px;min-height:150px;padding:8px 8px 6px">';
-    h+='<div style="font-family:var(--font-data);font-size:5px;color:'+tc+';font-weight:700;margin-bottom:3px;background:'+tc+'15;padding:2px 6px;border-radius:4px;display:inline-block">'+cd.t.toUpperCase()+'</div>';
-    h+='<div style="font-family:var(--font-title);font-size:11px;font-weight:700;color:var(--bright);line-height:1.2;margin-bottom:4px">'+cd.n+'</div>';
-    h+='<div style="display:flex;gap:6px;margin-bottom:4px;flex-wrap:wrap"><span style="font-family:var(--font-mono);font-size:7px;color:var(--muted)">'+cd.h+'</span><span style="font-family:var(--font-data);font-size:5px;color:var(--faint)">'+cd.ti+'</span><span style="font-family:var(--font-data);font-size:5px;color:'+rc+';text-transform:uppercase">'+cd.r+'</span></div>';
-    h+='<div style="display:flex;gap:6px;margin-bottom:4px"><div style="text-align:center"><div style="font-family:var(--font-data);font-size:9px;font-weight:800;color:#e85a6a">'+cd.a+'</div><div style="font-family:var(--font-data);font-size:4px;color:#e85a6a;opacity:.6">ATK</div></div><div style="text-align:center"><div style="font-family:var(--font-data);font-size:9px;font-weight:800;color:#6acd8a">'+cd.hp+'</div><div style="font-family:var(--font-data);font-size:4px;color:#6acd8a;opacity:.6">HP</div></div></div>';
-    if(cd.e.length){h+='<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px">';cd.e.forEach(function(e){h+='<span style="font-family:var(--font-data);font-size:5px;color:'+tc+';background:'+tc+'15;padding:2px 5px;border-radius:3px;border:1px solid '+tc+'25">'+e+'</span>'});h+='</div>'}
-    h+='<div style="display:flex;justify-content:space-between;align-items:center"><span style="font-family:var(--font-data);font-size:7px;color:#00D4FF;font-weight:700">'+cd.c+'MP</span><span style="font-family:var(--font-mono);font-size:7px;color:var(--faint)">'+cd.ch+' ch</span></div>';
-    h+='</div></div></div></div>';
+  PACK_V4.forEach(function(cd,i){
+    h+='<div class="flip-container" onclick="rC('+i+')" style="width:160px">';
+    h+='<div class="flip-inner" id="fc'+i+'" style="width:160px;min-height:252px">';
+    h+='<div class="flip-front" style="width:160px;min-height:252px">';
+    h+='<div style="font-size:32px;margin-bottom:8px;opacity:.5">🃏</div>';
+    h+='<div style="font-family:var(--font-data);font-size:6px;color:var(--gold);opacity:.6">TAP TO REVEAL</div>';
+    h+='</div>';
+    h+='<div class="flip-back" style="width:160px">';
+    h+='<div id="packCard'+i+'" class="sc-tiny"></div>';
+    h+='</div>';
+    h+='</div></div>';
   });
-  a.innerHTML=h;document.getElementById('packActions').style.display='block';document.getElementById('packDone').style.display='none';
+  a.innerHTML=h;
+  // Pre-render all card backs (hidden behind flip)
+  PACK_V4.forEach(function(cd,i){
+    var container=document.getElementById('packCard'+i);
+    if(container&&typeof buildCardV4==='function'){
+      container.innerHTML=buildCardV4(cd,{size:'tiny',delay:0});
+    }
+  });
+  document.getElementById('packActions').style.display='block';
+  document.getElementById('packDone').style.display='none';
 }
-function rC(i){if(revd.indexOf(i)!==-1)return;revd.push(i);document.getElementById('fc'+i).classList.add('flipped');if(revd.length>=PACK.length)setTimeout(function(){document.getElementById('packActions').style.display='none';document.getElementById('packDone').style.display='block'},500)}
-function revealAllCards(){var x=revd.length;var iv=setInterval(function(){if(x>=PACK.length){clearInterval(iv);return}rC(x);x++},350)}
+function rC(i){
+  if(revd.indexOf(i)!==-1)return;
+  revd.push(i);
+  document.getElementById('fc'+i).classList.add('flipped');
+  // Init particles/foil for this card after flip
+  setTimeout(function(){if(typeof initCards==='function')initCards()},650);
+  if(revd.length>=PACK_V4.length)setTimeout(function(){document.getElementById('packActions').style.display='none';document.getElementById('packDone').style.display='block'},800);
+}
+function revealAllCards(){var x=revd.length;var iv=setInterval(function(){if(x>=PACK_V4.length){clearInterval(iv);return}rC(x);x++},350)}
 
 /* MODES */
 function initModes(){
