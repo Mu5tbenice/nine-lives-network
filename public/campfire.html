@@ -168,9 +168,7 @@
   </style>
 </head>
 <body>
-
-  <nav class="top-nav"><div class="top-nav-content"><a href="/" class="nav-logo">Nine Lives Network</a><ul class="nav-links"><li><a href="/dashboard.html">Dashboard</a></li><li><a href="/map.html">World</a></li><li><a href="/leaderboards.html">Leaderboards</a></li><li><a href="/warroom.html" class="active">War Room</a></li><li><a href="/arena.html">Arena</a></li><li><a href="/how-to-play.html">Help</a></li></ul><button class="hamburger" id="hamburger" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button></div></nav>
-  <div class="mobile-menu" id="mobileMenu"><a href="/dashboard.html">Dashboard</a><a href="/map.html">World</a><a href="/leaderboards.html">Leaderboards</a><a href="/warroom.html" class="active">War Room</a><a href="/arena.html">Arena</a><a href="/how-to-play.html">Help</a></div>
+  <script src="/js/nav.js"></script>
 
   <div class="main-container">
 
@@ -243,11 +241,6 @@
     };
 
     var player = null;
-
-    function toggleMobileMenu() {
-      document.getElementById('hamburger').classList.toggle('active');
-      document.getElementById('mobileMenu').classList.toggle('active');
-    }
 
     function hImg(filename, size) {
       return '<img src="/assets/images/houses/' + filename + '" style="width:' + size + 'px;height:' + size + 'px;object-fit:contain;" onerror="this.style.display=\'none\'">';

@@ -10,6 +10,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/card-v4.css">
+  <link rel="stylesheet" href="/css/variables-v2.css">
+  <link rel="stylesheet" href="/css/nav-v2.css">
   <style>
     /* ═══ WARM NIGHT DESIGN SYSTEM ═══ */
     :root {
@@ -61,52 +63,6 @@
     ::-webkit-scrollbar { width: 3px; height: 3px; }
     ::-webkit-scrollbar-thumb { background: rgba(212,166,75,0.15); border-radius: 2px; }
     a { color: var(--gold); text-decoration: none; }
-
-    /* ═══ NAV ═══ */
-    .top-nav {
-      position: sticky; top: 0; z-index: 100;
-      padding: 10px 16px;
-      display: flex; align-items: center; justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      background: rgba(18, 14, 30, 0.85);
-      backdrop-filter: blur(12px);
-    }
-    .nav-logo {
-      font-family: var(--font-title); font-size: 14px; font-weight: 700;
-      color: var(--gold); letter-spacing: 2px; text-decoration: none;
-    }
-    .nav-links { display: flex; gap: 4px; list-style: none; }
-    .nav-links a {
-      font-family: var(--font-mono); font-size: 8px; padding: 4px 8px;
-      border-radius: 6px; color: var(--text-muted); text-decoration: none;
-      border: 1px solid transparent; transition: all 0.15s; letter-spacing: 0.5px;
-    }
-    .nav-links a:hover, .nav-links a.active {
-      color: var(--gold); border-color: rgba(212,166,75,0.15);
-      background: var(--gold-dim);
-    }
-    .hamburger { display: none; background: none; border: none; cursor: pointer; padding: 4px; }
-    .hamburger span { display: block; width: 18px; height: 2px; background: var(--text-muted); margin: 3px 0; border-radius: 1px; transition: 0.2s; }
-    .mobile-menu {
-      display: none; position: fixed; top: 44px; left: 0; right: 0; z-index: 99;
-      background: rgba(18,14,30,0.95); backdrop-filter: blur(12px);
-      padding: 12px 16px; border-bottom: 1px solid var(--border);
-      flex-direction: column; gap: 8px;
-    }
-    .mobile-menu.active { display: flex; }
-    .mobile-menu a {
-      font-family: var(--font-mono); font-size: 9px; padding: 8px 12px;
-      border-radius: 8px; color: var(--text-muted); text-decoration: none;
-      border: 1px solid var(--border);
-    }
-    .mobile-menu a:hover { color: var(--gold); border-color: rgba(212,166,75,0.15); }
-    @media(max-width:700px) {
-      .nav-links { display: none; }
-      .hamburger { display: block; }
-    }
-    @media(min-width:701px) {
-      .mobile-menu { display: none !important; }
-    }
 
     /* ═══ LAYOUT ═══ */
     .main-container { max-width: 500px; margin: 0 auto; padding: 0 14px 40px; }
@@ -189,33 +145,7 @@
   </style>
 </head>
 <body>
-
-  <!-- NAV -->
-  <nav class="top-nav">
-    <a href="/" class="nav-logo">Nine Lives Network</a>
-    <ul class="nav-links">
-      <li><a href="/dashboard.html" class="active">Dashboard</a></li>
-      <li><a href="/nethara-live.html">Nethara Live</a></li>
-      <li><a href="/duels.html">Duels</a></li>
-      <li><a href="/gauntlet.html">Gauntlet</a></li>
-      <li><a href="/boss.html">Boss</a></li>
-      <li><a href="/leaderboards.html">Ranks</a></li>
-      <li><a href="/builder.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;transition:all 0.2s;"><span style="font-size:22px;">🐱</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);letter-spacing:0.5px;">YOUR NINE</span></a><a href="/packs.html">Packs</a></li><li><a href="/collection.html">Spellbook</a></li>
-      <li><a href="/how-to-play.html">Help</a></li>
-    </ul>
-    <button class="hamburger" id="hamburger" onclick="toggleMobileMenu()"><span></span><span></span><span></span></button>
-  </nav>
-  <div class="mobile-menu" id="mobileMenu">
-    <a href="/dashboard.html" class="active">Dashboard</a>
-    <a href="/nethara-live.html">Nethara Live</a>
-    <a href="/duels.html">Duels</a>
-    <a href="/gauntlet.html">Gauntlet</a>
-    <a href="/boss.html">Boss</a>
-    <a href="/leaderboards.html">Ranks</a>
-    <a href="/builder.html" style="display:flex;flex-direction:column;align-items:center;gap:4px;padding:12px 6px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);text-decoration:none;transition:all 0.2s;"><span style="font-size:22px;">🐱</span><span style="font-family:var(--font-data);font-size:6px;color:var(--text-muted);letter-spacing:0.5px;">YOUR NINE</span></a><a href="/packs.html">Packs</a></li><li><a href="/collection.html">Spellbook</a>
-    <a href="/how-to-play.html">Help</a>
-    <a href="#" onclick="doLogout()" id="mobileLogout" style="display:none;">Logout</a>
-  </div>
+<script src="/js/nav.js"></script>
 
   <!-- LOADING -->
   <div class="main-container" id="loadingState">
@@ -248,7 +178,6 @@ function getTagColor(tag){if(!tag)return null;var colors={'$BONK':'#F0A030','$WI
 
 /* ═══ AUTH ═══ */
 function getPlayerId(){var p=new URLSearchParams(window.location.search);var f=p.get('player_id');if(f){localStorage.setItem('player_id',f);return f;}return localStorage.getItem('player_id');}
-function toggleMobileMenu(){document.getElementById('hamburger').classList.toggle('active');document.getElementById('mobileMenu').classList.toggle('active');}
 function doLogout(){localStorage.removeItem('player_id');window.location.href='/';}
 if(localStorage.getItem('player_id')){var ml=document.getElementById('mobileLogout');if(ml)ml.style.display='';}
 function timeAgo(d){var diff=Date.now()-new Date(d).getTime(),m=Math.floor(diff/60000);if(m<60)return m+'m ago';var h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
