@@ -94,6 +94,25 @@ async function loadGauntlet(){
   // Start button
   html+='<button class="start-btn" id="startBtn" onclick="startFloor()">⚔️ CHALLENGE FLOOR '+currentFloor+'</button>';
 
+
+  // Your Spells
+  if(playerSpells.length>0){
+    html+='<div class="section-label" style="margin-top:16px;"><span style="font-size:14px;">🃏</span><span class="section-label__text">YOUR SPELLS</span><span class="section-label__line"></span></div>';
+    html+='<div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;justify-content:center;">';
+    playerSpells.forEach(function(s,i){
+      var card={
+        id:s.id,name:s.spell_name||s.name,house:s.spell_house||s.house||'universal',
+        rarity:s.rarity||'common',type:s.spell_type||s.type||'attack',
+        base_atk:s.base_atk||0,base_hp:s.base_hp||0,base_spd:s.base_spd||0,
+        effects:s.spell_effects||s.effects||[],
+        current_charges:s.current_charges,max_charges:s.max_charges,
+        is_exhausted:s.is_exhausted
+      };
+      html+=buildSpellCard(card,{size:'mini',delay:i*0.03});
+    });
+    html+='</div>';
+  }
+
   // Floor tower
   html+='<div class="section-label"><span style="font-size:14px;">🗼</span><span class="section-label__text">TOWER</span><span class="section-label__line"></span></div>';
 

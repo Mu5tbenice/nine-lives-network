@@ -340,29 +340,20 @@ function buildHand(){
 function renderCarousel(){
   var h='';
   sorted.forEach(function(card,i){
-    var dist=Math.abs(i-carouselIdx);var isC=i===carouselIdx;
-    var hc=houseByName(card.house);var r=RARITY[card.rarity]||RARITY.common;var tc=TYPE_C[card.type]||'#888';
-    var w=isC?152:128,mh=isC?216:184,fs=isC?12:10,ah=isC?64:48,af=isC?26:20;
-    h+='<div class="carousel-card" onclick="setCarousel('+i+')" style="opacity:'+(dist>2?0:dist>1?0.2:isC?1:0.5)+';transform:scale('+(isC?1:0.8)+') translateX('+(i-carouselIdx)*-16+'px);z-index:'+(isC?10:5-dist)+';filter:'+(isC?'none':'brightness(0.6)')+';margin-left:'+(i===0?0:-26)+'px;pointer-events:'+(dist>2?'none':'auto')+';">';
-    h+='<div class="mini-card" style="width:'+w+'px;min-height:'+mh+'px;background:linear-gradient(180deg,'+hc.c+'12,#0c0a14 35%,#0a0810);border:1.5px solid '+(isC?hc.c+'60':r.b)+';box-shadow:'+(isC?'0 8px 28px rgba(0,0,0,0.5),0 0 16px '+hc.c+'20':'0 2px 8px rgba(0,0,0,0.3)')+'">';
-    h+='<div class="mc-rarity" style="background:'+r.bg+';border:1px solid '+r.b+';color:'+r.c+';">'+r.l+'</div>';
-    h+='<div class="mini-card-inner">';
-    h+='<div class="mc-top"><div class="mc-name" style="font-size:'+fs+'px;color:'+hc.c+';">'+esc(card.name)+'</div></div>';
-    h+='<div class="mc-art" style="height:'+ah+'px;background:radial-gradient(ellipse at 50% 40%,'+hc.c+'15,transparent 65%),linear-gradient(180deg,rgba(10,8,6,0.5),rgba(14,12,10,0.7));"><span style="font-size:'+af+'px;">\u2726</span><div class="mc-art-tier">'+(card.tier===0?'BASIC':'TIER '+card.tier)+'</div></div>';
-    h+='<div class="mc-type" style="background:'+tc+'15;color:'+tc+';border:1px solid '+tc+'25;">'+card.type+'</div>';
-    h+='<div class="mc-stats"><span class="mc-stat" style="color:var(--red);">ATK '+card.atk+'</span><span class="mc-stat" style="color:var(--green);">HP '+card.hp+'</span></div>';
-    h+='<div class="mc-charges">'+card.charges+'/'+card.maxCharges+' charges</div>';
-    if(card.effects)h+='<div class="mc-effect" style="color:'+hc.c+';">'+esc(card.effects)+'</div>';
-    h+='<div class="mc-house">'+hc.n.toUpperCase()+'</div>';
-    h+='</div></div></div>';
+    var isC=i===carouselIdx;
+    var dist=Math.abs(i-carouselIdx);
+    var cardHtml=buildSpellCard(card,{size:'tiny',delay:i*0.03});
+    // Wrap in carousel-card div with transform
+    h+='<div class="carousel-card'+(isC?' spell-card--selected':'')+(card.is_exhausted?' spell-card--exhausted':'')+'" onclick="setCarousel(''+i+'')" style="opacity:'+(dist>2?0:dist>1?0.2:isC?1:0.5)+';transform:scale('+(isC?1:0.8)+') translateX('+'+(i-carouselIdx)*-16+'px);z-index:'+(isC?10:5-dist)+';filter:'+(isC?'none':'brightness(0.6)')+';margin-left:'+'+(i===0?0:-26)+'px;pointer-events:'+'+(dist>2?'none':'auto')+''">';
+    h+=cardHtml;
+    h+='</div>';
   });
   if(sorted.length===0)h='<div class="empty-msg">No usable cards. Open packs!</div>';
   document.getElementById('carouselInner').innerHTML=h;
-  var dH='';sorted.forEach(function(c,i){dH+='<div class="c-dot" onclick="setCarousel('+i+')" style="width:'+(i===carouselIdx?16:5)+'px;background:'+(i===carouselIdx?houseByName(c.house).c:'rgba(255,255,255,0.08)')+';"></div>';});
+  var dH='';sorted.forEach(function(c,i){dH+='<div class="c-dot" onclick="setCarousel(''+i+'')" style="width:'+'+(i===carouselIdx?16:5)+'px;background:'+(i===carouselIdx?houseByName(c.house).c:'rgba(255,255,255,0.08)')+'">';});
   document.getElementById('carouselDots').innerHTML=dH;
   if(isDeployed&&sorted[carouselIdx]){document.getElementById('playBtn').textContent='CAST '+sorted[carouselIdx].name.toUpperCase()+' (1 MP)';document.getElementById('playBtn').disabled=currentMana<1;}
 }
-
 function setSort(k){sortKey=k;carouselIdx=0;buildHand();}
 function setCarousel(i){carouselIdx=i;renderCarousel();}
 function goL(){if(carouselIdx>0){carouselIdx--;renderCarousel();}}

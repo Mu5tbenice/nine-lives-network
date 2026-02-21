@@ -63,6 +63,8 @@ async function loadBoss(){
   var boss=null,leaderboard=[];
   try{var bR=await fetch('/api/boss/status');if(bR.ok)boss=await bR.json();}catch(e){}
   try{var lR=await fetch('/api/boss/contributions/'+playerId+'');if(lR.ok){var ld=await lR.json();leaderboard=ld.leaderboard||ld||[];}}catch(e){}
+  var playerSpells=[];
+  try{var cR2=await fetch('/api/packs/collection/'+playerId);if(cR2.ok){var cd2=await cR2.json();playerSpells=(cd2.cards||cd2||[]).slice(0,6);}}catch(e){}
 
   var html='';
   html+='<div class="section-label"><span style="font-size:14px;">🐉</span><span class="section-label__text">WEEKLY BOSS RAID</span><span class="section-label__line"></span></div>';
@@ -100,6 +102,25 @@ async function loadBoss(){
       html+='<span style="font-family:var(--font-data);font-size:8px;color:var(--sunset);">'+(d.total_damage||0).toLocaleString()+' DMG</span>';
       html+='</div>';
     });
+  }
+
+  
+  // Your Spells
+  if(playerSpells.length>0){
+    html+='<div class="section-label" style="margin-top:16px;"><span style="font-size:14px;">🃏</span><span class="section-label__text">YOUR SPELLS</span><span class="section-label__line"></span></div>';
+    html+='<div style="display:flex;flex-wrap:wrap;gap:8px;padding:8px 0;justify-content:center;">';
+    playerSpells.forEach(function(s,i){
+      var card={
+        id:s.id,name:s.spell_name||s.name,house:s.spell_house||s.house||'universal',
+        rarity:s.rarity||'common',type:s.spell_type||s.type||'attack',
+        base_atk:s.base_atk||0,base_hp:s.base_hp||0,base_spd:s.base_spd||0,
+        effects:s.spell_effects||s.effects||[],
+        current_charges:s.current_charges,max_charges:s.max_charges,
+        is_exhausted:s.is_exhausted
+      };
+      html+=buildSpellCard(card,{size:'mini',delay:i*0.03});
+    });
+    html+='</div>';
   }
 
   document.getElementById('content').innerHTML=html;

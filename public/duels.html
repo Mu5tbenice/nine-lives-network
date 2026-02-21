@@ -97,17 +97,14 @@ async function loadDuels(){
   html+='<div class="section-label"><span style="font-size:14px;">🃏</span><span class="section-label__text">PICK 3 CARDS</span><span class="section-label__line"></span></div>';
   html+='<div class="card-select" id="cardSelect">';
   if(playerCards.length>0){
-    var rCol={common:'#bbb',uncommon:'#6acd8a',rare:'#5588ff',epic:'#b088e8',legendary:'#ffd700'};
     playerCards.forEach(function(c,i){
-      html+='<div class="duel-card" id="dc'+i+'" onclick="togglePick('+i+')">';
-      html+='<div style="font-family:var(--font-data);font-size:6px;color:'+(rCol[c.rarity]||'#bbb')+';margin-bottom:4px;">'+(c.rarity||'common').toUpperCase()+'</div>';
-      html+='<div style="font-family:var(--font-title);font-size:12px;font-weight:700;color:var(--text-bright);line-height:1.2;margin-bottom:6px;">'+esc(c.name)+'</div>';
-      html+='<div style="display:flex;gap:8px;">';
-      html+='<span style="font-family:var(--font-data);font-size:8px;color:var(--red);">⚔️'+(c.atk||'?')+'</span>';
-      html+='<span style="font-family:var(--font-data);font-size:8px;color:var(--green);">💚'+(c.hp||'?')+'</span>';
-      html+='</div></div>';
+      var isPicked=pickedCards.indexOf(i)>-1;
+      html+='<div class="duel-card'+(isPicked?' spell-card--selected':'')+'" id="dc'+i+'" onclick="togglePick('+i+')" style="cursor:pointer;position:relative;">';
+      html+=buildSpellCard(c,{size:'mini',delay:i*0.04});
+      if(isPicked)html+='<div style="position:absolute;top:4px;right:4px;background:var(--gold);color:#000;font-family:var(--font-data);font-size:6px;padding:2px 4px;border-radius:3px;z-index:10;">SELECTED</div>';
+      html+='</div>';
     });
-  }else{
+    }else{
     html+='<div style="padding:16px;text-align:center;color:var(--text-faint);font-style:italic;font-size:12px;width:100%;">No cards available. Open a pack first!</div>';
   }
   html+='</div>';
@@ -135,9 +132,13 @@ function togglePick(idx){
   var pos=pickedCards.indexOf(idx);
   if(pos>-1){pickedCards.splice(pos,1);}
   else if(pickedCards.length<3){pickedCards.push(idx);}
-  playerCards.forEach(function(_,i){
+  // Re-render card grid to reflect selection state
+  playerCards.forEach(function(c,i){
     var el=document.getElementById('dc'+i);
-    if(el)el.classList.toggle('picked',pickedCards.indexOf(i)>-1);
+    if(el){
+      if(pickedCards.indexOf(i)>-1){el.classList.add('spell-card--selected');}
+      else{el.classList.remove('spell-card--selected');}
+    }
   });
   var cnt=document.getElementById('pickCount');
   if(cnt)cnt.textContent=pickedCards.length+'/3 SELECTED';

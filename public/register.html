@@ -162,7 +162,12 @@
 
     <div style="font-family:var(--font-mono);font-size:8px;color:var(--text-faint);margin:14px 0 6px;">not feeling it? pick your own:</div>
     <div class="house-grid" id="houseGrid"></div>
-    <button class="twitter-btn" id="confirmBtn" onclick="confirmRegistration()" style="margin-top:12px;">⚔️ JOIN NETHARA</button>
+    <div style="margin-top:16px;margin-bottom:4px;">
+        <label style="font-family:var(--font-mono);font-size:8px;color:var(--text-faint);letter-spacing:1px;display:block;margin-bottom:4px;">GUILD TAG <span style="color:var(--text-muted);">(optional)</span></label>
+        <input id="guildTagInput" type="text" maxlength="4" placeholder="e.g. VOID" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:var(--text-bright);font-family:var(--font-data);font-size:12px;padding:8px 12px;letter-spacing:2px;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+        <div style="font-family:var(--font-mono);font-size:7px;color:var(--text-faint);margin-top:4px;">join a guild later or enter your guild&#39;s 2-4 letter tag now</div>
+      </div>
+      <button class="twitter-btn" id="confirmBtn" onclick="confirmRegistration()" style="margin-top:12px;">⚔️ JOIN NETHARA</button>
   </div>
 
   <!-- ═══ STEP 4: CREATING ═══ -->
@@ -551,7 +556,7 @@ async function confirmRegistration() {
           access_token: twitterData.access_token,
           refresh_token: twitterData.refresh_token,
           school_id: selectedHouse,
-          guild_tag: null
+          guild_tag: (document.getElementById('guildTagInput')||{}).value || null
         })
       });
       if (r.ok) {
