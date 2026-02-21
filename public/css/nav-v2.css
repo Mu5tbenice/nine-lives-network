@@ -14,7 +14,7 @@
   left: 0;
   right: 0;
   z-index: 100;
-  background: rgba(10, 8, 18, 0.92);
+  background: rgba(14, 10, 24, 0.92);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-subtle);
@@ -130,7 +130,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(10, 8, 18, 0.97);
+  background: rgba(14, 10, 24, 0.97);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   z-index: 99;
