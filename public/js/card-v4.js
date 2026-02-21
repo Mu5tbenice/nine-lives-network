@@ -254,7 +254,7 @@ function buildCardV4(s, options) {
     var durColor = ({ common:'#bbb', uncommon:'#66dd66', rare:'#55bbff', epic:'#bb88ff', legendary:'#ffd700' })[rarity] || '#888';
     durHtml = '<div class="sc-durability">'
       + '<div class="sc-dur-track"><div class="sc-dur-fill" style="width:' + pct + '%;background:linear-gradient(90deg,' + durColor + ',' + durColor + '88)"></div></div>'
-      + '<span class="sc-dur-text">' + cur + '/' + s.max_charges + '</span>'
+      + '<span class="sc-dur-text"></span>'
       + '</div>';
   }
 
@@ -302,6 +302,7 @@ function buildCardV4(s, options) {
     + '<div class="sc-body">'
       + '<div class="sc-top">' + logoInline + '<div class="sc-name">' + _esc(s.name) + '</div>' + manaHtml + '</div>'
       + '<div style="flex:1"></div>'
+      + '<div class="sc-info-panel">'
       + statHtml
       + ruleHtml
       + '<div class="sc-info">'
@@ -312,7 +313,7 @@ function buildCardV4(s, options) {
         + flavorHtml
     + '<div class="sc-bottom sc-bottom--' + s.house + '" style="color:' + hc + '">' + houseName.toUpperCase() + '</div>'
       + '</div>'
-      + '<div style="height:4px"></div>'
+      + '</div>'
     + '</div>'
 
   + '</div>';
@@ -395,54 +396,31 @@ function fitCardNames(container) {
   });
 }
 
-/* ═══ FIX 3: Global tooltip — lives outside cards to avoid overflow:hidden clipping ═══ */
-function ensureGlobalTip() {
-  if (document.getElementById('sc-global-tip')) return document.getElementById('sc-global-tip');
-  var tip = document.createElement('div');
-  tip.id = 'sc-global-tip';
-  tip.style.cssText = 'display:none;position:fixed;top:0;left:0;white-space:normal;max-width:260px;font-family:Crimson Text,Georgia,serif;font-size:13px;font-weight:400;color:#e8e4d9;background:rgba(14,10,24,0.97);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:8px 14px;z-index:9999;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.7);line-height:1.35;';
-  document.body.appendChild(tip);
-  return tip;
-}
-
+/* ═══ FIX 3: Flip tooltips below when card is near top of screen ═══ */
 function fixTooltipPositions(container) {
-  var globalTip = ensureGlobalTip();
   var pills = (container || document).querySelectorAll('.spell-card .pill');
   pills.forEach(function(pill) {
     if (pill._tipFixed) return;
     pill._tipFixed = true;
-
-    // Read tooltip content from the inline .tip span
-    var inlineTip = pill.querySelector('.tip');
-    if (!inlineTip) return;
-    var tipContent = inlineTip.innerHTML;
-    // Hide the inline tip permanently — we use global one
-    inlineTip.style.display = 'none';
-
     pill.addEventListener('mouseenter', function() {
-      globalTip.innerHTML = tipContent;
-      globalTip.style.display = 'block';
-      globalTip.style.visibility = 'hidden';
-
+      var tip = pill.querySelector('.tip');
+      if (!tip) return;
+      tip.style.display = 'block';
+      tip.style.visibility = 'hidden';
       var pr = pill.getBoundingClientRect();
-      var tr = globalTip.getBoundingClientRect();
-
+      var tr = tip.getBoundingClientRect();
       var top = pr.top - tr.height - 8;
       var left = pr.left + (pr.width / 2) - (tr.width / 2);
-
-      // Flip below if clipped at top
       if (top < 8) top = pr.bottom + 8;
-      // Keep on screen horizontally
       if (left < 8) left = 8;
       if (left + tr.width > window.innerWidth - 8) left = window.innerWidth - tr.width - 8;
-
-      globalTip.style.top = top + 'px';
-      globalTip.style.left = left + 'px';
-      globalTip.style.visibility = 'visible';
+      tip.style.top = top + 'px';
+      tip.style.left = left + 'px';
+      tip.style.visibility = 'visible';
     });
-
     pill.addEventListener('mouseleave', function() {
-      globalTip.style.display = 'none';
+      var tip = pill.querySelector('.tip');
+      if (tip) tip.style.display = 'none';
     });
   });
 }
