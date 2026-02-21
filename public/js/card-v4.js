@@ -395,31 +395,54 @@ function fitCardNames(container) {
   });
 }
 
-/* ═══ FIX 3: Flip tooltips below when card is near top of screen ═══ */
+/* ═══ FIX 3: Global tooltip — lives outside cards to avoid overflow:hidden clipping ═══ */
+function ensureGlobalTip() {
+  if (document.getElementById('sc-global-tip')) return document.getElementById('sc-global-tip');
+  var tip = document.createElement('div');
+  tip.id = 'sc-global-tip';
+  tip.style.cssText = 'display:none;position:fixed;top:0;left:0;white-space:normal;max-width:260px;font-family:Crimson Text,Georgia,serif;font-size:13px;font-weight:400;color:#e8e4d9;background:rgba(14,10,24,0.97);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:8px 14px;z-index:9999;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,0.7);line-height:1.35;';
+  document.body.appendChild(tip);
+  return tip;
+}
+
 function fixTooltipPositions(container) {
+  var globalTip = ensureGlobalTip();
   var pills = (container || document).querySelectorAll('.spell-card .pill');
   pills.forEach(function(pill) {
     if (pill._tipFixed) return;
     pill._tipFixed = true;
+
+    // Read tooltip content from the inline .tip span
+    var inlineTip = pill.querySelector('.tip');
+    if (!inlineTip) return;
+    var tipContent = inlineTip.innerHTML;
+    // Hide the inline tip permanently — we use global one
+    inlineTip.style.display = 'none';
+
     pill.addEventListener('mouseenter', function() {
-      var tip = pill.querySelector('.tip');
-      if (!tip) return;
-      tip.style.display = 'block';
-      tip.style.visibility = 'hidden';
+      globalTip.innerHTML = tipContent;
+      globalTip.style.display = 'block';
+      globalTip.style.visibility = 'hidden';
+
       var pr = pill.getBoundingClientRect();
-      var tr = tip.getBoundingClientRect();
+      var tr = globalTip.getBoundingClientRect();
+
       var top = pr.top - tr.height - 8;
       var left = pr.left + (pr.width / 2) - (tr.width / 2);
+
+      // Flip below if clipped at top
       if (top < 8) top = pr.bottom + 8;
+      // Keep on screen horizontally
       if (left < 8) left = 8;
       if (left + tr.width > window.innerWidth - 8) left = window.innerWidth - tr.width - 8;
-      tip.style.top = top + 'px';
-      tip.style.left = left + 'px';
-      tip.style.visibility = 'visible';
+
+      globalTip.style.top = top + 'px';
+      globalTip.style.left = left + 'px';
+      globalTip.style.visibility = 'visible';
     });
+
     pill.addEventListener('mouseleave', function() {
-      var tip = pill.querySelector('.tip');
-      if (tip) tip.style.display = 'none';
+      globalTip.style.display = 'none';
     });
   });
 }
