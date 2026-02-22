@@ -16,8 +16,8 @@
     body{min-height:100vh;background:radial-gradient(ellipse at 50% 15%,rgba(123,45,142,0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(212,166,75,0.04) 0%,transparent 40%),linear-gradient(180deg,#1a1528 0%,#120e1e 50%,#0e0a18 100%);font-family:var(--font-body);color:var(--body);display:flex;flex-direction:column;align-items:center;padding:16px}
     .wrap{max-width:480px;width:100%}
     .step{display:none}.step.active{display:block;animation:fadeUp 0.35s ease}
-    .card-frame{border-radius:20px;background:var(--bg-card);border:1px solid var(--border-glow);padding:16px;position:relative;overflow:hidden;margin-bottom:12px}
-    .card-frame::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 20%,rgba(212,166,75,0.04) 0%,transparent 60%);pointer-events:none}
+    .card-frame{border-radius:20px;background:var(--bg-card);border:1px solid var(--border-glow);padding:16px;position:relative;overflow:visible;margin-bottom:12px}
+    .card-frame::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 20%,rgba(212,166,75,0.04) 0%,transparent 60%);pointer-events:none;border-radius:20px}
     .prog-bar{display:flex;gap:4px;margin-bottom:20px}
     .prog-seg{flex:1}.prog-fill{height:3px;border-radius:2px;background:rgba(255,255,255,0.06);transition:background 0.4s,box-shadow 0.4s;margin-bottom:4px}
     .prog-fill.done{background:var(--gold);box-shadow:0 0 6px rgba(212,166,75,0.3)}
@@ -27,9 +27,12 @@
     .slot-btn{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.015);border:1.5px solid rgba(255,255,255,0.06);transition:all 0.15s}.slot-btn:hover{border-color:rgba(123,45,142,0.3)}.slot-btn.active{background:rgba(123,45,142,0.08);border-color:#7B2D8E}.slot-btn.locked{opacity:0.4;cursor:default}
     .slot-icon{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);position:relative;overflow:hidden}
     .slot-icon img{width:100%;height:100%;object-fit:cover;border-radius:4px}
-    .picker{background:rgba(18,14,30,0.95);border:1px solid rgba(123,45,142,0.2);border-radius:12px;padding:12px;margin-bottom:12px;animation:fadeUp 0.2s ease}
-    .pick-row{display:flex;align-items:center;gap:8px;padding:10px 12px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.04);transition:all 0.12s;margin-bottom:4px}.pick-row:hover{background:rgba(255,255,255,0.03)}.pick-row.equipped{background:rgba(123,45,142,0.07);border-color:rgba(123,45,142,0.3)}
-    .pick-thumb{width:40px;height:40px;border-radius:6px;flex-shrink:0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;overflow:hidden}.pick-thumb img{width:100%;height:100%;object-fit:cover}
+    .picker-overlay{position:absolute;top:0;right:0;width:calc(100% - 167px);bottom:0;z-index:50;background:rgba(18,14,30,0.97);border:1px solid rgba(123,45,142,0.25);border-radius:12px;padding:10px;overflow-y:auto;animation:fadeUp 0.15s ease;backdrop-filter:blur(8px);box-shadow:-4px 0 20px rgba(0,0,0,0.4)}
+    .picker-overlay::-webkit-scrollbar{width:4px}.picker-overlay::-webkit-scrollbar-thumb{background:rgba(123,45,142,0.3);border-radius:2px}
+    .picker-head{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid rgba(123,45,142,0.15);background:rgba(18,14,30,0.97)}
+    .picker-close-btn{background:none;border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:var(--muted);font-size:14px;cursor:pointer;padding:2px 8px;font-family:var(--font-mono)}.picker-close-btn:hover{border-color:rgba(255,255,255,0.2);color:var(--bright)}
+    .pick-row{display:flex;align-items:center;gap:6px;padding:7px 8px;border-radius:8px;cursor:pointer;background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.04);transition:all 0.12s;margin-bottom:3px}.pick-row:hover{background:rgba(255,255,255,0.03)}.pick-row.equipped{background:rgba(123,45,142,0.07);border-color:rgba(123,45,142,0.3)}
+    .pick-thumb{width:34px;height:34px;border-radius:6px;flex-shrink:0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;overflow:hidden}.pick-thumb img{width:100%;height:100%;object-fit:cover}
     .char-preview{width:100%;aspect-ratio:1/1;max-height:280px;border-radius:12px;background:linear-gradient(180deg,#2a2240 0%,#221c38 60%,#1a1528 100%);border:1px solid rgba(123,45,142,0.15);position:relative;overflow:hidden}
     .char-preview .layer{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;transition:opacity 0.25s ease}
     .char-preview .fade-bottom{position:absolute;bottom:0;left:0;right:0;height:60px;background:linear-gradient(to top,#1a1528,transparent);pointer-events:none;z-index:20}
@@ -49,7 +52,7 @@
     .mode-desc{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-family:var(--font-mono);font-size:10px;color:var(--body);line-height:1.7;animation:fadeUp 0.2s ease}
     .anno-row{padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border);margin-bottom:6px;transition:all 0.2s}.anno-row:hover{border-color:rgba(232,90,106,0.25);background:rgba(232,90,106,0.04)}
     @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-    @media(max-width:400px){.wrap{padding:0 2px}.slot-col{width:135px}}
+    @media(max-width:400px){.wrap{padding:0 2px}.slot-col{width:135px}.picker-overlay{width:calc(100% - 147px)}}
   </style>
 </head>
 <body>
@@ -83,10 +86,10 @@
       <input type="text" id="nineName" maxlength="20" placeholder="e.g. Shadowfang the Unseen" class="name-input">
       <div id="nameCount" style="font-family:var(--font-mono);font-size:8px;color:var(--faint);margin-top:3px;text-align:right">0/20</div>
     </div>
-    <div class="card-frame" style="padding:16px">
-      <div style="display:flex;gap:12px;position:relative;z-index:1">
+    <div class="card-frame" style="padding:16px" id="mainCardFrame">
+      <div style="display:flex;gap:12px;position:relative;z-index:1" id="slotContainer">
         <div class="slot-col" id="slotCol"></div>
-        <div style="flex:1;display:flex;flex-direction:column;gap:12px">
+        <div style="flex:1;display:flex;flex-direction:column;gap:12px" id="rightPanel">
           <div class="char-preview" id="charPreview">
             <div class="vignette"></div>
             <div class="fade-bottom"></div>
@@ -108,7 +111,7 @@
         </div>
       </div>
     </div>
-    <div id="pickerArea"></div>
+    <!-- picker now renders as overlay inside slotContainer -->
     <div id="trinketCallout" style="display:none;padding:12px 16px;border-radius:10px;margin-bottom:12px;background:rgba(106,200,216,0.05);border:1px solid rgba(106,200,216,0.15);text-align:center">
       <div style="font-family:var(--font-data);font-size:6px;color:var(--cyan);margin-bottom:4px">💎 TRINKET SLOTS</div>
       <div style="font-family:var(--font-mono);font-size:10px;color:var(--body);line-height:1.6">Trinkets are powerful stat items found in chests, boss drops, and season rewards. These slots unlock when you find your first one.</div>
@@ -338,8 +341,7 @@ var HOUSE_PREVIEW_CARDS = {
 };
 
 /* ══════════════════════════════════════ */
-/*  STATE — FIX: only randomize for     */
-/*  new players, not edit mode           */
+/*  STATE                                */
 /* ══════════════════════════════════════ */
 var step=1,aSlot=null,pSlot=null,pItem=null,revd=[],oMode=null;
 var _skipIntro = new URLSearchParams(window.location.search).get('skip_intro') === '1';
@@ -348,11 +350,9 @@ var eq={};
 SLOTS.forEach(function(s){
   var pool=ITEMS[s.id];
   if(!_skipIntro && pool.length>1){
-    // New player: randomize for visual interest
     var idx=1+Math.floor(Math.random()*(pool.length-1));
     eq[s.id]=pool[idx];
   } else {
-    // Edit mode: start empty, load from API below
     eq[s.id]=pool[0];
   }
 });
@@ -423,31 +423,39 @@ function updCount(){
   var h=HOUSE_BASE_STATS[_playerHouse];
   document.getElementById('slotCountLabel').textContent=h.icon+' '+_playerHouse.toUpperCase()+' · '+c+'/8 SLOTS';
 }
-function tSlot(id){aSlot=aSlot===id?null:id;renderSlots();renderPicker();document.getElementById('trinketCallout').style.display='none'}
+function tSlot(id){aSlot=(id===null||aSlot===id)?null:id;renderSlots();renderPicker();document.getElementById('trinketCallout').style.display='none'}
 function showTI(){aSlot=null;renderSlots();renderPicker();document.getElementById('trinketCallout').style.display='block'}
 
-/* PICKER */
+/* PICKER — POPOVER OVERLAY */
 function renderPicker(){
-  var a=document.getElementById('pickerArea');document.getElementById('trinketCallout').style.display='none';
-  if(!aSlot||!ITEMS[aSlot]||ITEMS[aSlot].length<=1){a.innerHTML='';return}
+  document.getElementById('trinketCallout').style.display='none';
+  // Remove any existing picker overlay
+  var old=document.getElementById('pickerOverlay');
+  if(old)old.remove();
+  if(!aSlot||!ITEMS[aSlot]||ITEMS[aSlot].length<=1)return;
   var sl=SLOTS.find(function(s){return s.id===aSlot}),its=ITEMS[aSlot];
-  var h='<div class="picker"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><div style="font-family:var(--font-data);font-size:7px;color:#7B2D8E;letter-spacing:1px">'+sl.icon+' '+sl.label.toUpperCase()+'</div><div style="font-family:var(--font-data);font-size:5px;color:var(--faint)">'+(its.length-1)+' items</div></div>';
+  var h='<div class="picker-overlay" id="pickerOverlay">';
+  h+='<div class="picker-head"><div style="font-family:var(--font-data);font-size:6px;color:#7B2D8E;letter-spacing:1px">'+sl.icon+' '+sl.label.toUpperCase()+' <span style="color:var(--faint);font-weight:400">'+(its.length-1)+'</span></div>';
+  h+='<button class="picker-close-btn" onclick="tSlot(null)">✕</button></div>';
   its.forEach(function(it){
     var isE=eq[aSlot]&&eq[aSlot].id===it.id,rc=RC[it.r],hs=it.s&&Object.keys(it.s).length>0;
     var th=it.f?'<img src="'+IMG+aSlot+'/'+it.f+'" style="width:100%;height:100%;object-fit:cover;border-radius:4px" onerror="this.parentElement.textContent=\''+sl.icon+'\'">':(it.id==='none'?'—':sl.icon);
     h+='<div class="pick-row'+(isE?' equipped':'')+'" onclick="eqIt(\''+aSlot+"','"+it.id+"')\" onmouseenter=\"pvOn('"+aSlot+"','"+it.id+"')\" onmouseleave=\"pvOff()\">";
     h+='<div class="pick-thumb" style="background:'+rc+'10;border-color:'+rc+'25">'+th+'</div>';
-    h+='<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px"><span style="font-family:var(--font-title);font-size:13px;font-weight:700;color:'+(it.id==='none'?'var(--faint)':'var(--bright)')+'">'+it.name+'</span>';
-    if(it.r!=='none')h+='<span style="font-family:var(--font-data);font-size:6px;color:'+rc+';text-transform:uppercase;background:'+rc+'15;padding:2px 5px;border-radius:3px">'+it.r+'</span>';
-    h+='</div><div style="font-family:var(--font-mono);font-size:10px;color:var(--muted);margin-top:2px">'+it.d+'</div>';
-    if(hs){h+='<div style="display:flex;gap:8px;margin-top:4px">';Object.keys(it.s).forEach(function(k){h+='<span style="font-family:var(--font-data);font-size:8px;color:'+SM[k].c+'">+'+it.s[k]+' '+SM[k].l+'</span>'});h+='</div>'}
+    h+='<div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap"><span style="font-family:var(--font-title);font-size:11px;font-weight:700;color:'+(it.id==='none'?'var(--faint)':'var(--bright)')+'">'+it.name+'</span>';
+    if(it.r!=='none')h+='<span style="font-family:var(--font-data);font-size:4px;color:'+rc+';text-transform:uppercase;background:'+rc+'15;padding:1px 4px;border-radius:3px">'+it.r+'</span>';
+    h+='</div>';
+    if(hs){h+='<div style="display:flex;gap:5px;margin-top:2px">';Object.keys(it.s).forEach(function(k){h+='<span style="font-family:var(--font-data);font-size:6px;color:'+SM[k].c+'">+'+it.s[k]+' '+SM[k].l+'</span>'});h+='</div>'}
     h+='</div>';if(isE)h+='<div style="font-family:var(--font-data);font-size:7px;color:var(--green)">✓</div>';
     h+='</div>';
   });
-  h+='</div>';a.innerHTML=h;
+  h+='</div>';
+  // Insert inside the slotContainer so it overlays the preview area
+  var container=document.getElementById('slotContainer');
+  if(container)container.insertAdjacentHTML('beforeend',h);
 }
 
-function eqIt(sid,iid){var it=ITEMS[sid].find(function(i){return i.id===iid});if(it)eq[sid]=it;pSlot=null;pItem=null;renderSlots();renderPicker();renderStats();renderLayers();updCount()}
+function eqIt(sid,iid){var it=ITEMS[sid].find(function(i){return i.id===iid});if(it)eq[sid]=it;pSlot=null;pItem=null;aSlot=null;renderSlots();renderPicker();renderStats();renderLayers();updCount()}
 function pvOn(sid,iid){pItem=ITEMS[sid].find(function(i){return i.id===iid});pSlot=sid;renderStats()}
 function pvOff(){pItem=null;pSlot=null;renderStats()}
 
@@ -514,13 +522,12 @@ function initModes(){
 function tM(i){GM.forEach(function(_,j){var d=document.getElementById('md'+j),c=document.getElementById('mc'+j),v=document.getElementById('mv'+j);if(j===i&&oMode!==i){d.style.display='block';c.classList.add('open');v.style.transform='rotate(90deg)'}else{d.style.display='none';c.classList.remove('open');v.style.transform='none'}});oMode=oMode===i?null:i}
 
 /* ══════════════════════════════════════ */
-/*  SAVE EQUIPMENT — shared function     */
+/*  SAVE EQUIPMENT                       */
 /* ══════════════════════════════════════ */
 function saveEquipment(callback) {
-  // Calculate total stat bonuses from all equipped items
   var bonuses={atk:0,hp:0,spd:0,def:0,luck:0};
-  var slotFiles={};  // filenames for canvas rendering
-  var slotIds={};     // item IDs for re-loading in builder
+  var slotFiles={};
+  var slotIds={};
   Object.keys(eq).forEach(function(slot){
     var item=eq[slot];
     if(item&&item.id!=='none'){
@@ -535,13 +542,11 @@ function saveEquipment(callback) {
       }
     }
   });
-  // Save to localStorage — dashboard reads this
   localStorage.setItem('9lv_equipment',JSON.stringify({
     slots:slotFiles,
     items:slotIds,
     bonuses:bonuses
   }));
-  // Also try API (may not exist yet, that's OK)
   var pid=null;
   try{pid=JSON.parse(localStorage.getItem('9lv_player')).id;}catch(e){}
   if(pid){
@@ -567,24 +572,15 @@ renderSlots();renderStats();renderLayers();updCount();
 
 /* ══════════════════════════════════════ */
 /*  SKIP INTRO — EDIT MODE              */
-/*  When arriving from dashboard with    */
-/*  ?skip_intro=1, load actual equipment */
-/*  and show just the character editor   */
 /* ══════════════════════════════════════ */
 (function(){
   if (!_skipIntro) return;
-
-  // Hide tutorial progress bar and step counter
   var progBar = document.querySelector('.prog-bar');
   if (progBar) progBar.style.display = 'none';
   var stepCounter = document.getElementById('stepCounter');
   if (stepCounter) stepCounter.style.display = 'none';
-
-  // Hide "skip to dashboard" link
   var skipLink = document.getElementById('skipLink');
   if (skipLink) skipLink.style.display = 'none';
-
-  // Change header to edit mode with back button
   var headerDiv = document.getElementById('builderHeader');
   if (headerDiv) {
     var h = HOUSE_BASE_STATS[_playerHouse];
@@ -596,12 +592,8 @@ renderSlots();renderStats();renderLayers();updCount();
       + '<div style="font-family:var(--font-data);font-size:6px;color:' + h.color + '">' + _playerHouse.toUpperCase() + ' · ' + h.role + '</div>'
       + '</div></div>';
   }
-
-  // Change title
   var titleEl = document.getElementById('step1Title');
   if (titleEl) titleEl.textContent = 'EDIT YOUR NINE';
-
-  // Change step1 CTA button — save and go back
   var btn = document.getElementById('step1Btn');
   if (btn) {
     btn.disabled = false;
@@ -614,8 +606,6 @@ renderSlots();renderStats();renderLayers();updCount();
       });
     };
   }
-
-  // Pre-fill name from localStorage
   var nameInput = document.getElementById('nineName');
   if (nameInput) {
     try {
@@ -630,8 +620,6 @@ renderSlots();renderStats();renderLayers();updCount();
         }
       }
     } catch(e) {}
-
-    // Override name input — keep button as "SAVE" in edit mode
     nameInput.addEventListener('input', function() {
       var v = this.value;
       document.getElementById('nameCount').textContent = v.length + '/20';
@@ -643,8 +631,6 @@ renderSlots();renderStats();renderLayers();updCount();
       b.textContent = '💾 SAVE & BACK TO DASHBOARD';
     });
   }
-
-  // Load actual equipped items from localStorage
   try {
     var eqStr = localStorage.getItem('9lv_equipment');
     if (eqStr) {
