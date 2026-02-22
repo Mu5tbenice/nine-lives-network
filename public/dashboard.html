@@ -406,8 +406,8 @@ async function render(player,casts,zones,schools,quests){
     // Background — dramatic radial from house color
     +'<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 70%,'+house.color+'18 0%,transparent 55%),radial-gradient(ellipse at 20% 20%,rgba(139,180,224,0.05) 0%,transparent 40%),linear-gradient(180deg,#2a2040 0%,#1a1528 40%,#120e1e 100%);"></div>'
 
-    // House crest — large centered watermark behind everything
-    +'<img src="'+house.img+'" alt="" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:200px;height:200px;object-fit:contain;opacity:0.05;filter:drop-shadow(0 0 20px '+house.color+'30);pointer-events:none;z-index:0;" onerror="this.style.display=\'none\'">'
+    // House crest — positioned in upper-right diagonal between Season badge and Points
+    +'<img src="'+house.img+'" alt="" style="position:absolute;top:30px;right:50px;width:140px;height:140px;object-fit:contain;opacity:0.06;filter:drop-shadow(0 0 20px '+house.color+'30);pointer-events:none;z-index:0;" onerror="this.style.display=\'none\'">'
 
     +'<div style="position:relative;z-index:1;">'
 
@@ -423,14 +423,15 @@ async function render(player,casts,zones,schools,quests){
     +'<span style="color:rgba(255,255,255,0.1);">·</span>'
     +'<span style="font-family:var(--font-data);font-size:9px;color:'+house.color+';opacity:0.8;">'+house.icon+' '+(house.role||'').toUpperCase()+'</span>'
     +'</div>'
+    +'<a href="/builder.html?skip_intro=1" style="display:inline-block;margin-top:6px;font-family:var(--font-data);font-size:8px;color:var(--gold);background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);padding:4px 10px;border-radius:6px;border:1px solid rgba(212,166,75,0.2);text-decoration:none;cursor:pointer;transition:border-color 0.2s;" onmouseenter="this.style.borderColor=\'rgba(212,166,75,0.5)\'" onmouseleave="this.style.borderColor=\'rgba(212,166,75,0.2)\'">✏️ EDIT</a>'
     +'</div>'
     +'<span style="font-family:var(--font-data);font-size:9px;padding:5px 14px;border-radius:10px;border:1px solid rgba(212,166,75,0.25);background:rgba(212,166,75,0.08);color:var(--gold);letter-spacing:1.5px;flex-shrink:0;">SEASON 0</span>'
     +'</div>'
 
-    // ── CHARACTER SHOWCASE — full width, centered, BIG, overlaps stats ──
-    +'<div style="position:relative;display:flex;justify-content:center;align-items:flex-end;height:280px;overflow:visible;margin-top:-8px;">'
-    +'<div style="animation:subtleFloat 6s ease-in-out infinite;position:relative;z-index:3;">'
-    +'<canvas id="dashNineCanvas" width="500" height="500" style="width:300px;height:300px;filter:drop-shadow(0 8px 30px '+house.color+'40) drop-shadow(0 2px 8px rgba(0,0,0,0.5));margin-bottom:-30px;"></canvas>'
+    // ── CHARACTER SHOWCASE — behind stats bar, centered, BIG ──
+    +'<div style="position:relative;display:flex;justify-content:center;align-items:flex-end;height:270px;overflow:visible;margin-top:-8px;">'
+    +'<div style="animation:subtleFloat 6s ease-in-out infinite;position:relative;z-index:1;">'
+    +'<canvas id="dashNineCanvas" width="500" height="500" style="width:300px;height:300px;filter:drop-shadow(0 8px 30px '+house.color+'40) drop-shadow(0 2px 8px rgba(0,0,0,0.5));margin-bottom:-36px;"></canvas>'
     +'</div>'
 
     // Points — floating top-right
@@ -439,15 +440,12 @@ async function render(player,casts,zones,schools,quests){
     +'<div style="font-family:var(--font-data);font-size:8px;color:var(--text-faint);letter-spacing:1.5px;margin-top:2px;">POINTS</div>'
     +'</div>'
 
-    // Edit button — bottom-left
-    +'<a href="/builder.html?skip_intro=1" style="position:absolute;bottom:40px;left:16px;z-index:10;font-family:var(--font-data);font-size:8px;color:var(--gold);background:rgba(0,0,0,0.65);backdrop-filter:blur(4px);padding:4px 10px;border-radius:6px;border:1px solid rgba(212,166,75,0.2);text-decoration:none;cursor:pointer;">✏️ EDIT</a>'
-
-    // Floor shadow under character — sits above stats
-    +'<div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:220px;height:35px;background:radial-gradient(ellipse,'+house.color+'20 0%,transparent 70%);border-radius:50%;z-index:2;"></div>'
+    // Floor shadow under character
+    +'<div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);width:220px;height:35px;background:radial-gradient(ellipse,'+house.color+'20 0%,transparent 70%);border-radius:50%;z-index:0;"></div>'
     +'</div>'
 
-    // ── STATS BAR — character feet overlap into this ──
-    +'<div style="position:relative;z-index:1;display:flex;gap:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(8px);border-top:1px solid rgba(255,255,255,0.06);padding:10px 8px;">'
+    // ── STATS BAR — in front of character (z-index 5) ──
+    +'<div style="position:relative;z-index:5;display:flex;gap:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(10px);border-top:1px solid rgba(255,255,255,0.06);padding:10px 8px;">'
     +statPill('ATK',nAtk,'atk')
     +'<div style="width:1px;background:rgba(255,255,255,0.06);margin:2px 0;"></div>'
     +statPill('HP',nHp,'hp')
