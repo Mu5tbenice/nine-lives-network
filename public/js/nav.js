@@ -3,12 +3,11 @@
     { href: '/dashboard.html', label: 'Dashboard' },
     { href: '/nethara-live.html', label: 'Nethara' },
     { href: '/duels.html', label: 'Duels' },
-    { href: '/gauntlet.html', label: 'Gauntlet' },
+    { href: '/wilds.html', label: 'The Wilds' },
     { href: '/boss.html', label: 'Boss' },
     { href: '/leaderboards.html', label: 'Ranks' },
     { href: '/packs.html', label: 'Packs' },
     { href: '/collection.html', label: 'Spellbook' },
-    { href: '/profile.html', label: 'Profile' },
     { href: '/how-to-play.html', label: 'Help' }
   ];
   var currentPath = window.location.pathname.split('?')[0].split('#')[0];

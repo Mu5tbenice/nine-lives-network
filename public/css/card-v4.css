@@ -78,13 +78,13 @@
 .sc-art-img {
   position: absolute;
   top: 2px; left: 2px; right: 2px;
-  height: 55%;
+  height: 80%;
   z-index: 2;
   border-radius: 10px 10px 0 0;
   background-size: cover;
   background-position: center;
-  -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
-  mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
   pointer-events: none;
 }
 
@@ -224,11 +224,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   text-shadow:
-    -1px -1px 0 rgba(0,0,0,0.95),
-     1px -1px 0 rgba(0,0,0,0.95),
-    -1px  1px 0 rgba(0,0,0,0.95),
-     1px  1px 0 rgba(0,0,0,0.95),
-     0 0 6px rgba(0,0,0,0.7);
+    0 1px 2px rgba(0,0,0,0.9),
+    0 0 8px rgba(0,0,0,0.6);
 }
 
 /* ═══ MANA PILL ═══ */

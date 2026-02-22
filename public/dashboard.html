@@ -8,7 +8,7 @@
   <title>Dashboard | Nine Lives Network</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&family=MedievalSharp&family=Cormorant+SC:wght@400;600;700&family=Fondamento&family=Almendra&family=Pirata+One&family=Grenze+Gotisch:wght@400;700&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English+SC&family=Griffy&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/variables-v2.css">
   <link rel="stylesheet" href="/css/components-v2.css">
   <link rel="stylesheet" href="/css/card-v4.css">
@@ -37,6 +37,9 @@
     @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes glowPulse { 0%,100% { box-shadow: 0 0 20px rgba(212,166,75,0.08); } 50% { box-shadow: 0 0 30px rgba(212,166,75,0.15); } }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    @keyframes subtleFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     .fade-up { animation: fadeUp 0.4s ease both; }
     .fade-up-1 { animation-delay: 0.05s; }
     .fade-up-2 { animation-delay: 0.1s; }
@@ -125,7 +128,7 @@
 <script src="/js/card-v4.js"></script>
 <script>
 /* ═══ DATA ═══ */
-var HOUSES={1:{name:'Smoulders',color:'#E03C31',slug:'smoulders',icon:'🔥',img:'/assets/images/houses/Housesmoulders.png',atk:6,hp:12,spd:5},2:{name:'Darktide',color:'#00B4D8',slug:'darktide',icon:'🌊',img:'/assets/images/houses/Housedarktide.png',atk:4,hp:16,spd:4},3:{name:'Stonebark',color:'#5CB338',slug:'stonebark',icon:'🌿',img:'/assets/images/houses/Housestonebark.png',atk:2,hp:24,spd:2},4:{name:'Ashenvale',color:'#B0C4DE',slug:'ashenvale',icon:'💨',img:'/assets/images/houses/HouseAshenvale.png',atk:3,hp:14,spd:8},5:{name:'Stormrage',color:'#FFC800',slug:'stormrage',icon:'⚡',img:'/assets/images/houses/Housestormrage.png',atk:7,hp:10,spd:6},6:{name:'Nighthollow',color:'#7B2D8E',slug:'nighthollow',icon:'🌙',img:'/assets/images/houses/Housenighthollow.png',atk:4,hp:13,spd:7},7:{name:'Dawnbringer',color:'#FF8C00',slug:'dawnbringer',icon:'☀️',img:'/assets/images/houses/HouseDwnbringer.png',atk:3,hp:18,spd:3},8:{name:'Manastorm',color:'#5B8FE0',slug:'manastorm',icon:'🔮',img:'/assets/images/houses/Housemanastorm.png',atk:5,hp:14,spd:5},9:{name:'Plaguemire',color:'#E84393',slug:'plaguemire',icon:'☠️',img:'/assets/images/houses/Houseplaguemire.png',atk:3,hp:15,spd:4}};
+var HOUSES={1:{name:'Smoulders',color:'#E03C31',slug:'smoulders',icon:'🔥',img:'/assets/images/houses/Housesmoulders.png',atk:6,hp:12,spd:5,font:"'MedievalSharp',cursive",role:'Glass Cannon'},2:{name:'Darktide',color:'#00B4D8',slug:'darktide',icon:'🌊',img:'/assets/images/houses/Housedarktide.png',atk:4,hp:16,spd:4,font:"'Cormorant SC',serif",role:'Thief'},3:{name:'Stonebark',color:'#5CB338',slug:'stonebark',icon:'🌿',img:'/assets/images/houses/Housestonebark.png',atk:2,hp:24,spd:2,font:"'IM Fell English SC',serif",role:'Wall'},4:{name:'Ashenvale',color:'#B0C4DE',slug:'ashenvale',icon:'💨',img:'/assets/images/houses/HouseAshenvale.png',atk:3,hp:14,spd:8,font:"'Fondamento',cursive",role:'Rogue'},5:{name:'Stormrage',color:'#FFC800',slug:'stormrage',icon:'⚡',img:'/assets/images/houses/Housestormrage.png',atk:7,hp:10,spd:6,font:"'Pirata One',cursive",role:'Glass Cannon'},6:{name:'Nighthollow',color:'#7B2D8E',slug:'nighthollow',icon:'🌙',img:'/assets/images/houses/Housenighthollow.png',atk:4,hp:13,spd:7,font:"'Grenze Gotisch',cursive",role:'Disruptor'},7:{name:'Dawnbringer',color:'#FF8C00',slug:'dawnbringer',icon:'☀️',img:'/assets/images/houses/HouseDwnbringer.png',atk:3,hp:18,spd:3,font:"'Cinzel Decorative',cursive",role:'Healer'},8:{name:'Manastorm',color:'#5B8FE0',slug:'manastorm',icon:'🔮',img:'/assets/images/houses/Housemanastorm.png',atk:5,hp:14,spd:5,font:"'Almendra',serif",role:'Controller'},9:{name:'Plaguemire',color:'#E84393',slug:'plaguemire',icon:'☠️',img:'/assets/images/houses/Houseplaguemire.png',atk:3,hp:15,spd:4,font:"'Griffy',cursive",role:'DOT Specialist'}};
 
 var STAT_COLORS={atk:'#e85a6a',hp:'#6acd8a',spd:'#6ac8d8',def:'#b088e8',luck:'#D4A64B'};
 
@@ -432,45 +435,68 @@ async function render(player,casts,zones,schools,nineData,quests){
     /* ══════════════════════════════════
        1. PLAYER HERO CARD
     ══════════════════════════════════ */
-    +'<div class="fade-up" style="position:relative;border-radius:16px;overflow:hidden;margin:14px 0;border:1px solid var(--border);">'
-    +'<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 30%,'+house.color+'18 0%,transparent 50%),radial-gradient(ellipse at 70% 50%,rgba(139,180,224,0.08) 0%,transparent 50%),linear-gradient(180deg,#2a2040 0%,#1a1528 100%);"></div>'
-    +'<div style="position:relative;z-index:1;padding:18px 16px 14px;">'
+    +'<div class="fade-up" style="position:relative;border-radius:16px;overflow:hidden;margin:14px 0;border:1px solid rgba(255,255,255,0.08);animation:glowPulse 4s ease infinite;">'
+    +'<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 25% 30%,'+house.color+'20 0%,transparent 55%),radial-gradient(ellipse at 75% 60%,rgba(139,180,224,0.06) 0%,transparent 45%),linear-gradient(180deg,#2a2040 0%,#1a1528 50%,#120e1e 100%);"></div>'
+    +'<div style="position:relative;z-index:1;">'
 
-    // Top row: Nine character + name + points
-    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">'
-    +'<div style="display:flex;align-items:center;gap:12px;">'
+    // ── Top section: Character left + Info right ──
+    +'<div style="display:flex;position:relative;min-height:170px;">'
 
-    // Nine character — click to edit
-    +'<a href="/builder.html?skip_intro=1" style="display:block;width:56px;height:56px;border-radius:10px;border:2px solid '+house.color+';background:radial-gradient(circle,rgba(30,22,42,0.9),rgba(18,14,30,1));box-shadow:0 0 20px '+house.color+'25;overflow:hidden;position:relative;flex-shrink:0;cursor:pointer;text-decoration:none;">'
-    +'<canvas id="dashNineCanvas" width="200" height="200" style="width:100%;height:100%;"></canvas>'
-    +'<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.7);padding:2px 0;text-align:center;font-family:var(--font-data);font-size:4px;color:var(--gold);letter-spacing:0.5px;">EDIT</div>'
-    +'</a>'
+    // Nine character — left side, bleeds behind stats
+    +'<div style="position:absolute;left:0;top:-10px;bottom:-30px;width:160px;z-index:2;overflow:hidden;pointer-events:none;">'
+    +'<div style="width:100%;height:100%;display:flex;align-items:flex-end;justify-content:center;animation:subtleFloat 6s ease-in-out infinite;">'
+    +'<canvas id="dashNineCanvas" width="400" height="560" style="width:130%;height:auto;margin-bottom:-10px;filter:drop-shadow(0 4px 20px '+house.color+'30);"></canvas>'
+    +'</div>'
+    +'<div style="position:absolute;bottom:0;left:0;right:0;height:50px;background:linear-gradient(to top,#1a1528,transparent);z-index:3;"></div>'
+    +'</div>'
 
+    // Edit button — floating over character
+    +'<a href="/builder.html?skip_intro=1" style="position:absolute;left:12px;bottom:48px;z-index:10;font-family:var(--font-data);font-size:5px;color:var(--gold);background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);padding:4px 8px;border-radius:6px;border:1px solid rgba(212,166,75,0.2);text-decoration:none;cursor:pointer;pointer-events:auto;">✏️ EDIT</a>'
+
+    // Right side — info column
+    +'<div style="flex:1;padding:16px 16px 12px;margin-left:120px;display:flex;flex-direction:column;justify-content:space-between;min-height:160px;">'
+
+    // House name (flavour font) + crest + season
     +'<div>'
-    +'<div style="font-family:var(--font-title);font-size:17px;font-weight:700;color:'+house.color+';letter-spacing:1px;">'+house.name+'</div>'
-    +'<div style="font-family:var(--font-data);font-size:7px;color:var(--text-muted);margin-top:2px;">@'+esc(player.twitter_handle||'')+'</div>'
-    +'</div></div>'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;">'
+    +'<div style="display:flex;align-items:center;gap:8px;">'
+    +'<img src="'+house.img+'" alt="" style="width:30px;height:30px;object-fit:contain;filter:drop-shadow(0 0 6px '+house.color+'50);" onerror="this.style.display=\'none\'">'
+    +'<div style="font-family:'+house.font+';font-size:22px;font-weight:700;color:'+house.color+';letter-spacing:1px;text-shadow:0 0 24px '+house.color+'40,0 2px 4px rgba(0,0,0,0.4);line-height:1.1;text-transform:uppercase;">'+house.name+'</div>'
+    +'</div>'
+    +'<span style="font-family:var(--font-data);font-size:5px;padding:4px 10px;border-radius:8px;border:1px solid rgba(212,166,75,0.25);background:rgba(212,166,75,0.08);color:var(--gold);">SEASON 0</span>'
+    +'</div>'
 
-    // Season + Points
-    +'<div style="text-align:right;">'
-    +'<span style="font-family:var(--font-data);font-size:6px;padding:4px 10px;border-radius:8px;border:1px solid rgba(212,166,75,0.25);background:var(--gold-dim);color:var(--gold);letter-spacing:1px;">SEASON 0</span>'
-    +'<div style="font-family:var(--font-data);font-size:16px;color:var(--gold);margin-top:6px;text-shadow:0 0 16px rgba(212,166,75,0.4);">'+pts+'</div>'
-    +'<div style="font-family:var(--font-data);font-size:5px;color:var(--text-faint);margin-top:1px;">POINTS</div>'
-    +'</div></div>'
+    // Handle + role + change house
+    +'<div style="font-family:var(--font-data);font-size:7px;color:var(--text-muted);margin-left:38px;">@'+esc(player.twitter_handle||'')+'</div>'
+    +'<div style="display:flex;align-items:center;gap:6px;margin-top:3px;margin-left:38px;">'
+    +'<span style="font-family:var(--font-data);font-size:5px;color:'+house.color+';opacity:0.6;">'+house.icon+' '+(house.role||'').toUpperCase()+'</span>'
+    +'<span style="color:rgba(255,255,255,0.08);">·</span>'
+    +'<button onclick="openChangeHouse()" style="font-family:var(--font-data);font-size:4px;color:var(--text-muted);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;opacity:0.6;">change house</button>'
+    +'</div>'
+    +'</div>'
 
-    // Guild tag editor
+    // Points
+    +'<div style="text-align:right;margin:6px 0;">'
+    +'<div style="font-family:var(--font-data);font-size:20px;color:var(--gold);text-shadow:0 0 20px rgba(212,166,75,0.4);">'+pts+'</div>'
+    +'<div style="font-family:var(--font-data);font-size:5px;color:var(--text-faint);margin-top:2px;">POINTS</div>'
+    +'</div>'
+
+    // Guild
     +guildEditorH
 
-    // All 5 stats row
-    +'<div style="display:flex;gap:0;background:rgba(0,0,0,0.25);border-radius:10px;padding:10px 6px;margin-top:10px;">'
+    +'</div>'
+    +'</div>'
+
+    // ── Stats bar — character stands behind this ──
+    +'<div style="display:flex;gap:0;background:rgba(0,0,0,0.35);backdrop-filter:blur(8px);border-top:1px solid rgba(255,255,255,0.06);padding:10px 8px;position:relative;z-index:5;">'
     +statPill('ATK',nAtk,'atk')
-    +'<div style="width:1px;background:var(--border);margin:2px 0;"></div>'
+    +'<div style="width:1px;background:rgba(255,255,255,0.06);margin:2px 0;"></div>'
     +statPill('HP',nHp,'hp')
-    +'<div style="width:1px;background:var(--border);margin:2px 0;"></div>'
+    +'<div style="width:1px;background:rgba(255,255,255,0.06);margin:2px 0;"></div>'
     +statPill('SPD',nSpd,'spd')
-    +'<div style="width:1px;background:var(--border);margin:2px 0;"></div>'
+    +'<div style="width:1px;background:rgba(255,255,255,0.06);margin:2px 0;"></div>'
     +statPill('DEF',nDef,'def')
-    +'<div style="width:1px;background:var(--border);margin:2px 0;"></div>'
+    +'<div style="width:1px;background:rgba(255,255,255,0.06);margin:2px 0;"></div>'
     +statPill('LUCK',nLuck,'luck')
     +'</div>'
 
@@ -551,7 +577,7 @@ async function render(player,casts,zones,schools,nineData,quests){
 
 loadDashboard();
 
-// ── DASHBOARD NINE MINI PREVIEW ──
+// ── DASHBOARD NINE PREVIEW (tall character) ──
 async function loadNinePreview(){
   var pid=getPlayerId();if(!pid)return;
   try{
@@ -560,12 +586,13 @@ async function loadNinePreview(){
     var d=await r.json();
     var nine=d.nine,eq=d.equipped;
     var SLOT_PATHS={fur:"/assets/nine/fur/",expression:"/assets/nine/expression/",headwear:"/assets/nine/headwear/",outfit:"/assets/nine/outfit/",weapon:"/assets/nine/weapon/",familiar:"/assets/nine/familiar/"};
-    var LAYER_ORDER=["fur","expression","headwear","outfit","weapon","familiar"];
+    var LAYER_ORDER=["fur","outfit","weapon","headwear","expression","familiar"];
     var items=d.items||[];
     function findI(slug){for(var i=0;i<items.length;i++){if(items[i].slug===slug)return items[i];}return null;}
     var canvas=document.getElementById("dashNineCanvas");
     if(!canvas)return;
     var ctx=canvas.getContext("2d");
+    var cw=canvas.width,ch=canvas.height;
     var layers=[];
     LAYER_ORDER.forEach(function(slot){
       var slug=eq[slot];if(!slug)return;
@@ -576,8 +603,14 @@ async function loadNinePreview(){
       var loaded=0,imgs=[];
       layers.forEach(function(src,i){
         var img=new Image();
-        img.onload=function(){imgs[i]=img;loaded++;if(loaded===layers.length){ctx.clearRect(0,0,200,200);imgs.forEach(function(im){if(im)ctx.drawImage(im,0,0,200,200);});}};
-        img.onerror=function(){loaded++;if(loaded===layers.length){ctx.clearRect(0,0,200,200);imgs.forEach(function(im){if(im)ctx.drawImage(im,0,0,200,200);});}};
+        img.onload=function(){imgs[i]=img;loaded++;if(loaded===layers.length){
+          ctx.clearRect(0,0,cw,ch);
+          imgs.forEach(function(im){if(im)ctx.drawImage(im,0,0,cw,ch);});
+        }};
+        img.onerror=function(){loaded++;if(loaded===layers.length){
+          ctx.clearRect(0,0,cw,ch);
+          imgs.forEach(function(im){if(im)ctx.drawImage(im,0,0,cw,ch);});
+        }};
         img.src=src;
       });
     } else {
@@ -588,13 +621,139 @@ async function loadNinePreview(){
       var h=HOUSES[houseId]||HOUSES[1];
       if(h&&h.img){
         var crestImg=new Image();
-        crestImg.onload=function(){ctx.clearRect(0,0,200,200);var s=Math.min(200/crestImg.width,200/crestImg.height)*0.7;var w=crestImg.width*s;var ht=crestImg.height*s;ctx.globalAlpha=0.6;ctx.drawImage(crestImg,(200-w)/2,(200-ht)/2,w,ht);ctx.globalAlpha=1;};
+        crestImg.onload=function(){
+          ctx.clearRect(0,0,cw,ch);
+          var s=Math.min(cw/crestImg.width,ch/crestImg.height)*0.5;
+          var w=crestImg.width*s;var ht=crestImg.height*s;
+          ctx.globalAlpha=0.6;
+          ctx.drawImage(crestImg,(cw-w)/2,(ch-ht)/2-20,w,ht);
+          ctx.globalAlpha=1;
+        };
         crestImg.src=h.img;
       }
     }
   }catch(e){console.error("Nine preview error:",e);}
 }
 loadNinePreview();
+
+// ── CHANGE HOUSE MODAL ──
+function openChangeHouse(){
+  // Check cooldown
+  var pid=getPlayerId();if(!pid)return;
+  // Build modal HTML
+  var allH=Object.keys(HOUSES);
+  var curId=null;
+  try{var pStr=localStorage.getItem("9lv_player");if(pStr)curId=JSON.parse(pStr).school_id;}catch(e){}
+  if(!curId)curId=1; // fallback
+
+  var h='<div id="houseModal" style="position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.85);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn 0.2s ease;" onclick="if(event.target===this)closeHouseModal()">';
+  h+='<div style="max-width:440px;width:100%;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);background:linear-gradient(180deg,#2a2040 0%,#1a1528 100%);animation:slideUp 0.25s ease;max-height:85vh;overflow-y:auto;">';
+
+  // Header
+  h+='<div style="padding:16px 18px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;">';
+  h+='<div><div style="font-family:var(--font-title);font-size:16px;font-weight:700;color:var(--gold);letter-spacing:2px;">CHANGE HOUSE</div>';
+  h+='<div style="font-family:var(--font-data);font-size:5px;color:var(--text-faint);margin-top:4px;">ONCE PER WEEK · POINTS RESET TO 0</div></div>';
+  h+='<button onclick="closeHouseModal()" style="background:none;border:none;color:var(--text-faint);font-size:18px;cursor:pointer;padding:4px 8px;">✕</button>';
+  h+='</div>';
+
+  // Warning
+  h+='<div style="padding:12px 14px;">';
+  h+='<div style="padding:10px 14px;border-radius:10px;margin-bottom:14px;background:rgba(232,90,106,0.06);border:1px solid rgba(232,90,106,0.15);display:flex;align-items:flex-start;gap:8px;">';
+  h+='<span style="font-size:14px;flex-shrink:0;margin-top:1px;">⚠️</span>';
+  h+='<div style="font-family:var(--font-mono);font-size:10px;color:var(--red);line-height:1.6;">Changing house <strong>resets season points to 0</strong> and starts a <strong>7-day cooldown</strong>. Cards and equipment are kept.</div>';
+  h+='</div>';
+
+  // Current house
+  var cur=HOUSES[curId]||HOUSES[1];
+  h+='<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;background:'+cur.color+'08;border:1px solid '+cur.color+'20;margin-bottom:12px;">';
+  h+='<img src="'+cur.img+'" alt="" style="width:24px;height:24px;object-fit:contain;filter:drop-shadow(0 0 4px '+cur.color+'50);" onerror="this.textContent=\''+cur.icon+'\'">';
+  h+='<span style="font-family:'+cur.font+';font-size:14px;color:'+cur.color+';text-transform:uppercase;">'+cur.name+'</span>';
+  h+='<span style="font-family:var(--font-data);font-size:5px;color:var(--text-faint);margin-left:auto;">CURRENT</span>';
+  h+='</div>';
+
+  // House list
+  allH.forEach(function(id){
+    if(parseInt(id)===curId)return;
+    var hd=HOUSES[id];
+    h+='<div onclick="selectNewHouse('+id+')" id="houseOpt'+id+'" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;background:rgba(255,255,255,0.02);border:1.5px solid rgba(255,255,255,0.05);transition:all 0.15s;margin-bottom:4px;" onmouseenter="this.style.borderColor=\''+hd.color+'40\'" onmouseleave="if(!this.classList.contains(\'sel\'))this.style.borderColor=\'rgba(255,255,255,0.05)\'">';
+    h+='<img src="'+hd.img+'" alt="" style="width:36px;height:36px;object-fit:contain;filter:drop-shadow(0 0 4px '+hd.color+'40);flex-shrink:0;" onerror="this.outerHTML=\'<div style=font-size:18px>'+hd.icon+'</div>\'">';
+    h+='<div style="flex:1;"><div style="display:flex;align-items:baseline;gap:6px;">';
+    h+='<span style="font-family:'+hd.font+';font-size:16px;font-weight:700;color:var(--text-bright);text-transform:uppercase;">'+hd.name+'</span>';
+    h+='<span style="font-family:var(--font-data);font-size:4px;color:'+hd.color+';opacity:0.6;">'+hd.role.toUpperCase()+'</span>';
+    h+='</div><div style="display:flex;gap:8px;margin-top:4px;">';
+    h+='<span style="font-family:var(--font-data);font-size:6px;color:#e85a6a;">ATK '+hd.atk+'</span>';
+    h+='<span style="font-family:var(--font-data);font-size:6px;color:#6acd8a;">HP '+hd.hp+'</span>';
+    h+='<span style="font-family:var(--font-data);font-size:6px;color:#6ac8d8;">SPD '+hd.spd+'</span>';
+    h+='</div></div>';
+    h+='<div id="houseCheck'+id+'" style="display:none;font-family:var(--font-data);font-size:8px;color:'+hd.color+';">✓</div>';
+    h+='</div>';
+  });
+
+  // Confirm button
+  h+='<button id="houseConfirmBtn" onclick="confirmHouseChange()" disabled style="width:100%;margin-top:14px;padding:14px;border-radius:10px;border:none;cursor:not-allowed;font-family:var(--font-title);font-size:13px;font-weight:700;letter-spacing:2px;background:rgba(255,255,255,0.05);color:var(--text-faint);opacity:0.4;transition:all 0.2s;">SELECT A HOUSE</button>';
+  h+='</div></div></div>';
+
+  document.body.insertAdjacentHTML('beforeend',h);
+  window._selectedNewHouse=null;
+}
+
+function closeHouseModal(){
+  var m=document.getElementById('houseModal');
+  if(m)m.remove();
+  window._selectedNewHouse=null;
+}
+
+function selectNewHouse(id){
+  window._selectedNewHouse=id;
+  var hd=HOUSES[id];
+  // Reset all selections
+  Object.keys(HOUSES).forEach(function(k){
+    var el=document.getElementById('houseOpt'+k);
+    var ch=document.getElementById('houseCheck'+k);
+    if(el){el.style.borderColor='rgba(255,255,255,0.05)';el.style.background='rgba(255,255,255,0.02)';el.classList.remove('sel');}
+    if(ch)ch.style.display='none';
+  });
+  // Highlight selected
+  var el=document.getElementById('houseOpt'+id);
+  var ch=document.getElementById('houseCheck'+id);
+  if(el){el.style.borderColor=hd.color+'50';el.style.background=hd.color+'12';el.classList.add('sel');}
+  if(ch)ch.style.display='block';
+  // Enable button
+  var btn=document.getElementById('houseConfirmBtn');
+  if(btn){
+    btn.disabled=false;btn.style.cursor='pointer';btn.style.opacity='1';
+    btn.style.background='linear-gradient(135deg,#e85a6a,#c44455)';
+    btn.style.color='#fff';btn.style.boxShadow='0 4px 16px rgba(232,90,106,0.3)';
+    btn.textContent='⚠️ SWITCH TO '+hd.name.toUpperCase()+' (RESETS POINTS)';
+    btn.style.fontFamily=hd.font;
+  }
+}
+
+async function confirmHouseChange(){
+  var newId=window._selectedNewHouse;if(!newId)return;
+  var pid=getPlayerId();if(!pid)return;
+  var btn=document.getElementById('houseConfirmBtn');
+  if(btn){btn.disabled=true;btn.textContent='SWITCHING...';}
+  try{
+    var r=await fetch('/api/players/change-house',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({player_id:parseInt(pid),new_school_id:parseInt(newId)})
+    });
+    var d=await r.json();
+    if(r.ok&&d.success){
+      closeHouseModal();
+      // Reload dashboard to show new house
+      window.location.reload();
+    }else{
+      alert(d.error||'Failed to change house. You may be on cooldown.');
+      if(btn){btn.disabled=false;btn.textContent='TRY AGAIN';}
+    }
+  }catch(e){
+    alert('Network error — try again.');
+    if(btn){btn.disabled=false;btn.textContent='TRY AGAIN';}
+  }
+}
 </script>
 <script>
 /* ═══ V4 OVERRIDE — forces all card rendering through card-v4.js ═══ */

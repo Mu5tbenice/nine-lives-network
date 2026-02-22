@@ -3,276 +3,817 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Nethara Live | Nine Lives Network</title>
+  <title>Nethara Live — Nine Lives Network</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/variables-v2.css">
-  <link rel="stylesheet" href="/css/components-v2.css">
-  <link rel="stylesheet" href="/css/card-v4.css">
-  <link rel="stylesheet" href="/css/nav-v2.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Press+Start+2P&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
   <style>
-    :root{--bg-deep:#120e1e;--bg-warm:#1a1528;--bg-card:rgba(30,22,42,0.7);--bg-card-solid:#1e1630;--border:rgba(212,166,75,0.12);--border-glow:rgba(212,166,75,0.3);--gold:#D4A64B;--gold-dim:rgba(212,166,75,0.15);--text-bright:#F5F0E8;--text-body:#D4C8B8;--text-muted:#9B8E7E;--text-faint:#6B5E50;--sunset:#e8855a;--sky:#8BB4E0;--green:#6acd8a;--red:#e85a6a;--cyan:#6ac8d8;--purple:#b088e8;--font-title:'Cinzel',serif;--font-body:'Crimson Text',Georgia,serif;--font-data:'Press Start 2P',monospace;--font-mono:'JetBrains Mono',monospace}
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,rgba(232,133,90,0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(139,180,224,0.06) 0%,transparent 40%),linear-gradient(180deg,#1a1528 0%,#120e1e 30%,#0e0a18 100%);font-family:var(--font-body);color:var(--text-body);-webkit-font-smoothing:antialiased}
-    a{color:var(--gold);text-decoration:none}
-    ::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:rgba(212,166,75,0.15);border-radius:2px}
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { background: #0a0812; color: #CCC5DB; font-family: 'Crimson Text', serif; overflow-x: hidden; }
+    #root { max-width: 480px; margin: 0 auto; min-height: 100vh; }
+    ::-webkit-scrollbar { height: 3px; width: 3px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
 
-    .main{max-width:600px;margin:0 auto;padding:14px}
-    .section-label{display:flex;align-items:center;gap:8px;margin:16px 0 8px}
-    .section-label__text{font-family:var(--font-title);font-size:12px;font-weight:700;color:var(--gold);letter-spacing:2px}
-    .section-label__line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
-
-    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-    .fade-up{animation:fadeUp 0.4s ease both}
-
-    .zone-card{border-radius:12px;background:var(--bg-card);border:1px solid var(--border);overflow:hidden;margin-bottom:10px;transition:transform 0.15s,border-color 0.15s;cursor:pointer}
-    .zone-card:hover{transform:translateY(-1px);border-color:rgba(212,166,75,0.25)}
-    .zone-header{position:relative;height:100px;background-size:cover;background-position:center}
-    .zone-header-overlay{position:absolute;inset:0;background:linear-gradient(0deg,rgba(18,14,30,0.95) 0%,rgba(18,14,30,0.2) 60%)}
-    .zone-header-content{position:absolute;bottom:0;left:0;right:0;padding:10px 14px;z-index:2}
-    .zone-body{padding:12px 14px}
-    .guild-bar{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-    .guild-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-    .guild-name{font-family:var(--font-mono);font-size:9px;color:var(--text-body);width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .guild-track{flex:1;height:6px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden}
-    .guild-fill{height:100%;border-radius:3px;transition:width 0.5s}
-    .guild-pct{font-family:var(--font-data);font-size:7px;width:35px;text-align:right;font-weight:700}
-
-    .badge{font-family:var(--font-data);font-size:6px;padding:3px 8px;border-radius:4px;letter-spacing:0.5px;font-weight:700}
-
-    .deploy-panel{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(18,14,30,0.95);backdrop-filter:blur(12px);border-top:1px solid var(--border-glow);padding:14px 16px;transform:translateY(100%);transition:transform 0.3s}
-    .deploy-panel.open{transform:translateY(0)}
-    .hand-scroll{display:flex;gap:8px;overflow-x:auto;padding:4px 0}
-    .hand-card{min-width:100px;padding:8px 10px;border-radius:10px;background:rgba(255,255,255,0.03);border:1.5px solid var(--border);flex-shrink:0;cursor:pointer;transition:all 0.15s}
-    .hand-card.selected{transform:translateY(-4px);border-color:var(--gold)}
-    .hand-card:hover{border-color:rgba(212,166,75,0.25)}
-    .deploy-btn{width:100%;margin-top:10px;padding:14px;border-radius:10px;border:none;cursor:pointer;font-family:var(--font-title);font-size:14px;font-weight:700;letter-spacing:1px;color:#fff;transition:all 0.2s}
-    .deploy-btn:disabled{opacity:0.3;cursor:not-allowed}
-
-    .combat-timer{font-family:var(--font-data);font-size:8px;color:var(--sunset);letter-spacing:1px;text-align:center;padding:10px;background:rgba(232,133,90,0.06);border:1px solid rgba(232,133,90,0.12);border-radius:10px;margin-bottom:14px}
+    @keyframes charIdle { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+    @keyframes charShake { 0%, 100% { transform: translateX(0); } 15% { transform: translateX(-8px) rotate(-3deg); } 30% { transform: translateX(6px) rotate(2deg); } 50% { transform: translateX(-4px) rotate(-1deg); } 70% { transform: translateX(3px); } }
+    @keyframes charPulse { 0% { transform: scale(1); } 30% { transform: scale(1.12); } 100% { transform: scale(1); } }
+    @keyframes dmgFloat { 0% { opacity: 1; transform: translateY(0) scale(1); } 20% { opacity: 1; transform: translateY(-15px) scale(1.3); } 60% { opacity: 0.9; transform: translateY(-35px) scale(1.1); } 100% { opacity: 0; transform: translateY(-60px) scale(0.8); } }
+    @keyframes flashOut { 0% { opacity: 0.15; } 100% { opacity: 0; } }
+    @keyframes phaseIn { 0% { opacity: 0; transform: translate(-50%,-50%) scale(0.7); } 40% { opacity: 1; transform: translate(-50%,-50%) scale(1.05); } 100% { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
+    @keyframes nermIn { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: translateY(0); } }
+    @keyframes nermBounce { 0% { transform: scale(1); } 30% { transform: scale(1.2) rotate(-5deg); } 60% { transform: scale(0.95) rotate(3deg); } 100% { transform: scale(1) rotate(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+    @keyframes particleDrift { 0% { transform: translateY(0); } 50% { transform: translateY(-3px); } 100% { transform: translateY(0); } }
+    @keyframes pulseGlow { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
   </style>
 </head>
 <body>
-<script src="/js/nav.js"></script>
-  <div class="main" id="content">
-    <div style="text-align:center;padding:60px 20px;"><div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div><span style="font-family:var(--font-data);font-size:8px;color:var(--text-faint);letter-spacing:1px;">LOADING NETHARA...</span></div>
-  </div>
+  <div id="root"></div>
 
-  <!-- Deploy panel (hidden by default) -->
-  <div class="deploy-panel" id="deployPanel">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <span style="font-family:var(--font-title);font-size:13px;font-weight:700;color:var(--gold);">DEPLOY TO <span id="deployZoneName">—</span></span>
-      <span style="font-family:var(--font-data);font-size:7px;color:var(--text-faint);cursor:pointer;" onclick="closeDeployPanel()">✕ CLOSE</span>
-    </div>
-    <div class="hand-scroll" id="handCards"></div>
-    <button class="deploy-btn" id="deployBtn" disabled style="background:linear-gradient(135deg,var(--gold),#c49030);color:#0a0810;">⚔️ DEPLOY — 1 MANA</button>
-  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
 
-<script>
-var HOUSES={1:{name:'Smoulders',color:'#E03C31',icon:'🔥'},2:{name:'Darktide',color:'#00B4D8',icon:'🌊'},3:{name:'Stonebark',color:'#5CB338',icon:'🌿'},4:{name:'Ashenvale',color:'#B0C4DE',icon:'💨'},5:{name:'Stormrage',color:'#FFC800',icon:'⚡'},6:{name:'Nighthollow',color:'#7B2D8E',icon:'🌙'},7:{name:'Dawnbringer',color:'#FF8C00',icon:'☀️'},8:{name:'Manastorm',color:'#5B8FE0',icon:'🔮'},9:{name:'Plaguemire',color:'#E84393',icon:'☠️'}};
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
 
-var ZONE_IMAGES={};
+    // ═══════════════════════════════════════════════════════════
+    // THEME
+    // ═══════════════════════════════════════════════════════════
+    const T = {
+      bg: "#0a0812", surface: "#110e1a",
+      gold: "#D4A64B", bright: "#F0ECF8", body: "#CCC5DB",
+      muted: "#847C98", faint: "#554E68",
+      green: "#6acd8a", red: "#e85a6a", cyan: "#6ac8d8",
+      purple: "#b088e8", mana: "#00D4FF",
+      border: "rgba(255,255,255,0.06)",
+    };
+    const STAT = { ATK: "#e85a6a", HP: "#6acd8a", SPD: "#6ac8d8", DEF: "#b088e8", LUCK: "#D4A64B" };
+    const TYPE_CLR = { Attack: "#e85a6a", Defend: "#5599ff", Support: "#6acd8a", Manipulation: "#b088e8", Utility: "#6ac8d8" };
+    const RARITY_CLR = { common: "#8a8494", uncommon: "#6acd8a", rare: "#5599ff", epic: "#b088e8", legendary: "#D4A64B" };
 
-var playerId=null,selectedZone=null,selectedCard=null,playerCards=[];
+    // ═══════════════════════════════════════════════════════════
+    // NERM — full roast mode, 60+ lines
+    // ═══════════════════════════════════════════════════════════
+    const NERM = {
+      intro: [
+        "Oh good. Another 15 minutes, another bloodbath. Let's see who embarrasses themselves.",
+        "Welcome back to the zone where dreams go to die. Combat starting.",
+        "Alright, everyone's here. Some of you shouldn't be. You know who you are.",
+        "Another cycle, another chance for someone to get absolutely humiliated. My favorite.",
+        "The things I've seen in this zone... therapy isn't cheap in Nethara, you know.",
+      ],
+      spellCast: [
+        "Ooh, fancy. Someone read the card instructions for once.",
+        "A spell! How original. Nobody's ever tried THAT before.",
+        "Look at that card go. Almost impressive if it wasn't so predictable.",
+        "Casting spells like they actually know what they're doing. Cute.",
+      ],
+      burn: [
+        "Everything is on fire. Again. Smoulders players are so one-note.",
+        "BURN damage. Because subtlety is dead and Smoulders killed it.",
+        "That's a lot of fire for someone standing in a swamp.",
+        "Oh look, something's on fire. How original. How... Smoulders.",
+      ],
+      heal: [
+        "Healing? In THIS economy? Bold move.",
+        "Oh look, someone brought band-aids to a sword fight.",
+        "Patching yourself up just to get hit again. The Nethara experience.",
+      ],
+      poison: [
+        "Poison. The 'I'm too lazy to kill you now, so die slowly' approach.",
+        "Plaguemire doing Plaguemire things. Gross but effective.",
+        "That's going to itch. And burn. And also kill you.",
+      ],
+      attackPhase: [
+        "And now everyone hits each other. Brilliant tactical minds at work.",
+        "Auto-attacks! The part where strategy gives way to raw violence.",
+        "Threat targeting engaged. The biggest guild gets the biggest headache.",
+        "Here come the hands. Nethara's finest, swinging wildly.",
+      ],
+      bigHit: [
+        "OOF. That one was personal.",
+        "Absolutely disgusting damage. Someone call the authorities.",
+        "That Nine had a family. Well, had.",
+        "The disrespect. The audacity. The DAMAGE.",
+      ],
+      crit: [
+        "CRITICAL HIT. RNG said 'and I took that personally.'",
+        "25% chance and they HIT it. Buy a lottery ticket.",
+        "CRIT! That's not even fair. I love it.",
+        "Critical strike! Somewhere, a math nerd is very happy.",
+      ],
+      ko: function(name, guild) { return [
+        "@" + name + " just got sent to the shadow realm. " + guild + " in shambles.",
+        "And @" + name + " is DOWN. That's what happens when you bring vibes to a card fight.",
+        "@" + name + " eliminated. Thoughts and prayers to " + guild + ".",
+        "Rest in pieces, @" + name + ". You fought bravely. Sort of. Not really.",
+        "@" + name + " has been absolutely deleted. Pack it up, " + guild + ".",
+      ]},
+      noKo: [
+        "Everyone survived. How boring. Do better next time.",
+        "No knockouts? What are we even doing here?",
+        "All still standing. The participation trophy cycle.",
+      ],
+      loneWolf: [
+        "Lone Wolf just vibing in the corner with 1.5x ATK. Nobody even noticed.",
+        "Smart Lone Wolf — let the guilds eat each other, then clean up.",
+        "That Lone Wolf's threat profile is so low they're basically invisible. Respect.",
+      ],
+      winZone: [
+        "Your guild holds the zone! Don't let it go to your head. Too late, isn't it?",
+        "Zone secured. Screenshot this before it inevitably gets flipped.",
+        "Congratulations, you control a patch of digital dirt. Very proud.",
+      ],
+      loseZone: [
+        "Zone lost. That's what you get for bringing that loadout.",
+        "Couldn't hold it. Couldn't even hold a candle to these guys.",
+        "Well THAT was embarrassing. Regroup and try not to cry.",
+      ],
+      flip: [
+        "ZONE FLIPPED! The audacity! The drama! I live for this.",
+        "FLIPPED IT. Someone's guild chat is going nuclear right now.",
+        "And that's a flip! The old owners are punching air somewhere.",
+      ],
+      homeTurf: [
+        "Home turf advantage. Must be nice playing on easy mode.",
+        "Fighting on home ground with bonus stats. How brave of you.",
+      ],
+      objectiveZone: [
+        "Objective zone means 1.5x points. So at least your suffering is worth more.",
+        "Daily objective here — extra points for extra pain. Fair trade.",
+      ],
+      effectTick: [
+        "Effects ticking. Somewhere, someone is slowly realizing they're doomed.",
+        "DOTs doing their thing. The slow, inevitable march toward zero HP.",
+        "Tick tick tick. That's the sound of your health bar giving up.",
+      ],
+    };
+    const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
-function getPlayerId(){var p=new URLSearchParams(window.location.search);var f=p.get('player_id');if(f){localStorage.setItem('player_id',f);return f;}return localStorage.getItem('player_id');}
-function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
-function getZoneImg(z){if(z.image_url){if(z.image_url.startsWith('http')||z.image_url.startsWith('/'))return z.image_url;return'/assets/images/zones/'+z.image_url;}if(z.environment_image){return'/assets/images/zones/'+z.environment_image;}return'';}
+    // ═══════════════════════════════════════════════════════════
+    // HOUSES
+    // ═══════════════════════════════════════════════════════════
+    const H = {
+      smoulders:   { c: "#E03C31", n: "Smoulders",   i: "\u{1F525}", atk: 6, hp: 12, spd: 5, role: "Glass Cannon", turf: { atk: 1, spd: 1 }, art: "linear-gradient(135deg, #1a0505 0%, #3a1010 30%, #5a1a0a 50%, #2a0808 80%, #0a0505 100%)", accent: "radial-gradient(ellipse at 50% 70%, rgba(255,80,20,0.15), transparent 60%)" },
+      darktide:    { c: "#00B4D8", n: "Darktide",    i: "\u{1F30A}", atk: 4, hp: 16, spd: 4, role: "Thief", turf: { hp: 2, def: 1 }, art: "linear-gradient(135deg, #050a14 0%, #0a1a2a 30%, #0a2a3a 50%, #051020 80%, #030810 100%)", accent: "radial-gradient(ellipse at 50% 60%, rgba(0,180,216,0.12), transparent 60%)" },
+      stonebark:   { c: "#5CB338", n: "Stonebark",   i: "\u{1F33F}", atk: 2, hp: 24, spd: 2, role: "Wall", turf: { hp: 3, def: 1 }, art: "linear-gradient(135deg, #050a05 0%, #0a1a0a 30%, #152a10 50%, #0a150a 80%, #030803 100%)", accent: "radial-gradient(ellipse at 40% 70%, rgba(92,179,56,0.12), transparent 55%)" },
+      ashenvale:   { c: "#90E0EF", n: "Ashenvale",   i: "\u{1F4A8}", atk: 3, hp: 14, spd: 8, role: "Rogue", turf: { spd: 2, luck: 1 }, art: "linear-gradient(135deg, #080a10 0%, #101820 30%, #182838 50%, #0a1218 80%, #050810 100%)", accent: "radial-gradient(ellipse at 60% 40%, rgba(144,224,239,0.1), transparent 55%)" },
+      stormrage:   { c: "#FFC800", n: "Stormrage",   i: "\u26A1", atk: 7, hp: 10, spd: 6, role: "Glass Cannon", turf: { atk: 2, spd: 1 }, art: "linear-gradient(135deg, #0a0a05 0%, #1a1a0a 30%, #2a2510 50%, #15120a 80%, #080805 100%)", accent: "radial-gradient(ellipse at 50% 50%, rgba(255,200,0,0.1), transparent 55%)" },
+      nighthollow: { c: "#7B2D8E", n: "Nighthollow", i: "\u{1F319}", atk: 4, hp: 13, spd: 7, role: "Disruptor", turf: { atk: 1, luck: 2 }, art: "linear-gradient(135deg, #08050a 0%, #150a1a 30%, #201028 50%, #0a0510 80%, #050308 100%)", accent: "radial-gradient(ellipse at 50% 60%, rgba(123,45,142,0.12), transparent 55%)" },
+      dawnbringer: { c: "#FF8C00", n: "Dawnbringer", i: "\u2600\uFE0F", atk: 3, hp: 18, spd: 3, role: "Healer", turf: { hp: 2, luck: 1 }, art: "linear-gradient(135deg, #0a0805 0%, #1a150a 30%, #2a2015 50%, #15100a 80%, #0a0805 100%)", accent: "radial-gradient(ellipse at 50% 30%, rgba(255,140,0,0.1), transparent 55%)" },
+      manastorm:   { c: "#5B8FE0", n: "Manastorm",   i: "\u{1F52E}", atk: 5, hp: 14, spd: 5, role: "Controller", turf: { def: 1, luck: 1 }, art: "linear-gradient(135deg, #05050a 0%, #0a0a1a 30%, #10152a 50%, #080a15 80%, #03050a 100%)", accent: "radial-gradient(ellipse at 50% 50%, rgba(91,143,224,0.12), transparent 55%)" },
+      plaguemire:  { c: "#E84393", n: "Plaguemire",  i: "\u2620\uFE0F", atk: 3, hp: 15, spd: 4, role: "DOT", turf: { atk: 1, hp: 1 }, art: "linear-gradient(135deg, #0a050a 0%, #1a0a15 30%, #25101a 50%, #120810 80%, #080508 100%)", accent: "radial-gradient(ellipse at 50% 70%, rgba(232,67,147,0.12), transparent 55%)" },
+    };
 
-async function loadNethara(){
-  playerId=getPlayerId();
-  if(!playerId){document.getElementById('content').innerHTML='<div style="text-align:center;padding:40px"><a href="/register.html" style="font-family:var(--font-title);font-size:16px;">Register to play →</a></div>';return;}
+    const FX = {
+      BURN: { c: "#ffaa55", i: "\u{1F525}" }, CHAIN: { c: "#ff7744", i: "\u26D3" }, CRIT: { c: "#ffcc00", i: "\u{1F4A5}" },
+      PIERCE: { c: "#ff8866", i: "\u{1F5E1}" }, HEAL: { c: "#66ddaa", i: "\u{1F49A}" }, WARD: { c: "#D4A64B", i: "\u{1F6E1}" },
+      ANCHOR: { c: "#ccaa66", i: "\u2693" }, THORNS: { c: "#88cc44", i: "\u{1F33F}" }, DRAIN: { c: "#cc55ff", i: "\u{1FA78}" },
+      SIPHON: { c: "#aa44ff", i: "\u{1F300}" }, WEAKEN: { c: "#ff88aa", i: "\u2B07" }, HEX: { c: "#bb88ff", i: "\u{1F52E}" },
+      SILENCE: { c: "#8888cc", i: "\u{1F507}" }, HASTE: { c: "#66eeff", i: "\u{1F4A8}" }, POISON: { c: "#aaee55", i: "\u2620" },
+      DODGE: { c: "#aaeeff", i: "\u{1F32B}" }, AMPLIFY: { c: "#ffcc88", i: "\u{1F4E1}" }, BLESS: { c: "#ffffaa", i: "\u2728" },
+    };
 
-  try{
-    var[zR,pR]=await Promise.all([
-      fetch('/api/zones'),
-      fetch('/api/players/'+playerId)
-    ]);
-    var zones=zR.ok?await zR.json():[];
-    var player=pR.ok?await pR.json():{};
-    if(!Array.isArray(zones))zones=zones.zones||[];
+    const GUILDS = [
+      { id: 0, name: "Bonk Legion", color: "#FFD700", short: "BON" },
+      { id: 1, name: "Shadow Paws", color: "#00BFFF", short: "SHP" },
+      { id: 2, name: "Night Wolves", color: "#BB88FF", short: "NTW" },
+      { id: 3, name: "Pepe's Army", color: "#50FA7B", short: "PEP" },
+      { id: 4, name: "Cat Lovers United", color: "#FF79C6", short: "CLU" },
+    ];
 
-    // Try loading player cards
-    try{var cR=await fetch('/api/packs/collection/'+playerId);if(cR.ok){var cd=await cR.json();playerCards=(cd.cards||cd||[]).map(function(c){return{id:c.id,name:c.spell_name||c.name,spell_type:c.spell_type||'attack',rarity:c.rarity||'common',atk:(c.spell&&c.spell.base_atk)||c.base_atk||0,hp:(c.spell&&c.spell.base_hp)||c.base_hp||0,charges:c.current_charges||0};});}}catch(e){}
+    // ═══════════════════════════════════════════════════════════
+    // ZONES (trimmed set — TODO: wire to /api/zones)
+    // ═══════════════════════════════════════════════════════════
+    const ZONES = [
+      { id:1, name:"Ember Wastes", house:"smoulders", nines:19, status:"contested", objective:true, event:null },
+      { id:2, name:"Cinderfall Basin", house:"smoulders", nines:8, status:"held", objective:false, event:null },
+      { id:3, name:"Molten Gorge", house:"smoulders", nines:14, status:"contested", objective:false, event:null },
+      { id:4, name:"Blackmoor Basin", house:"darktide", nines:16, status:"contested", objective:false, event:null },
+      { id:5, name:"Abyssal Trench", house:"darktide", nines:6, status:"held", objective:false, event:{ type:"Mana Storm", icon:"\u26A1", time:"2h 14m" } },
+      { id:6, name:"Coral Depths", house:"darktide", nines:4, status:"held", objective:false, event:null },
+      { id:7, name:"Ironveil Citadel", house:"stonebark", nines:7, status:"held", objective:false, event:null },
+      { id:8, name:"Verdant Hollow", house:"stonebark", nines:12, status:"contested", objective:false, event:null },
+      { id:10, name:"Skyreach Summit", house:"ashenvale", nines:9, status:"held", objective:false, event:null },
+      { id:11, name:"Windshear Cliffs", house:"ashenvale", nines:11, status:"contested", objective:false, event:null },
+      { id:13, name:"Stormrage Spire", house:"stormrage", nines:10, status:"held", objective:false, event:null },
+      { id:14, name:"Thunder Peak", house:"stormrage", nines:15, status:"contested", objective:false, event:{ type:"Treasure Surge", icon:"\u{1F48E}", time:"48m" } },
+      { id:16, name:"Voidspire Tower", house:"nighthollow", nines:13, status:"contested", objective:false, event:null },
+      { id:17, name:"Dusk Hollow", house:"nighthollow", nines:7, status:"held", objective:false, event:null },
+      { id:19, name:"Solace Temple", house:"dawnbringer", nines:8, status:"held", objective:false, event:null },
+      { id:20, name:"Dawn's Gate", house:"dawnbringer", nines:11, status:"contested", objective:false, event:null },
+      { id:22, name:"Arcane Nexus", house:"manastorm", nines:14, status:"contested", objective:false, event:null },
+      { id:25, name:"Blightfen Swamp", house:"plaguemire", nines:12, status:"contested", objective:false, event:null },
+    ];
 
-    render(zones,player);
-  }catch(err){
-    console.error('Load error:',err);
-    document.getElementById('content').innerHTML='<div style="text-align:center;padding:40px;color:var(--text-muted);">Failed to load zones. Please refresh.</div>';
-  }
-}
+    const CARDS = [
+      { id:13, name:"Ember Strike", house:"smoulders", type:"Attack", tier:1, cost:1, rarity:"rare", atk:5, hp:1, spd:0, def:0, luck:0, fx:["BURN +3"], ch:12, mxCh:12 },
+      { id:51, name:"Overload", house:"stormrage", type:"Attack", tier:3, cost:3, rarity:"epic", atk:9, hp:1, spd:0, def:0, luck:2, fx:["CRIT","CHAIN","SURGE"], ch:18, mxCh:18 },
+      { id:40, name:"Cyclone Strike", house:"ashenvale", type:"Attack", tier:2, cost:2, rarity:"uncommon", atk:6, hp:1, spd:2, def:0, luck:0, fx:["HASTE","BURN +3"], ch:8, mxCh:8 },
+      { id:36, name:"Bastion", house:"stonebark", type:"Defend", tier:3, cost:3, rarity:"legendary", atk:1, hp:9, spd:0, def:3, luck:0, fx:["ANCHOR","WARD","HEAL +5"], ch:30, mxCh:30 },
+      { id:58, name:"Abyssal Verdict", house:"nighthollow", type:"Manipulation", tier:2, cost:2, rarity:"epic", atk:4, hp:3, spd:0, def:0, luck:1, fx:["HEX","WEAKEN"], ch:18, mxCh:18 },
+      { id:77, name:"Toxic Dart", house:"plaguemire", type:"Attack", tier:1, cost:1, rarity:"rare", atk:4, hp:2, spd:0, def:0, luck:0, fx:["POISON"], ch:12, mxCh:12 },
+      { id:31, name:"Regrowth", house:"stonebark", type:"Support", tier:1, cost:1, rarity:"common", atk:1, hp:5, spd:0, def:0, luck:0, fx:["HEAL +4"], ch:5, mxCh:5 },
+      { id:4, name:"Arcane Shield", house:"universal", type:"Defend", tier:1, cost:1, rarity:"uncommon", atk:1, hp:5, spd:0, def:0, luck:0, fx:["WARD"], ch:8, mxCh:8 },
+    ];
 
-function render(zones,player){
-  var activeZones=zones.filter(function(z){return z.is_active!==false;});
-  var obj=activeZones.find(function(z){return z.is_current_objective;});
+    // ═══════════════════════════════════════════════════════════
+    // COMBATANT GENERATOR
+    // ═══════════════════════════════════════════════════════════
+    const NAMES = ["EmberFox","StoneKing","NightShade","GaleRunner","TideWalker","SparkHound","PlagueRat","SolarFlare","LeyTapper","VoidFang","IronMaw","DuskClaw","MistPaw","BoltEye","RootHeart","CinderPaw","WaveBreak","ThornBack","SkyDancer","VoltNine","MoonClaw","DawnFire","ArcanePaw","BlightFang"];
+    const NCARDS = ["Ember Strike","Bastion","Cyclone Strike","Shadow Hex","Toxic Dart","Chain Lightning","Regrowth","Arcane Shield","Solar Flare","Riptide","Overload"];
+    const ALL_H = Object.keys(H);
 
-  // Combat timer (next 15-min cycle)
-  var now=new Date(),mins=now.getMinutes(),nextCycle=15-mins%15,secs=60-now.getSeconds();
-  if(secs===60){secs=0;}else{nextCycle--;}
-
-  var html='';
-
-  // Combat cycle timer
-  html+='<div class="combat-timer fade-up">⚔️ NEXT COMBAT CYCLE IN '+nextCycle+'m '+secs+'s</div>';
-
-  // Page title
-  html+='<div class="section-label fade-up"><span style="font-size:14px;">🔥</span><span class="section-label__text">NETHARA LIVE</span><span class="section-label__line"></span></div>';
-
-  // Objective zone first
-  if(obj){
-    html+=renderZoneCard(obj,true);
-  }
-
-  // All other active zones
-  activeZones.forEach(function(z){
-    if(obj&&z.id===obj.id)return;
-    html+=renderZoneCard(z,false);
-  });
-
-  if(activeZones.length===0){
-    html+='<div style="text-align:center;padding:40px;color:var(--text-faint);font-style:italic;">No active zones right now.</div>';
-  }
-
-  document.getElementById('content').innerHTML=html;
-
-  // Update timer every second
-  setInterval(function(){
-    var n=new Date(),m=n.getMinutes(),nc=15-m%15,sc=60-n.getSeconds();
-    if(sc===60){sc=0;}else{nc--;}
-    var el=document.querySelector('.combat-timer');
-    if(el)el.innerHTML='⚔️ NEXT COMBAT CYCLE IN '+nc+'m '+sc+'s';
-  },1000);
-}
-
-function renderZoneCard(z,isObj){
-  var img=getZoneImg(z);
-  var ctrl=z.controlling_school_id&&HOUSES[z.controlling_school_id]?HOUSES[z.controlling_school_id]:null;
-  var h='';
-
-  h+='<div class="zone-card fade-up" onclick="goZone('+z.id+')">';
-
-  // Objective banner
-  if(isObj){
-    h+='<div style="background:linear-gradient(90deg,rgba(212,166,75,0.15),transparent);padding:6px 14px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border);">';
-    h+='<span style="font-size:12px;">⭐</span><span style="font-family:var(--font-data);font-size:7px;color:var(--gold);letter-spacing:1px;">DAILY OBJECTIVE — x1.5 POINTS</span></div>';
-  }
-
-  // Zone image header
-  if(img){
-    h+='<div class="zone-header" style="background-image:url(\''+img+'\');">';
-    h+='<div class="zone-header-overlay"></div>';
-    h+='<div class="zone-header-content">';
-    h+='<div style="font-family:var(--font-title);font-size:15px;font-weight:700;color:var(--text-bright);letter-spacing:1px;text-shadow:0 2px 8px rgba(0,0,0,0.8);">'+esc(z.name)+'</div>';
-    if(z.zone_type)h+='<div style="font-family:var(--font-mono);font-size:8px;color:var(--text-muted);margin-top:2px;">'+esc(z.zone_type)+'</div>';
-    h+='</div></div>';
-  }else{
-    h+='<div style="padding:14px;border-bottom:1px solid var(--border);">';
-    h+='<div style="font-family:var(--font-title);font-size:15px;font-weight:700;color:var(--text-bright);letter-spacing:1px;">'+esc(z.name)+'</div>';
-    if(z.zone_type)h+='<div style="font-family:var(--font-mono);font-size:8px;color:var(--text-muted);margin-top:2px;">'+esc(z.zone_type)+'</div>';
-    h+='</div>';
-  }
-
-  h+='<div class="zone-body">';
-
-  // Controller badge
-  if(ctrl){
-    h+='<div style="margin-bottom:8px;"><span class="badge" style="background:'+ctrl.color+'15;color:'+ctrl.color+';border:1px solid '+ctrl.color+'30;">'+ctrl.icon+' '+ctrl.name+' CONTROLS</span></div>';
-  }
-
-  // Guild control bars (from zone influence data)
-  if(z.guild_influence&&z.guild_influence.length>0){
-    z.guild_influence.slice(0,3).forEach(function(g){
-      var col=g.color||'#888';
-      h+='<div class="guild-bar">';
-      h+='<div class="guild-dot" style="background:'+col+';"></div>';
-      h+='<div class="guild-name">'+esc(g.guild_tag||g.name||'?')+'</div>';
-      h+='<div class="guild-track"><div class="guild-fill" style="width:'+Math.min(100,g.percent||0)+'%;background:linear-gradient(90deg,'+col+'90,'+col+'40);"></div></div>';
-      h+='<div class="guild-pct" style="color:'+col+';">'+(g.percent||0)+'%</div>';
-      h+='</div>';
-    });
-  }
-
-  // Zone stats row
-  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">';
-  h+='<div style="display:flex;gap:4px;">';
-  if(z.bonus_effect){
-    h+='<span class="badge" style="background:rgba(176,136,232,0.1);color:var(--purple);border:1px solid rgba(176,136,232,0.2);">'+esc(z.bonus_effect)+'</span>';
-  }
-  h+='</div>';
-  h+='<span style="font-family:var(--font-data);font-size:6px;color:var(--text-faint);">TAP TO DEPLOY</span>';
-  h+='</div>';
-
-  h+='</div></div>';
-  return h;
-}
-
-function goZone(id){window.location.href="/zone-detail.html?id="+id;}
-function openDeploy(zoneId,zoneName){
-  selectedZone=zoneId;
-  selectedCard=null;
-  document.getElementById('deployZoneName').textContent=zoneName;
-  document.getElementById('deployBtn').disabled=true;
-
-  // Render hand cards
-  var hH='';
-  if(playerCards.length>0){
-    playerCards.forEach(function(c,i){
-      var rCol={common:'#bbb',uncommon:'#6acd8a',rare:'#5588ff',epic:'#b088e8',legendary:'#ffd700'};
-      hH+='<div class="hand-card" id="hc'+i+'" onclick="selectCard('+i+')">';
-      hH+='<div style="font-family:var(--font-data);font-size:6px;color:'+(rCol[c.rarity]||'#bbb')+';margin-bottom:3px;">'+(c.spell_type||'ATTACK').toUpperCase()+'</div>';
-      hH+='<div style="font-family:var(--font-title);font-size:11px;font-weight:700;color:var(--text-bright);line-height:1.2;margin-bottom:4px;">'+esc(c.name)+'</div>';
-      hH+='<div style="display:flex;justify-content:space-between;">';
-      hH+='<span style="font-family:var(--font-data);font-size:7px;color:var(--red);">⚔️'+(c.atk||'?')+'</span>';
-      hH+='<span style="font-family:var(--font-data);font-size:7px;color:var(--green);">💚'+(c.hp||'?')+'</span>';
-      hH+='</div></div>';
-    });
-  }else{
-    hH='<div style="padding:16px;text-align:center;color:var(--text-faint);font-style:italic;font-size:12px;width:100%;">No cards available. Open a pack first!</div>';
-  }
-  document.getElementById('handCards').innerHTML=hH;
-
-  document.getElementById('deployPanel').classList.add('open');
-}
-
-function closeDeployPanel(){
-  document.getElementById('deployPanel').classList.remove('open');
-  selectedZone=null;selectedCard=null;
-}
-
-function selectCard(idx){
-  selectedCard=idx;
-  document.querySelectorAll('.hand-card').forEach(function(el,i){
-    el.classList.toggle('selected',i===idx);
-  });
-  document.getElementById('deployBtn').disabled=false;
-}
-
-document.getElementById('deployBtn').addEventListener('click',async function(){
-  if(!selectedZone||selectedCard===null||!playerCards[selectedCard])return;
-  var btn=this;btn.disabled=true;btn.textContent='DEPLOYING...';
-  try{
-    var r=await fetch('/api/zones/deploy',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({player_id:playerId,zone_id:selectedZone,card_id:playerCards[selectedCard].id})
-    });
-    if(r.ok){
-      btn.textContent='✅ DEPLOYED!';
-      setTimeout(function(){closeDeployPanel();loadNethara();},1500);
-    }else{
-      var err=await r.json().catch(function(){return{error:'Failed'};});
-      btn.textContent='❌ '+(err.error||'Failed');
-      setTimeout(function(){btn.textContent='⚔️ DEPLOY — 1 MANA';btn.disabled=false;},2000);
+    function genCombatants(zoneId) {
+      const gc = 3 + Math.floor(Math.random() * 2);
+      const used = new Set(); const gs = [];
+      for (let i = 0; i < gc; i++) { let g; do { g = Math.floor(Math.random() * 5); } while (used.has(g)); used.add(g); gs.push(g); }
+      const out = []; let ni = 0;
+      gs.forEach(function(gid, gi) {
+        const cnt = gi === 0 ? 1 + Math.floor(Math.random() * 3) : 1 + Math.floor(Math.random() * 4);
+        for (let i = 0; i < cnt; i++) {
+          out.push({ id: zoneId + "-" + gid + "-" + i, name: NAMES[ni % NAMES.length], house: ALL_H[Math.floor(Math.random() * ALL_H.length)], guild: gid, card: NCARDS[Math.floor(Math.random() * NCARDS.length)], hp: 60 + Math.floor(Math.random() * 40), maxHp: 100, alive: true, isLoneWolf: false });
+          ni++;
+        }
+      });
+      if (Math.random() > 0.5) out.push({ id: zoneId + "-lone", name: "LoneHunter", house: ALL_H[Math.floor(Math.random() * ALL_H.length)], guild: -1, card: NCARDS[Math.floor(Math.random() * NCARDS.length)], hp: 75, maxHp: 100, alive: true, isLoneWolf: true });
+      return out;
     }
-  }catch(e){
-    btn.textContent='❌ Network error';
-    setTimeout(function(){btn.textContent='⚔️ DEPLOY — 1 MANA';btn.disabled=false;},2000);
-  }
-});
 
-loadNethara();
-</script>
-<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+    // ═══════════════════════════════════════════════════════════
+    // NINE SVG CHARACTER
+    // ═══════════════════════════════════════════════════════════
+    function Nine({ house, size, shake, glow, dead, pulse, label, subtitle, showHp, hp, onClick, style: sx }) {
+      size = size || 80;
+      const h = H[house]; const uid = useRef(Math.random().toString(36).slice(2, 8));
+      return (
+        <div onClick={onClick} style={Object.assign({ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, cursor: onClick ? "pointer" : "default", opacity: dead ? 0.25 : 1, filter: dead ? "grayscale(0.8)" : "none", transition: "opacity 0.5s" }, sx || {})}>
+          <div style={{ width: size, height: size * 1.1, position: "relative", animation: dead ? "none" : shake ? "charShake 0.5s ease" : pulse ? "charPulse 0.6s ease" : "charIdle 3s ease-in-out infinite", filter: glow ? "drop-shadow(0 0 12px " + h.c + "60)" : pulse ? "drop-shadow(0 0 18px " + h.c + "90)" : "none" }}>
+            <svg viewBox="0 0 100 115" width={size} height={size * 1.1}>
+              <defs><radialGradient id={"g-" + uid.current} cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor={h.c} stopOpacity="0.15" /><stop offset="100%" stopColor={h.c} stopOpacity="0" /></radialGradient></defs>
+              {glow && <ellipse cx="50" cy="70" rx="40" ry="30" fill={"url(#g-" + uid.current + ")"} />}
+              <path d="M25 55 L20 110 L80 110 L75 55 Q50 48 25 55Z" fill={h.c} opacity="0.6" />
+              <path d="M30 58 L27 105 L73 105 L70 58 Q50 52 30 58Z" fill={h.c} opacity="0.85" />
+              <rect x="28" y="68" width="44" height="4" rx="2" fill="#000" opacity="0.2" />
+              <circle cx="50" cy="62" r="5" fill={h.c} opacity="0.3" />
+              <text x="50" y="64" textAnchor="middle" fontSize="7">{h.i}</text>
+              <ellipse cx="50" cy="38" rx="22" ry="20" fill="#3a3a4a" />
+              <polygon points="32,22 28,5 41,18" fill="#3a3a4a" /><polygon points="68,22 72,5 59,18" fill="#3a3a4a" />
+              <polygon points="33,22 30,8 40,19" fill={h.c} opacity="0.35" /><polygon points="67,22 70,8 60,19" fill={h.c} opacity="0.35" />
+              <ellipse cx="40" cy="36" rx="4.5" ry="4" fill={h.c} /><ellipse cx="60" cy="36" rx="4.5" ry="4" fill={h.c} />
+              <ellipse cx="40" cy="36" rx="2.2" ry="2.8" fill="#0a0812" /><ellipse cx="60" cy="36" rx="2.2" ry="2.8" fill="#0a0812" />
+              <circle cx="41.5" cy="34.5" r="1.2" fill="white" opacity={dead?"0.3":"0.9"} /><circle cx="61.5" cy="34.5" r="1.2" fill="white" opacity={dead?"0.3":"0.9"} />
+              {dead && <React.Fragment><line x1="36" y1="33" x2="44" y2="39" stroke="#888" strokeWidth="2"/><line x1="44" y1="33" x2="36" y2="39" stroke="#888" strokeWidth="2"/><line x1="56" y1="33" x2="64" y2="39" stroke="#888" strokeWidth="2"/><line x1="64" y1="33" x2="56" y2="39" stroke="#888" strokeWidth="2"/></React.Fragment>}
+              <polygon points="49,42 51,42 50,44" fill={h.c} opacity="0.5" />
+              <path d="M46 45 Q50 47 54 45" fill="none" stroke="#2a2a3a" strokeWidth="0.7" />
+            </svg>
+          </div>
+          {label && <div style={{ fontFamily: "'Cinzel',serif", fontSize: size > 60 ? 10 : 7, fontWeight: 700, color: dead ? T.faint : T.bright, textAlign: "center", maxWidth: size + 30, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>}
+          {subtitle && <div style={{ fontFamily: "monospace", fontSize: 7, color: h.c, textAlign: "center" }}>{subtitle}</div>}
+          {showHp && <div style={{ width: Math.max(size * 0.75, 30), height: 3, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden" }}><div style={{ width: hp + "%", height: "100%", background: hp > 50 ? T.green : hp > 25 ? T.gold : T.red, borderRadius: 2, transition: "width 0.6s ease" }} /></div>}
+        </div>
+      );
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // NERM BUBBLE + PHASE BANNER + DAMAGE
+    // ═══════════════════════════════════════════════════════════
+    function NermBubble({ text }) {
+      if (!text) return null;
+      return (
+        <div key={text} style={{ animation: "nermIn 0.4s ease", display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 12px", background: "rgba(10,8,18,0.92)", border: "1px solid " + T.gold + "25", borderRadius: 12, margin: "0 12px 6px", boxShadow: "0 4px 20px rgba(0,0,0,0.5), 0 0 15px " + T.gold + "08" }}>
+          <div style={{ fontSize: 22, flexShrink: 0, animation: "nermBounce 0.6s ease" }}>{"\u{1F63C}"}</div>
+          <div>
+            <div style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 6, color: T.gold, marginBottom: 3 }}>NERM</div>
+            <div style={{ fontFamily: "monospace", fontSize: 9, color: T.body, lineHeight: 1.5, fontStyle: "italic" }}>{text}</div>
+          </div>
+        </div>
+      );
+    }
+
+    function PhaseBanner({ text, color }) {
+      if (!text) return null;
+      return (
+        <div key={text} style={{ position: "absolute", top: "35%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 200, animation: "phaseIn 0.5s ease", pointerEvents: "none" }}>
+          <div style={{ fontFamily: "'Cinzel',serif", fontSize: 16, fontWeight: 800, color: color, textShadow: "0 0 20px " + color + "60, 0 2px 8px rgba(0,0,0,0.9)", letterSpacing: 3, whiteSpace: "nowrap" }}>{text}</div>
+        </div>
+      );
+    }
+
+    function Dmg({ value, x, y, type }) {
+      const color = type === "damage" ? T.red : type === "heal" ? T.green : type === "effect" ? T.purple : T.gold;
+      const prefix = type === "damage" ? "-" : type === "heal" ? "+" : "";
+      const sz = type === "crit" ? 16 : type === "damage" ? 13 : 12;
+      return <div style={{ position: "absolute", left: x, top: y, pointerEvents: "none", zIndex: 100, fontFamily: "'Press Start 2P',monospace", fontSize: sz, color: color, textShadow: "0 0 12px " + color + ", 0 0 25px " + color + "60, 0 2px 6px rgba(0,0,0,0.9)", animation: "dmgFloat 1.8s ease-out forwards", whiteSpace: "nowrap" }}>{prefix}{value}</div>;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // CARD, PIP, SBLOCK
+    // ═══════════════════════════════════════════════════════════
+    function Pip({ l, v, c }) { return <div style={{ display: "flex", alignItems: "center", gap: 2, background: c + "10", borderRadius: 3, padding: "1px 4px" }}><span style={{ fontFamily: "monospace", fontSize: 6, color: c + "88", fontWeight: 700 }}>{l}</span><span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 6, color: c, fontWeight: 700 }}>{v}</span></div>; }
+    function SBlock({ l, base, bonus, c }) { return <div style={{ textAlign: "center" }}><div style={{ fontFamily: "monospace", fontSize: 7, color: c + "88" }}>{l}</div><div style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 14, color: c }}>{base + bonus}</div>{bonus > 0 && <div style={{ fontFamily: "monospace", fontSize: 7, color: T.green }}>+{bonus}</div>}</div>; }
+
+    function CardComp({ card, selected, onClick }) {
+      const hc = H[card.house] ? H[card.house].c : T.gold;
+      const tc = TYPE_CLR[card.type]; const rc = RARITY_CLR[card.rarity];
+      return (
+        <div onClick={onClick} style={{ width: 130, minWidth: 130, borderRadius: 12, cursor: "pointer", background: selected ? "linear-gradient(160deg, " + hc + "20, " + hc + "05)" : "rgba(255,255,255,0.03)", border: "2px solid " + (selected ? hc : T.border), boxShadow: selected ? "0 0 20px " + hc + "25" : "0 2px 8px rgba(0,0,0,0.3)", transform: selected ? "translateY(-4px) scale(1.02)" : "none", transition: "all 0.2s", overflow: "hidden", flexShrink: 0 }}>
+          <div style={{ height: 2, background: "linear-gradient(90deg, transparent, " + rc + ", transparent)", opacity: 0.5 }} />
+          <div style={{ height: 65, display: "flex", alignItems: "center", justifyContent: "center", background: "radial-gradient(circle at 50% 60%, " + hc + "15, transparent 70%)", position: "relative" }}>
+            <span style={{ fontSize: 34, filter: "drop-shadow(0 0 10px " + hc + "50)" }}>{H[card.house] ? H[card.house].i : "\u2728"}</span>
+            <div style={{ position: "absolute", top: 4, right: 5, fontFamily: "monospace", fontSize: 7, color: T.mana, background: "rgba(0,0,0,0.5)", borderRadius: 4, padding: "1px 5px" }}>T{card.tier}</div>
+          </div>
+          <div style={{ padding: "8px 10px 10px" }}>
+            <div style={{ fontFamily: "monospace", fontSize: 6, fontWeight: 800, color: "#0a0812", background: tc, borderRadius: 2, padding: "1px 5px", display: "inline-block", marginBottom: 3 }}>{card.type.toUpperCase()}</div>
+            <div style={{ fontFamily: "'Cinzel',serif", fontSize: 12, fontWeight: 700, color: T.bright, lineHeight: 1.2, marginBottom: 4 }}>{card.name}</div>
+            <div style={{ display: "flex", gap: 3, flexWrap: "wrap", marginBottom: 4 }}>
+              {card.atk > 0 && <Pip l="ATK" v={card.atk} c={STAT.ATK} />}{card.hp > 0 && <Pip l="HP" v={card.hp} c={STAT.HP} />}{card.spd > 0 && <Pip l="SPD" v={card.spd} c={STAT.SPD} />}
+            </div>
+            {card.fx.length > 0 && <div style={{ display: "flex", gap: 2, flexWrap: "wrap", marginBottom: 4 }}>{card.fx.map(function(f, i) { var k = f.replace(/\s*[\+\d]+$/,""); var m = FX[k] || { c: T.muted, i: "?" }; return <span key={i} style={{ fontSize: 7, fontFamily: "monospace", fontWeight: 600, color: m.c, background: m.c + "12", padding: "1px 4px", borderRadius: 3 }}>{m.i} {f}</span>; })}</div>}
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ fontFamily: "monospace", fontSize: 7, color: rc, fontWeight: 700, textTransform: "capitalize" }}>{card.rarity}</span>
+              <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 7, color: T.mana }}>{card.cost}MP</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // ZONE TILE + ZONE SELECT
+    // ═══════════════════════════════════════════════════════════
+    function ZoneTile({ zone, isDeployed, isHomeTurf, onClick }) {
+      const h = H[zone.house];
+      return (
+        <div onClick={onClick} style={{ borderRadius: 14, overflow: "hidden", cursor: "pointer", border: "1px solid " + (isDeployed ? h.c + "50" : T.border), transition: "all 0.2s", boxShadow: isDeployed ? "0 0 16px " + h.c + "15" : "0 2px 8px rgba(0,0,0,0.3)" }}
+          onMouseEnter={function(e) { e.currentTarget.style.transform = "translateY(-2px)"; }} onMouseLeave={function(e) { e.currentTarget.style.transform = "none"; }}>
+          <div style={{ height: 90, background: h.art, position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", inset: 0, background: h.accent }} />
+            <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(1px 1px at 20% 30%, " + h.c + "40, transparent), radial-gradient(1px 1px at 70% 60%, " + h.c + "30, transparent)", animation: "particleDrift 8s ease-in-out infinite" }} />
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 50, background: "linear-gradient(transparent, rgba(10,8,18,0.9))" }} />
+            <div style={{ position: "absolute", bottom: 8, left: 10, right: 10, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 16, filter: "drop-shadow(0 0 6px " + h.c + "60)" }}>{h.i}</span>
+              <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontFamily: "'Cinzel',serif", fontSize: 12, fontWeight: 700, color: T.bright, textShadow: "0 1px 4px rgba(0,0,0,0.8)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{zone.name}</div><div style={{ fontFamily: "monospace", fontSize: 8, color: h.c, opacity: 0.8 }}>{h.n}</div></div>
+            </div>
+          </div>
+          <div style={{ padding: "8px 10px", display: "flex", flexWrap: "wrap", gap: 3, alignItems: "center", justifyContent: "space-between", background: "rgba(255,255,255,0.02)" }}>
+            <div style={{ display: "flex", gap: 3 }}>
+              {zone.objective && <span style={{ fontSize: 7, fontFamily: "monospace", fontWeight: 700, background: T.gold + "18", color: T.gold, padding: "2px 6px", borderRadius: 4 }}>{"\u2B50"}</span>}
+              {zone.status === "contested" && <span style={{ fontSize: 7, fontFamily: "monospace", fontWeight: 700, background: T.red + "15", color: T.red, padding: "2px 6px", borderRadius: 4 }}>{"\u2694\uFE0F"}</span>}
+              {zone.event && <span style={{ fontSize: 7, fontFamily: "monospace", fontWeight: 700, background: T.purple + "15", color: T.purple, padding: "2px 6px", borderRadius: 4 }}>{zone.event.icon}</span>}
+              {isHomeTurf && <span style={{ fontSize: 7, fontFamily: "monospace", fontWeight: 700, background: T.green + "15", color: T.green, padding: "2px 6px", borderRadius: 4 }}>{"\u{1F3E0}"}</span>}
+              {isDeployed && <span style={{ fontSize: 7, fontFamily: "monospace", fontWeight: 700, background: T.cyan + "15", color: T.cyan, padding: "2px 6px", borderRadius: 4 }}>YOU</span>}
+            </div>
+            <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 7, color: T.faint }}>{zone.nines}{"\u{1F431}"}</span>
+          </div>
+        </div>
+      );
+    }
+
+    function ZoneSelect({ zones, playerHouse, playerDeployed, onSelect }) {
+      const [filter, setFilter] = useState("all");
+      const f = filter === "all" ? zones : filter === "hot" ? zones.filter(function(z) { return z.status === "contested" || z.objective || z.event; }) : filter === "mine" ? zones.filter(function(z) { return playerDeployed.indexOf(z.id) >= 0; }) : zones.filter(function(z) { return z.house === filter; });
+      var filterBtns = [{ k: "all", l: "All" }, { k: "hot", l: "\u{1F525} Hot" }, { k: "mine", l: "\u2694\uFE0F Mine" }];
+      Object.keys(H).forEach(function(k) { filterBtns.push({ k: k, l: H[k].i }); });
+      return (
+        <div>
+          <div style={{ display: "flex", gap: 6, overflowX: "auto", padding: "0 0 12px" }}>
+            {filterBtns.map(function(t) { return <button key={t.k} onClick={function() { setFilter(t.k); }} style={{ fontFamily: "monospace", fontSize: 9, fontWeight: filter === t.k ? 700 : 400, padding: "5px 10px", borderRadius: 20, border: "none", cursor: "pointer", background: filter === t.k ? T.gold + "20" : "rgba(255,255,255,0.04)", color: filter === t.k ? T.gold : T.faint, whiteSpace: "nowrap", flexShrink: 0 }}>{t.l}</button>; })}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {f.map(function(z) { return <ZoneTile key={z.id} zone={z} isDeployed={playerDeployed.indexOf(z.id) >= 0} isHomeTurf={playerHouse === z.house} onClick={function() { onSelect(z); }} />; })}
+          </div>
+          {f.length === 0 && <div style={{ textAlign: "center", padding: 40, fontFamily: "monospace", fontSize: 11, color: T.faint }}>No zones match.</div>}
+        </div>
+      );
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // CYCLE SUMMARY OVERLAY
+    // ═══════════════════════════════════════════════════════════
+    function CycleSummary({ results, onClose }) {
+      if (!results) return null;
+      var guildScores = results.guildScores, kos = results.kos, yourPoints = results.yourPoints, winner = results.winner, flipped = results.flipped;
+      var sorted = guildScores.slice().sort(function(a, b) { return b.totalHp - a.totalHp; });
+      return (
+        <div style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(5,3,8,0.9)", display: "flex", alignItems: "center", justifyContent: "center", animation: "fadeIn 0.3s" }} onClick={onClose}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ width: "90%", maxWidth: 380, background: T.surface, border: "1px solid " + T.gold + "30", borderRadius: 16, overflow: "hidden", boxShadow: "0 0 60px " + T.gold + "10" }}>
+            <div style={{ padding: "16px 20px", textAlign: "center", background: winner.isYou ? "linear-gradient(135deg, " + T.gold + "15, transparent)" : "linear-gradient(135deg, " + T.red + "10, transparent)", borderBottom: "1px solid " + T.border }}>
+              <div style={{ fontSize: 28, marginBottom: 4 }}>{winner.isYou ? "\u2694\uFE0F" : "\u{1F480}"}</div>
+              <div style={{ fontFamily: "'Cinzel',serif", fontSize: 16, fontWeight: 800, color: winner.isYou ? T.gold : T.red }}>{winner.isYou ? "YOUR GUILD HOLDS THE ZONE!" : winner.name + " controls the zone"}</div>
+              {flipped && <div style={{ fontFamily: "monospace", fontSize: 10, color: T.gold, marginTop: 4 }}>{"\u{1F504}"} ZONE FLIPPED! +15 bonus</div>}
+            </div>
+            <div style={{ padding: "12px 20px", borderBottom: "1px solid " + T.border }}>
+              <div style={{ fontFamily: "monospace", fontSize: 8, color: T.faint, letterSpacing: 1, marginBottom: 8 }}>GUILD STANDINGS</div>
+              {sorted.map(function(gs, i) { return (
+                <div key={gs.guildId} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: i < sorted.length - 1 ? "1px solid " + T.border : "none" }}>
+                  <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 9, color: i === 0 ? T.gold : T.faint, width: 18 }}>#{i + 1}</span>
+                  <div style={{ width: 8, height: 8, borderRadius: "50%", background: gs.color }} />
+                  <span style={{ flex: 1, fontFamily: "monospace", fontSize: 10, color: gs.isYou ? T.bright : T.body }}>{gs.name}{gs.isYou ? " (YOU)" : ""}</span>
+                  <span style={{ fontFamily: "monospace", fontSize: 8, color: T.muted }}>{gs.alive}/{gs.total}</span>
+                  <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 10, color: gs.totalHp > 0 ? T.green : T.red, width: 35, textAlign: "right" }}>{gs.totalHp}</span>
+                  <span style={{ fontFamily: "monospace", fontSize: 7, color: T.faint }}>HP</span>
+                </div>
+              ); })}
+            </div>
+            {kos.length > 0 && <div style={{ padding: "10px 20px", borderBottom: "1px solid " + T.border }}>
+              <div style={{ fontFamily: "monospace", fontSize: 8, color: T.red, letterSpacing: 1, marginBottom: 6 }}>KNOCKED OUT</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>{kos.map(function(k, i) { return <span key={i} style={{ fontFamily: "monospace", fontSize: 8, padding: "3px 8px", background: T.red + "12", color: T.red, borderRadius: 4 }}>{"\u{1F480}"} @{k.name} ({k.guild})</span>; })}</div>
+            </div>}
+            <div style={{ padding: "14px 20px" }}>
+              <div style={{ fontFamily: "monospace", fontSize: 8, color: T.gold, letterSpacing: 1, marginBottom: 8 }}>YOUR POINTS THIS CYCLE</div>
+              {yourPoints.breakdown.map(function(bp, i) { return <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0" }}><span style={{ fontFamily: "monospace", fontSize: 9, color: T.body }}>{bp.reason}</span><span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 9, color: T.green }}>+{bp.pts}</span></div>; })}
+              <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0 0", marginTop: 6, borderTop: "1px solid " + T.gold + "20" }}>
+                <span style={{ fontFamily: "'Cinzel',serif", fontSize: 13, fontWeight: 700, color: T.gold }}>TOTAL</span>
+                <span style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 14, color: T.gold }}>+{yourPoints.total}</span>
+              </div>
+            </div>
+            <button onClick={onClose} style={{ width: "100%", padding: 12, border: "none", cursor: "pointer", fontFamily: "monospace", fontSize: 11, color: T.faint, background: "rgba(255,255,255,0.03)", borderTop: "1px solid " + T.border }}>Dismiss</button>
+          </div>
+        </div>
+      );
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // BATTLE VIEW — cinematic 22s combat
+    // ═══════════════════════════════════════════════════════════
+    function BattleView({ zone, player, cards, onBack, onDeploy, onWithdraw }) {
+      const [selectedCard, setSelectedCard] = useState(null);
+      const [combatants, setCombatants] = useState(function() { return genCombatants(zone.id); });
+      const [dmgs, setDmgs] = useState([]);
+      const [shakeGroups, setShakeGroups] = useState({});
+      const [pulseMe, setPulseMe] = useState(false);
+      const [running, setRunning] = useState(false);
+      const [cycleTime, setCycleTime] = useState(847);
+      const [hoveredNine, setHoveredNine] = useState(null);
+      const [cycleResults, setCycleResults] = useState(null);
+      const [myHp, setMyHp] = useState(100);
+      const [nerm, setNerm] = useState(null);
+      const [phase, setPhase] = useState(null);
+      const [flash, setFlash] = useState(null);
+      const dmgId = useRef(0);
+      const timers = useRef([]);
+
+      const h = H[zone.house]; const ph = H[player.house];
+      const isDeployed = player.deployedZones.indexOf(zone.id) >= 0;
+      const deployedCard = cards.find(function(c) { return c.deployedTo === zone.id; });
+      const isHomeTurf = player.house === zone.house;
+      const turfBonus = isHomeTurf ? h.turf : null;
+
+      var guildGroups = {};
+      combatants.forEach(function(c) { var k = c.guild === -1 ? "lone-" + c.id : "g-" + c.guild; if (!guildGroups[k]) guildGroups[k] = { guild: c.guild, nines: [] }; guildGroups[k].nines.push(c); });
+      var enemyGroups = Object.values(guildGroups).filter(function(g) { return g.guild !== player.guild; });
+      var allyNines = combatants.filter(function(c) { return c.guild === player.guild; });
+      var hasLoneWolf = combatants.some(function(c) { return c.isLoneWolf && c.alive; });
+
+      useEffect(function() {
+        var t = setInterval(function() { setCycleTime(function(c) { return c > 0 ? c - 1 : 900; }); }, 1000);
+        return function() { clearInterval(t); timers.current.forEach(clearTimeout); };
+      }, []);
+
+      function later(fn, ms) { timers.current.push(setTimeout(fn, ms)); }
+      function spawnDmg(value, x, y, type) { var id = dmgId.current++; setDmgs(function(p) { return p.concat([{ id: id, value: value, x: x, y: y, type: type }]); }); later(function() { setDmgs(function(p) { return p.filter(function(d) { return d.id !== id; }); }); }, 1800); }
+      function shakeGroup(gid) { setShakeGroups(function(p) { var n = Object.assign({}, p); n[gid] = true; return n; }); later(function() { setShakeGroups(function(p) { var n = Object.assign({}, p); n[gid] = false; return n; }); }, 500); }
+      function doFlash(color) { setFlash(color); later(function() { setFlash(null); }, 300); }
+      function showNerm(text, dur) { setNerm(text); later(function() { setNerm(null); }, dur || 3000); }
+      function showPhase(text, color, dur) { setPhase({ text: text, color: color }); later(function() { setPhase(null); }, dur || 2000); }
+
+      // ═══ CINEMATIC COMBAT ═══
+      function runCombat() {
+        if (running || !isDeployed) return;
+        setRunning(true); setNerm(null); setPhase(null);
+
+        var threatGuild = enemyGroups.reduce(function(max, g) {
+          var hp = g.nines.filter(function(n) { return n.alive; }).reduce(function(s, n) { return s + n.hp; }, 0);
+          return hp > (max.hp || 0) ? { guild: g.guild, hp: hp, name: g.guild === -1 ? "Lone Wolf" : GUILDS[g.guild] ? GUILDS[g.guild].name : "Unknown" } : max;
+        }, { hp: 0, guild: -1, name: "Unknown" });
+
+        var yourAtk = ph.atk + (deployedCard ? deployedCard.atk : 0) + (turfBonus ? (turfBonus.atk || 0) : 0);
+        var hasBurn = deployedCard && deployedCard.fx.some(function(f) { return f.indexOf("BURN") >= 0; });
+        var hasHeal = deployedCard && deployedCard.fx.some(function(f) { return f.indexOf("HEAL") >= 0; });
+        var hasPoison = deployedCard && deployedCard.fx.some(function(f) { return f.indexOf("POISON") >= 0; });
+        var hasCrit = deployedCard && deployedCard.fx.indexOf("CRIT") >= 0;
+        var burnDmg = hasBurn ? parseInt((deployedCard.fx.find(function(f) { return f.indexOf("BURN") >= 0; }).match(/\d+/) || [3])[0]) : 0;
+        var healAmt = hasHeal ? parseInt((deployedCard.fx.find(function(f) { return f.indexOf("HEAL") >= 0; }).match(/\d+/) || [4])[0]) : 0;
+
+        // Phase 0: Opening (0-3.5s)
+        later(function() { showPhase("\u2694\uFE0F COMBAT CYCLE", T.gold); }, 0);
+        later(function() { showNerm(pick(NERM.intro), 3500); }, 500);
+        later(function() { if (isHomeTurf) showNerm(pick(NERM.homeTurf), 2500); }, 3200);
+
+        // Phase 1: Spells (4-8s)
+        later(function() { showPhase("SPELLS RESOLVE", T.purple, 2500); doFlash(deployedCard ? (H[deployedCard.house] ? H[deployedCard.house].c : T.purple) : T.purple); setPulseMe(true); later(function() { setPulseMe(false); }, 600); }, 4000);
+        later(function() { showNerm(pick(NERM.spellCast), 2500); }, 4800);
+
+        var spellT = 6000;
+        if (hasBurn) {
+          later(function() { doFlash("#ff6622"); spawnDmg(burnDmg, 250 + Math.random() * 60, 35 + Math.random() * 30, "effect"); shakeGroup(threatGuild.guild); showNerm(pick(NERM.burn), 2500); }, spellT);
+          spellT += 1500;
+        }
+        if (hasHeal) {
+          later(function() { doFlash("#44cc88"); spawnDmg("+" + healAmt, 100, 70, "heal"); setMyHp(function(p) { return Math.min(100, p + healAmt * 0.5); }); showNerm(pick(NERM.heal), 2500); }, spellT);
+          spellT += 1500;
+        }
+        if (hasPoison) {
+          later(function() { doFlash("#aaee55"); spawnDmg("\u2620", 270, 55, "effect"); showNerm(pick(NERM.poison), 2500); }, spellT);
+          spellT += 1500;
+        }
+
+        var atkStart = Math.max(spellT, 7500);
+
+        // Phase 2: Attacks (atkStart to atkStart+5s)
+        later(function() { showPhase("AUTO-ATTACK", T.red, 2500); showNerm(pick(NERM.attackPhase), 2500); }, atkStart);
+        later(function() { doFlash(ph.c); setPulseMe(true); later(function() { setPulseMe(false); }, 600); spawnDmg(yourAtk, 240 + Math.random() * 80, 30 + Math.random() * 50, "damage"); shakeGroup(threatGuild.guild); }, atkStart + 1500);
+        later(function() { showNerm(pick(NERM.bigHit), 2000); }, atkStart + 2000);
+        later(function() { var eDmg = 3 + Math.floor(Math.random() * 5); doFlash(T.red); spawnDmg(eDmg, 80 + Math.random() * 80, 60 + Math.random() * 30, "damage"); shakeGroup(player.guild); setMyHp(function(p) { return Math.max(5, p - eDmg * 0.4); }); }, atkStart + 3000);
+
+        var didCrit = hasCrit && Math.random() < 0.25;
+        if (didCrit) {
+          later(function() { var cd = yourAtk * 2; doFlash("#ffcc00"); spawnDmg(cd + " CRIT!", 220, 20, "crit"); shakeGroup(threatGuild.guild); showNerm(pick(NERM.crit), 2500); }, atkStart + 3800);
+        }
+        var atkEnd = atkStart + (didCrit ? 5000 : 4000);
+
+        // Phase 3: Effects + KOs
+        later(function() { showPhase("EFFECTS TICK", T.purple, 2000); showNerm(pick(NERM.effectTick), 2000); }, atkEnd);
+
+        var ko = [];
+        later(function() {
+          setCombatants(function(prev) { return prev.map(function(c) {
+            if (c.guild !== player.guild && c.alive && Math.random() < 0.18) {
+              ko.push({ name: c.name, guild: c.guild === -1 ? "Lone Wolf" : GUILDS[c.guild] ? GUILDS[c.guild].short : "???" });
+              return Object.assign({}, c, { hp: 0, alive: false });
+            }
+            return Object.assign({}, c, { hp: Math.max(5, c.hp - Math.floor(Math.random() * 10)) });
+          }); });
+        }, atkEnd + 1200);
+
+        later(function() {
+          if (ko.length > 0) {
+            doFlash(T.red);
+            ko.forEach(function(k, i) { later(function() { spawnDmg("\u{1F480} " + k.name, 150 + i * 40, 40 + i * 20, "damage"); }, i * 400); });
+            showNerm(pick(NERM.ko(ko[0].name, ko[0].guild)), 3000);
+          } else {
+            showNerm(pick(NERM.noKo), 2500);
+          }
+        }, atkEnd + 1800);
+
+        if (hasLoneWolf) {
+          later(function() { showNerm(pick(NERM.loneWolf), 2500); }, atkEnd + 3000);
+        }
+        var effectEnd = atkEnd + (hasLoneWolf ? 4200 : 3200);
+
+        // Phase 4: Zone control result
+        later(function() {
+          showPhase("ZONE CONTROL", T.gold, 3000);
+          var guildScores = [];
+          var allGrp = {};
+          combatants.forEach(function(c) { if (!allGrp[c.guild]) allGrp[c.guild] = []; allGrp[c.guild].push(c); });
+          var yourGuildHp = Math.round((myHp * 0.5) + (allGrp[player.guild] || []).filter(function(n) { return n.alive; }).reduce(function(s, n) { return s + n.hp; }, 0));
+          guildScores.push({ guildId: player.guild, name: GUILDS[player.guild].name, color: GUILDS[player.guild].color, totalHp: yourGuildHp, isYou: true, alive: (allGrp[player.guild] || []).filter(function(n) { return n.alive; }).length + 1, total: (allGrp[player.guild] || []).length + 1 });
+          Object.keys(allGrp).forEach(function(gid) {
+            var g = parseInt(gid); if (g === player.guild) return;
+            var nines = allGrp[gid]; var alive = nines.filter(function(n) { return n.alive; });
+            var gObj = g === -1 ? { name: "Lone Wolves", color: T.muted } : GUILDS[g];
+            guildScores.push({ guildId: g, name: gObj ? gObj.name : "Unknown", color: gObj ? gObj.color : T.muted, totalHp: alive.reduce(function(s, n) { return s + n.hp; }, 0), isYou: false, alive: alive.length, total: nines.length });
+          });
+          var winner = guildScores.sort(function(a, b) { return b.totalHp - a.totalHp; })[0];
+          var youWon = winner ? winner.isYou : false;
+          var flipped = youWon && zone.status === "contested";
+          var koList = combatants.filter(function(c) { return !c.alive && c.guild !== player.guild; }).map(function(c) { return { name: c.name, guild: c.guild === -1 ? "Lone Wolf" : GUILDS[c.guild] ? GUILDS[c.guild].short : "???" }; });
+          var breakdown = [];
+          if (isDeployed) breakdown.push({ reason: "Survived combat cycle", pts: 3 });
+          if (youWon) breakdown.push({ reason: "Guild controls zone", pts: 2 });
+          if (flipped) breakdown.push({ reason: "\u{1F504} Zone flipped!", pts: 15 });
+          if (koList.length > 0) breakdown.push({ reason: koList.length + " KO" + (koList.length > 1 ? "s" : ""), pts: koList.length * 10 });
+          if (zone.objective) breakdown.push({ reason: "\u2B50 Objective x1.5", pts: Math.round(breakdown.reduce(function(s, b) { return s + b.pts; }, 0) * 0.5) });
+          if (isHomeTurf) breakdown.push({ reason: "\u{1F3E0} Home Turf", pts: 2 });
+          var total = breakdown.reduce(function(s, b) { return s + b.pts; }, 0);
+
+          spawnDmg("+" + total + "pts", 120, 40, "crit");
+          showNerm(youWon ? pick(NERM.winZone) : pick(NERM.loseZone), 3000);
+          if (flipped) later(function() { showNerm(pick(NERM.flip), 3000); }, 1500);
+
+          later(function() {
+            setCycleResults({ guildScores: guildScores, kos: koList, winner: { name: winner ? winner.name : "Unknown", isYou: youWon }, flipped: flipped, yourPoints: { breakdown: breakdown, total: total } });
+            setRunning(false); setCycleTime(900);
+          }, 3000);
+        }, effectEnd);
+      }
+
+      var mins = Math.floor(cycleTime / 60);
+      var secs = cycleTime % 60;
+
+      return (
+        <div style={{ minHeight: "100vh", background: T.bg }}>
+          {/* Zone header */}
+          <div style={{ height: 70, position: "relative", overflow: "hidden", background: h.art }}>
+            <div style={{ position: "absolute", inset: 0, background: h.accent }} />
+            <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 40, background: "linear-gradient(transparent, #0a0812)" }} />
+            <div style={{ position: "absolute", top: 8, left: 8, right: 8, display: "flex", alignItems: "center", gap: 8, zIndex: 2 }}>
+              <button onClick={onBack} style={{ background: "rgba(0,0,0,0.5)", border: "none", color: T.bright, fontSize: 16, cursor: "pointer", padding: "4px 10px", borderRadius: 8 }}>{"\u2190"}</button>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ fontSize: 14 }}>{h.i}</span>
+                  <span style={{ fontFamily: "'Cinzel',serif", fontSize: 13, fontWeight: 700, color: T.bright }}>{zone.name}</span>
+                </div>
+                <div style={{ fontFamily: "monospace", fontSize: 8, color: h.c }}>{h.n} {"\u00B7"} {Object.keys(guildGroups).length} guilds</div>
+              </div>
+              <div style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 9, color: running ? T.red : T.mana, background: "rgba(0,0,0,0.5)", padding: "4px 8px", borderRadius: 6 }}>
+                {running ? "\u2694\uFE0F LIVE" : mins + ":" + (secs < 10 ? "0" : "") + secs}
+              </div>
+            </div>
+          </div>
+
+          {/* Pills */}
+          <div style={{ padding: "5px 12px", display: "flex", gap: 4, flexWrap: "wrap", borderBottom: "1px solid " + T.border }}>
+            {zone.objective && <span style={{ fontSize: 7, fontFamily: "monospace", fontWeight: 700, background: T.gold + "15", color: T.gold, padding: "2px 7px", borderRadius: 4 }}>{"\u2B50"} x1.5</span>}
+            {zone.status === "contested" && <span style={{ fontSize: 7, fontFamily: "monospace", fontWeight: 700, background: T.red + "12", color: T.red, padding: "2px 7px", borderRadius: 4 }}>{"\u2694\uFE0F"} CONTESTED</span>}
+            {isHomeTurf && <span style={{ fontSize: 7, fontFamily: "monospace", fontWeight: 700, background: T.green + "12", color: T.green, padding: "2px 7px", borderRadius: 4 }}>{"\u{1F3E0}"} HOME TURF</span>}
+          </div>
+
+          {/* ═══ ARENA ═══ */}
+          <div style={{ height: 260, position: "relative", overflow: "hidden", background: "radial-gradient(ellipse at 50% 90%, " + h.c + "08, transparent 50%)" }}>
+            {flash && <div style={{ position: "absolute", inset: 0, background: flash, opacity: 0.12, zIndex: 150, animation: "flashOut 0.3s ease forwards", pointerEvents: "none" }} />}
+            {phase && <PhaseBanner text={phase.text} color={phase.color} />}
+            <div style={{ position: "absolute", bottom: 20, left: 0, right: 0, height: 1, background: "linear-gradient(90deg, transparent 5%, " + h.c + "15 50%, transparent 95%)" }} />
+
+            {/* YOUR FORMATION */}
+            {isDeployed && (
+              <div style={{ position: "absolute", bottom: 25, left: "50%", transform: "translateX(-50%)", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: -14, position: "relative", height: 50 }}>
+                  {allyNines.slice(0, 4).map(function(a, i) {
+                    var offsets = [{ x: -30, z: 3 }, { x: 24, z: 2 }, { x: -52, z: 1 }, { x: 46, z: 0 }];
+                    var o = offsets[i];
+                    return <div key={a.id} onMouseEnter={function() { setHoveredNine(a); }} onMouseLeave={function() { setHoveredNine(null); }} style={{ position: "absolute", left: o.x, zIndex: o.z, opacity: 0.65 - i * 0.1, transform: "scale(" + (0.6 - i * 0.05) + ")" }}><Nine house={a.house} size={55} showHp={true} hp={a.hp} dead={!a.alive} shake={shakeGroups[player.guild]} /></div>;
+                  })}
+                  {allyNines.length > 4 && <div style={{ position: "absolute", left: 60, top: 5, fontFamily: "'Press Start 2P',monospace", fontSize: 7, color: T.muted, background: "rgba(0,0,0,0.5)", borderRadius: 10, padding: "2px 6px" }}>+{allyNines.length - 4}</div>}
+                </div>
+                <Nine house={player.house} size={85} glow={true} shake={shakeGroups[player.guild]} pulse={pulseMe} label="Your Nine" subtitle={deployedCard ? deployedCard.name : null} showHp={true} hp={myHp} />
+              </div>
+            )}
+
+            {/* ENEMY GUILDS */}
+            {enemyGroups.map(function(group, gi) {
+              var positions = [{ left: "6%", top: "12%" }, { right: "6%", top: "18%" }, { left: "12%", top: "52%" }, { right: "10%", top: "55%" }];
+              var pos = positions[gi % 4];
+              var guild = group.guild === -1 ? { name: "Lone Wolf", color: T.muted, short: "LW" } : GUILDS[group.guild];
+              var alive = group.nines.filter(function(n) { return n.alive; });
+              return (
+                <div key={gi} style={Object.assign({ position: "absolute", display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }, pos)}>
+                  <div style={{ fontFamily: "monospace", fontSize: 7, fontWeight: 700, color: guild ? guild.color : T.muted, background: (guild ? guild.color : T.muted) + "15", padding: "1px 6px", borderRadius: 4, border: "1px solid " + (guild ? guild.color : T.muted) + "25" }}>{guild ? guild.short : "?"} {"\u00B7"} {alive.length}/{group.nines.length}</div>
+                  <div style={{ display: "flex", position: "relative" }}>
+                    {alive.slice(0, 3).map(function(n, i) {
+                      return <div key={n.id} onMouseEnter={function() { setHoveredNine(n); }} onMouseLeave={function() { setHoveredNine(null); }} style={{ marginLeft: i > 0 ? -10 : 0, zIndex: 3 - i, transform: "scale(" + (1 - i * 0.1) + ")", opacity: 1 - i * 0.15 }}><Nine house={n.house} size={40} showHp={true} hp={n.hp} shake={shakeGroups[group.guild]} dead={!n.alive} /></div>;
+                    })}
+                    {alive.length > 3 && <div style={{ marginLeft: -6, width: 22, height: 22, borderRadius: "50%", background: "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Press Start 2P',monospace", fontSize: 6, color: T.muted, alignSelf: "center" }}>+{alive.length - 3}</div>}
+                  </div>
+                </div>
+              );
+            })}
+
+            {dmgs.map(function(d) { return <Dmg key={d.id} value={d.value} x={d.x} y={d.y} type={d.type} />; })}
+
+            {hoveredNine && !running && (
+              <div style={{ position: "absolute", top: 5, left: "50%", transform: "translateX(-50%)", background: "rgba(10,8,18,0.95)", border: "1px solid " + (H[hoveredNine.house] ? H[hoveredNine.house].c : T.muted) + "30", borderRadius: 10, padding: "8px 14px", zIndex: 50, minWidth: 150 }}>
+                <div style={{ fontFamily: "'Cinzel',serif", fontSize: 11, fontWeight: 700, color: T.bright }}>{hoveredNine.name}</div>
+                <div style={{ fontFamily: "monospace", fontSize: 8, color: H[hoveredNine.house] ? H[hoveredNine.house].c : T.muted }}>{H[hoveredNine.house] ? H[hoveredNine.house].i : "?"} {H[hoveredNine.house] ? H[hoveredNine.house].n : ""}{hoveredNine.guild >= 0 ? " \u00B7 " + (GUILDS[hoveredNine.guild] ? GUILDS[hoveredNine.guild].name : "") : " \u00B7 Lone Wolf \u{1F43A}"}</div>
+                <div style={{ fontFamily: "monospace", fontSize: 8, color: T.muted, marginTop: 2 }}>Card: <span style={{ color: T.bright }}>{hoveredNine.card}</span></div>
+                {hoveredNine.isLoneWolf && <div style={{ fontFamily: "monospace", fontSize: 7, color: T.gold, marginTop: 2 }}>{"\u{1F43A}"} 1.5x ATK</div>}
+              </div>
+            )}
+          </div>
+
+          {/* NERM */}
+          <NermBubble text={nerm} />
+
+          {/* COMBAT BUTTON */}
+          {isDeployed && !running && !cycleResults && (
+            <div style={{ padding: "8px 12px" }}>
+              <button onClick={runCombat} style={{ width: "100%", padding: 12, borderRadius: 10, border: "1px solid " + T.gold + "25", fontFamily: "'Cinzel',serif", fontSize: 13, fontWeight: 700, background: "linear-gradient(135deg, " + T.gold + "25, " + T.gold + "10)", color: T.gold, cursor: "pointer" }}>{"\u25B6"} WATCH COMBAT CYCLE</button>
+            </div>
+          )}
+
+          {/* CARD AREA */}
+          <div style={{ padding: "10px 12px 30px", background: "linear-gradient(transparent, rgba(0,0,0,0.2))" }}>
+            {isDeployed ? (
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <span style={{ fontFamily: "'Cinzel',serif", fontSize: 12, fontWeight: 700, color: T.gold }}>EQUIPPED</span>
+                  <button onClick={function() { onWithdraw(zone.id); }} style={{ fontFamily: "monospace", fontSize: 8, color: T.red, background: T.red + "10", border: "1px solid " + T.red + "20", borderRadius: 6, padding: "4px 10px", cursor: "pointer" }}>{"\u2715"} Withdraw</button>
+                </div>
+                {deployedCard && (
+                  <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                    <CardComp card={deployedCard} selected={true} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontFamily: "monospace", fontSize: 8, color: T.faint, marginBottom: 6 }}>COMBAT STATS</div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <SBlock l="ATK" base={ph.atk} bonus={deployedCard.atk + (turfBonus ? turfBonus.atk || 0 : 0)} c={STAT.ATK} />
+                        <SBlock l="HP" base={ph.hp} bonus={deployedCard.hp + (turfBonus ? turfBonus.hp || 0 : 0)} c={STAT.HP} />
+                        <SBlock l="SPD" base={ph.spd} bonus={deployedCard.spd + (turfBonus ? turfBonus.spd || 0 : 0)} c={STAT.SPD} />
+                      </div>
+                      {isHomeTurf && <div style={{ fontFamily: "monospace", fontSize: 7, color: T.green, marginTop: 6, background: T.green + "10", padding: "3px 8px", borderRadius: 6 }}>{"\u{1F3E0}"} {Object.keys(h.turf).map(function(k) { return "+" + h.turf[k] + " " + k.toUpperCase(); }).join(", ")}</div>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>
+                <div style={{ fontFamily: "'Cinzel',serif", fontSize: 13, fontWeight: 700, color: T.gold, marginBottom: 3 }}>CHOOSE YOUR WEAPON</div>
+                <div style={{ fontFamily: "monospace", fontSize: 9, color: T.muted, marginBottom: 10 }}>Pick a card to deploy</div>
+                <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 10 }}>
+                  {cards.filter(function(c) { return !c.deployedTo && c.ch > 0; }).map(function(card) {
+                    return <CardComp key={card.id} card={card} selected={selectedCard === card.id} onClick={function() { setSelectedCard(selectedCard === card.id ? null : card.id); }} />;
+                  })}
+                </div>
+                {selectedCard && (function() {
+                  var c = cards.find(function(x) { return x.id === selectedCard; });
+                  if (!c) return null;
+                  return (
+                    <div>
+                      <div style={{ background: "rgba(255,255,255,0.025)", borderRadius: 10, padding: "10px 12px", marginBottom: 8, border: "1px solid " + T.border }}>
+                        <div style={{ fontFamily: "monospace", fontSize: 8, color: T.faint, marginBottom: 4 }}>COMBAT PREVIEW</div>
+                        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+                          <SBlock l="ATK" base={ph.atk} bonus={c.atk + (turfBonus ? turfBonus.atk || 0 : 0)} c={STAT.ATK} />
+                          <SBlock l="HP" base={ph.hp} bonus={c.hp + (turfBonus ? turfBonus.hp || 0 : 0)} c={STAT.HP} />
+                          <SBlock l="SPD" base={ph.spd} bonus={c.spd + (turfBonus ? turfBonus.spd || 0 : 0)} c={STAT.SPD} />
+                        </div>
+                      </div>
+                      <button onClick={function() { onDeploy(zone.id, selectedCard); setSelectedCard(null); }} style={{ width: "100%", padding: 12, borderRadius: 10, border: "none", fontFamily: "'Cinzel',serif", fontSize: 13, fontWeight: 700, background: "linear-gradient(135deg, " + h.c + ", " + h.c + "88)", color: "#fff", boxShadow: "0 4px 20px " + h.c + "40", cursor: "pointer" }}>{"\u2694\uFE0F"} DEPLOY {"\u2014"} {c.cost} MANA</button>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+          </div>
+
+          <CycleSummary results={cycleResults} onClose={function() { setCycleResults(null); }} />
+        </div>
+      );
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // MAIN APP
+    // ═══════════════════════════════════════════════════════════
+    function App() {
+      const [view, setView] = useState("zones");
+      const [selectedZone, setSelectedZone] = useState(null);
+      const [player, setPlayer] = useState({ name: "Your Nine", house: "stormrage", guild: 0, mana: 5, maxMana: 10, points: 1130, deployedZones: [] });
+      const [cards, setCards] = useState(CARDS.map(function(c) { return Object.assign({}, c, { deployedTo: null }); }));
+      const [toast, setToast] = useState(null);
+      var ph = H[player.house];
+
+      function showToast(msg) { setToast(msg); setTimeout(function() { setToast(null); }, 2500); }
+      function handleDeploy(zoneId, cardId) {
+        var card = cards.find(function(c) { return c.id === cardId; });
+        if (player.mana < card.cost) return showToast("Need " + card.cost + " mana!");
+        setPlayer(function(p) { return Object.assign({}, p, { mana: p.mana - card.cost, deployedZones: p.deployedZones.concat([zoneId]) }); });
+        setCards(function(cs) { return cs.map(function(c) { return c.id === cardId ? Object.assign({}, c, { deployedTo: zoneId }) : c; }); });
+        showToast("\u2694\uFE0F " + card.name + " deployed!");
+      }
+      function handleWithdraw(zoneId) {
+        setPlayer(function(p) { return Object.assign({}, p, { deployedZones: p.deployedZones.filter(function(z) { return z !== zoneId; }) }); });
+        setCards(function(cs) { return cs.map(function(c) { return c.deployedTo === zoneId ? Object.assign({}, c, { deployedTo: null }) : c; }); });
+        showToast("\u2190 Withdrawn.");
+      }
+
+      if (view === "battle" && selectedZone) {
+        return <BattleView zone={selectedZone} player={player} cards={cards} onBack={function() { setView("zones"); setSelectedZone(null); }} onDeploy={handleDeploy} onWithdraw={handleWithdraw} />;
+      }
+
+      return (
+        <div style={{ minHeight: "100vh", background: T.bg, color: T.body }}>
+          {/* Header */}
+          <div style={{ padding: "14px 16px", background: "radial-gradient(ellipse at 50% 0%, " + ph.c + "08, transparent 70%)", borderBottom: "1px solid " + T.border }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <div style={{ fontFamily: "'Cinzel',serif", fontSize: 20, fontWeight: 800, color: T.gold, letterSpacing: 3 }}>NETHARA</div>
+              <div style={{ fontFamily: "'Press Start 2P',monospace", fontSize: 8, color: T.gold }}>{player.points} pts</div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <Nine house={player.house} size={60} glow={true} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: "'Cinzel',serif", fontSize: 12, fontWeight: 700, color: T.bright, marginBottom: 3 }}>{ph.i} {ph.n} {"\u00B7"} {ph.role}</div>
+                <div style={{ display: "flex", gap: 6, marginBottom: 4 }}><Pip l="ATK" v={ph.atk} c={STAT.ATK} /><Pip l="HP" v={ph.hp} c={STAT.HP} /><Pip l="SPD" v={ph.spd} c={STAT.SPD} /></div>
+                <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                  {Array.from({ length: 10 }, function(_, i) { return <div key={i} style={{ width: 8, height: 8, borderRadius: "50%", background: i < player.mana ? "linear-gradient(180deg, " + T.mana + ", #0088aa)" : "rgba(255,255,255,0.05)", border: "1px solid " + (i < player.mana ? T.mana + "40" : "rgba(255,255,255,0.06)") }} />; })}
+                  <span style={{ fontFamily: "monospace", fontSize: 7, color: T.faint, marginLeft: 3 }}>{player.mana}/{player.maxMana}</span>
+                </div>
+                <div style={{ fontFamily: "monospace", fontSize: 7, color: T.faint, marginTop: 3 }}>{"\u2694\uFE0F"} {player.deployedZones.length} deployed {"\u00B7"} {GUILDS[player.guild].name}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Zone Select */}
+          <div style={{ padding: "12px 14px 80px" }}>
+            <ZoneSelect zones={ZONES} playerHouse={player.house} playerDeployed={player.deployedZones} onSelect={function(z) { setSelectedZone(z); setView("battle"); }} />
+          </div>
+
+          {toast && <div style={{ position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)", background: "rgba(10,8,18,0.95)", border: "1px solid " + T.gold + "40", borderRadius: 12, padding: "10px 20px", zIndex: 2000, fontFamily: "monospace", fontSize: 11, color: T.gold, boxShadow: "0 8px 32px rgba(0,0,0,0.6)", animation: "slideUp 0.3s ease", maxWidth: "90%", textAlign: "center" }}>{toast}</div>}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
 </body>
 </html>
