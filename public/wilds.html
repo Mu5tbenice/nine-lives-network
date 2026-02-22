@@ -241,15 +241,15 @@ function CardV4({card,size="tiny",onClick,disabled,fatigued,isNew,isSelected}){
 /* ═══ PLAYER NINE — layered equipment preview ═══ */
 function PlayerNine({shake,flash,flashColor}){
   const h=PB.houseData;const c=h.color;const isCrit=flashColor==="#D4A64B";
-  const slots=PB.equipSlots;const basePath="/assets/images/builder/";
+  const slots=PB.equipSlots;const basePath="/assets/nine/";
   const layers=["fur","outfit","weapon","expression","headwear"];
   const hasLayers=layers.some(l=>slots[l]);
   return(<div style={{textAlign:"center",animation:shake?(isCrit?"bigShake .4s":"shake .3s"):"none"}}>
     <div style={{width:100,height:130,borderRadius:14,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",
       background:flash?`radial-gradient(ellipse at 50% 40%,${flashColor}55,rgba(10,8,18,.9) 75%)`:`radial-gradient(ellipse at 50% 40%,${c}25,rgba(10,8,18,.95) 80%)`,
       border:`2px solid ${flash?flashColor+'70':c+'30'}`,boxShadow:flash?`0 0 30px ${flashColor}40,inset 0 0 20px ${flashColor}15`:`0 0 20px ${c}18`,transition:"all .3s",overflow:"hidden"}}>
-      {hasLayers?layers.map(l=>slots[l]?<img key={l} src={`${basePath}${l}/${slots[l]}.png`} alt="" style={{position:"absolute",width:"85%",height:"85%",objectFit:"contain",top:"7%",left:"7%"}} onError={e=>{e.target.style.display='none'}}/>:null)
-       :<img src={h.crest} alt="" style={{width:58,height:58,objectFit:"contain",filter:`drop-shadow(0 0 10px ${c}70)`}} onError={e=>{e.target.textContent=h.icon;e.target.style.fontSize='44px'}}/>}
+      {hasLayers?layers.map(l=>slots[l]?<img key={l} src={`${basePath}${l}/${slots[l]}`} alt="" style={{position:"absolute",width:"85%",height:"85%",objectFit:"contain",top:"7%",left:"7%"}} onError={e=>{e.target.style.display='none'}}/>:null)
+       :<span style={{fontSize:48,filter:`drop-shadow(0 0 12px ${c}80)`}}>{h.icon||"\u{1F431}"}</span>}
     </div>
     <div style={{fontFamily:h.font||"var(--font-title)",fontSize:13,fontWeight:700,color:"#F5F0E8",textShadow:`0 0 10px ${c}50`,marginTop:5,lineHeight:1.15,maxWidth:110,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{PB.name}</div>
     <div style={{fontFamily:"var(--font-data)",fontSize:6,color:c,marginTop:2,letterSpacing:1}}>{h.icon} {h.name?.toUpperCase()}</div>
@@ -259,7 +259,7 @@ function PlayerNine({shake,flash,flashColor}){
 /* ═══ ENEMY FIGHTER — layered equipment like player ═══ */
 function EnemyFighter({enemy,shake,flash,flashColor}){
   const[imgErr,setImgErr]=useState(false);const h=enemy.houseData;const c=h.color;const isCrit=flashColor==="#D4A64B";
-  const basePath="/assets/images/builder/";const eq=enemy.equipped||{};
+  const basePath="/assets/nine/";const eq=enemy.equipped||{};
   const layers=["fur","outfit","weapon","expression","headwear"];
   const hasLayers=layers.some(l=>eq[l]?.f);
   return(<div style={{textAlign:"center",animation:shake?(isCrit?"bigShake .4s":"shake .3s"):"none"}}>
@@ -536,7 +536,7 @@ function TheWilds(){
     {journey.length>0&&<div style={{display:"flex",gap:3,padding:"4px 16px",flexWrap:"wrap"}}>{journey.map((j,i)=><div key={i} style={{width:7,height:7,borderRadius:"50%",background:j.won?HS[j.house].color:"#e85a6a35",border:`1px solid ${j.won?HS[j.house].color+"50":"#e85a6a25"}`}}/>)}<div style={{width:7,height:7,borderRadius:"50%",border:"1.5px solid #D4A64B30",animation:"pulse 1.5s infinite"}}/></div>}
 
     {/* ═══ ARENA ═══ */}
-    <div key={animKey} style={{width:"calc(100% - 24px)",aspectRatio:"16/9",position:"relative",overflow:"hidden",borderRadius:14,margin:"6px 12px",border:"1px solid rgba(255,255,255,.05)",background:"#0e0a18",flexShrink:0}}>
+    <div key={animKey} style={{width:"calc(100% - 24px)",aspectRatio:"4/3",position:"relative",overflow:"hidden",borderRadius:14,margin:"6px 12px",border:"1px solid rgba(255,255,255,.05)",background:"#0e0a18",flexShrink:0}}>
       <div style={{position:"absolute",inset:0,backgroundImage:`url(${ZP}${zone.img})`,backgroundSize:"cover",backgroundPosition:"center",filter:phase===PH.APPROACH?"brightness(.5) saturate(.55)":"brightness(.28) saturate(.4)",transition:"filter .7s"}}><div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse at 50% 80%,transparent 15%,rgba(10,8,18,.7) 60%)"}}/></div>
       <div style={{position:"absolute",bottom:3,left:"50%",transform:"translateX(-50%)",zIndex:20,fontFamily:"var(--font-title)",fontSize:8,color:"rgba(255,255,255,.18)",letterSpacing:2}}>{zone.name.toUpperCase()}</div>
 
