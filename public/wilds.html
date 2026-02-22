@@ -13,25 +13,6 @@
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
   <style>
-    /* ═══ NAV FALLBACK (in case nav.css doesn't load) ═══ */
-    .top-nav{position:fixed;top:0;left:0;right:0;height:56px;background:rgba(10,8,18,.97);border-bottom:1px solid rgba(255,255,255,.06);z-index:1000;backdrop-filter:blur(12px)}
-    .top-nav-content{max-width:1200px;margin:0 auto;height:100%;display:flex;align-items:center;justify-content:space-between;padding:0 16px}
-    .nav-logo{font-family:'Cinzel',serif;font-size:15px;font-weight:700;color:#D4A64B;text-decoration:none;letter-spacing:2px}
-    .nav-links{list-style:none;display:flex;gap:2px;margin:0;padding:0}
-    .nav-links li a{font-family:'Press Start 2P',monospace;font-size:7px;color:#6B5E50;text-decoration:none;padding:6px 10px;border-radius:6px;transition:all .2s;white-space:nowrap}
-    .nav-links li a:hover,.nav-links li a.active{color:#D4A64B;background:rgba(212,166,75,.08)}
-    .hamburger{display:none;background:none;border:none;cursor:pointer;padding:8px;flex-direction:column;gap:4px}
-    .hamburger span{display:block;width:20px;height:2px;background:#D4A64B;border-radius:1px;transition:.3s}
-    .hamburger.active span:nth-child(1){transform:rotate(45deg) translate(4px,4px)}
-    .hamburger.active span:nth-child(2){opacity:0}
-    .hamburger.active span:nth-child(3){transform:rotate(-45deg) translate(4px,-4px)}
-    .mobile-menu{display:none;position:fixed;top:56px;left:0;right:0;background:rgba(10,8,18,.97);border-bottom:1px solid rgba(255,255,255,.06);z-index:999;flex-direction:column;padding:8px;backdrop-filter:blur(12px)}
-    .mobile-menu a{font-family:'Press Start 2P',monospace;font-size:8px;color:#6B5E50;text-decoration:none;padding:10px 16px;border-radius:6px}
-    .mobile-menu a:hover,.mobile-menu a.active{color:#D4A64B;background:rgba(212,166,75,.08)}
-    .mobile-menu.active{display:flex}
-    .logout-btn{color:#e85a6a !important}
-    @media(max-width:900px){.nav-links{display:none}.hamburger{display:flex}}
-
     /* ═══ PAGE STYLES ═══ */
     :root{--font-title:'Cinzel',serif;--font-data:'Press Start 2P',monospace;--font-body:'Crimson Text',serif;--font-mono:'JetBrains Mono',monospace;--gold:#D4A64B}
     *{box-sizing:border-box;margin:0;padding:0}
@@ -188,7 +169,7 @@ const N2=["fang","claw","paw","whisker","tail","mane","tooth","shade","strike","
 const TIT=["the Relentless","the Cunning","the Hollow","the Wretched","the Unyielding","the Cursed","the Silent","the Burning","the Cruel","the Forgotten","the Unbroken","the Dread","the Defiant"];
 const FLAV=["A shadow moves between the trees...","You hear a twig crack.","The air thickens. Someone watches.","A figure steps from the mist.","Eyes glow in the dark.","The ground trembles.","'You don't belong here, Nine.'","Laughter echoes, then silence.","The path narrows. No way around.","A lone Nine blocks the road.","You stumble into a clearing. A trap.","Lightning splits the sky. You see them.","This territory is claimed."];
 const ESLOTS=["fur","outfit","weapon","headwear","expression"];
-const EQ={fur:[{id:"grey",s:{hp:1},r:"common"},{id:"smoke",s:{def:1},r:"common"},{id:"ember",s:{atk:1,hp:1},r:"uncommon"},{id:"void",s:{atk:1,luck:1},r:"rare"}],outfit:[{id:"tunic",s:{hp:2},r:"common"},{id:"mantle",s:{atk:1,def:1,hp:1},r:"uncommon"},{id:"tattered",s:{atk:2,spd:1,luck:1},r:"rare"}],weapon:[{id:"sword",s:{atk:2},r:"common"},{id:"crystal",s:{atk:2,spd:1},r:"uncommon"},{id:"daggers",s:{atk:3,spd:1},r:"rare"}],expression:[{id:"grumpy",s:{atk:1},r:"common"},{id:"glow",s:{atk:1,spd:1},r:"uncommon"}],headwear:[{id:"hat",s:{def:1},r:"common"},{id:"hood",s:{spd:1,def:1},r:"uncommon"},{id:"void_hood",s:{luck:1,def:1,spd:1},r:"rare"}]};
+const EQ={fur:[{id:"grey",f:"GREY.png",s:{hp:1},r:"common"},{id:"smoke",f:"SMOKEGREY.png",s:{def:1},r:"common"},{id:"ember",f:"EMBERORANGE.png",s:{atk:1,hp:1},r:"uncommon"},{id:"void",f:"VOIDPURPLE.png",s:{atk:1,luck:1},r:"rare"}],outfit:[{id:"tunic",f:"SIMPLETUNIC_BLUE.png",s:{hp:2},r:"common"},{id:"mantle",f:"MANTLE_RED.png",s:{atk:1,def:1,hp:1},r:"uncommon"},{id:"tattered",f:"TATTERED%20CLOAK.png",s:{atk:2,spd:1,luck:1},r:"rare"}],weapon:[{id:"sword",f:"SHORTSWORD.png",s:{atk:2},r:"common"},{id:"crystal",f:"CRYSTALSTAFF.png",s:{atk:2,spd:1},r:"uncommon"},{id:"daggers",f:"DUALDAGGERS.png",s:{atk:3,spd:1},r:"rare"}],expression:[{id:"grumpy",f:"GRUMPY.png",s:{atk:1},r:"common"},{id:"glow",f:"GLOWING.png",s:{atk:1,spd:1},r:"uncommon"}],headwear:[{id:"hat",f:"APPRENTICE.png",s:{def:1},r:"common"},{id:"hood",f:"WORNHOOD.png",s:{spd:1,def:1},r:"uncommon"},{id:"void_hood",f:"WORNHOOD_PURPLE.png",s:{luck:1,def:1,spd:1},r:"rare"}]};
 const RO=["common","uncommon","rare"];
 const getRW=f=>{f=Math.max(1,Math.min(f,15));if(f<=3)return{common:70,uncommon:25,rare:5};if(f<=6)return{common:40,uncommon:40,rare:20};if(f<=9)return{common:15,uncommon:45,rare:40};return{common:5,uncommon:25,rare:70}};
 const wPick=(items,w)=>{const p=[];RO.forEach(r=>{const wt=w[r]||0;items.filter(i=>i.r===r).forEach(it=>{for(let i=0;i<wt;i++)p.push(it)})});return p.length?pick(p):pick(items)};
@@ -275,14 +256,18 @@ function PlayerNine({shake,flash,flashColor}){
   </div>);
 }
 
-/* ═══ ENEMY FIGHTER ═══ */
+/* ═══ ENEMY FIGHTER — layered equipment like player ═══ */
 function EnemyFighter({enemy,shake,flash,flashColor}){
   const[imgErr,setImgErr]=useState(false);const h=enemy.houseData;const c=h.color;const isCrit=flashColor==="#D4A64B";
+  const basePath="/assets/images/builder/";const eq=enemy.equipped||{};
+  const layers=["fur","outfit","weapon","expression","headwear"];
+  const hasLayers=layers.some(l=>eq[l]?.f);
   return(<div style={{textAlign:"center",animation:shake?(isCrit?"bigShake .4s":"shake .3s"):"none"}}>
-    <div style={{width:100,height:130,borderRadius:14,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",
+    <div style={{width:100,height:130,borderRadius:14,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",
       background:flash?`radial-gradient(ellipse at 50% 40%,${flashColor}55,rgba(10,8,18,.9) 75%)`:`radial-gradient(ellipse at 50% 40%,${c}25,rgba(10,8,18,.95) 80%)`,
-      border:`2px solid ${flash?flashColor+'70':c+'30'}`,boxShadow:flash?`0 0 30px ${flashColor}40,inset 0 0 20px ${flashColor}15`:`0 0 20px ${c}18`,transition:"all .3s",overflow:"hidden",transform:"scaleX(-1)"}}>
-      {!imgErr?<img src={h.crest} alt="" style={{width:58,height:58,objectFit:"contain",filter:`drop-shadow(0 0 10px ${c}70)`}} onError={()=>setImgErr(true)}/>
+      border:`2px solid ${flash?flashColor+'70':c+'30'}`,boxShadow:flash?`0 0 30px ${flashColor}40,inset 0 0 20px ${flashColor}15`:`0 0 20px ${c}18`,transition:"all .3s",overflow:"hidden"}}>
+      {hasLayers?layers.map(l=>eq[l]?.f?<img key={l} src={`${basePath}${l}/${eq[l].f}`} alt="" style={{position:"absolute",width:"85%",height:"85%",objectFit:"contain",top:"7%",left:"7%",transform:"scaleX(-1)"}} onError={e=>{e.target.style.display='none'}}/>:null)
+       :!imgErr?<img src={h.crest} alt="" style={{width:58,height:58,objectFit:"contain",filter:`drop-shadow(0 0 10px ${c}70)`,transform:"scaleX(-1)"}} onError={()=>setImgErr(true)}/>
        :<span style={{fontSize:44,filter:`drop-shadow(0 0 12px ${c}80)`}}>{h.icon||"\u{1F431}"}</span>}
     </div>
     <div style={{fontFamily:h.font||"var(--font-title)",fontSize:12,fontWeight:700,color:"#F5F0E8",textShadow:`0 0 10px ${c}50`,marginTop:5,lineHeight:1.15,maxWidth:110,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{enemy.name}</div>
@@ -534,11 +519,14 @@ function TheWilds(){
       </div>
       <div style={{textAlign:"right"}}>
         <div style={{display:"flex",alignItems:"baseline",gap:3,justifyContent:"flex-end"}}>
-          <span style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6B5E50"}}>HP</span>
-          <span style={{fontFamily:"var(--font-data)",fontSize:14,color:currentHp<maxHp*.3?"#e85a6a":"#6acd8a",fontWeight:700}}>{phase>=PH.BATTLE?playerHp:currentHp}</span>
-          <span style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6B5E50"}}>/{maxHp}</span>
+          <span style={{fontFamily:"var(--font-data)",fontSize:8,color:"#6B5E50"}}>HP</span>
+          <span style={{fontFamily:"var(--font-data)",fontSize:16,color:currentHp<maxHp*.3?"#e85a6a":"#6acd8a",fontWeight:700}}>{phase>=PH.BATTLE?playerHp:currentHp}</span>
+          <span style={{fontFamily:"var(--font-data)",fontSize:8,color:"#6B5E50"}}>/{maxHp}</span>
         </div>
-        <div style={{fontFamily:"var(--font-data)",fontSize:6,color:"#D4A64B",marginTop:2}}>🃏{runPool.length} · ⭐{score}</div>
+        <div style={{display:"flex",gap:8,marginTop:4,justifyContent:"flex-end"}}>
+          <span style={{fontFamily:"var(--font-data)",fontSize:8,color:"#9B8E7E"}}>CARDS <span style={{color:"#D4A64B",fontWeight:700}}>{runPool.length}</span></span>
+          <span style={{fontFamily:"var(--font-data)",fontSize:8,color:"#9B8E7E"}}>PTS <span style={{color:"#D4A64B",fontWeight:700}}>{score}</span></span>
+        </div>
       </div>
     </div>
 
@@ -559,8 +547,8 @@ function TheWilds(){
       {/* Round indicator */}
       {curRound>0&&phase===PH.BATTLE&&<div style={{position:"absolute",top:mod.id!=="none"?24:20,left:"50%",transform:"translateX(-50%)",zIndex:20,fontFamily:"var(--font-data)",fontSize:6,color:"#6ac8d8",animation:"pulse .8s infinite"}}>ROUND {curRound}</div>}
 
-      {/* Flavor text on approach */}
-      {phase===PH.APPROACH&&<div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",zIndex:15,textAlign:"center",maxWidth:"78%",animation:"fadeUp .6s ease"}}><div style={{fontSize:15,fontStyle:"italic",color:"rgba(255,255,255,.5)",lineHeight:1.5,textShadow:"0 2px 8px rgba(0,0,0,.9)"}}>"{flavor}"</div></div>}
+      {/* Flavor text on approach — positioned at top so fighters show below */}
+      {phase===PH.APPROACH&&<div style={{position:"absolute",top:"8%",left:"50%",transform:"translateX(-50%)",zIndex:15,textAlign:"center",maxWidth:"78%",animation:"fadeUp .6s ease"}}><div style={{fontSize:12,fontStyle:"italic",color:"rgba(255,255,255,.45)",lineHeight:1.5,textShadow:"0 2px 8px rgba(0,0,0,.9)"}}>"{flavor}"</div></div>}
 
       {/* VS text */}
       {phase===PH.FACEOFF&&<div style={{position:"absolute",top:"48%",left:"50%",transform:"translate(-50%,-50%)",zIndex:15,fontFamily:"var(--font-title)",fontSize:28,fontWeight:900,color:"#D4A64B",textShadow:"0 0 18px rgba(212,166,75,.4)",letterSpacing:6}}>VS</div>}
@@ -568,14 +556,14 @@ function TheWilds(){
       {/* Battle result text */}
       {phase===PH.BATTLE&&battleResult&&<div style={{position:"absolute",top:"44%",left:"50%",transform:"translate(-50%,-50%)",zIndex:25,fontFamily:"var(--font-title)",fontSize:24,fontWeight:900,color:battleResult==="win"?"#D4A64B":"#e85a6a",textShadow:`0 0 24px ${battleResult==="win"?"rgba(212,166,75,.4)":"rgba(232,90,106,.4)"}`,animation:"fadeUp .5s ease"}}>{battleResult==="win"?"VICTORY":"DEFEATED"}</div>}
 
-      {/* Fighters */}
-      {phase!==PH.APPROACH&&<>
+      {/* Fighters - visible during approach, faceoff, and battle */}
+      {phase>=PH.APPROACH&&<>
         <div style={{position:"absolute",top:"8%",bottom:"8%",left:"50%",width:1,background:"linear-gradient(180deg,transparent,rgba(212,166,75,.06),transparent)",zIndex:4}}/>
-        <div style={{position:"absolute",bottom:10,left:"3%",width:"44%",height:"78%",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",animation:"slideInLeft .5s ease both"}}>
+        <div style={{position:"absolute",bottom:10,left:"3%",width:"44%",height:"78%",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",animation:"slideInLeft .5s ease both",opacity:phase===PH.APPROACH?.6:1,transition:"opacity .3s"}}>
           <PlayerNine shake={pShake} flash={pFlash!==null} flashColor={pFlash}/>
           {phase>=PH.BATTLE&&<HpBar current={playerHp} max={pStats.hp} color={pColor} side="left"/>}
         </div>
-        <div style={{position:"absolute",bottom:10,right:"3%",width:"44%",height:"78%",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",animation:"slideInRight .5s ease .12s both"}}>
+        <div style={{position:"absolute",bottom:10,right:"3%",width:"44%",height:"78%",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",animation:"slideInRight .5s ease .12s both",opacity:phase===PH.APPROACH?.6:1,transition:"opacity .3s"}}>
           {enemy&&<EnemyFighter enemy={enemy} shake={eShake} flash={eFlash!==null} flashColor={eFlash}/>}
           {phase>=PH.BATTLE&&<HpBar current={enemyHp} max={enemy.stats.hp} color={eColor} side="right"/>}
         </div>
@@ -596,19 +584,30 @@ function TheWilds(){
 
         {/* YOUR HAND — click empty slots to open picker */}
         <div style={{fontFamily:"var(--font-data)",fontSize:8,color:"#D4A64B",letterSpacing:1,marginBottom:8,textAlign:"center"}}>YOUR HAND — {selected.length}/3</div>
-        <div style={{display:"flex",gap:10,marginBottom:8,justifyContent:"center"}}>
+        <div style={{display:"flex",gap:6,marginBottom:8,justifyContent:"center"}}>
           {[0,1,2].map(i=>{
             if(selected[i]){
-              return <div key={`sel-${i}`} style={{position:"relative"}} onClick={()=>openPicker(i)}>
-                <CardV4 card={selected[i]} size="tiny"/>
-                <div style={{position:"absolute",top:4,right:4,width:20,height:20,borderRadius:"50%",background:"rgba(232,90,106,.8)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",cursor:"pointer",zIndex:20,lineHeight:1}}>×</div>
+              const sc=selected[i];const hc=TC[sc.type]||"#888";
+              return <div key={`sel-${i}`} style={{position:"relative",cursor:"pointer"}} onClick={()=>openPicker(i)}>
+                <div style={{width:110,padding:"8px 6px",borderRadius:10,background:`linear-gradient(160deg,rgba(30,22,42,.95),rgba(18,14,30,.98))`,border:`1.5px solid ${hc}40`,boxShadow:`0 2px 8px rgba(0,0,0,.3)`}}>
+                  <div style={{fontFamily:"var(--font-data)",fontSize:5,color:hc,fontWeight:700,marginBottom:3}}>{sc.type.toUpperCase()}</div>
+                  <div style={{fontFamily:"var(--font-title)",fontSize:10,fontWeight:700,color:"#F5F0E8",marginBottom:4,lineHeight:1.2}}>{sc.name}</div>
+                  <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:3}}>
+                    {sc.atk>0&&<span style={{fontFamily:"var(--font-data)",fontSize:7,color:"#e85a6a",fontWeight:700}}>{sc.atk}</span>}
+                    {sc.hp>0&&<span style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6acd8a",fontWeight:700}}>{sc.hp}</span>}
+                    {sc.spd>0&&<span style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6ac8d8",fontWeight:700}}>{sc.spd}</span>}
+                  </div>
+                  {sc.effects.length>0&&<div style={{display:"flex",gap:2,flexWrap:"wrap"}}>{sc.effects.map((e,ei)=><span key={ei} style={{fontSize:6,padding:"1px 4px",borderRadius:3,background:`${e.color}15`,color:e.color,fontFamily:"var(--font-data)"}}>{e.tag}</span>)}</div>}
+                  <div style={{fontFamily:"var(--font-data)",fontSize:5,color:RC_C[sc.rarity],marginTop:3}}>{sc.rarity.toUpperCase()}</div>
+                </div>
+                <div onClick={e=>{e.stopPropagation();removeCard(i)}} style={{position:"absolute",top:-4,right:-4,width:18,height:18,borderRadius:"50%",background:"rgba(232,90,106,.85)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",cursor:"pointer",zIndex:20,lineHeight:1,border:"1px solid rgba(0,0,0,.3)"}}>×</div>
               </div>
             }
-            return <div key={`empty-${i}`} onClick={()=>openPicker(i)} style={{width:160,height:252,borderRadius:12,border:"1.5px dashed rgba(255,255,255,.1)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:"rgba(255,255,255,.015)",transition:"all .2s"}}
+            return <div key={`empty-${i}`} onClick={()=>openPicker(i)} style={{width:110,height:110,borderRadius:10,border:"1.5px dashed rgba(255,255,255,.1)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:"rgba(255,255,255,.015)",transition:"all .2s"}}
               onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(212,166,75,.3)";e.currentTarget.style.background="rgba(212,166,75,.03)"}}
               onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,.1)";e.currentTarget.style.background="rgba(255,255,255,.015)"}}>
-              <span style={{fontSize:28,opacity:.2,marginBottom:4}}>+</span>
-              <span style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6B5E50"}}>TAP TO PICK</span>
+              <span style={{fontSize:22,opacity:.2,marginBottom:2}}>+</span>
+              <span style={{fontFamily:"var(--font-data)",fontSize:6,color:"#6B5E50"}}>TAP TO PICK</span>
             </div>
           })}
         </div>
