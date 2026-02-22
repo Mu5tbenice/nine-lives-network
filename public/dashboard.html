@@ -575,7 +575,7 @@ async function render(player,casts,zones,schools,nineData,quests){
   setInterval(updateManaTimer,30000);
 }
 
-loadDashboard();
+loadDashboard().then(function(){ loadNinePreview(); });
 
 // ── DASHBOARD NINE PREVIEW (tall character) ──
 async function loadNinePreview(){
@@ -634,7 +634,6 @@ async function loadNinePreview(){
     }
   }catch(e){console.error("Nine preview error:",e);}
 }
-loadNinePreview();
 
 // ── CHANGE HOUSE MODAL ──
 function openChangeHouse(){

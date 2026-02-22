@@ -2,133 +2,951 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Open Packs | Nine Lives Network</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;800;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spell Packs — Nine Lives Network</title>
+
+  <!-- Card system requires these in order -->
   <link rel="stylesheet" href="/css/variables-v2.css">
   <link rel="stylesheet" href="/css/components-v2.css">
   <link rel="stylesheet" href="/css/card-v4.css">
-  <link rel="stylesheet" href="/css/nav-v2.css">
+
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Press+Start+2P&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+
   <style>
-    :root{--bg-deep:#120e1e;--bg-warm:#1a1528;--bg-card:rgba(30,22,42,0.7);--border:rgba(212,166,75,0.12);--border-glow:rgba(212,166,75,0.3);--gold:#D4A64B;--gold-dim:rgba(212,166,75,0.15);--text-bright:#F5F0E8;--text-body:#D4C8B8;--text-muted:#9B8E7E;--text-faint:#6B5E50;--sunset:#e8855a;--green:#6acd8a;--red:#e85a6a;--cyan:#6ac8d8;--purple:#b088e8;--font-title:'Cinzel',serif;--font-body:'Crimson Text',Georgia,serif;--font-data:'Press Start 2P',monospace;--font-mono:'JetBrains Mono',monospace}
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{min-height:100vh;background:radial-gradient(ellipse at 50% 30%,rgba(212,166,75,0.08) 0%,transparent 50%),linear-gradient(180deg,#1a1528 0%,#120e1e 30%,#0e0a18 100%);font-family:var(--font-body);color:var(--text-body)}
-    a{color:var(--gold);text-decoration:none}
-    ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(212,166,75,0.15);border-radius:2px}
-    .main{max-width:500px;margin:0 auto;padding:14px}
-    .section-label{display:flex;align-items:center;gap:8px;margin:16px 0 8px}
-    .section-label__text{font-family:var(--font-title);font-size:12px;font-weight:700;color:var(--gold);letter-spacing:2px}
-    .section-label__line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+    /* ═══ BASE ═══ */
+    :root {
+      --bg:        #0a0812;
+      --bg-card:   #110e1c;
+      --bg-panel:  rgba(255,255,255,0.03);
+      --border:    rgba(255,255,255,0.07);
+      --gold:      #D4A64B;
+      --gold-bright: #F5D680;
+      --gold-dim:  #8B7332;
+      --bright:    #F0ECF8;
+      --body:      #CCC5DB;
+      --muted:     #847C98;
+      --faint:     #554E68;
+    }
 
-    .pack-card{border-radius:16px;background:var(--bg-card);border:1px solid var(--border-glow);padding:24px;text-align:center;margin-bottom:14px;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden}
-    .pack-card:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(212,166,75,0.15)}
-    .pack-card::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,rgba(212,166,75,0.08) 0%,transparent 60%);pointer-events:none}
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Crimson Text', serif;
+      background: var(--bg);
+      color: var(--body);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
 
-    .open-btn{width:100%;padding:14px;border-radius:10px;border:none;cursor:pointer;font-family:var(--font-title);font-size:14px;font-weight:700;letter-spacing:1px;background:linear-gradient(135deg,var(--gold),#c49030);color:#0a0810;box-shadow:0 4px 0 #8a6d2f,0 6px 16px rgba(212,166,75,0.25);transition:all 0.2s}
-    .open-btn:disabled{opacity:0.3;cursor:not-allowed;box-shadow:none}
+    /* ═══ HEADER ═══ */
+    .pack-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, rgba(212,166,75,0.04), transparent);
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 1100px; margin: 0 auto;
+    }
+    .pack-header h1 {
+      font-family: 'Cinzel', serif; font-size: 26px; font-weight: 800;
+      color: var(--gold); letter-spacing: 3px;
+    }
+    .pack-header .sub {
+      font-family: monospace; font-size: 11px; color: var(--faint); margin-top: 2px;
+    }
+    .header-stats {
+      display: flex; gap: 16px; align-items: center;
+    }
+    .stat-badge {
+      font-family: monospace; font-size: 11px;
+      padding: 6px 14px; border-radius: 8px;
+    }
 
-    @keyframes reveal{from{opacity:0;transform:scale(0.8) rotateY(90deg)}to{opacity:1;transform:scale(1) rotateY(0deg)}}
-    .revealed-card{animation:reveal 0.5s ease both;border-radius:12px;background:var(--bg-card);border:1.5px solid var(--border);padding:14px;text-align:center}
+    /* ═══ DAILY CLAIM BAR ═══ */
+    .daily-bar {
+      max-width: 1100px; margin: 16px auto 0; padding: 0 24px;
+    }
+    .daily-claim-btn {
+      width: 100%; padding: 14px 24px; border-radius: 12px;
+      background: linear-gradient(135deg, rgba(212,166,75,0.12), rgba(212,166,75,0.04));
+      border: 1.5px solid rgba(212,166,75,0.25);
+      color: var(--gold); font-family: 'Cinzel', serif; font-size: 15px;
+      font-weight: 700; letter-spacing: 2px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      transition: all 0.2s;
+    }
+    .daily-claim-btn:hover:not(:disabled) {
+      background: linear-gradient(135deg, rgba(212,166,75,0.2), rgba(212,166,75,0.08));
+      border-color: rgba(212,166,75,0.5); transform: translateY(-1px);
+      box-shadow: 0 4px 20px rgba(212,166,75,0.15);
+    }
+    .daily-claim-btn:disabled {
+      opacity: 0.4; cursor: default;
+    }
+    .daily-claim-btn .icon { font-size: 22px; }
 
-    .odds-table{width:100%;border-collapse:collapse;margin-top:8px}
-    .odds-table td{padding:6px 10px;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:9px}
-    .odds-table td:first-child{color:var(--text-body)}
-    .odds-table td:last-child{text-align:right;color:var(--text-faint)}
+    /* ═══ INVENTORY GRID ═══ */
+    .inventory-section {
+      max-width: 1100px; margin: 24px auto; padding: 0 24px;
+    }
+    .section-label {
+      font-family: monospace; font-size: 11px; color: var(--faint);
+      letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase;
+    }
+    .pack-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
+    }
+    .empty-state {
+      text-align: center; padding: 60px 20px;
+      color: var(--faint); font-family: monospace; font-size: 13px;
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
+
+    /* ═══ PACK CARD IN INVENTORY ═══ */
+    .pack-card {
+      border-radius: 14px; padding: 20px 16px; cursor: pointer;
+      position: relative; overflow: hidden; transition: all 0.25s;
+      border: 1.5px solid rgba(255,255,255,0.06);
+      text-align: center;
+    }
+    .pack-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+    .pack-card .pack-icon {
+      font-size: 48px; margin-bottom: 10px;
+      filter: drop-shadow(0 0 16px var(--pack-color));
+    }
+    .pack-card .pack-name {
+      font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .pack-card .pack-desc {
+      font-family: monospace; font-size: 9px; color: var(--muted);
+      line-height: 1.4; margin-bottom: 12px;
+    }
+    .pack-card .pack-count {
+      position: absolute; top: 10px; right: 10px;
+      width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Press Start 2P', monospace; font-size: 8px;
+      font-weight: 700; color: #000;
+    }
+    .pack-card .open-label {
+      font-family: monospace; font-size: 10px; letter-spacing: 1.5px;
+      padding: 7px 16px; border-radius: 6px;
+      border: 1px solid; transition: all 0.2s;
+    }
+
+    /* Pack type themes */
+    .pack-card.daily {
+      --pack-color: #D4A64B;
+      background: linear-gradient(135deg, #1a1408, #110e1c, #1a1408);
+      border-color: rgba(212,166,75,0.15);
+    }
+    .pack-card.daily:hover { border-color: rgba(212,166,75,0.4); }
+    .pack-card.daily .pack-name { color: #D4A64B; }
+    .pack-card.daily .pack-count { background: #D4A64B; }
+    .pack-card.daily .open-label { color: #D4A64B; border-color: rgba(212,166,75,0.3); background: rgba(212,166,75,0.08); }
+
+    .pack-card.boss {
+      --pack-color: #ff4466;
+      background: linear-gradient(135deg, #1a0808, #110e1c, #1a0808);
+      border-color: rgba(255,68,102,0.15);
+    }
+    .pack-card.boss:hover { border-color: rgba(255,68,102,0.4); }
+    .pack-card.boss .pack-name { color: #ff4466; }
+    .pack-card.boss .pack-count { background: #ff4466; }
+    .pack-card.boss .open-label { color: #ff4466; border-color: rgba(255,68,102,0.3); background: rgba(255,68,102,0.08); }
+
+    .pack-card.event {
+      --pack-color: #55bbff;
+      background: linear-gradient(135deg, #081018, #110e1c, #081018);
+      border-color: rgba(85,187,255,0.15);
+    }
+    .pack-card.event:hover { border-color: rgba(85,187,255,0.4); }
+    .pack-card.event .pack-name { color: #55bbff; }
+    .pack-card.event .pack-count { background: #55bbff; }
+    .pack-card.event .open-label { color: #55bbff; border-color: rgba(85,187,255,0.3); background: rgba(85,187,255,0.08); }
+
+    .pack-card.seasonal {
+      --pack-color: #ffd700;
+      background: linear-gradient(135deg, #1a1a04, #110e1c, #1a1a04);
+      border-color: rgba(255,215,0,0.15);
+    }
+    .pack-card.seasonal:hover { border-color: rgba(255,215,0,0.4); }
+    .pack-card.seasonal .pack-name { color: #ffd700; }
+    .pack-card.seasonal .pack-count { background: #ffd700; }
+    .pack-card.seasonal .open-label { color: #ffd700; border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.08); }
+
+    .pack-card.reward, .pack-card.welcome {
+      --pack-color: #88ddaa;
+      background: linear-gradient(135deg, #081a10, #110e1c, #081a10);
+      border-color: rgba(136,221,170,0.15);
+    }
+    .pack-card.reward:hover, .pack-card.welcome:hover { border-color: rgba(136,221,170,0.4); }
+    .pack-card.reward .pack-name, .pack-card.welcome .pack-name { color: #88ddaa; }
+    .pack-card.reward .pack-count, .pack-card.welcome .pack-count { background: #88ddaa; }
+    .pack-card.reward .open-label, .pack-card.welcome .open-label { color: #88ddaa; border-color: rgba(136,221,170,0.3); background: rgba(136,221,170,0.08); }
+
+    /* ═══ FULL-SCREEN CEREMONY OVERLAY ═══ */
+    .ceremony-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,0.96);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      animation: fadeIn 0.3s ease;
+    }
+    .ceremony-overlay .close-btn {
+      position: absolute; top: 16px; right: 20px;
+      background: none; border: 1px solid var(--border);
+      color: var(--muted); font-family: monospace; font-size: 13px;
+      padding: 8px 18px; border-radius: 8px; cursor: pointer;
+      transition: all 0.2s; z-index: 10;
+    }
+    .ceremony-overlay .close-btn:hover {
+      color: var(--bright); border-color: rgba(255,255,255,0.2);
+    }
+
+    /* Sealed pack */
+    .sealed-pack {
+      width: 220px; height: 310px; border-radius: 20px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; position: relative; overflow: hidden;
+      transition: transform 0.2s;
+    }
+    .sealed-pack:hover { transform: scale(1.04); }
+    .sealed-pack .seal-icon { font-size: 72px; position: relative; z-index: 1; }
+    .sealed-pack .seal-label {
+      font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700;
+      position: relative; z-index: 1; margin-top: 8px;
+    }
+    .sealed-pack .seal-sub {
+      font-family: monospace; font-size: 10px; color: var(--muted);
+      position: relative; z-index: 1; margin-top: 4px;
+    }
+    .tap-hint {
+      margin-top: 24px; font-family: 'Cinzel', serif; font-size: 14px;
+      color: var(--gold); letter-spacing: 3px; animation: pulse 2s infinite;
+    }
+
+    /* Particle canvas (in ceremony) */
+    .ceremony-particles {
+      position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+    }
+    .particle {
+      position: absolute; border-radius: 50%; opacity: 0;
+      animation: particleRise var(--dur) var(--delay) infinite;
+    }
+
+    /* Breaking animation */
+    .breaking-pack {
+      width: 220px; height: 310px; border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+    }
+    .breaking-pack.shake { animation: packShake 0.5s ease; }
+    .breaking-pack.burst { animation: packBurst 0.8s ease forwards; }
+    .burst-flash {
+      position: fixed; inset: 0; pointer-events: none; z-index: 20;
+      animation: flashBurst 0.6s ease forwards;
+    }
+
+    /* Card reveal area */
+    .reveal-area {
+      width: 100%; max-width: 1060px; padding: 0 16px; text-align: center;
+    }
+    .reveal-title {
+      font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700;
+      letter-spacing: 3px; margin-bottom: 4px;
+    }
+    .reveal-sub {
+      font-family: monospace; font-size: 11px; color: var(--muted); margin-bottom: 14px;
+    }
+    .reveal-all-btn {
+      font-family: monospace; font-size: 11px; letter-spacing: 1.5px;
+      padding: 9px 24px; border-radius: 8px; cursor: pointer;
+      margin-bottom: 20px; transition: all 0.2s;
+      color: var(--gold); background: rgba(212,166,75,0.08);
+      border: 1px solid rgba(212,166,75,0.25);
+    }
+    .reveal-all-btn:hover {
+      background: rgba(212,166,75,0.15); border-color: rgba(212,166,75,0.5);
+    }
+
+    /* Card slots row */
+    .card-slots {
+      display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    /* Individual card flip container */
+    .card-flip-slot {
+      width: 200px; height: 316px; perspective: 900px; cursor: pointer;
+    }
+    .card-flip-inner {
+      width: 100%; height: 100%; position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: rotateY(180deg);
+    }
+    .card-flip-slot.flipped .card-flip-inner {
+      transform: rotateY(0deg);
+    }
+    .card-flip-slot.entering {
+      animation: cardDrop 0.4s ease both;
+    }
+
+    /* Front face = real card via buildCardV4 */
+    .card-front {
+      position: absolute; inset: 0; backface-visibility: hidden;
+      border-radius: 14px; overflow: hidden;
+    }
+    /* Rarity glow on reveal */
+    .card-flip-slot.flipped .card-front { animation: rarityGlow 0.6s ease; }
+    .card-flip-slot.flipped.rarity-legendary .card-front { box-shadow: 0 0 30px rgba(255,215,0,0.5), 0 0 60px rgba(255,215,0,0.2); }
+    .card-flip-slot.flipped.rarity-epic .card-front { box-shadow: 0 0 25px rgba(187,136,255,0.4), 0 0 50px rgba(187,136,255,0.15); }
+    .card-flip-slot.flipped.rarity-rare .card-front { box-shadow: 0 0 20px rgba(77,166,255,0.35); }
+    .card-flip-slot.flipped.rarity-uncommon .card-front { box-shadow: 0 0 15px rgba(91,196,91,0.25); }
+
+    /* Back face */
+    .card-back {
+      position: absolute; inset: 0; backface-visibility: hidden;
+      transform: rotateY(180deg);
+      background: linear-gradient(135deg, #1a1528, #0f0a1e);
+      border: 1.5px solid rgba(212,166,75,0.2);
+      border-radius: 14px; display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .card-back-pattern {
+      position: absolute; inset: 0; opacity: 0.15;
+      background: repeating-conic-gradient(from 0deg, rgba(212,166,75,0.15) 0% 25%, transparent 25% 50%) 50% 50% / 28px 28px;
+    }
+    .card-back-inner {
+      text-align: center; position: relative; z-index: 1;
+    }
+    .card-back-inner .logo { font-size: 40px; filter: drop-shadow(0 0 10px rgba(212,166,75,0.4)); }
+    .card-back-inner .label {
+      font-family: 'Cinzel', serif; font-size: 11px; color: var(--gold);
+      letter-spacing: 4px; margin-top: 6px; opacity: 0.6;
+    }
+
+    /* Summary bar */
+    .summary-bar {
+      display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+      margin-bottom: 18px; animation: fadeIn 0.5s 0.2s both;
+    }
+    .rarity-pill {
+      font-family: 'Press Start 2P', monospace; font-size: 8px;
+      padding: 5px 12px; border-radius: 6px;
+    }
+    .collect-btn {
+      font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700;
+      color: #fff; border: none; padding: 14px 50px; border-radius: 12px;
+      cursor: pointer; letter-spacing: 2px; transition: all 0.2s;
+      background: linear-gradient(135deg, #D4A64B, #8B7332);
+      box-shadow: 0 4px 20px rgba(212,166,75,0.3);
+      animation: fadeIn 0.5s 0.3s both;
+    }
+    .collect-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(212,166,75,0.4);
+    }
+
+    /* Loading spinner */
+    .loading { text-align: center; padding: 40px; color: var(--faint); font-family: monospace; }
+    .spinner {
+      width: 28px; height: 28px; border: 2.5px solid var(--border);
+      border-top-color: var(--gold); border-radius: 50%;
+      animation: spin 0.8s linear infinite; margin: 0 auto 12px;
+    }
+
+    /* ═══ ANIMATIONS ═══ */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    @keyframes particleRise {
+      0% { opacity: 0; transform: translateY(0) scale(0); }
+      20% { opacity: 0.8; transform: translateY(-20px) scale(1); }
+      100% { opacity: 0; transform: translateY(-120px) scale(0.3); }
+    }
+
+    @keyframes packShake {
+      0%,100% { transform: translateX(0) rotate(0); }
+      10% { transform: translateX(-6px) rotate(-2deg); }
+      20% { transform: translateX(6px) rotate(2deg); }
+      30% { transform: translateX(-4px) rotate(-1deg); }
+      40% { transform: translateX(4px) rotate(1deg); }
+      50% { transform: translateX(-2px); }
+      60% { transform: translateX(2px); }
+    }
+
+    @keyframes packBurst {
+      0% { transform: scale(1); opacity: 1; }
+      40% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(0.2); opacity: 0; }
+    }
+
+    @keyframes flashBurst {
+      0% { background: rgba(255,255,255,0); }
+      30% { background: rgba(255,255,255,0.7); }
+      100% { background: rgba(255,255,255,0); }
+    }
+
+    @keyframes cardDrop {
+      0% { opacity: 0; transform: translateY(-60px) scale(0.7); }
+      60% { opacity: 1; transform: translateY(8px) scale(1.02); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes rarityGlow {
+      0% { filter: brightness(2); }
+      100% { filter: brightness(1); }
+    }
+
+    /* ═══ RESPONSIVE ═══ */
+    @media (max-width: 600px) {
+      .pack-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .card-flip-slot { width: 160px; height: 252px; }
+      .card-slots { gap: 8px; }
+      .pack-header h1 { font-size: 20px; letter-spacing: 2px; }
+      .reveal-title { font-size: 16px; }
+    }
   </style>
 </head>
 <body>
-<script src="/js/nav.js"></script>
-  <div class="main" id="content"><div style="text-align:center;padding:60px 20px;"><div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div></div></div>
 
-<script>
-var RARITY_COLORS={common:'#bbb',uncommon:'#6acd8a',rare:'#5588ff',epic:'#b088e8',legendary:'#ffd700'};
-var playerId=null;
-function getPlayerId(){var p=new URLSearchParams(window.location.search);var f=p.get('player_id');if(f){localStorage.setItem('player_id',f);return f;}return localStorage.getItem('player_id');}
-function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+  <!-- ═══ MAIN PAGE ═══ -->
+  <div id="main-page">
+    <div class="pack-header">
+      <div>
+        <h1>SPELL PACKS</h1>
+        <div class="sub" id="header-sub">Loading...</div>
+      </div>
+      <div class="header-stats">
+        <div class="stat-badge" style="background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.2); color:#00D4FF;" id="mana-badge">
+          — mana
+        </div>
+      </div>
+    </div>
 
-async function loadPacks(){
-  playerId=getPlayerId();
-  if(!playerId){document.getElementById('content').innerHTML='<div style="text-align:center;padding:40px"><a href="/register.html" style="font-family:var(--font-title);font-size:16px;">Register to play →</a></div>';return;}
+    <!-- Daily claim -->
+    <div class="daily-bar">
+      <button class="daily-claim-btn" id="claim-daily-btn" onclick="claimDailyPack()">
+        <span class="icon">📦</span>
+        CLAIM DAILY PACK
+      </button>
+    </div>
 
-  var player={};
-  try{var pR=await fetch('/api/players/'+playerId);if(pR.ok)player=await pR.json();}catch(e){}
+    <!-- Inventory -->
+    <div class="inventory-section">
+      <div class="section-label">YOUR PACKS</div>
+      <div id="pack-grid" class="pack-grid">
+        <div class="loading"><div class="spinner"></div>Loading packs...</div>
+      </div>
+    </div>
 
-  var html='';
-  html+='<div class="section-label"><span style="font-size:14px;">🎴</span><span class="section-label__text">OPEN PACKS</span><span class="section-label__line"></span></div>';
+    <!-- Admin test buttons (remove in production) -->
+    <div class="inventory-section" style="margin-top:10px; padding-top:16px; border-top:1px solid var(--border);">
+      <div class="section-label">⚙️ ADMIN — GRANT TEST PACKS</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
+        <button onclick="grantTestPack('boss','boss_kill')" style="font-family:monospace;font-size:10px;padding:8px 14px;border-radius:8px;background:rgba(255,68,102,0.1);border:1px solid rgba(255,68,102,0.3);color:#ff4466;cursor:pointer;">+ Boss Pack</button>
+        <button onclick="grantTestPack('event','event_reward')" style="font-family:monospace;font-size:10px;padding:8px 14px;border-radius:8px;background:rgba(85,187,255,0.1);border:1px solid rgba(85,187,255,0.3);color:#55bbff;cursor:pointer;">+ Event Pack</button>
+        <button onclick="grantTestPack('seasonal','season_reward')" style="font-family:monospace;font-size:10px;padding:8px 14px;border-radius:8px;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);color:#ffd700;cursor:pointer;">+ Seasonal Pack</button>
+        <button onclick="grantTestPack('reward','admin_grant')" style="font-family:monospace;font-size:10px;padding:8px 14px;border-radius:8px;background:rgba(136,221,170,0.1);border:1px solid rgba(136,221,170,0.3);color:#88ddaa;cursor:pointer;">+ Reward Pack</button>
+      </div>
+    </div>
+  </div>
 
-  // Daily pack
-  html+='<div class="pack-card" id="dailyPack">';
-  html+='<div style="font-size:56px;margin-bottom:12px;">🎴</div>';
-  html+='<div style="font-family:var(--font-title);font-size:20px;font-weight:700;color:var(--text-bright);letter-spacing:2px;">Daily Pack</div>';
-  html+='<div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);margin:8px 0;">3 random spell cards</div>';
-  html+='<div style="font-family:var(--font-data);font-size:8px;color:var(--green);margin-bottom:12px;">FREE — 1 per day</div>';
-  html+='<button class="open-btn" id="openDaily" onclick="openPack(\'daily\')">🎴 OPEN DAILY PACK</button>';
-  html+='</div>';
+  <!-- ═══ CEREMONY OVERLAY (hidden by default) ═══ -->
+  <div class="ceremony-overlay" id="ceremony" style="display:none;">
+    <button class="close-btn" id="ceremony-close" onclick="closeCeremony()" style="display:none;">✕ Close</button>
+    <div id="ceremony-content"></div>
+  </div>
 
-  // Revealed cards area
-  html+='<div id="revealArea"></div>';
+  <!-- Card system scripts (required for buildCardV4) -->
+  <script src="/js/card-global.js"></script>
+  <script src="/js/card-particles.js"></script>
+  <script src="/js/card-v4.js"></script>
 
-  // Pack odds
-  html+='<div class="section-label" style="margin-top:20px;"><span style="font-size:14px;">📊</span><span class="section-label__text">DROP RATES</span><span class="section-label__line"></span></div>';
-  html+='<div style="border-radius:10px;background:var(--bg-card);border:1px solid var(--border);padding:4px 0;">';
-  html+='<table class="odds-table">';
-  html+='<tr><td><span style="color:#bbb;">★</span> Common</td><td>50%</td></tr>';
-  html+='<tr><td><span style="color:#6acd8a;">★★</span> Uncommon</td><td>30%</td></tr>';
-  html+='<tr><td><span style="color:#5588ff;">★★★</span> Rare</td><td>14%</td></tr>';
-  html+='<tr><td><span style="color:#b088e8;">★★★★</span> Epic</td><td>5%</td></tr>';
-  html+='<tr><td><span style="color:#ffd700;">★★★★★</span> Legendary</td><td>1%</td></tr>';
-  html+='</table></div>';
+  <script>
+    // ═══════════════════════════════════════
+    // CONFIG
+    // ═══════════════════════════════════════
 
-  document.getElementById('content').innerHTML=html;
-}
+    // TODO: Replace with your actual auth system
+    // For now, tries to read from localStorage or defaults to 1
+    const PLAYER_ID = localStorage.getItem('player_id') || 1;
 
-async function openPack(type){
-  var btn=document.getElementById('openDaily');
-  btn.disabled=true;btn.textContent='OPENING...';
+    const PACK_META = {
+      daily:    { icon: '📦', name: 'Daily Pack',    desc: '1 Basic ATK · 1 Basic DEF · 3 Random Spells', color: '#D4A64B' },
+      boss:     { icon: '👹', name: 'Boss Reward',   desc: '5 Random Spells — Higher tier chances',        color: '#ff4466' },
+      event:    { icon: '⚡', name: 'Event Pack',    desc: '5 Random Spells — Guaranteed Rare+',           color: '#55bbff' },
+      seasonal: { icon: '🏆', name: 'Season Reward', desc: '5 Random Spells — Guaranteed Epic+',           color: '#ffd700' },
+      reward:   { icon: '🎁', name: 'Reward Pack',   desc: '5 Random Spells',                              color: '#88ddaa' },
+      welcome:  { icon: '🌟', name: 'Welcome Pack',  desc: '5 Cards to start your journey',                color: '#88ddaa' },
+    };
 
-  try{
-    var r=await fetch('/api/packs/open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({player_id:playerId,pack_type:type})});
-    if(r.ok){
-      var res=await r.json();
-      var cards=res.cards||res||[];
-      revealCards(cards);
-      btn.textContent='✅ OPENED!';
-    }else{
-      var err=await r.json().catch(function(){return{error:'Failed'};});
-      btn.textContent='❌ '+(err.error||'Failed');
-      setTimeout(function(){btn.textContent='🎴 OPEN DAILY PACK';btn.disabled=false;},2000);
+    const RARITY_META = {
+      common:    { color: '#8a8a9a', label: 'Common' },
+      uncommon:  { color: '#5bc45b', label: 'Uncommon' },
+      rare:      { color: '#4da6ff', label: 'Rare' },
+      epic:      { color: '#bb88ff', label: 'Epic' },
+      legendary: { color: '#ffd700', label: 'Legendary' },
+    };
+
+    // ═══════════════════════════════════════
+    // STATE
+    // ═══════════════════════════════════════
+    let inventoryPacks = [];
+    let ceremonyCards = [];
+    let ceremonyPackType = '';
+    let flippedCards = new Set();
+
+    // ═══════════════════════════════════════
+    // PAGE LOAD
+    // ═══════════════════════════════════════
+    document.addEventListener('DOMContentLoaded', () => {
+      loadInventory();
+    });
+
+    // ═══════════════════════════════════════
+    // LOAD INVENTORY
+    // ═══════════════════════════════════════
+    async function loadInventory() {
+      try {
+        const res = await fetch(`/api/packs/inventory/${PLAYER_ID}`);
+        const data = await res.json();
+
+        if (!data.success) {
+          document.getElementById('pack-grid').innerHTML =
+            '<div class="empty-state"><div class="icon">📦</div>Could not load packs</div>';
+          return;
+        }
+
+        inventoryPacks = data.packs || [];
+        renderInventory();
+        updateHeader();
+      } catch (err) {
+        console.error('Load inventory error:', err);
+        document.getElementById('pack-grid').innerHTML =
+          '<div class="empty-state"><div class="icon">⚠️</div>Error loading packs</div>';
+      }
     }
-  }catch(e){
-    btn.textContent='❌ Network error';
-    setTimeout(function(){btn.textContent='🎴 OPEN DAILY PACK';btn.disabled=false;},2000);
-  }
-}
 
-function revealCards(cards){
-  var area=document.getElementById('revealArea');
-  var h='<div class="section-label"><span style="font-size:14px;">✨</span><span class="section-label__text">YOU GOT</span><span class="section-label__line"></span></div>';
-  h+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">';
-  cards.forEach(function(c,i){
-    var rc=RARITY_COLORS[(c.rarity||'common').toLowerCase()]||'#bbb';
-    h+='<div class="revealed-card" style="animation-delay:'+(i*0.2)+'s;border-color:'+rc+'40;">';
-    if(c.image_url)h+='<img src="'+c.image_url+'" style="width:100%;height:70px;object-fit:cover;border-radius:6px;margin-bottom:6px;">';
-    else h+='<div style="font-size:32px;margin-bottom:6px;">🃏</div>';
-    h+='<div style="font-family:var(--font-title);font-size:11px;font-weight:700;color:var(--text-bright);line-height:1.2;">'+esc(c.name)+'</div>';
-    h+='<div style="font-family:var(--font-data);font-size:6px;color:'+rc+';margin:4px 0;">'+(c.rarity||'common').toUpperCase()+'</div>';
-    h+='<div style="display:flex;justify-content:center;gap:6px;">';
-    h+='<span style="font-family:var(--font-data);font-size:7px;color:var(--red);">⚔️'+(c.base_atk||c.atk||'?')+'</span>';
-    h+='<span style="font-family:var(--font-data);font-size:7px;color:var(--green);">💚'+(c.base_hp||c.hp||'?')+'</span>';
-    h+='</div></div>';
-  });
-  h+='</div>';
-  h+='<a href="/builder.html">Your Nine</a> <a href="/packs.html">Packs</a></li><li><a href="/collection.html" style="display:block;text-align:center;font-family:var(--font-title);font-size:13px;color:var(--gold);margin-bottom:14px;">View Spellbook →</a>';
-  area.innerHTML=h;
-}
+    // ═══════════════════════════════════════
+    // RENDER INVENTORY GRID
+    // ═══════════════════════════════════════
+    function renderInventory() {
+      const grid = document.getElementById('pack-grid');
 
-loadPacks();
-</script>
-<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+      if (inventoryPacks.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state" style="grid-column:1/-1;">
+            <div class="icon">📦</div>
+            <div>No unopened packs</div>
+            <div style="margin-top:6px; font-size:11px;">Claim your daily pack above, or earn packs from bosses and events!</div>
+          </div>`;
+        return;
+      }
+
+      // Group by pack_type
+      const groups = {};
+      inventoryPacks.forEach(p => {
+        if (!groups[p.pack_type]) groups[p.pack_type] = [];
+        groups[p.pack_type].push(p);
+      });
+
+      let html = '';
+      for (const [type, packs] of Object.entries(groups)) {
+        const meta = PACK_META[type] || PACK_META.reward;
+        // Show one card per type with count badge — click opens the oldest one
+        const oldestPack = packs[0]; // already sorted by granted_at ASC
+        html += `
+          <div class="pack-card ${type}" onclick="startCeremony(${oldestPack.id}, '${type}')">
+            ${packs.length > 1 ? `<div class="pack-count">${packs.length}</div>` : ''}
+            <div class="pack-icon">${meta.icon}</div>
+            <div class="pack-name">${meta.name}</div>
+            <div class="pack-desc">${meta.desc}</div>
+            <div class="open-label">TAP TO OPEN</div>
+          </div>`;
+      }
+
+      grid.innerHTML = html;
+    }
+
+    function updateHeader() {
+      const total = inventoryPacks.length;
+      document.getElementById('header-sub').textContent =
+        `${total} pack${total !== 1 ? 's' : ''} available`;
+    }
+
+    // ═══════════════════════════════════════
+    // CLAIM DAILY PACK
+    // ═══════════════════════════════════════
+    async function claimDailyPack() {
+      const btn = document.getElementById('claim-daily-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="icon">⏳</span> CLAIMING...';
+
+      try {
+        const res = await fetch('/api/packs/claim-daily', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ player_id: parseInt(PLAYER_ID) }),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          btn.innerHTML = '<span class="icon">✅</span> PACK ADDED TO INVENTORY!';
+          setTimeout(() => {
+            btn.innerHTML = '<span class="icon">📦</span> CLAIM DAILY PACK';
+            btn.disabled = false;
+          }, 2000);
+          await loadInventory();
+        } else if (data.already_granted) {
+          btn.innerHTML = '<span class="icon">⏰</span> ALREADY CLAIMED TODAY';
+          setTimeout(() => {
+            btn.innerHTML = '<span class="icon">📦</span> CLAIM DAILY PACK';
+            btn.disabled = false;
+          }, 2000);
+        } else {
+          btn.innerHTML = '<span class="icon">❌</span> ' + (data.error || 'Error');
+          btn.disabled = false;
+        }
+      } catch (err) {
+        console.error('Claim daily error:', err);
+        btn.innerHTML = '<span class="icon">❌</span> NETWORK ERROR';
+        btn.disabled = false;
+      }
+    }
+
+    // ═══════════════════════════════════════
+    // GRANT TEST PACK (admin)
+    // ═══════════════════════════════════════
+    async function grantTestPack(packType, source) {
+      try {
+        const res = await fetch('/api/packs/grant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            player_id: parseInt(PLAYER_ID),
+            pack_type: packType,
+            source: source,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          await loadInventory();
+        } else {
+          alert('Error: ' + (data.error || 'Unknown'));
+        }
+      } catch (err) {
+        console.error('Grant error:', err);
+      }
+    }
+
+    // ═══════════════════════════════════════
+    // CEREMONY — FULL SCREEN PACK OPENING
+    // ═══════════════════════════════════════
+
+    async function startCeremony(packInventoryId, packType) {
+      ceremonyPackType = packType;
+      ceremonyCards = [];
+      flippedCards = new Set();
+
+      const overlay = document.getElementById('ceremony');
+      const content = document.getElementById('ceremony-content');
+      const closeBtn = document.getElementById('ceremony-close');
+      overlay.style.display = 'flex';
+      closeBtn.style.display = 'none';
+
+      const meta = PACK_META[packType] || PACK_META.reward;
+
+      // PHASE 1: Sealed pack
+      content.innerHTML = `
+        <div class="ceremony-particles" id="seal-particles"></div>
+        <div class="sealed-pack" id="sealed-pack" style="
+          background: linear-gradient(135deg, ${hexToRgba(meta.color, 0.08)}, #110e1c, ${hexToRgba(meta.color, 0.08)});
+          border: 2px solid ${hexToRgba(meta.color, 0.3)};
+          box-shadow: 0 0 50px ${hexToRgba(meta.color, 0.15)}, 0 0 100px ${hexToRgba(meta.color, 0.05)};
+        ">
+          <div class="seal-icon">${meta.icon}</div>
+          <div class="seal-label" style="color:${meta.color}">${meta.name}</div>
+          <div class="seal-sub">5 Cards Inside</div>
+        </div>
+        <div class="tap-hint">TAP TO OPEN</div>`;
+
+      spawnParticles('seal-particles', meta.color, 30);
+
+      // Click to break open + call API
+      document.getElementById('sealed-pack').onclick = async () => {
+        await breakOpen(packInventoryId, packType);
+      };
+    }
+
+    async function breakOpen(packInventoryId, packType) {
+      const content = document.getElementById('ceremony-content');
+      const meta = PACK_META[packType] || PACK_META.reward;
+      const sealedPack = document.getElementById('sealed-pack');
+
+      // Remove tap hint
+      const hint = content.querySelector('.tap-hint');
+      if (hint) hint.remove();
+
+      // PHASE 2: Shake
+      sealedPack.onclick = null;
+      sealedPack.classList.add('shake');
+
+      // Call API while shaking
+      let apiResult = null;
+      try {
+        const res = await fetch('/api/packs/inventory/open', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            player_id: parseInt(PLAYER_ID),
+            pack_inventory_id: packInventoryId,
+          }),
+        });
+        apiResult = await res.json();
+      } catch (err) {
+        console.error('Open pack API error:', err);
+        closeCeremony();
+        alert('Error opening pack. Please try again.');
+        return;
+      }
+
+      if (!apiResult || !apiResult.success) {
+        closeCeremony();
+        alert('Error: ' + (apiResult?.error || 'Could not open pack'));
+        return;
+      }
+
+      ceremonyCards = apiResult.cards;
+
+      // Find best rarity for burst color
+      const rarityOrder = ['common','uncommon','rare','epic','legendary'];
+      let bestRarity = 'common';
+      ceremonyCards.forEach(c => {
+        if (rarityOrder.indexOf(c.rarity) > rarityOrder.indexOf(bestRarity)) {
+          bestRarity = c.rarity;
+        }
+      });
+      const burstColor = RARITY_META[bestRarity].color;
+
+      // Wait for shake to finish
+      await sleep(500);
+
+      // PHASE 3: Burst
+      // Change sealed pack class
+      const breaking = document.querySelector('.sealed-pack');
+      if (breaking) {
+        breaking.classList.remove('shake');
+        breaking.classList.add('burst');
+        breaking.style.borderColor = burstColor;
+        breaking.style.boxShadow = `0 0 80px ${hexToRgba(burstColor, 0.5)}`;
+      }
+
+      // White flash
+      const flash = document.createElement('div');
+      flash.className = 'burst-flash';
+      document.getElementById('ceremony').appendChild(flash);
+
+      await sleep(700);
+      flash.remove();
+
+      // PHASE 4: Show cards
+      showRevealPhase();
+    }
+
+    function showRevealPhase() {
+      const content = document.getElementById('ceremony-content');
+      const closeBtn = document.getElementById('ceremony-close');
+      closeBtn.style.display = 'block';
+
+      const meta = PACK_META[ceremonyPackType] || PACK_META.reward;
+
+      content.innerHTML = `
+        <div class="reveal-area">
+          <div class="reveal-title" style="color:${meta.color}">${meta.name}</div>
+          <div class="reveal-sub" id="reveal-sub">Tap each card to reveal</div>
+          <button class="reveal-all-btn" id="reveal-all-btn" onclick="revealAllCards()">REVEAL ALL</button>
+          <div class="card-slots" id="card-slots"></div>
+          <div id="summary-area"></div>
+        </div>`;
+
+      const slotsContainer = document.getElementById('card-slots');
+
+      // Determine card size based on screen width
+      const isMobile = window.innerWidth <= 600;
+      const cardSize = isMobile ? 'tiny' : 'mini';
+
+      // Create card slots with staggered drop animation
+      ceremonyCards.forEach((card, i) => {
+        const slot = document.createElement('div');
+        slot.className = `card-flip-slot rarity-${card.rarity}`;
+        slot.style.animationDelay = `${i * 0.1}s`;
+        slot.classList.add('entering');
+        slot.dataset.index = i;
+        slot.onclick = () => flipCard(i);
+
+        // Build card data in the shape buildCardV4 expects
+        const cardData = {
+          name: card.name,
+          house: card.house,
+          spell_type: card.type,
+          rarity: card.rarity,
+          mana_cost: card.cost,
+          base_atk: card.base_atk,
+          base_hp: card.base_hp,
+          base_spd: card.base_spd || 0,
+          base_def: card.base_def || 0,
+          base_luck: card.base_luck || 0,
+          base_effect: card.base_effect || '',
+          bonus_effects: card.effects || [],
+          flavor_text: card.flavor_text || '',
+          image_url: card.image_url || null,
+          current_charges: card.current_charges,
+          max_charges: card.max_charges,
+        };
+
+        // Build the real card HTML using your card-v4 system
+        let cardHtml = '';
+        try {
+          cardHtml = buildCardV4(cardData, { size: cardSize });
+        } catch (e) {
+          console.warn('buildCardV4 not available, using fallback:', e);
+          cardHtml = buildFallbackCard(card);
+        }
+
+        slot.innerHTML = `
+          <div class="card-flip-inner">
+            <div class="card-front">${cardHtml}</div>
+            <div class="card-back">
+              <div class="card-back-pattern"></div>
+              <div class="card-back-inner">
+                <div class="logo">🐱</div>
+                <div class="label">9LV</div>
+              </div>
+            </div>
+          </div>`;
+
+        slotsContainer.appendChild(slot);
+      });
+
+      // Init card particles/foil/tooltips from card-v4 system
+      try { initCards(); } catch (e) { console.warn('initCards not available:', e); }
+    }
+
+    function flipCard(index) {
+      if (flippedCards.has(index)) return;
+      flippedCards.add(index);
+
+      const slot = document.querySelector(`.card-flip-slot[data-index="${index}"]`);
+      if (slot) slot.classList.add('flipped');
+
+      // Check if all flipped
+      if (flippedCards.size === ceremonyCards.length) {
+        onAllRevealed();
+      }
+    }
+
+    function revealAllCards() {
+      ceremonyCards.forEach((_, i) => {
+        setTimeout(() => flipCard(i), i * 120);
+      });
+    }
+
+    function onAllRevealed() {
+      const revealBtn = document.getElementById('reveal-all-btn');
+      if (revealBtn) revealBtn.style.display = 'none';
+
+      document.getElementById('reveal-sub').textContent =
+        `${ceremonyCards.filter(c => c.rarity !== 'common').length} special card${ceremonyCards.filter(c => c.rarity !== 'common').length !== 1 ? 's' : ''} found!`;
+
+      const summaryArea = document.getElementById('summary-area');
+
+      // Rarity summary pills
+      const rarityCounts = {};
+      ceremonyCards.forEach(c => {
+        rarityCounts[c.rarity] = (rarityCounts[c.rarity] || 0) + 1;
+      });
+
+      let pillsHtml = '<div class="summary-bar">';
+      ['common','uncommon','rare','epic','legendary'].forEach(r => {
+        if (rarityCounts[r]) {
+          const rm = RARITY_META[r];
+          pillsHtml += `<div class="rarity-pill" style="color:${rm.color}; background:${hexToRgba(rm.color, 0.1)}; border:1px solid ${hexToRgba(rm.color, 0.25)};">${rarityCounts[r]}× ${rm.label}</div>`;
+        }
+      });
+      pillsHtml += '</div>';
+
+      summaryArea.innerHTML = pillsHtml +
+        '<button class="collect-btn" onclick="closeCeremony()">COLLECT CARDS</button>';
+    }
+
+    function closeCeremony() {
+      document.getElementById('ceremony').style.display = 'none';
+      document.getElementById('ceremony-content').innerHTML = '';
+      document.getElementById('ceremony-close').style.display = 'none';
+      ceremonyCards = [];
+      flippedCards = new Set();
+      // Refresh inventory
+      loadInventory();
+    }
+
+    // ═══════════════════════════════════════
+    // FALLBACK CARD (if buildCardV4 not loaded)
+    // ═══════════════════════════════════════
+    function buildFallbackCard(card) {
+      const rm = RARITY_META[card.rarity] || RARITY_META.common;
+      const tc = { attack:'#e85a6a', defend:'#5599ff', support:'#55dd88', manipulation:'#bb88ff', utility:'#aabbcc' };
+      const typeColor = tc[card.type] || '#aaa';
+      return `
+        <div style="width:100%;height:100%;background:linear-gradient(170deg,${hexToRgba(rm.color,0.06)},#110e1c);
+          border:1.5px solid ${hexToRgba(rm.color,0.3)};border-radius:14px;padding:12px;
+          display:flex;flex-direction:column;box-shadow:inset 0 0 30px ${hexToRgba(rm.color,0.1)};">
+          <div style="font-family:monospace;font-size:8px;color:${typeColor};text-transform:uppercase;letter-spacing:1px;margin-bottom:auto;">${card.type}</div>
+          <div style="text-align:center;flex:1;display:flex;align-items:center;justify-content:center;font-size:28px;">🐱</div>
+          <div style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:#F0ECF8;text-align:center;margin-bottom:6px;">${card.name}</div>
+          <div style="display:flex;justify-content:center;gap:8px;margin-bottom:6px;">
+            ${card.base_atk ? `<span style="font-family:'Press Start 2P',monospace;font-size:8px;color:#e85a6a;">ATK ${card.base_atk}</span>` : ''}
+            ${card.base_hp ? `<span style="font-family:'Press Start 2P',monospace;font-size:8px;color:#6acd8a;">HP ${card.base_hp}</span>` : ''}
+          </div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:${rm.color};text-align:center;text-transform:uppercase;border-top:1px solid rgba(255,255,255,0.07);padding-top:6px;">${rm.label}</div>
+        </div>`;
+    }
+
+    // ═══════════════════════════════════════
+    // HELPERS
+    // ═══════════════════════════════════════
+    function hexToRgba(hex, alpha) {
+      const r = parseInt(hex.slice(1,3), 16);
+      const g = parseInt(hex.slice(3,5), 16);
+      const b = parseInt(hex.slice(5,7), 16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    function spawnParticles(containerId, color, count) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.cssText = `
+          left: ${Math.random() * 100}%;
+          bottom: ${Math.random() * 40}%;
+          width: ${2 + Math.random() * 4}px;
+          height: ${2 + Math.random() * 4}px;
+          background: ${color};
+          --dur: ${2 + Math.random() * 3}s;
+          --delay: ${Math.random() * 3}s;
+        `;
+        container.appendChild(p);
+      }
+    }
+  </script>
 </body>
 </html>

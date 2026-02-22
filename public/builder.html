@@ -55,12 +55,12 @@
 <body>
 <div class="wrap">
   <!-- HEADER -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px" id="builderHeader">
     <div style="display:flex;align-items:center;gap:10px">
-      <div style="width:40px;height:40px;border-radius:50%;border:2px solid #7B2D8E;background:rgba(123,45,142,0.1);display:flex;align-items:center;justify-content:center;font-size:20px">🌙</div>
+      <div id="headerHouseIcon" style="width:40px;height:40px;border-radius:50%;border:2px solid #7B2D8E;background:rgba(123,45,142,0.1);display:flex;align-items:center;justify-content:center;font-size:20px">🌙</div>
       <div>
         <div style="font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--bright)">Welcome, Nine</div>
-        <div style="font-family:var(--font-data);font-size:6px;color:#7B2D8E">NIGHTHOLLOW · DISRUPTOR</div>
+        <div id="headerHouseLabel" style="font-family:var(--font-data);font-size:6px;color:#7B2D8E">NIGHTHOLLOW · DISRUPTOR</div>
       </div>
     </div>
     <div id="stepCounter" style="font-family:var(--font-data);font-size:6px;color:var(--faint)">1/4</div>
@@ -75,7 +75,7 @@
   <!-- ═══ STEP 1 ═══ -->
   <div id="step1" class="step active">
     <div style="text-align:center;margin-bottom:14px">
-      <div style="font-family:var(--font-title);font-size:22px;font-weight:700;color:var(--gold);letter-spacing:3px">CREATE YOUR NINE</div>
+      <div style="font-family:var(--font-title);font-size:22px;font-weight:700;color:var(--gold);letter-spacing:3px" id="step1Title">CREATE YOUR NINE</div>
       <div id="slotCountLabel" style="font-family:var(--font-data);font-size:6px;color:#7B2D8E;margin-top:4px">🌙 NIGHTHOLLOW · 0/8 SLOTS</div>
     </div>
     <div class="card-frame" style="padding:12px 16px;margin-bottom:12px">
@@ -127,9 +127,7 @@
       <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted);margin-top:4px">Cards are how your Nine fights. Here's what they look like:</div>
     </div>
     <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;align-items:flex-start">
-      <!-- Real rendered card -->
       <div id="builderCardPreview" style="flex-shrink:0"></div>
-      <!-- Annotation boxes -->
       <div style="max-width:220px;text-align:left">
         <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:var(--red);font-weight:700;margin-bottom:3px">TYPE</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">Attack, Defend, Support, or Manipulation — determines what your card does in battle</div></div>
         <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:#e85a6a;font-weight:700;margin-bottom:3px">STATS</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">ATK adds damage, HP adds durability. Cards boost your Nine's base stats during combat</div></div>
@@ -139,7 +137,7 @@
       </div>
     </div>
     <div style="margin-top:16px;padding:10px 16px;border-radius:8px;background:rgba(212,166,75,0.06);border:1px solid var(--border);text-align:center;width:100%">
-      <div style="font-family:var(--font-mono);font-size:10px;color:var(--gold)">💡 Your house cards get ×1.3 effect strength — your POISON hits harder</div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--gold)">💡 Your house cards get ×1.3 effect strength</div>
     </div>
     <div style="margin-top:20px;text-align:center"><button class="cta-btn" onclick="goStep(3)">OPEN YOUR FIRST PACK →</button></div>
   </div>
@@ -189,8 +187,45 @@
 var IMG = '/assets/nine/';
 var SM = {atk:{l:'ATK',c:'#e85a6a',m:15},hp:{l:'HP',c:'#6acd8a',m:30},spd:{l:'SPD',c:'#6ac8d8',m:15},def:{l:'DEF',c:'#b088e8',m:15},luck:{l:'LUCK',c:'#D4A64B',m:15}};
 var SK = ['atk','hp','spd','def','luck'];
-var BS = {atk:7,hp:18,spd:5,def:3,luck:5}; // Nighthollow base
 var RC = {none:'#6B5E50',common:'#888',uncommon:'#6acd8a',rare:'#5599ff',epic:'#b088e8',legendary:'#D4A64B'};
+
+/* ═══ HOUSE BASE STATS (from V4 Game Design) ═══ */
+var HOUSE_BASE_STATS = {
+  smoulders:   {atk:6, hp:12, spd:5, def:0, luck:0, icon:'🔥', color:'#E03C31', role:'GLASS CANNON'},
+  darktide:    {atk:4, hp:16, spd:4, def:0, luck:0, icon:'🌊', color:'#00B4D8', role:'THIEF'},
+  stonebark:   {atk:2, hp:24, spd:2, def:0, luck:0, icon:'🌿', color:'#5CB338', role:'WALL'},
+  ashenvale:   {atk:3, hp:14, spd:8, def:0, luck:0, icon:'💨', color:'#90E0EF', role:'ROGUE'},
+  stormrage:   {atk:7, hp:10, spd:6, def:0, luck:0, icon:'⚡', color:'#FFC800', role:'GLASS CANNON'},
+  nighthollow: {atk:4, hp:13, spd:7, def:0, luck:0, icon:'🌙', color:'#7B2D8E', role:'DISRUPTOR'},
+  dawnbringer: {atk:3, hp:18, spd:3, def:0, luck:0, icon:'☀️', color:'#FF8C00', role:'HEALER'},
+  manastorm:   {atk:5, hp:14, spd:5, def:0, luck:0, icon:'🔮', color:'#5B8FE0', role:'CONTROLLER'},
+  plaguemire:  {atk:3, hp:15, spd:4, def:0, luck:0, icon:'☠️', color:'#E84393', role:'DOT SPECIALIST'}
+};
+var HOUSE_ID_MAP = {1:'smoulders',2:'darktide',3:'stonebark',4:'ashenvale',5:'stormrage',6:'nighthollow',7:'dawnbringer',8:'manastorm',9:'plaguemire'};
+
+/* Determine player's house */
+var _playerHouse = 'nighthollow'; // default
+try {
+  var _pStr = localStorage.getItem('9lv_player');
+  if (_pStr) {
+    var _pObj = JSON.parse(_pStr);
+    var _hid = _pObj.school_id || _pObj.house;
+    if (typeof _hid === 'number' && HOUSE_ID_MAP[_hid]) _playerHouse = HOUSE_ID_MAP[_hid];
+    else if (typeof _hid === 'string' && HOUSE_BASE_STATS[_hid]) _playerHouse = _hid;
+  }
+} catch(e) {}
+
+var _houseData = HOUSE_BASE_STATS[_playerHouse];
+var BS = {atk:_houseData.atk, hp:_houseData.hp, spd:_houseData.spd, def:_houseData.def, luck:_houseData.luck};
+
+/* Update header to show actual house */
+(function(){
+  var h = HOUSE_BASE_STATS[_playerHouse];
+  var icon = document.getElementById('headerHouseIcon');
+  var label = document.getElementById('headerHouseLabel');
+  if (icon) { icon.textContent = h.icon; icon.style.borderColor = h.color; icon.style.background = h.color + '15'; }
+  if (label) { label.textContent = _playerHouse.toUpperCase() + ' · ' + h.role; label.style.color = h.color; }
+})();
 
 var SLOTS = [
   {id:'fur',       label:'Skin',       icon:'🐾', layer:'GEAR',z:1},
@@ -289,19 +324,38 @@ var GM = [
   {i:'👹',n:'Weekly Boss',t:'Mon–Fri',d:'A massive boss appears Monday. Your whole guild attacks together. Phases get harder at 50% and 25% HP.',c:'#b088e8'}
 ];
 
-/* STATE */
-  /* STATE */
-  var step=1,aSlot=null,pSlot=null,pItem=null,revd=[],oMode=null;
-  var eq={};SLOTS.forEach(function(s){
-    var pool=ITEMS[s.id];
-    if(pool.length>1){
-      // Pick a random item (skip index 0 which is "None")
-      var idx=1+Math.floor(Math.random()*(pool.length-1));
-      eq[s.id]=pool[idx];
-    } else {
-      eq[s.id]=pool[0];
-    }
-  });
+var HOUSE_PREVIEW_CARDS = {
+  smoulders:{name:'Ember Strike',house:'smoulders',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'BURN +3',desc:'3 extra damage per cycle'}],flavor_text:'Everything burns eventually.',image_url:'',current_charges:12,max_charges:12},
+  darktide:{name:'Riptide',house:'darktide',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'DRAIN 3%',desc:'Steal 3% HP from target'}],flavor_text:'The current remembers what the shore forgets.',image_url:'',current_charges:12,max_charges:12},
+  stonebark:{name:'Root Strike',house:'stonebark',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'BURN +2',desc:'2 extra damage per cycle'}],flavor_text:'The roots remember what the storm forgets.',image_url:'',current_charges:12,max_charges:12},
+  ashenvale:{name:'Gust Blade',house:'ashenvale',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:1,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'HASTE',desc:'+3 SPD this cycle'}],flavor_text:'Wind doesn\'t ask permission.',image_url:'',current_charges:12,max_charges:12},
+  stormrage:{name:'Spark',house:'stormrage',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'CRIT',desc:'25% chance to deal double ATK'}],flavor_text:'One spark is all it takes.',image_url:'',current_charges:12,max_charges:12},
+  nighthollow:{name:'Shadow Bolt',house:'nighthollow',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'WEAKEN',desc:'Target deals 50% damage this cycle'}],flavor_text:'You won\'t see it coming. That\'s the point.',image_url:'',current_charges:12,max_charges:12},
+  dawnbringer:{name:'Radiant Strike',house:'dawnbringer',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'BURN +2',desc:'2 extra damage per cycle'}],flavor_text:'Light reveals. Light destroys.',image_url:'',current_charges:12,max_charges:12},
+  manastorm:{name:'Arcane Siphon',house:'manastorm',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'DRAIN 3%',desc:'Steal 3% HP from target'}],flavor_text:'Power flows to those who take it.',image_url:'',current_charges:12,max_charges:12},
+  plaguemire:{name:'Plague Doctor',house:'plaguemire',spell_type:'support',rarity:'epic',mana_cost:3,base_atk:3,base_hp:6,base_spd:0,base_def:1,base_luck:1,base_effect:'',bonus_effects:[{tag:'HEAL +6',desc:'Restore 6 HP to self or ally'},{tag:'THORNS',desc:'Attackers take damage back'},{tag:'POISON',desc:'Damage per cycle, stacks'}],flavor_text:'The cure is worse than the disease.',image_url:'/assets/images/spells/PLAGUEDOCTOR.JPEG',current_charges:18,max_charges:18},
+  universal:{name:'Arcane Bolt',house:'universal',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'BURN +2',desc:'2 extra damage per cycle'}],flavor_text:'Pure mana, shaped by will.',image_url:'',current_charges:12,max_charges:12}
+};
+
+/* ══════════════════════════════════════ */
+/*  STATE — FIX: only randomize for     */
+/*  new players, not edit mode           */
+/* ══════════════════════════════════════ */
+var step=1,aSlot=null,pSlot=null,pItem=null,revd=[],oMode=null;
+var _skipIntro = new URLSearchParams(window.location.search).get('skip_intro') === '1';
+
+var eq={};
+SLOTS.forEach(function(s){
+  var pool=ITEMS[s.id];
+  if(!_skipIntro && pool.length>1){
+    // New player: randomize for visual interest
+    var idx=1+Math.floor(Math.random()*(pool.length-1));
+    eq[s.id]=pool[idx];
+  } else {
+    // Edit mode: start empty, load from API below
+    eq[s.id]=pool[0];
+  }
+});
 
 /* NAV */
 function goStep(n){
@@ -364,7 +418,11 @@ function renderStats(){
   p.innerHTML=h;document.getElementById('totalPower').textContent=tot;
 }
 
-function updCount(){var c=Object.values(eq).filter(function(i){return i.id!=='none'}).length;document.getElementById('slotCountLabel').textContent='🌙 NIGHTHOLLOW · '+c+'/8 SLOTS'}
+function updCount(){
+  var c=Object.values(eq).filter(function(i){return i.id!=='none'}).length;
+  var h=HOUSE_BASE_STATS[_playerHouse];
+  document.getElementById('slotCountLabel').textContent=h.icon+' '+_playerHouse.toUpperCase()+' · '+c+'/8 SLOTS';
+}
 function tSlot(id){aSlot=aSlot===id?null:id;renderSlots();renderPicker();document.getElementById('trinketCallout').style.display='none'}
 function showTI(){aSlot=null;renderSlots();renderPicker();document.getElementById('trinketCallout').style.display='block'}
 
@@ -401,31 +459,15 @@ document.getElementById('nineName').addEventListener('input',function(){
   else{b.disabled=true;b.textContent='NAME YOUR NINE TO CONTINUE';d.style.display='none'}
 });
 
-/* HOUSE PREVIEW CARD — shown on the Cards tab */
-var HOUSE_PREVIEW_CARDS = {
-  smoulders:{name:'Ember Strike',house:'smoulders',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'BURN +3',desc:'3 extra damage per cycle'}],flavor_text:'Everything burns eventually.',image_url:'',current_charges:12,max_charges:12},
-  darktide:{name:'Riptide',house:'darktide',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'DRAIN 3%',desc:'Steal 3% HP from target'}],flavor_text:'The current remembers what the shore forgets.',image_url:'',current_charges:12,max_charges:12},
-  stonebark:{name:'Root Strike',house:'stonebark',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'BURN +2',desc:'2 extra damage per cycle'}],flavor_text:'The roots remember what the storm forgets.',image_url:'',current_charges:12,max_charges:12},
-  ashenvale:{name:'Gust Blade',house:'ashenvale',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:1,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'HASTE',desc:'+3 SPD this cycle'}],flavor_text:'Wind doesn\'t ask permission.',image_url:'',current_charges:12,max_charges:12},
-  stormrage:{name:'Spark',house:'stormrage',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'CRIT',desc:'25% chance to deal double ATK'}],flavor_text:'One spark is all it takes.',image_url:'',current_charges:12,max_charges:12},
-  nighthollow:{name:'Shadow Bolt',house:'nighthollow',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'WEAKEN',desc:'Target deals 50% damage this cycle'}],flavor_text:'You won\'t see it coming. That\'s the point.',image_url:'',current_charges:12,max_charges:12},
-  dawnbringer:{name:'Radiant Strike',house:'dawnbringer',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'BURN +2',desc:'2 extra damage per cycle'}],flavor_text:'Light reveals. Light destroys.',image_url:'',current_charges:12,max_charges:12},
-  manastorm:{name:'Arcane Siphon',house:'manastorm',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'DRAIN 3%',desc:'Steal 3% HP from target'}],flavor_text:'Power flows to those who take it.',image_url:'',current_charges:12,max_charges:12},
-  plaguemire:{name:'Plague Doctor',house:'plaguemire',spell_type:'support',rarity:'epic',mana_cost:3,base_atk:3,base_hp:6,base_spd:0,base_def:1,base_luck:1,base_effect:'',bonus_effects:[{tag:'HEAL +6',desc:'Restore 6 HP to self or ally'},{tag:'THORNS',desc:'Attackers take damage back'},{tag:'POISON',desc:'Damage per cycle, stacks'}],flavor_text:'The cure is worse than the disease.',image_url:'/assets/images/spells/PLAGUEDOCTOR.JPEG',current_charges:18,max_charges:18},
-  universal:{name:'Arcane Bolt',house:'universal',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'BURN +2',desc:'2 extra damage per cycle'}],flavor_text:'Pure mana, shaped by will.',image_url:'',current_charges:12,max_charges:12}
-};
-
 function renderBuilderCard(){
   var el=document.getElementById('builderCardPreview');
   if(!el||typeof buildCardV4!=='function')return;
-  // TODO: use actual player house when house selection is dynamic
-  var house='plaguemire';
-  var card=HOUSE_PREVIEW_CARDS[house]||HOUSE_PREVIEW_CARDS['plaguemire'];
+  var card=HOUSE_PREVIEW_CARDS[_playerHouse]||HOUSE_PREVIEW_CARDS['nighthollow'];
   el.innerHTML=buildCardV4(card,{delay:0});
   setTimeout(function(){if(typeof initCards==='function')initCards()},150);
 }
 
-/* PACK — real card renders with flip reveal */
+/* PACK */
 function initPack(){
   revd=[];var a=document.getElementById('packCards'),h='';
   PACK_V4.forEach(function(cd,i){
@@ -441,7 +483,6 @@ function initPack(){
     h+='</div></div>';
   });
   a.innerHTML=h;
-  // Pre-render all card backs (hidden behind flip)
   PACK_V4.forEach(function(cd,i){
     var container=document.getElementById('packCard'+i);
     if(container&&typeof buildCardV4==='function'){
@@ -452,10 +493,8 @@ function initPack(){
   document.getElementById('packDone').style.display='none';
 }
 function rC(i){
-  if(revd.indexOf(i)!==-1)return;
-  revd.push(i);
+  if(revd.indexOf(i)!==-1)return;revd.push(i);
   document.getElementById('fc'+i).classList.add('flipped');
-  // Init particles/foil for this card after flip
   setTimeout(function(){if(typeof initCards==='function')initCards()},650);
   if(revd.length>=PACK_V4.length)setTimeout(function(){document.getElementById('packActions').style.display='none';document.getElementById('packDone').style.display='block'},800);
 }
@@ -474,127 +513,144 @@ function initModes(){
 }
 function tM(i){GM.forEach(function(_,j){var d=document.getElementById('md'+j),c=document.getElementById('mc'+j),v=document.getElementById('mv'+j);if(j===i&&oMode!==i){d.style.display='block';c.classList.add('open');v.style.transform='rotate(90deg)'}else{d.style.display='none';c.classList.remove('open');v.style.transform='none'}});oMode=oMode===i?null:i}
 
+/* ══════════════════════════════════════ */
+/*  SAVE EQUIPMENT — shared function     */
+/* ══════════════════════════════════════ */
+function saveEquipment(callback) {
+  var eqData = {};
+  Object.keys(eq).forEach(function(slot) {
+    eqData[slot] = eq[slot] ? eq[slot].id : 'none';
+  });
+  var pid = null;
+  try { pid = JSON.parse(localStorage.getItem('9lv_player')).id; } catch(e) {}
+
+  if (pid) {
+    fetch('/api/items/equip', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ player_id: pid, equipment: eqData })
+    })
+    .then(function(r) { if (callback) callback(); })
+    .catch(function(e) { console.error('Save failed:', e); if (callback) callback(); });
+  } else {
+    if (callback) callback();
+  }
+}
+
 function enterNethara(){
   var name=document.getElementById('nineName').value.trim()||'Unnamed Nine';
-  // TODO: POST to /api/builder with name + JSON.stringify(eq)
-  window.location.href='/dashboard.html';
+  saveEquipment(function() {
+    window.location.href='/dashboard.html';
+  });
 }
 
 /* INIT */
 renderSlots();renderStats();renderLayers();updCount();
-  
-  /* ══════════════════════════════════════ */
-  /*  SKIP INTRO — EDIT MODE              */
-  /*  When arriving from dashboard with    */
-  /*  ?skip_intro=1, hide tutorial flow    */
-  /*  and show just the character editor   */
-  /* ══════════════════════════════════════ */
-  (function(){
-    var params = new URLSearchParams(window.location.search);
-    if (params.get('skip_intro') !== '1') return;
 
-    // Hide tutorial progress bar and step counter
-    var progBar = document.querySelector('.prog-bar');
-    if (progBar) progBar.style.display = 'none';
-    var stepCounter = document.getElementById('stepCounter');
-    if (stepCounter) stepCounter.style.display = 'none';
+/* ══════════════════════════════════════ */
+/*  SKIP INTRO — EDIT MODE              */
+/*  When arriving from dashboard with    */
+/*  ?skip_intro=1, load actual equipment */
+/*  and show just the character editor   */
+/* ══════════════════════════════════════ */
+(function(){
+  if (!_skipIntro) return;
 
-    // Hide "skip to dashboard" link
-    var skipLink = document.getElementById('skipLink');
-    if (skipLink) skipLink.style.display = 'none';
+  // Hide tutorial progress bar and step counter
+  var progBar = document.querySelector('.prog-bar');
+  if (progBar) progBar.style.display = 'none';
+  var stepCounter = document.getElementById('stepCounter');
+  if (stepCounter) stepCounter.style.display = 'none';
 
-    // Change header text
-    var headerDiv = document.querySelector('.wrap > div:first-child');
-    if (headerDiv) {
-      headerDiv.innerHTML =
-        '<div style="display:flex;align-items:center;gap:10px">'
-        + '<a href="/dashboard.html" style="text-decoration:none;font-size:20px;color:var(--muted);padding:4px 8px;cursor:pointer">←</a>'
-        + '<div>'
-        + '<div style="font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--bright)">Edit Your Nine</div>'
-        + '<div style="font-family:var(--font-data);font-size:6px;color:var(--faint)">CHANGE APPEARANCE & GEAR</div>'
-        + '</div></div>';
-    }
+  // Hide "skip to dashboard" link
+  var skipLink = document.getElementById('skipLink');
+  if (skipLink) skipLink.style.display = 'none';
 
-    // Change title
-    var titleEl = document.querySelector('#step1 div[style*="text-align:center"] div[style*="font-size:22px"]');
-    if (titleEl) titleEl.textContent = 'EDIT YOUR NINE';
+  // Change header to edit mode with back button
+  var headerDiv = document.getElementById('builderHeader');
+  if (headerDiv) {
+    var h = HOUSE_BASE_STATS[_playerHouse];
+    headerDiv.innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px">'
+      + '<a href="/dashboard.html" style="text-decoration:none;font-size:20px;color:var(--muted);padding:4px 8px;cursor:pointer">←</a>'
+      + '<div>'
+      + '<div style="font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--bright)">Edit Your Nine</div>'
+      + '<div style="font-family:var(--font-data);font-size:6px;color:' + h.color + '">' + _playerHouse.toUpperCase() + ' · ' + h.role + '</div>'
+      + '</div></div>';
+  }
 
-    // Change step1 CTA button — save and go back
-    var btn = document.getElementById('step1Btn');
-    if (btn) {
-      // Enable button immediately (they already have a name)
-      btn.disabled = false;
-      btn.textContent = '💾 SAVE & BACK TO DASHBOARD';
-      btn.onclick = function() {
-        // TODO: POST equipment changes to API here
+  // Change title
+  var titleEl = document.getElementById('step1Title');
+  if (titleEl) titleEl.textContent = 'EDIT YOUR NINE';
+
+  // Change step1 CTA button — save and go back
+  var btn = document.getElementById('step1Btn');
+  if (btn) {
+    btn.disabled = false;
+    btn.textContent = '💾 SAVE & BACK TO DASHBOARD';
+    btn.onclick = function() {
+      btn.disabled = true;
+      btn.textContent = 'SAVING...';
+      saveEquipment(function() {
         window.location.href = '/dashboard.html';
-      };
-    }
-
-    // Hide the "name your nine" requirement text
-    var nameHint = document.querySelector('#step1 div[style*="text-align:center"][style*="margin-top:8px"]');
-    if (nameHint) nameHint.style.display = 'none';
-
-    // Override the name input handler to not change button text
-    var nameInput = document.getElementById('nineName');
-    if (nameInput) {
-      // Try to pre-fill with existing name
-      try {
-        var pStr = localStorage.getItem('9lv_player');
-        if (pStr) {
-          var pObj = JSON.parse(pStr);
-          if (pObj.nine_name) {
-            nameInput.value = pObj.nine_name;
-            document.getElementById('nameCount').textContent = pObj.nine_name.length + '/20';
-            var charName = document.getElementById('charNameDisplay');
-            if (charName) { charName.textContent = pObj.nine_name; charName.style.display = 'block'; }
-          }
-        }
-      } catch(e) {}
-
-      nameInput.addEventListener('input', function() {
-        var v = this.value;
-        document.getElementById('nameCount').textContent = v.length + '/20';
-        var d = document.getElementById('charNameDisplay');
-        if (v.trim()) { d.textContent = v.trim(); d.style.display = 'block'; }
-        else { d.style.display = 'none'; }
-        // Keep button always enabled in edit mode
-        var b = document.getElementById('step1Btn');
-        b.disabled = false;
-        b.textContent = '💾 SAVE & BACK TO DASHBOARD';
       });
-    }
+    };
+  }
 
-    // Load actual equipped items from API
-    var pid = null;
+  // Pre-fill name from localStorage
+  var nameInput = document.getElementById('nineName');
+  if (nameInput) {
     try {
       var pStr = localStorage.getItem('9lv_player');
-      if (pStr) pid = JSON.parse(pStr).id;
+      if (pStr) {
+        var pObj = JSON.parse(pStr);
+        if (pObj.nine_name) {
+          nameInput.value = pObj.nine_name;
+          document.getElementById('nameCount').textContent = pObj.nine_name.length + '/20';
+          var charName = document.getElementById('charNameDisplay');
+          if (charName) { charName.textContent = pObj.nine_name; charName.style.display = 'block'; }
+        }
+      }
     } catch(e) {}
-    if (!pid) {
-      var sp = new URLSearchParams(window.location.search);
-      pid = sp.get('player_id');
-    }
 
-    if (pid) {
-      fetch('/api/items/equipped/' + pid)
-        .then(function(r) { return r.ok ? r.json() : null; })
-        .then(function(d) {
-          if (!d || !d.equipped) return;
-          var equipped = d.equipped;
-          var items = d.items || [];
-          // Map equipped slugs to actual item objects in ITEMS
-          Object.keys(equipped).forEach(function(slot) {
-            var slug = equipped[slot];
-            if (!slug || !ITEMS[slot]) return;
-            var found = ITEMS[slot].find(function(it) { return it.id === slug; });
-            if (found) eq[slot] = found;
-          });
-          renderSlots(); renderStats(); renderLayers(); updCount();
-        })
-        .catch(function(e) { console.log('Edit mode: could not load equipment', e); });
-    }
-  })();
+    // Override name input — keep button as "SAVE" in edit mode
+    nameInput.addEventListener('input', function() {
+      var v = this.value;
+      document.getElementById('nameCount').textContent = v.length + '/20';
+      var d = document.getElementById('charNameDisplay');
+      if (v.trim()) { d.textContent = v.trim(); d.style.display = 'block'; }
+      else { d.style.display = 'none'; }
+      var b = document.getElementById('step1Btn');
+      b.disabled = false;
+      b.textContent = '💾 SAVE & BACK TO DASHBOARD';
+    });
+  }
+
+  // Load actual equipped items from API
+  var pid = null;
+  try {
+    var pStr = localStorage.getItem('9lv_player');
+    if (pStr) pid = JSON.parse(pStr).id;
+  } catch(e) {}
+
+  if (pid) {
+    fetch('/api/items/equipped/' + pid)
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(d) {
+        if (!d || !d.equipped) return;
+        var equipped = d.equipped;
+        // Map API slugs to builder ITEMS objects
+        Object.keys(equipped).forEach(function(slot) {
+          var slug = equipped[slot];
+          if (!slug || !ITEMS[slot]) return;
+          var found = ITEMS[slot].find(function(it) { return it.id === slug; });
+          if (found) eq[slot] = found;
+        });
+        renderSlots(); renderStats(); renderLayers(); updCount();
+      })
+      .catch(function(e) { console.log('Edit mode: could not load equipment', e); });
+  }
+})();
 </script>
 </body>
 </html>
