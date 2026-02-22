@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Spell Packs — Nine Lives Network</title>
+  <title>The Bazaar — Nine Lives Network</title>
 
   <!-- Card system requires these in order -->
   <link rel="stylesheet" href="/css/variables-v2.css">
@@ -26,6 +26,10 @@
       --body:      #CCC5DB;
       --muted:     #847C98;
       --faint:     #554E68;
+      --cyan:      #00D4FF;
+      --green:     #44cc88;
+      --red:       #ff4466;
+      --blue:      #55bbff;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -38,72 +42,113 @@
     }
 
     /* ═══ HEADER ═══ */
-    .pack-header {
+    .bazaar-header {
       padding: 20px 24px 16px;
       border-bottom: 1px solid var(--border);
       background: linear-gradient(180deg, rgba(212,166,75,0.04), transparent);
       display: flex; justify-content: space-between; align-items: center;
-      max-width: 1100px; margin: 0 auto;
+      max-width: 900px; margin: 0 auto;
     }
-    .pack-header h1 {
-      font-family: 'Cinzel', serif; font-size: 26px; font-weight: 800;
+    .bazaar-header h1 {
+      font-family: 'Cinzel', serif; font-size: 24px; font-weight: 800;
       color: var(--gold); letter-spacing: 3px;
     }
-    .pack-header .sub {
-      font-family: monospace; font-size: 11px; color: var(--faint); margin-top: 2px;
+    .bazaar-header .sub {
+      font-family: monospace; font-size: 10px; color: var(--faint); margin-top: 2px;
     }
-    .header-stats {
-      display: flex; gap: 16px; align-items: center;
-    }
-    .stat-badge {
+    .mana-badge {
       font-family: monospace; font-size: 11px;
       padding: 6px 14px; border-radius: 8px;
+      background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); color: var(--cyan);
+      display: flex; align-items: center; gap: 5;
     }
+    .mana-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+    }
+    .mana-dot.full { background: linear-gradient(180deg, #00D4FF, #0088aa); }
+    .mana-dot.empty { background: rgba(255,255,255,0.06); }
+
+    /* ═══ TABS ═══ */
+    .tab-bar {
+      display: flex; padding: 0 24px;
+      border-bottom: 1px solid var(--border);
+      max-width: 900px; margin: 0 auto;
+    }
+    .tab-btn {
+      font-family: monospace; font-size: 11px; font-weight: 400;
+      padding: 12px 16px; cursor: pointer; border: none; background: none;
+      color: var(--faint); border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn.active { color: var(--gold); font-weight: 700; border-bottom-color: var(--gold); }
+
+    /* ═══ TAB CONTENT ═══ */
+    .tab-content { display: none; max-width: 900px; margin: 0 auto; padding: 20px 24px 80px; }
+    .tab-content.active { display: block; }
+
+    /* ═══ SECTION LABEL ═══ */
+    .section-label {
+      font-family: monospace; font-size: 11px; color: var(--faint);
+      letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase;
+      display: flex; align-items: center; gap: 8;
+    }
+    .section-label .icon { font-size: 14px; }
 
     /* ═══ DAILY CLAIM BAR ═══ */
-    .daily-bar {
-      max-width: 1100px; margin: 16px auto 0; padding: 0 24px;
-    }
+    .daily-bar { margin-bottom: 20px; }
     .daily-claim-btn {
-      width: 100%; padding: 14px 24px; border-radius: 12px;
+      width: 100%; padding: 16px 24px; border-radius: 14px;
       background: linear-gradient(135deg, rgba(212,166,75,0.12), rgba(212,166,75,0.04));
-      border: 1.5px solid rgba(212,166,75,0.25);
+      border: 1.5px solid rgba(212,166,75,0.3);
       color: var(--gold); font-family: 'Cinzel', serif; font-size: 15px;
       font-weight: 700; letter-spacing: 2px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; gap: 10px;
-      transition: all 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      transition: all 0.2s; position: relative; overflow: hidden;
+      box-shadow: 0 0 30px rgba(212,166,75,0.08);
     }
     .daily-claim-btn:hover:not(:disabled) {
       background: linear-gradient(135deg, rgba(212,166,75,0.2), rgba(212,166,75,0.08));
       border-color: rgba(212,166,75,0.5); transform: translateY(-1px);
       box-shadow: 0 4px 20px rgba(212,166,75,0.15);
     }
-    .daily-claim-btn:disabled {
-      opacity: 0.4; cursor: default;
+    .daily-claim-btn:disabled { opacity: 0.4; cursor: default; }
+    .daily-claim-btn .btn-icon { font-size: 24px; }
+    .daily-claim-btn .shimmer {
+      position: absolute; top: 0; left: -100%; width: 200%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(212,166,75,0.06), transparent);
+      animation: shimmer 3s infinite;
     }
-    .daily-claim-btn .icon { font-size: 22px; }
 
-    /* ═══ INVENTORY GRID ═══ */
-    .inventory-section {
-      max-width: 1100px; margin: 24px auto; padding: 0 24px;
+    .daily-claimed-bar {
+      width: 100%; padding: 14px 24px; border-radius: 14px;
+      background: rgba(85,78,104,0.06); border: 1.5px solid rgba(85,78,104,0.12);
+      display: flex; align-items: center; justify-content: space-between;
     }
-    .section-label {
-      font-family: monospace; font-size: 11px; color: var(--faint);
-      letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase;
+    .daily-claimed-bar .left { display: flex; align-items: center; gap: 10px; }
+    .daily-claimed-bar .left .icon { font-size: 18px; opacity: 0.35; }
+    .daily-claimed-bar .left .text { font-family: monospace; font-size: 12px; color: var(--muted); }
+    .daily-claimed-bar .right { display: flex; align-items: center; gap: 6px; }
+    .daily-claimed-bar .right .label { font-family: monospace; font-size: 10px; color: var(--faint); }
+    .countdown-badge {
+      font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--gold);
+      background: rgba(212,166,75,0.08); padding: 4px 10px; border-radius: 6px;
+      border: 1px solid rgba(212,166,75,0.15);
     }
+
+    /* ═══ PACK GRID ═══ */
     .pack-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 14px;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 12px; margin-bottom: 28px;
     }
     .empty-state {
-      text-align: center; padding: 60px 20px;
+      text-align: center; padding: 60px 20px; grid-column: 1 / -1;
       color: var(--faint); font-family: monospace; font-size: 13px;
     }
     .empty-state .icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
 
-    /* ═══ PACK CARD IN INVENTORY ═══ */
+    /* ═══ PACK CARD (INVENTORY) ═══ */
     .pack-card {
-      border-radius: 14px; padding: 20px 16px; cursor: pointer;
+      border-radius: 14px; padding: 22px 16px; cursor: pointer;
       position: relative; overflow: hidden; transition: all 0.25s;
       border: 1.5px solid rgba(255,255,255,0.06);
       text-align: center;
@@ -113,16 +158,15 @@
       box-shadow: 0 8px 30px rgba(0,0,0,0.4);
     }
     .pack-card .pack-icon {
-      font-size: 48px; margin-bottom: 10px;
+      font-size: 44px; margin-bottom: 10px;
       filter: drop-shadow(0 0 16px var(--pack-color));
     }
     .pack-card .pack-name {
-      font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700;
-      margin-bottom: 4px;
+      font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; margin-bottom: 4px;
     }
     .pack-card .pack-desc {
       font-family: monospace; font-size: 9px; color: var(--muted);
-      line-height: 1.4; margin-bottom: 12px;
+      line-height: 1.4; margin-bottom: 14px;
     }
     .pack-card .pack-count {
       position: absolute; top: 10px; right: 10px;
@@ -138,57 +182,175 @@
     }
 
     /* Pack type themes */
-    .pack-card.daily {
-      --pack-color: #D4A64B;
-      background: linear-gradient(135deg, #1a1408, #110e1c, #1a1408);
-      border-color: rgba(212,166,75,0.15);
-    }
+    .pack-card.daily { --pack-color: #D4A64B; background: linear-gradient(135deg, rgba(212,166,75,0.06), #110e1c, rgba(212,166,75,0.04)); border-color: rgba(212,166,75,0.15); }
     .pack-card.daily:hover { border-color: rgba(212,166,75,0.4); }
     .pack-card.daily .pack-name { color: #D4A64B; }
     .pack-card.daily .pack-count { background: #D4A64B; }
     .pack-card.daily .open-label { color: #D4A64B; border-color: rgba(212,166,75,0.3); background: rgba(212,166,75,0.08); }
 
-    .pack-card.boss {
-      --pack-color: #ff4466;
-      background: linear-gradient(135deg, #1a0808, #110e1c, #1a0808);
-      border-color: rgba(255,68,102,0.15);
-    }
+    .pack-card.boss { --pack-color: #ff4466; background: linear-gradient(135deg, rgba(255,68,102,0.06), #110e1c, rgba(255,68,102,0.04)); border-color: rgba(255,68,102,0.15); }
     .pack-card.boss:hover { border-color: rgba(255,68,102,0.4); }
     .pack-card.boss .pack-name { color: #ff4466; }
     .pack-card.boss .pack-count { background: #ff4466; }
     .pack-card.boss .open-label { color: #ff4466; border-color: rgba(255,68,102,0.3); background: rgba(255,68,102,0.08); }
 
-    .pack-card.event {
-      --pack-color: #55bbff;
-      background: linear-gradient(135deg, #081018, #110e1c, #081018);
-      border-color: rgba(85,187,255,0.15);
-    }
+    .pack-card.event { --pack-color: #55bbff; background: linear-gradient(135deg, rgba(85,187,255,0.06), #110e1c, rgba(85,187,255,0.04)); border-color: rgba(85,187,255,0.15); }
     .pack-card.event:hover { border-color: rgba(85,187,255,0.4); }
     .pack-card.event .pack-name { color: #55bbff; }
     .pack-card.event .pack-count { background: #55bbff; }
     .pack-card.event .open-label { color: #55bbff; border-color: rgba(85,187,255,0.3); background: rgba(85,187,255,0.08); }
 
-    .pack-card.seasonal {
-      --pack-color: #ffd700;
-      background: linear-gradient(135deg, #1a1a04, #110e1c, #1a1a04);
-      border-color: rgba(255,215,0,0.15);
-    }
+    .pack-card.seasonal { --pack-color: #ffd700; background: linear-gradient(135deg, rgba(255,215,0,0.06), #110e1c, rgba(255,215,0,0.04)); border-color: rgba(255,215,0,0.15); }
     .pack-card.seasonal:hover { border-color: rgba(255,215,0,0.4); }
     .pack-card.seasonal .pack-name { color: #ffd700; }
     .pack-card.seasonal .pack-count { background: #ffd700; }
     .pack-card.seasonal .open-label { color: #ffd700; border-color: rgba(255,215,0,0.3); background: rgba(255,215,0,0.08); }
 
-    .pack-card.reward, .pack-card.welcome {
-      --pack-color: #88ddaa;
-      background: linear-gradient(135deg, #081a10, #110e1c, #081a10);
-      border-color: rgba(136,221,170,0.15);
-    }
+    .pack-card.reward, .pack-card.welcome { --pack-color: #88ddaa; background: linear-gradient(135deg, rgba(136,221,170,0.06), #110e1c, rgba(136,221,170,0.04)); border-color: rgba(136,221,170,0.15); }
     .pack-card.reward:hover, .pack-card.welcome:hover { border-color: rgba(136,221,170,0.4); }
     .pack-card.reward .pack-name, .pack-card.welcome .pack-name { color: #88ddaa; }
     .pack-card.reward .pack-count, .pack-card.welcome .pack-count { background: #88ddaa; }
     .pack-card.reward .open-label, .pack-card.welcome .open-label { color: #88ddaa; border-color: rgba(136,221,170,0.3); background: rgba(136,221,170,0.08); }
 
-    /* ═══ FULL-SCREEN CEREMONY OVERLAY ═══ */
+    /* ═══ BUY PACK CARD ═══ */
+    .buy-pack-card {
+      border-radius: 14px; padding: 22px 16px; cursor: pointer;
+      position: relative; overflow: hidden; transition: all 0.25s;
+      text-align: center;
+    }
+    .buy-pack-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+    .buy-pack-card .pack-icon { font-size: 36px; margin-bottom: 8px; }
+    .buy-pack-card .pack-name { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+    .buy-pack-card .pack-desc { font-family: monospace; font-size: 9px; color: var(--muted); margin-bottom: 14px; }
+    .buy-pack-card .price-btn {
+      font-family: monospace; font-size: 11px; letter-spacing: 1px;
+      padding: 8px 18px; border-radius: 8px; font-weight: 700;
+    }
+    .buy-pack-card .save-tag {
+      position: absolute; top: 0; right: 0;
+      font-family: monospace; font-size: 7px; font-weight: 700; letter-spacing: 1px;
+      padding: 4px 10px; border-radius: 0 12px 0 8px;
+      background: rgba(68,204,136,0.12); color: #44cc88; border: 1px solid rgba(68,204,136,0.18);
+    }
+    .fair-play-notice {
+      font-family: monospace; font-size: 9px; color: var(--muted); text-align: center;
+      margin-bottom: 14px; padding: 8px 14px; border-radius: 8px;
+      background: rgba(212,166,75,0.03); border: 1px solid rgba(212,166,75,0.06);
+    }
+    .fair-play-notice .gold { color: var(--gold); }
+
+    /* ═══ EARN INFO ═══ */
+    .earn-info {
+      border-radius: 14px; padding: 16px 18px;
+      border: 1.5px solid rgba(85,78,104,0.08); background: rgba(85,78,104,0.02);
+    }
+    .earn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .earn-item { display: flex; align-items: center; gap: 10px; }
+    .earn-icon {
+      width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center; font-size: 14px;
+    }
+    .earn-item .label { font-family: monospace; font-size: 10px; color: var(--bright); font-weight: 600; }
+    .earn-item .desc { font-family: monospace; font-size: 8px; color: var(--faint); }
+
+    /* ═══ SHOP ITEMS ═══ */
+    .shop-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 12px; margin-bottom: 28px;
+    }
+    .shop-item {
+      border-radius: 14px; padding: 20px 16px; position: relative; overflow: hidden;
+      text-align: center; transition: all 0.25s; cursor: pointer;
+    }
+    .shop-item.disabled { opacity: 0.45; cursor: default; }
+    .shop-item .item-icon { font-size: 36px; margin-bottom: 10px; }
+    .shop-item .item-name { font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+    .shop-item .item-desc { font-family: monospace; font-size: 9px; color: var(--muted); line-height: 1.4; margin-bottom: 14px; min-height: 24px; }
+    .shop-item .item-price {
+      font-family: monospace; font-size: 10px; letter-spacing: 1px;
+      padding: 7px 14px; border-radius: 8px; font-weight: 700;
+    }
+    .shop-item .item-tag {
+      position: absolute; top: 0; right: 0;
+      font-family: monospace; font-size: 7px; font-weight: 700; letter-spacing: 1px;
+      padding: 4px 10px; border-radius: 0 12px 0 8px;
+    }
+    .cosmetic-notice {
+      font-family: monospace; font-size: 10px; color: var(--muted); text-align: center;
+      margin-bottom: 20px; padding: 10px 16px; border-radius: 8px;
+      background: rgba(212,166,75,0.03); border: 1px solid rgba(212,166,75,0.08);
+    }
+    .cosmetic-notice .gold { color: var(--gold); }
+
+    /* ═══ FEATURED — TOKEN CARD ═══ */
+    .token-card {
+      border-radius: 14px; padding: 20px; margin-bottom: 24px;
+      border: 1.5px solid rgba(212,166,75,0.15);
+      background: linear-gradient(135deg, rgba(212,166,75,0.04), #110e1c);
+      display: flex; align-items: center; gap: 16px;
+    }
+    .token-icon {
+      width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; box-shadow: 0 0 20px rgba(212,166,75,0.3);
+    }
+    .token-card .title { font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
+    .token-card .desc { font-family: monospace; font-size: 10px; color: var(--muted); margin-bottom: 8px; }
+    .token-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .token-btn {
+      font-family: monospace; font-size: 9px; padding: 6px 12px; border-radius: 6px;
+      cursor: pointer; border: 1px solid; transition: all 0.2s;
+    }
+
+    /* ═══ FEATURED — NFT TEASER ═══ */
+    .nft-teaser {
+      border-radius: 16px; padding: 28px 24px; margin-bottom: 24px;
+      border: 1.5px solid rgba(187,136,255,0.18);
+      background: linear-gradient(135deg, rgba(187,136,255,0.05), #110e1c, rgba(212,166,75,0.03));
+      text-align: center; position: relative; overflow: hidden;
+    }
+    .nft-teaser .bg-pattern {
+      position: absolute; inset: 0; opacity: 0.03;
+      background: repeating-conic-gradient(from 0deg, rgba(187,136,255,0.3) 0% 25%, transparent 25% 50%);
+      background-size: 40px 40px;
+    }
+    .nft-teaser .content { position: relative; z-index: 1; }
+    .nft-teaser .title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 800; color: #bb88ff; letter-spacing: 3px; margin-bottom: 6px; }
+    .nft-teaser .subtitle { font-family: monospace; font-size: 11px; color: var(--gold); margin-bottom: 12px; }
+    .nft-teaser .body { font-family: monospace; font-size: 10px; color: var(--muted); line-height: 1.6; max-width: 480px; margin: 0 auto 18px; }
+    .trait-pills { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 20px; }
+    .trait-pill {
+      font-family: monospace; font-size: 8px; padding: 4px 10px; border-radius: 4px;
+      background: rgba(187,136,255,0.06); border: 1px solid rgba(187,136,255,0.12); color: #bb88ff;
+    }
+    .nft-cta {
+      font-family: 'Cinzel', serif; font-size: 11px; color: var(--faint); letter-spacing: 2px;
+      padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(85,78,104,0.12); display: inline-block;
+    }
+
+    /* ═══ FEATURED — AUCTION HOUSE ═══ */
+    .auction-placeholder {
+      border-radius: 14px; padding: 32px 24px; text-align: center;
+      border: 1.5px dashed rgba(85,78,104,0.15); background: rgba(85,78,104,0.02);
+      margin-bottom: 24px;
+    }
+    .auction-placeholder .icon { font-size: 36px; margin-bottom: 12px; opacity: 0.25; }
+    .auction-placeholder .title { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; color: var(--muted); margin-bottom: 6px; }
+    .auction-placeholder .desc { font-family: monospace; font-size: 10px; color: var(--faint); line-height: 1.5; }
+
+    /* ═══ QUICK LINKS ═══ */
+    .links-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .link-tile {
+      flex: 1 1 140px; border-radius: 14px; padding: 20px 16px; text-align: center;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .link-tile:hover { transform: translateY(-2px); }
+    .link-tile .icon { font-size: 28px; margin-bottom: 8px; }
+    .link-tile .title { font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; margin-bottom: 4px; }
+    .link-tile .desc { font-family: monospace; font-size: 9px; color: var(--faint); }
+
+    /* ═══ CEREMONY OVERLAY ═══ */
     .ceremony-overlay {
       position: fixed; inset: 0; z-index: 9999;
       background: rgba(0,0,0,0.96);
@@ -206,12 +368,10 @@
       color: var(--bright); border-color: rgba(255,255,255,0.2);
     }
 
-    /* Sealed pack */
     .sealed-pack {
       width: 220px; height: 310px; border-radius: 20px;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      cursor: pointer; position: relative; overflow: hidden;
-      transition: transform 0.2s;
+      cursor: pointer; position: relative; overflow: hidden; transition: transform 0.2s;
     }
     .sealed-pack:hover { transform: scale(1.04); }
     .sealed-pack .seal-icon { font-size: 72px; position: relative; z-index: 1; }
@@ -228,16 +388,12 @@
       color: var(--gold); letter-spacing: 3px; animation: pulse 2s infinite;
     }
 
-    /* Particle canvas (in ceremony) */
-    .ceremony-particles {
-      position: absolute; inset: 0; pointer-events: none; overflow: hidden;
-    }
+    .ceremony-particles { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
     .particle {
       position: absolute; border-radius: 50%; opacity: 0;
       animation: particleRise var(--dur) var(--delay) infinite;
     }
 
-    /* Breaking animation */
     .breaking-pack {
       width: 220px; height: 310px; border-radius: 20px;
       display: flex; align-items: center; justify-content: center;
@@ -251,16 +407,9 @@
     }
 
     /* Card reveal area */
-    .reveal-area {
-      width: 100%; max-width: 1060px; padding: 0 16px; text-align: center;
-    }
-    .reveal-title {
-      font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700;
-      letter-spacing: 3px; margin-bottom: 4px;
-    }
-    .reveal-sub {
-      font-family: monospace; font-size: 11px; color: var(--muted); margin-bottom: 14px;
-    }
+    .reveal-area { width: 100%; max-width: 1060px; padding: 0 16px; text-align: center; }
+    .reveal-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; letter-spacing: 3px; margin-bottom: 4px; }
+    .reveal-sub { font-family: monospace; font-size: 11px; color: var(--muted); margin-bottom: 14px; }
     .reveal-all-btn {
       font-family: monospace; font-size: 11px; letter-spacing: 1.5px;
       padding: 9px 24px; border-radius: 8px; cursor: pointer;
@@ -268,46 +417,28 @@
       color: var(--gold); background: rgba(212,166,75,0.08);
       border: 1px solid rgba(212,166,75,0.25);
     }
-    .reveal-all-btn:hover {
-      background: rgba(212,166,75,0.15); border-color: rgba(212,166,75,0.5);
-    }
+    .reveal-all-btn:hover { background: rgba(212,166,75,0.15); border-color: rgba(212,166,75,0.5); }
 
-    /* Card slots row */
-    .card-slots {
-      display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;
-      margin-bottom: 24px;
-    }
+    /* 3+2 card layout */
+    .card-row { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
 
-    /* Individual card flip container */
-    .card-flip-slot {
-      width: 200px; height: 316px; perspective: 900px; cursor: pointer;
-    }
+    .card-flip-slot { width: 200px; height: 316px; perspective: 900px; cursor: pointer; }
     .card-flip-inner {
       width: 100%; height: 100%; position: relative;
       transform-style: preserve-3d;
       transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
       transform: rotateY(180deg);
     }
-    .card-flip-slot.flipped .card-flip-inner {
-      transform: rotateY(0deg);
-    }
-    .card-flip-slot.entering {
-      animation: cardDrop 0.4s ease both;
-    }
+    .card-flip-slot.flipped .card-flip-inner { transform: rotateY(0deg); }
+    .card-flip-slot.entering { animation: cardDrop 0.4s ease both; }
 
-    /* Front face = real card via buildCardV4 */
-    .card-front {
-      position: absolute; inset: 0; backface-visibility: hidden;
-      border-radius: 14px; overflow: hidden;
-    }
-    /* Rarity glow on reveal */
+    .card-front { position: absolute; inset: 0; backface-visibility: hidden; border-radius: 14px; overflow: hidden; }
     .card-flip-slot.flipped .card-front { animation: rarityGlow 0.6s ease; }
     .card-flip-slot.flipped.rarity-legendary .card-front { box-shadow: 0 0 30px rgba(255,215,0,0.5), 0 0 60px rgba(255,215,0,0.2); }
     .card-flip-slot.flipped.rarity-epic .card-front { box-shadow: 0 0 25px rgba(187,136,255,0.4), 0 0 50px rgba(187,136,255,0.15); }
     .card-flip-slot.flipped.rarity-rare .card-front { box-shadow: 0 0 20px rgba(77,166,255,0.35); }
     .card-flip-slot.flipped.rarity-uncommon .card-front { box-shadow: 0 0 15px rgba(91,196,91,0.25); }
 
-    /* Back face */
     .card-back {
       position: absolute; inset: 0; backface-visibility: hidden;
       transform: rotateY(180deg);
@@ -320,16 +451,13 @@
       position: absolute; inset: 0; opacity: 0.15;
       background: repeating-conic-gradient(from 0deg, rgba(212,166,75,0.15) 0% 25%, transparent 25% 50%) 50% 50% / 28px 28px;
     }
-    .card-back-inner {
-      text-align: center; position: relative; z-index: 1;
-    }
+    .card-back-inner { text-align: center; position: relative; z-index: 1; }
     .card-back-inner .logo { font-size: 40px; filter: drop-shadow(0 0 10px rgba(212,166,75,0.4)); }
     .card-back-inner .label {
       font-family: 'Cinzel', serif; font-size: 11px; color: var(--gold);
       letter-spacing: 4px; margin-top: 6px; opacity: 0.6;
     }
 
-    /* Summary bar */
     .summary-bar {
       display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
       margin-bottom: 18px; animation: fadeIn 0.5s 0.2s both;
@@ -346,12 +474,8 @@
       box-shadow: 0 4px 20px rgba(212,166,75,0.3);
       animation: fadeIn 0.5s 0.3s both;
     }
-    .collect-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(212,166,75,0.4);
-    }
+    .collect-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(212,166,75,0.4); }
 
-    /* Loading spinner */
     .loading { text-align: center; padding: 40px; color: var(--faint); font-family: monospace; }
     .spinner {
       width: 28px; height: 28px; border: 2.5px solid var(--border);
@@ -363,13 +487,12 @@
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-
+    @keyframes shimmer { 0% { transform: translateX(-50%); } 100% { transform: translateX(50%); } }
     @keyframes particleRise {
       0% { opacity: 0; transform: translateY(0) scale(0); }
       20% { opacity: 0.8; transform: translateY(-20px) scale(1); }
       100% { opacity: 0; transform: translateY(-120px) scale(0.3); }
     }
-
     @keyframes packShake {
       0%,100% { transform: translateX(0) rotate(0); }
       10% { transform: translateX(-6px) rotate(-2deg); }
@@ -379,25 +502,21 @@
       50% { transform: translateX(-2px); }
       60% { transform: translateX(2px); }
     }
-
     @keyframes packBurst {
       0% { transform: scale(1); opacity: 1; }
       40% { transform: scale(1.15); opacity: 1; }
       100% { transform: scale(0.2); opacity: 0; }
     }
-
     @keyframes flashBurst {
       0% { background: rgba(255,255,255,0); }
       30% { background: rgba(255,255,255,0.7); }
       100% { background: rgba(255,255,255,0); }
     }
-
     @keyframes cardDrop {
       0% { opacity: 0; transform: translateY(-60px) scale(0.7); }
       60% { opacity: 1; transform: translateY(8px) scale(1.02); }
       100% { opacity: 1; transform: translateY(0) scale(1); }
     }
-
     @keyframes rarityGlow {
       0% { filter: brightness(2); }
       100% { filter: brightness(1); }
@@ -405,11 +524,13 @@
 
     /* ═══ RESPONSIVE ═══ */
     @media (max-width: 600px) {
-      .pack-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .pack-grid, .shop-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
       .card-flip-slot { width: 160px; height: 252px; }
-      .card-slots { gap: 8px; }
-      .pack-header h1 { font-size: 20px; letter-spacing: 2px; }
+      .card-row { gap: 8px; }
+      .bazaar-header h1 { font-size: 20px; letter-spacing: 2px; }
       .reveal-title { font-size: 16px; }
+      .earn-grid { grid-template-columns: 1fr; }
+      .links-row { flex-direction: column; }
     }
   </style>
 </head>
@@ -417,53 +538,251 @@
 
   <!-- ═══ MAIN PAGE ═══ -->
   <div id="main-page">
-    <div class="pack-header">
+    <!-- Header -->
+    <div class="bazaar-header">
       <div>
-        <h1>SPELL PACKS</h1>
+        <h1>THE BAZAAR</h1>
         <div class="sub" id="header-sub">Loading...</div>
       </div>
-      <div class="header-stats">
-        <div class="stat-badge" style="background:rgba(0,212,255,0.08); border:1px solid rgba(0,212,255,0.2); color:#00D4FF;" id="mana-badge">
-          — mana
+      <div class="mana-badge" id="mana-badge">— mana</div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="packs" onclick="switchTab('packs')">📦 Packs</button>
+      <button class="tab-btn" data-tab="shop" onclick="switchTab('shop')">✨ Shop</button>
+      <button class="tab-btn" data-tab="featured" onclick="switchTab('featured')">🐱 Featured</button>
+    </div>
+
+    <!-- ═══ PACKS TAB ═══ -->
+    <div class="tab-content active" id="tab-packs">
+      <!-- Daily claim -->
+      <div class="daily-bar" id="daily-bar">
+        <button class="daily-claim-btn" id="claim-daily-btn" onclick="claimDailyPack()">
+          <span class="btn-icon">📦</span>
+          CLAIM DAILY PACK
+          <div class="shimmer"></div>
+        </button>
+      </div>
+
+      <!-- Your packs inventory -->
+      <div class="section-label"><span class="icon">📦</span> YOUR PACKS</div>
+      <div id="pack-grid" class="pack-grid">
+        <div class="loading"><div class="spinner"></div>Loading packs...</div>
+      </div>
+
+      <!-- Buy packs -->
+      <div class="section-label"><span class="icon">💰</span> BUY SPELL PACKS</div>
+      <div class="fair-play-notice">
+        All packs use <span class="gold">identical drop rates</span> — no boosted odds, no pay-to-win.
+      </div>
+      <div class="pack-grid" id="buy-packs-grid">
+        <!-- Single -->
+        <div class="buy-pack-card" onclick="buyPack(1)" style="border:1.5px solid rgba(212,166,75,0.15); background:linear-gradient(135deg,rgba(212,166,75,0.05),#110e1c);">
+          <div class="pack-icon">📦</div>
+          <div class="pack-name" style="color:#D4A64B;">Single Pack</div>
+          <div class="pack-desc">1 pack · Same drop rates as daily</div>
+          <div class="price-btn" style="background:rgba(212,166,75,0.1); border:1px solid rgba(212,166,75,0.25); color:#D4A64B;">50 $9LV</div>
+        </div>
+        <!-- 3-Pack -->
+        <div class="buy-pack-card" onclick="buyPack(3)" style="border:1.5px solid rgba(85,187,255,0.15); background:linear-gradient(135deg,rgba(85,187,255,0.05),#110e1c);">
+          <div class="save-tag">SAVE 17%</div>
+          <div class="pack-icon">📦📦📦</div>
+          <div class="pack-name" style="color:#55bbff;">3-Pack Bundle</div>
+          <div class="pack-desc">3 packs · Same drop rates as daily</div>
+          <div class="price-btn" style="background:rgba(85,187,255,0.1); border:1px solid rgba(85,187,255,0.25); color:#55bbff;">125 $9LV</div>
+        </div>
+        <!-- 5-Pack -->
+        <div class="buy-pack-card" onclick="buyPack(5)" style="border:1.5px solid rgba(187,136,255,0.15); background:linear-gradient(135deg,rgba(187,136,255,0.05),#110e1c);">
+          <div class="save-tag">SAVE 20%</div>
+          <div class="pack-icon" style="font-size:28px;">📦 ×5</div>
+          <div class="pack-name" style="color:#bb88ff;">5-Pack Bundle</div>
+          <div class="pack-desc">5 packs · Same drop rates as daily</div>
+          <div class="price-btn" style="background:rgba(187,136,255,0.1); border:1px solid rgba(187,136,255,0.25); color:#bb88ff;">200 $9LV</div>
+        </div>
+      </div>
+
+      <!-- Earn more -->
+      <div class="section-label"><span class="icon">🎯</span> OTHER WAYS TO EARN PACKS</div>
+      <div class="earn-info">
+        <div class="earn-grid">
+          <div class="earn-item">
+            <div class="earn-icon" style="background:rgba(255,68,102,0.06); border:1px solid rgba(255,68,102,0.1);">👹</div>
+            <div><div class="label">Weekly Boss</div><div class="desc">Raid participation</div></div>
+          </div>
+          <div class="earn-item">
+            <div class="earn-icon" style="background:rgba(85,187,255,0.06); border:1px solid rgba(85,187,255,0.1);">⚡</div>
+            <div><div class="label">Events</div><div class="desc">Special event drops</div></div>
+          </div>
+          <div class="earn-item">
+            <div class="earn-icon" style="background:rgba(255,215,0,0.06); border:1px solid rgba(255,215,0,0.1);">🏆</div>
+            <div><div class="label">Milestones</div><div class="desc">Season point thresholds</div></div>
+          </div>
+          <div class="earn-item">
+            <div class="earn-icon" style="background:rgba(187,136,255,0.06); border:1px solid rgba(187,136,255,0.1);">⚔️</div>
+            <div><div class="label">Clashes</div><div class="desc">Community clash wins</div></div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Daily claim -->
-    <div class="daily-bar">
-      <button class="daily-claim-btn" id="claim-daily-btn" onclick="claimDailyPack()">
-        <span class="icon">📦</span>
-        CLAIM DAILY PACK
-      </button>
-    </div>
+    <!-- ═══ SHOP TAB ═══ -->
+    <div class="tab-content" id="tab-shop">
+      <div class="cosmetic-notice">
+        ✨ All items are <span class="gold">cosmetic or convenience</span> only — no stat boosts, no pay-to-win.
+      </div>
 
-    <!-- Inventory -->
-    <div class="inventory-section">
-      <div class="section-label">YOUR PACKS</div>
-      <div id="pack-grid" class="pack-grid">
-        <div class="loading"><div class="spinner"></div>Loading packs...</div>
+      <div class="section-label"><span class="icon">🎨</span> COSMETICS</div>
+      <div class="shop-grid">
+        <div class="shop-item" style="border:1.5px solid rgba(0,212,255,0.15); background:linear-gradient(135deg,rgba(0,212,255,0.05),#110e1c);">
+          <div class="item-icon" style="filter:drop-shadow(0 0 10px #00D4FF);">🏷️</div>
+          <div class="item-name" style="color:#00D4FF;">Custom Title</div>
+          <div class="item-desc">Display a custom title on your profile</div>
+          <div class="item-price" style="background:rgba(0,212,255,0.1); border:1px solid rgba(0,212,255,0.25); color:#00D4FF;">200 $9LV</div>
+        </div>
+        <div class="shop-item" style="border:1.5px solid rgba(187,136,255,0.15); background:linear-gradient(135deg,rgba(187,136,255,0.05),#110e1c);">
+          <div class="item-icon" style="filter:drop-shadow(0 0 10px #bb88ff);">🎴</div>
+          <div class="item-name" style="color:#bb88ff;">Animated Card Back</div>
+          <div class="item-desc">Visual upgrade for all your cards</div>
+          <div class="item-price" style="background:rgba(187,136,255,0.1); border:1px solid rgba(187,136,255,0.25); color:#bb88ff;">500 $9LV</div>
+        </div>
+        <div class="shop-item" style="border:1.5px solid rgba(68,204,136,0.15); background:linear-gradient(135deg,rgba(68,204,136,0.05),#110e1c);">
+          <div class="item-icon" style="filter:drop-shadow(0 0 10px #44cc88);">🎨</div>
+          <div class="item-name" style="color:#44cc88;">Card Art Variant</div>
+          <div class="item-desc">Alternate art for any spell card</div>
+          <div class="item-price" style="background:rgba(68,204,136,0.1); border:1px solid rgba(68,204,136,0.25); color:#44cc88;">1,000 $9LV</div>
+        </div>
+        <div class="shop-item" style="border:1.5px solid rgba(212,166,75,0.15); background:linear-gradient(135deg,rgba(212,166,75,0.05),#110e1c);">
+          <div class="item-icon" style="filter:drop-shadow(0 0 10px #D4A64B);">🏔️</div>
+          <div class="item-name" style="color:#D4A64B;">Monument</div>
+          <div class="item-desc">Visual marker on the map for your guild</div>
+          <div class="item-price" style="background:rgba(212,166,75,0.1); border:1px solid rgba(212,166,75,0.25); color:#D4A64B;">2,500 $9LV</div>
+        </div>
+        <div class="shop-item" style="border:1.5px solid rgba(255,68,102,0.15); background:linear-gradient(135deg,rgba(255,68,102,0.05),#110e1c);">
+          <div class="item-tag" style="background:rgba(255,68,102,0.12); color:#ff4466; border:1px solid rgba(255,68,102,0.18);">LEGENDARY</div>
+          <div class="item-icon" style="filter:drop-shadow(0 0 10px #ff4466);">📍</div>
+          <div class="item-name" style="color:#ff4466;">Zone Naming</div>
+          <div class="item-desc">Name a zone on the map — permanently</div>
+          <div class="item-price" style="background:rgba(255,68,102,0.1); border:1px solid rgba(255,68,102,0.25); color:#ff4466;">5,000 $9LV</div>
+        </div>
+      </div>
+
+      <div class="section-label"><span class="icon">🎫</span> SEASON PASSES</div>
+      <div class="shop-grid">
+        <div class="shop-item" style="border:1.5px solid rgba(68,204,136,0.15); background:linear-gradient(135deg,rgba(68,204,136,0.05),#110e1c);">
+          <div class="item-icon" style="filter:drop-shadow(0 0 10px #44cc88);">🧭</div>
+          <div class="item-name" style="color:#44cc88;">Explorer Pass</div>
+          <div class="item-desc">+1 Gauntlet run per day all season</div>
+          <div class="item-price" style="background:rgba(68,204,136,0.1); border:1px solid rgba(68,204,136,0.25); color:#44cc88;">500 $9LV</div>
+        </div>
+        <div class="shop-item" style="border:1.5px solid rgba(85,187,255,0.15); background:linear-gradient(135deg,rgba(85,187,255,0.05),#110e1c);">
+          <div class="item-icon" style="filter:drop-shadow(0 0 10px #55bbff);">⚔️</div>
+          <div class="item-name" style="color:#55bbff;">Commander Pass</div>
+          <div class="item-desc">Create custom duel tournaments</div>
+          <div class="item-price" style="background:rgba(85,187,255,0.1); border:1px solid rgba(85,187,255,0.25); color:#55bbff;">2,500 $9LV</div>
+        </div>
+        <div class="shop-item" style="border:1.5px solid rgba(187,136,255,0.15); background:linear-gradient(135deg,rgba(187,136,255,0.05),#110e1c);">
+          <div class="item-tag" style="background:rgba(187,136,255,0.12); color:#bb88ff; border:1px solid rgba(187,136,255,0.18);">PREMIUM</div>
+          <div class="item-icon" style="filter:drop-shadow(0 0 10px #bb88ff);">👁️</div>
+          <div class="item-name" style="color:#bb88ff;">Overlord Pass</div>
+          <div class="item-desc">See hidden zone stats & deployed Nines</div>
+          <div class="item-price" style="background:rgba(187,136,255,0.1); border:1px solid rgba(187,136,255,0.25); color:#bb88ff;">10,000 $9LV</div>
+        </div>
+      </div>
+
+      <div class="section-label"><span class="icon">⚔️</span> GUILD & SOCIAL</div>
+      <div class="shop-grid">
+        <div class="shop-item disabled" style="border:1.5px solid rgba(255,68,102,0.06); background:linear-gradient(135deg,rgba(255,68,102,0.02),#110e1c);">
+          <div class="item-icon" style="filter:grayscale(0.8);">🎯</div>
+          <div class="item-name" style="color:var(--muted);">Place Bounty</div>
+          <div class="item-desc">Put a bounty on another player's Nine</div>
+          <div class="item-price" style="background:rgba(85,78,104,0.08); border:1px solid rgba(85,78,104,0.08); color:var(--faint);">COMING SOON</div>
+        </div>
+        <div class="shop-item disabled" style="border:1.5px solid rgba(212,166,75,0.06); background:linear-gradient(135deg,rgba(212,166,75,0.02),#110e1c);">
+          <div class="item-icon" style="filter:grayscale(0.8);">💰</div>
+          <div class="item-name" style="color:var(--muted);">War Chest</div>
+          <div class="item-desc">Pool tokens for guild rewards</div>
+          <div class="item-price" style="background:rgba(85,78,104,0.08); border:1px solid rgba(85,78,104,0.08); color:var(--faint);">COMING SOON</div>
+        </div>
       </div>
     </div>
 
-    <!-- Admin test buttons (remove in production) -->
-    <div class="inventory-section" style="margin-top:10px; padding-top:16px; border-top:1px solid var(--border);">
-      <div class="section-label">⚙️ ADMIN — GRANT TEST PACKS</div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
-        <button onclick="grantTestPack('boss','boss_kill')" style="font-family:monospace;font-size:10px;padding:8px 14px;border-radius:8px;background:rgba(255,68,102,0.1);border:1px solid rgba(255,68,102,0.3);color:#ff4466;cursor:pointer;">+ Boss Pack</button>
-        <button onclick="grantTestPack('event','event_reward')" style="font-family:monospace;font-size:10px;padding:8px 14px;border-radius:8px;background:rgba(85,187,255,0.1);border:1px solid rgba(85,187,255,0.3);color:#55bbff;cursor:pointer;">+ Event Pack</button>
-        <button onclick="grantTestPack('seasonal','season_reward')" style="font-family:monospace;font-size:10px;padding:8px 14px;border-radius:8px;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);color:#ffd700;cursor:pointer;">+ Seasonal Pack</button>
-        <button onclick="grantTestPack('reward','admin_grant')" style="font-family:monospace;font-size:10px;padding:8px 14px;border-radius:8px;background:rgba(136,221,170,0.1);border:1px solid rgba(136,221,170,0.3);color:#88ddaa;cursor:pointer;">+ Reward Pack</button>
+    <!-- ═══ FEATURED TAB ═══ -->
+    <div class="tab-content" id="tab-featured">
+      <!-- $9LV Token -->
+      <div class="section-label"><span class="icon">🪙</span> $9LV TOKEN</div>
+      <div class="token-card">
+        <div class="token-icon">🐱</div>
+        <div style="flex:1;">
+          <div class="title">$9LV</div>
+          <div class="desc">The official token of Nine Lives Network · Solana SPL</div>
+          <div class="token-btns">
+            <button class="token-btn" style="background:rgba(212,166,75,0.1); border-color:rgba(212,166,75,0.25); color:#D4A64B;">VIEW ON PUMP.FUN</button>
+            <button class="token-btn" style="background:rgba(85,78,104,0.1); border-color:rgba(85,78,104,0.2); color:var(--muted);">COPY ADDRESS</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- NFT Teaser -->
+      <div class="section-label"><span class="icon">🐱</span> THE NINES — NFT COLLECTION</div>
+      <div class="nft-teaser">
+        <div class="bg-pattern"></div>
+        <div class="content">
+          <div style="font-size:44px; margin-bottom:12px;">🐱</div>
+          <div class="title">THE NINES</div>
+          <div class="subtitle">2,500 Genesis Collection · Coming Season 2</div>
+          <div class="body">Equippable NFT cats with 8 trait slots that affect both appearance and gameplay stats.</div>
+          <div class="trait-pills">
+            <div class="trait-pill">Fur</div>
+            <div class="trait-pill">Hat</div>
+            <div class="trait-pill">Eyes</div>
+            <div class="trait-pill">Robe</div>
+            <div class="trait-pill">Weapon</div>
+            <div class="trait-pill">Accessory</div>
+            <div class="trait-pill">BG</div>
+            <div class="trait-pill">Expr.</div>
+          </div>
+          <div class="nft-cta">FOLLOW @9LVNETWORK FOR UPDATES</div>
+        </div>
+      </div>
+
+      <!-- Auction House -->
+      <div class="section-label"><span class="icon">🏛️</span> AUCTION HOUSE</div>
+      <div class="auction-placeholder">
+        <div class="icon">🏛️</div>
+        <div class="title">AUCTION HOUSE</div>
+        <div class="desc">Trade cards, cosmetics, and rare items with other Nines.<br>Coming in a future update.</div>
+      </div>
+
+      <!-- Quick Links -->
+      <div class="section-label"><span class="icon">🔗</span> QUICK LINKS</div>
+      <div class="links-row">
+        <a class="link-tile" href="/leaderboard.html" style="border:1.5px solid rgba(212,166,75,0.1); background:linear-gradient(135deg,rgba(212,166,75,0.03),#110e1c); text-decoration:none;">
+          <div class="icon">📊</div>
+          <div class="title" style="color:#D4A64B;">Leaderboards</div>
+          <div class="desc">Season rankings</div>
+        </a>
+        <a class="link-tile" href="/duels.html" style="border:1.5px solid rgba(255,68,102,0.1); background:linear-gradient(135deg,rgba(255,68,102,0.03),#110e1c); text-decoration:none;">
+          <div class="icon">⚔️</div>
+          <div class="title" style="color:#ff4466;">Quick Duel</div>
+          <div class="desc">Free 1v1 PvP</div>
+        </a>
+        <a class="link-tile" href="/map.html" style="border:1.5px solid rgba(68,204,136,0.1); background:linear-gradient(135deg,rgba(68,204,136,0.03),#110e1c); text-decoration:none;">
+          <div class="icon">🗺️</div>
+          <div class="title" style="color:#44cc88;">War Map</div>
+          <div class="desc">Territory battles</div>
+        </a>
       </div>
     </div>
   </div>
 
-  <!-- ═══ CEREMONY OVERLAY (hidden by default) ═══ -->
+  <!-- ═══ CEREMONY OVERLAY ═══ -->
   <div class="ceremony-overlay" id="ceremony" style="display:none;">
     <button class="close-btn" id="ceremony-close" onclick="closeCeremony()" style="display:none;">✕ Close</button>
     <div id="ceremony-content"></div>
   </div>
 
-  <!-- Card system scripts (required for buildCardV4) -->
+  <!-- Card system scripts -->
   <script src="/js/card-global.js"></script>
   <script src="/js/card-particles.js"></script>
   <script src="/js/card-v4.js"></script>
@@ -472,9 +791,6 @@
     // ═══════════════════════════════════════
     // CONFIG
     // ═══════════════════════════════════════
-
-    // TODO: Replace with your actual auth system
-    // For now, tries to read from localStorage or defaults to 1
     const PLAYER_ID = localStorage.getItem('player_id') || 1;
 
     const PACK_META = {
@@ -501,6 +817,7 @@
     let ceremonyCards = [];
     let ceremonyPackType = '';
     let flippedCards = new Set();
+    let dailyClaimedToday = false;
 
     // ═══════════════════════════════════════
     // PAGE LOAD
@@ -508,6 +825,16 @@
     document.addEventListener('DOMContentLoaded', () => {
       loadInventory();
     });
+
+    // ═══════════════════════════════════════
+    // TAB SWITCHING
+    // ═══════════════════════════════════════
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+      document.getElementById(`tab-${tab}`).classList.add('active');
+    }
 
     // ═══════════════════════════════════════
     // LOAD INVENTORY
@@ -524,8 +851,15 @@
         }
 
         inventoryPacks = data.packs || [];
+
+        // Check if daily was already claimed
+        if (data.daily_claimed || data.already_granted) {
+          dailyClaimedToday = true;
+        }
+
         renderInventory();
         updateHeader();
+        updateDailyBar();
       } catch (err) {
         console.error('Load inventory error:', err);
         document.getElementById('pack-grid').innerHTML =
@@ -541,15 +875,14 @@
 
       if (inventoryPacks.length === 0) {
         grid.innerHTML = `
-          <div class="empty-state" style="grid-column:1/-1;">
+          <div class="empty-state">
             <div class="icon">📦</div>
             <div>No unopened packs</div>
-            <div style="margin-top:6px; font-size:11px;">Claim your daily pack above, or earn packs from bosses and events!</div>
+            <div style="margin-top:6px; font-size:11px;">Claim your daily pack above, buy packs with $9LV, or earn packs from bosses and events!</div>
           </div>`;
         return;
       }
 
-      // Group by pack_type
       const groups = {};
       inventoryPacks.forEach(p => {
         if (!groups[p.pack_type]) groups[p.pack_type] = [];
@@ -559,8 +892,7 @@
       let html = '';
       for (const [type, packs] of Object.entries(groups)) {
         const meta = PACK_META[type] || PACK_META.reward;
-        // Show one card per type with count badge — click opens the oldest one
-        const oldestPack = packs[0]; // already sorted by granted_at ASC
+        const oldestPack = packs[0];
         html += `
           <div class="pack-card ${type}" onclick="startCeremony(${oldestPack.id}, '${type}')">
             ${packs.length > 1 ? `<div class="pack-count">${packs.length}</div>` : ''}
@@ -577,7 +909,38 @@
     function updateHeader() {
       const total = inventoryPacks.length;
       document.getElementById('header-sub').textContent =
-        `${total} pack${total !== 1 ? 's' : ''} available`;
+        `Packs · Cosmetics · Collectibles`;
+    }
+
+    // ═══════════════════════════════════════
+    // DAILY BAR — CLAIM OR COUNTDOWN
+    // ═══════════════════════════════════════
+    function updateDailyBar() {
+      const bar = document.getElementById('daily-bar');
+      if (dailyClaimedToday) {
+        // Show countdown to next midnight UTC
+        const now = new Date();
+        const midnight = new Date(now);
+        midnight.setUTCDate(midnight.getUTCDate() + 1);
+        midnight.setUTCHours(0, 0, 0, 0);
+        const diff = midnight - now;
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const countdown = `${hours}h ${mins}m`;
+
+        bar.innerHTML = `
+          <div class="daily-claimed-bar">
+            <div class="left">
+              <span class="icon">📦</span>
+              <span class="text">Daily pack claimed</span>
+            </div>
+            <div class="right">
+              <span class="label">Next in</span>
+              <span class="countdown-badge">${countdown}</span>
+            </div>
+          </div>`;
+      }
+      // Otherwise leave the claim button as-is
     }
 
     // ═══════════════════════════════════════
@@ -585,8 +948,9 @@
     // ═══════════════════════════════════════
     async function claimDailyPack() {
       const btn = document.getElementById('claim-daily-btn');
+      if (!btn) return;
       btn.disabled = true;
-      btn.innerHTML = '<span class="icon">⏳</span> CLAIMING...';
+      btn.innerHTML = '<span class="btn-icon">⏳</span> CLAIMING...';
 
       try {
         const res = await fetch('/api/packs/claim-daily', {
@@ -597,58 +961,34 @@
         const data = await res.json();
 
         if (data.success) {
-          btn.innerHTML = '<span class="icon">✅</span> PACK ADDED TO INVENTORY!';
-          setTimeout(() => {
-            btn.innerHTML = '<span class="icon">📦</span> CLAIM DAILY PACK';
-            btn.disabled = false;
-          }, 2000);
+          dailyClaimedToday = true;
+          updateDailyBar();
           await loadInventory();
         } else if (data.already_granted) {
-          btn.innerHTML = '<span class="icon">⏰</span> ALREADY CLAIMED TODAY';
-          setTimeout(() => {
-            btn.innerHTML = '<span class="icon">📦</span> CLAIM DAILY PACK';
-            btn.disabled = false;
-          }, 2000);
+          dailyClaimedToday = true;
+          updateDailyBar();
         } else {
-          btn.innerHTML = '<span class="icon">❌</span> ' + (data.error || 'Error');
+          btn.innerHTML = '<span class="btn-icon">❌</span> ' + (data.error || 'Error');
           btn.disabled = false;
         }
       } catch (err) {
         console.error('Claim daily error:', err);
-        btn.innerHTML = '<span class="icon">❌</span> NETWORK ERROR';
+        btn.innerHTML = '<span class="btn-icon">❌</span> NETWORK ERROR';
         btn.disabled = false;
       }
     }
 
     // ═══════════════════════════════════════
-    // GRANT TEST PACK (admin)
+    // BUY PACKS (placeholder — needs backend)
     // ═══════════════════════════════════════
-    async function grantTestPack(packType, source) {
-      try {
-        const res = await fetch('/api/packs/grant', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            player_id: parseInt(PLAYER_ID),
-            pack_type: packType,
-            source: source,
-          }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          await loadInventory();
-        } else {
-          alert('Error: ' + (data.error || 'Unknown'));
-        }
-      } catch (err) {
-        console.error('Grant error:', err);
-      }
+    function buyPack(amount) {
+      // TODO: Wire to backend /api/packs/buy endpoint
+      alert(`Buy ${amount} pack${amount > 1 ? 's' : ''} — Coming soon! This will spend $9LV tokens.`);
     }
 
     // ═══════════════════════════════════════
     // CEREMONY — FULL SCREEN PACK OPENING
     // ═══════════════════════════════════════
-
     async function startCeremony(packInventoryId, packType) {
       ceremonyPackType = packType;
       ceremonyCards = [];
@@ -662,7 +1002,6 @@
 
       const meta = PACK_META[packType] || PACK_META.reward;
 
-      // PHASE 1: Sealed pack
       content.innerHTML = `
         <div class="ceremony-particles" id="seal-particles"></div>
         <div class="sealed-pack" id="sealed-pack" style="
@@ -678,7 +1017,6 @@
 
       spawnParticles('seal-particles', meta.color, 30);
 
-      // Click to break open + call API
       document.getElementById('sealed-pack').onclick = async () => {
         await breakOpen(packInventoryId, packType);
       };
@@ -689,15 +1027,12 @@
       const meta = PACK_META[packType] || PACK_META.reward;
       const sealedPack = document.getElementById('sealed-pack');
 
-      // Remove tap hint
       const hint = content.querySelector('.tap-hint');
       if (hint) hint.remove();
 
-      // PHASE 2: Shake
       sealedPack.onclick = null;
       sealedPack.classList.add('shake');
 
-      // Call API while shaking
       let apiResult = null;
       try {
         const res = await fetch('/api/packs/inventory/open', {
@@ -724,7 +1059,6 @@
 
       ceremonyCards = apiResult.cards;
 
-      // Find best rarity for burst color
       const rarityOrder = ['common','uncommon','rare','epic','legendary'];
       let bestRarity = 'common';
       ceremonyCards.forEach(c => {
@@ -734,11 +1068,8 @@
       });
       const burstColor = RARITY_META[bestRarity].color;
 
-      // Wait for shake to finish
       await sleep(500);
 
-      // PHASE 3: Burst
-      // Change sealed pack class
       const breaking = document.querySelector('.sealed-pack');
       if (breaking) {
         breaking.classList.remove('shake');
@@ -747,7 +1078,6 @@
         breaking.style.boxShadow = `0 0 80px ${hexToRgba(burstColor, 0.5)}`;
       }
 
-      // White flash
       const flash = document.createElement('div');
       flash.className = 'burst-flash';
       document.getElementById('ceremony').appendChild(flash);
@@ -755,7 +1085,6 @@
       await sleep(700);
       flash.remove();
 
-      // PHASE 4: Show cards
       showRevealPhase();
     }
 
@@ -766,22 +1095,23 @@
 
       const meta = PACK_META[ceremonyPackType] || PACK_META.reward;
 
+      // 3+2 layout
       content.innerHTML = `
         <div class="reveal-area">
           <div class="reveal-title" style="color:${meta.color}">${meta.name}</div>
           <div class="reveal-sub" id="reveal-sub">Tap each card to reveal</div>
           <button class="reveal-all-btn" id="reveal-all-btn" onclick="revealAllCards()">REVEAL ALL</button>
-          <div class="card-slots" id="card-slots"></div>
+          <div class="card-row" id="card-row-top"></div>
+          <div class="card-row" id="card-row-bottom"></div>
           <div id="summary-area"></div>
         </div>`;
 
-      const slotsContainer = document.getElementById('card-slots');
+      const topRow = document.getElementById('card-row-top');
+      const bottomRow = document.getElementById('card-row-bottom');
 
-      // Determine card size based on screen width
       const isMobile = window.innerWidth <= 600;
       const cardSize = isMobile ? 'tiny' : 'mini';
 
-      // Create card slots with staggered drop animation
       ceremonyCards.forEach((card, i) => {
         const slot = document.createElement('div');
         slot.className = `card-flip-slot rarity-${card.rarity}`;
@@ -790,7 +1120,6 @@
         slot.dataset.index = i;
         slot.onclick = () => flipCard(i);
 
-        // Build card data in the shape buildCardV4 expects
         const cardData = {
           name: card.name,
           house: card.house,
@@ -810,7 +1139,6 @@
           max_charges: card.max_charges,
         };
 
-        // Build the real card HTML using your card-v4 system
         let cardHtml = '';
         try {
           cardHtml = buildCardV4(cardData, { size: cardSize });
@@ -831,10 +1159,14 @@
             </div>
           </div>`;
 
-        slotsContainer.appendChild(slot);
+        // First 3 cards go top row, last 2 go bottom row
+        if (i < 3) {
+          topRow.appendChild(slot);
+        } else {
+          bottomRow.appendChild(slot);
+        }
       });
 
-      // Init card particles/foil/tooltips from card-v4 system
       try { initCards(); } catch (e) { console.warn('initCards not available:', e); }
     }
 
@@ -845,7 +1177,6 @@
       const slot = document.querySelector(`.card-flip-slot[data-index="${index}"]`);
       if (slot) slot.classList.add('flipped');
 
-      // Check if all flipped
       if (flippedCards.size === ceremonyCards.length) {
         onAllRevealed();
       }
@@ -866,7 +1197,6 @@
 
       const summaryArea = document.getElementById('summary-area');
 
-      // Rarity summary pills
       const rarityCounts = {};
       ceremonyCards.forEach(c => {
         rarityCounts[c.rarity] = (rarityCounts[c.rarity] || 0) + 1;
@@ -891,12 +1221,11 @@
       document.getElementById('ceremony-close').style.display = 'none';
       ceremonyCards = [];
       flippedCards = new Set();
-      // Refresh inventory
       loadInventory();
     }
 
     // ═══════════════════════════════════════
-    // FALLBACK CARD (if buildCardV4 not loaded)
+    // FALLBACK CARD
     // ═══════════════════════════════════════
     function buildFallbackCard(card) {
       const rm = RARITY_META[card.rarity] || RARITY_META.common;
