@@ -78,20 +78,13 @@ async function processRewards(playerId, floorCleared) {
   // Award season points
   if (rewards.seasonPoints > 0) {
     try {
-      await supabaseAdmin
-        .from('players')
-        .update({ season_points: supabase.rpc ? undefined : undefined })
-        .eq('id', playerId);
-      // Use raw SQL increment since supabase JS doesn't have easy increment
       await supabaseAdmin.rpc('increment_season_points', {
         p_player_id: playerId,
         p_points: rewards.seasonPoints,
-      }).catch(() => {
-        // If RPC doesn't exist yet, just log it
-        console.log(`[Gauntlet] Would award ${rewards.seasonPoints} season points to player ${playerId}`);
       });
+      console.log(`[Gauntlet] ✅ Awarded ${rewards.seasonPoints} season points to player ${playerId}`);
     } catch (e) {
-      console.log(`[Gauntlet] Season points: ${rewards.seasonPoints} for player ${playerId}`);
+      console.error(`[Gauntlet] ❌ Failed to award points:`, e.message);
     }
   }
 
@@ -386,6 +379,23 @@ async function fightFloor(runId, playerId, cardId) {
   if (pHp <= 0) {
     // Still award season points for floors cleared before dying
     const totalPoints = Math.max(0, (run.current_floor - 1)) * POINTS_PER_FLOOR;
+
+    const totalPoints = Math.max(0, (run.current_floor - 1)) * POINTS_PER_FLOOR;
+
+    if (totalPoints > 0) {
+      try {
+        await supabaseAdmin.rpc('increment_season_points', {
+          p_player_id: playerId,
+          p_points: totalPoints,
+        });
+        console.log(`[Gauntlet] ✅ Awarded ${totalPoints} defeat points to player ${playerId}`);
+      } catch (e) {
+        console.error(`[Gauntlet] ❌ Failed to award defeat points:`, e.message);
+      }
+    }
+
+    await supabaseAdmin
+      .from('gauntlet_runs')
 
     await supabaseAdmin
       .from('gauntlet_runs')
