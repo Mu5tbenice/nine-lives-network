@@ -620,9 +620,17 @@ async function loadChronicle(){
       return;
     }
 
-    var hasLive=data.acts.some(function(a){return a.status==='active';});
+    var hasLive=data.acts.some(function(a){return a.status==='active'&&a.tweet_id;});
     var allDone=data.status==='complete';
-    var activeAct=data.acts.find(function(a){return a.status==='active';});
+    var activeAct=data.acts.find(function(a){return a.status==='active'&&a.tweet_id;});
+    // Also find the most recent complete act for "live reply" context
+    var liveReplyAct=activeAct;
+    if(!liveReplyAct){
+      // If no act is truly live, the latest complete act is the one to reply to
+      for(var i=data.acts.length-1;i>=0;i--){
+        if(data.acts[i].status==='complete'&&data.acts[i].tweet_id){ liveReplyAct=data.acts[i]; break; }
+      }
+    }
 
     // Pick card background based on state
     var cardBg=data.player_named
@@ -660,8 +668,8 @@ async function loadChronicle(){
 
     // ── HEADER ──
     var statusH='';
-    if(activeAct){
-      statusH='<div style="display:flex;align-items:center;gap:5px;"><div style="width:6px;height:6px;border-radius:50%;background:#6acd8a;animation:pulse 2s infinite;"></div><span style="font-family:var(--font-data);font-size:6px;color:#6acd8a;">ACT '+activeAct.num+' LIVE</span></div>';
+    if(liveReplyAct && !allDone){
+      statusH='<div style="display:flex;align-items:center;gap:5px;"><div style="width:6px;height:6px;border-radius:50%;background:#6acd8a;animation:pulse 2s infinite;"></div><span style="font-family:var(--font-data);font-size:6px;color:#6acd8a;">ACT '+liveReplyAct.num+' LIVE</span></div>';
     } else if(allDone){
       statusH='<span style="font-family:var(--font-data);font-size:6px;color:#6acd8a;letter-spacing:1px;">✓ COMPLETE</span>';
     }
@@ -686,17 +694,24 @@ async function loadChronicle(){
     h+='</div>';
 
     // ── ACT BARS — green=done, gold=active with pulse dot, grey=upcoming ──
+    // Find the latest posted act number (the one players should reply to)
+    var latestPostedNum=0;
+    data.acts.forEach(function(a){ if(a.tweet_id) latestPostedNum=a.num; });
+
     h+='<div style="display:flex;gap:6px;padding:0 14px 12px;">';
     data.acts.forEach(function(act){
-      var isActive=act.status==='active';
-      var isDone=act.status==='complete';
+      var isDone=act.status==='complete' && act.tweet_id;
+      var isCurrentLive=isDone && act.num===latestPostedNum && !allDone; // Latest posted = live reply target
+      var isLive=isCurrentLive; // Gold style
+      if(isCurrentLive) isDone=false; // Override: show as live not done
+      var isUpcoming=!isDone && !isLive;
       var tweetUrl=act.tweet_id?'https://x.com/9LVNetwork/status/'+act.tweet_id:null;
-      var isClickable=(isActive||isDone)&&tweetUrl;
+      var isClickable=(isLive||isDone)&&tweetUrl;
 
-      // Colors from mockup: complete=green, active=gold, upcoming=grey
+      // Colors: green=done, gold=live, grey=upcoming/waiting
       var bg,border,labelCol;
       if(isDone){ bg='rgba(106,205,138,0.10)'; border='rgba(106,205,138,0.25)'; labelCol='#6acd8a'; }
-      else if(isActive){ bg='rgba(212,166,75,0.10)'; border='rgba(212,166,75,0.35)'; labelCol='var(--gold)'; }
+      else if(isLive){ bg='rgba(212,166,75,0.10)'; border='rgba(212,166,75,0.35)'; labelCol='var(--gold)'; }
       else { bg='rgba(255,255,255,0.015)'; border='rgba(255,255,255,0.05)'; labelCol='var(--text-faint)'; }
 
       if(isClickable){
@@ -705,13 +720,13 @@ async function loadChronicle(){
         h+='<div style="flex:1;padding:10px 8px;border-radius:10px;background:'+bg+';border:1px solid '+border+';position:relative;min-width:0;">';
       }
 
-      // Gold pulse dot for active act
-      if(isActive){
+      // Gold pulse dot for live act
+      if(isLive){
         h+='<div style="position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px rgba(212,166,75,0.5);animation:pulse 2s infinite;"></div>';
       }
 
       h+='<div style="font-family:var(--font-data);font-size:6px;color:'+labelCol+';margin-bottom:3px;letter-spacing:0.5px;">ACT '+act.num+'</div>'
-        +'<div style="font-family:var(--font-title);font-size:10px;font-weight:700;color:'+(act.status==='upcoming'?'var(--text-faint)':'var(--text-bright)')+';line-height:1.2;">'+esc(act.name)+'</div>'
+        +'<div style="font-family:var(--font-title);font-size:10px;font-weight:700;color:'+(isUpcoming?'var(--text-faint)':'var(--text-bright)')+';line-height:1.2;">'+esc(act.name)+'</div>'
         +'<div style="font-family:var(--font-mono);font-size:6px;color:var(--text-faint);margin-top:3px;">'+esc(act.time)+'</div>';
 
       if(isDone){
@@ -724,8 +739,8 @@ async function loadChronicle(){
 
     // ── STORY BODY — show active or latest completed act's text ──
     var displayAct=null;
-    // Prefer active act, fall back to most recent complete with text
-    if(activeAct && activeAct.text) displayAct=activeAct;
+    // Show the live reply act's text, or fall back to most recent with text
+    if(liveReplyAct && liveReplyAct.text) displayAct=liveReplyAct;
     if(!displayAct){
       for(var i=data.acts.length-1;i>=0;i--){
         if(data.acts[i].status==='complete' && data.acts[i].text){
@@ -742,10 +757,10 @@ async function loadChronicle(){
       h+='<div style="margin:0 14px 12px;padding:12px 14px;border-radius:10px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.06);">'
         +'<div style="font-family:var(--font-body);font-size:13px;color:var(--text-body);line-height:1.55;">'+esc(storyText)+'</div>';
 
-      // CTA button if there's a live act
-      if(activeAct && activeAct.tweet_id){
+      // CTA button if there's a live act to reply to
+      if(liveReplyAct && liveReplyAct.tweet_id && !allDone){
         h+='<div style="margin-top:10px;">'
-          +'<a href="https://x.com/9LVNetwork/status/'+activeAct.tweet_id+'" target="_blank" style="display:inline-block;font-family:var(--font-title);font-size:11px;font-weight:700;padding:8px 20px;border-radius:8px;background:linear-gradient(135deg,var(--gold),#c49030);color:#0a0810;letter-spacing:1.5px;text-decoration:none;box-shadow:0 3px 0 #8a6d2f,0 4px 12px rgba(212,166,75,0.2);">𝕏 REPLY AS YOUR NINE</a>'
+          +'<a href="https://x.com/9LVNetwork/status/'+liveReplyAct.tweet_id+'" target="_blank" style="display:inline-block;font-family:var(--font-title);font-size:11px;font-weight:700;padding:8px 20px;border-radius:8px;background:linear-gradient(135deg,var(--gold),#c49030);color:#0a0810;letter-spacing:1.5px;text-decoration:none;box-shadow:0 3px 0 #8a6d2f,0 4px 12px rgba(212,166,75,0.2);">𝕏 REPLY AS YOUR NINE</a>'
           +'</div>';
       }
       h+='</div>';
@@ -762,9 +777,9 @@ async function loadChronicle(){
     if(!allDone && (!displayAct || !displayAct.text)){
       var ctaUrl='https://x.com/9LVNetwork';
       var ctaLabel='𝕏 FOLLOW @9LVNetwork';
-      if(activeAct && activeAct.tweet_id){
-        ctaUrl='https://x.com/9LVNetwork/status/'+activeAct.tweet_id;
-        ctaLabel='𝕏 JOIN ACT '+activeAct.num+' NOW';
+      if(liveReplyAct && liveReplyAct.tweet_id){
+        ctaUrl='https://x.com/9LVNetwork/status/'+liveReplyAct.tweet_id;
+        ctaLabel='𝕏 JOIN ACT '+liveReplyAct.num+' NOW';
       } else {
         for(var i=data.acts.length-1;i>=0;i--){
           if(data.acts[i].tweet_id){
