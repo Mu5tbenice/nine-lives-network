@@ -10,6 +10,8 @@ const territoryControl = require('../services/territoryControl');
 const activityDecay = require('../services/activityDecay');
 const supabase = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
+const multer = require('multer');
+const path = require('path');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
@@ -325,8 +327,10 @@ router.put('/spell/:id', async (req, res) => {
   try {
     const spellId = parseInt(req.params.id);
     const allowed = ['name', 'slug', 'house', 'tier', 'mana_cost', 'spell_type',
-                     'base_effect', 'bonus_effects', 'flavor_text', 'motto',
-                     'is_active', 'is_always_available', 'image_url', 'in_pack_pool'];
+       'base_effect', 'bonus_effects', 'flavor_text', 'motto',
+       'is_active', 'is_always_available', 'image_url', 'in_pack_pool',
+       'base_atk', 'base_hp', 'base_spd', 'base_def', 'base_luck',
+       'rarity_weights'];
     const updates = {};
     allowed.forEach(f => {
       if (req.body[f] !== undefined) {
@@ -507,5 +511,49 @@ router.get('/recent-actions', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// ╔═══════════════════════════════════╗
+// ║  SPELL IMAGE UPLOAD                ║
+// ╚═══════════════════════════════════╝
 
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, '../../public/assets/images/spells'));
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const spellId = req.params.id;
+    const safeName = `spell-${spellId}${ext}`;
+    cb(null, safeName);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (allowed.includes(ext)) cb(null, true);
+    else cb(new Error('Only image files allowed'));
+  }
+});
+
+router.post('/spell/:id/upload-image', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No image file provided' });
+    const spellId = parseInt(req.params.id);
+    const filename = req.file.filename;
+    const { data, error } = await supabaseAdmin
+      .from('spells')
+      .update({ image_url: filename })
+      .eq('id', spellId)
+      .select()
+      .single();
+    if (error) throw error;
+    console.log(`[Admin] Uploaded image for spell ${spellId}: ${filename}`);
+    res.json({ success: true, filename, spell: data });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 module.exports = router;

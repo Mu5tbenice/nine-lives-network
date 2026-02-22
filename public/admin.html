@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin | Nine Lives Network</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #1a1528;
+      --bg-dark: #0f0c1a;
+      --card: rgba(255,255,255,0.04);
+      --card-hover: rgba(255,255,255,0.07);
+      --border: rgba(255,255,255,0.08);
+      --border-active: rgba(255,255,255,0.18);
+      --gold: #D4A64B;
+      --gold-dim: rgba(212,166,75,0.15);
+      --bright: #F0ECF8;
+      --body: #CCC5DB;
+      --muted: #847C98;
+      --faint: #554E68;
+      --green: #44cc88;
+      --red: #e85a6a;
+      --blue: #6ac8d8;
+      --purple: #b088e8;
+      --pink: #E84393;
+      --orange: #FF8C00;
+      --atk: #e85a6a;
+      --hp: #6acd8a;
+      --spd: #6ac8d8;
+      --def: #b088e8;
+      --luck: #D4A64B;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--body);
+      font-family: 'Crimson Text', serif;
+      min-height: 100vh;
+    }
+
+    /* ── AUTH GATE ── */
+    #auth-gate {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      gap: 16px;
+    }
+    #auth-gate h1 {
+      font-family: 'Cinzel', serif;
+      color: var(--gold);
+      font-size: 28px;
+      letter-spacing: 3px;
+    }
+    #auth-gate p { color: var(--muted); font-size: 14px; }
+
+    /* ── HEADER ── */
+    .admin-header {
+      background: var(--bg-dark);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .admin-header h1 {
+      font-family: 'Cinzel', serif;
+      color: var(--gold);
+      font-size: 18px;
+      letter-spacing: 2px;
+    }
+    .admin-header .status {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      color: var(--green);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .admin-header .status::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      display: inline-block;
+    }
+
+    /* ── TABS ── */
+    .tab-bar {
+      display: flex;
+      gap: 0;
+      background: var(--bg-dark);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      padding: 14px 18px;
+      background: none;
+      border: none;
+      color: var(--faint);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: all 0.2s;
+    }
+    .tab-btn:hover { color: var(--muted); }
+    .tab-btn.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+
+    /* ── MAIN CONTENT ── */
+    .admin-content { padding: 20px 24px; max-width: 1400px; margin: 0 auto; }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 20px;
+      min-width: 140px;
+      flex: 1;
+    }
+    .stat-card .label {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px;
+      color: var(--faint);
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .stat-card .value {
+      font-family: 'Cinzel', serif;
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--bright);
+    }
+    .stat-card .value.gold { color: var(--gold); }
+    .stat-card .value.green { color: var(--green); }
+    .stat-card .value.red { color: var(--red); }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .toolbar select, .toolbar input[type="text"] {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--body);
+      font-family: 'Crimson Text', serif;
+      font-size: 14px;
+      padding: 8px 12px;
+      outline: none;
+    }
+    .toolbar select:focus, .toolbar input[type="text"]:focus {
+      border-color: var(--gold);
+    }
+    .toolbar select option { background: var(--bg-dark); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--card);
+      color: var(--body);
+      white-space: nowrap;
+    }
+    .btn:hover { border-color: var(--gold); color: var(--bright); }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold), #c4963b);
+      color: #1a1528;
+      border-color: var(--gold);
+      font-weight: 700;
+    }
+    .btn-gold:hover { filter: brightness(1.1); }
+    .btn-red { border-color: var(--red); color: var(--red); }
+    .btn-red:hover { background: rgba(232,90,106,0.15); }
+    .btn-green { border-color: var(--green); color: var(--green); }
+    .btn-green:hover { background: rgba(68,204,136,0.15); }
+    .btn-sm { font-size: 7px; padding: 6px 10px; }
+
+    /* ── TABLE ── */
+    .data-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 13px;
+    }
+    .data-table thead th {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px;
+      color: var(--faint);
+      letter-spacing: 1px;
+      padding: 10px 8px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 5;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .data-table thead th:hover { color: var(--gold); }
+    .data-table tbody tr {
+      transition: background 0.15s;
+    }
+    .data-table tbody tr:hover { background: var(--card-hover); }
+    .data-table tbody td {
+      padding: 8px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      vertical-align: middle;
+    }
+
+    /* Spell-specific table styles */
+    .spell-img-cell {
+      width: 40px; height: 40px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: var(--card);
+      border: 1px solid var(--border);
+    }
+    .spell-img-placeholder {
+      width: 40px; height: 40px;
+      border-radius: 6px;
+      background: var(--card);
+      border: 1px dashed var(--faint);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: var(--faint);
+    }
+    .house-badge {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+      display: inline-block;
+    }
+    .type-badge {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .stat-val { font-family: monospace; font-weight: 700; font-size: 12px; text-align: center; }
+    .toggle-btn {
+      width: 36px; height: 20px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+    }
+    .toggle-btn.on { background: var(--green); }
+    .toggle-btn.off { background: var(--faint); }
+    .toggle-btn::after {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: white;
+      top: 2px;
+      transition: left 0.2s;
+    }
+    .toggle-btn.on::after { left: 18px; }
+    .toggle-btn.off::after { left: 2px; }
+
+    .rarity-common { color: #999; }
+    .rarity-uncommon { color: #66dd66; }
+    .rarity-rare { color: #55bbff; }
+    .rarity-epic { color: #bb88ff; }
+    .rarity-legendary { color: #ffd700; }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 20px;
+      overflow-y: auto;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg);
+      border: 1px solid var(--border-active);
+      border-radius: 14px;
+      width: 100%;
+      max-width: 720px;
+      padding: 24px;
+      position: relative;
+    }
+    .modal-title {
+      font-family: 'Cinzel', serif;
+      font-size: 20px;
+      color: var(--gold);
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+    .modal-close:hover { color: var(--bright); }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px;
+      color: var(--faint);
+      letter-spacing: 1px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--body);
+      font-family: 'Crimson Text', serif;
+      font-size: 14px;
+      padding: 8px 12px;
+      outline: none;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--gold);
+    }
+    .form-group select option { background: var(--bg-dark); }
+    .form-group textarea { min-height: 60px; resize: vertical; }
+    .form-group input[type="number"] { width: 100%; }
+
+    .stat-edit-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .stat-edit-box {
+      text-align: center;
+      flex: 1;
+    }
+    .stat-edit-box label { display: block; margin-bottom: 4px; }
+    .stat-edit-box input {
+      width: 100%;
+      text-align: center;
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .image-upload-area {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+      position: relative;
+    }
+    .image-upload-area:hover { border-color: var(--gold); }
+    .image-upload-area img {
+      max-height: 150px;
+      border-radius: 8px;
+      margin-bottom: 8px;
+    }
+    .image-upload-area input[type="file"] {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .effects-editor { display: flex; flex-direction: column; gap: 8px; }
+    .effect-row {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .effect-row input { flex: 1; }
+    .effect-row .remove-effect {
+      background: none; border: none; color: var(--red);
+      cursor: pointer; font-size: 18px; padding: 0 4px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      justify-content: flex-end;
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      z-index: 2000;
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { background: rgba(68,204,136,0.2); border: 1px solid var(--green); color: var(--green); }
+    .toast.error { background: rgba(232,90,106,0.2); border: 1px solid var(--red); color: var(--red); }
+    .toast.info { background: rgba(106,200,216,0.2); border: 1px solid var(--blue); color: var(--blue); }
+
+    /* ── TABLE WRAPPER ── */
+    .table-wrapper {
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(0,0,0,0.15);
+    }
+
+    /* ── FORCE ACTION CARDS ── */
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    .action-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .action-card h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 15px;
+      color: var(--bright);
+      margin-bottom: 6px;
+    }
+    .action-card p {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    /* ── LOADING ── */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--faint);
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+    }
+    .loading::after {
+      content: '';
+      display: inline-block;
+      width: 12px; height: 12px;
+      border: 2px solid var(--faint);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .admin-content { padding: 12px; }
+      .form-grid { grid-template-columns: 1fr; }
+      .stats-bar { flex-direction: column; }
+      .tab-btn { padding: 12px 12px; font-size: 8px; }
+    }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════ AUTH GATE ══════════════ -->
+<div id="auth-gate">
+  <h1>NINE LIVES NETWORK</h1>
+  <p>⛔ Admin access required. Use ?admin_key= in the URL.</p>
+</div>
+
+<!-- ══════════════ ADMIN PANEL ══════════════ -->
+<div id="admin-panel" style="display:none;">
+
+  <div class="admin-header">
+    <h1>⚙️ ADMIN PANEL</h1>
+    <div class="status">CONNECTED</div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" data-tab="spells">🃏 SPELLS</button>
+    <button class="tab-btn" data-tab="zones">🗺️ ZONES</button>
+    <button class="tab-btn" data-tab="players">👥 PLAYERS</button>
+    <button class="tab-btn" data-tab="system">⚡ SYSTEM</button>
+  </div>
+
+  <div class="admin-content">
+
+    <!-- ═══ STATS BAR ═══ -->
+    <div class="stats-bar" id="stats-bar">
+      <div class="stat-card">
+        <div class="label">PLAYERS</div>
+        <div class="value green" id="stat-players">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">ACTIVE SPELLS</div>
+        <div class="value gold" id="stat-spells">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">ZONES</div>
+        <div class="value" id="stat-zones">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">ACTIONS TODAY</div>
+        <div class="value" id="stat-actions">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">OBJECTIVE</div>
+        <div class="value gold" id="stat-objective" style="font-size:13px;">—</div>
+      </div>
+    </div>
+
+    <!-- ═══ SPELLS TAB ═══ -->
+    <div class="tab-panel active" id="panel-spells">
+      <div class="toolbar">
+        <input type="text" id="spell-search" placeholder="Search spells..." style="width:200px;">
+        <select id="spell-filter-house">
+          <option value="">All Houses</option>
+          <option value="universal">Universal</option>
+          <option value="smoulders">🔥 Smoulders</option>
+          <option value="darktide">🌊 Darktide</option>
+          <option value="stonebark">🌿 Stonebark</option>
+          <option value="ashenvale">💨 Ashenvale</option>
+          <option value="stormrage">⚡ Stormrage</option>
+          <option value="nighthollow">🌙 Nighthollow</option>
+          <option value="dawnbringer">☀️ Dawnbringer</option>
+          <option value="manastorm">🔮 Manastorm</option>
+          <option value="plaguemire">☠️ Plaguemire</option>
+        </select>
+        <select id="spell-filter-type">
+          <option value="">All Types</option>
+          <option value="attack">Attack</option>
+          <option value="defend">Defend</option>
+          <option value="support">Support</option>
+          <option value="manipulation">Manipulation</option>
+          <option value="utility">Utility</option>
+        </select>
+        <select id="spell-filter-tier">
+          <option value="">All Tiers</option>
+          <option value="0">T0</option>
+          <option value="1">T1</option>
+          <option value="2">T2</option>
+          <option value="3">T3</option>
+        </select>
+        <select id="spell-filter-image">
+          <option value="">All</option>
+          <option value="has-image">Has Image</option>
+          <option value="no-image">No Image</option>
+        </select>
+        <div style="flex:1;"></div>
+        <button class="btn btn-gold" onclick="openNewSpell()">+ NEW SPELL</button>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table" id="spells-table">
+          <thead>
+            <tr>
+              <th>IMG</th>
+              <th data-sort="id">ID</th>
+              <th data-sort="name">NAME</th>
+              <th data-sort="house">HOUSE</th>
+              <th data-sort="spell_type">TYPE</th>
+              <th data-sort="tier">TIER</th>
+              <th>ATK</th>
+              <th>HP</th>
+              <th>SPD</th>
+              <th>DEF</th>
+              <th>LCK</th>
+              <th>EFFECTS</th>
+              <th>POOL</th>
+              <th>ACTIVE</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="spells-tbody"></tbody>
+        </table>
+      </div>
+      <div style="margin-top:10px; font-family:'Press Start 2P',monospace; font-size:8px; color:var(--faint);">
+        Showing <span id="spell-count">0</span> spells
+      </div>
+    </div>
+
+    <!-- ═══ ZONES TAB ═══ -->
+    <div class="tab-panel" id="panel-zones">
+      <div class="toolbar">
+        <button class="btn btn-gold" onclick="openNewZone()">+ NEW ZONE</button>
+        <div style="flex:1;"></div>
+        <button class="btn btn-green" onclick="forceObjective()">🎯 RANDOM OBJECTIVE</button>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table" id="zones-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>NAME</th>
+              <th>TYPE</th>
+              <th>BONUS</th>
+              <th>OBJECTIVE</th>
+              <th>CONTROLLER</th>
+              <th>ACTIONS</th>
+            </tr>
+          </thead>
+          <tbody id="zones-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ PLAYERS TAB ═══ -->
+    <div class="tab-panel" id="panel-players">
+      <div class="toolbar">
+        <input type="text" id="player-search" placeholder="Search players..." style="width:200px;">
+        <div style="flex:1;"></div>
+        <button class="btn" onclick="loadPlayers()">🔄 REFRESH</button>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table" id="players-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>HANDLE</th>
+              <th>HOUSE</th>
+              <th>GUILD</th>
+              <th>MANA</th>
+              <th>POINTS</th>
+              <th>STREAK</th>
+              <th>ACTIVE</th>
+              <th>JOINED</th>
+            </tr>
+          </thead>
+          <tbody id="players-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ SYSTEM TAB ═══ -->
+    <div class="tab-panel" id="panel-system">
+      <h2 style="font-family:'Cinzel',serif; color:var(--gold); margin-bottom:16px;">Force Actions</h2>
+      <div class="action-grid">
+        <div class="action-card">
+          <h3>🌙 Midnight Banking</h3>
+          <p>Trigger the midnight reset: decay zone power, process attrition effects, reset dailies.</p>
+          <button class="btn btn-gold" onclick="forceAction('force-midnight')">TRIGGER</button>
+        </div>
+        <div class="action-card">
+          <h3>🎯 Random Objective</h3>
+          <p>Set a random zone as today's daily objective (×1.5 points).</p>
+          <button class="btn btn-gold" onclick="forceAction('force-objective')">SET RANDOM</button>
+        </div>
+        <div class="action-card">
+          <h3>💧 Reset All Mana</h3>
+          <p>Reset every player's mana to 7. Use after maintenance.</p>
+          <button class="btn btn-red" onclick="if(confirm('Reset ALL player mana to 7?')) forceAction('reset-mana')">RESET MANA</button>
+        </div>
+        <div class="action-card">
+          <h3>📉 Activity Decay</h3>
+          <p>Process activity decay for inactive players.</p>
+          <button class="btn" onclick="forceAction('activity-decay')">PROCESS</button>
+        </div>
+      </div>
+
+      <h2 style="font-family:'Cinzel',serif; color:var(--gold); margin:24px 0 16px;">Scheduler Status</h2>
+      <div id="scheduler-status" class="action-card">
+        <div class="loading">Loading scheduler status</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════ SPELL EDIT MODAL ══════════════ -->
+<div class="modal-overlay" id="spell-modal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="spell-modal-title">Edit Spell</span>
+      <button class="modal-close" onclick="closeSpellModal()">×</button>
+    </div>
+
+    <div class="form-grid">
+      <input type="hidden" id="spell-edit-id">
+
+      <div class="form-group">
+        <label>NAME</label>
+        <input type="text" id="spell-edit-name" placeholder="Ember Strike">
+      </div>
+      <div class="form-group">
+        <label>SLUG</label>
+        <input type="text" id="spell-edit-slug" placeholder="ember-strike" style="color:var(--faint);">
+      </div>
+
+      <div class="form-group">
+        <label>HOUSE</label>
+        <select id="spell-edit-house">
+          <option value="universal">Universal</option>
+          <option value="smoulders">Smoulders</option>
+          <option value="darktide">Darktide</option>
+          <option value="stonebark">Stonebark</option>
+          <option value="ashenvale">Ashenvale</option>
+          <option value="stormrage">Stormrage</option>
+          <option value="nighthollow">Nighthollow</option>
+          <option value="dawnbringer">Dawnbringer</option>
+          <option value="manastorm">Manastorm</option>
+          <option value="plaguemire">Plaguemire</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>TYPE</label>
+        <select id="spell-edit-type">
+          <option value="attack">Attack</option>
+          <option value="defend">Defend</option>
+          <option value="support">Support</option>
+          <option value="manipulation">Manipulation</option>
+          <option value="utility">Utility</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>TIER</label>
+        <select id="spell-edit-tier">
+          <option value="0">T0 (Basic)</option>
+          <option value="1">T1</option>
+          <option value="2">T2</option>
+          <option value="3">T3</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>MANA COST</label>
+        <input type="number" id="spell-edit-mana" min="0" max="5" value="1">
+      </div>
+
+      <!-- STATS -->
+      <div class="form-group full">
+        <label>BASE STATS</label>
+        <div class="stat-edit-row">
+          <div class="stat-edit-box">
+            <label style="color:var(--atk);">ATK</label>
+            <input type="number" id="spell-edit-atk" min="0" max="20" style="color:var(--atk); border-color:rgba(232,90,106,0.3);">
+          </div>
+          <div class="stat-edit-box">
+            <label style="color:var(--hp);">HP</label>
+            <input type="number" id="spell-edit-hp" min="0" max="20" style="color:var(--hp); border-color:rgba(106,205,138,0.3);">
+          </div>
+          <div class="stat-edit-box">
+            <label style="color:var(--spd);">SPD</label>
+            <input type="number" id="spell-edit-spd" min="0" max="20" style="color:var(--spd); border-color:rgba(106,200,216,0.3);">
+          </div>
+          <div class="stat-edit-box">
+            <label style="color:var(--def);">DEF</label>
+            <input type="number" id="spell-edit-def" min="0" max="20" style="color:var(--def); border-color:rgba(176,136,232,0.3);">
+          </div>
+          <div class="stat-edit-box">
+            <label style="color:var(--luck);">LUCK</label>
+            <input type="number" id="spell-edit-luck" min="0" max="20" style="color:var(--luck); border-color:rgba(212,166,75,0.3);">
+          </div>
+        </div>
+      </div>
+
+      <!-- EFFECTS -->
+      <div class="form-group full">
+        <label>BONUS EFFECTS</label>
+        <div class="effects-editor" id="effects-editor"></div>
+        <button class="btn btn-sm" onclick="addEffectRow()" style="margin-top:6px;">+ ADD EFFECT</button>
+      </div>
+
+      <!-- FLAVOR TEXT -->
+      <div class="form-group full">
+        <label>FLAVOR TEXT</label>
+        <textarea id="spell-edit-flavor" placeholder="Everything burns eventually."></textarea>
+      </div>
+
+      <!-- IMAGE -->
+      <div class="form-group full">
+        <label>CARD ARTWORK</label>
+        <div class="image-upload-area" id="image-upload-area">
+          <div id="image-preview-container">
+            <p style="color:var(--faint); font-size:13px;">📁 Click or drag image here</p>
+            <p style="color:var(--faint); font-size:11px; margin-top:4px;">PNG or JPEG recommended</p>
+          </div>
+          <input type="file" id="spell-image-input" accept="image/*" onchange="previewImage(this)">
+        </div>
+      </div>
+
+      <!-- TOGGLES -->
+      <div class="form-group">
+        <label>IN PACK POOL</label>
+        <select id="spell-edit-pool">
+          <option value="true">Yes — appears in packs</option>
+          <option value="false">No — removed from packs</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>ACTIVE</label>
+        <select id="spell-edit-active">
+          <option value="true">Active</option>
+          <option value="false">Disabled</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-red btn-sm" id="spell-delete-btn" onclick="deleteSpell()" style="margin-right:auto;">DELETE</button>
+      <button class="btn" onclick="closeSpellModal()">CANCEL</button>
+      <button class="btn btn-gold" onclick="saveSpell()">SAVE SPELL</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ ZONE EDIT MODAL ══════════════ -->
+<div class="modal-overlay" id="zone-modal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="zone-modal-title">Edit Zone</span>
+      <button class="modal-close" onclick="closeZoneModal()">×</button>
+    </div>
+    <div class="form-grid">
+      <input type="hidden" id="zone-edit-id">
+      <div class="form-group full">
+        <label>NAME</label>
+        <input type="text" id="zone-edit-name" placeholder="Blackmoor Basin">
+      </div>
+      <div class="form-group full">
+        <label>DESCRIPTION</label>
+        <textarea id="zone-edit-desc" placeholder="A dark, mist-covered basin..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>TYPE</label>
+        <select id="zone-edit-type">
+          <option value="neutral">Neutral</option>
+          <option value="contested">Contested</option>
+          <option value="boss">Boss</option>
+          <option value="event">Event</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>BONUS EFFECT</label>
+        <input type="text" id="zone-edit-bonus" placeholder="e.g. +2 ATK">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-red btn-sm" id="zone-delete-btn" onclick="deleteZone()" style="margin-right:auto;">DELETE</button>
+      <button class="btn" onclick="closeZoneModal()">CANCEL</button>
+      <button class="btn btn-gold" onclick="saveZone()">SAVE ZONE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ TOAST ══════════════ -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════
+const params = new URLSearchParams(window.location.search);
+const ADMIN_KEY = params.get('admin_key') || '';
+const API = '';
+
+function adminHeaders() {
+  return { 'Content-Type': 'application/json', 'x-admin-key': ADMIN_KEY };
+}
+
+async function adminFetch(url, opts = {}) {
+  opts.headers = { ...adminHeaders(), ...(opts.headers || {}) };
+  const res = await fetch(API + url, opts);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || 'Request failed');
+  }
+  return res.json();
+}
+
+// ═══════════════════════════════════════
+// AUTH CHECK
+// ═══════════════════════════════════════
+async function checkAuth() {
+  if (!ADMIN_KEY) return false;
+  try {
+    await adminFetch('/api/admin/stats');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// ═══════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ═══════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ═══════════════════════════════════════
+// HOUSE COLORS
+// ═══════════════════════════════════════
+const HOUSE_COLORS = {
+  universal: '#D4A64B',
+  smoulders: '#E03C31',
+  darktide: '#00B4D8',
+  stonebark: '#5CB338',
+  ashenvale: '#90E0EF',
+  stormrage: '#FFC800',
+  nighthollow: '#7B2D8E',
+  dawnbringer: '#FF8C00',
+  manastorm: '#5B8FE0',
+  plaguemire: '#E84393',
+};
+
+const HOUSE_ICONS = {
+  universal: '🌐', smoulders: '🔥', darktide: '🌊', stonebark: '🌿',
+  ashenvale: '💨', stormrage: '⚡', nighthollow: '🌙', dawnbringer: '☀️',
+  manastorm: '🔮', plaguemire: '☠️',
+};
+
+const TYPE_COLORS = {
+  attack: '#ff5555', defend: '#55aaff', support: '#55ff99', manipulation: '#cc77ff', utility: '#D4A64B'
+};
+
+// ═══════════════════════════════════════
+// LOAD STATS
+// ═══════════════════════════════════════
+async function loadStats() {
+  try {
+    const s = await adminFetch('/api/admin/stats');
+    document.getElementById('stat-players').textContent = s.total_players;
+    document.getElementById('stat-spells').textContent = s.active_spells;
+    document.getElementById('stat-zones').textContent = s.total_zones;
+    document.getElementById('stat-actions').textContent = s.actions_today;
+    document.getElementById('stat-objective').textContent = s.current_objective;
+  } catch (e) {
+    console.error('Stats load failed:', e);
+  }
+}
+
+// ═══════════════════════════════════════
+// SPELLS
+// ═══════════════════════════════════════
+let allSpells = [];
+let sortCol = 'id';
+let sortAsc = true;
+
+async function loadSpells() {
+  try {
+    allSpells = await fetch('/api/spells').then(r => r.json());
+    renderSpells();
+  } catch (e) {
+    toast('Failed to load spells: ' + e.message, 'error');
+  }
+}
+
+function renderSpells() {
+  const search = document.getElementById('spell-search').value.toLowerCase();
+  const houseF = document.getElementById('spell-filter-house').value;
+  const typeF = document.getElementById('spell-filter-type').value;
+  const tierF = document.getElementById('spell-filter-tier').value;
+  const imageF = document.getElementById('spell-filter-image').value;
+
+  let filtered = allSpells.filter(s => {
+    if (search && !s.name.toLowerCase().includes(search) && !s.slug?.toLowerCase().includes(search)) return false;
+    if (houseF && s.house !== houseF) return false;
+    if (typeF && s.spell_type !== typeF) return false;
+    if (tierF !== '' && s.tier !== parseInt(tierF)) return false;
+    if (imageF === 'has-image' && !s.image_url) return false;
+    if (imageF === 'no-image' && s.image_url) return false;
+    return true;
+  });
+
+  // Sort
+  filtered.sort((a, b) => {
+    let av = a[sortCol], bv = b[sortCol];
+    if (typeof av === 'string') av = av.toLowerCase();
+    if (typeof bv === 'string') bv = bv.toLowerCase();
+    if (av < bv) return sortAsc ? -1 : 1;
+    if (av > bv) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  const tbody = document.getElementById('spells-tbody');
+  tbody.innerHTML = filtered.map(s => {
+    const hc = HOUSE_COLORS[s.house] || '#999';
+    const tc = TYPE_COLORS[s.spell_type] || '#999';
+    const hi = HOUSE_ICONS[s.house] || '?';
+    const imgSrc = s.image_url ? `/assets/images/spells/${s.image_url}` : '';
+    const effects = (s.bonus_effects || []).map(e => typeof e === 'string' ? e : e.tag).join(', ');
+
+    return `<tr>
+      <td>${imgSrc ? `<img src="${imgSrc}" class="spell-img-cell" onerror="this.style.display='none'">` : `<div class="spell-img-placeholder">?</div>`}</td>
+      <td style="color:var(--faint); font-family:monospace; font-size:11px;">${s.id}</td>
+      <td style="font-family:'Cinzel',serif; font-weight:700; color:var(--bright);">${s.name}</td>
+      <td><span class="house-badge" style="background:${hc}18; color:${hc}; border:1px solid ${hc}30;">${hi} ${s.house}</span></td>
+      <td><span class="type-badge" style="background:${tc}18; color:${tc}; border:1px solid ${tc}30;">${s.spell_type}</span></td>
+      <td style="font-family:monospace; color:var(--muted);">T${s.tier}</td>
+      <td class="stat-val" style="color:var(--atk);">${s.base_atk || 0}</td>
+      <td class="stat-val" style="color:var(--hp);">${s.base_hp || 0}</td>
+      <td class="stat-val" style="color:var(--spd);">${s.base_spd || 0}</td>
+      <td class="stat-val" style="color:var(--def);">${s.base_def || 0}</td>
+      <td class="stat-val" style="color:var(--luck);">${s.base_luck || 0}</td>
+      <td style="font-family:monospace; font-size:10px; color:var(--muted); max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${effects}">${effects || '—'}</td>
+      <td><button class="toggle-btn ${s.in_pack_pool ? 'on' : 'off'}" onclick="togglePool(${s.id}, ${!s.in_pack_pool})"></button></td>
+      <td><button class="toggle-btn ${s.is_active ? 'on' : 'off'}" onclick="toggleActive(${s.id}, ${!s.is_active})"></button></td>
+      <td><button class="btn btn-sm" onclick="editSpell(${s.id})">✏️ EDIT</button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('spell-count').textContent = filtered.length;
+}
+
+// Sorting
+document.querySelectorAll('#spells-table thead th[data-sort]').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.sort;
+    if (sortCol === col) sortAsc = !sortAsc;
+    else { sortCol = col; sortAsc = true; }
+    renderSpells();
+  });
+});
+
+// Filters
+['spell-search', 'spell-filter-house', 'spell-filter-type', 'spell-filter-tier', 'spell-filter-image'].forEach(id => {
+  document.getElementById(id).addEventListener('input', renderSpells);
+  document.getElementById(id).addEventListener('change', renderSpells);
+});
+
+// Quick toggles
+async function togglePool(id, val) {
+  try {
+    await adminFetch(`/api/admin/spell/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ in_pack_pool: val })
+    });
+    const s = allSpells.find(x => x.id === id);
+    if (s) s.in_pack_pool = val;
+    renderSpells();
+    toast(val ? 'Added to pack pool' : 'Removed from pack pool');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function toggleActive(id, val) {
+  try {
+    await adminFetch(`/api/admin/spell/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ is_active: val })
+    });
+    const s = allSpells.find(x => x.id === id);
+    if (s) s.is_active = val;
+    renderSpells();
+    toast(val ? 'Spell activated' : 'Spell deactivated');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ═══ SPELL MODAL ═══
+let currentImageFile = null;
+
+function openNewSpell() {
+  document.getElementById('spell-edit-id').value = '';
+  document.getElementById('spell-edit-name').value = '';
+  document.getElementById('spell-edit-slug').value = '';
+  document.getElementById('spell-edit-house').value = 'universal';
+  document.getElementById('spell-edit-type').value = 'attack';
+  document.getElementById('spell-edit-tier').value = '1';
+  document.getElementById('spell-edit-mana').value = '1';
+  document.getElementById('spell-edit-atk').value = '0';
+  document.getElementById('spell-edit-hp').value = '0';
+  document.getElementById('spell-edit-spd').value = '0';
+  document.getElementById('spell-edit-def').value = '0';
+  document.getElementById('spell-edit-luck').value = '0';
+  document.getElementById('spell-edit-flavor').value = '';
+  document.getElementById('spell-edit-pool').value = 'true';
+  document.getElementById('spell-edit-active').value = 'true';
+  document.getElementById('effects-editor').innerHTML = '';
+  resetImageUpload();
+  document.getElementById('spell-delete-btn').style.display = 'none';
+  document.getElementById('spell-modal-title').textContent = 'New Spell';
+  document.getElementById('spell-modal').classList.add('open');
+}
+
+function editSpell(id) {
+  const s = allSpells.find(x => x.id === id);
+  if (!s) return;
+
+  document.getElementById('spell-edit-id').value = s.id;
+  document.getElementById('spell-edit-name').value = s.name || '';
+  document.getElementById('spell-edit-slug').value = s.slug || '';
+  document.getElementById('spell-edit-house').value = s.house || 'universal';
+  document.getElementById('spell-edit-type').value = s.spell_type || 'attack';
+  document.getElementById('spell-edit-tier').value = s.tier || 0;
+  document.getElementById('spell-edit-mana').value = s.mana_cost || 1;
+  document.getElementById('spell-edit-atk').value = s.base_atk || 0;
+  document.getElementById('spell-edit-hp').value = s.base_hp || 0;
+  document.getElementById('spell-edit-spd').value = s.base_spd || 0;
+  document.getElementById('spell-edit-def').value = s.base_def || 0;
+  document.getElementById('spell-edit-luck').value = s.base_luck || 0;
+  document.getElementById('spell-edit-flavor').value = s.flavor_text || '';
+  document.getElementById('spell-edit-pool').value = s.in_pack_pool ? 'true' : 'false';
+  document.getElementById('spell-edit-active').value = s.is_active ? 'true' : 'false';
+
+  // Effects
+  const editor = document.getElementById('effects-editor');
+  editor.innerHTML = '';
+  const effects = s.bonus_effects || [];
+  effects.forEach(e => {
+    const eff = typeof e === 'string' ? { tag: e, desc: '' } : e;
+    addEffectRow(eff.tag, eff.desc);
+  });
+
+  // Image
+  resetImageUpload();
+  if (s.image_url) {
+    document.getElementById('image-preview-container').innerHTML =
+      `<img src="/assets/images/spells/${s.image_url}" style="max-height:150px; border-radius:8px;" onerror="this.parentElement.innerHTML='<p style=color:var(--red)>Image not found</p>'">
+       <p style="color:var(--muted); font-size:11px; margin-top:6px;">Current: ${s.image_url}</p>
+       <p style="color:var(--faint); font-size:11px;">Drop new image to replace</p>`;
+  }
+
+  document.getElementById('spell-delete-btn').style.display = 'block';
+  document.getElementById('spell-modal-title').textContent = 'Edit: ' + s.name;
+  document.getElementById('spell-modal').classList.add('open');
+}
+
+function closeSpellModal() {
+  document.getElementById('spell-modal').classList.remove('open');
+  currentImageFile = null;
+}
+
+function addEffectRow(tag = '', desc = '') {
+  const editor = document.getElementById('effects-editor');
+  const row = document.createElement('div');
+  row.className = 'effect-row';
+  row.innerHTML = `
+    <input type="text" placeholder="Tag (e.g. BURN +3)" value="${tag}" class="effect-tag" style="flex:0.4;">
+    <input type="text" placeholder="Description" value="${desc}" class="effect-desc" style="flex:0.6;">
+    <button class="remove-effect" onclick="this.parentElement.remove()">×</button>
+  `;
+  editor.appendChild(row);
+}
+
+function resetImageUpload() {
+  currentImageFile = null;
+  document.getElementById('spell-image-input').value = '';
+  document.getElementById('image-preview-container').innerHTML = `
+    <p style="color:var(--faint); font-size:13px;">📁 Click or drag image here</p>
+    <p style="color:var(--faint); font-size:11px; margin-top:4px;">PNG or JPEG recommended</p>
+  `;
+}
+
+function previewImage(input) {
+  if (input.files && input.files[0]) {
+    currentImageFile = input.files[0];
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      document.getElementById('image-preview-container').innerHTML = `
+        <img src="${e.target.result}" style="max-height:150px; border-radius:8px;">
+        <p style="color:var(--green); font-size:11px; margin-top:6px;">✓ ${currentImageFile.name} ready to upload</p>
+      `;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+async function saveSpell() {
+  const id = document.getElementById('spell-edit-id').value;
+  const isNew = !id;
+
+  // Collect effects
+  const effectRows = document.querySelectorAll('#effects-editor .effect-row');
+  const bonus_effects = [];
+  effectRows.forEach(row => {
+    const tag = row.querySelector('.effect-tag').value.trim();
+    const desc = row.querySelector('.effect-desc').value.trim();
+    if (tag) bonus_effects.push({ tag, desc });
+  });
+
+  const payload = {
+    name: document.getElementById('spell-edit-name').value.trim(),
+    slug: document.getElementById('spell-edit-slug').value.trim(),
+    house: document.getElementById('spell-edit-house').value,
+    spell_type: document.getElementById('spell-edit-type').value,
+    tier: parseInt(document.getElementById('spell-edit-tier').value),
+    mana_cost: parseInt(document.getElementById('spell-edit-mana').value),
+    base_atk: parseInt(document.getElementById('spell-edit-atk').value) || 0,
+    base_hp: parseInt(document.getElementById('spell-edit-hp').value) || 0,
+    base_spd: parseInt(document.getElementById('spell-edit-spd').value) || 0,
+    base_def: parseInt(document.getElementById('spell-edit-def').value) || 0,
+    base_luck: parseInt(document.getElementById('spell-edit-luck').value) || 0,
+    bonus_effects,
+    flavor_text: document.getElementById('spell-edit-flavor').value.trim(),
+    in_pack_pool: document.getElementById('spell-edit-pool').value === 'true',
+    is_active: document.getElementById('spell-edit-active').value === 'true',
+  };
+
+  if (!payload.name) { toast('Name is required', 'error'); return; }
+
+  try {
+    let savedSpell;
+    if (isNew) {
+      const result = await adminFetch('/api/admin/spells', { method: 'POST', body: JSON.stringify(payload) });
+      savedSpell = result.spell;
+      toast('Spell created: ' + savedSpell.name);
+    } else {
+      const result = await adminFetch(`/api/admin/spell/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+      savedSpell = result.spell;
+      toast('Spell updated: ' + savedSpell.name);
+    }
+
+    // Upload image if selected
+    if (currentImageFile && savedSpell) {
+      await uploadSpellImage(savedSpell.id, currentImageFile);
+    }
+
+    closeSpellModal();
+    await loadSpells();
+  } catch (e) {
+    toast('Save failed: ' + e.message, 'error');
+  }
+}
+
+async function uploadSpellImage(spellId, file) {
+  try {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const res = await fetch(`/api/admin/spell/${spellId}/upload-image`, {
+      method: 'POST',
+      headers: { 'x-admin-key': ADMIN_KEY },
+      body: formData
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Upload failed');
+    }
+
+    const result = await res.json();
+    toast('Image uploaded: ' + result.filename, 'info');
+  } catch (e) {
+    toast('Image upload failed: ' + e.message, 'error');
+  }
+}
+
+async function deleteSpell() {
+  const id = document.getElementById('spell-edit-id').value;
+  const spell = allSpells.find(s => s.id == id);
+  if (!id || !confirm(`Delete "${spell?.name || 'this spell'}" permanently? This cannot be undone.`)) return;
+
+  try {
+    await adminFetch(`/api/admin/spell/${id}`, { method: 'DELETE' });
+    toast('Spell deleted');
+    closeSpellModal();
+    await loadSpells();
+  } catch (e) {
+    toast('Delete failed: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════
+// ZONES
+// ═══════════════════════════════════════
+let allZones = [];
+
+async function loadZones() {
+  try {
+    allZones = await adminFetch('/api/admin/zones');
+    renderZones();
+  } catch (e) {
+    toast('Failed to load zones: ' + e.message, 'error');
+  }
+}
+
+function renderZones() {
+  const tbody = document.getElementById('zones-tbody');
+  tbody.innerHTML = allZones.map(z => `
+    <tr>
+      <td style="font-family:monospace; color:var(--faint);">${z.id}</td>
+      <td style="font-family:'Cinzel',serif; font-weight:700; color:var(--bright);">${z.name}</td>
+      <td style="font-family:monospace; font-size:11px; color:var(--muted);">${z.zone_type || 'neutral'}</td>
+      <td style="font-family:monospace; font-size:11px; color:var(--gold);">${z.bonus_effect || '—'}</td>
+      <td>${z.is_current_objective ? '<span style="color:var(--gold); font-family:monospace; font-size:10px;">⭐ ACTIVE</span>' : '—'}</td>
+      <td style="font-family:monospace; font-size:11px; color:var(--muted);">${z.controlling_school_id || '—'}</td>
+      <td>
+        <button class="btn btn-sm" onclick="editZone(${z.id})">✏️</button>
+        <button class="btn btn-sm" onclick="setObjective(${z.id})" title="Set as objective">🎯</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function openNewZone() {
+  document.getElementById('zone-edit-id').value = '';
+  document.getElementById('zone-edit-name').value = '';
+  document.getElementById('zone-edit-desc').value = '';
+  document.getElementById('zone-edit-type').value = 'neutral';
+  document.getElementById('zone-edit-bonus').value = '';
+  document.getElementById('zone-delete-btn').style.display = 'none';
+  document.getElementById('zone-modal-title').textContent = 'New Zone';
+  document.getElementById('zone-modal').classList.add('open');
+}
+
+function editZone(id) {
+  const z = allZones.find(x => x.id === id);
+  if (!z) return;
+  document.getElementById('zone-edit-id').value = z.id;
+  document.getElementById('zone-edit-name').value = z.name || '';
+  document.getElementById('zone-edit-desc').value = z.description || '';
+  document.getElementById('zone-edit-type').value = z.zone_type || 'neutral';
+  document.getElementById('zone-edit-bonus').value = z.bonus_effect || '';
+  document.getElementById('zone-delete-btn').style.display = 'block';
+  document.getElementById('zone-modal-title').textContent = 'Edit: ' + z.name;
+  document.getElementById('zone-modal').classList.add('open');
+}
+
+function closeZoneModal() {
+  document.getElementById('zone-modal').classList.remove('open');
+}
+
+async function saveZone() {
+  const id = document.getElementById('zone-edit-id').value;
+  const payload = {
+    name: document.getElementById('zone-edit-name').value.trim(),
+    description: document.getElementById('zone-edit-desc').value.trim(),
+    zone_type: document.getElementById('zone-edit-type').value,
+    bonus_effect: document.getElementById('zone-edit-bonus').value.trim() || null,
+  };
+  if (!payload.name) { toast('Name required', 'error'); return; }
+
+  try {
+    if (id) {
+      await adminFetch(`/api/admin/zone/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+      toast('Zone updated');
+    } else {
+      await adminFetch('/api/admin/zones', { method: 'POST', body: JSON.stringify(payload) });
+      toast('Zone created');
+    }
+    closeZoneModal();
+    await loadZones();
+  } catch (e) {
+    toast('Save failed: ' + e.message, 'error');
+  }
+}
+
+async function deleteZone() {
+  const id = document.getElementById('zone-edit-id').value;
+  if (!id || !confirm('Delete this zone permanently?')) return;
+  try {
+    await adminFetch(`/api/admin/zone/${id}`, { method: 'DELETE' });
+    toast('Zone deleted');
+    closeZoneModal();
+    await loadZones();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function setObjective(zoneId) {
+  try {
+    await adminFetch(`/api/admin/zone/${zoneId}/objective`, { method: 'POST' });
+    toast('Objective set!');
+    await loadZones();
+    await loadStats();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function forceObjective() {
+  try {
+    await adminFetch('/api/admin/force-objective', { method: 'POST', body: '{}' });
+    toast('Random objective set!');
+    await loadZones();
+    await loadStats();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// ═══════════════════════════════════════
+// PLAYERS
+// ═══════════════════════════════════════
+let allPlayers = [];
+
+async function loadPlayers() {
+  try {
+    allPlayers = await adminFetch('/api/admin/players');
+    renderPlayers();
+  } catch (e) {
+    toast('Failed to load players: ' + e.message, 'error');
+  }
+}
+
+function renderPlayers() {
+  const search = (document.getElementById('player-search').value || '').toLowerCase();
+  let filtered = allPlayers;
+  if (search) {
+    filtered = filtered.filter(p =>
+      (p.twitter_handle || '').toLowerCase().includes(search) ||
+      (p.community_tag || '').toLowerCase().includes(search)
+    );
+  }
+
+  const tbody = document.getElementById('players-tbody');
+  tbody.innerHTML = filtered.map(p => {
+    const houseColor = HOUSE_COLORS[p.school_id] || '#999';
+    const houseIcon = HOUSE_ICONS[p.school_id] || '?';
+    return `<tr>
+      <td style="font-family:monospace; color:var(--faint); font-size:11px;">${p.id}</td>
+      <td style="font-weight:700; color:var(--bright);">@${p.twitter_handle || '—'}</td>
+      <td><span class="house-badge" style="background:${houseColor}18; color:${houseColor}; border:1px solid ${houseColor}30;">${houseIcon} ${p.school_id || '—'}</span></td>
+      <td style="font-family:monospace; font-size:11px; color:var(--muted);">${p.community_tag || 'Lone Wolf'}</td>
+      <td style="font-family:monospace; color:var(--blue);">${p.mana}</td>
+      <td style="font-family:monospace; color:var(--gold); font-weight:700;">${p.seasonal_points}</td>
+      <td style="font-family:monospace; color:var(--green);">${p.streak}d</td>
+      <td>${p.is_active ? '<span style="color:var(--green);">✓</span>' : '<span style="color:var(--red);">✗</span>'}</td>
+      <td style="font-family:monospace; font-size:10px; color:var(--faint);">${new Date(p.created_at).toLocaleDateString()}</td>
+    </tr>`;
+  }).join('');
+}
+
+document.getElementById('player-search').addEventListener('input', renderPlayers);
+
+// ═══════════════════════════════════════
+// SYSTEM ACTIONS
+// ═══════════════════════════════════════
+async function forceAction(action) {
+  try {
+    const result = await adminFetch(`/api/admin/${action}`, { method: 'POST', body: '{}' });
+    toast(`${action} completed!`);
+    console.log(action, result);
+    await loadStats();
+  } catch (e) {
+    toast(`${action} failed: ${e.message}`, 'error');
+  }
+}
+
+async function loadSchedulerStatus() {
+  try {
+    const status = await adminFetch('/api/admin/scheduler-status');
+    const el = document.getElementById('scheduler-status');
+    el.innerHTML = `
+      <h3 style="font-family:'Cinzel',serif; color:var(--bright); margin-bottom:10px;">
+        ${status.initialized ? '✅ Running' : '⚠️ Not initialized'}
+      </h3>
+      <div style="font-family:monospace; font-size:11px; color:var(--muted);">
+        ${Object.entries(status.lastRuns || {}).map(([k, v]) =>
+          `<div style="margin-bottom:4px;"><span style="color:var(--faint);">${k}:</span> ${v ? new Date(v).toLocaleString() : 'Never'}</div>`
+        ).join('')}
+      </div>
+    `;
+  } catch (e) {
+    document.getElementById('scheduler-status').innerHTML = `<p style="color:var(--red);">Failed to load</p>`;
+  }
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+async function init() {
+  const authed = await checkAuth();
+  if (!authed) {
+    document.getElementById('auth-gate').style.display = 'flex';
+    document.getElementById('admin-panel').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('auth-gate').style.display = 'none';
+  document.getElementById('admin-panel').style.display = 'block';
+
+  await Promise.all([
+    loadStats(),
+    loadSpells(),
+    loadZones(),
+    loadPlayers(),
+    loadSchedulerStatus(),
+  ]);
+}
+
+init();
+</script>
+</body>
+</html>

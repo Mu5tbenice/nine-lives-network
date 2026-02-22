@@ -124,7 +124,7 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const updates = {};
-    const allowed = ['name', 'slug', 'house', 'tier', 'mana_cost', 'spell_type', 'base_effect', 'bonus_effects', 'flavor_text', 'motto', 'is_active', 'image_url'];
+    const allowed = ['name', 'slug', 'house', 'tier', 'mana_cost', 'spell_type', 'base_effect', 'bonus_effects', 'flavor_text', 'motto', 'is_active', 'image_url', 'in_pack_pool', 'base_atk', 'base_hp', 'base_spd', 'base_def', 'base_luck', 'rarity_weights'];
     allowed.forEach(key => {
       if (req.body[key] !== undefined) updates[key] = req.body[key];
     });
