@@ -2,413 +2,454 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Nethara Live — Nine Lives Network</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nethara — Nine Lives Network</title>
   <link rel="stylesheet" href="/css/variables-v2.css">
   <link rel="stylesheet" href="/css/components-v2.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&family=Crimson+Text:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg-deep); color: var(--text-body); font-family: var(--font-body); }
-    #nethara-root { max-width: 600px; margin: 0 auto; padding-top: 56px; min-height: 100vh; }
-    ::-webkit-scrollbar { height: 3px; width: 3px; }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 2px; }
-    @keyframes charIdle { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
-    @keyframes charShake { 0%,100%{transform:translateX(0)} 15%{transform:translateX(-8px) rotate(-3deg)} 30%{transform:translateX(6px) rotate(2deg)} 50%{transform:translateX(-4px)} }
-    @keyframes charPulse { 0%{transform:scale(1)} 30%{transform:scale(1.12)} 100%{transform:scale(1)} }
-    @keyframes dmgFloat { 0%{opacity:1;transform:translateY(0) scale(1)} 20%{opacity:1;transform:translateY(-15px) scale(1.3)} 100%{opacity:0;transform:translateY(-60px) scale(0.8)} }
-    @keyframes flashOut { 0%{opacity:0.15} 100%{opacity:0} }
-    @keyframes phaseIn { 0%{opacity:0;transform:translate(-50%,-50%) scale(0.7)} 40%{opacity:1;transform:translate(-50%,-50%) scale(1.05)} 100%{transform:translate(-50%,-50%) scale(1)} }
-    @keyframes nermIn { 0%{opacity:0;transform:translateY(8px)} 100%{opacity:1;transform:translateY(0)} }
-    @keyframes nermBounce { 0%{transform:scale(1)} 30%{transform:scale(1.2) rotate(-5deg)} 100%{transform:scale(1)} }
-    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-    @keyframes slideUp { from{opacity:0;transform:translateX(-50%) translateY(10px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-    @keyframes particleDrift { 0%{transform:translateY(0)} 50%{transform:translateY(-3px)} 100%{transform:translateY(0)} }
-    @keyframes liveDot { 0%,100%{box-shadow:0 0 0 0 rgba(0,255,136,0.5)} 50%{box-shadow:0 0 0 5px rgba(0,255,136,0)} }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:#0e0a18;color:#CCC5DB;font-family:'Crimson Text',serif;min-height:100vh}
+    .nethara-wrap{max-width:520px;margin:0 auto;min-height:100vh}
+
+    /* ═══ HEADER ═══ */
+    .n-header{padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:center}
+    .n-title{font-family:'Cinzel',serif;font-size:22px;font-weight:800;color:#D4A64B;letter-spacing:2px}
+    .n-sub{font-family:'JetBrains Mono',monospace;font-size:9px;color:#554E68;margin-top:1px}
+    .n-status{display:flex;align-items:center;gap:6px}
+    .n-dot{width:8px;height:8px;border-radius:50%;background:#6acd8a;animation:pulse 2s infinite}
+    .n-active{font-family:'JetBrains Mono',monospace;font-size:10px;color:#6acd8a}
+
+    /* ═══ MANA ═══ */
+    .n-mana{padding:0 16px 10px;display:flex;align-items:center;gap:8px}
+    .m-orb{width:12px;height:12px;border-radius:50%;border:1px solid rgba(0,212,255,0.15)}
+    .m-orb.on{background:linear-gradient(180deg,#00D4FF,#0088aa);border-color:rgba(0,212,255,0.4);box-shadow:0 0 6px rgba(0,212,255,0.2)}
+    .m-txt{font-family:'JetBrains Mono',monospace;font-size:10px;color:#554E68}
+    .m-next{font-family:'JetBrains Mono',monospace;font-size:10px;color:#00D4FF}
+
+    /* ═══ TABS ═══ */
+    .n-tabs{display:flex;padding:0 16px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:12px}
+    .n-tab{font-family:'JetBrains Mono',monospace;font-size:10px;padding:10px 14px;cursor:pointer;
+      border:none;background:none;color:#554E68;border-bottom:2px solid transparent;transition:all 0.2s}
+    .n-tab.active{color:#D4A64B;border-bottom-color:#D4A64B;font-weight:700}
+    .n-tab:hover{color:#847C98}
+
+    /* ═══ ZONE CARD ═══ */
+    .z-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;
+      cursor:pointer;overflow:hidden;transition:transform 0.15s,border-color 0.15s;margin-bottom:10px}
+    .z-card:hover{transform:translateY(-1px)}
+    .z-event{padding:5px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.05)}
+    .z-event-t{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700}
+    .z-event-c{font-family:'JetBrains Mono',monospace;font-size:9px;color:#D4A64B}
+    .z-obj{background:linear-gradient(90deg,rgba(212,166,75,0.12),transparent);padding:5px 14px;
+      display:flex;align-items:center;gap:6px;border-bottom:1px solid rgba(255,255,255,0.05)}
+    .z-obj-t{font-family:'JetBrains Mono',monospace;font-size:10px;color:#D4A64B;font-weight:700}
+    .z-body{padding:12px 14px}
+    .z-name{font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#F0ECF8;margin-bottom:1px}
+    .z-region{font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.7}
+    .z-badge{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:4px;font-weight:700}
+    .z-badge.contested{color:#ff4466;background:rgba(255,68,102,0.1)}
+    .z-badge.held{color:#6acd8a;background:rgba(106,205,138,0.1)}
+    .g-row{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+    .g-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+    .g-name{font-family:'JetBrains Mono',monospace;font-size:9px;color:#CCC5DB;width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .g-track{flex:1;height:5px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden}
+    .g-fill{height:100%;border-radius:3px;transition:width 0.5s}
+    .g-pct{font-family:'JetBrains Mono',monospace;font-size:9px;width:28px;text-align:right;font-weight:700}
+    .z-fx{display:flex;gap:4px;flex-wrap:wrap}
+    .fx-pill{font-family:'JetBrains Mono',monospace;font-size:8px;padding:2px 5px;border-radius:3px;font-weight:600}
+    .z-cast{font-family:'JetBrains Mono',monospace;font-size:9px;color:#554E68}
+    .z-bot{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+
+    /* ═══ BATTLE VIEW ═══ */
+    .b-head{padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
+    .b-back{background:none;border:none;color:#847C98;font-size:20px;cursor:pointer;padding:4px 8px}
+    .b-arena{position:relative;width:100%;height:260px;overflow:hidden;border-bottom:1px solid rgba(255,255,255,0.06)}
+    .b-guilds{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,0.06)}
+    .b-guild-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+    .b-g-circ{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+      font-family:'JetBrains Mono',monospace;font-size:7px;font-weight:700;flex-shrink:0}
+    .b-g-pct{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700}
+    .b-hp-track{height:8px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden;flex:1}
+    .b-hp-fill{height:100%;border-radius:4px;transition:width 0.5s}
+    .feed-wrap{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06)}
+    .feed-title{font-family:'JetBrains Mono',monospace;font-size:9px;color:#554E68;letter-spacing:1px;margin-bottom:8px}
+    .feed-entry{display:flex;gap:8px;margin-bottom:6px;padding:6px 8px;background:rgba(255,255,255,0.02);border-radius:6px;border:1px solid rgba(255,255,255,0.04)}
+    .feed-dot{width:5px;height:5px;border-radius:50%;margin-top:5px;flex-shrink:0}
+    .feed-txt{font-family:'JetBrains Mono',monospace;font-size:10px;color:#CCC5DB;flex:1}
+    .feed-txt b{font-weight:700}
+    .feed-res{font-family:'JetBrains Mono',monospace;font-size:9px;color:#6acd8a;margin-top:2px}
+    .feed-time{font-family:'JetBrains Mono',monospace;font-size:8px;color:#554E68;flex-shrink:0}
+    .nerm-bubble{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:60;
+      background:rgba(20,13,30,0.95);border:1px solid rgba(212,166,75,0.3);border-radius:10px;
+      padding:6px 12px;max-width:80%;display:flex;align-items:center;gap:6px;
+      animation:nermIn 0.3s ease;pointer-events:none}
+    .nerm-t{font-family:'JetBrains Mono',monospace;font-size:8px;color:#D4A64B;line-height:1.4}
+
+    /* ═══ GUILD TAB ═══ */
+    .guild-hdr{border-radius:12px;padding:16px;margin-bottom:14px}
+    .guild-title{font-family:'Cinzel',serif;font-size:18px;font-weight:700}
+    .guild-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:#CCC5DB;margin-top:4px}
+    .guild-stats{display:flex;gap:16px;margin-top:12px}
+    .gs-val{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
+    .gs-lbl{font-family:'JetBrains Mono',monospace;font-size:8px;color:#554E68}
+    .ga-title{font-family:'JetBrains Mono',monospace;font-size:9px;color:#554E68;letter-spacing:1px;margin-bottom:8px}
+    .ga-row{display:flex;gap:8px;margin-bottom:6px;padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:8px}
+
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+    @keyframes spriteIdle{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+    @keyframes nermIn{from{opacity:0;transform:translateX(-50%) translateY(6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+    ::-webkit-scrollbar{width:4px;height:4px}
+    ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
   </style>
 </head>
 <body>
+  <div id="nav-placeholder"></div>
+  <div class="nethara-wrap" id="app"></div>
 
-  <div id="nethara-root"></div>
+  <script src="/js/sprite-renderer.js"></script>
+  <script src="/js/spell-vfx.js"></script>
+  <script>try{var s=document.createElement('script');s.src='/js/nav.js';document.body.appendChild(s)}catch(e){}</script>
+  <script>
+  (function(){
+  'use strict';
 
-  <!-- Shared site nav (auto-injects) -->
-  <script src="/js/nav.js"></script>
+  // ═══ CONSTANTS ═══
+  var H={
+    smoulders:{color:'#E03C31',name:'Smoulders',icon:'🔥'},darktide:{color:'#00B4D8',name:'Darktide',icon:'🌊'},
+    stonebark:{color:'#5CB338',name:'Stonebark',icon:'🌿'},ashenvale:{color:'#B0C4DE',name:'Ashenvale',icon:'💨'},
+    stormrage:{color:'#FFC800',name:'Stormrage',icon:'⚡'},nighthollow:{color:'#7B2D8E',name:'Nighthollow',icon:'🌙'},
+    dawnbringer:{color:'#FF8C00',name:'Dawnbringer',icon:'☀️'},manastorm:{color:'#5B8FE0',name:'Manastorm',icon:'🔮'},
+    plaguemire:{color:'#E84393',name:'Plaguemire',icon:'☠️'}
+  };
+  var FX={
+    BURN:{c:'#ffaa55',i:'🔥'},WARD:{c:'#D4A64B',i:'🛡️'},POISON:{c:'#aaee55',i:'☠️'},
+    ANCHOR:{c:'#ccaa66',i:'⚓'},HEX:{c:'#bb88ff',i:'🔮'},SILENCE:{c:'#888',i:'🔇'},
+    HEAL:{c:'#6acd8a',i:'💚'},THORNS:{c:'#55aa22',i:'🌿'},WEAKEN:{c:'#cc6666',i:'⬇️'}
+  };
+  var MATCHUPS={
+    smoulders:{s:'stonebark',w:'darktide'},darktide:{s:'smoulders',w:'stonebark'},stonebark:{s:'darktide',w:'smoulders'},
+    stormrage:{s:'ashenvale',w:'nighthollow'},ashenvale:{s:'nighthollow',w:'stormrage'},nighthollow:{s:'stormrage',w:'ashenvale'},
+    dawnbringer:{s:'plaguemire',w:'manastorm'},plaguemire:{s:'manastorm',w:'dawnbringer'},manastorm:{s:'dawnbringer',w:'plaguemire'}
+  };
+  var MOCK_GUILDS=[
+    {id:1,name:'Bonk Legion',color:'#FFD700',short:'BON'},{id:2,name:'Shadow Paws',color:'#00BFFF',short:'SHP'},
+    {id:3,name:'Night Wolves',color:'#BB88FF',short:'NTW'},{id:4,name:"Pepe's Army",color:'#50FA7B',short:'PEP'},
+    {id:5,name:'Cat Lovers United',color:'#FF79C6',short:'CLU'}
+  ];
+  var ZNAMES={
+    smoulders:['Ember Wastes','Cinderfall Ridge','Molten Core'],darktide:['Blackmoor Basin','Abyssal Trench','Tide Caverns'],
+    stonebark:['Ironveil Citadel','Roothold Valley','Ancient Grove'],ashenvale:['Ashenvale Peaks','Mistwalker Pass','Zephyr Cliffs'],
+    stormrage:['Stormrage Spire','Thunder Plains','Voltaic Gorge'],nighthollow:['Voidspire Tower','Dusk Hollow','Eclipse Sanctum'],
+    dawnbringer:['Radiant Bastion','Sunforge Mesa','Golden Reach'],manastorm:['Arcane Nexus','Leyline Crossing','Crystal Depths'],
+    plaguemire:['Blighted Swamp','Spore Caverns','Miasma Pits']
+  };
+  var NINE_NAMES=['EmberFox','BoltCaster','StoneKing','NightShade','PlagueRat','SunWarden','MistWalker',
+    'VoidFang','ArcaneEcho','RootGuard','ThunderPaw','DuskBlade','HolyWhisker','ManaDrain','SporeKitty',
+    'FlameHeart','TideRipper','LeafBlade','GaleRunner','SparkClaw','ShadowMeld','LightBearer','RuneSeer','BlightFur'];
+  var HK=Object.keys(H);
 
-  <!-- React CDN -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
-
-  <script type="text/babel">
-const {useState,useEffect,useRef,useMemo}=React;
-
-// ═══════════════════════════════════════════════════════════
-// THEME — using CSS variable values from variables-v2.css
-// ═══════════════════════════════════════════════════════════
-const V={
-  bg:"var(--bg-deep)",bgMid:"var(--bg-mid)",bgWarm:"var(--bg-warm)",
-  card:"var(--bg-card)",cardSolid:"var(--bg-card-solid)",cardHover:"var(--bg-card-hover)",
-  gold:"var(--gold)",goldDim:"var(--gold-dim)",goldGlow:"var(--gold-glow)",goldBorder:"var(--gold-border)",
-  bright:"var(--text-bright)",body:"var(--text-body)",muted:"var(--text-muted)",faint:"var(--text-faint)",
-  green:"var(--green)",red:"var(--red)",cyan:"var(--cyan)",purple:"var(--purple)",orange:"var(--orange)",
-  live:"var(--live)",border:"var(--border-subtle)",borderMed:"var(--border-medium)",borderGold:"var(--border)",
-  radius:"var(--radius)",radiusSm:"var(--radius-sm)",radiusXs:"var(--radius-xs)",
-  title:"var(--font-title)",bodyF:"var(--font-body)",data:"var(--font-data)",mono:"var(--font-mono)",
-};
-// Raw hex for inline JS calcs (gradients, rgba ops)
-const C={
-  bg:"#0e0a18",card:"#1e1630",gold:"#D4A64B",bright:"#F5F0E8",body:"#D4C8B8",
-  muted:"#9B8E7E",faint:"#6B5E50",green:"#6acd8a",red:"#e85a6a",cyan:"#6ac8d8",
-  purple:"#b088e8",orange:"#FF8C00",live:"#00ff88",mana:"#6ac8d8",
-};
-const STAT={ATK:"#e85a6a",HP:"#6acd8a",SPD:"#6ac8d8",DEF:"#b088e8",LUCK:"#D4A64B"};
-const TYPE_CLR={Attack:"#e85a6a",Defend:"#5599ff",Support:"#6acd8a",Manipulation:"#b088e8",Utility:"#6ac8d8"};
-const RARITY_CLR={common:"#9B8E7E",uncommon:"#6acd8a",rare:"#5599ff",epic:"#b088e8",legendary:"#D4A64B"};
-
-// ═══ NERM ═══
-const NERM={
-  intro:["Oh good. Another bloodbath. Let's see who embarrasses themselves.","Welcome back to the zone where dreams go to die.","Everyone's here. Some of you shouldn't be.","Another cycle, another chance for humiliation.","The things I've seen in this zone... therapy isn't cheap in Nethara."],
-  spellCast:["Ooh fancy. Someone read the card instructions.","A spell! How original.","Look at that card go. Almost impressive.","Casting spells like they know what they're doing. Cute."],
-  burn:["Everything is on fire. Again. Smoulders are so one-note.","BURN damage. Because subtlety is dead.","That's a lot of fire for someone in a swamp."],
-  heal:["Healing? In THIS economy?","Band-aids at a sword fight.","Patching up just to get hit again."],
-  poison:["Poison. The 'too lazy to kill you now' approach.","Plaguemire doing Plaguemire things.","That's going to itch. And kill you."],
-  attackPhase:["Now everyone hits each other. Brilliant tactics.","Auto-attacks! Strategy meets violence.","Threat targeting engaged. Biggest guild, biggest headache."],
-  bigHit:["OOF. That was personal.","Disgusting damage. Call the authorities.","That Nine had a family. Well, had."],
-  crit:["CRITICAL HIT. RNG took that personally.","25% chance and they HIT it.","CRIT! Not even fair. I love it."],
-  ko:function(n,g){return["@"+n+" sent to the shadow realm. "+g+" in shambles.","@"+n+" is DOWN. Vibes don't win card fights.","@"+n+" eliminated. Thoughts and prayers to "+g+".","@"+n+" absolutely deleted."];},
-  noKo:["Everyone survived. How boring.","No knockouts? What are we doing here?"],
-  loneWolf:["Lone Wolf vibing with 1.5x ATK. Nobody noticed.","Smart Lone Wolf — let guilds eat each other."],
-  winZone:["Your guild holds! Don't let it go to your head.","Zone secured. Screenshot before it flips."],
-  loseZone:["Zone lost. That loadout though.","Couldn't hold it. Couldn't hold a candle."],
-  flip:["ZONE FLIPPED! The audacity! The drama!","Someone's guild chat is going nuclear."],
-  homeTurf:["Home turf advantage. Must be nice.","Home ground with bonuses. How brave."],
-  effectTick:["Effects ticking. Someone's slowly doomed.","DOTs doing their thing. March toward zero HP."],
-};
-const pick=a=>a[Math.floor(Math.random()*a.length)];
-
-// ═══ HOUSES ═══
-const H={
-  smoulders:{c:"#E03C31",n:"Smoulders",i:"\u{1F525}",atk:6,hp:12,spd:5,role:"Glass Cannon",turf:{atk:1,spd:1},bonus:"+2 ATK",art:"linear-gradient(135deg,#1a0505,#3a1010 30%,#5a1a0a 50%,#2a0808 80%,#0a0505)",accent:"radial-gradient(ellipse at 50% 70%,rgba(255,80,20,0.15),transparent 60%)"},
-  darktide:{c:"#00B4D8",n:"Darktide",i:"\u{1F30A}",atk:4,hp:16,spd:4,role:"Thief",turf:{hp:2,def:1},bonus:"Steal 1 HP/cyc",art:"linear-gradient(135deg,#050a14,#0a1a2a 30%,#0a2a3a 50%,#051020 80%,#030810)",accent:"radial-gradient(ellipse at 50% 60%,rgba(0,180,216,0.12),transparent 60%)"},
-  stonebark:{c:"#5CB338",n:"Stonebark",i:"\u{1F33F}",atk:2,hp:24,spd:2,role:"Wall",turf:{hp:3,def:1},bonus:"+4 HP",art:"linear-gradient(135deg,#050a05,#0a1a0a 30%,#152a10 50%,#0a150a 80%,#030803)",accent:"radial-gradient(ellipse at 40% 70%,rgba(92,179,56,0.12),transparent 55%)"},
-  ashenvale:{c:"#B0C4DE",n:"Ashenvale",i:"\u{1F4A8}",atk:3,hp:14,spd:8,role:"Rogue",turf:{spd:2,luck:1},bonus:"+2 SPD",art:"linear-gradient(135deg,#080a10,#101820 30%,#182838 50%,#0a1218 80%,#050810)",accent:"radial-gradient(ellipse at 60% 40%,rgba(176,196,222,0.1),transparent 55%)"},
-  stormrage:{c:"#FFC800",n:"Stormrage",i:"\u26A1",atk:7,hp:10,spd:6,role:"Glass Cannon",turf:{atk:2,spd:1},bonus:"15% CRIT",art:"linear-gradient(135deg,#0a0a05,#1a1a0a 30%,#2a2510 50%,#15120a 80%,#080805)",accent:"radial-gradient(ellipse at 50% 50%,rgba(255,200,0,0.1),transparent 55%)"},
-  nighthollow:{c:"#7B2D8E",n:"Nighthollow",i:"\u{1F319}",atk:4,hp:13,spd:7,role:"Disruptor",turf:{atk:1,luck:2},bonus:"20% SILENCE",art:"linear-gradient(135deg,#08050a,#150a1a 30%,#201028 50%,#0a0510 80%,#050308)",accent:"radial-gradient(ellipse at 50% 60%,rgba(123,45,142,0.12),transparent 55%)"},
-  dawnbringer:{c:"#FF8C00",n:"Dawnbringer",i:"\u2600\uFE0F",atk:3,hp:18,spd:3,role:"Healer",turf:{hp:2,luck:1},bonus:"+2 HP heal/cyc",art:"linear-gradient(135deg,#0a0805,#1a150a 30%,#2a2015 50%,#15100a 80%,#0a0805)",accent:"radial-gradient(ellipse at 50% 30%,rgba(255,140,0,0.1),transparent 55%)"},
-  manastorm:{c:"#5B8FE0",n:"Manastorm",i:"\u{1F52E}",atk:5,hp:14,spd:5,role:"Controller",turf:{def:1,luck:1},bonus:"+25% effects",art:"linear-gradient(135deg,#05050a,#0a0a1a 30%,#10152a 50%,#080a15 80%,#03050a)",accent:"radial-gradient(ellipse at 50% 50%,rgba(91,143,224,0.12),transparent 55%)"},
-  plaguemire:{c:"#E84393",n:"Plaguemire",i:"\u2620\uFE0F",atk:3,hp:15,spd:4,role:"DOT",turf:{atk:1,hp:1},bonus:"1 POISON/cyc",art:"linear-gradient(135deg,#0a050a,#1a0a15 30%,#25101a 50%,#120810 80%,#080508)",accent:"radial-gradient(ellipse at 50% 70%,rgba(232,67,147,0.12),transparent 55%)"},
-};
-const FX={BURN:{c:"#ffaa55",i:"\u{1F525}"},CHAIN:{c:"#ff7744",i:"\u26D3"},CRIT:{c:"#ffcc00",i:"\u{1F4A5}"},PIERCE:{c:"#ff8866",i:"\u{1F5E1}"},HEAL:{c:"#66ddaa",i:"\u{1F49A}"},WARD:{c:C.gold,i:"\u{1F6E1}"},ANCHOR:{c:"#ccaa66",i:"\u2693"},THORNS:{c:"#88cc44",i:"\u{1F33F}"},DRAIN:{c:"#cc55ff",i:"\u{1FA78}"},SIPHON:{c:"#aa44ff",i:"\u{1F300}"},WEAKEN:{c:"#ff88aa",i:"\u2B07"},HEX:{c:"#bb88ff",i:"\u{1F52E}"},SILENCE:{c:"#8888cc",i:"\u{1F507}"},HASTE:{c:"#66eeff",i:"\u{1F4A8}"},POISON:{c:"#aaee55",i:"\u2620"},DODGE:{c:"#aaeeff",i:"\u{1F32B}"},AMPLIFY:{c:"#ffcc88",i:"\u{1F4E1}"},BLESS:{c:"#ffffaa",i:"\u2728"}};
-const GUILDS=[{id:0,name:"Bonk Legion",color:"#FFD700",short:"BON"},{id:1,name:"Shadow Paws",color:"#00BFFF",short:"SHP"},{id:2,name:"Night Wolves",color:"#BB88FF",short:"NTW"},{id:3,name:"Pepe's Army",color:"#50FA7B",short:"PEP"},{id:4,name:"Cat Lovers United",color:"#FF79C6",short:"CLU"}];
-
-// ═══ MOCK ZONE DATA — TODO: fetch('/api/zones') ═══
-const ZONES=[
-  {id:1,name:"Ember Wastes",house:"smoulders",nines:19,status:"contested",objective:true,event:null,guilds:[{g:0,pct:42,cnt:5},{g:1,pct:31,cnt:4},{g:3,pct:15,cnt:2},{g:2,pct:12,cnt:1}]},
-  {id:2,name:"Cinderfall Basin",house:"smoulders",nines:8,status:"held",objective:false,event:null,guilds:[{g:0,pct:70,cnt:3},{g:4,pct:30,cnt:2}]},
-  {id:4,name:"Blackmoor Basin",house:"darktide",nines:16,status:"contested",objective:false,event:null,guilds:[{g:1,pct:38,cnt:5},{g:0,pct:35,cnt:4},{g:2,pct:18,cnt:2},{g:3,pct:9,cnt:1}]},
-  {id:5,name:"Abyssal Trench",house:"darktide",nines:6,status:"held",objective:false,event:{type:"Mana Storm",icon:"\u26A1",time:"2h 14m",desc:"All casts cost 0 mana"},guilds:[{g:1,pct:65,cnt:4},{g:0,pct:35,cnt:2}]},
-  {id:7,name:"Ironveil Citadel",house:"stonebark",nines:7,status:"held",objective:false,event:null,guilds:[{g:2,pct:62,cnt:4},{g:0,pct:22,cnt:1},{g:1,pct:16,cnt:1}]},
-  {id:8,name:"Verdant Hollow",house:"stonebark",nines:12,status:"contested",objective:false,event:null,guilds:[{g:0,pct:33,cnt:3},{g:3,pct:30,cnt:3},{g:2,pct:22,cnt:2},{g:4,pct:15,cnt:1}]},
-  {id:10,name:"Skyreach Summit",house:"ashenvale",nines:9,status:"held",objective:false,event:null,guilds:[{g:0,pct:55,cnt:4},{g:4,pct:25,cnt:2},{g:1,pct:20,cnt:2}]},
-  {id:13,name:"Stormrage Spire",house:"stormrage",nines:10,status:"held",objective:false,event:null,guilds:[{g:0,pct:70,cnt:5},{g:3,pct:20,cnt:2},{g:4,pct:10,cnt:1}]},
-  {id:14,name:"Thunder Peak",house:"stormrage",nines:15,status:"contested",objective:false,event:{type:"Treasure Surge",icon:"\u{1F48E}",time:"48m",desc:"+50 pts first 10"},guilds:[{g:3,pct:34,cnt:4},{g:0,pct:32,cnt:4},{g:1,pct:20,cnt:3},{g:2,pct:14,cnt:2}]},
-  {id:16,name:"Voidspire Tower",house:"nighthollow",nines:13,status:"contested",objective:false,event:null,guilds:[{g:3,pct:45,cnt:5},{g:4,pct:30,cnt:3},{g:2,pct:25,cnt:3}]},
-  {id:19,name:"Solace Temple",house:"dawnbringer",nines:8,status:"held",objective:false,event:null,guilds:[{g:4,pct:60,cnt:4},{g:0,pct:40,cnt:3}]},
-  {id:22,name:"Arcane Nexus",house:"manastorm",nines:14,status:"contested",objective:false,event:null,guilds:[{g:2,pct:35,cnt:4},{g:0,pct:30,cnt:3},{g:1,pct:20,cnt:2},{g:3,pct:15,cnt:2}]},
-  {id:25,name:"Blightfen Swamp",house:"plaguemire",nines:12,status:"contested",objective:false,event:null,guilds:[{g:3,pct:40,cnt:4},{g:1,pct:30,cnt:3},{g:0,pct:20,cnt:2},{g:4,pct:10,cnt:1}]},
-];
-const CARDS=[
-  {id:13,name:"Ember Strike",house:"smoulders",type:"Attack",tier:1,cost:1,rarity:"rare",atk:5,hp:1,spd:0,def:0,luck:0,fx:["BURN +3"],ch:12,mxCh:12},
-  {id:51,name:"Overload",house:"stormrage",type:"Attack",tier:3,cost:3,rarity:"epic",atk:9,hp:1,spd:0,def:0,luck:2,fx:["CRIT","CHAIN","SURGE"],ch:18,mxCh:18},
-  {id:40,name:"Cyclone Strike",house:"ashenvale",type:"Attack",tier:2,cost:2,rarity:"uncommon",atk:6,hp:1,spd:2,def:0,luck:0,fx:["HASTE","BURN +3"],ch:8,mxCh:8},
-  {id:36,name:"Bastion",house:"stonebark",type:"Defend",tier:3,cost:3,rarity:"legendary",atk:1,hp:9,spd:0,def:3,luck:0,fx:["ANCHOR","WARD","HEAL +5"],ch:30,mxCh:30},
-  {id:58,name:"Abyssal Verdict",house:"nighthollow",type:"Manipulation",tier:2,cost:2,rarity:"epic",atk:4,hp:3,spd:0,def:0,luck:1,fx:["HEX","WEAKEN"],ch:18,mxCh:18},
-  {id:77,name:"Toxic Dart",house:"plaguemire",type:"Attack",tier:1,cost:1,rarity:"rare",atk:4,hp:2,spd:0,def:0,luck:0,fx:["POISON"],ch:12,mxCh:12},
-  {id:31,name:"Regrowth",house:"stonebark",type:"Support",tier:1,cost:1,rarity:"common",atk:1,hp:5,spd:0,def:0,luck:0,fx:["HEAL +4"],ch:5,mxCh:5},
-  {id:4,name:"Arcane Shield",house:"universal",type:"Defend",tier:1,cost:1,rarity:"uncommon",atk:1,hp:5,spd:0,def:0,luck:0,fx:["WARD"],ch:8,mxCh:8},
-];
-
-// ═══ COMBATANT GENERATOR ═══
-const NAMES=["EmberFox","StoneKing","NightShade","GaleRunner","TideWalker","SparkHound","PlagueRat","SolarFlare","VoidFang","IronMaw","DuskClaw","MistPaw","BoltEye","RootHeart","CinderPaw","WaveBreak","ThornBack","SkyDancer","VoltNine","MoonClaw","DawnFire","ArcanePaw","BlightFang"];
-const NCARDS=["Ember Strike","Bastion","Cyclone Strike","Shadow Hex","Toxic Dart","Chain Lightning","Regrowth","Arcane Shield","Solar Flare","Overload"];
-const ALL_H=Object.keys(H);
-function genCombatants(zid){var gc=3+Math.floor(Math.random()*2),used=new Set(),gs=[];for(var i=0;i<gc;i++){var g;do{g=Math.floor(Math.random()*5)}while(used.has(g));used.add(g);gs.push(g)}var out=[],ni=0;gs.forEach(function(gid,gi){var cnt=gi===0?1+Math.floor(Math.random()*3):1+Math.floor(Math.random()*4);for(var i=0;i<cnt;i++){out.push({id:zid+"-"+gid+"-"+i,name:NAMES[ni%NAMES.length],house:ALL_H[Math.floor(Math.random()*ALL_H.length)],guild:gid,card:NCARDS[Math.floor(Math.random()*NCARDS.length)],hp:60+Math.floor(Math.random()*40),maxHp:100,alive:true,isLoneWolf:false});ni++}});if(Math.random()>0.6)out.push({id:zid+"-lone",name:"LoneHunter",house:ALL_H[Math.floor(Math.random()*ALL_H.length)],guild:-1,card:NCARDS[Math.floor(Math.random()*NCARDS.length)],hp:75,maxHp:100,alive:true,isLoneWolf:true});return out}
-
-// ═══════════════════════════════════════════════════════════
-// SMALL COMPONENTS
-// ═══════════════════════════════════════════════════════════
-function Nine({house,size,shake,glow,dead,pulse,label,subtitle,showHp,hp,onClick,style:sx}){
-  size=size||80;var h=H[house];var uid=useRef(Math.random().toString(36).slice(2,8));
-  return(<div onClick={onClick} style={Object.assign({display:"flex",flexDirection:"column",alignItems:"center",gap:2,cursor:onClick?"pointer":"default",opacity:dead?0.25:1,filter:dead?"grayscale(0.8)":"none",transition:"opacity 0.5s"},sx||{})}>
-    <div style={{width:size,height:size*1.1,position:"relative",animation:dead?"none":shake?"charShake 0.5s ease":pulse?"charPulse 0.6s ease":"charIdle 3s ease-in-out infinite",filter:glow?"drop-shadow(0 0 12px "+h.c+"60)":pulse?"drop-shadow(0 0 18px "+h.c+"90)":"none"}}>
-      <svg viewBox="0 0 100 115" width={size} height={size*1.1}>
-        <defs><radialGradient id={"g-"+uid.current} cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor={h.c} stopOpacity="0.15"/><stop offset="100%" stopColor={h.c} stopOpacity="0"/></radialGradient></defs>
-        {glow&&<ellipse cx="50" cy="70" rx="40" ry="30" fill={"url(#g-"+uid.current+")"}/>}
-        <path d="M25 55 L20 110 L80 110 L75 55 Q50 48 25 55Z" fill={h.c} opacity="0.6"/><path d="M30 58 L27 105 L73 105 L70 58 Q50 52 30 58Z" fill={h.c} opacity="0.85"/>
-        <rect x="28" y="68" width="44" height="4" rx="2" fill="#000" opacity="0.2"/><circle cx="50" cy="62" r="5" fill={h.c} opacity="0.3"/><text x="50" y="64" textAnchor="middle" fontSize="7">{h.i}</text>
-        <ellipse cx="50" cy="38" rx="22" ry="20" fill="#3a3a4a"/><polygon points="32,22 28,5 41,18" fill="#3a3a4a"/><polygon points="68,22 72,5 59,18" fill="#3a3a4a"/>
-        <polygon points="33,22 30,8 40,19" fill={h.c} opacity="0.35"/><polygon points="67,22 70,8 60,19" fill={h.c} opacity="0.35"/>
-        <ellipse cx="40" cy="36" rx="4.5" ry="4" fill={h.c}/><ellipse cx="60" cy="36" rx="4.5" ry="4" fill={h.c}/>
-        <ellipse cx="40" cy="36" rx="2.2" ry="2.8" fill={C.bg}/><ellipse cx="60" cy="36" rx="2.2" ry="2.8" fill={C.bg}/>
-        <circle cx="41.5" cy="34.5" r="1.2" fill="white" opacity={dead?"0.3":"0.9"}/><circle cx="61.5" cy="34.5" r="1.2" fill="white" opacity={dead?"0.3":"0.9"}/>
-        {dead&&<><line x1="36" y1="33" x2="44" y2="39" stroke="#888" strokeWidth="2"/><line x1="44" y1="33" x2="36" y2="39" stroke="#888" strokeWidth="2"/><line x1="56" y1="33" x2="64" y2="39" stroke="#888" strokeWidth="2"/><line x1="64" y1="33" x2="56" y2="39" stroke="#888" strokeWidth="2"/></>}
-        <polygon points="49,42 51,42 50,44" fill={h.c} opacity="0.5"/><path d="M46 45 Q50 47 54 45" fill="none" stroke="#2a2a3a" strokeWidth="0.7"/>
-      </svg>
-    </div>
-    {label&&<div style={{fontFamily:V.title,fontSize:size>60?10:7,fontWeight:700,color:dead?C.faint:C.bright,textAlign:"center",maxWidth:size+30,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{label}</div>}
-    {subtitle&&<div style={{fontFamily:V.mono,fontSize:7,color:h.c,textAlign:"center"}}>{subtitle}</div>}
-    {showHp&&<div style={{width:Math.max(size*0.75,30),height:3,background:"rgba(255,255,255,0.08)",borderRadius:2,overflow:"hidden"}}><div style={{width:hp+"%",height:"100%",background:hp>50?C.green:hp>25?C.gold:C.red,borderRadius:2,transition:"width 0.6s"}}/></div>}
-  </div>);
-}
-
-function NermBubble({text}){if(!text)return null;return(<div key={text} style={{animation:"nermIn 0.4s ease",display:"flex",alignItems:"flex-start",gap:10,padding:"10px 14px",background:C.card,border:"1px solid "+C.gold+"25",borderRadius:12,margin:"0 16px 8px",boxShadow:"0 4px 20px rgba(0,0,0,0.4)"}}><div style={{fontSize:24,flexShrink:0,animation:"nermBounce 0.6s ease"}}>{"\u{1F63C}"}</div><div><div style={{fontFamily:V.data,fontSize:7,color:C.gold,marginBottom:3,letterSpacing:1}}>NERM</div><div style={{fontFamily:V.mono,fontSize:10,color:C.body,lineHeight:1.5,fontStyle:"italic"}}>{text}</div></div></div>);}
-function PhaseBanner({text,color}){if(!text)return null;return(<div key={text} style={{position:"absolute",top:"35%",left:"50%",transform:"translate(-50%,-50%)",zIndex:200,animation:"phaseIn 0.5s ease",pointerEvents:"none"}}><div style={{fontFamily:V.title,fontSize:18,fontWeight:800,color:color,textShadow:"0 0 20px "+color+"60, 0 2px 8px rgba(0,0,0,0.9)",letterSpacing:3,whiteSpace:"nowrap"}}>{text}</div></div>);}
-function Dmg({value,x,y,type}){var color=type==="damage"?C.red:type==="heal"?C.green:type==="effect"?C.purple:C.gold;return<div style={{position:"absolute",left:x,top:y,pointerEvents:"none",zIndex:100,fontFamily:V.data,fontSize:type==="crit"?16:13,color:color,textShadow:"0 0 12px "+color+", 0 2px 6px rgba(0,0,0,0.9)",animation:"dmgFloat 1.8s ease-out forwards",whiteSpace:"nowrap"}}>{type==="damage"?"-":type==="heal"?"+":""}{value}</div>;}
-function Pip({l,v,c}){return<div style={{display:"flex",alignItems:"center",gap:3,background:c+"10",borderRadius:4,padding:"2px 6px"}}><span style={{fontFamily:V.mono,fontSize:8,color:c+"99",fontWeight:700}}>{l}</span><span style={{fontFamily:V.data,fontSize:8,color:c}}>{v}</span></div>;}
-function SBlock({l,base,bonus,c}){return<div style={{textAlign:"center"}}><div style={{fontFamily:V.mono,fontSize:8,color:c+"99"}}>{l}</div><div style={{fontFamily:V.data,fontSize:16,color:c}}>{base+bonus}</div>{bonus>0&&<div style={{fontFamily:V.mono,fontSize:8,color:C.green}}>+{bonus}</div>}</div>;}
-function CardComp({card,selected,onClick}){var hc=H[card.house]?H[card.house].c:C.gold;var tc=TYPE_CLR[card.type];var rc=RARITY_CLR[card.rarity];return(<div onClick={onClick} style={{width:130,minWidth:130,borderRadius:12,cursor:"pointer",background:selected?hc+"15":"rgba(30,22,42,0.7)",border:"2px solid "+(selected?hc:"rgba(255,255,255,0.07)"),boxShadow:selected?"0 0 20px "+hc+"20":"none",transform:selected?"translateY(-4px)":"none",transition:"all 0.2s",overflow:"hidden",flexShrink:0}}><div style={{height:2,background:"linear-gradient(90deg,transparent,"+rc+",transparent)",opacity:0.5}}/><div style={{height:60,display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(circle at 50% 60%,"+hc+"12,transparent 70%)",position:"relative"}}><span style={{fontSize:32,filter:"drop-shadow(0 0 8px "+hc+"50)"}}>{H[card.house]?H[card.house].i:"\u2728"}</span><div style={{position:"absolute",top:4,right:5,fontFamily:V.mono,fontSize:7,color:C.cyan,background:"rgba(0,0,0,0.4)",borderRadius:4,padding:"1px 5px"}}>T{card.tier}</div></div><div style={{padding:"8px 10px 10px"}}><div style={{fontFamily:V.mono,fontSize:6,fontWeight:800,color:C.bg,background:tc,borderRadius:2,padding:"1px 5px",display:"inline-block",marginBottom:3}}>{card.type.toUpperCase()}</div><div style={{fontFamily:V.title,fontSize:12,fontWeight:700,color:C.bright,lineHeight:1.2,marginBottom:4}}>{card.name}</div><div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:4}}>{card.atk>0&&<Pip l="ATK" v={card.atk} c={STAT.ATK}/>}{card.hp>0&&<Pip l="HP" v={card.hp} c={STAT.HP}/>}{card.spd>0&&<Pip l="SPD" v={card.spd} c={STAT.SPD}/>}</div>{card.fx.length>0&&<div style={{display:"flex",gap:2,flexWrap:"wrap",marginBottom:4}}>{card.fx.map(function(f,i){var k=f.replace(/\s*[\+\d]+$/,"");var m=FX[k]||{c:C.muted,i:"?"};return<span key={i} style={{fontSize:7,fontFamily:V.mono,fontWeight:600,color:m.c,background:m.c+"10",padding:"1px 4px",borderRadius:3}}>{m.i} {f}</span>})}</div>}<div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontFamily:V.mono,fontSize:7,color:rc,fontWeight:700,textTransform:"capitalize"}}>{card.rarity}</span><span style={{fontFamily:V.data,fontSize:7,color:C.cyan}}>{card.cost}MP</span></div></div></div>);}
-
-// ═══════════════════════════════════════════════════════════
-// PLAYER HEADER
-// ═══════════════════════════════════════════════════════════
-function PlayerHeader({player}){
-  var ph=H[player.house];
-  return(<div style={{padding:"16px",background:"radial-gradient(ellipse at 50% 0%,"+ph.c+"08,transparent 70%)",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-    <div style={{display:"flex",alignItems:"center",gap:14}}>
-      <Nine house={player.house} size={65} glow={true}/>
-      <div style={{flex:1,minWidth:0}}>
-        <div style={{fontFamily:V.title,fontSize:14,fontWeight:700,color:C.bright,marginBottom:4}}>{ph.i} {ph.n} <span style={{fontFamily:V.mono,fontSize:9,color:C.muted,fontWeight:400}}>{ph.role}</span></div>
-        <div style={{display:"flex",gap:6,marginBottom:6}}><Pip l="ATK" v={ph.atk} c={STAT.ATK}/><Pip l="HP" v={ph.hp} c={STAT.HP}/><Pip l="SPD" v={ph.spd} c={STAT.SPD}/></div>
-        <div style={{display:"flex",alignItems:"center",gap:4}}>
-          {Array.from({length:10},function(_,i){return<div key={i} style={{width:9,height:9,borderRadius:"50%",background:i<player.mana?"linear-gradient(180deg,"+C.cyan+",#0088aa)":"rgba(255,255,255,0.05)",border:"1px solid "+(i<player.mana?C.cyan+"40":"rgba(255,255,255,0.06)"),boxShadow:i<player.mana?"0 0 4px "+C.cyan+"20":"none"}}/>})}
-          <span style={{fontFamily:V.mono,fontSize:8,color:C.faint,marginLeft:4}}>{player.mana}/{player.maxMana}</span>
-        </div>
-        <div style={{display:"flex",gap:12,marginTop:4}}>
-          <span style={{fontFamily:V.mono,fontSize:8,color:C.muted}}>{"\u2694\uFE0F"} {player.deployedZones.length} deployed</span>
-          <span style={{fontFamily:V.mono,fontSize:8,color:GUILDS[player.guild].color}}>{GUILDS[player.guild].name}</span>
-          <span style={{fontFamily:V.data,fontSize:8,color:C.gold}}>{player.points} pts</span>
-        </div>
-      </div>
-    </div>
-  </div>);
-}
-
-// ═══════════════════════════════════════════════════════════
-// ZONE COMMAND CENTER
-// ═══════════════════════════════════════════════════════════
-function getZonePriority(z,pg){
-  var my=z.guilds.find(function(g){return g.g===pg});
-  var myPct=my?my.pct:0;var topPct=z.guilds[0]?z.guilds[0].pct:0;
-  var leading=my&&myPct>=topPct;var needsHelp=my&&!leading&&z.status==="contested";
-  if(needsHelp)return{score:100+z.nines,tag:"REINFORCE",tagC:C.red,tagIcon:"\u{1F6E1}\uFE0F",full:true};
-  if(z.event&&z.status==="contested")return{score:90+z.nines,tag:z.event.type.toUpperCase(),tagC:C.purple,tagIcon:z.event.icon,full:true};
-  if(z.objective)return{score:80+z.nines,tag:"OBJECTIVE",tagC:C.gold,tagIcon:"\u2B50",full:true};
-  if(z.event)return{score:75+z.nines,tag:z.event.type.toUpperCase(),tagC:C.purple,tagIcon:z.event.icon,full:true};
-  if(z.status==="contested"&&my&&leading)return{score:65+z.nines,tag:"HOLD",tagC:C.green,tagIcon:"\u2694\uFE0F",full:true};
-  if(z.status==="contested")return{score:50+z.nines,tag:"CONTESTED",tagC:C.red,tagIcon:"\u2694\uFE0F",full:false};
-  return{score:z.nines,tag:null,tagC:null,tagIcon:null,full:false};
-}
-
-function ZoneTile({zone,pri,pg,ph,isDeployed,onClick}){
-  var h=H[zone.house];var my=zone.guilds.find(function(g){return g.g===pg});var isHome=ph===zone.house;var full=pri.full;
-  return(<div onClick={onClick} style={{borderRadius:12,overflow:"hidden",cursor:"pointer",border:"1px solid "+(isDeployed?h.c+"40":pri.tag==="REINFORCE"?C.red+"30":"rgba(255,255,255,0.07)"),transition:"all 0.2s",gridColumn:full?"1 / -1":"auto",boxShadow:pri.tag==="REINFORCE"?"0 0 12px "+C.red+"10":isDeployed?"0 0 12px "+h.c+"10":"none"}}
-    onMouseEnter={function(e){e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.borderColor=h.c+"40"}}
-    onMouseLeave={function(e){e.currentTarget.style.transform="none";e.currentTarget.style.borderColor=isDeployed?h.c+"40":pri.tag==="REINFORCE"?C.red+"30":"rgba(255,255,255,0.07)"}}>
-    {/* Art */}
-    <div style={{height:full?110:80,background:h.art,position:"relative",overflow:"hidden"}}>
-      <div style={{position:"absolute",inset:0,background:h.accent}}/>
-      <div style={{position:"absolute",inset:0,backgroundImage:"radial-gradient(1px 1px at 20% 30%,"+h.c+"30,transparent),radial-gradient(1px 1px at 70% 60%,"+h.c+"20,transparent),radial-gradient(1px 1px at 50% 80%,"+h.c+"25,transparent)",animation:"particleDrift 8s ease-in-out infinite"}}/>
-      <div style={{position:"absolute",bottom:0,left:0,right:0,height:full?55:40,background:"linear-gradient(transparent,"+C.bg+"ee)"}}/>
-      {/* Top badges */}
-      <div style={{position:"absolute",top:8,left:8,display:"flex",gap:4,flexWrap:"wrap"}}>
-        {pri.tag&&<span style={{fontFamily:V.data,fontSize:7,color:pri.tagC,background:"rgba(0,0,0,0.65)",padding:"3px 8px",borderRadius:4,border:"1px solid "+pri.tagC+"30"}}>{pri.tagIcon} {pri.tag}</span>}
-        {isDeployed&&<span style={{fontFamily:V.data,fontSize:7,color:C.cyan,background:"rgba(0,0,0,0.65)",padding:"3px 8px",borderRadius:4,border:"1px solid "+C.cyan+"30"}}>YOU</span>}
-        {isHome&&<span style={{fontFamily:V.data,fontSize:7,color:C.green,background:"rgba(0,0,0,0.65)",padding:"3px 8px",borderRadius:4,border:"1px solid "+C.green+"30"}}>{"\u{1F3E0}"}</span>}
-      </div>
-      {zone.event&&<div style={{position:"absolute",top:8,right:8,fontFamily:V.data,fontSize:7,color:C.purple,background:"rgba(0,0,0,0.65)",padding:"3px 8px",borderRadius:4}}>{zone.event.icon} {zone.event.time}</div>}
-      {/* Zone name */}
-      <div style={{position:"absolute",bottom:8,left:10,right:10,display:"flex",alignItems:"center",gap:6}}>
-        <span style={{fontSize:full?20:16,filter:"drop-shadow(0 0 6px "+h.c+"60)"}}>{h.i}</span>
-        <div style={{flex:1,minWidth:0}}>
-          <div style={{fontFamily:V.title,fontSize:full?15:12,fontWeight:700,color:C.bright,textShadow:"0 1px 4px rgba(0,0,0,0.8)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{zone.name}</div>
-          <div style={{fontFamily:V.mono,fontSize:8,color:h.c,opacity:0.8}}>{h.n} \u00B7 {h.bonus}</div>
-        </div>
-        <span style={{fontFamily:V.data,fontSize:8,color:C.faint}}>{zone.nines}{"\u{1F431}"}</span>
-      </div>
-    </div>
-    {/* Guild presence */}
-    <div style={{padding:full?"10px 12px":"8px 10px",background:"rgba(30,22,42,0.7)"}}>
-      <div style={{display:"flex",height:5,borderRadius:3,overflow:"hidden",marginBottom:full?8:6,background:"rgba(0,0,0,0.2)"}}>
-        {zone.guilds.map(function(gd,i){var g=GUILDS[gd.g];return<div key={i} style={{width:gd.pct+"%",height:"100%",background:g?g.color:"#666",opacity:gd.g===pg?1:0.5,borderRight:i<zone.guilds.length-1?"1px solid rgba(0,0,0,0.3)":"none"}}/>})}
-      </div>
-      <div style={{display:"flex",gap:full?10:6,flexWrap:"wrap",alignItems:"center"}}>
-        {zone.guilds.slice(0,full?4:3).map(function(gd,i){var g=GUILDS[gd.g];var isMe=gd.g===pg;return(<div key={i} style={{display:"flex",alignItems:"center",gap:3}}>
-          <div style={{width:6,height:6,borderRadius:"50%",background:g?g.color:"#666",boxShadow:isMe?"0 0 6px "+(g?g.color:"#666")+"60":"none"}}/>
-          <span style={{fontFamily:V.mono,fontSize:full?9:8,color:isMe?C.bright:C.muted,fontWeight:isMe?700:400}}>{g?g.short:"?"}</span>
-          <span style={{fontFamily:V.data,fontSize:full?8:7,color:isMe?(gd.pct>=zone.guilds[0].pct?C.green:C.red):C.faint}}>{gd.pct}%</span>
-          {isMe&&gd.cnt>0&&<span style={{fontFamily:V.mono,fontSize:7,color:C.muted}}>({gd.cnt})</span>}
-        </div>)})}
-        {zone.guilds.length>(full?4:3)&&<span style={{fontFamily:V.mono,fontSize:8,color:C.faint}}>+{zone.guilds.length-(full?4:3)}</span>}
-      </div>
-      {full&&my&&<div style={{marginTop:6,fontFamily:V.mono,fontSize:9,color:my.pct>=zone.guilds[0].pct?C.green:C.red,background:(my.pct>=zone.guilds[0].pct?C.green:C.red)+"08",padding:"4px 8px",borderRadius:4}}>
-        {my.pct>=zone.guilds[0].pct?"\u2694\uFE0F Your guild leads \u2014 "+my.cnt+" deployed":"\u{1F6E1}\uFE0F "+my.pct+"% (#"+(zone.guilds.indexOf(my)+1)+") \u2014 "+my.cnt+" deployed, needs backup"}
-      </div>}
-    </div>
-  </div>);
-}
-
-const SORTS=[
-  {k:"help",l:"\u{1F6E1}\uFE0F Guild Needs Help"},
-  {k:"active",l:"\u{1F525} Most Active"},
-  {k:"contested",l:"\u2694\uFE0F Contested"},
-  {k:"events",l:"\u26A1 Events"},
-  {k:"mine",l:"\u{1F4CD} My Zones"},
-  {k:"bonus",l:"\u2B50 Bonuses"},
-];
-
-function ZoneGrid({zones,player,onSelect}){
-  var [sort,setSort]=useState("help");
-  var sorted=useMemo(function(){
-    var mapped=zones.map(function(z){return{zone:z,pri:getZonePriority(z,player.guild)}});
-    if(sort==="help")mapped.sort(function(a,b){return b.pri.score-a.pri.score});
-    else if(sort==="active")mapped.sort(function(a,b){return b.zone.nines-a.zone.nines});
-    else if(sort==="contested")mapped=mapped.filter(function(m){return m.zone.status==="contested"}).sort(function(a,b){return b.zone.nines-a.zone.nines});
-    else if(sort==="events")mapped=mapped.filter(function(m){return m.zone.event}).sort(function(a,b){return b.zone.nines-a.zone.nines});
-    else if(sort==="mine")mapped=mapped.filter(function(m){return player.deployedZones.indexOf(m.zone.id)>=0});
-    else if(sort==="bonus"){mapped.sort(function(a,b){return(b.zone.objective?50:0)-(a.zone.objective?50:0)})}
-    return mapped;
-  },[zones,sort,player.guild,player.deployedZones]);
-
-  return(<div>
-    {/* Sort bar */}
-    <div style={{padding:"14px 16px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-      <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
-        {SORTS.map(function(s){return(<button key={s.k} onClick={function(){setSort(s.k)}} style={{fontFamily:V.mono,fontSize:11,fontWeight:sort===s.k?600:400,padding:"9px 16px",borderRadius:8,border:"1px solid "+(sort===s.k?C.gold+"40":"rgba(255,255,255,0.07)"),cursor:"pointer",background:sort===s.k?"rgba(212,166,75,0.15)":"rgba(30,22,42,0.7)",color:sort===s.k?C.gold:C.muted,whiteSpace:"nowrap",flexShrink:0,transition:"all 0.2s"}}>{s.l}</button>)})}
-      </div>
-    </div>
-    {/* Live status */}
-    <div style={{padding:"8px 16px",display:"flex",alignItems:"center",gap:8,borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-      <div style={{width:8,height:8,borderRadius:"50%",background:C.live,animation:"liveDot 2s infinite"}}/>
-      <span style={{fontFamily:V.mono,fontSize:10,color:C.live}}>{zones.filter(function(z){return z.status==="contested"||z.event}).length} active battles</span>
-      <span style={{fontFamily:V.mono,fontSize:9,color:C.faint,marginLeft:"auto"}}>{zones.length} zones</span>
-    </div>
-    {/* Grid */}
-    <div style={{padding:16,display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
-      {sorted.map(function(m){return<ZoneTile key={m.zone.id} zone={m.zone} pri={m.pri} pg={player.guild} ph={player.house} isDeployed={player.deployedZones.indexOf(m.zone.id)>=0} onClick={function(){onSelect(m.zone)}}/>})}
-      {sorted.length===0&&<div style={{gridColumn:"1 / -1",textAlign:"center",padding:40,fontFamily:V.mono,fontSize:11,color:C.faint}}>No zones match this filter.</div>}
-    </div>
-  </div>);
-}
-
-// ═══════════════════════════════════════════════════════════
-// CYCLE SUMMARY
-// ═══════════════════════════════════════════════════════════
-function CycleSummary({results,onClose}){if(!results)return null;var gs=results.guildScores,kos=results.kos,pts=results.yourPoints,win=results.winner,flip=results.flipped;var sorted=gs.slice().sort(function(a,b){return b.totalHp-a.totalHp});return(<div style={{position:"fixed",inset:0,zIndex:500,background:"rgba(5,3,8,0.9)",display:"flex",alignItems:"center",justifyContent:"center",animation:"fadeIn 0.3s"}} onClick={onClose}><div onClick={function(e){e.stopPropagation()}} style={{width:"92%",maxWidth:400,background:"#1a1528",border:"1px solid "+C.gold+"30",borderRadius:12,overflow:"hidden",boxShadow:"0 0 60px "+C.gold+"10"}}><div style={{padding:"18px 22px",textAlign:"center",background:win.isYou?C.gold+"12":C.red+"08",borderBottom:"1px solid rgba(255,255,255,0.07)"}}><div style={{fontSize:28,marginBottom:4}}>{win.isYou?"\u2694\uFE0F":"\u{1F480}"}</div><div style={{fontFamily:V.title,fontSize:16,fontWeight:800,color:win.isYou?C.gold:C.red}}>{win.isYou?"YOUR GUILD HOLDS THE ZONE!":win.name+" controls the zone"}</div>{flip&&<div style={{fontFamily:V.mono,fontSize:10,color:C.gold,marginTop:4}}>{"\u{1F504}"} ZONE FLIPPED! +15</div>}</div><div style={{padding:"14px 22px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}><div style={{fontFamily:V.mono,fontSize:9,color:C.faint,letterSpacing:1,marginBottom:8}}>STANDINGS</div>{sorted.map(function(s,i){return(<div key={s.guildId} style={{display:"flex",alignItems:"center",gap:8,padding:"5px 0",borderBottom:i<sorted.length-1?"1px solid rgba(255,255,255,0.07)":"none"}}><span style={{fontFamily:V.data,fontSize:9,color:i===0?C.gold:C.faint,width:18}}>#{i+1}</span><div style={{width:8,height:8,borderRadius:"50%",background:s.color}}/><span style={{flex:1,fontFamily:V.mono,fontSize:10,color:s.isYou?C.bright:C.body}}>{s.name}{s.isYou?" (YOU)":""}</span><span style={{fontFamily:V.data,fontSize:10,color:s.totalHp>0?C.green:C.red}}>{s.totalHp}</span><span style={{fontFamily:V.mono,fontSize:7,color:C.faint}}>HP</span></div>)})}</div>{kos.length>0&&<div style={{padding:"10px 22px",borderBottom:"1px solid rgba(255,255,255,0.07)"}}><div style={{fontFamily:V.mono,fontSize:9,color:C.red,letterSpacing:1,marginBottom:6}}>KNOCKED OUT</div><div style={{display:"flex",flexWrap:"wrap",gap:4}}>{kos.map(function(k,i){return<span key={i} style={{fontFamily:V.mono,fontSize:8,padding:"3px 8px",background:C.red+"12",color:C.red,borderRadius:4}}>{"\u{1F480}"} @{k.name}</span>})}</div></div>}<div style={{padding:"14px 22px"}}><div style={{fontFamily:V.mono,fontSize:9,color:C.gold,letterSpacing:1,marginBottom:8}}>YOUR POINTS</div>{pts.breakdown.map(function(b,i){return<div key={i} style={{display:"flex",justifyContent:"space-between",padding:"3px 0"}}><span style={{fontFamily:V.mono,fontSize:10,color:C.body}}>{b.reason}</span><span style={{fontFamily:V.data,fontSize:9,color:C.green}}>+{b.pts}</span></div>})}<div style={{display:"flex",justifyContent:"space-between",padding:"8px 0 0",marginTop:6,borderTop:"1px solid "+C.gold+"20"}}><span style={{fontFamily:V.title,fontSize:14,fontWeight:700,color:C.gold}}>TOTAL</span><span style={{fontFamily:V.data,fontSize:14,color:C.gold}}>+{pts.total}</span></div></div><button onClick={onClose} style={{width:"100%",padding:12,border:"none",cursor:"pointer",fontFamily:V.mono,fontSize:11,color:C.faint,background:"rgba(255,255,255,0.03)",borderTop:"1px solid rgba(255,255,255,0.07)"}}>Dismiss</button></div></div>);}
-
-// ═══════════════════════════════════════════════════════════
-// BATTLE VIEW
-// ═══════════════════════════════════════════════════════════
-function BattleView({zone,player,cards,onBack,onDeploy,onWithdraw}){
-  var [selCard,setSelCard]=useState(null),[combatants,setCombatants]=useState(function(){return genCombatants(zone.id)}),[dmgs,setDmgs]=useState([]),[shakeG,setShakeG]=useState({}),[pulseMe,setPulseMe]=useState(false),[running,setRunning]=useState(false),[cycleTime,setCycleTime]=useState(847),[hovered,setHovered]=useState(null),[cycleRes,setCycleRes]=useState(null),[myHp,setMyHp]=useState(100),[nerm,setNerm]=useState(null),[phase,setPhase]=useState(null),[flash,setFlash]=useState(null);
-  var dmgId=useRef(0),tmrs=useRef([]);
-  var h=H[zone.house],ph=H[player.house],isDep=player.deployedZones.indexOf(zone.id)>=0,depCard=cards.find(function(c){return c.deployedTo===zone.id}),isHome=player.house===zone.house,tb=isHome?h.turf:null;
-  var gg={};combatants.forEach(function(c){var k=c.guild===-1?"lone-"+c.id:"g-"+c.guild;if(!gg[k])gg[k]={guild:c.guild,nines:[]};gg[k].nines.push(c)});
-  var enemies=Object.values(gg).filter(function(g){return g.guild!==player.guild});
-  var allies=combatants.filter(function(c){return c.guild===player.guild});
-  var hasLW=combatants.some(function(c){return c.isLoneWolf&&c.alive});
-  useEffect(function(){var t=setInterval(function(){setCycleTime(function(c){return c>0?c-1:900})},1000);return function(){clearInterval(t);tmrs.current.forEach(clearTimeout)}},[]);
-  function later(fn,ms){tmrs.current.push(setTimeout(fn,ms))}function spD(v,x,y,t){var id=dmgId.current++;setDmgs(function(p){return p.concat([{id:id,value:v,x:x,y:y,type:t}])});later(function(){setDmgs(function(p){return p.filter(function(d){return d.id!==id})})},1800)}function shG(gid){setShakeG(function(p){var n=Object.assign({},p);n[gid]=true;return n});later(function(){setShakeG(function(p){var n=Object.assign({},p);n[gid]=false;return n})},500)}function doF(c){setFlash(c);later(function(){setFlash(null)},300)}function sN(t,d){setNerm(t);later(function(){setNerm(null)},d||3000)}function sP(t,c,d){setPhase({text:t,color:c});later(function(){setPhase(null)},d||2000)}
-
-  function runCombat(){
-    if(running||!isDep)return;setRunning(true);setNerm(null);setPhase(null);
-    var tg=enemies.reduce(function(mx,g){var hp=g.nines.filter(function(n){return n.alive}).reduce(function(s,n){return s+n.hp},0);return hp>(mx.hp||0)?{guild:g.guild,hp:hp,name:g.guild===-1?"Lone Wolf":GUILDS[g.guild]?GUILDS[g.guild].name:"Unknown"}:mx},{hp:0,guild:-1,name:"Unknown"});
-    var yAtk=ph.atk+(depCard?depCard.atk:0)+(tb?(tb.atk||0):0);
-    var hBurn=depCard&&depCard.fx.some(function(f){return f.indexOf("BURN")>=0});
-    var hHeal=depCard&&depCard.fx.some(function(f){return f.indexOf("HEAL")>=0});
-    var hPoison=depCard&&depCard.fx.some(function(f){return f.indexOf("POISON")>=0});
-    var hCrit=depCard&&depCard.fx.indexOf("CRIT")>=0;
-    var burnD=hBurn?parseInt((depCard.fx.find(function(f){return f.indexOf("BURN")>=0}).match(/\d+/)||[3])[0]):0;
-    var healA=hHeal?parseInt((depCard.fx.find(function(f){return f.indexOf("HEAL")>=0}).match(/\d+/)||[4])[0]):0;
-    later(function(){sP("\u2694\uFE0F COMBAT CYCLE",C.gold)},0);later(function(){sN(pick(NERM.intro),3500)},500);
-    later(function(){if(isHome)sN(pick(NERM.homeTurf),2500)},3200);
-    later(function(){sP("SPELLS RESOLVE",C.purple,2500);doF(depCard?(H[depCard.house]?H[depCard.house].c:C.purple):C.purple);setPulseMe(true);later(function(){setPulseMe(false)},600)},4000);
-    later(function(){sN(pick(NERM.spellCast),2500)},4800);
-    var sp=6000;if(hBurn){later(function(){doF("#ff6622");spD(burnD,250+Math.random()*60,35+Math.random()*30,"effect");shG(tg.guild);sN(pick(NERM.burn),2500)},sp);sp+=1500}
-    if(hHeal){later(function(){doF("#44cc88");spD("+"+healA,100,70,"heal");setMyHp(function(p){return Math.min(100,p+healA*0.5)});sN(pick(NERM.heal),2500)},sp);sp+=1500}
-    if(hPoison){later(function(){doF("#aaee55");spD("\u2620",270,55,"effect");sN(pick(NERM.poison),2500)},sp);sp+=1500}
-    var as=Math.max(sp,7500);
-    later(function(){sP("AUTO-ATTACK",C.red,2500);sN(pick(NERM.attackPhase),2500)},as);
-    later(function(){doF(ph.c);setPulseMe(true);later(function(){setPulseMe(false)},600);spD(yAtk,240+Math.random()*80,30+Math.random()*50,"damage");shG(tg.guild)},as+1500);
-    later(function(){sN(pick(NERM.bigHit),2000)},as+2000);
-    later(function(){var ed=3+Math.floor(Math.random()*5);doF(C.red);spD(ed,80+Math.random()*80,60+Math.random()*30,"damage");shG(player.guild);setMyHp(function(p){return Math.max(5,p-ed*0.4)})},as+3000);
-    var crit=hCrit&&Math.random()<0.25;
-    if(crit){later(function(){doF("#ffcc00");spD(yAtk*2+" CRIT!",220,20,"crit");shG(tg.guild);sN(pick(NERM.crit),2500)},as+3800)}
-    var ae=as+(crit?5000:4000);
-    later(function(){sP("EFFECTS TICK",C.purple,2000);sN(pick(NERM.effectTick),2000)},ae);
-    var ko=[];later(function(){setCombatants(function(prev){return prev.map(function(c){if(c.guild!==player.guild&&c.alive&&Math.random()<0.18){ko.push({name:c.name,guild:c.guild===-1?"Lone Wolf":GUILDS[c.guild]?GUILDS[c.guild].short:"???"});return Object.assign({},c,{hp:0,alive:false})}return Object.assign({},c,{hp:Math.max(5,c.hp-Math.floor(Math.random()*10))})})})},ae+1200);
-    later(function(){if(ko.length>0){doF(C.red);ko.forEach(function(k,i){later(function(){spD("\u{1F480} "+k.name,150+i*40,40+i*20,"damage")},i*400)});sN(pick(NERM.ko(ko[0].name,ko[0].guild)),3000)}else{sN(pick(NERM.noKo),2500)}},ae+1800);
-    if(hasLW){later(function(){sN(pick(NERM.loneWolf),2500)},ae+3000)}
-    var ee=ae+(hasLW?4200:3200);
-    later(function(){sP("ZONE CONTROL",C.gold,3000);var gs=[];var ag={};combatants.forEach(function(c){if(!ag[c.guild])ag[c.guild]=[];ag[c.guild].push(c)});var yGhp=Math.round((myHp*0.5)+(ag[player.guild]||[]).filter(function(n){return n.alive}).reduce(function(s,n){return s+n.hp},0));gs.push({guildId:player.guild,name:GUILDS[player.guild].name,color:GUILDS[player.guild].color,totalHp:yGhp,isYou:true,alive:(ag[player.guild]||[]).filter(function(n){return n.alive}).length+1,total:(ag[player.guild]||[]).length+1});Object.keys(ag).forEach(function(gid){var g=parseInt(gid);if(g===player.guild)return;var ns=ag[gid];var al=ns.filter(function(n){return n.alive});var go=g===-1?{name:"Lone Wolves",color:C.muted}:GUILDS[g];gs.push({guildId:g,name:go?go.name:"Unknown",color:go?go.color:C.muted,totalHp:al.reduce(function(s,n){return s+n.hp},0),isYou:false,alive:al.length,total:ns.length})});var w=gs.sort(function(a,b){return b.totalHp-a.totalHp})[0];var yw=w?w.isYou:false;var fl=yw&&zone.status==="contested";var kl=combatants.filter(function(c){return!c.alive&&c.guild!==player.guild}).map(function(c){return{name:c.name,guild:c.guild===-1?"LW":GUILDS[c.guild]?GUILDS[c.guild].short:"???"}});var bd=[];if(isDep)bd.push({reason:"Survived cycle",pts:3});if(yw)bd.push({reason:"Guild controls zone",pts:2});if(fl)bd.push({reason:"\u{1F504} Zone flipped!",pts:15});if(kl.length>0)bd.push({reason:kl.length+" KO"+(kl.length>1?"s":""),pts:kl.length*10});if(zone.objective)bd.push({reason:"\u2B50 Objective x1.5",pts:Math.round(bd.reduce(function(s,b){return s+b.pts},0)*0.5)});if(isHome)bd.push({reason:"\u{1F3E0} Home Turf",pts:2});var tot=bd.reduce(function(s,b){return s+b.pts},0);spD("+"+tot+"pts",120,40,"crit");sN(yw?pick(NERM.winZone):pick(NERM.loseZone),3000);if(fl)later(function(){sN(pick(NERM.flip),3000)},1500);later(function(){setCycleRes({guildScores:gs,kos:kl,winner:{name:w?w.name:"Unknown",isYou:yw},flipped:fl,yourPoints:{breakdown:bd,total:tot}});setRunning(false);setCycleTime(900)},3000)},ee);
+  // ═══ MOCK DATA GENERATORS ═══
+  function mockGuilds(zone){
+    var n=2+Math.floor(Math.random()*3);var gs=[];var rem=100;
+    var sh=MOCK_GUILDS.slice().sort(function(){return Math.random()-0.5});
+    for(var i=0;i<n;i++){var p=i===n-1?rem:Math.floor(rem*(0.25+Math.random()*0.4));rem-=p;
+      gs.push({guild_id:sh[i].id,name:sh[i].name,color:sh[i].color,short:sh[i].short,pct:Math.max(p,5)});}
+    return gs.sort(function(a,b){return b.pct-a.pct});
   }
-  var mn=Math.floor(cycleTime/60),sc=cycleTime%60;
-  return(<div style={{minHeight:"100vh",background:C.bg}}>
-    {/* Header */}
-    <div style={{height:70,position:"relative",overflow:"hidden",background:h.art}}>
-      <div style={{position:"absolute",inset:0,background:h.accent}}/><div style={{position:"absolute",bottom:0,left:0,right:0,height:40,background:"linear-gradient(transparent,"+C.bg+")"}}/>
-      <div style={{position:"absolute",top:8,left:8,right:8,display:"flex",alignItems:"center",gap:8,zIndex:2}}>
-        <button onClick={onBack} style={{background:"rgba(0,0,0,0.5)",border:"none",color:C.bright,fontSize:16,cursor:"pointer",padding:"4px 10px",borderRadius:8}}>{"\u2190"}</button>
-        <div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:5}}><span style={{fontSize:14}}>{h.i}</span><span style={{fontFamily:V.title,fontSize:13,fontWeight:700,color:C.bright}}>{zone.name}</span></div><div style={{fontFamily:V.mono,fontSize:8,color:h.c}}>{h.n} \u00B7 {Object.keys(gg).length} guilds</div></div>
-        <div style={{fontFamily:V.data,fontSize:9,color:running?C.red:C.cyan,background:"rgba(0,0,0,0.5)",padding:"4px 8px",borderRadius:8}}>{running?"\u2694\uFE0F LIVE":mn+":"+(sc<10?"0":"")+sc}</div>
-      </div>
-    </div>
-    <div style={{padding:"5px 12px",display:"flex",gap:4,flexWrap:"wrap",borderBottom:"1px solid rgba(255,255,255,0.07)"}}>
-      {zone.objective&&<span style={{fontSize:7,fontFamily:V.data,color:C.gold,background:C.gold+"15",padding:"2px 7px",borderRadius:4}}>{"\u2B50"} x1.5</span>}
-      {zone.status==="contested"&&<span style={{fontSize:7,fontFamily:V.data,color:C.red,background:C.red+"12",padding:"2px 7px",borderRadius:4}}>{"\u2694\uFE0F"} CONTESTED</span>}
-      {isHome&&<span style={{fontSize:7,fontFamily:V.data,color:C.green,background:C.green+"12",padding:"2px 7px",borderRadius:4}}>{"\u{1F3E0}"} HOME TURF</span>}
-      <span style={{fontSize:7,fontFamily:V.mono,color:C.faint,marginLeft:"auto"}}>{h.bonus}</span>
-    </div>
-    {/* Arena */}
-    <div style={{height:260,position:"relative",overflow:"hidden",background:"radial-gradient(ellipse at 50% 90%,"+h.c+"08,transparent 50%)"}}>
-      {flash&&<div style={{position:"absolute",inset:0,background:flash,opacity:0.12,zIndex:150,animation:"flashOut 0.3s ease forwards",pointerEvents:"none"}}/>}
-      {phase&&<PhaseBanner text={phase.text} color={phase.color}/>}
-      <div style={{position:"absolute",bottom:20,left:0,right:0,height:1,background:"linear-gradient(90deg,transparent 5%,"+h.c+"15 50%,transparent 95%)"}}/>
-      {isDep&&(<div style={{position:"absolute",bottom:25,left:"50%",transform:"translateX(-50%)",display:"flex",flexDirection:"column",alignItems:"center"}}><div style={{display:"flex",justifyContent:"center",marginBottom:-14,position:"relative",height:50}}>{allies.slice(0,4).map(function(a,i){var off=[{x:-30,z:3},{x:24,z:2},{x:-52,z:1},{x:46,z:0}][i];return<div key={a.id} style={{position:"absolute",left:off.x,zIndex:off.z,opacity:0.65-i*0.1,transform:"scale("+(0.6-i*0.05)+")"}}><Nine house={a.house} size={55} showHp={true} hp={a.hp} dead={!a.alive} shake={shakeG[player.guild]}/></div>})}{allies.length>4&&<div style={{position:"absolute",left:60,top:5,fontFamily:V.data,fontSize:7,color:C.muted,background:"rgba(0,0,0,0.5)",borderRadius:10,padding:"2px 6px"}}>+{allies.length-4}</div>}</div><Nine house={player.house} size={85} glow={true} shake={shakeG[player.guild]} pulse={pulseMe} label="Your Nine" subtitle={depCard?depCard.name:null} showHp={true} hp={myHp}/></div>)}
-      {enemies.map(function(gr,gi){var pos=[{left:"6%",top:"12%"},{right:"6%",top:"18%"},{left:"12%",top:"52%"},{right:"10%",top:"55%"}][gi%4];var gld=gr.guild===-1?{name:"Lone Wolf",color:C.muted,short:"LW"}:GUILDS[gr.guild];var al=gr.nines.filter(function(n){return n.alive});return(<div key={gi} style={Object.assign({position:"absolute",display:"flex",flexDirection:"column",alignItems:"center",gap:2},pos)}><div style={{fontFamily:V.mono,fontSize:7,fontWeight:700,color:gld?gld.color:C.muted,background:(gld?gld.color:C.muted)+"15",padding:"1px 6px",borderRadius:4,border:"1px solid "+(gld?gld.color:C.muted)+"25"}}>{gld?gld.short:"?"} \u00B7 {al.length}/{gr.nines.length}</div><div style={{display:"flex",position:"relative"}}>{al.slice(0,3).map(function(n,i){return<div key={n.id} style={{marginLeft:i>0?-10:0,zIndex:3-i,transform:"scale("+(1-i*0.1)+")",opacity:1-i*0.15}}><Nine house={n.house} size={40} showHp={true} hp={n.hp} shake={shakeG[gr.guild]} dead={!n.alive}/></div>})}{al.length>3&&<div style={{marginLeft:-6,width:22,height:22,borderRadius:"50%",background:"rgba(255,255,255,0.06)",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:V.data,fontSize:6,color:C.muted,alignSelf:"center"}}>+{al.length-3}</div>}</div></div>)})}
-      {dmgs.map(function(d){return<Dmg key={d.id} value={d.value} x={d.x} y={d.y} type={d.type}/>})}
-    </div>
-    <NermBubble text={nerm}/>
-    {isDep&&!running&&!cycleRes&&(<div style={{padding:"8px 16px"}}><button onClick={runCombat} style={{width:"100%",padding:14,borderRadius:12,border:"1px solid "+C.gold+"25",fontFamily:V.title,fontSize:14,fontWeight:700,background:"rgba(212,166,75,0.15)",color:C.gold,cursor:"pointer"}}>{"\u25B6"} WATCH COMBAT CYCLE</button></div>)}
-    {/* Card area */}
-    <div style={{padding:"12px 16px 40px"}}>
-      {isDep?(<div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={{fontFamily:V.title,fontSize:12,fontWeight:700,color:C.gold}}>EQUIPPED</span><button onClick={function(){onWithdraw(zone.id)}} style={{fontFamily:V.mono,fontSize:9,color:C.red,background:C.red+"10",border:"1px solid "+C.red+"20",borderRadius:8,padding:"5px 12px",cursor:"pointer"}}>{"\u2715"} Withdraw</button></div>{depCard&&(<div style={{display:"flex",gap:12,alignItems:"flex-start"}}><CardComp card={depCard} selected={true}/><div style={{flex:1}}><div style={{fontFamily:V.mono,fontSize:9,color:C.faint,marginBottom:6}}>COMBAT STATS</div><div style={{display:"flex",gap:10}}><SBlock l="ATK" base={ph.atk} bonus={depCard.atk+(tb?tb.atk||0:0)} c={STAT.ATK}/><SBlock l="HP" base={ph.hp} bonus={depCard.hp+(tb?tb.hp||0:0)} c={STAT.HP}/><SBlock l="SPD" base={ph.spd} bonus={depCard.spd+(tb?tb.spd||0:0)} c={STAT.SPD}/></div>{isHome&&<div style={{fontFamily:V.mono,fontSize:8,color:C.green,marginTop:8,background:C.green+"10",padding:"4px 10px",borderRadius:8}}>{"\u{1F3E0}"} {Object.keys(h.turf).map(function(k){return"+"+h.turf[k]+" "+k.toUpperCase()}).join(", ")}</div>}</div></div>)}</div>):(<div><div style={{fontFamily:V.title,fontSize:14,fontWeight:700,color:C.gold,marginBottom:4}}>CHOOSE YOUR WEAPON</div><div style={{fontFamily:V.mono,fontSize:10,color:C.muted,marginBottom:10}}>Pick a card to deploy</div><div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:10}}>{cards.filter(function(c){return!c.deployedTo&&c.ch>0}).map(function(card){return<CardComp key={card.id} card={card} selected={selCard===card.id} onClick={function(){setSelCard(selCard===card.id?null:card.id)}}/>})}</div>{selCard&&(function(){var c=cards.find(function(x){return x.id===selCard});if(!c)return null;return(<div><div style={{background:"rgba(30,22,42,0.7)",borderRadius:12,padding:"10px 14px",marginBottom:8,border:"1px solid rgba(255,255,255,0.07)"}}><div style={{fontFamily:V.mono,fontSize:9,color:C.faint,marginBottom:4}}>COMBAT PREVIEW</div><div style={{display:"flex",gap:10,justifyContent:"center"}}><SBlock l="ATK" base={ph.atk} bonus={c.atk+(tb?tb.atk||0:0)} c={STAT.ATK}/><SBlock l="HP" base={ph.hp} bonus={c.hp+(tb?tb.hp||0:0)} c={STAT.HP}/><SBlock l="SPD" base={ph.spd} bonus={c.spd+(tb?tb.spd||0:0)} c={STAT.SPD}/></div></div><button onClick={function(){onDeploy(zone.id,selCard);setSelCard(null)}} style={{width:"100%",padding:14,borderRadius:12,border:"none",fontFamily:V.title,fontSize:14,fontWeight:700,background:"linear-gradient(135deg,"+h.c+","+h.c+"88)",color:"#fff",boxShadow:"0 4px 20px "+h.c+"40",cursor:"pointer"}}>{"\u2694\uFE0F"} DEPLOY \u2014 {c.cost} MANA</button></div>)})()}</div>)}
-    </div>
-    <CycleSummary results={cycleRes} onClose={function(){setCycleRes(null)}}/>
-  </div>);
-}
+  function mockNines(count,guilds){
+    var ns=[];for(var i=0;i<count;i++){
+      var g=guilds[Math.floor(Math.random()*guilds.length)];var house=HK[Math.floor(Math.random()*HK.length)];
+      ns.push({id:i+1,name:NINE_NAMES[Math.floor(Math.random()*NINE_NAMES.length)],
+        house:house,guild_id:g.guild_id,guild_name:g.name,guild_color:g.color,guild_short:g.short,
+        hp:Math.floor(Math.random()*20)+5,max_hp:24,atk:Math.floor(Math.random()*6)+2,spd:Math.floor(Math.random()*8)+1,
+        equipped_card:{name:'Spell',house:HK[Math.floor(Math.random()*HK.length)]},sprite_config:null});}
+    return ns;
+  }
+  function mockZones(){
+    var zones=[];var id=1;
+    Object.keys(ZNAMES).forEach(function(hk){
+      ZNAMES[hk].forEach(function(name,i){
+        var guilds=mockGuilds();var contested=guilds.length>1&&guilds[0].pct-guilds[1].pct<18;
+        var fxPool=['BURN','WARD','POISON','ANCHOR','HEX','HEAL','THORNS'];
+        var effects=[];for(var f=0;f<Math.floor(Math.random()*3);f++){var e=fxPool[Math.floor(Math.random()*fxPool.length)];if(effects.indexOf(e)<0)effects.push(e);}
+        zones.push({id:id++,name:name,region:H[hk].name+' Territory',region_house:hk,
+          guilds:guilds,casters:Math.floor(Math.random()*25)+2,
+          event:Math.random()<0.12?{type:Math.random()<0.5?'Mana Storm':'Treasure Surge',icon:Math.random()<0.5?'⚡':'💎',time:Math.floor(Math.random()*180)+'m'}:null,
+          contested:contested,objective:id===4,effects:effects,streak:contested?0:Math.floor(Math.random()*8),
+          deployed_nines:mockNines(4+Math.floor(Math.random()*8),guilds)});
+      });
+    });
+    return zones;
+  }
 
-// ═══════════════════════════════════════════════════════════
-// APP
-// ═══════════════════════════════════════════════════════════
-function App(){
-  var [view,setView]=useState("zones"),[selZone,setSelZone]=useState(null);
-  var [player,setPlayer]=useState({name:"Your Nine",house:"stormrage",guild:0,mana:5,maxMana:10,points:1130,deployedZones:[]});
-  var [cards,setCards]=useState(CARDS.map(function(c){return Object.assign({},c,{deployedTo:null})}));
-  var [toast,setToast]=useState(null);
-  function showToast(m){setToast(m);setTimeout(function(){setToast(null)},2500)}
-  function handleDeploy(zid,cid){var card=cards.find(function(c){return c.id===cid});if(player.mana<card.cost)return showToast("Need "+card.cost+" mana!");setPlayer(function(p){return Object.assign({},p,{mana:p.mana-card.cost,deployedZones:p.deployedZones.concat([zid])})});setCards(function(cs){return cs.map(function(c){return c.id===cid?Object.assign({},c,{deployedTo:zid}):c})});showToast("\u2694\uFE0F "+card.name+" deployed!")}
-  function handleWithdraw(zid){setPlayer(function(p){return Object.assign({},p,{deployedZones:p.deployedZones.filter(function(z){return z!==zid})})});setCards(function(cs){return cs.map(function(c){return c.deployedTo===zid?Object.assign({},c,{deployedTo:null}):c})});showToast("\u2190 Withdrawn.")}
-  if(view==="battle"&&selZone){return<BattleView zone={selZone} player={player} cards={cards} onBack={function(){setView("zones");setSelZone(null)}} onDeploy={handleDeploy} onWithdraw={handleWithdraw}/>}
-  return(<div style={{minHeight:"100vh",background:C.bg,color:C.body}}>
-    <PlayerHeader player={player}/>
-    <ZoneGrid zones={ZONES} player={player} onSelect={function(z){setSelZone(z);setView("battle")}}/>
-    {toast&&<div style={{position:"fixed",bottom:20,left:"50%",transform:"translateX(-50%)",background:C.card,border:"1px solid "+C.gold+"40",borderRadius:12,padding:"10px 20px",zIndex:2000,fontFamily:V.mono,fontSize:11,color:C.gold,boxShadow:"0 8px 32px rgba(0,0,0,0.6)",animation:"slideUp 0.3s ease",maxWidth:"90%",textAlign:"center"}}>{toast}</div>}
-  </div>);
-}
+  // ═══ STATE ═══
+  var S={tab:'zones',zones:[],selZone:null,mana:{cur:5,max:10,next:'42m'},mock:false,loading:true};
 
-ReactDOM.createRoot(document.getElementById("nethara-root")).render(<App/>);
+  // ═══ API ═══
+  function tok(){try{var s=localStorage.getItem('supabase_session');if(s)return JSON.parse(s).access_token;}catch(e){}try{return localStorage.getItem('auth_token');}catch(e){}return null;}
+  function api(url){var t=tok();var h={'Content-Type':'application/json'};if(t)h['Authorization']='Bearer '+t;
+    return fetch(url,{headers:h}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();});}
+
+  function load(){
+    S.loading=true;render();
+    Promise.all([api('/api/zones').catch(function(){return null;}),api('/api/mana').catch(function(){return null;})]).then(function(r){
+      var zd=r[0];var md=r[1];
+      if(zd&&Array.isArray(zd)&&zd.length>0){S.zones=zd;S.mock=false;}
+      else if(zd&&zd.zones&&zd.zones.length>0){S.zones=zd.zones;S.mock=false;}
+      else{S.zones=mockZones();S.mock=true;}
+      if(md){S.mana={cur:md.current||md.mana||5,max:md.max||10,next:md.next_in||'42m'};}
+      S.loading=false;render();
+    });
+  }
+
+  // ═══ SORTING ═══
+  function sorted(z){return z.slice().sort(function(a,b){
+    if(a.objective&&!b.objective)return -1;if(b.objective&&!a.objective)return 1;
+    if(a.event&&!b.event)return -1;if(b.event&&!a.event)return 1;
+    if(a.contested&&!b.contested)return -1;if(b.contested&&!a.contested)return 1;
+    return(b.casters||0)-(a.casters||0);});}
+
+  // ═══ RENDER ═══
+  function render(){
+    var app=document.getElementById('app');
+    if(S.selZone){app.innerHTML=battleHTML(S.selZone);initBattle(S.selZone);}
+    else{app.innerHTML=headerHTML()+manaHTML()+tabsHTML()+contentHTML();}
+    bind();
+  }
+
+  function headerHTML(){
+    var ac=S.zones.filter(function(z){return z.contested||z.event}).length;
+    return '<div class="n-header"><div><div class="n-title">NETHARA</div><div class="n-sub">Season 1'+
+      (S.mock?' · Preview Mode':'')+'</div></div><div class="n-status"><div class="n-dot"></div>'+
+      '<span class="n-active">'+ac+' Active</span></div></div>';
+  }
+  function manaHTML(){
+    var o='';for(var i=1;i<=S.mana.max;i++)o+='<div class="m-orb'+(i<=S.mana.cur?' on':'')+'"></div>';
+    return '<div class="n-mana">'+o+'<span class="m-txt">'+S.mana.cur+'/'+S.mana.max+' Mana</span>'+
+      '<span class="m-next">Next: '+S.mana.next+'</span></div>';
+  }
+  function tabsHTML(){
+    return '<div class="n-tabs"><button class="n-tab'+(S.tab==='zones'?' active':'')+'" data-tab="zones">🔥 Hot Zones</button>'+
+      '<button class="n-tab'+(S.tab==='guild'?' active':'')+'" data-tab="guild">👥 Guild</button></div>';
+  }
+  function contentHTML(){
+    if(S.loading)return '<div style="text-align:center;padding:40px;font-family:JetBrains Mono,monospace;font-size:10px;color:#554E68">Loading Nethara...</div>';
+    if(S.tab==='zones')return '<div style="padding:0 14px 80px">'+sorted(S.zones).map(zoneHTML).join('')+'</div>';
+    if(S.tab==='guild')return guildHTML();
+    return '';
+  }
+
+  // ═══ ZONE CARD ═══
+  function zoneHTML(z){
+    var h=H[z.region_house]||{color:'#D4A64B',icon:'✨',name:'?'};
+    var s='<div class="z-card" data-zid="'+z.id+'" style="border-left:3px solid '+h.color+'30">';
+    if(z.event)s+='<div class="z-event" style="background:linear-gradient(90deg,'+h.color+'12,transparent)">'+
+      '<span class="z-event-t" style="color:'+h.color+'">'+z.event.icon+' '+z.event.type.toUpperCase()+'</span>'+
+      '<span class="z-event-c">'+z.event.time+'</span></div>';
+    if(z.objective)s+='<div class="z-obj"><span style="font-size:11px">⭐</span><span class="z-obj-t">DAILY OBJECTIVE — ×1.5 PTS</span></div>';
+    s+='<div class="z-body"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'+
+      '<div><div class="z-name">'+z.name+'</div><div class="z-region" style="color:'+h.color+'">'+h.icon+' '+z.region+'</div></div>';
+    if(z.contested)s+='<span class="z-badge contested">CONTESTED</span>';
+    else if(z.streak>0)s+='<span class="z-badge held">HELD '+z.streak+'d</span>';
+    s+='</div>';
+    (z.guilds||[]).slice(0,3).forEach(function(g){
+      s+='<div class="g-row"><div class="g-dot" style="background:'+g.color+'"></div>'+
+        '<div class="g-name">'+g.name+'</div><div class="g-track"><div class="g-fill" style="width:'+g.pct+'%;background:linear-gradient(90deg,'+g.color+'90,'+g.color+'40)"></div></div>'+
+        '<div class="g-pct" style="color:'+g.color+'">'+g.pct+'%</div></div>';
+    });
+    s+='<div class="z-bot"><div class="z-fx">';
+    (z.effects||[]).forEach(function(e){var f=FX[e]||{c:'#888',i:'⬡'};
+      s+='<span class="fx-pill" style="background:'+f.c+'12;color:'+f.c+';border:1px solid '+f.c+'20">'+f.i+' '+e+'</span>';});
+    s+='</div><div class="z-cast">'+(z.casters||0)+' casters</div></div>';
+    return s+'</div></div>';
+  }
+
+  // ═══ BATTLE VIEW ═══
+  function battleHTML(z){
+    var h=H[z.region_house]||{color:'#D4A64B',icon:'✨',name:'?'};
+    var s='<div class="b-head" style="background:linear-gradient(180deg,'+h.color+'08,transparent)">'+
+      '<button class="b-back" id="b-back">←</button><div style="flex:1">'+
+      '<div class="z-name">'+z.name+'</div><div class="z-region" style="color:'+h.color+'">'+h.icon+' '+z.region+'</div></div>';
+    if(z.event)s+='<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:'+h.color+';background:'+h.color+'12;padding:4px 10px;border-radius:6px;border:1px solid '+h.color+'25">'+z.event.icon+' '+z.event.time+'</div>';
+    s+='</div>';
+    // Arena
+    s+='<div class="b-arena" id="b-arena" style="background:linear-gradient(180deg,'+h.color+'06,#08050f 40%,'+h.color+'04)"></div>';
+    // Guild bars
+    s+='<div class="b-guilds"><div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#554E68;letter-spacing:1px;margin-bottom:8px">GUILD PRESENCE</div>';
+    (z.guilds||[]).forEach(function(g){
+      s+='<div class="b-guild-row"><div class="b-g-circ" style="border:2px solid '+g.color+';background:'+g.color+'15;color:'+g.color+'">'+g.short+'</div>'+
+        '<div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:3px">'+
+        '<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#CCC5DB">'+g.name+'</span>'+
+        '<span class="b-g-pct" style="color:'+g.color+'">'+g.pct+'%</span></div>'+
+        '<div class="b-hp-track"><div class="b-hp-fill" style="width:'+g.pct+'%;background:linear-gradient(90deg,'+g.color+','+g.color+'60)"></div></div></div></div>';
+    });
+    s+='</div>';
+    // Feed
+    s+='<div class="feed-wrap"><div class="feed-title">LIVE BATTLE FEED</div><div id="feed-list"></div></div>';
+    return s;
+  }
+
+  // ═══ BATTLE INIT ═══
+  function initBattle(z){
+    var arena=document.getElementById('b-arena');if(!arena)return;
+    var hc=(H[z.region_house]||{color:'#D4A64B'}).color;
+    var nines=z.deployed_nines||mockNines(8,z.guilds||[]);
+
+    // Group by guild
+    var groups={};
+    nines.forEach(function(n){var gid=n.guild_id||0;
+      if(!groups[gid])groups[gid]={nines:[],color:n.guild_color||'#888',name:n.guild_name||'?',short:n.guild_short||'??'};
+      groups[gid].nines.push(n);});
+
+    var gids=Object.keys(groups);var W=arena.clientWidth;var HH=arena.clientHeight;
+    var gpos=[{x:0.18,y:0.35},{x:0.82,y:0.35},{x:0.18,y:0.7},{x:0.82,y:0.7},{x:0.5,y:0.22}];
+    var positions=[];
+
+    gids.forEach(function(gid,gi){
+      var grp=groups[gid];var bp=gpos[gi%gpos.length];
+      var bx=bp.x*W;var by=bp.y*HH;var flip=bp.x>0.5;
+
+      // Guild label
+      var lbl=document.createElement('div');
+      lbl.style.cssText='position:absolute;z-index:10;font-family:JetBrains Mono,monospace;font-size:7px;font-weight:700;'+
+        'color:'+grp.color+';background:'+grp.color+'15;padding:2px 6px;border-radius:3px;border:1px solid '+grp.color+'25;'+
+        'left:'+(bx-18)+'px;top:'+(by-38)+'px;white-space:nowrap';
+      lbl.textContent=grp.short;arena.appendChild(lbl);
+
+      grp.nines.forEach(function(n,ni){
+        var cfg=n.sprite_config||NineSprite.randomConfig(n.house,n.id*7+ni*13);
+        if(n.equipped_card&&n.equipped_card.house){var sc2=NineSprite.HOUSE_COLORS[n.equipped_card.house];if(sc2)cfg.weapon.color=sc2;}
+        var cv=NineSprite.createCanvas(cfg,2.5,flip);
+        var ox=(ni%3-1)*26;var oy=Math.floor(ni/3)*28;
+        cv.style.cssText='position:absolute;z-index:20;left:'+(bx+ox-12)+'px;top:'+(by+oy-12)+'px;'+
+          'animation:spriteIdle '+(1.2+ni*0.12)+'s ease-in-out infinite;animation-delay:'+(ni*0.08)+'s;'+
+          'filter:drop-shadow(0 0 3px '+(NineSprite.HOUSE_COLORS[n.house]||'#FFC800')+'40)';
+        arena.appendChild(cv);
+
+        // Name
+        var nm=document.createElement('div');
+        nm.style.cssText='position:absolute;z-index:25;font-family:JetBrains Mono,monospace;font-size:5px;'+
+          'color:#fff;background:'+grp.color+'88;padding:1px 3px;border-radius:2px;white-space:nowrap;pointer-events:none;'+
+          'left:'+(bx+ox-12)+'px;top:'+(by+oy+48)+'px';
+        nm.textContent=n.name;arena.appendChild(nm);
+        positions.push({nine:n,x:bx+ox,y:by+oy,cfg:cfg,flip:flip,guild:grp});
+      });
+    });
+
+    combatLoop(arena,positions,z);
+  }
+
+  // ═══ COMBAT LOOP ═══
+  function combatLoop(arena,pos,zone){
+    if(pos.length<2)return;
+    var vfx=new SpellVFX.Engine();
+    var feedEl=document.getElementById('feed-list');
+    var feeds=[];
+    var nermEl=null;var nermTO=null;var lastNerm=0;
+
+    var NERM={
+      intro:["Everyone's here. This should be interesting.","Another cycle, another disaster.","Let the chaos commence."],
+      cast:["Bold move.","Someone read the card instructions.","Interesting strategy."],
+      kill:["DELETED.","That was personal.","Gone. Reduced to sparkles."],
+      crit:["CRITICAL! 25% chance and they HIT it.","Ouch. That's a big one."],
+      quiet:["...it's quiet. Too quiet.","Did everyone fall asleep?","Hello? Is this thing on?"],
+      effective:["Super effective! Read the chart.","Type advantage — smart play."],
+      resisted:["Barely a scratch. Bad matchup.","Resisted! Wrong target."]
+    };
+
+    function nerm(cat){
+      var now=Date.now();if(now-lastNerm<6000)return;lastNerm=now;
+      var qs=NERM[cat]||NERM.cast;var t=qs[Math.floor(Math.random()*qs.length)];
+      if(nermEl)nermEl.remove();
+      nermEl=document.createElement('div');nermEl.className='nerm-bubble';
+      nermEl.innerHTML='<span style="font-size:14px">😼</span><span class="nerm-t">'+t+'</span>';
+      arena.appendChild(nermEl);
+      if(nermTO)clearTimeout(nermTO);
+      nermTO=setTimeout(function(){if(nermEl){nermEl.remove();nermEl=null;}},5500);
+    }
+
+    function addFeed(txt,c){
+      feeds.unshift({t:txt,c:c||'#CCC5DB',ts:Date.now()});
+      if(feeds.length>5)feeds=feeds.slice(0,5);
+      if(!feedEl)return;
+      feedEl.innerHTML=feeds.map(function(e){
+        var age=Math.floor((Date.now()-e.ts)/1000);var ts=age<60?age+'s':Math.floor(age/60)+'m';
+        return '<div class="feed-entry"><div class="feed-dot" style="background:'+e.c+'"></div>'+
+          '<div class="feed-txt">'+e.t+'</div><div class="feed-time">'+ts+'</div></div>';
+      }).join('');
+    }
+
+    setTimeout(function(){nerm('intro');},800);
+
+    // Spell fire loop
+    var si=setInterval(function(){
+      if(!document.getElementById('b-arena')){clearInterval(si);return;}
+      var from=pos[Math.floor(Math.random()*pos.length)];
+      var targets=pos.filter(function(p){return p.guild!==from.guild});
+      if(targets.length===0)targets=pos.filter(function(p){return p!==from});
+      if(targets.length===0)return;
+      targets.sort(function(a,b){return(a.nine.hp||10)-(b.nine.hp||10)});
+      var to=targets[0];
+
+      var ch=(from.nine.equipped_card&&from.nine.equipped_card.house)||from.nine.house;
+      var sn=vfx.fire(from.x,from.y,to.x,to.y,ch,function(){
+        var dmg=from.nine.atk||5;
+        var m=MATCHUPS[from.nine.house];var mt='n';
+        if(m){if(m.s===to.nine.house)mt='s';else if(m.w===to.nine.house)mt='w';}
+        if(mt==='s'){dmg=Math.round(dmg*1.3);vfx.spawnDmg(to.x,to.y-15,dmg,'crit');if(Math.random()<0.3)nerm('effective');}
+        else if(mt==='w'){dmg=Math.round(dmg*0.8);vfx.spawnDmg(to.x,to.y-15,dmg,'damage');if(Math.random()<0.3)nerm('resisted');}
+        else{vfx.spawnDmg(to.x,to.y-15,dmg,Math.random()<0.12?'crit':'damage');}
+        to.nine.hp=Math.max(0,(to.nine.hp||10)-dmg);
+        if(to.nine.hp<=0){to.nine.hp=to.nine.max_hp||24;if(Math.random()<0.4)nerm('kill');}
+      });
+
+      addFeed('<b style="color:'+from.guild.color+'">@'+from.nine.name+'</b> cast <span style="color:'+(H[ch]||{color:'#D4A64B'}).color+'">'+sn+'</span>',from.guild.color);
+      if(Math.random()<0.1)nerm('cast');
+    },850+Math.random()*500);
+
+    // Quiet nerm
+    var qi=setInterval(function(){if(!document.getElementById('b-arena')){clearInterval(qi);return;}if(Math.random()<0.15)nerm('quiet');},13000);
+
+    // VFX animation
+    function tick(){if(!document.getElementById('b-arena'))return;vfx.update();vfx.render(arena);requestAnimationFrame(tick);}
+    requestAnimationFrame(tick);
+  }
+
+  // ═══ GUILD TAB ═══
+  function guildHTML(){
+    var g=MOCK_GUILDS[0];var gc=g.color;
+    var s='<div style="padding:0 14px 80px"><div class="guild-hdr" style="background:linear-gradient(135deg,'+gc+'12,transparent);border:1px solid '+gc+'25">'+
+      '<div class="guild-title" style="color:'+gc+'">'+g.name+'</div><div class="guild-meta">28 members · 4 zones held · Rank #1</div>'+
+      '<div class="guild-stats"><div style="text-align:center"><div class="gs-val" style="color:#6acd8a">4</div><div class="gs-lbl">ZONES</div></div>'+
+      '<div style="text-align:center"><div class="gs-val" style="color:#D4A64B">2</div><div class="gs-lbl">REGIONS</div></div>'+
+      '<div style="text-align:center"><div class="gs-val" style="color:#F0ECF8">1,130</div><div class="gs-lbl">POWER</div></div></div></div>';
+    s+='<div class="ga-title" style="margin-top:14px">GUILD ACTIVITY</div>';
+    [{p:'BoltCaster',a:'cast Lightning Surge in Ember Wastes',r:'+45 influence',t:'2m'},
+     {p:'StoneKing',a:'deployed to Ironveil Citadel',r:'WARD active',t:'5m'},
+     {p:'EmberFox',a:'cast Ember Strike in Blackmoor Basin',r:'+30 influence',t:'8m'},
+     {p:'SunWarden',a:'flipped Radiant Bastion',r:'+15 zone flip bonus',t:'12m'}
+    ].forEach(function(a){
+      s+='<div class="ga-row"><span style="font-size:12px">⚔️</span><div style="flex:1">'+
+        '<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#F0ECF8">@'+a.p+'</span> '+
+        '<span style="font-family:JetBrains Mono,monospace;font-size:10px;color:#847C98">'+a.a+'</span>'+
+        '<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#6acd8a;margin-top:2px">'+a.r+'</div></div>'+
+        '<span style="font-family:JetBrains Mono,monospace;font-size:8px;color:#554E68">'+a.t+'</span></div>';
+    });
+    return s+'</div>';
+  }
+
+  // ═══ EVENTS ═══
+  function bind(){
+    document.querySelectorAll('.n-tab').forEach(function(t){t.onclick=function(){S.tab=t.dataset.tab;S.selZone=null;render();};});
+    document.querySelectorAll('.z-card').forEach(function(c){c.onclick=function(){
+      var id=parseInt(c.dataset.zid);S.selZone=S.zones.find(function(z){return z.id===id})||null;render();};});
+    var bb=document.getElementById('b-back');if(bb)bb.onclick=function(){S.selZone=null;render();};
+  }
+
+  // ═══ GO ═══
+  load();
+  })();
   </script>
 </body>
 </html>
