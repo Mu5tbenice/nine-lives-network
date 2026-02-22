@@ -245,13 +245,13 @@ function PlayerNine({shake,flash,flashColor}){
   const layers=["fur","outfit","weapon","expression","headwear"];
   const hasLayers=layers.some(l=>slots[l]);
   return(<div style={{textAlign:"center",animation:shake?(isCrit?"bigShake .4s":"shake .3s"):"none"}}>
-    <div style={{width:100,height:130,borderRadius:14,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",
+    <div style={{width:130,height:170,borderRadius:14,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",
       background:flash?`radial-gradient(ellipse at 50% 40%,${flashColor}55,rgba(10,8,18,.9) 75%)`:`radial-gradient(ellipse at 50% 40%,${c}25,rgba(10,8,18,.95) 80%)`,
       border:`2px solid ${flash?flashColor+'70':c+'30'}`,boxShadow:flash?`0 0 30px ${flashColor}40,inset 0 0 20px ${flashColor}15`:`0 0 20px ${c}18`,transition:"all .3s",overflow:"hidden"}}>
-      {hasLayers?layers.map(l=>slots[l]?<img key={l} src={`${basePath}${l}/${slots[l]}`} alt="" style={{position:"absolute",width:"85%",height:"85%",objectFit:"contain",top:"7%",left:"7%"}} onError={e=>{e.target.style.display='none'}}/>:null)
-       :<span style={{fontSize:48,filter:`drop-shadow(0 0 12px ${c}80)`}}>{h.icon||"\u{1F431}"}</span>}
+      {hasLayers?layers.map(l=>slots[l]?<img key={l} src={`${basePath}${l}/${slots[l]}`} alt="" style={{position:"absolute",width:"90%",height:"90%",objectFit:"contain",top:"5%",left:"5%"}} onError={e=>{e.target.style.display='none'}}/>:null)
+       :<span style={{fontSize:56,filter:`drop-shadow(0 0 12px ${c}80)`}}>{h.icon||"\u{1F431}"}</span>}
     </div>
-    <div style={{fontFamily:h.font||"var(--font-title)",fontSize:13,fontWeight:700,color:"#F5F0E8",textShadow:`0 0 10px ${c}50`,marginTop:5,lineHeight:1.15,maxWidth:110,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{PB.name}</div>
+    <div style={{fontFamily:h.font||"var(--font-title)",fontSize:14,fontWeight:700,color:"#F5F0E8",textShadow:`0 0 10px ${c}50`,marginTop:5,lineHeight:1.15,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{PB.name}</div>
     <div style={{fontFamily:"var(--font-data)",fontSize:6,color:c,marginTop:2,letterSpacing:1}}>{h.icon} {h.name?.toUpperCase()}</div>
   </div>);
 }
@@ -263,14 +263,14 @@ function EnemyFighter({enemy,shake,flash,flashColor}){
   const layers=["fur","outfit","weapon","expression","headwear"];
   const hasLayers=layers.some(l=>eq[l]?.f);
   return(<div style={{textAlign:"center",animation:shake?(isCrit?"bigShake .4s":"shake .3s"):"none"}}>
-    <div style={{width:100,height:130,borderRadius:14,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",
+    <div style={{width:130,height:170,borderRadius:14,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",
       background:flash?`radial-gradient(ellipse at 50% 40%,${flashColor}55,rgba(10,8,18,.9) 75%)`:`radial-gradient(ellipse at 50% 40%,${c}25,rgba(10,8,18,.95) 80%)`,
       border:`2px solid ${flash?flashColor+'70':c+'30'}`,boxShadow:flash?`0 0 30px ${flashColor}40,inset 0 0 20px ${flashColor}15`:`0 0 20px ${c}18`,transition:"all .3s",overflow:"hidden"}}>
-      {hasLayers?layers.map(l=>eq[l]?.f?<img key={l} src={`${basePath}${l}/${eq[l].f}`} alt="" style={{position:"absolute",width:"85%",height:"85%",objectFit:"contain",top:"7%",left:"7%",transform:"scaleX(-1)"}} onError={e=>{e.target.style.display='none'}}/>:null)
-       :!imgErr?<img src={h.crest} alt="" style={{width:58,height:58,objectFit:"contain",filter:`drop-shadow(0 0 10px ${c}70)`,transform:"scaleX(-1)"}} onError={()=>setImgErr(true)}/>
-       :<span style={{fontSize:44,filter:`drop-shadow(0 0 12px ${c}80)`}}>{h.icon||"\u{1F431}"}</span>}
+      {hasLayers?layers.map(l=>eq[l]?.f?<img key={l} src={`${basePath}${l}/${eq[l].f}`} alt="" style={{position:"absolute",width:"90%",height:"90%",objectFit:"contain",top:"5%",left:"5%",transform:"scaleX(-1)"}} onError={e=>{e.target.style.display='none'}}/>:null)
+       :!imgErr?<img src={h.crest} alt="" style={{width:72,height:72,objectFit:"contain",filter:`drop-shadow(0 0 10px ${c}70)`,transform:"scaleX(-1)"}} onError={()=>setImgErr(true)}/>
+       :<span style={{fontSize:56,filter:`drop-shadow(0 0 12px ${c}80)`}}>{h.icon||"\u{1F431}"}</span>}
     </div>
-    <div style={{fontFamily:h.font||"var(--font-title)",fontSize:12,fontWeight:700,color:"#F5F0E8",textShadow:`0 0 10px ${c}50`,marginTop:5,lineHeight:1.15,maxWidth:110,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{enemy.name}</div>
+    <div style={{fontFamily:h.font||"var(--font-title)",fontSize:13,fontWeight:700,color:"#F5F0E8",textShadow:`0 0 10px ${c}50`,marginTop:5,lineHeight:1.15,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{enemy.name}</div>
     <div style={{fontFamily:"var(--font-data)",fontSize:6,color:c,marginTop:2,letterSpacing:1}}>{h.icon} {h.name?.toUpperCase()}</div>
   </div>);
 }
@@ -312,25 +312,41 @@ function SlashFx({slashes}){return(<>{slashes.map(s=><div key={s.id} className={
 function CardPickerModal({pool,fatigued,selected,onSelect,onClose,slotIndex}){
   const available=pool.filter(c=>!selected.find(s=>s.id===c.id)&&!fatigued[c.id]);
   const tired=pool.filter(c=>fatigued[c.id]);
+  const[filter,setFilter]=useState("all");
+  const types=["all","attack","defend","support","manipulation"];
+  const filtered=filter==="all"?available:available.filter(c=>c.type.toLowerCase()===filter);
   return(<div className="modal-overlay" onClick={onClose}>
-    <div className="modal-content" onClick={e=>e.stopPropagation()}>
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12,padding:"0 4px"}}>
+    <div style={{width:"100%",maxWidth:600,padding:"16px 0",display:"flex",flexDirection:"column",height:"100vh"}} onClick={e=>e.stopPropagation()}>
+      {/* Header */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,padding:"0 16px"}}>
         <div>
           <div style={{fontFamily:"var(--font-title)",fontSize:16,fontWeight:700,color:"#D4A64B"}}>Choose a Card</div>
           <div style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6B5E50",marginTop:4}}>SLOT {slotIndex+1} · {available.length} AVAILABLE</div>
         </div>
         <button onClick={onClose} style={{background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:8,color:"#9B8E7E",fontSize:18,width:36,height:36,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{"\u2715"}</button>
       </div>
-      {available.length===0&&<div style={{textAlign:"center",padding:30,fontFamily:"var(--font-data)",fontSize:8,color:"#6B5E50"}}>No cards available. All cards are selected or tired.</div>}
-      <div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center"}}>
-        {available.map(c=><CardV4 key={c.id} card={c} size="tiny" onClick={()=>{onSelect(c);onClose()}} isNew={false}/>)}
+
+      {/* Type filter tabs */}
+      <div style={{display:"flex",gap:0,padding:"0 16px",marginBottom:12,overflowX:"auto"}}>
+        {types.map(t=><button key={t} onClick={()=>setFilter(t)} style={{fontFamily:"var(--font-data)",fontSize:7,padding:"6px 12px",border:"none",borderBottom:filter===t?"2px solid #D4A64B":"2px solid transparent",background:"none",color:filter===t?"#D4A64B":"#6B5E50",cursor:"pointer",whiteSpace:"nowrap",transition:"all .15s"}}>{t.toUpperCase()}</button>)}
       </div>
-      {tired.length>0&&<>
-        <div style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6B5E50",marginTop:16,marginBottom:8,textAlign:"center",letterSpacing:1}}>TIRED ({tired.length})</div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center"}}>
-          {tired.map(c=><CardV4 key={c.id} card={c} size="tiny" disabled fatigued/>)}
+
+      {/* Scrollable card area */}
+      <div style={{flex:1,overflowY:"auto",padding:"0 16px"}}>
+        {filtered.length===0&&<div style={{textAlign:"center",padding:30,fontFamily:"var(--font-data)",fontSize:8,color:"#6B5E50"}}>No {filter==="all"?"":"matching "}cards available.</div>}
+        <div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center",paddingBottom:16}}>
+          {filtered.map(c=><div key={c.id} style={{transition:"transform .15s"}}
+            onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)"}} onMouseLeave={e=>{e.currentTarget.style.transform="none"}}>
+            <CardV4 card={c} size="tiny" onClick={()=>{onSelect(c);onClose()}} isNew={false}/>
+          </div>)}
         </div>
-      </>}
+        {tired.length>0&&<>
+          <div style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6B5E50",marginTop:8,marginBottom:8,textAlign:"center",letterSpacing:1}}>TIRED ({tired.length})</div>
+          <div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center",paddingBottom:16}}>
+            {tired.map(c=><CardV4 key={c.id} card={c} size="tiny" disabled fatigued/>)}
+          </div>
+        </>}
+      </div>
     </div>
   </div>);
 }
@@ -415,7 +431,9 @@ function TheWilds(){
 
   const approach=()=>{
     const ps=calcPS(selected,mod);
-    setPlayerHp(Math.min(currentHp,ps.hp));setEnemyHp(enemy.stats.hp);
+    const baseHp=calcPS([],mod).hp;
+    const cardBonus=ps.hp-baseHp;
+    setPlayerHp(Math.min(currentHp+cardBonus,ps.hp));setEnemyHp(enemy.stats.hp);
     setPhase(PH.FACEOFF);
   };
 
@@ -423,7 +441,7 @@ function TheWilds(){
     setPhase(PH.BATTLE);setFloats([]);setSlashes([]);
     const ps=calcPS(selected,mod);
     const esMod=mod?.apply?mod.apply({...enemy.stats}):{...enemy.stats};
-    const initHp=Math.min(currentHp,ps.hp);
+    const initHp=playerHp;
     const result=simulate({...ps,hp:initHp},esMod,selected,enemy.cards,mod);
     let php=initHp,ehp=esMod.hp;const log=[];let delay=0;
 
@@ -455,7 +473,7 @@ function TheWilds(){
       if(won){
         const updatedFat={};Object.keys(fatigued).forEach(k=>{const v=fatigued[k]-1;if(v>0)updatedFat[k]=v});
         selected.forEach(c=>{updatedFat[c.id]=1});setFatigued(updatedFat);
-        const heal=Math.floor(ps.hp*.2);setCurrentHp(Math.min(ps.hp,result.finalPhp+heal));
+        const heal=Math.floor(maxHp*.2);setCurrentHp(Math.min(maxHp,result.finalPhp+heal));
         setScore(s=>s+enc*10+5);
         setRewards(pickN(REWARD_POOL.filter(c=>!runPool.find(p=>p.id===c.id)),3));
         setPhase(PH.REWARD);
@@ -504,7 +522,7 @@ function TheWilds(){
 
   /* ═══ REWARD OVERLAY ═══ */
   if(phase===PH.REWARD&&rewards.length>0){
-    const healAmt=Math.floor(pStats.hp*.2);
+    const healAmt=Math.floor(maxHp*.2);
     return(<><RewardScreen rewards={rewards} onPick={pickReward} onSkip={skipReward} enc={enc} score={score} healAmt={healAmt}/></>);
   }
 
@@ -520,8 +538,8 @@ function TheWilds(){
       <div style={{textAlign:"right"}}>
         <div style={{display:"flex",alignItems:"baseline",gap:3,justifyContent:"flex-end"}}>
           <span style={{fontFamily:"var(--font-data)",fontSize:8,color:"#6B5E50"}}>HP</span>
-          <span style={{fontFamily:"var(--font-data)",fontSize:16,color:currentHp<maxHp*.3?"#e85a6a":"#6acd8a",fontWeight:700}}>{phase>=PH.BATTLE?playerHp:currentHp}</span>
-          <span style={{fontFamily:"var(--font-data)",fontSize:8,color:"#6B5E50"}}>/{maxHp}</span>
+          <span style={{fontFamily:"var(--font-data)",fontSize:16,color:currentHp<maxHp*.3?"#e85a6a":"#6acd8a",fontWeight:700}}>{phase>=PH.FACEOFF?playerHp:currentHp}</span>
+          <span style={{fontFamily:"var(--font-data)",fontSize:8,color:"#6B5E50"}}>/{phase>=PH.APPROACH&&selected.length>0?pStats.hp:maxHp}</span>
         </div>
         <div style={{display:"flex",gap:8,marginTop:4,justifyContent:"flex-end"}}>
           <span style={{fontFamily:"var(--font-data)",fontSize:8,color:"#9B8E7E"}}>CARDS <span style={{color:"#D4A64B",fontWeight:700}}>{runPool.length}</span></span>
@@ -536,7 +554,7 @@ function TheWilds(){
     {journey.length>0&&<div style={{display:"flex",gap:3,padding:"4px 16px",flexWrap:"wrap"}}>{journey.map((j,i)=><div key={i} style={{width:7,height:7,borderRadius:"50%",background:j.won?HS[j.house].color:"#e85a6a35",border:`1px solid ${j.won?HS[j.house].color+"50":"#e85a6a25"}`}}/>)}<div style={{width:7,height:7,borderRadius:"50%",border:"1.5px solid #D4A64B30",animation:"pulse 1.5s infinite"}}/></div>}
 
     {/* ═══ ARENA ═══ */}
-    <div key={animKey} style={{width:"calc(100% - 24px)",aspectRatio:"4/3",position:"relative",overflow:"hidden",borderRadius:14,margin:"6px 12px",border:"1px solid rgba(255,255,255,.05)",background:"#0e0a18",flexShrink:0}}>
+    <div key={animKey} style={{width:"calc(100% - 24px)",minHeight:320,position:"relative",overflow:"hidden",borderRadius:14,margin:"6px 12px",border:"1px solid rgba(255,255,255,.05)",background:"#0e0a18",flexShrink:0}}>
       <div style={{position:"absolute",inset:0,backgroundImage:`url(${ZP}${zone.img})`,backgroundSize:"cover",backgroundPosition:"center",filter:phase===PH.APPROACH?"brightness(.5) saturate(.55)":"brightness(.28) saturate(.4)",transition:"filter .7s"}}><div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse at 50% 80%,transparent 15%,rgba(10,8,18,.7) 60%)"}}/></div>
       <div style={{position:"absolute",bottom:3,left:"50%",transform:"translateX(-50%)",zIndex:20,fontFamily:"var(--font-title)",fontSize:8,color:"rgba(255,255,255,.18)",letterSpacing:2}}>{zone.name.toUpperCase()}</div>
 
@@ -559,13 +577,13 @@ function TheWilds(){
       {/* Fighters - visible during approach, faceoff, and battle */}
       {phase>=PH.APPROACH&&<>
         <div style={{position:"absolute",top:"8%",bottom:"8%",left:"50%",width:1,background:"linear-gradient(180deg,transparent,rgba(212,166,75,.06),transparent)",zIndex:4}}/>
-        <div style={{position:"absolute",bottom:10,left:"3%",width:"44%",height:"78%",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",animation:"slideInLeft .5s ease both",opacity:phase===PH.APPROACH?.6:1,transition:"opacity .3s"}}>
+        <div style={{position:"absolute",bottom:8,left:"2%",width:"46%",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",animation:"slideInLeft .5s ease both",opacity:phase===PH.APPROACH?.7:1,transition:"opacity .3s"}}>
           <PlayerNine shake={pShake} flash={pFlash!==null} flashColor={pFlash}/>
-          {phase>=PH.BATTLE&&<HpBar current={playerHp} max={pStats.hp} color={pColor} side="left"/>}
+          {phase>=PH.FACEOFF&&<HpBar current={playerHp} max={pStats.hp} color={pColor} side="left"/>}
         </div>
-        <div style={{position:"absolute",bottom:10,right:"3%",width:"44%",height:"78%",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",animation:"slideInRight .5s ease .12s both",opacity:phase===PH.APPROACH?.6:1,transition:"opacity .3s"}}>
+        <div style={{position:"absolute",bottom:8,right:"2%",width:"46%",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",animation:"slideInRight .5s ease .12s both",opacity:phase===PH.APPROACH?.7:1,transition:"opacity .3s"}}>
           {enemy&&<EnemyFighter enemy={enemy} shake={eShake} flash={eFlash!==null} flashColor={eFlash}/>}
-          {phase>=PH.BATTLE&&<HpBar current={enemyHp} max={enemy.stats.hp} color={eColor} side="right"/>}
+          {phase>=PH.FACEOFF&&<HpBar current={enemyHp} max={enemy.stats.hp} color={eColor} side="right"/>}
         </div>
       </>}
       <FloatingNumbers floats={floats}/>
@@ -575,38 +593,44 @@ function TheWilds(){
     {/* ═══ BELOW-ARENA CONTROLS ═══ */}
     <div style={{width:"100%",padding:"0 12px"}}>
 
-      {/* APPROACH PHASE — card slots + approach button */}
+      {/* APPROACH PHASE — stats preview + card slots + approach button */}
       {phase===PH.APPROACH&&<div style={{marginTop:8}}>
-        {/* Tip */}
-        <div style={{textAlign:"center",marginBottom:8}}>
-          <span style={{fontFamily:"var(--font-data)",fontSize:6,color:"#6B5E50",opacity:.7}}>💡 Cards tire after use for 1 encounter. You don't need to fill all 3 slots.</span>
+
+        {/* STATS PREVIEW — your stats visible, enemy hidden */}
+        <div style={{marginBottom:10}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,padding:"0 4px"}}>
+            <span style={{fontFamily:"var(--font-data)",fontSize:7,color:pColor}}>{PB.houseData.icon} YOU {selected.length>0?`(${selected.length} cards)`:""}</span>
+            <span style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6B5E50"}}>ENEMY {eColor&&enemy?enemy.houseData.icon:""}</span>
+          </div>
+          {STATS.map(s=><div key={s.key} style={{display:"flex",alignItems:"center",gap:4,marginBottom:3}}>
+            <span style={{fontFamily:"var(--font-data)",fontSize:10,width:28,textAlign:"right",fontWeight:700,color:s.color}}>{pStats[s.key]}</span>
+            <div style={{flex:1,height:4,background:"rgba(255,255,255,.03)",borderRadius:2,overflow:"hidden",direction:"rtl"}}><div style={{width:`${(pStats[s.key]/Math.max(pStats[s.key],20))*100}%`,height:"100%",borderRadius:2,background:`linear-gradient(270deg,${s.color},${s.color}30)`}}/></div>
+            <span style={{fontFamily:"var(--font-data)",fontSize:7,color:s.color,width:32,textAlign:"center",opacity:.5}}>{s.label}</span>
+            <div style={{flex:1,height:4,background:"rgba(255,255,255,.03)",borderRadius:2,overflow:"hidden"}}><div style={{width:"45%",height:"100%",borderRadius:2,background:"linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.02))"}}/></div>
+            <span style={{fontFamily:"var(--font-data)",fontSize:10,width:28,textAlign:"left",fontWeight:700,color:"#3a3545"}}>???</span>
+          </div>)}
         </div>
 
-        {/* YOUR HAND — click empty slots to open picker */}
-        <div style={{fontFamily:"var(--font-data)",fontSize:8,color:"#D4A64B",letterSpacing:1,marginBottom:8,textAlign:"center"}}>YOUR HAND — {selected.length}/3</div>
-        <div style={{display:"flex",gap:6,marginBottom:8,justifyContent:"center"}}>
+        {/* Tip */}
+        <div style={{textAlign:"center",marginBottom:6}}>
+          <span style={{fontFamily:"var(--font-data)",fontSize:6,color:"#6B5E50",opacity:.7}}>💡 Cards tire after use. You don't need to fill all 3.</span>
+        </div>
+
+        {/* YOUR HAND — horizontal scroll of CardV4 tiny */}
+        <div style={{fontFamily:"var(--font-data)",fontSize:8,color:"#D4A64B",letterSpacing:1,marginBottom:6,textAlign:"center"}}>YOUR HAND — {selected.length}/3</div>
+        <div style={{display:"flex",gap:8,marginBottom:8,justifyContent:"center",alignItems:"flex-start"}}>
           {[0,1,2].map(i=>{
             if(selected[i]){
-              const sc=selected[i];const hc=TC[sc.type]||"#888";
-              return <div key={`sel-${i}`} style={{position:"relative",cursor:"pointer"}} onClick={()=>openPicker(i)}>
-                <div style={{width:110,padding:"8px 6px",borderRadius:10,background:`linear-gradient(160deg,rgba(30,22,42,.95),rgba(18,14,30,.98))`,border:`1.5px solid ${hc}40`,boxShadow:`0 2px 8px rgba(0,0,0,.3)`}}>
-                  <div style={{fontFamily:"var(--font-data)",fontSize:5,color:hc,fontWeight:700,marginBottom:3}}>{sc.type.toUpperCase()}</div>
-                  <div style={{fontFamily:"var(--font-title)",fontSize:10,fontWeight:700,color:"#F5F0E8",marginBottom:4,lineHeight:1.2}}>{sc.name}</div>
-                  <div style={{display:"flex",gap:4,flexWrap:"wrap",marginBottom:3}}>
-                    {sc.atk>0&&<span style={{fontFamily:"var(--font-data)",fontSize:7,color:"#e85a6a",fontWeight:700}}>{sc.atk}</span>}
-                    {sc.hp>0&&<span style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6acd8a",fontWeight:700}}>{sc.hp}</span>}
-                    {sc.spd>0&&<span style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6ac8d8",fontWeight:700}}>{sc.spd}</span>}
-                  </div>
-                  {sc.effects.length>0&&<div style={{display:"flex",gap:2,flexWrap:"wrap"}}>{sc.effects.map((e,ei)=><span key={ei} style={{fontSize:6,padding:"1px 4px",borderRadius:3,background:`${e.color}15`,color:e.color,fontFamily:"var(--font-data)"}}>{e.tag}</span>)}</div>}
-                  <div style={{fontFamily:"var(--font-data)",fontSize:5,color:RC_C[sc.rarity],marginTop:3}}>{sc.rarity.toUpperCase()}</div>
-                </div>
-                <div onClick={e=>{e.stopPropagation();removeCard(i)}} style={{position:"absolute",top:-4,right:-4,width:18,height:18,borderRadius:"50%",background:"rgba(232,90,106,.85)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,color:"#fff",cursor:"pointer",zIndex:20,lineHeight:1,border:"1px solid rgba(0,0,0,.3)"}}>×</div>
+              return <div key={`sel-${i}`} style={{position:"relative",cursor:"pointer",transition:"transform .2s",transform:"scale(1)"}} onClick={()=>openPicker(i)}
+                onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)"}} onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)"}}>
+                <CardV4 card={selected[i]} size="tiny"/>
+                <div onClick={e=>{e.stopPropagation();removeCard(i)}} style={{position:"absolute",top:-4,right:-4,width:20,height:20,borderRadius:"50%",background:"rgba(232,90,106,.85)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",cursor:"pointer",zIndex:20,lineHeight:1,border:"1px solid rgba(0,0,0,.3)"}}>×</div>
               </div>
             }
-            return <div key={`empty-${i}`} onClick={()=>openPicker(i)} style={{width:110,height:110,borderRadius:10,border:"1.5px dashed rgba(255,255,255,.1)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:"rgba(255,255,255,.015)",transition:"all .2s"}}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(212,166,75,.3)";e.currentTarget.style.background="rgba(212,166,75,.03)"}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,.1)";e.currentTarget.style.background="rgba(255,255,255,.015)"}}>
-              <span style={{fontSize:22,opacity:.2,marginBottom:2}}>+</span>
+            return <div key={`empty-${i}`} onClick={()=>openPicker(i)} style={{width:110,height:160,borderRadius:10,border:"1.5px dashed rgba(255,255,255,.08)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:"rgba(255,255,255,.01)",transition:"all .2s"}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(212,166,75,.25)";e.currentTarget.style.background="rgba(212,166,75,.02)"}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,.08)";e.currentTarget.style.background="rgba(255,255,255,.01)"}}>
+              <span style={{fontSize:22,opacity:.15,marginBottom:4}}>+</span>
               <span style={{fontFamily:"var(--font-data)",fontSize:6,color:"#6B5E50"}}>TAP TO PICK</span>
             </div>
           })}
@@ -621,7 +645,7 @@ function TheWilds(){
           {selected.reduce((a,c)=>a+c.luck,0)>0&&<span style={{color:"#D4A64B"}}> +{selected.reduce((a,c)=>a+c.luck,0)} LUCK</span>}
         </div>}
 
-        {/* APPROACH BUTTON — right below arena */}
+        {/* APPROACH BUTTON */}
         <div style={{textAlign:"center",margin:"6px 0 14px"}}>
           <button onClick={approach} disabled={!canFight} style={{padding:"13px 40px",borderRadius:10,border:`1px solid ${canFight?"rgba(212,166,75,.3)":"rgba(255,255,255,.04)"}`,cursor:canFight?"pointer":"not-allowed",fontFamily:"var(--font-title)",fontSize:16,fontWeight:700,letterSpacing:3,background:canFight?"linear-gradient(135deg,rgba(212,166,75,.15),rgba(212,166,75,.05))":"rgba(255,255,255,.02)",color:canFight?"#D4A64B":"#6B5E50",opacity:canFight?1:.4,transition:"all .2s"}}>{canFight?"🐾 APPROACH":"PICK CARDS TO APPROACH"}</button>
         </div>
