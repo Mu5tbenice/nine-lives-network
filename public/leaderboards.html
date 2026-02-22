@@ -17,113 +17,860 @@
     body{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,rgba(212,166,75,0.06) 0%,transparent 50%),linear-gradient(180deg,#1a1528 0%,#120e1e 30%,#0e0a18 100%);font-family:var(--font-body);color:var(--text-body)}
     a{color:var(--gold);text-decoration:none}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(212,166,75,0.15);border-radius:2px}
-    .main{max-width:500px;margin:0 auto;padding:14px}
-    .section-label{display:flex;align-items:center;gap:8px;margin:16px 0 8px}
+
+    .main{max-width:500px;margin:0 auto;padding:14px 14px 80px}
+
+    /* Header */
+    .page-header{text-align:center;padding:10px 0 4px}
+    .page-title{font-family:var(--font-title);font-size:22px;font-weight:800;color:var(--gold);letter-spacing:3px}
+    .page-sub{font-family:var(--font-mono);font-size:9px;color:var(--text-faint);margin-top:4px}
+
+    /* Season progress */
+    .season-bar{margin:10px 0 14px;padding:0 4px}
+    .season-bar__track{height:4px;border-radius:2px;background:rgba(255,255,255,0.04);overflow:hidden}
+    .season-bar__fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--gold),var(--sunset));transition:width 0.8s}
+    .season-bar__labels{display:flex;justify-content:space-between;margin-top:4px;font-family:var(--font-mono);font-size:8px;color:var(--text-faint)}
+
+    /* Section label */
+    .section-label{display:flex;align-items:center;gap:8px;margin:18px 0 10px}
+    .section-label__icon{font-size:14px}
     .section-label__text{font-family:var(--font-title);font-size:12px;font-weight:700;color:var(--gold);letter-spacing:2px}
     .section-label__line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
 
-    .tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto}
-    .tab{font-family:var(--font-mono);font-size:8px;padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;white-space:nowrap;transition:all 0.15s}
-    .tab.active{color:var(--gold);border-color:rgba(212,166,75,0.25);background:var(--gold-dim)}
+    /* Tabs */
+    .tabs{display:flex;gap:4px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px}
+    .tab{font-family:var(--font-mono);font-size:8px;font-weight:400;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;white-space:nowrap;transition:all 0.15s}
+    .tab.active{font-weight:700}
+    .tab[data-color="gold"].active{color:var(--gold);border-color:rgba(212,166,75,0.25);background:var(--gold-dim)}
+    .tab[data-color="sunset"].active{color:var(--sunset);border-color:rgba(232,133,90,0.25);background:rgba(232,133,90,0.1)}
+    .tab[data-color="red"].active{color:var(--red);border-color:rgba(232,90,106,0.25);background:rgba(232,90,106,0.1)}
+    .tab[data-color="cyan"].active{color:var(--cyan);border-color:rgba(106,200,216,0.25);background:rgba(106,200,216,0.1)}
 
-    .lb-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);margin-bottom:4px;transition:background 0.15s}
+    /* Podium */
+    .podium{display:flex;gap:6px;margin-bottom:16px;align-items:flex-end}
+    .podium__card{flex:1;text-align:center;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);animation:fadeSlideIn 0.4s ease both}
+    .podium__card.first{padding:16px 8px 12px;border-color:rgba(212,166,75,0.25);background:linear-gradient(180deg,rgba(212,166,75,0.06),var(--bg-card))}
+    .podium__card.second,.podium__card.third{padding:12px 8px 10px}
+    .podium__medal{margin-bottom:4px}
+    .podium__house{font-size:22px;margin-bottom:4px}
+    .podium__card.first .podium__house{font-size:28px}
+    .podium__name{font-family:var(--font-mono);font-size:10px;color:var(--text-bright);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .podium__pts{font-family:var(--font-data);font-size:9px;color:var(--gold);margin-top:4px}
+    .podium__card.first .podium__pts{font-size:11px}
+    .podium__label{font-family:var(--font-mono);font-size:8px;color:var(--text-faint);margin-top:2px}
+
+    /* Player row */
+    .lb-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);margin-bottom:4px;transition:all 0.15s}
     .lb-row.top3{border-color:rgba(212,166,75,0.2)}
-    .lb-row.me{border-color:var(--cyan);background:rgba(106,200,216,0.04)}
-    .rank{font-family:var(--font-data);font-size:10px;min-width:30px;text-align:center}
-    .lb-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1px solid var(--border)}
-    .lb-name{flex:1;font-family:var(--font-mono);font-size:10px;color:var(--text-bright);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .lb-score{font-family:var(--font-data);font-size:9px;color:var(--gold)}
+    .lb-row.me{border-color:rgba(106,200,216,0.3);background:rgba(106,200,216,0.04)}
+    .lb-row:hover{background:rgba(30,22,42,0.9)}
 
-    .house-row{display:flex;align-items:center;gap:10px;padding:12px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);margin-bottom:6px}
-    .house-icon{font-size:24px}
-    .house-bar{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,0.04);overflow:hidden}
-    .house-fill{height:100%;border-radius:4px;transition:width 0.5s}
+    .rank{font-family:var(--font-data);font-size:10px;min-width:30px;text-align:center;color:var(--text-muted)}
+    .rank-medal{font-size:18px;min-width:30px;text-align:center}
+
+    .lb-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+    .lb-info{flex:1;min-width:0}
+    .lb-name-row{display:flex;align-items:center;gap:6px}
+    .lb-name{font-family:var(--font-mono);font-size:11px;color:var(--text-bright);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .lb-guild{font-family:var(--font-mono);font-size:8px;color:var(--text-faint);background:rgba(255,255,255,0.04);padding:1px 5px;border-radius:3px}
+    .lb-house{font-family:var(--font-mono);font-size:8px;margin-top:2px}
+    .lb-score{text-align:right;min-width:55px}
+    .lb-score__val{font-family:var(--font-data);font-size:9px;color:var(--gold)}
+    .lb-score__label{font-family:var(--font-mono);font-size:8px;color:var(--text-faint)}
+
+    /* Sparkline canvas */
+    .sparkline{display:block}
+
+    /* House card */
+    .house-card{padding:14px 16px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);border-left:3px solid;margin-bottom:6px}
+    .house-card.top3{border-color:rgba(212,166,75,0.2)}
+    .house-card__inner{display:flex;align-items:center;gap:12px}
+    .house-card__icon{font-size:28px}
+    .house-card__body{flex:1}
+    .house-card__name{font-family:var(--font-title);font-size:15px;font-weight:700}
+    .house-card__role{font-family:var(--font-mono);font-size:8px;color:var(--text-faint);margin-left:8px}
+    .house-card__bar{height:8px;border-radius:4px;background:rgba(255,255,255,0.04);overflow:hidden;margin-top:6px}
+    .house-card__fill{height:100%;border-radius:4px;transition:width 0.8s ease}
+    .house-card__meta{display:flex;gap:12px;margin-top:6px;font-family:var(--font-mono);font-size:9px;color:var(--text-muted)}
+    .house-card__score{text-align:right}
+    .house-card__pts{font-family:var(--font-data);font-size:10px;color:var(--gold)}
+
+    /* Chart container */
+    .chart-box{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 8px;margin-bottom:14px}
+    .chart-legend{display:flex;gap:10px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+    .chart-legend__item{display:flex;align-items:center;gap:4px}
+    .chart-legend__dot{width:8px;height:3px;border-radius:1px}
+    .chart-legend__name{font-family:var(--font-mono);font-size:8px;color:var(--text-faint)}
+
+    /* Clash card */
+    .clash-card{padding:14px 16px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);margin-bottom:8px}
+    .clash-card.live{border-color:rgba(106,200,216,0.3);background:rgba(106,200,216,0.04)}
+    .clash-live-badge{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+    .clash-live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+    .clash-live-text{font-family:var(--font-mono);font-size:9px;color:var(--green);font-weight:700;letter-spacing:1px}
+    .clash-inner{display:flex;align-items:center;gap:8px}
+    .clash-guild{flex:1;text-align:center}
+    .clash-guild__name{font-family:var(--font-title);font-size:12px;font-weight:700}
+    .clash-guild__name.dim{opacity:0.5}
+    .clash-guild__score{font-family:var(--font-data);font-size:14px;margin-top:6px}
+    .clash-guild__score.live{font-size:16px;color:var(--cyan)}
+    .clash-guild__score.won{color:var(--green);text-shadow:0 0 8px rgba(106,205,138,0.3)}
+    .clash-vs{font-family:var(--font-title);font-size:11px;color:var(--text-faint);width:40px;text-align:center;border-radius:8px;padding:4px 0}
+    .clash-vs.live{background:rgba(106,200,216,0.1)}
+    .clash-week{text-align:center;margin-top:8px;font-family:var(--font-mono);font-size:8px;color:var(--text-faint)}
+    .clash-crown{font-size:10px;margin-top:4px}
+
+    /* Standings table */
+    .standings{border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:16px}
+    .standings__head{display:grid;grid-template-columns:1fr 36px 36px 50px;padding:8px 12px;background:var(--gold-dim);font-family:var(--font-mono);font-size:8px;color:var(--gold);font-weight:700;letter-spacing:1px}
+    .standings__row{display:grid;grid-template-columns:1fr 36px 36px 50px;align-items:center;padding:10px 12px;border-top:1px solid var(--border)}
+    .standings__row:nth-child(even){background:var(--bg-card)}
+    .standings__guild{display:flex;align-items:center;gap:8px}
+    .standings__dot{width:8px;height:8px;border-radius:50%}
+    .standings__name{font-family:var(--font-mono);font-size:10px;color:var(--text-bright)}
+    .standings__w{font-family:var(--font-data);font-size:9px;color:var(--green);text-align:center}
+    .standings__l{font-family:var(--font-data);font-size:9px;color:var(--red);text-align:center}
+    .standings__pts{font-family:var(--font-data);font-size:9px;color:var(--gold);text-align:right}
+
+    /* Prize card */
+    .prize-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);margin-bottom:4px}
+    .prize-icon{font-size:18px}
+    .prize-text{flex:1;font-family:var(--font-mono);font-size:10px;color:var(--text-bright)}
+    .prize-place{font-family:var(--font-data);font-size:8px;color:var(--gold)}
+
+    /* Clash prizes */
+    .clash-prizes{padding:14px 16px;border-radius:12px;background:linear-gradient(135deg,rgba(106,200,216,0.05),var(--bg-card));border:1px solid rgba(106,200,216,0.15);margin-bottom:8px}
+    .clash-prizes__title{font-family:var(--font-title);font-size:13px;font-weight:700;color:var(--cyan);margin-bottom:8px}
+    .clash-prizes__item{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+    .clash-prizes__item-icon{font-size:14px}
+    .clash-prizes__item-text{font-family:var(--font-mono);font-size:9px;color:var(--text-body)}
+
+    /* Week label */
+    .week-label{font-family:var(--font-mono);font-size:9px;color:var(--gold);margin:12px 0 6px;padding:4px 8px;background:var(--gold-dim);border-radius:4px;display:inline-block}
+
+    /* Info box */
+    .info-box{padding:10px 12px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);margin-bottom:12px;font-family:var(--font-mono);font-size:9px;color:var(--text-muted);text-align:center}
+
+    /* Empty state */
+    .empty{text-align:center;padding:40px 20px;color:var(--text-faint);font-style:italic;font-family:var(--font-body)}
+
+    /* Loading */
+    .loading{text-align:center;padding:60px 20px}
+    .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
+
+    /* Admin bar */
+    .admin-bar{background:rgba(232,90,106,0.08);border:1px solid rgba(232,90,106,0.2);border-radius:10px;padding:12px;margin-bottom:16px}
+    .admin-bar__title{font-family:var(--font-title);font-size:11px;color:var(--red);font-weight:700;margin-bottom:8px;letter-spacing:1px}
+    .admin-bar button{font-family:var(--font-mono);font-size:8px;padding:6px 12px;border-radius:6px;border:1px solid rgba(232,90,106,0.3);background:rgba(232,90,106,0.1);color:var(--red);cursor:pointer;margin:2px}
+    .admin-bar button:hover{background:rgba(232,90,106,0.2)}
+
+    /* Animations */
+    @keyframes fadeSlideIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+    /* Sub-tabs */
+    .sub-tabs{display:flex;gap:4px;margin-bottom:12px}
+    .sub-tab{font-family:var(--font-mono);font-size:8px;padding:6px 12px;border-radius:6px;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--text-muted);transition:all 0.15s}
+    .sub-tab.active{border-color:rgba(106,200,216,0.3);background:rgba(106,200,216,0.1);color:var(--cyan)}
+
+    /* Modal */
+    .modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+    .modal{background:#1a1528;border:1px solid var(--border-glow);border-radius:16px;padding:24px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto}
+    .modal__title{font-family:var(--font-title);font-size:16px;color:var(--gold);margin-bottom:16px}
+    .modal label{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);display:block;margin-bottom:4px;margin-top:10px}
+    .modal input,.modal select{width:100%;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg-deep);color:var(--text-bright);font-family:var(--font-mono);font-size:10px}
+    .modal__actions{display:flex;gap:8px;margin-top:16px}
+    .modal__btn{flex:1;padding:10px;border-radius:8px;border:none;cursor:pointer;font-family:var(--font-title);font-size:12px;font-weight:700}
+    .modal__btn.primary{background:linear-gradient(135deg,var(--gold),var(--sunset));color:#000}
+    .modal__btn.secondary{background:transparent;border:1px solid var(--border);color:var(--text-muted)}
   </style>
 </head>
 <body>
 <script src="/js/nav.js"></script>
-  <div class="main" id="content"><div style="text-align:center;padding:60px 20px;"><div style="width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px;"></div></div></div>
+
+<div class="main" id="content">
+  <div class="loading"><div class="spinner"></div></div>
+</div>
+
+<!-- Admin Clash Modal (hidden by default) -->
+<div id="clashModal" class="modal-overlay" style="display:none">
+  <div class="modal">
+    <div class="modal__title">⚔️ Create Guild Clash</div>
+    <label>Week Number</label>
+    <input type="number" id="clashWeek" min="1" max="99" value="1">
+    <label>Guild A Name</label>
+    <input type="text" id="clashGuildA" placeholder="e.g. Bonk Legion">
+    <label>Guild A Color</label>
+    <input type="color" id="clashColorA" value="#FFD700">
+    <label>Guild B Name</label>
+    <input type="text" id="clashGuildB" placeholder="e.g. Shadow Paws">
+    <label>Guild B Color</label>
+    <input type="color" id="clashColorB" value="#00BFFF">
+    <label>Status</label>
+    <select id="clashStatus">
+      <option value="upcoming">Upcoming</option>
+      <option value="live">Live</option>
+      <option value="complete">Complete</option>
+    </select>
+    <label>Score A (if complete/live)</label>
+    <input type="number" id="clashScoreA" min="0" value="0">
+    <label>Score B (if complete/live)</label>
+    <input type="number" id="clashScoreB" min="0" value="0">
+    <div class="modal__actions">
+      <button class="modal__btn secondary" onclick="closeClashModal()">Cancel</button>
+      <button class="modal__btn primary" onclick="saveClash()">Create Clash</button>
+    </div>
+  </div>
+</div>
 
 <script>
-var HOUSES={1:{name:'Smoulders',color:'#E03C31',icon:'🔥'},2:{name:'Darktide',color:'#00B4D8',icon:'🌊'},3:{name:'Stonebark',color:'#5CB338',icon:'🌿'},4:{name:'Ashenvale',color:'#B0C4DE',icon:'💨'},5:{name:'Stormrage',color:'#FFC800',icon:'⚡'},6:{name:'Nighthollow',color:'#7B2D8E',icon:'🌙'},7:{name:'Dawnbringer',color:'#FF8C00',icon:'☀️'},8:{name:'Manastorm',color:'#5B8FE0',icon:'🔮'},9:{name:'Plaguemire',color:'#E84393',icon:'☠️'}};
-var playerId=null,currentTab='season',data={};
+// ═══════════════════════════════════════
+// HOUSES DATA
+// ═══════════════════════════════════════
+var HOUSES = {
+  1:{name:'Smoulders',color:'#E03C31',icon:'🔥',role:'Glass Cannon'},
+  2:{name:'Darktide',color:'#00B4D8',icon:'🌊',role:'Thief'},
+  3:{name:'Stonebark',color:'#5CB338',icon:'🌿',role:'Wall'},
+  4:{name:'Ashenvale',color:'#B0C4DE',icon:'💨',role:'Rogue'},
+  5:{name:'Stormrage',color:'#FFC800',icon:'⚡',role:'Glass Cannon'},
+  6:{name:'Nighthollow',color:'#7B2D8E',icon:'🌙',role:'Disruptor'},
+  7:{name:'Dawnbringer',color:'#FF8C00',icon:'☀️',role:'Healer'},
+  8:{name:'Manastorm',color:'#5B8FE0',icon:'🔮',role:'Controller'},
+  9:{name:'Plaguemire',color:'#E84393',icon:'☠️',role:'DOT'}
+};
 
-function getPlayerId(){var p=new URLSearchParams(window.location.search);var f=p.get('player_id');if(f){localStorage.setItem('player_id',f);return f;}return localStorage.getItem('player_id');}
-function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+var SEASON_PRIZES = [
+  {place:'#1',prize:'Design a permanent spell card',icon:'✨'},
+  {place:'#1-3',prize:'Named in Season 2 storyline',icon:'📖'},
+  {place:'#1-5',prize:'Champion card frame + First Nine badge',icon:'👑'},
+  {place:'#1-10',prize:'Council membership + Nines priority',icon:'🏛️'},
+  {place:'🏠',prize:'Winning house gets exclusive seasonal spell',icon:'⚔️'}
+];
 
-async function loadLeaderboards(){
-  playerId=getPlayerId();
-  try{
-    var[sR,hR,dR]=await Promise.all([
-      fetch('/api/leaderboards/players').then(function(r){return r.ok?r.json():[]}).catch(function(){return[];}),
-      fetch('/api/leaderboards/schools').then(function(r){return r.ok?r.json():[]}).catch(function(){return[];}),
-      fetch('/api/leaderboards/duels').then(function(r){return r.ok?r.json():[]}).catch(function(){return[];})
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+var playerId = null;
+var currentTab = 'season';
+var clashView = 'standings';
+var isAdmin = false;
+var data = { players:[], houses:[], duels:[], clashes:{ matches:[], standings:[] } };
+
+function getPlayerId() {
+  var p = new URLSearchParams(window.location.search);
+  var f = p.get('player_id');
+  if (f) { localStorage.setItem('player_id', f); return f; }
+  return localStorage.getItem('player_id');
+}
+
+function checkAdmin() {
+  var p = new URLSearchParams(window.location.search);
+  return !!p.get('admin_key');
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;'); }
+
+// ═══════════════════════════════════════
+// SPARKLINE
+// ═══════════════════════════════════════
+function drawSparkline(canvasId, dataPoints, color) {
+  var canvas = document.getElementById(canvasId);
+  if (!canvas || !dataPoints || !dataPoints.length) return;
+  var ctx = canvas.getContext('2d');
+  var w = 70, h = 22;
+  var dpr = window.devicePixelRatio || 1;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  var min = Math.min.apply(null, dataPoints);
+  var max = Math.max.apply(null, dataPoints);
+  var range = max - min || 1;
+  var step = w / (dataPoints.length - 1);
+
+  // Fill
+  var grad = ctx.createLinearGradient(0, 0, 0, h);
+  grad.addColorStop(0, color + '40');
+  grad.addColorStop(1, 'transparent');
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  dataPoints.forEach(function(v, i) {
+    var x = i * step;
+    var y = h - ((v - min) / range) * (h - 4) - 2;
+    ctx.lineTo(x, y);
+  });
+  ctx.lineTo(w, h);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  dataPoints.forEach(function(v, i) {
+    var x = i * step;
+    var y = h - ((v - min) / range) * (h - 4) - 2;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Dot
+  var lastX = (dataPoints.length - 1) * step;
+  var lastY = h - ((dataPoints[dataPoints.length - 1] - min) / range) * (h - 4) - 2;
+  ctx.beginPath();
+  ctx.arc(lastX, lastY, 2, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+// ═══════════════════════════════════════
+// HOUSE PROGRESSION CHART
+// ═══════════════════════════════════════
+function drawHouseChart(canvasId, houseData) {
+  var canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var dpr = window.devicePixelRatio || 1;
+  var w = 440, h = 140;
+  canvas.width = w * dpr; canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  var pad = { l: 5, r: 5, t: 10, b: 20 };
+  var cw = w - pad.l - pad.r;
+  var ch = h - pad.t - pad.b;
+
+  // If we have real data, use it. Otherwise generate mock
+  var houseIds = Object.keys(houseData);
+  if (houseIds.length === 0) {
+    // Generate mock progression for top 5 houses
+    var topHouses = data.houses.slice(0, 5);
+    topHouses.forEach(function(hd) {
+      houseData[hd.school_id] = [];
+      var sum = 0;
+      for (var d = 0; d < 14; d++) {
+        sum += Math.round(50 + Math.random() * 150 + (hd.total_points / 50));
+        houseData[hd.school_id].push(sum);
+      }
+    });
+    houseIds = Object.keys(houseData);
+  }
+
+  if (houseIds.length === 0) return;
+
+  var maxVal = 0;
+  houseIds.forEach(function(hid) {
+    var mx = Math.max.apply(null, houseData[hid]);
+    if (mx > maxVal) maxVal = mx;
+  });
+
+  houseIds.forEach(function(hid) {
+    var house = HOUSES[hid];
+    if (!house) return;
+    var pts = houseData[hid];
+    var step = cw / (pts.length - 1);
+
+    ctx.beginPath();
+    pts.forEach(function(v, i) {
+      var x = pad.l + i * step;
+      var y = pad.t + ch - (v / maxVal) * ch;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = house.color + 'aa';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // End label
+    var lastY = pad.t + ch - (pts[pts.length - 1] / maxVal) * ch;
+    ctx.fillStyle = house.color;
+    ctx.font = 'bold 9px JetBrains Mono, monospace';
+    ctx.fillText(house.icon, pad.l + (pts.length - 1) * step + 4, lastY + 3);
+  });
+
+  // X labels
+  ctx.fillStyle = '#6B5E50';
+  ctx.font = '8px JetBrains Mono, monospace';
+  var days = houseData[houseIds[0]] ? houseData[houseIds[0]].length : 14;
+  var step = cw / (days - 1);
+  for (var d = 0; d < days; d += 2) {
+    ctx.fillText('D' + (d + 1), pad.l + d * step - 5, h - 4);
+  }
+}
+
+// ═══════════════════════════════════════
+// LOAD DATA
+// ═══════════════════════════════════════
+async function loadAll() {
+  playerId = getPlayerId();
+  isAdmin = checkAdmin();
+
+  try {
+    var [pR, hR, dR, cR] = await Promise.all([
+      fetch('/api/leaderboards/players').then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
+      fetch('/api/leaderboards/schools').then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
+      fetch('/api/leaderboards/duels').then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
+      fetch('/api/leaderboards/clashes').then(function(r) { return r.ok ? r.json() : { matches:[], standings:[] }; }).catch(function() { return { matches:[], standings:[] }; })
     ]);
-    data.season=Array.isArray(sR)?sR:sR.players||sR.leaderboard||[];
-    data.houses=Array.isArray(hR)?hR:hR.schools||hR.houses||[];
-    data.duels=Array.isArray(dR)?dR:dR.players||dR.leaderboard||[];
-  }catch(e){console.error(e);}
+
+    data.players = Array.isArray(pR) ? pR : pR.players || [];
+    data.houses = Array.isArray(hR) ? hR : hR.schools || hR.houses || [];
+    data.duels = Array.isArray(dR) ? dR : dR.players || [];
+    data.clashes = cR && cR.matches ? cR : { matches: [], standings: [] };
+  } catch (e) {
+    console.error('Failed to load leaderboard data:', e);
+  }
+
   render();
 }
 
-function render(){
-  var html='';
-  html+='<div class="section-label"><span style="font-size:14px;">🏆</span><span class="section-label__text">LEADERBOARDS</span><span class="section-label__line"></span></div>';
+// ═══════════════════════════════════════
+// RENDER HELPERS
+// ═══════════════════════════════════════
+function medal(rank) {
+  if (rank === 1) return '<span class="rank-medal" style="filter:drop-shadow(0 0 4px rgba(255,215,0,0.5))">🥇</span>';
+  if (rank === 2) return '<span class="rank-medal">🥈</span>';
+  if (rank === 3) return '<span class="rank-medal">🥉</span>';
+  return '<span class="rank">#' + rank + '</span>';
+}
+
+function playerRow(p, rank, opts) {
+  opts = opts || {};
+  var h = HOUSES[p.school_id] || { name:'?', color:'#888', icon:'🐱' };
+  var isMe = playerId && (p.id == playerId);
+  var delay = (rank - 1) * 0.03;
+  var sparkId = 'spark_' + (opts.prefix || '') + p.id;
+
+  var scoreHtml = '';
+  if (opts.showDuels) {
+    var wr = Math.round(((p.duel_wins||0) / ((p.duel_wins||0) + (p.duel_losses||0) || 1)) * 100);
+    scoreHtml = '<div class="lb-score"><div class="lb-score__val" style="color:var(--green)">' + (p.duel_wins||0) + 'W</div><div style="font-family:var(--font-mono);font-size:8px;color:var(--red)">' + (p.duel_losses||0) + 'L <span style="color:var(--text-faint)">(' + wr + '%)</span></div></div>';
+  } else {
+    scoreHtml = '<div class="lb-score"><div class="lb-score__val">' + (p.seasonal_points||0).toLocaleString() + '</div><div class="lb-score__label">pts</div></div>';
+  }
+
+  return '<div class="lb-row' + (rank <= 3 ? ' top3' : '') + (isMe ? ' me' : '') + '" style="animation-delay:' + delay + 's;animation:fadeSlideIn 0.3s ease ' + delay + 's both">'
+    + medal(rank)
+    + '<div class="lb-avatar" style="background:' + h.color + '20;border:2px solid ' + h.color + '40">' + h.icon + '</div>'
+    + '<div class="lb-info">'
+    + '<div class="lb-name-row">'
+    + (isMe ? '<span style="color:var(--cyan);font-size:10px">★</span> ' : '')
+    + '<span class="lb-name">@' + esc(p.twitter_handle || '???') + '</span>'
+    + (p.guild_tag ? '<span class="lb-guild">' + esc(p.guild_tag) + '</span>' : '')
+    + '</div>'
+    + '<div class="lb-house" style="color:' + h.color + '">' + h.icon + ' ' + h.name + '</div>'
+    + '</div>'
+    + '<canvas id="' + sparkId + '" class="sparkline" style="width:70px;height:22px"></canvas>'
+    + scoreHtml
+    + '</div>';
+}
+
+// ═══════════════════════════════════════
+// MAIN RENDER
+// ═══════════════════════════════════════
+function render() {
+  var html = '';
+
+  // Header
+  html += '<div class="page-header"><div class="page-title">LEADERBOARDS</div>';
+  html += '<div class="page-sub">Season 1</div></div>';
+
+  // Season progress
+  html += '<div class="season-bar"><div class="season-bar__track"><div class="season-bar__fill" style="width:25%"></div></div>';
+  html += '<div class="season-bar__labels"><span>Week 2</span><span>8 weeks total</span></div></div>';
 
   // Tabs
-  html+='<div class="tabs">';
-  html+='<button class="tab '+(currentTab==='season'?'active':'')+'" onclick="switchTab(\'season\')">🏆 SEASON</button>';
-  html+='<button class="tab '+(currentTab==='houses'?'active':'')+'" onclick="switchTab(\'houses\')">🏠 HOUSES</button>';
-  html+='<button class="tab '+(currentTab==='duels'?'active':'')+'" onclick="switchTab(\'duels\')">⚔️ DUELS</button>';
-  html+='</div>';
+  html += '<div class="tabs">';
+  html += '<button class="tab' + (currentTab==='season'?' active':'') + '" data-color="gold" onclick="switchTab(\'season\')">🏆 SEASON</button>';
+  html += '<button class="tab' + (currentTab==='houses'?' active':'') + '" data-color="sunset" onclick="switchTab(\'houses\')">🏠 HOUSES</button>';
+  html += '<button class="tab' + (currentTab==='duels'?' active':'') + '" data-color="red" onclick="switchTab(\'duels\')">⚔️ DUELS</button>';
+  html += '<button class="tab' + (currentTab==='clash'?' active':'') + '" data-color="cyan" onclick="switchTab(\'clash\')">💥 CLASH</button>';
+  html += '</div>';
 
-  if(currentTab==='houses'){
-    var houses=data.houses||[];
-    var maxPts=0;houses.forEach(function(h){if((h.total_points||h.points||0)>maxPts)maxPts=h.total_points||h.points||0;});
-    if(houses.length>0){
-      houses.sort(function(a,b){return(b.total_points||b.points||0)-(a.total_points||a.points||0);});
-      houses.forEach(function(h,i){
-        var house=HOUSES[h.school_id||h.id]||{name:'?',color:'#888',icon:'?'};
-        var pts=h.total_points||h.points||0;
-        var pct=maxPts?Math.round(pts/maxPts*100):0;
-        html+='<div class="house-row">';
-        html+='<span style="font-family:var(--font-data);font-size:10px;min-width:24px;">'+(i<3?['🥇','🥈','🥉'][i]:'#'+(i+1))+'</span>';
-        html+='<span class="house-icon">'+house.icon+'</span>';
-        html+='<div style="flex:1;"><div style="font-family:var(--font-title);font-size:12px;font-weight:700;color:'+house.color+';">'+house.name+'</div>';
-        html+='<div class="house-bar"><div class="house-fill" style="width:'+pct+'%;background:'+house.color+';"></div></div></div>';
-        html+='<span style="font-family:var(--font-data);font-size:9px;color:var(--gold);">'+pts.toLocaleString()+'</span>';
-        html+='</div>';
+  // ═══ SEASON TAB ═══
+  if (currentTab === 'season') {
+    var players = data.players;
+    if (players.length >= 3) {
+      // Podium: #2, #1, #3
+      var order = [1, 0, 2];
+      html += '<div class="podium">';
+      order.forEach(function(idx) {
+        var p = players[idx];
+        var h = HOUSES[p.school_id] || { icon:'🐱', color:'#888' };
+        var cls = idx === 0 ? 'first' : (idx === 1 ? 'second' : 'third');
+        html += '<div class="podium__card ' + cls + '" style="animation-delay:' + (idx * 0.1) + 's">';
+        html += '<div class="podium__medal">' + (idx === 0 ? '<span style="font-size:28px">🥇</span>' : idx === 1 ? '<span style="font-size:22px">🥈</span>' : '<span style="font-size:22px">🥉</span>') + '</div>';
+        html += '<div class="podium__house">' + h.icon + '</div>';
+        html += '<div class="podium__name">@' + esc(p.twitter_handle) + '</div>';
+        html += '<div class="podium__pts">' + (p.seasonal_points||0).toLocaleString() + '</div>';
+        html += '<div class="podium__label">pts</div>';
+        html += '</div>';
       });
-    }else{
-      html+='<div style="text-align:center;padding:30px;color:var(--text-faint);font-style:italic;">No house data yet.</div>';
+      html += '</div>';
+
+      // Rest of rankings
+      html += sectionLabel('📊', 'RANKINGS');
+      players.slice(3).forEach(function(p, i) {
+        html += playerRow(p, i + 4, { prefix: 'season_' });
+      });
+    } else if (players.length > 0) {
+      html += sectionLabel('📊', 'RANKINGS');
+      players.forEach(function(p, i) {
+        html += playerRow(p, i + 1, { prefix: 'season_' });
+      });
+    } else {
+      html += '<div class="empty">No players yet. Be the first to earn points!</div>';
     }
-  }else{
-    var list=data[currentTab]||[];
-    if(list.length>0){
-      list.slice(0,25).forEach(function(p,i){
-        var isMe=playerId&&(p.id==playerId||p.player_id==playerId);
-        var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1);
-        var score=currentTab==='duels'?(p.duel_wins||p.wins||0):(p.seasonal_points||p.points||0);
-        var label=currentTab==='duels'?'W':'pts';
-        html+='<div class="lb-row '+(i<3?'top3':'')+(isMe?' me':'')+'">';
-        html+='<span class="rank">'+medal+'</span>';
-        if(p.profile_image)html+='<img class="lb-avatar" src="'+p.profile_image+'">';
-        else html+='<div class="lb-avatar" style="background:var(--gold-dim);display:flex;align-items:center;justify-content:center;font-size:14px;">🐱</div>';
-        html+='<span class="lb-name">'+(isMe?'<span style="color:var(--cyan);">★</span> ':'')+'@'+esc(p.twitter_handle||'???')+'</span>';
-        html+='<span class="lb-score">'+score.toLocaleString()+' '+label+'</span>';
-        html+='</div>';
+
+    // Season Prizes
+    html += sectionLabel('🎁', 'SEASON PRIZES');
+    SEASON_PRIZES.forEach(function(pr, i) {
+      html += '<div class="prize-row" style="animation:fadeSlideIn 0.3s ease ' + (i * 0.05) + 's both">';
+      html += '<span class="prize-icon">' + pr.icon + '</span>';
+      html += '<span class="prize-text">' + pr.prize + '</span>';
+      html += '<span class="prize-place">' + pr.place + '</span>';
+      html += '</div>';
+    });
+  }
+
+  // ═══ HOUSES TAB ═══
+  if (currentTab === 'houses') {
+    var houses = data.houses.sort(function(a, b) { return (b.total_points||0) - (a.total_points||0); });
+    var maxPts = houses.length ? houses[0].total_points : 1;
+
+    // Chart
+    if (houses.length > 0) {
+      html += sectionLabel('📈', 'HOUSE PROGRESSION');
+      html += '<div class="chart-box">';
+      html += '<canvas id="houseChart" style="width:100%;max-width:440px;height:140px;display:block"></canvas>';
+      html += '<div class="chart-legend">';
+      houses.slice(0, 5).forEach(function(hd) {
+        var h = HOUSES[hd.school_id] || {};
+        html += '<div class="chart-legend__item"><div class="chart-legend__dot" style="background:' + (h.color||'#888') + '"></div>';
+        html += '<span class="chart-legend__name">' + (h.name||'?') + '</span></div>';
       });
-    }else{
-      html+='<div style="text-align:center;padding:30px;color:var(--text-faint);font-style:italic;">No data yet. Be the first!</div>';
+      html += '</div></div>';
+    }
+
+    html += sectionLabel('🏠', 'HOUSE RANKINGS');
+    if (houses.length > 0) {
+      houses.forEach(function(hd, i) {
+        var h = HOUSES[hd.school_id] || { name:'?', color:'#888', icon:'?', role:'' };
+        var pct = maxPts ? Math.round((hd.total_points||0) / maxPts * 100) : 0;
+        var avg = hd.member_count ? Math.round(hd.total_points / hd.member_count) : 0;
+        var delay = i * 0.05;
+
+        html += '<div class="house-card' + (i < 3 ? ' top3' : '') + '" style="border-left-color:' + h.color + ';animation:fadeSlideIn 0.3s ease ' + delay + 's both">';
+        html += '<div class="house-card__inner">';
+        html += '<div style="min-width:28px;text-align:center">' + medal(i + 1) + '</div>';
+        html += '<span class="house-card__icon">' + h.icon + '</span>';
+        html += '<div class="house-card__body">';
+        html += '<div><span class="house-card__name" style="color:' + h.color + '">' + h.name + '</span>';
+        html += '<span class="house-card__role">' + h.role + '</span></div>';
+        html += '<div class="house-card__bar"><div class="house-card__fill" style="width:' + pct + '%;background:linear-gradient(90deg,' + h.color + ',' + h.color + '80)' + (i === 0 ? ';box-shadow:0 0 8px ' + h.color + '40' : '') + '"></div></div>';
+        html += '<div class="house-card__meta"><span>👥 ' + hd.member_count + ' members</span><span>⌀ ' + avg.toLocaleString() + ' avg</span></div>';
+        html += '</div>';
+        html += '<div class="house-card__score"><div class="house-card__pts">' + (hd.total_points||0).toLocaleString() + '</div><div class="lb-score__label">total pts</div></div>';
+        html += '</div></div>';
+      });
+    } else {
+      html += '<div class="empty">No house data yet.</div>';
     }
   }
 
-  document.getElementById('content').innerHTML=html;
+  // ═══ DUELS TAB ═══
+  if (currentTab === 'duels') {
+    html += sectionLabel('⚔️', 'DUEL RANKINGS');
+    html += '<div class="info-box">Ranked by wins · All active duelists shown</div>';
+
+    var duelists = data.duels;
+    if (duelists.length > 0) {
+      duelists.forEach(function(p, i) {
+        html += playerRow(p, i + 1, { showDuels: true, prefix: 'duel_' });
+      });
+    } else {
+      html += '<div class="empty">No duels fought yet. Challenge someone!</div>';
+    }
+  }
+
+  // ═══ GUILD CLASH TAB ═══
+  if (currentTab === 'clash') {
+    // Admin controls
+    if (isAdmin) {
+      html += '<div class="admin-bar">';
+      html += '<div class="admin-bar__title">🔧 ADMIN CONTROLS</div>';
+      html += '<button onclick="openClashModal()">+ New Clash Matchup</button>';
+      html += '<button onclick="refreshClashes()">↻ Refresh</button>';
+      html += '</div>';
+    }
+
+    // Sub-tabs
+    html += '<div class="sub-tabs">';
+    html += '<button class="sub-tab' + (clashView==='standings'?' active':'') + '" onclick="switchClashView(\'standings\')">📊 Standings</button>';
+    html += '<button class="sub-tab' + (clashView==='matches'?' active':'') + '" onclick="switchClashView(\'matches\')">⚔️ Matches</button>';
+    html += '</div>';
+
+    var matches = data.clashes.matches || [];
+    var standings = data.clashes.standings || [];
+
+    if (clashView === 'standings') {
+      // Standings table
+      if (standings.length > 0) {
+        html += sectionLabel('🏆', 'ROUND ROBIN STANDINGS');
+        html += '<div class="standings">';
+        html += '<div class="standings__head"><span>GUILD</span><span style="text-align:center">W</span><span style="text-align:center">L</span><span style="text-align:right">PTS</span></div>';
+        standings.forEach(function(g, i) {
+          html += '<div class="standings__row" style="animation:fadeSlideIn 0.3s ease ' + (i * 0.05) + 's both">';
+          html += '<div class="standings__guild">' + medal(i + 1) + '<div class="standings__dot" style="background:' + (g.color||'#888') + '"></div>';
+          html += '<span class="standings__name">' + esc(g.name) + '</span></div>';
+          html += '<span class="standings__w">' + (g.w||0) + '</span>';
+          html += '<span class="standings__l">' + (g.l||0) + '</span>';
+          html += '<span class="standings__pts">' + (g.pts||0) + '</span>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      // This week's matches
+      var currentWeek = 0;
+      matches.forEach(function(m) { if (m.week > currentWeek) currentWeek = m.week; });
+      var thisWeek = matches.filter(function(m) { return m.week === currentWeek; });
+
+      if (thisWeek.length > 0) {
+        html += sectionLabel('⚡', 'THIS WEEK');
+        thisWeek.forEach(function(c, i) { html += clashCard(c, i); });
+      }
+
+      if (standings.length === 0 && thisWeek.length === 0) {
+        html += '<div class="empty">No guild clashes yet. ' + (isAdmin ? 'Use admin controls to create matchups!' : 'Coming soon!') + '</div>';
+      }
+    }
+
+    if (clashView === 'matches') {
+      if (matches.length > 0) {
+        html += sectionLabel('📜', 'ALL MATCH RESULTS');
+        // Group by week, newest first
+        var weeks = {};
+        matches.forEach(function(m) {
+          if (!weeks[m.week]) weeks[m.week] = [];
+          weeks[m.week].push(m);
+        });
+        var weekNums = Object.keys(weeks).sort(function(a,b){return b-a;});
+        weekNums.forEach(function(w) {
+          html += '<div class="week-label">WEEK ' + w + '</div>';
+          weeks[w].forEach(function(c, i) { html += clashCard(c, i); });
+        });
+      } else {
+        html += '<div class="empty">No matches played yet.</div>';
+      }
+    }
+
+    // Clash Prizes
+    html += sectionLabel('🎁', 'CLASH PRIZES');
+    html += '<div class="clash-prizes">';
+    html += '<div class="clash-prizes__title">Season Clash Champion</div>';
+    var clashPrizes = [
+      {icon:'👑', text:'"Warlord" title for your guild'},
+      {icon:'⚔️', text:'Choose one featured clash matchup next season'},
+      {icon:'📣', text:'Victory spotlight thread from @9LVNetwork'},
+      {icon:'🔥', text:'Undefeated streak (3+ wins) = "Unbeatable" badge'}
+    ];
+    clashPrizes.forEach(function(cp) {
+      html += '<div class="clash-prizes__item"><span class="clash-prizes__item-icon">' + cp.icon + '</span>';
+      html += '<span class="clash-prizes__item-text">' + cp.text + '</span></div>';
+    });
+    html += '</div>';
+  }
+
+  document.getElementById('content').innerHTML = html;
+
+  // Draw sparklines after DOM update
+  requestAnimationFrame(function() {
+    // Player sparklines (generate from seasonal_points as mock progression)
+    var allPlayers = currentTab === 'duels' ? data.duels : data.players;
+    var prefix = currentTab === 'duels' ? 'duel_' : 'season_';
+    allPlayers.forEach(function(p) {
+      var canvas = document.getElementById('spark_' + prefix + p.id);
+      if (canvas) {
+        var h = HOUSES[p.school_id] || { color: '#888' };
+        // Generate a simple progression curve from the points
+        var pts = p.seasonal_points || 0;
+        var fakeHistory = [];
+        for (var d = 0; d < 14; d++) {
+          fakeHistory.push(Math.round(pts * (d + 1) / 14 * (0.8 + Math.random() * 0.4)));
+        }
+        fakeHistory[fakeHistory.length - 1] = pts; // ensure end matches
+        drawSparkline('spark_' + prefix + p.id, fakeHistory, h.color);
+      }
+    });
+
+    // House progression chart
+    if (currentTab === 'houses') {
+      drawHouseChart('houseChart', {});
+    }
+  });
 }
 
-function switchTab(t){currentTab=t;render();}
-loadLeaderboards();
+function sectionLabel(icon, text) {
+  return '<div class="section-label"><span class="section-label__icon">' + icon + '</span><span class="section-label__text">' + text + '</span><span class="section-label__line"></span></div>';
+}
+
+function clashCard(c, i) {
+  var isLive = c.status === 'live';
+  var isComplete = c.status === 'complete';
+  var aWon = isComplete && (c.score_a||0) > (c.score_b||0);
+  var bWon = isComplete && (c.score_b||0) > (c.score_a||0);
+  var delay = i * 0.05;
+
+  var h = '<div class="clash-card' + (isLive ? ' live' : '') + '" style="animation:fadeSlideIn 0.3s ease ' + delay + 's both">';
+
+  if (isLive) {
+    h += '<div class="clash-live-badge"><div class="clash-live-dot"></div><span class="clash-live-text">LIVE NOW</span></div>';
+  }
+
+  h += '<div class="clash-inner">';
+  // Guild A
+  h += '<div class="clash-guild">';
+  h += '<div class="clash-guild__name' + (bWon ? ' dim' : '') + '" style="color:' + (aWon ? (c.color_a||'#fff') : '') + '">' + esc(c.guild_a) + '</div>';
+  h += '<div class="clash-guild__score' + (isLive ? ' live' : '') + (aWon ? ' won' : '') + '">' + (c.score_a||0).toLocaleString() + '</div>';
+  if (aWon) h += '<div class="clash-crown">👑</div>';
+  h += '</div>';
+  // VS
+  h += '<div class="clash-vs' + (isLive ? ' live' : '') + '">' + (isLive ? '⚔️' : c.status === 'upcoming' ? 'TBD' : 'VS') + '</div>';
+  // Guild B
+  h += '<div class="clash-guild">';
+  h += '<div class="clash-guild__name' + (aWon ? ' dim' : '') + '" style="color:' + (bWon ? (c.color_b||'#fff') : '') + '">' + esc(c.guild_b) + '</div>';
+  h += '<div class="clash-guild__score' + (isLive ? ' live' : '') + (bWon ? ' won' : '') + '">' + (c.score_b||0).toLocaleString() + '</div>';
+  if (bWon) h += '<div class="clash-crown">👑</div>';
+  h += '</div>';
+  h += '</div>';
+
+  h += '<div class="clash-week">WEEK ' + c.week + '</div>';
+
+  // Admin: edit buttons
+  if (isAdmin) {
+    h += '<div style="text-align:center;margin-top:8px;border-top:1px solid var(--border);padding-top:8px">';
+    h += '<button onclick="editClash(' + c.id + ')" style="font-family:var(--font-mono);font-size:8px;padding:4px 10px;border-radius:4px;border:1px solid rgba(212,166,75,0.2);background:rgba(212,166,75,0.08);color:var(--gold);cursor:pointer;margin:0 2px">✏️ Edit</button>';
+    h += '<button onclick="deleteClash(' + c.id + ')" style="font-family:var(--font-mono);font-size:8px;padding:4px 10px;border-radius:4px;border:1px solid rgba(232,90,106,0.2);background:rgba(232,90,106,0.08);color:var(--red);cursor:pointer;margin:0 2px">🗑️ Delete</button>';
+    h += '</div>';
+  }
+
+  h += '</div>';
+  return h;
+}
+
+// ═══════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════
+function switchTab(t) { currentTab = t; render(); }
+function switchClashView(v) { clashView = v; render(); }
+
+// ═══════════════════════════════════════
+// ADMIN: CLASH MANAGEMENT
+// ═══════════════════════════════════════
+var editingClashId = null;
+
+function openClashModal() {
+  editingClashId = null;
+  document.getElementById('clashWeek').value = 1;
+  document.getElementById('clashGuildA').value = '';
+  document.getElementById('clashGuildB').value = '';
+  document.getElementById('clashColorA').value = '#FFD700';
+  document.getElementById('clashColorB').value = '#00BFFF';
+  document.getElementById('clashStatus').value = 'upcoming';
+  document.getElementById('clashScoreA').value = 0;
+  document.getElementById('clashScoreB').value = 0;
+  document.getElementById('clashModal').style.display = 'flex';
+}
+
+function closeClashModal() {
+  document.getElementById('clashModal').style.display = 'none';
+  editingClashId = null;
+}
+
+function editClash(id) {
+  var match = (data.clashes.matches || []).find(function(m) { return m.id === id; });
+  if (!match) return;
+  editingClashId = id;
+  document.getElementById('clashWeek').value = match.week;
+  document.getElementById('clashGuildA').value = match.guild_a;
+  document.getElementById('clashGuildB').value = match.guild_b;
+  document.getElementById('clashColorA').value = match.color_a || '#FFD700';
+  document.getElementById('clashColorB').value = match.color_b || '#00BFFF';
+  document.getElementById('clashStatus').value = match.status;
+  document.getElementById('clashScoreA').value = match.score_a || 0;
+  document.getElementById('clashScoreB').value = match.score_b || 0;
+  document.getElementById('clashModal').style.display = 'flex';
+}
+
+async function saveClash() {
+  var adminKey = new URLSearchParams(window.location.search).get('admin_key');
+  var payload = {
+    week: parseInt(document.getElementById('clashWeek').value),
+    guild_a: document.getElementById('clashGuildA').value.trim(),
+    guild_b: document.getElementById('clashGuildB').value.trim(),
+    color_a: document.getElementById('clashColorA').value,
+    color_b: document.getElementById('clashColorB').value,
+    status: document.getElementById('clashStatus').value,
+    score_a: parseInt(document.getElementById('clashScoreA').value) || 0,
+    score_b: parseInt(document.getElementById('clashScoreB').value) || 0
+  };
+
+  if (!payload.guild_a || !payload.guild_b) {
+    alert('Please enter both guild names');
+    return;
+  }
+
+  try {
+    var url = editingClashId
+      ? '/api/admin/clashes/' + editingClashId + '?admin_key=' + adminKey
+      : '/api/admin/clashes?admin_key=' + adminKey;
+    var method = editingClashId ? 'PUT' : 'POST';
+
+    var r = await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if (r.ok) {
+      closeClashModal();
+      await refreshClashes();
+    } else {
+      var err = await r.json();
+      alert('Error: ' + (err.error || 'Failed to save'));
+    }
+  } catch (e) {
+    alert('Error saving clash: ' + e.message);
+  }
+}
+
+async function deleteClash(id) {
+  if (!confirm('Delete this clash matchup?')) return;
+  var adminKey = new URLSearchParams(window.location.search).get('admin_key');
+  try {
+    await fetch('/api/admin/clashes/' + id + '?admin_key=' + adminKey, { method: 'DELETE' });
+    await refreshClashes();
+  } catch (e) {
+    alert('Error: ' + e.message);
+  }
+}
+
+async function refreshClashes() {
+  try {
+    var r = await fetch('/api/leaderboards/clashes');
+    if (r.ok) {
+      data.clashes = await r.json();
+    }
+  } catch (e) {}
+  render();
+}
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+loadAll();
 </script>
-<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 </body>
 </html>

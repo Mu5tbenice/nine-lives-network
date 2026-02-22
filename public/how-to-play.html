@@ -18,7 +18,7 @@
     a{color:var(--gold);text-decoration:none}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:rgba(212,166,75,0.15);border-radius:2px}
     .main{max-width:560px;margin:0 auto;padding:14px 14px 40px}
-    .section-label{display:flex;align-items:center;gap:8px;margin:20px 0 10px}
+    .section-label{display:flex;align-items:center;gap:8px;margin:24px 0 10px}
     .section-label__text{font-family:var(--font-title);font-size:12px;font-weight:700;color:var(--gold);letter-spacing:2px}
     .section-label__line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
     .step{display:flex;gap:14px;padding:14px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);margin-bottom:8px}
@@ -28,52 +28,180 @@
     .info-card{border-radius:12px;background:var(--bg-card);border:1px solid var(--border);padding:16px;margin-bottom:8px}
     .info-card h4{font-family:var(--font-title);font-size:13px;font-weight:700;color:var(--text-bright);margin-bottom:6px}
     .info-card p{font-size:14px;color:var(--text-muted);line-height:1.6}
+    .stat-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+    .stat-pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;font-family:var(--font-mono);font-size:11px;font-weight:600;border:1px solid}
+    .house-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px}
+    .house-chip{display:flex;align-items:center;gap:6px;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid var(--border)}
+    .house-chip span:first-child{font-size:14px}
+    .house-chip span:last-child{font-family:var(--font-mono);font-size:10px;color:var(--text-muted)}
+    .warn{font-size:12px;color:var(--sunset);font-family:var(--font-mono);margin-top:6px;opacity:0.85}
+    .coming-soon-badge{display:inline-block;font-family:var(--font-data);font-size:8px;color:var(--cyan);background:rgba(106,200,216,0.1);border:1px solid rgba(106,200,216,0.25);padding:2px 8px;border-radius:4px;margin-left:8px;vertical-align:middle;letter-spacing:1px}
+    .type-tag{display:inline-block;padding:2px 8px;border-radius:4px;font-family:var(--font-mono);font-size:10px;font-weight:700;margin-right:4px;margin-bottom:4px}
   </style>
 </head>
 <body>
 <script src="/js/nav.js"></script>
   <div class="main">
+
+    <!-- HEADER -->
     <div style="text-align:center;padding:20px 0 10px;">
       <div style="font-size:48px;margin-bottom:8px;">🐱</div>
       <div style="font-family:var(--font-title);font-size:22px;font-weight:700;color:var(--text-bright);letter-spacing:2px;">How to Play</div>
-      <p style="font-size:14px;color:var(--text-muted);margin-top:6px;">Welcome to Nine Lives Network — territory warfare in the world of Nethara.</p>
+      <p style="font-size:14px;color:var(--text-muted);margin-top:6px;">Welcome to Nine Lives Network, territory warfare in the world of Nethara.</p>
     </div>
 
+    <!-- ===== GETTING STARTED ===== -->
     <div class="section-label"><span style="font-size:14px;">🚀</span><span class="section-label__text">GETTING STARTED</span><span class="section-label__line"></span></div>
 
-    <div class="step"><div class="step-num">1</div><div class="step-body"><h3>Register with Twitter</h3><p>Connect your 𝕏 account to create your Nine — your magical cat warrior in Nethara.</p></div></div>
-    <div class="step"><div class="step-num">2</div><div class="step-body"><h3>Join a House</h3><p>Choose from 9 elemental houses. Your house determines your starting abilities and allies.</p></div></div>
-    <div class="step"><div class="step-num">3</div><div class="step-body"><h3>Open Your First Pack</h3><p>Get 3 free spell cards daily. Build your collection and find powerful combos.</p></div></div>
-    <div class="step"><div class="step-num">4</div><div class="step-body"><h3>Deploy to Zones</h3><p>Head to Nethara Live. Pick a zone, deploy a card, and fight for territory every 15 minutes.</p></div></div>
+    <div class="step"><div class="step-num">1</div><div class="step-body"><h3>Register with Twitter</h3><p>Connect your 𝕏 account to create your Nine, your magical cat warrior in Nethara.</p></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-body"><h3>Join a House</h3><p>Choose from 9 elemental houses. Each house gives your Nine different base stats (ATK, HP, SPD) that define how you fight. You can also try the AI-powered Sorting Ceremony, which scans your profile and assigns a house with a personalized roast.</p><p class="warn">⚠ You can switch houses once per week, but points earned under your old house don't carry over. Choose wisely!</p></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-body"><h3>Open Your First Pack</h3><p>Get 5 free spell cards every day: 1 Basic Attack, 1 Basic Defend, and 3 random spells with rarity rolls. No login = no pack, they don't stack up.</p></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body"><h3>Deploy to Zones</h3><p>Head to Nethara Live. Pick a zone, deploy your Nine (costs 1 mana), equip a card, and fight for territory. Combat cycles every 15 minutes.</p></div></div>
 
+    <!-- ===== THE NINE HOUSES ===== -->
+    <div class="section-label"><span style="font-size:14px;">🏛️</span><span class="section-label__text">THE NINE HOUSES</span><span class="section-label__line"></span></div>
+
+    <div class="info-card">
+      <p>Your house determines your Nine's base ATK, HP, and SPD. Each house has a distinct combat identity. Using cards from your own house gives a <span style="color:var(--gold);">×1.3 effect boost</span>.</p>
+      <div class="house-grid">
+        <div class="house-chip"><span>🔥</span><span>Smoulders</span></div>
+        <div class="house-chip"><span>🌊</span><span>Darktide</span></div>
+        <div class="house-chip"><span>🌿</span><span>Stonebark</span></div>
+        <div class="house-chip"><span>💨</span><span>Ashenvale</span></div>
+        <div class="house-chip"><span>⚡</span><span>Stormrage</span></div>
+        <div class="house-chip"><span>🌙</span><span>Nighthollow</span></div>
+        <div class="house-chip"><span>☀️</span><span>Dawnbringer</span></div>
+        <div class="house-chip"><span>🔮</span><span>Manastorm</span></div>
+        <div class="house-chip"><span>☠️</span><span>Plaguemire</span></div>
+      </div>
+    </div>
+
+    <!-- ===== SPELL CARDS ===== -->
+    <div class="section-label"><span style="font-size:14px;">🃏</span><span class="section-label__text">SPELL CARDS</span><span class="section-label__line"></span></div>
+
+    <div class="info-card">
+      <h4>Card Stats</h4>
+      <p>Cards are your Nine's weapons. Every card has 5 stats that boost your Nine when equipped:</p>
+      <div class="stat-row">
+        <span class="stat-pill" style="color:#e85a6a;border-color:rgba(232,90,106,0.3);background:rgba(232,90,106,0.08);">ATK</span>
+        <span class="stat-pill" style="color:#6acd8a;border-color:rgba(106,205,138,0.3);background:rgba(106,205,138,0.08);">HP</span>
+        <span class="stat-pill" style="color:#6ac8d8;border-color:rgba(106,200,216,0.3);background:rgba(106,200,216,0.08);">SPD</span>
+        <span class="stat-pill" style="color:#b088e8;border-color:rgba(176,136,232,0.3);background:rgba(176,136,232,0.08);">DEF</span>
+        <span class="stat-pill" style="color:#D4A64B;border-color:rgba(212,166,75,0.3);background:rgba(212,166,75,0.08);">LUCK</span>
+      </div>
+      <p style="margin-top:8px;">Cards also have effects like BURN, WARD, HEAL, SILENCE, POISON, and more. 24 effects in total that trigger during combat.</p>
+    </div>
+
+    <div class="info-card">
+      <h4>Card Types</h4>
+      <p>
+        <span class="type-tag" style="color:#ff5555;background:rgba(255,85,85,0.1);border:1px solid rgba(255,85,85,0.25);">Attack</span>High ATK, low HP. Designed to deal damage fast.<br>
+        <span class="type-tag" style="color:#55aaff;background:rgba(85,170,255,0.1);border:1px solid rgba(85,170,255,0.25);">Defend</span>Low ATK, high HP. Built to absorb hits and hold zones.<br>
+        <span class="type-tag" style="color:#55ff99;background:rgba(85,255,153,0.1);border:1px solid rgba(85,255,153,0.25);">Support</span>Balanced stats. Heals allies and buffs your team.<br>
+        <span class="type-tag" style="color:#cc77ff;background:rgba(204,119,255,0.1);border:1px solid rgba(204,119,255,0.25);">Manipulation</span>Debuffs enemies with silence, hex, drain, and weaken.<br>
+        <span class="type-tag" style="color:#D4A64B;background:rgba(212,166,75,0.1);border:1px solid rgba(212,166,75,0.25);">Utility</span>Speed and luck boosts, dodge, and free casts.
+      </p>
+    </div>
+
+    <div class="info-card">
+      <h4>Rarities</h4>
+      <p>When you pull a card, rarity is rolled. Higher rarity = bonus ATK/HP and more durability charges:</p>
+      <p style="margin-top:6px;">
+        <span style="color:#bbb;">★ Common</span> · Base stats · 5 charges<br>
+        <span style="color:#6acd8a;">★★ Uncommon</span> · +1 stat · 8 charges<br>
+        <span style="color:#5588ff;">★★★ Rare</span> · +1 ATK & HP · 12 charges<br>
+        <span style="color:#b088e8;">★★★★ Epic</span> · +2 ATK & HP · 18 charges<br>
+        <span style="color:#ffd700;">★★★★★ Legendary</span> · +3 ATK & HP · 30 charges
+      </p>
+    </div>
+
+    <div class="info-card">
+      <h4>Durability & Charges</h4>
+      <p>Cards have limited charges. Each zone combat cycle uses 1 charge. When charges hit 0, the card is <span style="color:var(--sunset);">exhausted</span>. It returns to your hand and can still be used in Duels and the Gauntlet forever, but can't deploy to zones until recharged.</p>
+      <p style="margin-top:6px;">Recharge by feeding 3 Common cards or 1 same-rarity duplicate. You never lose a card permanently.</p>
+    </div>
+
+    <!-- ===== GAME MODES ===== -->
     <div class="section-label"><span style="font-size:14px;">⚔️</span><span class="section-label__text">GAME MODES</span><span class="section-label__line"></span></div>
 
-    <div class="info-card"><h4>🔥 Nethara Live — Territory Warfare</h4><p>Deploy cards to zones. Combat cycles every 15 minutes. Control zones to earn points for your guild and house. The daily objective zone gives 1.5x bonus points.</p></div>
-    <div class="info-card"><h4>⚔️ Quick Duels — PvP</h4><p>Pick 3 cards. Best of 3 rounds against another player. Higher ATK wins each round. Costs 1 mana.</p></div>
-    <div class="info-card"><h4>🏰 The Gauntlet — Solo PvE</h4><p>Climb the tower floor by floor. Each floor has a tougher enemy. How high can you reach? Resets daily.</p></div>
-    <div class="info-card"><h4>🐉 Boss Raid — Co-op</h4><p>Every Monday a world boss spawns. All guilds unite to deal damage. Top damage dealers earn bonus rewards at the end of the week.</p></div>
+    <div class="info-card">
+      <h4>🔥 Nethara Live: Territory Warfare</h4>
+      <p>Deploy your Nine to zones across Nethara (costs 1 mana per zone). You can be on as many zones as you can afford. Every 15 minutes, all Nines on a zone fight automatically. Your equipped card's stats boost your Nine and its effects trigger during combat. The guild with the most surviving HP controls the zone.</p>
+      <p style="margin-top:6px;">One zone each day is the <span style="color:var(--gold);">Daily Objective</span>, worth ×1.5 bonus points. Cards use 1 charge per combat cycle on zones.</p>
+    </div>
+    <div class="info-card">
+      <h4>⚔️ Quick Duels: 1v1 PvP</h4>
+      <p>Both players reveal a card simultaneously. Higher ATK deals damage. Best of 3 rounds. Duels are <span style="color:var(--green);">free, 0 mana</span>, and cards are never consumed. The perfect "I have 2 minutes" mode.</p>
+    </div>
+    <div class="info-card">
+      <h4>🏰 The Gauntlet: Solo PvE</h4>
+      <p>Fight sequential AI battles, each harder than the last. Costs 1 mana to enter. Rewards scale with depth. Progress resets daily. How far can you get today? Cards are never consumed.</p>
+    </div>
+    <div class="info-card">
+      <h4>🐉 Weekly Boss: Guild Co-op Raid</h4>
+      <p>A world boss spawns Monday and must die by Friday. Massive HP pool that scales with player count. The boss hits everyone each cycle (AOE). At 50% HP it gains SILENCE, at 25% it adds AOE BURN and POISON.</p>
+      <p style="margin-top:6px;">Costs 1 mana to deploy. Cards use charges here (like zones). Top damage dealers and the killing blow earn big bonus points.</p>
+    </div>
 
+    <!-- ===== THE CHRONICLE ===== -->
+    <div class="section-label"><span style="font-size:14px;">📜</span><span class="section-label__text">THE CHRONICLE</span><span class="coming-soon-badge">COMING SOON</span><span class="section-label__line"></span></div>
+
+    <div class="info-card">
+      <h4>📜 The Chronicle: Twitter Narrative</h4>
+      <p>Every day, <span style="color:var(--text-bright);">@9LVNetwork</span> posts a four-act collaborative story on 𝕏. Reply in character as your Nine. The bot reads replies, weaves players into the narrative, and awards points. Get named in the story for a massive flex.</p>
+      <p style="margin-top:6px;">Act 4's ending is unpredictable. Sometimes the biggest guild wins, sometimes the lone underdog gets the bonus. You can't game it. Just show up and write something brilliant.</p>
+      <p style="margin-top:6px;">Chronicle points count toward the main leaderboard. A Twitter-only player can be competitive without ever touching the web app.</p>
+    </div>
+
+    <!-- ===== MANA SYSTEM ===== -->
     <div class="section-label"><span style="font-size:14px;">💧</span><span class="section-label__text">MANA SYSTEM</span><span class="section-label__line"></span></div>
 
-    <div class="info-card"><h4>How Mana Works</h4><p>You regenerate 1 mana per hour, up to 7 max. Most actions cost 1 mana. Earn bonus mana from daily quests and streaks. Every action you take matters — spend wisely!</p></div>
+    <div class="info-card">
+      <h4>How Mana Works</h4>
+      <p>Mana is your universal action resource. You regenerate <span style="color:var(--cyan);">1 mana per hour</span>, up to a max of 10. Earn bonus mana from retweeting @9LVNetwork (+1), daily login (+1), and daily quests (+1–2).</p>
+      <p style="margin-top:8px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint);line-height:1.8;">
+        Deploy to a zone · · · · · · 1 mana<br>
+        Cast T0/T1 card · · · · · · · 1 mana<br>
+        Cast T2 card · · · · · · · · · 2 mana<br>
+        Cast T3 card · · · · · · · · · 3 mana<br>
+        Quick Duel · · · · · · · · · · FREE<br>
+        Gauntlet run · · · · · · · · · 1 mana
+      </p>
+    </div>
 
-    <div class="section-label"><span style="font-size:14px;">🃏</span><span class="section-label__text">CARDS</span><span class="section-label__line"></span></div>
+    <!-- ===== GUILDS ===== -->
+    <div class="section-label"><span style="font-size:14px;">👥</span><span class="section-label__text">GUILDS</span><span class="section-label__line"></span></div>
 
-    <div class="info-card"><h4>Card Stats</h4><p>Every card has ATK (attack power), HP (health), and a mana cost. Cards also have durability — they can only be used a set number of times before needing repair or replacement.</p></div>
-    <div class="info-card"><h4>Rarities</h4><p>
-      <span style="color:#bbb;">★ Common</span> — Solid basics<br>
-      <span style="color:#6acd8a;">★★ Uncommon</span> — Slightly stronger<br>
-      <span style="color:#5588ff;">★★★ Rare</span> — Noticeable power spike<br>
-      <span style="color:#b088e8;">★★★★ Epic</span> — Game-changing effects<br>
-      <span style="color:#ffd700;">★★★★★ Legendary</span> — The stuff of legends
-    </p></div>
+    <div class="info-card">
+      <h4>Guilds vs Houses</h4>
+      <p><span style="color:var(--text-bright);">House = your class</span> (how you fight). <span style="color:var(--text-bright);">Guild = your faction</span> (who you fight for). Guilds are crypto communities, friend groups, or any team. "$BONK Legion" and "Cat Lovers United" are both valid guilds.</p>
+      <p style="margin-top:6px;">A well-built guild wants house diversity: DPS, tanks, healers, and controllers. Going all one house is a risk. One SILENCE effect shuts down your whole team.</p>
+      <p style="margin-top:6px;">No guild? <span style="color:var(--text-bright);">Lone Wolves</span> get <span style="color:var(--gold);">×1.5 ATK</span> in combat to compensate for fighting solo.</p>
+    </div>
 
-    <div class="section-label"><span style="font-size:14px;">🏰</span><span class="section-label__text">GUILDS & HOUSES</span><span class="section-label__line"></span></div>
+    <!-- ===== SCORING & POINTS ===== -->
+    <div class="section-label"><span style="font-size:14px;">🏆</span><span class="section-label__text">SCORING & LEADERBOARDS</span><span class="section-label__line"></span></div>
 
-    <div class="info-card"><h4>Guilds</h4><p>Guilds are community teams (tied to your token ticker like $9LV). Guild members fight together for zone control and compete on guild leaderboards.</p></div>
-    <div class="info-card"><h4>Houses</h4><p>Houses are the 9 elemental factions of Nethara. Your house gives you identity and determines house standings. All zones are contestable — there are no home territories.</p></div>
+    <div class="info-card">
+      <h4>How Points Work</h4>
+      <p>Everything you do earns season points. Zone battles, duels, gauntlet runs, boss raids, and Chronicle participation all count. Points feed the main leaderboard and convert to <span style="color:var(--gold);">$9LV tokens</span>.</p>
+      <p style="margin-top:6px;">You never lose points. You stop earning, but you never go backwards. Card rarity doesn't affect points, only combat performance.</p>
+    </div>
+    <div class="info-card">
+      <h4>Leaderboards</h4>
+      <p>Compete across multiple boards: Player (main), Guild, House, Duel (Elo rating), Gauntlet (highest floor), and Zone Control (total cycles held). Season prizes go to the top players, winning house, and top guilds.</p>
+    </div>
 
-    <div style="text-align:center;padding:20px 0;">
+    <!-- ===== DAILY CYCLE ===== -->
+    <div class="section-label"><span style="font-size:14px;">🌙</span><span class="section-label__text">DAILY CYCLE</span><span class="section-label__line"></span></div>
+
+    <div class="info-card">
+      <h4>Midnight Reset (UTC)</h4>
+      <p>Every day at midnight UTC: all Nines heal to full HP, zone power decays 30–50%, attrition effects process, daily quests reset, a new daily pack becomes available, and the Daily Objective zone changes. Cards stay deployed if they still have charges.</p>
+    </div>
+
+    <!-- ===== CTA ===== -->
+    <div style="text-align:center;padding:24px 0;">
       <a href="/register.html" style="display:inline-block;font-family:var(--font-title);font-size:14px;font-weight:700;padding:12px 28px;border-radius:10px;background:linear-gradient(135deg,var(--gold),#c49030);color:#0a0810;letter-spacing:1.5px;box-shadow:0 4px 0 #8a6d2f,0 6px 16px rgba(212,166,75,0.25);">Start Playing →</a>
     </div>
   </div>

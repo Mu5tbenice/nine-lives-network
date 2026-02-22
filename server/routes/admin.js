@@ -556,4 +556,108 @@ router.post('/spell/:id/upload-image', upload.single('image'), async (req, res) 
     res.status(500).json({ error: e.message });
   }
 });
+
+// ═══════════════════════════════════════════════════════
+// GUILD CLASH ADMIN ROUTES
+// Add these to your existing server/routes/admin.js file
+// (paste at the bottom, BEFORE the module.exports line)
+// ═══════════════════════════════════════════════════════
+
+/**
+ * POST /api/admin/clashes
+ * Create a new guild clash matchup
+ */
+router.post('/clashes', async (req, res) => {
+  try {
+    const { week, guild_a, guild_b, color_a, color_b, status, score_a, score_b } = req.body;
+
+    if (!guild_a || !guild_b) {
+      return res.status(400).json({ error: 'Both guild names are required' });
+    }
+
+    const { data: clash, error } = await supabase
+      .from('guild_clashes')
+      .insert({
+        week: week || 1,
+        guild_a,
+        guild_b,
+        color_a: color_a || '#FFD700',
+        color_b: color_b || '#00BFFF',
+        status: status || 'upcoming',
+        score_a: score_a || 0,
+        score_b: score_b || 0
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating clash:', error);
+      return res.status(500).json({ error: 'Failed to create clash' });
+    }
+
+    res.json(clash);
+  } catch (error) {
+    console.error('Error in create clash:', error);
+    res.status(500).json({ error: 'Failed to create clash' });
+  }
+});
+
+/**
+ * PUT /api/admin/clashes/:id
+ * Update a clash matchup (scores, status, etc.)
+ */
+router.put('/clashes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = {};
+
+    // Only include fields that were sent
+    const allowed = ['week', 'guild_a', 'guild_b', 'color_a', 'color_b', 'status', 'score_a', 'score_b'];
+    allowed.forEach(field => {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    });
+
+    const { data: clash, error } = await supabase
+      .from('guild_clashes')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating clash:', error);
+      return res.status(500).json({ error: 'Failed to update clash' });
+    }
+
+    res.json(clash);
+  } catch (error) {
+    console.error('Error in update clash:', error);
+    res.status(500).json({ error: 'Failed to update clash' });
+  }
+});
+
+/**
+ * DELETE /api/admin/clashes/:id
+ * Delete a clash matchup
+ */
+router.delete('/clashes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabase
+      .from('guild_clashes')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting clash:', error);
+      return res.status(500).json({ error: 'Failed to delete clash' });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error in delete clash:', error);
+    res.status(500).json({ error: 'Failed to delete clash' });
+  }
+});
 module.exports = router;

@@ -4,7 +4,7 @@ const supabase = require('../config/supabase');
 
 /**
  * GET /api/leaderboards/players
- * Get top players by seasonal points
+ * Top players by seasonal points
  */
 router.get('/players', async (req, res) => {
   try {
@@ -12,7 +12,7 @@ router.get('/players', async (req, res) => {
 
     const { data: players, error } = await supabase
       .from('players')
-      .select('id, twitter_handle, school_id, community_tag, profile_image, seasonal_points, lifetime_points')
+      .select('id, twitter_handle, school_id, guild_tag, profile_image, seasonal_points, lifetime_points, duel_wins, duel_losses, streak')
       .eq('is_active', true)
       .order('seasonal_points', { ascending: false })
       .limit(limit);
@@ -23,7 +23,6 @@ router.get('/players', async (req, res) => {
     }
 
     res.json(players || []);
-
   } catch (error) {
     console.error('Error in players leaderboard:', error);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
@@ -32,7 +31,7 @@ router.get('/players', async (req, res) => {
 
 /**
  * GET /api/leaderboards/schools
- * Get schools ranked by total member points
+ * Houses ranked by total member points
  */
 router.get('/schools', async (req, res) => {
   try {
@@ -47,7 +46,8 @@ router.get('/schools', async (req, res) => {
     }
 
     const schoolStats = {};
-    players.forEach(player => {
+    (players || []).forEach(player => {
+      if (!player.school_id) return;
       if (!schoolStats[player.school_id]) {
         schoolStats[player.school_id] = { school_id: player.school_id, total_points: 0, member_count: 0 };
       }
@@ -57,7 +57,6 @@ router.get('/schools', async (req, res) => {
 
     const sorted = Object.values(schoolStats).sort((a, b) => b.total_points - a.total_points);
     res.json(sorted);
-
   } catch (error) {
     console.error('Error in schools leaderboard:', error);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
@@ -65,158 +64,147 @@ router.get('/schools', async (req, res) => {
 });
 
 /**
- * GET /api/leaderboards/communities
- * Get communities ranked by total member points (all-time seasonal)
+ * GET /api/leaderboards/duels
+ * Top duelists by win rate (min 5 duels to qualify)
  */
-router.get('/communities', async (req, res) => {
+router.get('/duels', async (req, res) => {
   try {
+    const limit = parseInt(req.query.limit) || 50;
+
     const { data: players, error } = await supabase
       .from('players')
-      .select('community_tag, seasonal_points')
-      .eq('is_active', true)
-      .not('community_tag', 'is', null);
+      .select('id, twitter_handle, school_id, guild_tag, profile_image, duel_wins, duel_losses')
+      .eq('is_active', true);
 
     if (error) {
-      console.error('Error fetching community stats:', error);
+      console.error('Error fetching duel leaderboard:', error);
       return res.status(500).json({ error: 'Failed to fetch leaderboard' });
     }
 
-    const communityStats = {};
-    players.forEach(player => {
-      if (!player.community_tag) return;
-      const tag = player.community_tag.toUpperCase();
-      if (!communityStats[tag]) {
-        communityStats[tag] = { community_tag: player.community_tag, total_points: 0, member_count: 0 };
-      }
-      communityStats[tag].total_points += player.seasonal_points || 0;
-      communityStats[tag].member_count += 1;
-    });
+    // Filter players with at least 1 duel, sort by wins then win rate
+    const qualified = (players || [])
+      .filter(p => (p.duel_wins || 0) + (p.duel_losses || 0) >= 1)
+      .map(p => ({
+        ...p,
+        total_duels: (p.duel_wins || 0) + (p.duel_losses || 0),
+        win_rate: Math.round(((p.duel_wins || 0) / ((p.duel_wins || 0) + (p.duel_losses || 0) || 1)) * 100)
+      }))
+      .sort((a, b) => {
+        if (b.duel_wins !== a.duel_wins) return (b.duel_wins || 0) - (a.duel_wins || 0);
+        return b.win_rate - a.win_rate;
+      })
+      .slice(0, limit);
 
-    const sorted = Object.values(communityStats).sort((a, b) => b.total_points - a.total_points).slice(0, 50);
-    res.json(sorted);
-
+    res.json(qualified);
   } catch (error) {
-    console.error('Error in communities leaderboard:', error);
+    console.error('Error in duels leaderboard:', error);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
   }
 });
 
 /**
- * GET /api/leaderboards/today
- * Today's points — communities, players, and houses
- * Pulls from territory_actions for today's game_day
+ * GET /api/leaderboards/guilds
+ * Guilds ranked by total member points
  */
-router.get('/today', async (req, res) => {
+router.get('/guilds', async (req, res) => {
   try {
-    const today = new Date().toISOString().split('T')[0];
-
-    // Get today's territory actions with player details
-    const { data: actions, error } = await supabase
-      .from('territory_actions')
-      .select('player_id, school_id, power_contributed, player:players(id, twitter_handle, school_id, community_tag, profile_image)')
-      .eq('game_day', today);
+    const { data: players, error } = await supabase
+      .from('players')
+      .select('guild_tag, seasonal_points')
+      .eq('is_active', true)
+      .not('guild_tag', 'is', null);
 
     if (error) {
-      console.error('Error fetching today actions:', error);
-      return res.status(500).json({ error: 'Failed to fetch today data' });
+      console.error('Error fetching guild stats:', error);
+      return res.status(500).json({ error: 'Failed to fetch leaderboard' });
     }
 
-    // Also get today's casts for tweet-based points
-    const { data: casts, error: castsError } = await supabase
-      .from('casts')
-      .select('player_id, points_earned')
-      .gte('created_at', today + 'T00:00:00.000Z')
-      .lte('created_at', today + 'T23:59:59.999Z');
-
-    // Build player points map (territory + casts)
-    const playerPoints = {};
-    const playerInfo = {};
-
-    // Points from territory actions (8 pts each)
-    if (actions) {
-      actions.forEach(a => {
-        if (!playerPoints[a.player_id]) playerPoints[a.player_id] = 0;
-        playerPoints[a.player_id] += 8;
-        if (a.player) playerInfo[a.player_id] = a.player;
-      });
-    }
-
-    // Points from casts
-    if (casts) {
-      casts.forEach(c => {
-        if (!playerPoints[c.player_id]) playerPoints[c.player_id] = 0;
-        playerPoints[c.player_id] += (c.points_earned || 0);
-      });
-    }
-
-    // Build community totals
-    const communities = {};
-    Object.keys(playerPoints).forEach(pid => {
-      const info = playerInfo[pid];
-      if (info && info.community_tag) {
-        const tag = info.community_tag.toUpperCase();
-        if (!communities[tag]) {
-          communities[tag] = { community_tag: info.community_tag, today_points: 0, member_count: 0, members: [] };
-        }
-        communities[tag].today_points += playerPoints[pid];
-        communities[tag].member_count += 1;
+    const guildStats = {};
+    (players || []).forEach(player => {
+      if (!player.guild_tag) return;
+      const tag = player.guild_tag.toUpperCase();
+      if (!guildStats[tag]) {
+        guildStats[tag] = { guild_tag: player.guild_tag, total_points: 0, member_count: 0 };
       }
+      guildStats[tag].total_points += player.seasonal_points || 0;
+      guildStats[tag].member_count += 1;
     });
 
-    // Build house totals
-    const houses = {};
-    Object.keys(playerPoints).forEach(pid => {
-      const info = playerInfo[pid];
-      if (info && info.school_id) {
-        if (!houses[info.school_id]) {
-          houses[info.school_id] = { school_id: info.school_id, today_points: 0, member_count: 0 };
-        }
-        houses[info.school_id].today_points += playerPoints[pid];
-        houses[info.school_id].member_count += 1;
+    const sorted = Object.values(guildStats).sort((a, b) => b.total_points - a.total_points).slice(0, 50);
+    res.json(sorted);
+  } catch (error) {
+    console.error('Error in guilds leaderboard:', error);
+    res.status(500).json({ error: 'Failed to fetch leaderboard' });
+  }
+});
+
+/**
+ * GET /api/leaderboards/clashes
+ * All guild clash matchups with standings
+ */
+router.get('/clashes', async (req, res) => {
+  try {
+    const { data: clashes, error } = await supabase
+      .from('guild_clashes')
+      .select('*')
+      .order('week', { ascending: true })
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching clashes:', error);
+      return res.status(500).json({ error: 'Failed to fetch clashes' });
+    }
+
+    // Build round-robin standings from completed matches
+    const standings = {};
+    (clashes || []).forEach(c => {
+      if (c.status !== 'complete') return;
+      [c.guild_a, c.guild_b].forEach(g => {
+        if (!standings[g]) standings[g] = { name: g, color: g === c.guild_a ? c.color_a : c.color_b, w: 0, l: 0, pts: 0, total_scored: 0 };
+      });
+      if (c.score_a > c.score_b) {
+        standings[c.guild_a].w += 1;
+        standings[c.guild_a].pts += 3;
+        standings[c.guild_b].l += 1;
+      } else if (c.score_b > c.score_a) {
+        standings[c.guild_b].w += 1;
+        standings[c.guild_b].pts += 3;
+        standings[c.guild_a].l += 1;
+      } else {
+        standings[c.guild_a].pts += 1;
+        standings[c.guild_b].pts += 1;
       }
+      standings[c.guild_a].total_scored += c.score_a || 0;
+      standings[c.guild_b].total_scored += c.score_b || 0;
+      // Keep latest color
+      if (c.color_a) standings[c.guild_a].color = c.color_a;
+      if (c.color_b) standings[c.guild_b].color = c.color_b;
     });
 
-    // Build top players list
-    const topPlayers = Object.keys(playerPoints)
-      .map(pid => ({
-        player_id: parseInt(pid),
-        today_points: playerPoints[pid],
-        twitter_handle: playerInfo[pid] ? playerInfo[pid].twitter_handle : null,
-        school_id: playerInfo[pid] ? playerInfo[pid].school_id : null,
-        community_tag: playerInfo[pid] ? playerInfo[pid].community_tag : null,
-        profile_image: playerInfo[pid] ? playerInfo[pid].profile_image : null
-      }))
-      .sort((a, b) => b.today_points - a.today_points)
-      .slice(0, 20);
-
-    const sortedCommunities = Object.values(communities).sort((a, b) => b.today_points - a.today_points);
-    const sortedHouses = Object.values(houses).sort((a, b) => b.today_points - a.today_points);
+    const sortedStandings = Object.values(standings)
+      .sort((a, b) => b.pts - a.pts || b.total_scored - a.total_scored);
 
     res.json({
-      date: today,
-      communities: sortedCommunities,
-      houses: sortedHouses,
-      players: topPlayers
+      matches: clashes || [],
+      standings: sortedStandings
     });
-
   } catch (error) {
-    console.error('Error in today leaderboard:', error);
-    res.status(500).json({ error: 'Failed to fetch today data' });
+    console.error('Error in clashes:', error);
+    res.status(500).json({ error: 'Failed to fetch clashes' });
   }
 });
 
 /**
  * GET /api/leaderboards/history
- * House AND community points per day for the last N days (for line charts)
+ * House points per day for charts
  */
 router.get('/history', async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 14;
 
-    // Get all territory actions with player community tag
     const { data: actions, error } = await supabase
       .from('territory_actions')
-      .select('game_day, school_id, player:players(community_tag)')
+      .select('game_day, school_id, player:players(guild_tag)')
       .order('game_day', { ascending: true });
 
     if (error) {
@@ -224,38 +212,31 @@ router.get('/history', async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch history' });
     }
 
-    // Group by day — houses and communities
     const dayData = {};
     if (actions) {
       actions.forEach(a => {
         if (!a.game_day) return;
-        if (!dayData[a.game_day]) dayData[a.game_day] = { houses: {}, communities: {} };
+        if (!dayData[a.game_day]) dayData[a.game_day] = { houses: {}, guilds: {} };
 
-        // House points
-        if (!dayData[a.game_day].houses[a.school_id]) dayData[a.game_day].houses[a.school_id] = 0;
-        dayData[a.game_day].houses[a.school_id] += 8;
+        if (a.school_id) {
+          if (!dayData[a.game_day].houses[a.school_id]) dayData[a.game_day].houses[a.school_id] = 0;
+          dayData[a.game_day].houses[a.school_id] += 8;
+        }
 
-        // Community points
-        const tag = a.player && a.player.community_tag ? a.player.community_tag.toUpperCase() : null;
+        const tag = a.player && a.player.guild_tag ? a.player.guild_tag.toUpperCase() : null;
         if (tag) {
-          if (!dayData[a.game_day].communities[tag]) dayData[a.game_day].communities[tag] = 0;
-          dayData[a.game_day].communities[tag] += 8;
+          if (!dayData[a.game_day].guilds[tag]) dayData[a.game_day].guilds[tag] = 0;
+          dayData[a.game_day].guilds[tag] += 8;
         }
       });
     }
 
-    // Convert to array sorted by date
     const history = Object.keys(dayData)
       .sort()
       .slice(-days)
-      .map(day => ({
-        date: day,
-        houses: dayData[day].houses,
-        communities: dayData[day].communities
-      }));
+      .map(day => ({ date: day, houses: dayData[day].houses, guilds: dayData[day].guilds }));
 
     res.json(history);
-
   } catch (error) {
     console.error('Error in history:', error);
     res.status(500).json({ error: 'Failed to fetch history' });
@@ -264,7 +245,7 @@ router.get('/history', async (req, res) => {
 
 /**
  * GET /api/leaderboards/player/:id/rank
- * Get a specific player's rank in each category
+ * Specific player's rank
  */
 router.get('/player/:id/rank', async (req, res) => {
   try {
@@ -286,50 +267,9 @@ router.get('/player/:id/rank', async (req, res) => {
       .eq('is_active', true)
       .order('seasonal_points', { ascending: false });
 
-    const individualRank = allPlayers.findIndex(p => p.id === parseInt(id)) + 1;
+    const individualRank = (allPlayers || []).findIndex(p => p.id === parseInt(id)) + 1;
 
-    const { data: schoolPlayers } = await supabase
-      .from('players')
-      .select('school_id, seasonal_points')
-      .eq('is_active', true);
-
-    const schoolStats = {};
-    schoolPlayers.forEach(p => {
-      if (!schoolStats[p.school_id]) schoolStats[p.school_id] = 0;
-      schoolStats[p.school_id] += p.seasonal_points || 0;
-    });
-
-    const sortedSchools = Object.entries(schoolStats)
-      .sort((a, b) => b[1] - a[1])
-      .map(([id]) => parseInt(id));
-
-    const schoolRank = sortedSchools.indexOf(player.school_id) + 1;
-
-    let communityRank = null;
-    if (player.community_tag) {
-      const { data: communityPlayers } = await supabase
-        .from('players')
-        .select('community_tag, seasonal_points')
-        .eq('is_active', true)
-        .not('community_tag', 'is', null);
-
-      const communityStats = {};
-      communityPlayers.forEach(p => {
-        if (!p.community_tag) return;
-        const tag = p.community_tag.toUpperCase();
-        if (!communityStats[tag]) communityStats[tag] = 0;
-        communityStats[tag] += p.seasonal_points || 0;
-      });
-
-      const sortedCommunities = Object.entries(communityStats)
-        .sort((a, b) => b[1] - a[1])
-        .map(([tag]) => tag);
-
-      communityRank = sortedCommunities.indexOf(player.community_tag.toUpperCase()) + 1;
-    }
-
-    res.json({ individual: individualRank, school: schoolRank, community: communityRank });
-
+    res.json({ individual: individualRank || null });
   } catch (error) {
     console.error('Error getting player rank:', error);
     res.status(500).json({ error: 'Failed to get rank' });
