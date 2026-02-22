@@ -197,7 +197,7 @@ const PILL_CLASS={"#ffaa55":"p-orange","#e85a6a":"p-red","#D4A64B":"p-gold","#ff
 /* ═══ COMPONENTS ═══ */
 
 function CardV4({card,size="tiny",onClick,disabled,fatigued,isNew,isSelected}){
-  const hc=HS[card.house]?.color||"#D4A64B";const hi=HS[card.house]?.icon||"\u2726";
+  const hc=HS[card.house]?.color||"#D4A64B";const hCrest=HS[card.house]?.crest;
   const isLeg=card.rarity==="legendary";const sizeClass=size==="mini"?"sc-mini":"sc-tiny";
   const manaCost=card.mana_cost||Math.ceil((card.atk+card.hp+card.spd+card.def+card.luck)/4);
   const stats=[{v:card.atk,k:"atk"},{v:card.hp,k:"hp"},{v:card.spd,k:"spd"},{v:card.def,k:"def"},{v:card.luck,k:"luck"}].filter(s=>s.v>0);
@@ -210,7 +210,8 @@ function CardV4({card,size="tiny",onClick,disabled,fatigued,isNew,isSelected}){
           <div className="sc-border"/><div className="sc-face"/><div className="sc-art-area"/><div className="sc-inner-edge"/>
           <div className="sc-body">
             <div className="sc-top">
-              <span style={{fontSize:18,filter:`drop-shadow(0 0 4px ${hc}60)`,lineHeight:1}}>{hi}</span>
+              {hCrest?<img src={hCrest} alt="" style={{width:20,height:20,objectFit:"contain",filter:`drop-shadow(0 0 4px ${hc}60)`}} onError={e=>{e.target.style.display="none"}}/>
+               :<span style={{fontSize:18,filter:`drop-shadow(0 0 4px ${hc}60)`,lineHeight:1}}>{"\u2726"}</span>}
               <div className="sc-name">{card.name}</div>
               <div className="sc-mana"><span className="sc-mana-icon">{"\u25C6"}</span><span className="sc-mana-num">{manaCost}</span></div>
             </div>
@@ -238,40 +239,38 @@ function CardV4({card,size="tiny",onClick,disabled,fatigued,isNew,isSelected}){
     </div>);
 }
 
-/* ═══ PLAYER NINE — layered equipment preview ═══ */
+/* ═══ PLAYER NINE — glow + character, no box ═══ */
 function PlayerNine({shake,flash,flashColor}){
   const h=PB.houseData;const c=h.color;const isCrit=flashColor==="#D4A64B";
   const slots=PB.equipSlots;const basePath="/assets/nine/";
   const layers=["fur","outfit","weapon","expression","headwear"];
   const hasLayers=layers.some(l=>slots[l]);
-  return(<div style={{textAlign:"center",animation:shake?(isCrit?"bigShake .4s":"shake .3s"):"none"}}>
-    <div style={{width:130,height:170,borderRadius:14,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",
-      background:flash?`radial-gradient(ellipse at 50% 40%,${flashColor}55,rgba(10,8,18,.9) 75%)`:`radial-gradient(ellipse at 50% 40%,${c}25,rgba(10,8,18,.95) 80%)`,
-      border:`2px solid ${flash?flashColor+'70':c+'30'}`,boxShadow:flash?`0 0 30px ${flashColor}40,inset 0 0 20px ${flashColor}15`:`0 0 20px ${c}18`,transition:"all .3s",overflow:"hidden"}}>
-      {hasLayers?layers.map(l=>slots[l]?<img key={l} src={`${basePath}${l}/${slots[l]}`} alt="" style={{position:"absolute",width:"90%",height:"90%",objectFit:"contain",top:"5%",left:"5%"}} onError={e=>{e.target.style.display='none'}}/>:null)
-       :<span style={{fontSize:56,filter:`drop-shadow(0 0 12px ${c}80)`}}>{h.icon||"\u{1F431}"}</span>}
+  const glowC=flash?flashColor:c;
+  return(<div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center",animation:shake?(isCrit?"bigShake .4s":"shake .3s"):"none"}}>
+    {/* Glow behind character */}
+    <div style={{position:"absolute",width:"140%",height:"140%",borderRadius:"50%",background:`radial-gradient(ellipse at 50% 50%,${glowC}${flash?"40":"18"},transparent 70%)`,filter:`blur(${flash?20:12}px)`,transition:"all .3s",pointerEvents:"none"}}/>
+    {/* Character container */}
+    <div style={{width:160,height:200,position:"relative",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+      {hasLayers?layers.map(l=>slots[l]?<img key={l} src={`${basePath}${l}/${slots[l]}`} alt="" style={{position:"absolute",width:"100%",height:"100%",objectFit:"contain"}} onError={e=>{e.target.style.display='none'}}/>:null)
+       :<span style={{fontSize:72,filter:`drop-shadow(0 0 20px ${c}80)`}}>{h.icon||"\u{1F431}"}</span>}
     </div>
-    <div style={{fontFamily:h.font||"var(--font-title)",fontSize:14,fontWeight:700,color:"#F5F0E8",textShadow:`0 0 10px ${c}50`,marginTop:5,lineHeight:1.15,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{PB.name}</div>
-    <div style={{fontFamily:"var(--font-data)",fontSize:6,color:c,marginTop:2,letterSpacing:1}}>{h.icon} {h.name?.toUpperCase()}</div>
   </div>);
 }
 
-/* ═══ ENEMY FIGHTER — layered equipment like player ═══ */
+/* ═══ ENEMY FIGHTER — glow + character, no box ═══ */
 function EnemyFighter({enemy,shake,flash,flashColor}){
   const[imgErr,setImgErr]=useState(false);const h=enemy.houseData;const c=h.color;const isCrit=flashColor==="#D4A64B";
   const basePath="/assets/nine/";const eq=enemy.equipped||{};
   const layers=["fur","outfit","weapon","expression","headwear"];
   const hasLayers=layers.some(l=>eq[l]?.f);
-  return(<div style={{textAlign:"center",animation:shake?(isCrit?"bigShake .4s":"shake .3s"):"none"}}>
-    <div style={{width:130,height:170,borderRadius:14,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",position:"relative",
-      background:flash?`radial-gradient(ellipse at 50% 40%,${flashColor}55,rgba(10,8,18,.9) 75%)`:`radial-gradient(ellipse at 50% 40%,${c}25,rgba(10,8,18,.95) 80%)`,
-      border:`2px solid ${flash?flashColor+'70':c+'30'}`,boxShadow:flash?`0 0 30px ${flashColor}40,inset 0 0 20px ${flashColor}15`:`0 0 20px ${c}18`,transition:"all .3s",overflow:"hidden"}}>
-      {hasLayers?layers.map(l=>eq[l]?.f?<img key={l} src={`${basePath}${l}/${eq[l].f}`} alt="" style={{position:"absolute",width:"90%",height:"90%",objectFit:"contain",top:"5%",left:"5%",transform:"scaleX(-1)"}} onError={e=>{e.target.style.display='none'}}/>:null)
-       :!imgErr?<img src={h.crest} alt="" style={{width:72,height:72,objectFit:"contain",filter:`drop-shadow(0 0 10px ${c}70)`,transform:"scaleX(-1)"}} onError={()=>setImgErr(true)}/>
-       :<span style={{fontSize:56,filter:`drop-shadow(0 0 12px ${c}80)`}}>{h.icon||"\u{1F431}"}</span>}
+  const glowC=flash?flashColor:c;
+  return(<div style={{position:"relative",display:"flex",alignItems:"center",justifyContent:"center",animation:shake?(isCrit?"bigShake .4s":"shake .3s"):"none"}}>
+    <div style={{position:"absolute",width:"140%",height:"140%",borderRadius:"50%",background:`radial-gradient(ellipse at 50% 50%,${glowC}${flash?"40":"18"},transparent 70%)`,filter:`blur(${flash?20:12}px)`,transition:"all .3s",pointerEvents:"none"}}/>
+    <div style={{width:160,height:200,position:"relative",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+      {hasLayers?layers.map(l=>eq[l]?.f?<img key={l} src={`${basePath}${l}/${eq[l].f}`} alt="" style={{position:"absolute",width:"100%",height:"100%",objectFit:"contain",transform:"scaleX(-1)"}} onError={e=>{e.target.style.display='none'}}/>:null)
+       :!imgErr?<img src={h.crest} alt="" style={{width:90,height:90,objectFit:"contain",filter:`drop-shadow(0 0 16px ${c}70)`,transform:"scaleX(-1)"}} onError={()=>setImgErr(true)}/>
+       :<span style={{fontSize:72,filter:`drop-shadow(0 0 20px ${c}80)`}}>{h.icon||"\u{1F431}"}</span>}
     </div>
-    <div style={{fontFamily:h.font||"var(--font-title)",fontSize:13,fontWeight:700,color:"#F5F0E8",textShadow:`0 0 10px ${c}50`,marginTop:5,lineHeight:1.15,maxWidth:140,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{enemy.name}</div>
-    <div style={{fontFamily:"var(--font-data)",fontSize:6,color:c,marginTop:2,letterSpacing:1}}>{h.icon} {h.name?.toUpperCase()}</div>
   </div>);
 }
 
@@ -308,7 +307,7 @@ function ProgressBar({enc,maxEnc=16}){
 function FloatingNumbers({floats}){return(<>{floats.map(f=><div key={f.id} className={`dmg-float ${f.cls}`} style={{left:f.x,top:f.y}}>{f.text}</div>)}</>);}
 function SlashFx({slashes}){return(<>{slashes.map(s=><div key={s.id} className={`slash-fx ${s.cls}`} style={{left:s.x,top:s.y}}/>)}</>);}
 
-/* ═══ CARD PICKER MODAL ═══ */
+/* ═══ CARD PICKER MODAL — horizontal carousel ═══ */
 function CardPickerModal({pool,fatigued,selected,onSelect,onClose,slotIndex}){
   const available=pool.filter(c=>!selected.find(s=>s.id===c.id)&&!fatigued[c.id]);
   const tired=pool.filter(c=>fatigued[c.id]);
@@ -316,37 +315,38 @@ function CardPickerModal({pool,fatigued,selected,onSelect,onClose,slotIndex}){
   const types=["all","attack","defend","support","manipulation"];
   const filtered=filter==="all"?available:available.filter(c=>c.type.toLowerCase()===filter);
   return(<div className="modal-overlay" onClick={onClose}>
-    <div style={{width:"100%",maxWidth:600,padding:"16px 0",display:"flex",flexDirection:"column",height:"100vh"}} onClick={e=>e.stopPropagation()}>
+    <div style={{width:"100%",maxWidth:600,display:"flex",flexDirection:"column",height:"100vh",justifyContent:"center"}} onClick={e=>e.stopPropagation()}>
       {/* Header */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,padding:"0 16px"}}>
         <div>
           <div style={{fontFamily:"var(--font-title)",fontSize:16,fontWeight:700,color:"#D4A64B"}}>Choose a Card</div>
-          <div style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6B5E50",marginTop:4}}>SLOT {slotIndex+1} · {available.length} AVAILABLE</div>
+          <div style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6B5E50",marginTop:4}}>SLOT {slotIndex+1} \u00b7 {available.length} AVAILABLE</div>
         </div>
         <button onClick={onClose} style={{background:"rgba(255,255,255,.05)",border:"1px solid rgba(255,255,255,.1)",borderRadius:8,color:"#9B8E7E",fontSize:18,width:36,height:36,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>{"\u2715"}</button>
       </div>
 
-      {/* Type filter tabs */}
+      {/* Type filter */}
       <div style={{display:"flex",gap:0,padding:"0 16px",marginBottom:12,overflowX:"auto"}}>
         {types.map(t=><button key={t} onClick={()=>setFilter(t)} style={{fontFamily:"var(--font-data)",fontSize:7,padding:"6px 12px",border:"none",borderBottom:filter===t?"2px solid #D4A64B":"2px solid transparent",background:"none",color:filter===t?"#D4A64B":"#6B5E50",cursor:"pointer",whiteSpace:"nowrap",transition:"all .15s"}}>{t.toUpperCase()}</button>)}
       </div>
 
-      {/* Scrollable card area */}
-      <div style={{flex:1,overflowY:"auto",padding:"0 16px"}}>
-        {filtered.length===0&&<div style={{textAlign:"center",padding:30,fontFamily:"var(--font-data)",fontSize:8,color:"#6B5E50"}}>No {filter==="all"?"":"matching "}cards available.</div>}
-        <div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center",paddingBottom:16}}>
-          {filtered.map(c=><div key={c.id} style={{transition:"transform .15s"}}
-            onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)"}} onMouseLeave={e=>{e.currentTarget.style.transform="none"}}>
-            <CardV4 card={c} size="tiny" onClick={()=>{onSelect(c);onClose()}} isNew={false}/>
-          </div>)}
+      {/* Horizontal carousel */}
+      {filtered.length===0?<div style={{textAlign:"center",padding:30,fontFamily:"var(--font-data)",fontSize:8,color:"#6B5E50"}}>No {filter==="all"?"":"matching "}cards available.</div>
+      :<div style={{display:"flex",gap:14,overflowX:"auto",padding:"8px 16px 16px",WebkitOverflowScrolling:"touch",scrollSnapType:"x mandatory"}}>
+        {filtered.map(c=><div key={c.id} style={{flexShrink:0,scrollSnapAlign:"center",transition:"transform .15s",cursor:"pointer"}}
+          onClick={()=>{onSelect(c);onClose()}}
+          onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-6px) scale(1.03)"}} onMouseLeave={e=>{e.currentTarget.style.transform="none"}}>
+          <CardV4 card={c} size="mini"/>
+        </div>)}
+      </div>}
+
+      {/* Tired cards */}
+      {tired.length>0&&<div style={{padding:"0 16px",marginTop:8}}>
+        <div style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6B5E50",marginBottom:8,textAlign:"center",letterSpacing:1}}>TIRED ({tired.length})</div>
+        <div style={{display:"flex",gap:10,overflowX:"auto",padding:"0 0 8px",WebkitOverflowScrolling:"touch"}}>
+          {tired.map(c=><div key={c.id} style={{flexShrink:0}}><CardV4 card={c} size="tiny" disabled fatigued/></div>)}
         </div>
-        {tired.length>0&&<>
-          <div style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6B5E50",marginTop:8,marginBottom:8,textAlign:"center",letterSpacing:1}}>TIRED ({tired.length})</div>
-          <div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center",paddingBottom:16}}>
-            {tired.map(c=><CardV4 key={c.id} card={c} size="tiny" disabled fatigued/>)}
-          </div>
-        </>}
-      </div>
+      </div>}
     </div>
   </div>);
 }
@@ -553,54 +553,70 @@ function TheWilds(){
     {/* Journey dots */}
     {journey.length>0&&<div style={{display:"flex",gap:3,padding:"4px 16px",flexWrap:"wrap"}}>{journey.map((j,i)=><div key={i} style={{width:7,height:7,borderRadius:"50%",background:j.won?HS[j.house].color:"#e85a6a35",border:`1px solid ${j.won?HS[j.house].color+"50":"#e85a6a25"}`}}/>)}<div style={{width:7,height:7,borderRadius:"50%",border:"1.5px solid #D4A64B30",animation:"pulse 1.5s infinite"}}/></div>}
 
-    {/* ═══ ARENA ═══ */}
-    <div key={animKey} style={{width:"calc(100% - 24px)",minHeight:320,position:"relative",overflow:"hidden",borderRadius:14,margin:"6px 12px",border:"1px solid rgba(255,255,255,.05)",background:"#0e0a18",flexShrink:0}}>
-      <div style={{position:"absolute",inset:0,backgroundImage:`url(${ZP}${zone.img})`,backgroundSize:"cover",backgroundPosition:"center",filter:phase===PH.APPROACH?"brightness(.5) saturate(.55)":"brightness(.28) saturate(.4)",transition:"filter .7s"}}><div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse at 50% 80%,transparent 15%,rgba(10,8,18,.7) 60%)"}}/></div>
-      <div style={{position:"absolute",bottom:3,left:"50%",transform:"translateX(-50%)",zIndex:20,fontFamily:"var(--font-title)",fontSize:8,color:"rgba(255,255,255,.18)",letterSpacing:2}}>{zone.name.toUpperCase()}</div>
+    {/* ═══ ARENA — same size for ALL phases ═══ */}
+    <div key={animKey} style={{width:"calc(100% - 16px)",height:340,position:"relative",overflow:"hidden",borderRadius:14,margin:"6px 8px",border:"1px solid rgba(255,255,255,.05)",background:"#0e0a18",flexShrink:0}}>
+      <div style={{position:"absolute",inset:0,backgroundImage:`url(${ZP}${zone.img})`,backgroundSize:"cover",backgroundPosition:"center",filter:phase===PH.APPROACH?"brightness(.5) saturate(.55)":"brightness(.28) saturate(.4)",transition:"filter .7s"}}><div style={{position:"absolute",inset:0,background:"radial-gradient(ellipse at 50% 80%,transparent 15%,rgba(10,8,18,.65) 55%)"}}/></div>
 
-      {/* Modifier banner */}
-      {mod.id!=="none"&&<div style={{position:"absolute",top:5,left:5,right:5,zIndex:20,display:"flex",justifyContent:"center"}}><div style={{padding:"3px 12px",borderRadius:5,background:`${mod.color}15`,border:`1px solid ${mod.color}30`,textAlign:"center"}}><span style={{fontFamily:"var(--font-data)",fontSize:6,color:mod.color}}>{mod.icon} {mod.name.toUpperCase()}</span><span style={{fontFamily:"var(--font-data)",fontSize:5,color:"#9B8E7E",marginLeft:4}}>{mod.desc}</span></div></div>}
-      {mod.id==="none"&&<div style={{position:"absolute",top:6,left:"50%",transform:"translateX(-50%)",zIndex:20,fontFamily:"var(--font-data)",fontSize:7,color:"#D4A64B",letterSpacing:2,textShadow:"0 0 8px rgba(212,166,75,.3)"}}>ENCOUNTER {enc}</div>}
+      {/* Modifier / Encounter banner */}
+      {mod.id!=="none"?<div style={{position:"absolute",top:5,left:5,right:5,zIndex:20,display:"flex",justifyContent:"center"}}><div style={{padding:"3px 12px",borderRadius:5,background:`${mod.color}15`,border:`1px solid ${mod.color}30`,textAlign:"center"}}><span style={{fontFamily:"var(--font-data)",fontSize:6,color:mod.color}}>{mod.icon} {mod.name.toUpperCase()}</span><span style={{fontFamily:"var(--font-data)",fontSize:5,color:"#9B8E7E",marginLeft:4}}>{mod.desc}</span></div></div>
+       :<div style={{position:"absolute",top:6,left:"50%",transform:"translateX(-50%)",zIndex:20,fontFamily:"var(--font-data)",fontSize:7,color:"#D4A64B",letterSpacing:2,textShadow:"0 0 8px rgba(212,166,75,.3)"}}>ENCOUNTER {enc}</div>}
+
+      {/* Names at top of arena with VS */}
+      {phase>=PH.APPROACH&&<div style={{position:"absolute",top:mod.id!=="none"?28:24,left:0,right:0,zIndex:20,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+        <div style={{flex:1,textAlign:"right",paddingRight:4}}>
+          <div style={{fontFamily:PB.houseData.font||"var(--font-title)",fontSize:16,fontWeight:700,color:"#F5F0E8",textShadow:`0 2px 12px rgba(0,0,0,.9),0 0 12px ${pColor}40`,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{PB.name}</div>
+          <div style={{fontFamily:"var(--font-data)",fontSize:6,color:pColor,letterSpacing:1,marginTop:1}}>{PB.houseData.icon} {PB.houseData.name?.toUpperCase()}</div>
+        </div>
+        <div style={{fontFamily:"var(--font-title)",fontSize:phase>=PH.FACEOFF?24:14,fontWeight:900,color:phase>=PH.FACEOFF?"#D4A64B":"rgba(212,166,75,.35)",textShadow:phase>=PH.FACEOFF?"0 0 18px rgba(212,166,75,.4)":"none",letterSpacing:4,transition:"all .4s",flexShrink:0}}>VS</div>
+        <div style={{flex:1,textAlign:"left",paddingLeft:4}}>
+          {enemy&&<><div style={{fontFamily:enemy.houseData.font||"var(--font-title)",fontSize:16,fontWeight:700,color:"#F5F0E8",textShadow:`0 2px 12px rgba(0,0,0,.9),0 0 12px ${eColor}40`,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{enemy.name}</div>
+          <div style={{fontFamily:"var(--font-data)",fontSize:6,color:eColor,letterSpacing:1,marginTop:1}}>{enemy.houseData.icon} {enemy.houseData.name?.toUpperCase()}</div></>}
+        </div>
+      </div>}
 
       {/* Round indicator */}
-      {curRound>0&&phase===PH.BATTLE&&<div style={{position:"absolute",top:mod.id!=="none"?24:20,left:"50%",transform:"translateX(-50%)",zIndex:20,fontFamily:"var(--font-data)",fontSize:6,color:"#6ac8d8",animation:"pulse .8s infinite"}}>ROUND {curRound}</div>}
+      {curRound>0&&phase===PH.BATTLE&&<div style={{position:"absolute",top:mod.id!=="none"?28:24,left:"50%",transform:"translateX(-50%)",zIndex:25,fontFamily:"var(--font-data)",fontSize:7,color:"#6ac8d8",animation:"pulse .8s infinite",background:"rgba(10,8,18,.7)",padding:"2px 10px",borderRadius:4}}>ROUND {curRound}</div>}
 
-      {/* Flavor text on approach — positioned at top so fighters show below */}
-      {phase===PH.APPROACH&&<div style={{position:"absolute",top:"8%",left:"50%",transform:"translateX(-50%)",zIndex:15,textAlign:"center",maxWidth:"78%",animation:"fadeUp .6s ease"}}><div style={{fontSize:12,fontStyle:"italic",color:"rgba(255,255,255,.45)",lineHeight:1.5,textShadow:"0 2px 8px rgba(0,0,0,.9)"}}>"{flavor}"</div></div>}
-
-      {/* VS text */}
-      {phase===PH.FACEOFF&&<div style={{position:"absolute",top:"48%",left:"50%",transform:"translate(-50%,-50%)",zIndex:15,fontFamily:"var(--font-title)",fontSize:28,fontWeight:900,color:"#D4A64B",textShadow:"0 0 18px rgba(212,166,75,.4)",letterSpacing:6}}>VS</div>}
+      {/* Flavor text on approach */}
+      {phase===PH.APPROACH&&<div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)",zIndex:15,textAlign:"center",maxWidth:"60%",animation:"fadeUp .6s ease"}}><div style={{fontSize:12,fontStyle:"italic",color:"rgba(255,255,255,.35)",lineHeight:1.5,textShadow:"0 2px 8px rgba(0,0,0,.9)"}}>"{flavor}"</div></div>}
 
       {/* Battle result text */}
       {phase===PH.BATTLE&&battleResult&&<div style={{position:"absolute",top:"44%",left:"50%",transform:"translate(-50%,-50%)",zIndex:25,fontFamily:"var(--font-title)",fontSize:24,fontWeight:900,color:battleResult==="win"?"#D4A64B":"#e85a6a",textShadow:`0 0 24px ${battleResult==="win"?"rgba(212,166,75,.4)":"rgba(232,90,106,.4)"}`,animation:"fadeUp .5s ease"}}>{battleResult==="win"?"VICTORY":"DEFEATED"}</div>}
 
-      {/* Fighters - visible during approach, faceoff, and battle */}
+      {/* Fighters — face to face, big */}
       {phase>=PH.APPROACH&&<>
-        <div style={{position:"absolute",top:"8%",bottom:"8%",left:"50%",width:1,background:"linear-gradient(180deg,transparent,rgba(212,166,75,.06),transparent)",zIndex:4}}/>
-        <div style={{position:"absolute",bottom:8,left:"2%",width:"46%",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",animation:"slideInLeft .5s ease both",opacity:phase===PH.APPROACH?.7:1,transition:"opacity .3s"}}>
+        <div style={{position:"absolute",bottom:16,left:"0%",width:"48%",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",animation:"slideInLeft .5s ease both",opacity:phase===PH.APPROACH?.75:1,transition:"opacity .3s"}}>
           <PlayerNine shake={pShake} flash={pFlash!==null} flashColor={pFlash}/>
           {phase>=PH.FACEOFF&&<HpBar current={playerHp} max={pStats.hp} color={pColor} side="left"/>}
         </div>
-        <div style={{position:"absolute",bottom:8,right:"2%",width:"46%",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",animation:"slideInRight .5s ease .12s both",opacity:phase===PH.APPROACH?.7:1,transition:"opacity .3s"}}>
+        <div style={{position:"absolute",bottom:16,right:"0%",width:"48%",zIndex:10,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-end",animation:"slideInRight .5s ease .12s both",opacity:phase===PH.APPROACH?.75:1,transition:"opacity .3s"}}>
           {enemy&&<EnemyFighter enemy={enemy} shake={eShake} flash={eFlash!==null} flashColor={eFlash}/>}
           {phase>=PH.FACEOFF&&<HpBar current={enemyHp} max={enemy.stats.hp} color={eColor} side="right"/>}
         </div>
       </>}
       <FloatingNumbers floats={floats}/>
       <SlashFx slashes={slashes}/>
+
+      {/* Zone name watermark */}
+      <div style={{position:"absolute",bottom:3,left:"50%",transform:"translateX(-50%)",zIndex:20,fontFamily:"var(--font-title)",fontSize:8,color:"rgba(255,255,255,.15)",letterSpacing:2}}>{zone.name.toUpperCase()}</div>
     </div>
 
     {/* ═══ BELOW-ARENA CONTROLS ═══ */}
     <div style={{width:"100%",padding:"0 12px"}}>
 
-      {/* APPROACH PHASE — stats preview + card slots + approach button */}
-      {phase===PH.APPROACH&&<div style={{marginTop:8}}>
+      {/* ═══ APPROACH PHASE ═══ */}
+      {phase===PH.APPROACH&&<div style={{marginTop:6}}>
 
-        {/* STATS PREVIEW — your stats visible, enemy hidden */}
-        <div style={{marginBottom:10}}>
+        {/* APPROACH BUTTON — right under zone image */}
+        <div style={{textAlign:"center",margin:"4px 0 10px"}}>
+          <button onClick={approach} disabled={!canFight} style={{padding:"12px 36px",borderRadius:10,border:`1px solid ${canFight?"rgba(212,166,75,.3)":"rgba(255,255,255,.04)"}`,cursor:canFight?"pointer":"not-allowed",fontFamily:"var(--font-title)",fontSize:15,fontWeight:700,letterSpacing:3,background:canFight?"linear-gradient(135deg,rgba(212,166,75,.15),rgba(212,166,75,.05))":"rgba(255,255,255,.02)",color:canFight?"#D4A64B":"#6B5E50",opacity:canFight?1:.4,transition:"all .2s"}}>{canFight?"\u{1F43E} APPROACH":"PICK CARDS TO APPROACH"}</button>
+        </div>
+
+        {/* STATS PREVIEW — you visible, enemy ??? */}
+        <div style={{marginBottom:8}}>
           <div style={{display:"flex",justifyContent:"space-between",marginBottom:4,padding:"0 4px"}}>
             <span style={{fontFamily:"var(--font-data)",fontSize:7,color:pColor}}>{PB.houseData.icon} YOU {selected.length>0?`(${selected.length} cards)`:""}</span>
-            <span style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6B5E50"}}>ENEMY {eColor&&enemy?enemy.houseData.icon:""}</span>
+            <span style={{fontFamily:"var(--font-data)",fontSize:7,color:"#6B5E50"}}>ENEMY {enemy?enemy.houseData.icon:""}</span>
           </div>
           {STATS.map(s=><div key={s.key} style={{display:"flex",alignItems:"center",gap:4,marginBottom:3}}>
             <span style={{fontFamily:"var(--font-data)",fontSize:10,width:28,textAlign:"right",fontWeight:700,color:s.color}}>{pStats[s.key]}</span>
@@ -609,58 +625,44 @@ function TheWilds(){
             <div style={{flex:1,height:4,background:"rgba(255,255,255,.03)",borderRadius:2,overflow:"hidden"}}><div style={{width:"45%",height:"100%",borderRadius:2,background:"linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.02))"}}/></div>
             <span style={{fontFamily:"var(--font-data)",fontSize:10,width:28,textAlign:"left",fontWeight:700,color:"#3a3545"}}>???</span>
           </div>)}
+          {/* FX preview */}
+          {selected.some(c=>c.effects.length>0)&&<div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:4,justifyContent:"center"}}><span style={{fontFamily:"var(--font-data)",fontSize:6,color:"#6B5E50"}}>YOUR FX:</span>{selected.flatMap(c=>c.effects).map((e,i)=><span key={i} style={{fontSize:7,padding:"2px 5px",borderRadius:4,background:`${e.color}15`,color:e.color,fontFamily:"var(--font-data)"}}>{e.tag}</span>)}</div>}
         </div>
 
-        {/* Tip */}
-        <div style={{textAlign:"center",marginBottom:6}}>
-          <span style={{fontFamily:"var(--font-data)",fontSize:6,color:"#6B5E50",opacity:.7}}>💡 Cards tire after use. You don't need to fill all 3.</span>
-        </div>
-
-        {/* YOUR HAND — horizontal scroll of CardV4 tiny */}
+        {/* CARD HAND — carousel */}
         <div style={{fontFamily:"var(--font-data)",fontSize:8,color:"#D4A64B",letterSpacing:1,marginBottom:6,textAlign:"center"}}>YOUR HAND — {selected.length}/3</div>
-        <div style={{display:"flex",gap:8,marginBottom:8,justifyContent:"center",alignItems:"flex-start"}}>
+        <div style={{display:"flex",gap:8,marginBottom:6,overflowX:"auto",padding:"4px 4px 8px",WebkitOverflowScrolling:"touch",scrollSnapType:"x mandatory"}}>
           {[0,1,2].map(i=>{
             if(selected[i]){
-              return <div key={`sel-${i}`} style={{position:"relative",cursor:"pointer",transition:"transform .2s",transform:"scale(1)"}} onClick={()=>openPicker(i)}
-                onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)"}} onMouseLeave={e=>{e.currentTarget.style.transform="scale(1)"}}>
+              return <div key={`sel-${i}`} style={{position:"relative",cursor:"pointer",flexShrink:0,scrollSnapAlign:"center",transition:"transform .15s"}} onClick={()=>openPicker(i)}
+                onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-4px)"}} onMouseLeave={e=>{e.currentTarget.style.transform="none"}}>
                 <CardV4 card={selected[i]} size="tiny"/>
-                <div onClick={e=>{e.stopPropagation();removeCard(i)}} style={{position:"absolute",top:-4,right:-4,width:20,height:20,borderRadius:"50%",background:"rgba(232,90,106,.85)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",cursor:"pointer",zIndex:20,lineHeight:1,border:"1px solid rgba(0,0,0,.3)"}}>×</div>
+                <div onClick={e=>{e.stopPropagation();removeCard(i)}} style={{position:"absolute",top:-4,right:-4,width:20,height:20,borderRadius:"50%",background:"rgba(232,90,106,.85)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",cursor:"pointer",zIndex:20,lineHeight:1,border:"1px solid rgba(0,0,0,.3)"}}>\u00d7</div>
               </div>
             }
-            return <div key={`empty-${i}`} onClick={()=>openPicker(i)} style={{width:110,height:160,borderRadius:10,border:"1.5px dashed rgba(255,255,255,.08)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:"rgba(255,255,255,.01)",transition:"all .2s"}}
-              onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(212,166,75,.25)";e.currentTarget.style.background="rgba(212,166,75,.02)"}}
-              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,.08)";e.currentTarget.style.background="rgba(255,255,255,.01)"}}>
-              <span style={{fontSize:22,opacity:.15,marginBottom:4}}>+</span>
+            return <div key={`empty-${i}`} onClick={()=>openPicker(i)} style={{width:108,height:155,borderRadius:10,border:"1.5px dashed rgba(255,255,255,.06)",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",background:"rgba(255,255,255,.01)",transition:"all .2s",flexShrink:0,scrollSnapAlign:"center"}}
+              onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(212,166,75,.2)";e.currentTarget.style.background="rgba(212,166,75,.015)"}}
+              onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,.06)";e.currentTarget.style.background="rgba(255,255,255,.01)"}}>
+              <span style={{fontSize:20,opacity:.12,marginBottom:4}}>+</span>
               <span style={{fontFamily:"var(--font-data)",fontSize:6,color:"#6B5E50"}}>TAP TO PICK</span>
             </div>
           })}
         </div>
-
-        {/* Stat bonus preview */}
-        {selected.length>0&&<div style={{fontFamily:"var(--font-data)",fontSize:8,color:"#9B8E7E",marginBottom:6,textAlign:"center"}}>
-          <span style={{color:"#e85a6a"}}>+{selected.reduce((a,c)=>a+c.atk,0)} ATK</span>{" "}
-          <span style={{color:"#6acd8a"}}>+{selected.reduce((a,c)=>a+c.hp,0)} HP</span>
-          {selected.reduce((a,c)=>a+c.spd,0)>0&&<span style={{color:"#6ac8d8"}}> +{selected.reduce((a,c)=>a+c.spd,0)} SPD</span>}
-          {selected.reduce((a,c)=>a+c.def,0)>0&&<span style={{color:"#b088e8"}}> +{selected.reduce((a,c)=>a+c.def,0)} DEF</span>}
-          {selected.reduce((a,c)=>a+c.luck,0)>0&&<span style={{color:"#D4A64B"}}> +{selected.reduce((a,c)=>a+c.luck,0)} LUCK</span>}
-        </div>}
-
-        {/* APPROACH BUTTON */}
-        <div style={{textAlign:"center",margin:"6px 0 14px"}}>
-          <button onClick={approach} disabled={!canFight} style={{padding:"13px 40px",borderRadius:10,border:`1px solid ${canFight?"rgba(212,166,75,.3)":"rgba(255,255,255,.04)"}`,cursor:canFight?"pointer":"not-allowed",fontFamily:"var(--font-title)",fontSize:16,fontWeight:700,letterSpacing:3,background:canFight?"linear-gradient(135deg,rgba(212,166,75,.15),rgba(212,166,75,.05))":"rgba(255,255,255,.02)",color:canFight?"#D4A64B":"#6B5E50",opacity:canFight?1:.4,transition:"all .2s"}}>{canFight?"🐾 APPROACH":"PICK CARDS TO APPROACH"}</button>
+        <div style={{textAlign:"center",marginBottom:10}}>
+          <span style={{fontFamily:"var(--font-data)",fontSize:6,color:"#6B5E50",opacity:.6}}>\u{1F4A1} Cards tire after use. You don't need all 3.</span>
         </div>
       </div>}
 
-      {/* FACEOFF PHASE — stat comparison + fight button */}
+      {/* ═══ FACEOFF PHASE — same arena, full stats revealed ═══ */}
       {phase===PH.FACEOFF&&<div style={{marginTop:6}}>
         <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}><span style={{fontFamily:"var(--font-data)",fontSize:7,color:pColor}}>{PB.houseData.icon} YOU ({selected.length} cards)</span><span style={{fontFamily:"var(--font-data)",fontSize:7,color:eColor}}>ENEMY ({enemy.cards.length}) {enemy.houseData.icon}</span></div>
-        {mod.hideStats?<div style={{textAlign:"center",padding:16,fontFamily:"var(--font-data)",fontSize:8,color:"#847C98"}}>🌫️ FOG OF WAR — Enemy stats hidden</div>
+        {mod.hideStats?<div style={{textAlign:"center",padding:16,fontFamily:"var(--font-data)",fontSize:8,color:"#847C98"}}>\u{1F32B}\uFE0F FOG OF WAR — Enemy stats hidden</div>
          :STATS.map(s=><StatBar key={s.key} s={s} pv={pStats[s.key]} ev={(mod?.apply?mod.apply({...enemy.stats}):enemy.stats)[s.key]}/>)}
         {selected.some(c=>c.effects.length>0)&&<div style={{display:"flex",gap:4,flexWrap:"wrap",marginTop:4}}><span style={{fontFamily:"var(--font-data)",fontSize:6,color:"#6B5E50"}}>YOUR FX:</span>{selected.flatMap(c=>c.effects).map((e,i)=><span key={i} style={{fontSize:7,padding:"2px 5px",borderRadius:4,background:`${e.color}15`,color:e.color,fontFamily:"var(--font-data)"}}>{e.tag}</span>)}</div>}
-        <div style={{textAlign:"center",margin:"12px 0 16px"}}><button onClick={fight} style={{padding:"14px 40px",borderRadius:12,border:"none",cursor:"pointer",fontFamily:"var(--font-title)",fontSize:16,fontWeight:700,letterSpacing:4,background:"linear-gradient(135deg,#D4A64B,#c49a3a)",color:"#120e1e",boxShadow:"0 4px 20px rgba(212,166,75,.3)"}}>⚔️ FIGHT</button></div>
+        <div style={{textAlign:"center",margin:"12px 0 16px"}}><button onClick={fight} style={{padding:"14px 40px",borderRadius:12,border:"none",cursor:"pointer",fontFamily:"var(--font-title)",fontSize:16,fontWeight:700,letterSpacing:4,background:"linear-gradient(135deg,#D4A64B,#c49a3a)",color:"#120e1e",boxShadow:"0 4px 20px rgba(212,166,75,.3)"}}>\u2694\uFE0F FIGHT</button></div>
       </div>}
 
-      {/* BATTLE LOG */}
+      {/* ═══ BATTLE LOG ═══ */}
       {battleLog.length>0&&<BattleLog events={battleLog}/>}
 
       <div style={{height:20}}/>
