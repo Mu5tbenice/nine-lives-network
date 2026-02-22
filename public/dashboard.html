@@ -128,7 +128,7 @@
 <script src="/js/card-v4.js"></script>
 <script>
 /* ═══ DATA ═══ */
-var HOUSES={1:{name:'Smoulders',color:'#E03C31',slug:'smoulders',icon:'🔥',img:'/assets/images/houses/Housesmoulders.png',atk:6,hp:12,spd:5,font:"'MedievalSharp',cursive",role:'Glass Cannon'},2:{name:'Darktide',color:'#00B4D8',slug:'darktide',icon:'🌊',img:'/assets/images/houses/Housedarktide.png',atk:4,hp:16,spd:4,font:"'Cormorant SC',serif",role:'Thief'},3:{name:'Stonebark',color:'#5CB338',slug:'stonebark',icon:'🌿',img:'/assets/images/houses/Housestonebark.png',atk:2,hp:24,spd:2,font:"'IM Fell English SC',serif",role:'Wall'},4:{name:'Ashenvale',color:'#B0C4DE',slug:'ashenvale',icon:'💨',img:'/assets/images/houses/HouseAshenvale.png',atk:3,hp:14,spd:8,font:"'Fondamento',cursive",role:'Rogue'},5:{name:'Stormrage',color:'#FFC800',slug:'stormrage',icon:'⚡',img:'/assets/images/houses/Housestormrage.png',atk:7,hp:10,spd:6,font:"'Pirata One',cursive",role:'Glass Cannon'},6:{name:'Nighthollow',color:'#7B2D8E',slug:'nighthollow',icon:'🌙',img:'/assets/images/houses/Housenighthollow.png',atk:4,hp:13,spd:7,font:"'Grenze Gotisch',cursive",role:'Disruptor'},7:{name:'Dawnbringer',color:'#FF8C00',slug:'dawnbringer',icon:'☀️',img:'/assets/images/houses/HouseDwnbringer.png',atk:3,hp:18,spd:3,font:"'Cinzel Decorative',cursive",role:'Healer'},8:{name:'Manastorm',color:'#5B8FE0',slug:'manastorm',icon:'🔮',img:'/assets/images/houses/Housemanastorm.png',atk:5,hp:14,spd:5,font:"'Almendra',serif",role:'Controller'},9:{name:'Plaguemire',color:'#E84393',slug:'plaguemire',icon:'☠️',img:'/assets/images/houses/Houseplaguemire.png',atk:3,hp:15,spd:4,font:"'Griffy',cursive",role:'DOT Specialist'}};
+var HOUSES={1:{name:'Smoulders',color:'#E03C31',slug:'smoulders',icon:'🔥',img:'/assets/images/houses/House-smoulders.png',atk:6,hp:12,spd:5,font:"'MedievalSharp',cursive",role:'Glass Cannon'},2:{name:'Darktide',color:'#00B4D8',slug:'darktide',icon:'🌊',img:'/assets/images/houses/House-darktide.png',atk:4,hp:16,spd:4,font:"'Cormorant SC',serif",role:'Thief'},3:{name:'Stonebark',color:'#5CB338',slug:'stonebark',icon:'🌿',img:'/assets/images/houses/Houe-stonebark.png',atk:2,hp:24,spd:2,font:"'IM Fell English SC',serif",role:'Wall'},4:{name:'Ashenvale',color:'#B0C4DE',slug:'ashenvale',icon:'💨',img:'/assets/images/houses/House-Ashenvale.png',atk:3,hp:14,spd:8,font:"'Fondamento',cursive",role:'Rogue'},5:{name:'Stormrage',color:'#FFC800',slug:'stormrage',icon:'⚡',img:'/assets/images/houses/House-stormrage.png',atk:7,hp:10,spd:6,font:"'Pirata One',cursive",role:'Glass Cannon'},6:{name:'Nighthollow',color:'#7B2D8E',slug:'nighthollow',icon:'🌙',img:'/assets/images/houses/House-nighthollow.png',atk:4,hp:13,spd:7,font:"'Grenze Gotisch',cursive",role:'Disruptor'},7:{name:'Dawnbringer',color:'#FF8C00',slug:'dawnbringer',icon:'☀️',img:'/assets/images/houses/House-dawnbringer.png',atk:3,hp:18,spd:3,font:"'Cinzel Decorative',cursive",role:'Healer'},8:{name:'Manastorm',color:'#5B8FE0',slug:'manastorm',icon:'🔮',img:'/assets/images/houses/House-manastorm.png',atk:5,hp:14,spd:5,font:"'Almendra',serif",role:'Controller'},9:{name:'Plaguemire',color:'#E84393',slug:'plaguemire',icon:'☠️',img:'/assets/images/houses/House-plaguemire.png',atk:3,hp:15,spd:4,font:"'Griffy',cursive",role:'DOT Specialist'}};
 
 var STAT_COLORS={atk:'#e85a6a',hp:'#6acd8a',spd:'#6ac8d8',def:'#b088e8',luck:'#D4A64B'};
 
@@ -211,11 +211,10 @@ async function loadDashboard(){
     var schools=sR.ok?await sR.json():[];
     if(!player||player.error){document.getElementById('loadingState').style.display='none';document.getElementById('errorState').style.display='block';return;}
 
-    var nineData=null,quests=[];
-    try{var nr=await fetch('/api/players/'+pid+'/nine');nineData=nr.ok?await nr.json():null;}catch(e){}
-    try{var qr=await fetch('/api/quests/'+pid);if(qr.ok){var qd=await qr.json();quests=qd.quests||[];}}catch(e){}
+    var quests=[];
+    // Quests endpoint not built yet — skip silently
 
-    render(player,casts||[],zones||[],schools||[],nineData,quests);
+    render(player,casts||[],zones||[],schools||[],quests);
   }catch(err){
     console.error('Dashboard load error:',err);
     document.getElementById('loadingState').style.display='none';
@@ -242,7 +241,7 @@ function sectionLabel(icon,text,fadeClass){
 }
 
 /* ═══ RENDER ═══ */
-async function render(player,casts,zones,schools,nineData,quests){
+async function render(player,casts,zones,schools,quests){
   var house=HOUSES[player.school_id]||HOUSES[1];
   var pid=getPlayerId();
   var mana=5,maxM=10;
@@ -251,13 +250,17 @@ async function render(player,casts,zones,schools,nineData,quests){
   var streak=player.streak||0;
   var rc=Array.isArray(casts)?casts.slice(0,5):[];
 
-  // Nine stats
-  var nine=nineData||{};
-  var nAtk=nine.base_atk||house.atk||'?';
-  var nHp=nine.base_hp||house.hp||'?';
-  var nSpd=nine.base_spd||house.spd||'?';
-  var nDef=nine.base_def||0;
-  var nLuck=nine.base_luck||0;
+  // Nine stats = house base + equipment bonuses from localStorage
+  var eqBonuses={atk:0,hp:0,spd:0,def:0,luck:0};
+  try{
+    var eqStr=localStorage.getItem('9lv_equipment');
+    if(eqStr){var eqData=JSON.parse(eqStr);eqBonuses=eqData.bonuses||eqBonuses;}
+  }catch(e){}
+  var nAtk=(house.atk||0)+eqBonuses.atk;
+  var nHp=(house.hp||0)+eqBonuses.hp;
+  var nSpd=(house.spd||0)+eqBonuses.spd;
+  var nDef=eqBonuses.def;
+  var nLuck=eqBonuses.luck;
 
   // Guild tag
   var guildTag=player.guild_tag||player.community_tag||'';
@@ -580,59 +583,58 @@ loadDashboard().then(function(){ loadNinePreview(); });
 // ── DASHBOARD NINE PREVIEW (tall character) ──
 async function loadNinePreview(){
   var pid=getPlayerId();if(!pid)return;
-  try{
-    var r=await fetch("/api/items/equipped/"+pid);
-    if(!r.ok)return;
-    var d=await r.json();
-    var nine=d.nine,eq=d.equipped;
-    var SLOT_PATHS={fur:"/assets/nine/fur/",expression:"/assets/nine/expression/",headwear:"/assets/nine/headwear/",outfit:"/assets/nine/outfit/",weapon:"/assets/nine/weapon/",familiar:"/assets/nine/familiar/"};
-    var LAYER_ORDER=["fur","outfit","weapon","headwear","expression","familiar"];
-    var items=d.items||[];
-    function findI(slug){for(var i=0;i<items.length;i++){if(items[i].slug===slug)return items[i];}return null;}
-    var canvas=document.getElementById("dashNineCanvas");
-    if(!canvas)return;
-    var ctx=canvas.getContext("2d");
-    var cw=canvas.width,ch=canvas.height;
-    var layers=[];
+  var canvas=document.getElementById("dashNineCanvas");
+  if(!canvas)return;
+  var ctx=canvas.getContext("2d");
+  var cw=canvas.width,ch=canvas.height;
+
+  // Read equipment from localStorage (saved by builder)
+  var eqData=null;
+  try{var eqStr=localStorage.getItem('9lv_equipment');if(eqStr)eqData=JSON.parse(eqStr);}catch(e){}
+
+  var SLOT_PATHS={fur:"/assets/nine/fur/",expression:"/assets/nine/expression/",headwear:"/assets/nine/headwear/",outfit:"/assets/nine/outfit/",weapon:"/assets/nine/weapon/",familiar:"/assets/nine/familiar/"};
+  var LAYER_ORDER=["fur","outfit","weapon","headwear","expression","familiar"];
+
+  var layers=[];
+  if(eqData&&eqData.slots){
     LAYER_ORDER.forEach(function(slot){
-      var slug=eq[slot];if(!slug)return;
-      var item=findI(slug);if(!item||!item.image_file)return;
-      layers.push((SLOT_PATHS[slot]||"")+item.image_file);
+      var file=eqData.slots[slot];
+      if(file){layers.push((SLOT_PATHS[slot]||"")+file);}
     });
-    if(layers.length>0){
-      var loaded=0,imgs=[];
-      layers.forEach(function(src,i){
-        var img=new Image();
-        img.onload=function(){imgs[i]=img;loaded++;if(loaded===layers.length){
-          ctx.clearRect(0,0,cw,ch);
-          imgs.forEach(function(im){if(im)ctx.drawImage(im,0,0,cw,ch);});
-        }};
-        img.onerror=function(){loaded++;if(loaded===layers.length){
-          ctx.clearRect(0,0,cw,ch);
-          imgs.forEach(function(im){if(im)ctx.drawImage(im,0,0,cw,ch);});
-        }};
-        img.src=src;
-      });
-    } else {
-      // No equipment — show house crest as fallback
-      var houseId=null;
-      try{var pStr=localStorage.getItem("9lv_player");if(pStr){var pObj=JSON.parse(pStr);houseId=pObj.school_id;}}catch(e){}
-      if(!houseId){try{var r2=await fetch("/api/players/"+pid);if(r2.ok){var p2=await r2.json();houseId=p2.school_id;}}catch(e){}}
-      var h=HOUSES[houseId]||HOUSES[1];
-      if(h&&h.img){
-        var crestImg=new Image();
-        crestImg.onload=function(){
-          ctx.clearRect(0,0,cw,ch);
-          var s=Math.min(cw/crestImg.width,ch/crestImg.height)*0.5;
-          var w=crestImg.width*s;var ht=crestImg.height*s;
-          ctx.globalAlpha=0.6;
-          ctx.drawImage(crestImg,(cw-w)/2,(ch-ht)/2-20,w,ht);
-          ctx.globalAlpha=1;
-        };
-        crestImg.src=h.img;
-      }
+  }
+
+  if(layers.length>0){
+    var loaded=0,imgs=[];
+    layers.forEach(function(src,i){
+      var img=new Image();
+      img.onload=function(){imgs[i]=img;loaded++;if(loaded===layers.length){
+        ctx.clearRect(0,0,cw,ch);
+        imgs.forEach(function(im){if(im)ctx.drawImage(im,0,0,cw,ch);});
+      }};
+      img.onerror=function(){loaded++;if(loaded===layers.length){
+        ctx.clearRect(0,0,cw,ch);
+        imgs.forEach(function(im){if(im)ctx.drawImage(im,0,0,cw,ch);});
+      }};
+      img.src=src;
+    });
+  } else {
+    // No equipment saved — show house crest as fallback
+    var houseId=null;
+    try{var pStr=localStorage.getItem("9lv_player");if(pStr){var pObj=JSON.parse(pStr);houseId=pObj.school_id;}}catch(e){}
+    var h=HOUSES[houseId]||HOUSES[1];
+    if(h&&h.img){
+      var crestImg=new Image();
+      crestImg.onload=function(){
+        ctx.clearRect(0,0,cw,ch);
+        var s=Math.min(cw/crestImg.width,ch/crestImg.height)*0.5;
+        var w=crestImg.width*s;var ht=crestImg.height*s;
+        ctx.globalAlpha=0.6;
+        ctx.drawImage(crestImg,(cw-w)/2,(ch-ht)/2-20,w,ht);
+        ctx.globalAlpha=1;
+      };
+      crestImg.src=h.img;
     }
-  }catch(e){console.error("Nine preview error:",e);}
+  }
 }
 
 // ── CHANGE HOUSE MODAL ──

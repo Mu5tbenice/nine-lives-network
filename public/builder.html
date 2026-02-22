@@ -517,23 +517,41 @@ function tM(i){GM.forEach(function(_,j){var d=document.getElementById('md'+j),c=
 /*  SAVE EQUIPMENT — shared function     */
 /* ══════════════════════════════════════ */
 function saveEquipment(callback) {
-  var eqData = {};
-  Object.keys(eq).forEach(function(slot) {
-    eqData[slot] = eq[slot] ? eq[slot].id : 'none';
+  // Calculate total stat bonuses from all equipped items
+  var bonuses={atk:0,hp:0,spd:0,def:0,luck:0};
+  var slotFiles={};  // filenames for canvas rendering
+  var slotIds={};     // item IDs for re-loading in builder
+  Object.keys(eq).forEach(function(slot){
+    var item=eq[slot];
+    if(item&&item.id!=='none'){
+      slotIds[slot]=item.id;
+      if(item.f)slotFiles[slot]=item.f;
+      if(item.s){
+        if(item.s.atk)bonuses.atk+=item.s.atk;
+        if(item.s.hp)bonuses.hp+=item.s.hp;
+        if(item.s.spd)bonuses.spd+=item.s.spd;
+        if(item.s.def)bonuses.def+=item.s.def;
+        if(item.s.luck)bonuses.luck+=item.s.luck;
+      }
+    }
   });
-  var pid = null;
-  try { pid = JSON.parse(localStorage.getItem('9lv_player')).id; } catch(e) {}
-
-  if (pid) {
-    fetch('/api/items/equip', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ player_id: pid, equipment: eqData })
-    })
-    .then(function(r) { if (callback) callback(); })
-    .catch(function(e) { console.error('Save failed:', e); if (callback) callback(); });
+  // Save to localStorage — dashboard reads this
+  localStorage.setItem('9lv_equipment',JSON.stringify({
+    slots:slotFiles,
+    items:slotIds,
+    bonuses:bonuses
+  }));
+  // Also try API (may not exist yet, that's OK)
+  var pid=null;
+  try{pid=JSON.parse(localStorage.getItem('9lv_player')).id;}catch(e){}
+  if(pid){
+    fetch('/api/items/equip',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({player_id:pid,equipment:slotIds})
+    }).then(function(){if(callback)callback();}).catch(function(){if(callback)callback();});
   } else {
-    if (callback) callback();
+    if(callback)callback();
   }
 }
 
@@ -626,30 +644,21 @@ renderSlots();renderStats();renderLayers();updCount();
     });
   }
 
-  // Load actual equipped items from API
-  var pid = null;
+  // Load actual equipped items from localStorage
   try {
-    var pStr = localStorage.getItem('9lv_player');
-    if (pStr) pid = JSON.parse(pStr).id;
-  } catch(e) {}
-
-  if (pid) {
-    fetch('/api/items/equipped/' + pid)
-      .then(function(r) { return r.ok ? r.json() : null; })
-      .then(function(d) {
-        if (!d || !d.equipped) return;
-        var equipped = d.equipped;
-        // Map API slugs to builder ITEMS objects
-        Object.keys(equipped).forEach(function(slot) {
-          var slug = equipped[slot];
-          if (!slug || !ITEMS[slot]) return;
-          var found = ITEMS[slot].find(function(it) { return it.id === slug; });
-          if (found) eq[slot] = found;
-        });
-        renderSlots(); renderStats(); renderLayers(); updCount();
-      })
-      .catch(function(e) { console.log('Edit mode: could not load equipment', e); });
-  }
+    var eqStr = localStorage.getItem('9lv_equipment');
+    if (eqStr) {
+      var eqData = JSON.parse(eqStr);
+      var savedItems = eqData.items || {};
+      Object.keys(savedItems).forEach(function(slot) {
+        var itemId = savedItems[slot];
+        if (!itemId || !ITEMS[slot]) return;
+        var found = ITEMS[slot].find(function(it) { return it.id === itemId; });
+        if (found) eq[slot] = found;
+      });
+      renderSlots(); renderStats(); renderLayers(); updCount();
+    }
+  } catch(e) { console.log('Edit mode: could not load equipment', e); }
 })();
 </script>
 </body>
