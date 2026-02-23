@@ -224,10 +224,10 @@ app.get("/", (req, res) => {
 
 // Start Nerm Telegram bot
 try {
-  const { startNermBot } = require("./services/nerm-bot");
+  const { startNermBot } = require("./services/nerm-telegram");
   startNermBot();
 } catch (e) {
-  console.error("❌ Failed to load Nerm bot:", e.message);
+  console.error("❌ Failed to load Nerm Telegram bot:", e.message);
 }
 
 // Start server (use `server` instead of `app` for Socket.io)
