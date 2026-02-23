@@ -6,11 +6,43 @@
   <title>Zone Battle — Nine Lives Network</title>
   <link rel="stylesheet" href="/css/variables-v2.css">
   <link rel="stylesheet" href="/css/components-v2.css">
+  <link rel="stylesheet" href="/css/card-v4.css">
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;700&family=Crimson+Text:wght@400;600&display=swap" rel="stylesheet">
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{background:#0a0612;color:#D4C8B8;font-family:'Crimson Text',serif;min-height:100vh;overflow-x:hidden}
     .wrap{max-width:560px;margin:0 auto;min-height:100vh}
+    /* Your Nine panel */
+    .yn{padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;gap:12px;align-items:center}
+    .yn-sprite{position:relative;flex-shrink:0}
+    .yn-sprite canvas{image-rendering:pixelated;border-radius:6px}
+    .yn-sprite-glow{position:absolute;inset:-4px;border-radius:10px;animation:playerGlow 2s ease-in-out infinite;pointer-events:none}
+    .yn-info{flex:1;min-width:0}
+    .yn-name{font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#D4A64B;display:flex;align-items:center;gap:6px}
+    .yn-house{font-family:'JetBrains Mono',monospace;font-size:8px;margin-top:2px}
+    .yn-guild{font-family:'JetBrains Mono',monospace;font-size:7px;color:#554E68;margin-top:1px}
+    .yn-hpwrap{margin-top:6px}
+    .yn-hpbar{height:8px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden;border:1px solid rgba(255,255,255,.06)}
+    .yn-hpfill{height:100%;border-radius:3px;transition:width .5s}
+    .yn-hptext{font-family:'JetBrains Mono',monospace;font-size:8px;color:#554E68;margin-top:2px;display:flex;justify-content:space-between}
+    .yn-stats{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+    .yn-stat{font-family:'JetBrains Mono',monospace;font-size:7px;padding:2px 6px;border-radius:3px;
+      background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+    .yn-spell{margin-top:6px;font-family:'JetBrains Mono',monospace;font-size:8px;padding:3px 8px;
+      border-radius:4px;display:inline-flex;align-items:center;gap:4px}
+    /* Spell tooltip */
+    .spell-tip{position:fixed;z-index:500;min-width:160px;max-width:220px;padding:10px 12px;
+      background:rgba(14,10,24,.97);border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.8);
+      backdrop-filter:blur(12px);pointer-events:none;display:none}
+    .spell-tip.on{display:block}
+    .spell-tip-name{font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:#F0ECF8;margin-bottom:4px}
+    .spell-tip-type{font-family:'JetBrains Mono',monospace;font-size:7px;font-weight:700;text-transform:uppercase;
+      padding:1px 6px;border-radius:3px;display:inline-block;margin-bottom:6px}
+    .spell-tip-stats{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+    .spell-tip-stat{font-family:'JetBrains Mono',monospace;font-size:7px;padding:2px 5px;border-radius:3px;
+      background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}
+    .spell-tip-fx{font-family:'JetBrains Mono',monospace;font-size:7px;padding:2px 5px;border-radius:3px}
+    .spell-tip-house{font-family:'JetBrains Mono',monospace;font-size:7px;color:#554E68;margin-top:3px}
     /* Header */
     .bh{padding:14px 16px 8px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:flex-start}
     .bh-back{background:none;border:none;color:#847C98;font-size:18px;cursor:pointer;padding:2px 8px 2px 0;font-family:'Cinzel',serif}
@@ -31,20 +63,21 @@
     .gb-arrow{font-size:8px;color:#554E68;transition:transform .2s}
     .gb-arrow.open{transform:rotate(180deg)}
     /* Roster dropdown */
-    .roster{position:absolute;top:100%;left:0;margin-top:4px;z-index:200;min-width:165px;
+    .roster{position:absolute;top:100%;left:0;margin-top:4px;z-index:200;min-width:200px;
       background:rgba(14,10,24,.97);border-radius:8px;box-shadow:0 8px 30px rgba(0,0,0,.7);
       padding:6px 0;backdrop-filter:blur(8px);display:none}
     .roster.open{display:block}
     .roster-hdr{padding:4px 12px 6px;font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:1px;margin-bottom:4px}
-    .roster-nine{display:flex;align-items:center;gap:6px;padding:4px 12px;cursor:pointer;
+    .roster-nine{display:flex;align-items:center;gap:6px;padding:5px 12px;cursor:pointer;
       border-left:2px solid transparent;transition:all .15s}
     .roster-nine:hover,.roster-nine.sel{background:rgba(255,255,255,.08)}
     .roster-nine.sel{border-left-color:currentColor}
     .roster-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
     .roster-name{font-family:'JetBrains Mono',monospace;font-size:9px;color:#F0ECF8}
-    .roster-name.dead{color:#554E68}
+    .roster-name.dead{color:#554E68;text-decoration:line-through}
+    .roster-spell{font-family:'JetBrains Mono',monospace;font-size:6px;margin-top:1px;opacity:.7}
     .roster-house{font-family:'JetBrains Mono',monospace;font-size:7px;color:#554E68;margin-left:auto}
-    .roster-hp{font-family:'JetBrains Mono',monospace;font-size:7px}
+    .roster-hp{font-family:'JetBrains Mono',monospace;font-size:7px;margin-left:4px}
     /* Nerm */
     .nerm{margin:6px 12px;display:flex;align-items:flex-start;gap:8px;padding:7px 12px;
       background:rgba(25,18,36,.92);border:1px solid rgba(212,166,75,.12);border-radius:10px;
@@ -83,8 +116,11 @@
     /* Kill feed */
     .kf{padding:6px 12px}
     .kf-hdr{font-family:'Press Start 2P',monospace;font-size:5px;color:#554E68;letter-spacing:1px;margin-bottom:4px}
+    .kf-list{max-height:180px;overflow:hidden}
     .kf-item{display:flex;align-items:center;gap:4px;padding:3px 8px;margin-bottom:2px;
-      background:rgba(232,90,106,.03);border-radius:4px;animation:slideIn .3s ease;flex-wrap:wrap}
+      background:rgba(232,90,106,.03);border-radius:4px;flex-wrap:wrap;
+      animation:kfFadeIn .5s ease;transition:opacity .5s}
+    @keyframes kfFadeIn{from{opacity:0;transform:translateY(-8px);max-height:0}to{opacity:1;transform:translateY(0);max-height:40px}}
     .kf-name{font-family:'JetBrains Mono',monospace;font-size:8.5px;font-weight:700}
     .kf-action{font-family:'Press Start 2P',monospace;font-size:4.5px;color:#e85a6a}
     .kf-with{font-family:'Press Start 2P',monospace;font-size:4.5px;color:#554E68}
@@ -133,6 +169,15 @@
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
 <script src="/js/sprite-renderer.js"></script>
+<script src="/js/card-global.js"></script>
+<script src="/js/card-v4.js"></script>
+<div class="spell-tip" id="spell-tip">
+  <div class="spell-tip-name" id="st-name"></div>
+  <div class="spell-tip-type" id="st-type"></div>
+  <div class="spell-tip-stats" id="st-stats"></div>
+  <div id="st-fx"></div>
+  <div class="spell-tip-house" id="st-house"></div>
+</div>
 <script>try{var s=document.createElement('script');s.src='/js/nav.js';document.body.appendChild(s)}catch(e){}</script>
 <script>
 (function(){
@@ -147,6 +192,13 @@ var HOUSE={
   stormrage:{c:'#FFC800',i:'⚡',spd:6},nighthollow:{c:'#7B2D8E',i:'🌙',spd:7},
   dawnbringer:{c:'#FF8C00',i:'☀️',spd:3},manastorm:{c:'#5B8FE0',i:'🔮',spd:5},
   plaguemire:{c:'#E84393',i:'☠️',spd:4}
+};
+var HOUSE_STATS={
+  smoulders:{atk:6,hp:12,spd:5},darktide:{atk:4,hp:16,spd:4},
+  stonebark:{atk:2,hp:24,spd:2},ashenvale:{atk:3,hp:14,spd:8},
+  stormrage:{atk:7,hp:10,spd:6},nighthollow:{atk:4,hp:13,spd:7},
+  dawnbringer:{atk:3,hp:18,spd:3},manastorm:{atk:5,hp:14,spd:5},
+  plaguemire:{atk:3,hp:15,spd:4}
 };
 var HKEYS=Object.keys(HOUSE);
 var MATCHUPS={
@@ -178,6 +230,42 @@ var NERM_LINES={
   respawn:['They\'re back! Did they learn anything? Doubtful.']
 };
 var NAMES=['EmberFox','StoneKing','BoltCaster','VoidFang','IronMaw','CinderPaw','SolarFlare','MistPaw','DawnFire','NightShade','PlagueRat','TideWalker','DuskClaw','MoonClaw','WaveBreak','BlightFang','GaleRunner','ArcanePaw','ThornBack','VoltNine','RootHeart','SkyClaw','FrostFang','HexCat','AshWalker','GrimPaw'];
+
+var TYPE_COLORS={Attack:'#ff5555',Defend:'#55aaff',Support:'#55ff99',Manipulation:'#cc77ff',Utility:'#D4A64B'};
+
+// Spell data for tooltips (subset from CARD_STATS_V4)
+var SPELL_DATA={
+  'Ember Strike':{type:'Attack',house:'smoulders',tier:'T1',atk:5,hp:1,spd:0,def:0,luck:0,fx:['BURN +3']},
+  'Firestorm Volley':{type:'Attack',house:'smoulders',tier:'T2',atk:6,hp:1,spd:1,def:0,luck:0,fx:['CHAIN']},
+  'Eruption':{type:'Attack',house:'smoulders',tier:'T3',atk:8,hp:1,spd:2,def:0,luck:0,fx:['CHAIN','BURN +5']},
+  'Riptide':{type:'Attack',house:'darktide',tier:'T1',atk:4,hp:2,spd:0,def:0,luck:0,fx:['DRAIN 3%']},
+  'Maelstrom':{type:'Attack',house:'darktide',tier:'T2',atk:5,hp:2,spd:1,def:0,luck:0,fx:['SIPHON']},
+  'Sovereign Tide':{type:'Manipulation',house:'darktide',tier:'T3',atk:6,hp:3,spd:0,def:0,luck:2,fx:['DRAIN 12%','SIPHON']},
+  'Root Strike':{type:'Attack',house:'stonebark',tier:'T1',atk:4,hp:2,spd:0,def:0,luck:0,fx:['BURN +2']},
+  'Quake':{type:'Attack',house:'stonebark',tier:'T2',atk:5,hp:3,spd:0,def:0,luck:0,fx:['PIERCE']},
+  'Earthshatter':{type:'Attack',house:'stonebark',tier:'T3',atk:7,hp:3,spd:0,def:0,luck:0,fx:['BURN +5','PIERCE']},
+  'Gust Blade':{type:'Attack',house:'ashenvale',tier:'T1',atk:5,hp:1,spd:1,def:0,luck:0,fx:['HASTE']},
+  'Cyclone Strike':{type:'Attack',house:'ashenvale',tier:'T2',atk:6,hp:1,spd:2,def:0,luck:0,fx:['HASTE','BURN +3']},
+  'Tempest':{type:'Attack',house:'ashenvale',tier:'T3',atk:7,hp:2,spd:3,def:0,luck:0,fx:['CHAIN','HASTE']},
+  'Spark':{type:'Attack',house:'stormrage',tier:'T1',atk:5,hp:1,spd:0,def:0,luck:0,fx:['CRIT']},
+  'Chain Lightning':{type:'Attack',house:'stormrage',tier:'T2',atk:7,hp:1,spd:0,def:0,luck:0,fx:['CHAIN']},
+  'Overload':{type:'Attack',house:'stormrage',tier:'T3',atk:9,hp:1,spd:0,def:0,luck:2,fx:['CRIT','CHAIN','SURGE']},
+  'Shadow Bolt':{type:'Attack',house:'nighthollow',tier:'T1',atk:4,hp:2,spd:0,def:0,luck:0,fx:['WEAKEN']},
+  'Revenant Surge':{type:'Attack',house:'nighthollow',tier:'T2',atk:5,hp:2,spd:1,def:0,luck:0,fx:['SILENCE','BURN +3']},
+  'Oblivion':{type:'Manipulation',house:'nighthollow',tier:'T3',atk:5,hp:4,spd:0,def:0,luck:2,fx:['SILENCE','WEAKEN','HEX']},
+  'Radiant Strike':{type:'Attack',house:'dawnbringer',tier:'T1',atk:4,hp:2,spd:0,def:0,luck:0,fx:['BURN +2']},
+  'Solar Flare':{type:'Attack',house:'dawnbringer',tier:'T2',atk:5,hp:3,spd:0,def:0,luck:0,fx:['BURN +4','AMPLIFY']},
+  'Divine Wrath':{type:'Attack',house:'dawnbringer',tier:'T3',atk:7,hp:3,spd:0,def:0,luck:1,fx:['BURN +5','AMPLIFY']},
+  'Arcane Siphon':{type:'Attack',house:'manastorm',tier:'T1',atk:4,hp:2,spd:0,def:0,luck:0,fx:['DRAIN 3%']},
+  'Reality Warp':{type:'Attack',house:'manastorm',tier:'T2',atk:5,hp:2,spd:0,def:0,luck:1,fx:['SIPHON','DRAIN 3%']},
+  'Unravel':{type:'Manipulation',house:'manastorm',tier:'T3',atk:6,hp:3,spd:1,def:0,luck:1,fx:['SIPHON','DRAIN 10%','SILENCE']},
+  'Toxic Dart':{type:'Attack',house:'plaguemire',tier:'T1',atk:4,hp:2,spd:0,def:0,luck:0,fx:['POISON']},
+  'Blightfall':{type:'Attack',house:'plaguemire',tier:'T2',atk:5,hp:2,spd:0,def:1,luck:0,fx:['POISON','CORRODE']},
+  'Pandemic':{type:'Attack',house:'plaguemire',tier:'T3',atk:7,hp:3,spd:0,def:0,luck:1,fx:['POISON','CORRODE','INFECT']},
+  'Mana Bolt':{type:'Attack',house:'universal',tier:'T0',atk:3,hp:2,spd:0,def:0,luck:0,fx:[]},
+  'Arcane Bolt':{type:'Attack',house:'universal',tier:'T1',atk:5,hp:1,spd:0,def:0,luck:0,fx:['BURN +2']},
+  'Hex Bolt':{type:'Attack',house:'universal',tier:'T1',atk:4,hp:2,spd:0,def:0,luck:0,fx:['WEAKEN']}
+};
 
 var AW=540,AH=360,SC=2,SPX=24*SC,MG=32;
 var pick=function(a){return a[Math.floor(Math.random()*a.length)]};
@@ -233,7 +321,7 @@ function initBattle(zoneData){
     pos:{},wp:{},spells:[],sparkles:[],dmgs:[],killFeed:[],
     hovGuild:null,openGuild:null,hlId:null,
     nerm:null,nermTimeout:null,
-    raf:null,frame:0,spellCount:0,spellId:0,sparkleId:0,dmgId:0
+    raf:null,frame:0,spellCount:0,spellId:0,sparkleId:0,dmgId:0,kfThrottle:false
   };
   // Init positions
   var gg={};B.nines.forEach(function(n){if(!gg[n.guild])gg[n.guild]=[];gg[n.guild].push(n.id);});
@@ -286,9 +374,11 @@ function renderPage(z){
     s+='<div class="roster-hdr" style="color:'+g.color+';border-bottom:1px solid '+g.color+'15">⚔ '+g.name+'</div>';
     B.nines.filter(function(n){return n.guild===gid}).forEach(function(n){
       var hm=HOUSE[n.house]||{c:'#888',i:'✨'};
-      s+='<div class="roster-nine" data-rnid="'+n.id+'" style="color:'+hm.c+'">';
+      var shc=(HOUSE[n.cardHouse]||{c:'#D4A64B'}).c;
+      s+='<div class="roster-nine" data-rnid="'+n.id+'" data-spell="'+n.spellName+'" style="color:'+hm.c+'">';
       s+='<div class="roster-dot" style="background:'+hm.c+'"></div>';
-      s+='<span class="roster-name" id="rn-'+n.id+'">'+(n.isPlayer?'★ ':'')+n.name+'</span>';
+      s+='<div style="flex:1;min-width:0"><span class="roster-name" id="rn-'+n.id+'">'+(n.isPlayer?'★ ':'')+n.name+'</span>';
+      s+='<div class="roster-spell" style="color:'+shc+'">🃏 '+n.spellName+'</div></div>';
       s+='<span class="roster-house">'+hm.i+'</span>';
       s+='<span class="roster-hp" id="rhp-'+n.id+'" style="color:#6acd8a">100</span>';
       s+='</div>';
@@ -297,8 +387,31 @@ function renderPage(z){
   });
   s+='</div>';
 
-  // Nerm
-  s+='<div class="nerm" id="nerm-box"><div class="nerm-face">😼</div><div><div class="nerm-label">NERM</div><div class="nerm-text" id="nerm-text"></div></div></div>';
+  // Your Nine panel
+  var pn=B.nines.find(function(n){return n.isPlayer});
+  if(pn){
+    var ph=HOUSE[pn.house]||{c:'#D4A64B',i:'✨'};
+    var pg=GUILDS[pn.guild]||{name:'Lone Wolf',color:'#888'};
+    var sd=SPELL_DATA[pn.spellName]||null;
+    s+='<div class="yn" id="yn-panel">';
+    s+='<div class="yn-sprite"><div class="yn-sprite-glow"></div><canvas id="yn-cv" width="24" height="24" style="width:72px;height:72px;image-rendering:pixelated;animation:spriteIdle 2s ease-in-out infinite"></canvas></div>';
+    s+='<div class="yn-info">';
+    s+='<div class="yn-name">★ '+pn.name+' <span style="font-size:16px">'+ph.i+'</span></div>';
+    s+='<div class="yn-house" style="color:'+ph.c+'">House '+pn.house.charAt(0).toUpperCase()+pn.house.slice(1)+'</div>';
+    s+='<div class="yn-guild" style="color:'+pg.color+'">⚔ '+pg.name+'</div>';
+    s+='<div class="yn-hpwrap"><div class="yn-hpbar"><div class="yn-hpfill" id="yn-hpfill" style="width:100%;background:#6acd8a"></div></div>';
+    s+='<div class="yn-hptext"><span id="yn-hptext">100 / 100 HP</span><span style="color:#6acd8a" id="yn-status">ALIVE</span></div></div>';
+    s+='<div class="yn-stats">';
+    s+='<span class="yn-stat" style="color:#e85a6a;border-color:#e85a6a25">ATK '+HOUSE_STATS[pn.house].atk+'</span>';
+    s+='<span class="yn-stat" style="color:#6acd8a;border-color:#6acd8a25">HP '+HOUSE_STATS[pn.house].hp+'</span>';
+    s+='<span class="yn-stat" style="color:#6ac8d8;border-color:#6ac8d825">SPD '+HOUSE_STATS[pn.house].spd+'</span>';
+    s+='</div>';
+    if(sd){
+      var tc=TYPE_COLORS[sd.type]||'#D4A64B';var shc=(HOUSE[sd.house]||{c:'#D4A64B'}).c;
+      s+='<div class="yn-spell" style="color:'+shc+';background:'+shc+'12;border:1px solid '+shc+'20">🃏 '+pn.spellName+'</div>';
+    }
+    s+='</div></div>';
+  }
 
   // Arena
   s+='<div class="arena" id="arena"><div class="arena-ground"></div>';
@@ -322,8 +435,11 @@ function renderPage(z){
   s+='<div class="begin-wrap" id="begin-wrap"><button class="begin-btn" id="begin-btn">⚔️ BEGIN COMBAT ⚔️</button></div>';
   s+='</div>';
 
+  // Nerm (below battlefield)
+  s+='<div class="nerm" id="nerm-box"><div class="nerm-face">😼</div><div><div class="nerm-label">NERM</div><div class="nerm-text" id="nerm-text"></div></div></div>';
+
   // Kill feed
-  s+='<div class="kf" id="killfeed" style="display:none"><div class="kf-hdr">KILL FEED</div><div id="kf-list"></div></div>';
+  s+='<div class="kf" id="killfeed" style="display:none"><div class="kf-hdr">KILL FEED</div><div class="kf-list" id="kf-list"></div></div>';
 
   // Zone info
   s+='<div class="zinfo"><div class="zinfo-title">'+hi+' '+zoneName+' — '+regionName+'</div>';
@@ -343,7 +459,41 @@ function renderPage(z){
 
   bindEvents();
   updateGuildStats();
+  // Draw Your Nine sprite (larger)
+  var pn=B.nines.find(function(n){return n.isPlayer});
+  if(pn){
+    var yncv=document.getElementById('yn-cv');
+    if(yncv&&pn.cfg){try{NineSprite.draw(yncv.getContext('2d'),pn.cfg,false);}catch(e){}}
+  }
 }
+
+// ═══════════════════════════════════════
+// SPELL TOOLTIP
+// ═══════════════════════════════════════
+function showSpellTip(spellName,rect){
+  var tip=document.getElementById('spell-tip');if(!tip)return;
+  var sd=SPELL_DATA[spellName];if(!sd){tip.className='spell-tip';return;}
+  var hm=HOUSE[sd.house]||{c:'#D4A64B',i:'✨'};
+  var tc=TYPE_COLORS[sd.type]||'#D4A64B';
+  document.getElementById('st-name').textContent=spellName;
+  var typeEl=document.getElementById('st-type');
+  typeEl.textContent=sd.tier+' '+sd.type;typeEl.style.color=tc;typeEl.style.background=tc+'15';typeEl.style.borderColor=tc+'30';
+  var statsHtml='';
+  if(sd.atk)statsHtml+='<span class="spell-tip-stat" style="color:#e85a6a;border-color:#e85a6a25">ATK '+sd.atk+'</span>';
+  if(sd.hp)statsHtml+='<span class="spell-tip-stat" style="color:#6acd8a;border-color:#6acd8a25">HP '+sd.hp+'</span>';
+  if(sd.spd)statsHtml+='<span class="spell-tip-stat" style="color:#6ac8d8;border-color:#6ac8d825">SPD '+sd.spd+'</span>';
+  if(sd.def)statsHtml+='<span class="spell-tip-stat" style="color:#b088e8;border-color:#b088e825">DEF '+sd.def+'</span>';
+  if(sd.luck)statsHtml+='<span class="spell-tip-stat" style="color:#D4A64B;border-color:#D4A64B25">LUCK '+sd.luck+'</span>';
+  document.getElementById('st-stats').innerHTML=statsHtml;
+  var fxHtml='';sd.fx.forEach(function(f){fxHtml+='<span class="spell-tip-fx" style="color:'+hm.c+';background:'+hm.c+'12;border:1px solid '+hm.c+'20;margin-right:3px">'+f+'</span>';});
+  document.getElementById('st-fx').innerHTML=fxHtml;
+  document.getElementById('st-house').textContent=hm.i+' '+(sd.house==='universal'?'Universal':sd.house.charAt(0).toUpperCase()+sd.house.slice(1));
+  tip.style.left=Math.min(rect.right+8,window.innerWidth-230)+'px';
+  tip.style.top=Math.max(8,rect.top-20)+'px';
+  tip.className='spell-tip on';
+  tip.style.borderColor=hm.c+'30';
+}
+function hideSpellTip(){var tip=document.getElementById('spell-tip');if(tip)tip.className='spell-tip';}
 
 // ═══════════════════════════════════════
 // EVENTS
@@ -365,7 +515,7 @@ function bindEvents(){
       updateRosters();updateHighlight();
     };
   });
-  // Roster clicks
+  // Roster clicks + tooltip
   document.querySelectorAll('.roster-nine').forEach(function(el){
     el.onclick=function(e){
       e.stopPropagation();
@@ -373,6 +523,10 @@ function bindEvents(){
       if(B.hlId===nid)B.hlId=null;else B.hlId=nid;
       updateHighlight();updateRosters();
     };
+    el.onmouseenter=function(){
+      var spell=el.dataset.spell;if(spell)showSpellTip(spell,el.getBoundingClientRect());
+    };
+    el.onmouseleave=function(){hideSpellTip();};
   });
   // Click arena to deselect
   var arena=document.getElementById('arena');
@@ -447,6 +601,21 @@ function updateNineVisual(n){
   if(nm){
     var g=GUILDS[n.guild]||{color:'#888'};
     nm.style.color=n.alive?(n.isPlayer?'#D4A64B':g.color):(g.color+'22');
+  }
+  // Update Your Nine panel if this is the player
+  if(n.isPlayer){
+    var ynHpf=document.getElementById('yn-hpfill');
+    var ynHpt=document.getElementById('yn-hptext');
+    var ynSt=document.getElementById('yn-status');
+    if(ynHpf){
+      var pp=Math.max(0,n.hp/n.maxHp);
+      ynHpf.style.width=(pp*100)+'%';
+      ynHpf.style.background=pp>.5?'#6acd8a':pp>.25?'#D4A64B':'#e85a6a';
+    }
+    if(ynHpt)ynHpt.textContent=n.hp+' / '+n.maxHp+' HP';
+    if(ynSt){ynSt.textContent=n.alive?'ALIVE':'KO\'D';ynSt.style.color=n.alive?'#6acd8a':'#e85a6a';}
+    var yncv=document.getElementById('yn-cv');
+    if(yncv){yncv.style.filter=n.alive?'none':'grayscale(.8) brightness(.25)';yncv.style.opacity=n.alive?'1':'.35';}
   }
 }
 
@@ -572,12 +741,19 @@ function spawnDmg(x,y,value,type){
 }
 function addKill(killer,victim,killerGuild,victimGuild,spell,cardHouse){
   var kg=GUILDS[killerGuild]||{color:'#fff'};var vg=GUILDS[victimGuild]||{color:'#999'};var hm=HOUSE[cardHouse]||{c:'#D4A64B',i:'✨'};
-  B.killFeed.unshift({k:killer,v:victim,kg:kg,vg:vg,spell:spell,hc:hm.c,hi:hm.i});
+  B.killFeed.unshift({k:killer,v:victim,kg:kg,vg:vg,spell:spell,hc:hm.c,hi:hm.i,t:Date.now()});
   if(B.killFeed.length>6)B.killFeed=B.killFeed.slice(0,6);
+  // Throttle: only update DOM at most once per 800ms
+  if(B.kfThrottle)return;
+  B.kfThrottle=true;
+  setTimeout(function(){B.kfThrottle=false;renderKillFeed();},800);
+  renderKillFeed();
+}
+function renderKillFeed(){
   var kfEl=document.getElementById('killfeed');if(kfEl)kfEl.style.display='block';
   var list=document.getElementById('kf-list');if(!list)return;
   list.innerHTML=B.killFeed.map(function(k,i){
-    return'<div class="kf-item" style="opacity:'+(1-i*.12)+'">'+
+    return'<div class="kf-item" style="opacity:'+(1-i*.15)+'">'+
       '<span class="kf-name" style="color:'+k.kg.color+'">@'+k.k+'</span>'+
       '<span class="kf-action">pwnd</span>'+
       '<span class="kf-name" style="color:'+k.vg.color+';font-weight:400">@'+k.v+'</span>'+
@@ -616,6 +792,7 @@ function startRenderLoop(){
           if(cr&&Math.random()<.35)showNerm(pick(NERM_LINES.crit),3000);
           if(mu==='s'&&Math.random()<.25)showNerm(pick(NERM_LINES.superEff),3000);
           tgt.hp=Math.max(0,tgt.hp-dmg);
+          if(atk)tgt.lastHitBy=atk.id;
           if(tgt.hp<=0){
             tgt.alive=false;
             spawnFirework(tp.x,tp.y,['#FF4444','#FF8844','#FFCC33','#FFF'],22);
@@ -665,7 +842,11 @@ function startRenderLoop(){
           var caster=sorted[Math.floor(Math.random()*Math.min(5,sorted.length))];
           var en=al.filter(function(n){return n.guild!==caster.guild});
           if(en.length){
-            var tgt=en.reduce(function(a,b){return a.hp<b.hp?a:b});
+            // Random weighted targeting: 50% random, 25% retaliatory, 25% lowest HP
+            var tgt;var roll=Math.random();
+            if(roll<.5){tgt=en[Math.floor(Math.random()*en.length)];}
+            else if(roll<.75&&caster.lastHitBy!=null){var ret=en.find(function(n){return n.id===caster.lastHitBy});tgt=ret||en[Math.floor(Math.random()*en.length)];}
+            else{tgt=en.reduce(function(a,b){return a.hp<b.hp?a:b});}
             fireSpell(caster.id,tgt.id,caster.cardHouse);
             B.spellCount++;
             if(B.spellCount%7===0&&Math.random()<.3)showNerm(pick(NERM_LINES.cast),2500);
@@ -680,7 +861,9 @@ function startRenderLoop(){
           var al=B.nines.filter(function(n){return n.alive});if(al.length<2)return;
           var a=al[Math.floor(Math.random()*al.length)];
           var en=al.filter(function(n){return n.guild!==a.guild});if(!en.length)return;
-          var t=en.reduce(function(a,b){return a.hp<b.hp?a:b});
+          var t;var roll=Math.random();
+          if(roll<.6){t=en[Math.floor(Math.random()*en.length)];}
+          else{t=en.reduce(function(a,b){return a.hp<b.hp?a:b});}
           fireSpell(a.id,t.id,a.cardHouse);
         },delay);})(i*90);}
       }

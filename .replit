@@ -15,3 +15,8 @@ build = ["sh", "-c", "npm install"]
 
 [nix]
 packages = ["file", "zip"]
+
+[userenv]
+
+[userenv.shared]
+TELEGRAM_BOT_TOKEN = "8596422570:AAFuDVL0hA7wLf2kYyNtexhZ2aNTeR3FSEo"
