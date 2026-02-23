@@ -583,7 +583,7 @@
   // EVENTS
   function bind(){
     document.querySelectorAll('.nt-b').forEach(function(t){t.onclick=function(){S.tab=t.dataset.tab;S.sel=null;render();};});
-    document.querySelectorAll('.zc').forEach(function(c){c.onclick=function(){var id=parseInt(c.dataset.zid);S.sel=S.zones.find(function(z){return z.id===id})||null;render();};});
+    document.querySelectorAll('.zc').forEach(function(c){c.onclick=function(){var id=parseInt(c.dataset.zid);window.location.href='/zone-battle.html?id='+id;};});
   }
   function bindBattle(){
     var bb=document.getElementById('b-back');if(bb)bb.onclick=function(){cleanup();S.sel=null;render();};

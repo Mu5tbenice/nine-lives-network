@@ -11,16 +11,26 @@
 //   Phase 5: Power calculation (surviving HP = zone control)
 //   Step 6:  Durability tick (cards lose 1 charge)
 //   Step 7:  Log the cycle
+//   Step 8:  POINTS — award season points
 // ═══════════════════════════════════════════════════════
 
 const supabase = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
 const { useCharge } = require('./cardDurability');
+const { addPoints } = require('./pointsService');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// ── POINTS VALUES (from Game Design V4, Section 19) ──
+const COMBAT_POINTS = {
+  SURVIVE_CYCLE: 3,     // +3 per cycle survived
+  DEAL_KO: 10,          // +10 for knocking someone out
+  GUILD_CONTROLS: 2,    // +2 if your guild controls zone at cycle end
+  OBJECTIVE_MULT: 1.5,  // x1.5 on daily objective zone
+};
 
 // ── REGION BONUSES ──
 // Guild controlling 2/3 zones in a region gets these bonuses
@@ -94,12 +104,14 @@ async function runCombatCycle() {
 
     let totalKnockouts = 0;
     let totalZonesProcessed = 0;
+    let totalPointsAwarded = 0;
 
     // Process each zone
     for (const zoneId of zoneIds) {
       try {
         const result = await processZoneCombat(zoneId, regionBonuses);
         totalKnockouts += result.knockouts;
+        totalPointsAwarded += result.points_awarded || 0;
         totalZonesProcessed++;
       } catch (zoneErr) {
         console.error(`[Combat] Zone ${zoneId} error:`, zoneErr.message);
@@ -107,11 +119,12 @@ async function runCombatCycle() {
     }
 
     const elapsed = Date.now() - startTime;
-    console.log(`[Combat] ✅ Cycle complete: ${totalZonesProcessed} zones, ${totalKnockouts} knockouts, ${elapsed}ms`);
+    console.log(`[Combat] ✅ Cycle complete: ${totalZonesProcessed} zones, ${totalKnockouts} knockouts, ${totalPointsAwarded} pts awarded, ${elapsed}ms`);
 
     return {
       zones_processed: totalZonesProcessed,
       knockouts: totalKnockouts,
+      points_awarded: totalPointsAwarded,
       elapsed_ms: elapsed,
     };
 
@@ -144,7 +157,7 @@ async function processZoneCombat(zoneId, regionBonuses) {
     .eq('is_active', true);
 
   if (!deployments || deployments.length < 1) {
-    return { knockouts: 0 };
+    return { knockouts: 0, points_awarded: 0 };
   }
 
   // Build combatant objects
@@ -368,10 +381,12 @@ async function processZoneCombat(zoneId, regionBonuses) {
 
   // ── PHASE 4: Knockout Check ──
   let knockouts = 0;
+  const knockedOutPlayers = [];
   for (const c of combatants) {
     if (c.hp <= 0 && !c.knocked_out) {
       c.knocked_out = true;
       knockouts++;
+      knockedOutPlayers.push(c);
       combatLog.push({ phase: 'knockout', player: c.twitter_handle, guild: c.guild_tag });
     }
   }
@@ -479,7 +494,59 @@ async function processZoneCombat(zoneId, regionBonuses) {
       },
     });
 
-  return { knockouts, controlling_guild: controllingGuild, guild_power: guildPower };
+  // ══════════════════════════════════════════════════
+  // STEP 8: AWARD POINTS (NEW — Season Scoring V4)
+  // ══════════════════════════════════════════════════
+  let pointsAwarded = 0;
+
+  // Only award points if there was actual combat (2+ guilds)
+  if (guilds.length >= 2) {
+    // Check if this is the daily objective zone (x1.5 multiplier)
+    let isObjective = false;
+    try {
+      const { data: zoneData } = await supabase
+        .from('zones')
+        .select('is_current_objective')
+        .eq('id', zoneId)
+        .single();
+      isObjective = zoneData?.is_current_objective || false;
+    } catch (e) { /* non-critical */ }
+
+    const mult = isObjective ? COMBAT_POINTS.OBJECTIVE_MULT : 1;
+
+    // 8a: +3 per survivor (survived a combat cycle)
+    for (const c of combatants) {
+      if (!c.knocked_out && c.hp > 0) {
+        const pts = Math.round(COMBAT_POINTS.SURVIVE_CYCLE * mult);
+        await addPoints(c.player_id, pts, 'zone_survive', `Survived cycle on zone ${zoneId}`);
+        pointsAwarded += pts;
+      }
+    }
+
+    // 8b: +10 per KO (awarded to all surviving enemies of each KO'd player)
+    for (const ko of knockedOutPlayers) {
+      const killers = combatants.filter(c => c.guild_tag !== ko.guild_tag && !c.knocked_out && c.hp > 0);
+      if (killers.length > 0) {
+        // Give full KO points to the top damage dealer, half to others
+        const topKiller = killers.reduce((best, c) => c.damage_dealt > best.damage_dealt ? c : best, killers[0]);
+        const pts = Math.round(COMBAT_POINTS.DEAL_KO * mult);
+        await addPoints(topKiller.player_id, pts, 'zone_ko', `KO'd @${ko.twitter_handle} on zone ${zoneId}`);
+        pointsAwarded += pts;
+      }
+    }
+
+    // 8c: +2 to all members of the controlling guild on this zone
+    if (controllingGuild) {
+      const controllers = combatants.filter(c => c.guild_tag === controllingGuild && !c.knocked_out && c.hp > 0);
+      for (const c of controllers) {
+        const pts = Math.round(COMBAT_POINTS.GUILD_CONTROLS * mult);
+        await addPoints(c.player_id, pts, 'zone_control', `Guild controls zone ${zoneId}`);
+        pointsAwarded += pts;
+      }
+    }
+  }
+
+  return { knockouts, controlling_guild: controllingGuild, guild_power: guildPower, points_awarded: pointsAwarded };
 }
 
 // ═══════════════════════════════════════════

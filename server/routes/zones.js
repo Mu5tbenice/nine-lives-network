@@ -10,11 +10,17 @@ const { createClient } = require('@supabase/supabase-js');
 const { spendMana } = require('../services/manaRegen');
 const { getNine, healNine } = require('../services/nineSystem');
 const { getEffectiveStats, RARITY_BONUSES } = require('../services/cardDurability');
+const { addPoints } = require('../services/pointsService');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// Zone deploy points (from Game Design V4, Section 19)
+const ZONE_POINTS = {
+  DEPLOY: 5,  // +5 for deploying to a zone
+};
 
 // ═══════════════════════════════════════════
 // POST /api/zones/deploy
@@ -85,13 +91,17 @@ router.post('/deploy', async (req, res) => {
       return res.status(500).json({ error: 'Failed to deploy' });
     }
 
+    // ── AWARD DEPLOY POINTS (+5) ──
+    await addPoints(player_id, ZONE_POINTS.DEPLOY, 'zone_deploy', `Deployed to zone ${zone_id}`);
+
     res.json({
       success: true,
       deployment,
       mana_remaining: manaResult.mana,
+      points_earned: ZONE_POINTS.DEPLOY,
       message: player?.guild_tag
-        ? `Deployed to zone ${zone_id}! Fighting for ${player.guild_tag}`
-        : `Lone Wolf deployed! 1.5x ATK bonus active.`,
+        ? `Deployed to zone ${zone_id}! Fighting for ${player.guild_tag} (+${ZONE_POINTS.DEPLOY} pts)`
+        : `Lone Wolf deployed! 1.5x ATK bonus active. (+${ZONE_POINTS.DEPLOY} pts)`,
       is_lone_wolf: player?.guild_tag ? false : true,
     });
 
@@ -234,7 +244,6 @@ router.post('/play-card', async (req, res) => {
         deployment_id: deployment.id,
         card_id: card_id,
         is_active: true,
-        is_mercenary: !(player?.guild_tag),
       })
       .select()
       .single();
@@ -373,26 +382,8 @@ router.get('/my-deployments/:playerId', async (req, res) => {
   }
 });
 
-
-// GET /api/zones - List all active zones
-router.get("/", async (req, res) => {
-  try {
-    const { data: zones, error } = await supabase
-      .from("zones")
-      .select("*")
-      .eq("is_active", true)
-      .order("id");
-    if (error) return res.status(500).json({ error: error.message });
-    res.json(zones || []);
-  } catch (err) {
-    console.error("Error fetching zones:", err);
-    res.status(500).json({ error: "Failed to fetch zones" });
-  }
-});
-module.exports = router;
 // ═══════════════════════════════════════════
-// GET /api/zonesdeploy
-// List all active zones
+// GET /api/zones — List all active zones
 // ═══════════════════════════════════════════
 router.get('/', async (req, res) => {
   try {
@@ -408,3 +399,5 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch zones' });
   }
 });
+
+module.exports = router;
