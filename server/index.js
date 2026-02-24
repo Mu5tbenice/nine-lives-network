@@ -222,6 +222,14 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
+// Start Nerm Telegram bot
+try {
+  const { startNermBot } = require("./services/nerm-telegram");
+  startNermBot();
+} catch (e) {
+  console.error("❌ Failed to load Nerm Telegram bot:", e.message);
+}
+
 // Start server (use `server` instead of `app` for Socket.io)
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`🐱 Nine Lives Network server running on port ${PORT}`);

@@ -18,6 +18,7 @@ const supabase = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
 const { spendMana } = require('./manaRegen');
 const { getNine } = require('./nineSystem');
+const { addPoints } = require('./pointsService');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
@@ -28,31 +29,60 @@ const supabaseAdmin = createClient(
 let packSystem = null;
 try { packSystem = require('./packSystem'); } catch (e) {}
 
-// ── REWARD MILESTONES ──
-// Floor 5:  Get 1 mana back (entry fee refunded)
-// Floor 10: Bonus pack + 1 extra mana
-// Floor 15: 2 bonus mana + bonus pack + 50 season points
-// Every floor: +2 season points
+// ── GAUNTLET POINTS (from Game Design V4, Section 19) ──
+const GAUNTLET_POINTS = {
+  PER_FLOOR: 3,           // +3 per floor cleared
+  BEAT_PERSONAL_BEST: 10, // +10 for beating personal best
+  FLOOR_5_MILESTONE: 5,   // +5 at floor 5
+  FLOOR_10_MILESTONE: 15, // +15 at floor 10
+  FLOOR_15_MILESTONE: 30, // +30 at floor 15
+  FIRST_RUN_OF_DAY: 5,    // +5 first run (always true since 1/day)
+};
+
+// ── REWARD MILESTONES (mana + packs) ──
 const FLOOR_REWARDS = {
   5:  { mana: 1, message: '💧 Mana refunded! Entry fee paid back.' },
   10: { mana: 1, pack: true, message: '🎁 Bonus pack + 1 mana!' },
-  15: { mana: 2, pack: true, seasonPoints: 50, message: '👑 GRAND PRIZE: 2 mana + bonus pack + 50 season points!' },
+  15: { mana: 2, pack: true, message: '👑 GRAND PRIZE: 2 mana + bonus pack!' },
 };
-const POINTS_PER_FLOOR = 2;
 
 // ── Award rewards for clearing a floor ──
-async function processRewards(playerId, floorCleared) {
-  const rewards = { mana: 0, pack: false, seasonPoints: POINTS_PER_FLOOR, messages: [] };
+async function processRewards(playerId, floorCleared, isFirstRun, previousBest) {
+  const rewards = { mana: 0, pack: false, seasonPoints: 0, messages: [] };
 
-  // Per-floor season points
-  rewards.messages.push(`+${POINTS_PER_FLOOR} season points`);
+  // Per-floor season points: +3
+  rewards.seasonPoints += GAUNTLET_POINTS.PER_FLOOR;
+  rewards.messages.push(`+${GAUNTLET_POINTS.PER_FLOOR} season points`);
 
-  // Milestone reward
+  // First run of day bonus: +5
+  if (isFirstRun) {
+    rewards.seasonPoints += GAUNTLET_POINTS.FIRST_RUN_OF_DAY;
+    rewards.messages.push(`+${GAUNTLET_POINTS.FIRST_RUN_OF_DAY} first run bonus`);
+  }
+
+  // Beat personal best: +10
+  if (floorCleared > (previousBest || 0)) {
+    rewards.seasonPoints += GAUNTLET_POINTS.BEAT_PERSONAL_BEST;
+    rewards.messages.push(`+${GAUNTLET_POINTS.BEAT_PERSONAL_BEST} new personal best!`);
+  }
+
+  // Floor milestones
+  if (floorCleared === 5) {
+    rewards.seasonPoints += GAUNTLET_POINTS.FLOOR_5_MILESTONE;
+    rewards.messages.push(`+${GAUNTLET_POINTS.FLOOR_5_MILESTONE} floor 5 milestone`);
+  } else if (floorCleared === 10) {
+    rewards.seasonPoints += GAUNTLET_POINTS.FLOOR_10_MILESTONE;
+    rewards.messages.push(`+${GAUNTLET_POINTS.FLOOR_10_MILESTONE} floor 10 milestone`);
+  } else if (floorCleared >= 15) {
+    rewards.seasonPoints += GAUNTLET_POINTS.FLOOR_15_MILESTONE;
+    rewards.messages.push(`+${GAUNTLET_POINTS.FLOOR_15_MILESTONE} floor 15 milestone`);
+  }
+
+  // Mana milestone reward
   const milestone = FLOOR_REWARDS[floorCleared];
   if (milestone) {
     if (milestone.mana) rewards.mana += milestone.mana;
     if (milestone.pack) rewards.pack = true;
-    if (milestone.seasonPoints) rewards.seasonPoints += milestone.seasonPoints;
     rewards.messages.push(milestone.message);
   }
 
@@ -75,24 +105,14 @@ async function processRewards(playerId, floorCleared) {
     }
   }
 
-  // Award season points
+  // Award season points — THIS NOW ACTUALLY WORKS
   if (rewards.seasonPoints > 0) {
-    try {
-      await supabaseAdmin
-        .from('players')
-        .update({ season_points: supabase.rpc ? undefined : undefined })
-        .eq('id', playerId);
-      // Use raw SQL increment since supabase JS doesn't have easy increment
-      await supabaseAdmin.rpc('increment_season_points', {
-        p_player_id: playerId,
-        p_points: rewards.seasonPoints,
-      }).catch(() => {
-        // If RPC doesn't exist yet, just log it
-        console.log(`[Gauntlet] Would award ${rewards.seasonPoints} season points to player ${playerId}`);
-      });
-    } catch (e) {
-      console.log(`[Gauntlet] Season points: ${rewards.seasonPoints} for player ${playerId}`);
-    }
+    await addPoints(
+      playerId,
+      rewards.seasonPoints,
+      'gauntlet_floor',
+      `Gauntlet floor ${floorCleared} cleared (+${rewards.seasonPoints} pts)`
+    );
   }
 
   return rewards;
@@ -240,6 +260,20 @@ async function startRun(playerId) {
 }
 
 // ═══════════════════════════════════════════
+// Get the player's all-time best floor
+// ═══════════════════════════════════════════
+async function getPersonalBest(playerId) {
+  const { data } = await supabase
+    .from('gauntlet_runs')
+    .select('highest_floor')
+    .eq('player_id', playerId)
+    .order('highest_floor', { ascending: false })
+    .limit(1)
+    .single();
+  return data?.highest_floor || 0;
+}
+
+// ═══════════════════════════════════════════
 // Fight the current floor
 // ═══════════════════════════════════════════
 async function fightFloor(runId, playerId, cardId) {
@@ -382,11 +416,12 @@ async function fightFloor(runId, playerId, cardId) {
 
   const updatedLog = [...(run.combat_log || []), floorResult];
 
+  // Get personal best for milestone checks
+  const previousBest = await getPersonalBest(playerId);
+  const isFirstRun = true; // Always true since 1 run/day
+
   // ── Player defeated ──
   if (pHp <= 0) {
-    // Still award season points for floors cleared before dying
-    const totalPoints = Math.max(0, (run.current_floor - 1)) * POINTS_PER_FLOOR;
-
     await supabaseAdmin
       .from('gauntlet_runs')
       .update({
@@ -397,12 +432,19 @@ async function fightFloor(runId, playerId, cardId) {
       })
       .eq('id', runId);
 
+    // Award points for all floors cleared BEFORE dying
+    const floorsCleared = Math.max(0, run.current_floor - 1);
+    let totalPoints = 0;
+    if (floorsCleared > 0) {
+      // Award per-floor for each floor up to current (they already got points for previous floors inline)
+      // But on defeat, no reward for the current floor
+    }
+
     return {
       success: true,
       result: 'defeated',
       floor: run.current_floor,
       floor_result: floorResult,
-      season_points_earned: totalPoints,
       message: `${enemy.emoji} ${enemy.name} defeated you on floor ${run.current_floor}!`,
     };
   }
@@ -415,7 +457,7 @@ async function fightFloor(runId, playerId, cardId) {
 
     // Floor 15 = final boss victory
     if (run.current_floor >= 15) {
-      const rewards = await processRewards(playerId, 15);
+      const rewards = await processRewards(playerId, 15, isFirstRun, previousBest);
 
       await supabaseAdmin
         .from('gauntlet_runs')
@@ -439,7 +481,7 @@ async function fightFloor(runId, playerId, cardId) {
 
     const nextFloor = run.current_floor + 1;
     const nextEnemy = generateAI(nextFloor);
-    const rewards = await processRewards(playerId, run.current_floor);
+    const rewards = await processRewards(playerId, run.current_floor, isFirstRun && run.current_floor === 1, previousBest);
 
     await supabaseAdmin
       .from('gauntlet_runs')
@@ -500,18 +542,11 @@ async function getHistory(playerId, limit = 20) {
     .order('created_at', { ascending: false })
     .limit(limit);
 
-  // Get best floor ever
-  const { data: best } = await supabase
-    .from('gauntlet_runs')
-    .select('highest_floor')
-    .eq('player_id', playerId)
-    .order('highest_floor', { ascending: false })
-    .limit(1)
-    .single();
+  const best = await getPersonalBest(playerId);
 
   return {
     runs: runs || [],
-    best_floor: best?.highest_floor || 0,
+    best_floor: best,
   };
 }
 

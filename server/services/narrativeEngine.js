@@ -20,6 +20,7 @@
 
 const supabase = require("../config/supabase");
 const { narratives, getRandomNarrative, getNarrativeById } = require("./narratives");
+const { addPoints: centralAddPoints } = require('./pointsService');
 
 // ════════════════════════════════════
 // CONSTANTS
@@ -299,7 +300,8 @@ function scoreReply(text, houseId) {
  * Award points to a player.
  */
 async function awardPoints(playerId, points, source) {
-  try {
+  await centralAddPoints(playerId, points, source || 'chronicle', 'Chronicle points');
+}
     // Try RPC first
     const { error } = await supabase.rpc("increment_player_points", {
       p_player_id: playerId,
