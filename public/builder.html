@@ -51,6 +51,12 @@
     .mode-card{padding:14px 16px;border-radius:12px;cursor:pointer;background:rgba(255,255,255,0.02);border:1px solid var(--border);transition:all 0.2s;margin-bottom:8px}.mode-card:hover,.mode-card.open{border-color:rgba(212,166,75,0.2)}.mode-card.open{background:rgba(255,255,255,0.03)}
     .mode-desc{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-family:var(--font-mono);font-size:10px;color:var(--body);line-height:1.7;animation:fadeUp 0.2s ease}
     .anno-row{padding:8px 10px;border-radius:8px;background:rgba(255,255,255,0.02);border:1px solid var(--border);margin-bottom:6px;transition:all 0.2s}.anno-row:hover{border-color:rgba(232,90,106,0.25);background:rgba(232,90,106,0.04)}
+    .guild-tag-edit{margin-bottom:12px;display:none}
+    .guild-tag-edit.show{display:block}
+    .guild-tag-field{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;color:var(--bright);font-family:var(--font-title);font-size:14px;font-weight:600;padding:10px 14px;letter-spacing:1px;outline:none;transition:border-color 0.2s}
+    .guild-tag-field:focus{border-color:rgba(212,166,75,0.5)}
+    .guild-tag-field::placeholder{color:var(--faint);font-size:12px;font-weight:400;letter-spacing:0}
+    .autosave-status{font-family:var(--font-data);font-size:7px;margin-top:4px;min-height:14px;transition:opacity 0.3s}
     @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
     @media(max-width:400px){.wrap{padding:0 2px}.slot-col{width:135px}.picker-overlay{width:calc(100% - 147px)}}
   </style>
@@ -89,6 +95,13 @@
       <label style="font-family:var(--font-data);font-size:6px;color:var(--gold);letter-spacing:1px;display:block;margin-bottom:6px">NAME YOUR NINE</label>
       <input type="text" id="nineName" maxlength="20" placeholder="e.g. Shadowfang the Unseen" class="name-input">
       <div id="nameCount" style="font-family:var(--font-mono);font-size:8px;color:var(--faint);margin-top:3px;text-align:right">0/20</div>
+    </div>
+    <!-- GUILD TAG (edit mode only) -->
+    <div class="card-frame guild-tag-edit" id="guildTagEdit" style="padding:12px 16px;margin-bottom:12px">
+      <label style="font-family:var(--font-data);font-size:6px;color:var(--gold);letter-spacing:1px;display:block;margin-bottom:6px">GUILD TAG</label>
+      <input type="text" id="guildTagField" maxlength="16" placeholder="e.g. $BONK, $WIF, or any team name" class="guild-tag-field">
+      <div id="guildTagStatus" class="autosave-status" style="color:var(--faint)"></div>
+      <div style="font-family:var(--font-mono);font-size:8px;color:var(--faint);margin-top:4px">Leave empty to go Lone Wolf (1.5× ATK in zones)</div>
     </div>
     <div class="card-frame" style="padding:16px" id="mainCardFrame">
       <div style="display:flex;gap:12px;position:relative;z-index:1" id="slotContainer">
@@ -649,6 +662,64 @@ renderSlots();renderStats();renderLayers();updCount();
       renderSlots(); renderStats(); renderLayers(); updCount();
     }
   } catch(e) { console.log('Edit mode: could not load equipment', e); }
+  /* ═══ GUILD TAG — autosave in edit mode ═══ */
+  var guildEditSection = document.getElementById('guildTagEdit');
+  if (guildEditSection) guildEditSection.classList.add('show');
+  var guildField = document.getElementById('guildTagField');
+  var guildStatus = document.getElementById('guildTagStatus');
+  var _guildTimer = null;
+  // Load current guild tag
+  try {
+  var _pGuild = JSON.parse(localStorage.getItem('9lv_player') || '{}');
+  if (_pGuild.guild_tag || _pGuild.community_tag) {
+  guildField.value = _pGuild.guild_tag || _pGuild.community_tag || '';
+  }
+  } catch(e) {}
+  // Autosave function
+  function autoSaveGuildTag() {
+  var tag = guildField.value.trim();
+  var pid = null;
+  try { pid = JSON.parse(localStorage.getItem('9lv_player')).id; } catch(e) {}
+  if (!pid) { guildStatus.textContent = 'No player found'; guildStatus.style.color = 'var(--red)'; return; }
+    guildStatus.textContent = 'SAVING...';
+    guildStatus.style.color = 'var(--cyan)';
+
+    fetch('/api/players/update-guild', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_id: parseInt(pid), guild_tag: tag || null })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (d.success) {
+        guildStatus.innerHTML = tag
+          ? '<span style="color:var(--green)">✓ SAVED — ' + tag + '</span>'
+          : '<span style="color:var(--cyan)">✓ LONE WOLF MODE</span>';
+        // Update localStorage so dashboard shows new tag
+        try {
+          var p = JSON.parse(localStorage.getItem('9lv_player') || '{}');
+          p.guild_tag = tag || null;
+          localStorage.setItem('9lv_player', JSON.stringify(p));
+        } catch(e) {}
+      } else {
+        guildStatus.textContent = d.error || 'Failed to save';
+        guildStatus.style.color = 'var(--red)';
+      }
+    })
+    .catch(function() {
+      guildStatus.textContent = 'Network error';
+      guildStatus.style.color = 'var(--red)';
+    });
+    }
+    // Debounced input — saves 1 second after you stop typing
+    if (guildField) {
+    guildField.addEventListener('input', function() {
+    guildStatus.textContent = 'typing...';
+    guildStatus.style.color = 'var(--faint)';
+    clearTimeout(_guildTimer);
+    _guildTimer = setTimeout(autoSaveGuildTag, 1000);
+    });
+    }
 })();
 </script>
 </body>
