@@ -12,7 +12,7 @@ const oauthStates = new Map();
 
 // Callback URL for Twitter OAuth - USE YOUR PUBLISHED APP URL
 const CALLBACK_URL = process.env.TWITTER_CALLBACK_URL 
-  || ''https://9lv.net/auth/twitter/callback'';
+|| 'https://9lv.net/auth/twitter/callback';
 
 /**
  * GET /auth/twitter

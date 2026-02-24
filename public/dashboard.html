@@ -461,22 +461,23 @@ async function render(player,casts,zones,schools,quests){
     +statPill('LUCK',nLuck,'luck')
     +'</div>'
 
-    // ── GUILD + DISCORD BAR — below stats ──
-    +'<div style="display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;flex-wrap:wrap;background:rgba(0,0,0,0.2);border-top:1px solid rgba(255,255,255,0.04);">'
+    // ── GUILD + DISCORD BAR — clean display only ──
+    +'<div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 16px;background:rgba(0,0,0,0.2);border-top:1px solid rgba(255,255,255,0.04);">'
     +'<span id="guildBadgeDisplay">'+guildBadgeH+'</span>'
-    +'<input type="text" id="guildTagInput" class="guild-tag-input" placeholder="$GUILD" value="'+esc(guildTag)+'" maxlength="16" style="width:80px;text-align:center;">'
-    +'<button id="guildTagSave" class="guild-tag-save" onclick="saveGuildTag()">SAVE</button>'
-    +(guildTag?'<button class="guild-tag-save" onclick="clearGuildTag()" style="background:rgba(106,200,216,0.1);color:var(--cyan);border-color:rgba(106,200,216,0.2);">🐺</button>':'')
-    +'<a href="https://discord.gg/27tqFz8cJS" target="_blank" style="display:flex;align-items:center;gap:6px;background:rgba(212,166,75,0.08);border:1px solid rgba(212,166,75,0.2);padding:5px 14px;border-radius:8px;text-decoration:none;cursor:pointer;transition:all 0.2s;margin-left:auto;" onmouseenter="this.style.borderColor=\'rgba(212,166,75,0.5)\';this.style.background=\'rgba(212,166,75,0.12)\'" onmouseleave="this.style.borderColor=\'rgba(212,166,75,0.2)\';this.style.background=\'rgba(212,166,75,0.08)\'">'
-    +'<img src="/assets/images/discord-9lv.png" alt="Discord" style="height:22px;width:auto;">'
-    +'<span style="font-family:var(--font-data);font-size:8px;color:var(--gold);letter-spacing:1px;font-weight:700;">JOIN</span>'
+    +'<a href="https://discord.gg/27tqFz8cJS" target="_blank" style="display:flex;align-items:center;margin-left:auto;text-decoration:none;cursor:pointer;opacity:0.7;transition:opacity 0.2s;" onmouseenter="this.style.opacity=\'1\'" onmouseleave="this.style.opacity=\'0.7\'">'
+    +'<img src="/assets/images/discord-9lv.png" alt="Discord" style="height:28px;width:auto;">'
     +'</a>'
-    +'<div id="guildTagMsg" class="guild-tag-msg" style="width:100%;text-align:center;margin:0;">'
-    +(!guildTag?'<span style="color:var(--cyan);font-size:9px;">🐺 Lone Wolves get 1.5× ATK in zones</span>':'')
-    +'</div>'
     +'</div>'
 
     +'</div></div>'
+
+    /* ══════════════════════════════════
+       CTA — PRIMARY ACTION BUTTON
+    ══════════════════════════════════ */
+    +'<a href="/nethara-live.html" class="fade-up fade-up-1" style="display:flex;align-items:center;justify-content:center;gap:10px;margin:16px 0;padding:18px 24px;border-radius:12px;text-decoration:none;cursor:pointer;background:linear-gradient(135deg,#D4A64B 0%,#b8903d 60%,#8a6d2f 100%);border:1px solid rgba(255,220,130,0.3);box-shadow:0 4px 0 #6b5525,0 0 30px rgba(212,166,75,0.25),0 8px 32px rgba(212,166,75,0.15);transition:all 0.15s;position:relative;overflow:hidden;" onmouseenter="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 6px 0 #6b5525,0 0 40px rgba(212,166,75,0.4),0 12px 40px rgba(212,166,75,0.2)\'" onmouseleave="this.style.transform=\'none\';this.style.boxShadow=\'0 4px 0 #6b5525,0 0 30px rgba(212,166,75,0.25),0 8px 32px rgba(212,166,75,0.15)\'" ontouchstart="this.style.transform=\'translateY(2px)\';this.style.boxShadow=\'0 1px 0 #6b5525\'" ontouchend="this.style.transform=\'none\';this.style.boxShadow=\'0 4px 0 #6b5525,0 0 30px rgba(212,166,75,0.25),0 8px 32px rgba(212,166,75,0.15)\'">'
+    +'<span style="font-size:20px;">⚔️</span>'
+    +'<span style="font-family:var(--font-title);font-size:17px;font-weight:800;color:#1a1528;letter-spacing:3px;text-transform:uppercase;text-shadow:0 1px 0 rgba(255,255,255,0.2);">DEPLOY TO BATTLE</span>'
+    +'</a>'
 
     /* ══════════════════════════════════
        2. THE CHRONICLE
