@@ -46,7 +46,7 @@ var PILL_MAP = {
   'BURN':'orange','SCALD':'orange','CHAIN':'orange','CRIT':'yellow','SURGE':'orange',
   'PIERCE':'red','HEAL':'green','WARD':'gold','ANCHOR':'brown','THORNS':'green',
   'DRAIN':'purple','SIPHON':'dark','WEAKEN':'pink','HEX':'purple','SILENCE':'dark',
-  'HASTE':'green','SWIFT':'green','DODGE':'green','FREE':'green',
+  'HASTE':'green','SWIFT':'green','DODGE':'green',
   'POISON':'toxic','CORRODE':'toxic','INFECT':'toxic',
   'AMPLIFY':'gold','INSPIRE':'orange','BLESS':'white',
   'SPREAD':'red','STRIP':'red','ERUPTION':'red','PULL':'blue','REFLECT':'cyan',
@@ -73,7 +73,7 @@ var EFFECT_TIPS = {
   BURN:    'Extra damage over time each cycle',
   CHAIN:   'Attack hits 2 targets instead of 1',
   CRIT:    '25% chance to deal double ATK',
-  SURGE:   '+50% ATK but costs +1 extra mana',
+  SURGE:   '+50% ATK, card loses 2% sharpness this cycle',
   PIERCE:  'Ignore enemy shields and WARD',
   HEAL:    'Restore HP to self or lowest-HP ally',
   WARD:    'Absorb next hit — blocks one attack',
@@ -85,9 +85,8 @@ var EFFECT_TIPS = {
   HEX:     'Target loses 2 ATK this cycle',
   SILENCE: "Target's card effect doesn't activate",
   HASTE:   '+3 SPD this cycle (act first)',
-  SWIFT:   'First card of the day: effect doubled',
+  SWIFT:   'First cycle after deploying: effect doubled',
   DODGE:   '30% chance to avoid all damage',
-  FREE:    'Card costs 0 mana this cast',
   POISON:  'Damage per cycle, stacks, ignores DEF',
   CORRODE: 'All enemies lose 1 max HP until midnight',
   INFECT:  'If target KO, POISON spreads',
@@ -116,10 +115,10 @@ var _esc = (typeof esc === 'function') ? esc : function(s) {
 
    spell = {
      name, house, spell_type, rarity,
-     mana_cost, base_atk, base_hp, base_spd, base_def, base_luck,
+     base_atk, base_hp, base_spd, base_def, base_luck,
      base_effect, bonus_effects (array or JSON string),
      flavor_text, image_url,
-     current_charges, max_charges, is_exhausted, deployed_zone
+     sharpness (0-100, default 100), deployed_zone
    }
 
    options = {
@@ -161,9 +160,15 @@ function buildCardV4(s, options) {
   else if (size === 'tiny') sizeClass = ' sc-tiny-card';
   else if (size === 'zoom') sizeClass = ' sc-zoom';
 
-  // Exhausted / deployed classes
+  // Sharpness value (V5)
+  var sharpness = (s.sharpness !== undefined && s.sharpness !== null) ? s.sharpness : 100;
+  var sharpPct = Math.max(0, Math.min(100, sharpness));
+
+  // Sharpness / deployed classes
   var stateClasses = '';
-  if (s.is_exhausted) stateClasses += ' spell-card--exhausted';
+  if (sharpPct === 0) stateClasses += ' spell-card--degraded';
+  else if (sharpPct <= 50) stateClasses += ' spell-card--worn';
+  if (sharpPct === 100) stateClasses += ' spell-card--pristine';
   if (s.deployed_zone) stateClasses += ' spell-card--deployed';
   if (rarity === 'legendary') stateClasses += ' spell-card--legendary';
 
@@ -177,8 +182,7 @@ function buildCardV4(s, options) {
     ? '<img class="sc-crest-watermark" src="' + houseImg + '" onerror="this.style.display=\'none\'">'
     : '';
 
-  // ── Mana pill (flex aligned) ──
-  var manaHtml = '<div class="sc-mana"><span class="sc-mana-icon">💧</span><span class="sc-mana-num">' + s.mana_cost + '</span></div>';
+  // ── V5: Mana removed — no mana pill on cards ──
 
   // ── Art image or gradient area ──
   var hasArt = s.image_url && s.image_url.length > 0;
@@ -245,18 +249,13 @@ function buildCardV4(s, options) {
     pillsHtml += '</div>';
   }
 
-  // ── DURABILITY BAR ──
-  var durHtml = '';
-  if (s.max_charges && s.max_charges > 0) {
-    var cur = s.current_charges || s.max_charges;
-    var pct = Math.round((cur / s.max_charges) * 100);
-    var rc2 = RARITY_CONFIG[rarity] || {};
-    var durColor = ({ common:'#bbb', uncommon:'#66dd66', rare:'#55bbff', epic:'#bb88ff', legendary:'#ffd700' })[rarity] || '#888';
-    durHtml = '<div class="sc-durability">'
-      + '<div class="sc-dur-track"><div class="sc-dur-fill" style="width:' + pct + '%;background:linear-gradient(90deg,' + durColor + ',' + durColor + '88)"></div></div>'
-      + '<span class="sc-dur-text"></span>'
-      + '</div>';
-  }
+  // ── SHARPNESS BAR (V5 — replaces durability) ──
+  var sharpHtml = '';
+  var sharpColor = sharpPct > 60 ? '#44cc88' : sharpPct > 30 ? '#ffcc44' : sharpPct > 0 ? '#ff5555' : '#555';
+  sharpHtml = '<div class="sc-sharpness">'
+    + '<div class="sc-sharp-track"><div class="sc-sharp-fill" style="width:' + sharpPct + '%;background:linear-gradient(90deg,' + sharpColor + ',' + sharpColor + '88)"></div></div>'
+    + '<span class="sc-sharp-text">' + sharpPct + '%</span>'
+    + '</div>';
 
   // ── FLAVOR TEXT ──
   var flavorHtml = '';
@@ -273,6 +272,7 @@ function buildCardV4(s, options) {
     + ' data-glow="' + hc + '"'
     + ' data-particle="' + pType + '"'
     + ' data-foil-s="0.18" data-foil-w="0.1" data-num="50"'
+    + ' data-sharpness="' + sharpPct + '"'
     + ' style="'
       + '--hc:' + hc + ';'
       + '--hc-shadow:' + hc + '30;'
@@ -295,12 +295,14 @@ function buildCardV4(s, options) {
     +   '<div class="sc-rainbow"></div>'
     +   '<canvas class="sc-particles"></canvas>'
     +   '<div class="sc-glow"></div>'
+    +   (sharpPct < 50 ? '<div class="sc-degrade-overlay"></div>' : '')
+    +   (sharpPct === 100 ? '<div class="sc-pristine-gleam"></div>' : '')
     + '</div>'
     + crestWM
 
     // Body
     + '<div class="sc-body">'
-      + '<div class="sc-top">' + logoInline + '<div class="sc-name">' + _esc(s.name) + '</div>' + manaHtml + '</div>'
+      + '<div class="sc-top">' + logoInline + '<div class="sc-name">' + _esc(s.name) + '</div></div>'
       + '<div style="flex:1"></div>'
       + '<div class="sc-info-panel">'
       + statHtml
@@ -309,7 +311,7 @@ function buildCardV4(s, options) {
         + '<div class="sc-type-row">' + typeHtml + '<span class="sc-type-spacer"></span>' + rarityHtml + '</div>'
         + effectHtml
         + pillsHtml
-        + durHtml
+        + sharpHtml
         + flavorHtml
       + '</div>'
       + '<div class="sc-bottom house-name-' + s.house + '" style="color:' + hc + '">' + houseName.toUpperCase() + '</div>'

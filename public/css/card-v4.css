@@ -431,28 +431,32 @@
   line-height: 1.4;
 }
 
-/* ═══ DURABILITY BAR ═══ */
-.sc-durability {
+/* ═══ SHARPNESS BAR (V5) ═══ */
+.sc-sharpness {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
-.sc-dur-track {
-  width: 60px;
-  height: 3px;
-  border-radius: 3px;
+.sc-sharp-track {
+  flex: 1;
+  height: 4px;
+  border-radius: 4px;
   background: rgba(255,255,255,0.06);
   overflow: hidden;
 }
-.sc-dur-fill {
+.sc-sharp-fill {
   height: 100%;
-  border-radius: 3px;
+  border-radius: 4px;
+  transition: width 0.5s ease;
 }
-.sc-dur-text {
+.sc-sharp-text {
   font-family: var(--font-data);
-  font-size: 6px;
-  color: rgba(255,255,255,0.22);
+  font-size: 7px;
+  color: rgba(255,255,255,0.35);
   line-height: 1;
+  white-space: nowrap;
+  min-width: 22px;
+  text-align: right;
 }
 
 /* ═══ FLAVOR TEXT ═══ */
@@ -571,22 +575,57 @@
   gap: 10px;
 }
 
-/* ═══ EXHAUSTED OVERLAY ═══ */
-.spell-card--exhausted {
-  filter: grayscale(0.7) brightness(0.6);
-  pointer-events: none;
+/* ═══ SHARPNESS VISUAL STATES (V5) ═══ */
+
+/* Worn: 1-50% sharpness — subtle faded look */
+.spell-card--worn {
+  filter: brightness(0.85);
 }
-.spell-card--exhausted::after {
-  content: 'EXHAUSTED';
+.spell-card--worn .sc-art-img {
+  filter: saturate(0.7);
+}
+
+/* Fully Degraded: 0% sharpness — very worn, greyed out */
+.spell-card--degraded {
+  filter: grayscale(0.5) brightness(0.65);
+}
+.spell-card--degraded::after {
+  content: 'DULL';
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%) rotate(-15deg);
   font-family: var(--font-data);
-  font-size: 14px;
-  color: rgba(255,80,80,0.6);
+  font-size: 12px;
+  color: rgba(255,100,100,0.5);
   letter-spacing: 3px;
   z-index: 20;
   pointer-events: none;
+}
+
+/* Degradation overlay — grey tint over card art when worn */
+.sc-degrade-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  border-radius: inherit;
+  background: rgba(30,25,40,0.25);
+  mix-blend-mode: multiply;
+}
+
+/* Pristine: 100% sharpness — subtle gleam pulse */
+.sc-pristine-gleam {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%);
+  animation: pristineGleam 3s ease-in-out infinite;
+}
+@keyframes pristineGleam {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
 }
 
 /* ═══ DEPLOYED BADGE ═══ */
