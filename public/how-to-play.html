@@ -60,7 +60,7 @@
     <div class="step"><div class="step-num">1</div><div class="step-body"><h3>Register with Twitter</h3><p>Connect your 𝕏 account to create your Nine, your magical cat warrior in Nethara.</p></div></div>
     <div class="step"><div class="step-num">2</div><div class="step-body"><h3>Join a House</h3><p>Choose from 9 elemental houses. Each house gives your Nine different base stats (ATK, HP, SPD) that define how you fight. You can also try the AI-powered Sorting Ceremony, which scans your profile and assigns a house with a personalized roast.</p><p class="warn">⚠ You can switch houses once per week, but points earned under your old house don't carry over. Choose wisely!</p></div></div>
     <div class="step"><div class="step-num">3</div><div class="step-body"><h3>Open Your First Pack</h3><p>Get 5 free spell cards every day: 1 Basic Attack, 1 Basic Defend, and 3 random spells with rarity rolls. No login = no pack, they don't stack up.</p></div></div>
-    <div class="step"><div class="step-num">4</div><div class="step-body"><h3>Deploy to Zones</h3><p>Head to Nethara Live. Pick a zone, deploy your Nine (costs 1 mana), equip a card, and fight for territory. Combat cycles every 15 minutes.</p></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-body"><h3>Deploy to Zones</h3><p>Head to Nethara Live. Pick a zone, deploy your Nine, equip a card, and fight for territory. Combat cycles every 15 minutes.</p></div></div>
 
     <!-- ===== THE NINE HOUSES ===== -->
     <div class="section-label"><span style="font-size:14px;">🏛️</span><span class="section-label__text">THE NINE HOUSES</span><span class="section-label__line"></span></div>
@@ -120,9 +120,9 @@
     </div>
 
     <div class="info-card">
-      <h4>Durability & Charges</h4>
-      <p>Cards have limited charges. Each zone combat cycle uses 1 charge. When charges hit 0, the card is <span style="color:var(--sunset);">exhausted</span>. It returns to your hand and can still be used in Duels and the Gauntlet forever, but can't deploy to zones until recharged.</p>
-      <p style="margin-top:6px;">Recharge by feeding 3 Common cards or 1 same-rarity duplicate. You never lose a card permanently.</p>
+      <h4>Sharpness</h4>
+      <p>Every card has a <span style="color:var(--green);">sharpness meter</span> (0–100%). Each zone combat cycle reduces sharpness by 1%. As sharpness drops, your card's stats are reduced — at 0% sharpness, the card fights at only 50% power.</p>
+      <p style="margin-top:6px;">Sharpen your cards by feeding duplicate cards or same-house cards. You never lose a card permanently — just keep them sharp.</p>
     </div>
 
     <!-- ===== GAME MODES ===== -->
@@ -130,21 +130,21 @@
 
     <div class="info-card">
       <h4>🔥 Nethara Live: Territory Warfare</h4>
-      <p>Deploy your Nine to zones across Nethara (costs 1 mana per zone). You can be on as many zones as you can afford. Every 15 minutes, all Nines on a zone fight automatically. Your equipped card's stats boost your Nine and its effects trigger during combat. The guild with the most surviving HP controls the zone.</p>
-      <p style="margin-top:6px;">One zone each day is the <span style="color:var(--gold);">Daily Objective</span>, worth ×1.5 bonus points. Cards use 1 charge per combat cycle on zones.</p>
+      <p>Deploy your Nine to zones across Nethara. You can be on multiple zones at once. Every 15 minutes, all Nines on a zone fight automatically. Your equipped card's stats boost your Nine and its effects trigger during combat. The guild with the most surviving HP controls the zone.</p>
+      <p style="margin-top:6px;">One zone each day is the <span style="color:var(--gold);">Daily Objective</span>, worth ×1.5 bonus points. Cards lose 1% sharpness per combat cycle on zones.</p>
     </div>
     <div class="info-card">
       <h4>⚔️ Quick Duels: 1v1 PvP</h4>
-      <p>Both players reveal a card simultaneously. Higher ATK deals damage. Best of 3 rounds. Duels are <span style="color:var(--green);">free, 0 mana</span>, and cards are never consumed. The perfect "I have 2 minutes" mode.</p>
+      <p>Both players reveal a card simultaneously. Higher ATK deals damage. Best of 3 rounds. Duels are <span style="color:var(--green);">free</span>, and cards are never consumed. The perfect "I have 2 minutes" mode.</p>
     </div>
     <div class="info-card">
       <h4>🏰 The Gauntlet: Solo PvE</h4>
-      <p>Fight sequential AI battles, each harder than the last. Costs 1 mana to enter. Rewards scale with depth. Progress resets daily. How far can you get today? Cards are never consumed.</p>
+      <p>Fight sequential AI battles, each harder than the last. Rewards scale with depth. Progress resets daily. How far can you get today? Cards are never consumed.</p>
     </div>
     <div class="info-card">
       <h4>🐉 Weekly Boss: Guild Co-op Raid</h4>
       <p>A world boss spawns Monday and must die by Friday. Massive HP pool that scales with player count. The boss hits everyone each cycle (AOE). At 50% HP it gains SILENCE, at 25% it adds AOE BURN and POISON.</p>
-      <p style="margin-top:6px;">Costs 1 mana to deploy. Cards use charges here (like zones). Top damage dealers and the killing blow earn big bonus points.</p>
+      <p style="margin-top:6px;">Cards lose sharpness here (like zones). Top damage dealers and the killing blow earn big bonus points.</p>
     </div>
 
     <!-- ===== THE CHRONICLE ===== -->
@@ -155,22 +155,6 @@
       <p>Every day, <span style="color:var(--text-bright);">@9LVNetwork</span> posts a four-act collaborative story on 𝕏. Reply in character as your Nine. The bot reads replies, weaves players into the narrative, and awards points. Get named in the story for a massive flex.</p>
       <p style="margin-top:6px;">Act 4's ending is unpredictable. Sometimes the biggest guild wins, sometimes the lone underdog gets the bonus. You can't game it. Just show up and write something brilliant.</p>
       <p style="margin-top:6px;">Chronicle points count toward the main leaderboard. A Twitter-only player can be competitive without ever touching the web app.</p>
-    </div>
-
-    <!-- ===== MANA SYSTEM ===== -->
-    <div class="section-label"><span style="font-size:14px;">💧</span><span class="section-label__text">MANA SYSTEM</span><span class="section-label__line"></span></div>
-
-    <div class="info-card">
-      <h4>How Mana Works</h4>
-      <p>Mana is your universal action resource. You regenerate <span style="color:var(--cyan);">1 mana per hour</span>, up to a max of 10. Earn bonus mana from retweeting @9LVNetwork (+1), daily login (+1), and daily quests (+1–2).</p>
-      <p style="margin-top:8px;font-family:var(--font-mono);font-size:11px;color:var(--text-faint);line-height:1.8;">
-        Deploy to a zone · · · · · · 1 mana<br>
-        Cast T0/T1 card · · · · · · · 1 mana<br>
-        Cast T2 card · · · · · · · · · 2 mana<br>
-        Cast T3 card · · · · · · · · · 3 mana<br>
-        Quick Duel · · · · · · · · · · FREE<br>
-        Gauntlet run · · · · · · · · · 1 mana
-      </p>
     </div>
 
     <!-- ===== GUILDS ===== -->
@@ -201,7 +185,7 @@
 
     <div class="info-card">
       <h4>Midnight Reset (UTC)</h4>
-      <p>Every day at midnight UTC: all Nines heal to full HP, zone power decays 30–50%, attrition effects process, daily quests reset, a new daily pack becomes available, and the Daily Objective zone changes. Cards stay deployed if they still have charges.</p>
+      <p>Every day at midnight UTC: all Nines heal to full HP, zone power decays 30–50%, attrition effects process, daily quests reset, a new daily pack becomes available, and the Daily Objective zone changes. Deployed cards remain active.</p>
     </div>
 
     <!-- ===== CTA ===== -->

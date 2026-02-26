@@ -109,7 +109,6 @@
       var points=player.seasonal_points||0;
       var lifetime=player.lifetime_points||0;
       var streak=player.streak||0;
-      var mana=player.mana!=null?player.mana:5;
       var recentCasts=casts.slice(0,5);
 
       var avatarHTML=player.profile_image
@@ -161,7 +160,7 @@
         +'<div class="p-stat"><div class="p-stat__val">'+points+'</div><div class="p-stat__label">Season Pts</div></div>'
         +'<div class="p-stat"><div class="p-stat__val">'+lifetime+'</div><div class="p-stat__label">Lifetime</div></div>'
         +'<div class="p-stat"><div class="p-stat__val">'+streak+'</div><div class="p-stat__label">Streak</div></div>'
-        +'<div class="p-stat"><div class="p-stat__val">'+mana+'/5</div><div class="p-stat__label">Mana</div></div>'
+        +'<div class="p-stat"><div class="p-stat__val">'+(player.card_count||'—')+'</div><div class="p-stat__label">Cards</div></div>'
         +'</div>'
 
         +'<div class="card fade-up fade-up-2">'

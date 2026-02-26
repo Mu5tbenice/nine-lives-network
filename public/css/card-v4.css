@@ -602,30 +602,25 @@
   pointer-events: none;
 }
 
-/* Degradation overlay — grey tint over card art when worn */
+/* Degradation overlay — grey tint over full card when worn */
 .sc-degrade-overlay {
   position: absolute;
   inset: 0;
-  z-index: 7;
+  z-index: 9;
   pointer-events: none;
   border-radius: inherit;
   background: rgba(30,25,40,0.25);
   mix-blend-mode: multiply;
 }
 
-/* Pristine: 100% sharpness — subtle gleam pulse */
+/* Pristine: 100% sharpness — subtle constant gleam across full card */
 .sc-pristine-gleam {
   position: absolute;
   inset: 0;
-  z-index: 7;
+  z-index: 9;
   pointer-events: none;
   border-radius: inherit;
-  background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%);
-  animation: pristineGleam 3s ease-in-out infinite;
-}
-@keyframes pristineGleam {
-  0%, 100% { opacity: 0; }
-  50% { opacity: 1; }
+  background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.04) 48%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.04) 52%, transparent 70%);
 }
 
 /* ═══ DEPLOYED BADGE ═══ */

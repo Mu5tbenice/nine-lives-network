@@ -160,7 +160,6 @@
     <option value="name">Sort: Name</option>
     <option value="house">Sort: House</option>
     <option value="type">Sort: Type</option>
-    <option value="mana">Sort: Mana Cost</option>
   </select>
 </div>
 
@@ -406,7 +405,6 @@ function renderMyCards() {
   else if (sortBy === 'name') items.sort(function(a,b){ return a.card.name.localeCompare(b.card.name); });
   else if (sortBy === 'house') items.sort(function(a,b){ return HO.indexOf(a.card.house) - HO.indexOf(b.card.house); });
   else if (sortBy === 'type') items.sort(function(a,b){ return a.card.type.localeCompare(b.card.type); });
-  else if (sortBy === 'mana') items.sort(function(a,b){ return (a.card.mana_cost||1) - (b.card.mana_cost||1); });
 
   // Empty states
   if (items.length === 0 && playerCards.length === 0) {
@@ -476,7 +474,6 @@ function renderCodex() {
   else if (sortBy === 'name') spells.sort(function(a,b){ return a.name.localeCompare(b.name); });
   else if (sortBy === 'house') spells.sort(function(a,b){ return HO.indexOf(a.house) - HO.indexOf(b.house); });
   else if (sortBy === 'type') spells.sort(function(a,b){ return a.spell_type.localeCompare(b.spell_type); });
-  else if (sortBy === 'mana') spells.sort(function(a,b){ return (a.mana_cost||1) - (b.mana_cost||1); });
 
   if (spells.length === 0) {
     document.getElementById('content').innerHTML =

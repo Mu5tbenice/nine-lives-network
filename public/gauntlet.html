@@ -260,7 +260,7 @@ async function init() {
 }
 
 // ═══════════════════════════════════════════
-// START RUN (costs 1 mana)
+// START RUN
 // ═══════════════════════════════════════════
 async function startRun() {
   STATE.error = null;
@@ -415,22 +415,20 @@ function renderStart() {
   h += '<div class="g-stat-grid">';
   h += '<div class="g-stat-box"><div class="g-stat-box__val" style="color:var(--purple);">&#x2014;</div><div class="g-stat-box__label">FLOOR</div></div>';
   h += '<div class="g-stat-box"><div class="g-stat-box__val" style="color:var(--gold);">' + STATE.bestFloor + '</div><div class="g-stat-box__label">BEST EVER</div></div>';
-  h += '<div class="g-stat-box"><div class="g-stat-box__val" style="color:var(--cyan);">1</div><div class="g-stat-box__label">MANA COST</div></div>';
   h += '</div>';
 
   h += '<button class="g-btn g-btn--start" onclick="startRun()"' + (STATE.fighting ? ' disabled' : '') + '>';
-  h += STATE.fighting ? '&#x23F3; STARTING...' : '&#x2694;&#xFE0F; BEGIN GAUNTLET RUN (1 MANA)';
+  h += STATE.fighting ? '&#x23F3; STARTING...' : '&#x2694;&#xFE0F; BEGIN GAUNTLET RUN';
   h += '</button>';
 
   h += '<div class="g-rules">';
   h += '<div class="g-rules__title">HOW IT WORKS</div>';
   h += '<div class="g-rules__text">';
-  h += '1. Pay 1 mana to enter<br>';
-  h += '2. Pick a card for each floor<br>';
-  h += '3. Your Nine fights an AI enemy<br>';
-  h += '4. HP carries between floors (+10% heal per clear)<br>';
-  h += '5. Cards are NOT consumed (no durability cost)<br>';
-  h += '6. Floor 5: mana refund &#x2022; Floor 10: bonus pack &#x2022; Floor 15: grand prize';
+  h += '1. Pick a card for each floor<br>';
+  h += '2. Your Nine fights an AI enemy<br>';
+  h += '3. HP carries between floors (+10% heal per clear)<br>';
+  h += '4. Cards are NOT consumed (no sharpness cost)<br>';
+  h += '5. Floor 5: bonus reward &#x2022; Floor 10: bonus pack &#x2022; Floor 15: grand prize';
   h += '</div></div>';
   return h;
 }
@@ -507,7 +505,7 @@ function renderCardPicker() {
       house: c.spell_house || (c.spell && c.spell.house) || c.house || 'universal',
       spell_type: c.spell_type || (c.spell && c.spell.spell_type) || c.type || 'attack',
       rarity: c.rarity || 'common',
-      mana_cost: c.mana_cost || (c.spell && c.spell.mana_cost) || 1,
+      sharpness: c.sharpness ?? 100,
       base_atk: c.base_atk || (c.spell && c.spell.base_atk) || 0,
       base_hp: c.base_hp || (c.spell && c.spell.base_hp) || 0,
       base_spd: c.base_spd || (c.spell && c.spell.base_spd) || 0,
@@ -656,7 +654,7 @@ function renderTower() {
     if (isCurrent) {
       out += '<span class="tower-floor__badge" style="background:rgba(212,166,75,0.1);border:1px solid rgba(212,166,75,0.2);color:var(--gold);">NEXT &#x2192;</span>';
     } else if (t.f === 5 || t.f === 10 || t.f === 15) {
-      var lbl = t.f === 5 ? '&#x1F4A7; MANA' : t.f === 10 ? '&#x1F381; PACK' : '&#x1F451; BOSS';
+      var lbl = t.f === 5 ? '&#x2B50; BONUS' : t.f === 10 ? '&#x1F381; PACK' : '&#x1F451; BOSS';
       out += '<span class="tower-floor__badge" style="background:rgba(176,136,232,0.08);border:1px solid rgba(176,136,232,0.15);color:var(--purple);">' + lbl + '</span>';
     }
 

@@ -295,8 +295,6 @@ function buildCardV4(s, options) {
     +   '<div class="sc-rainbow"></div>'
     +   '<canvas class="sc-particles"></canvas>'
     +   '<div class="sc-glow"></div>'
-    +   (sharpPct < 50 ? '<div class="sc-degrade-overlay"></div>' : '')
-    +   (sharpPct === 100 ? '<div class="sc-pristine-gleam"></div>' : '')
     + '</div>'
     + crestWM
 
@@ -317,6 +315,10 @@ function buildCardV4(s, options) {
       + '<div class="sc-bottom house-name-' + s.house + '" style="color:' + hc + '">' + houseName.toUpperCase() + '</div>'
       + '</div>'
     + '</div>'
+
+    // Sharpness overlays (full card, above everything)
+    + (sharpPct < 50 ? '<div class="sc-degrade-overlay"></div>' : '')
+    + (sharpPct === 100 ? '<div class="sc-pristine-gleam"></div>' : '')
 
   + '</div>';
 }

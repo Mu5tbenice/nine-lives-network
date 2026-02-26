@@ -57,17 +57,7 @@
     .bazaar-header .sub {
       font-family: monospace; font-size: 10px; color: var(--faint); margin-top: 2px;
     }
-    .mana-badge {
-      font-family: monospace; font-size: 11px;
-      padding: 6px 14px; border-radius: 8px;
-      background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); color: var(--cyan);
-      display: flex; align-items: center; gap: 5;
-    }
-    .mana-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-    }
-    .mana-dot.full { background: linear-gradient(180deg, #00D4FF, #0088aa); }
-    .mana-dot.empty { background: rgba(255,255,255,0.06); }
+    /* V5: Mana badge removed */
 
     /* ═══ TABS ═══ */
     .tab-bar {
@@ -564,7 +554,7 @@
         <h1>THE BAZAAR</h1>
         <div class="sub" id="header-sub">Loading...</div>
       </div>
-      <div class="mana-badge" id="mana-badge">— mana</div>
+      <!-- V5: mana badge removed -->
     </div>
 
     <!-- Tabs -->
@@ -1145,7 +1135,6 @@
           house: card.house,
           spell_type: card.type,
           rarity: card.rarity,
-          mana_cost: card.cost,
           base_atk: card.base_atk,
           base_hp: card.base_hp,
           base_spd: card.base_spd || 0,

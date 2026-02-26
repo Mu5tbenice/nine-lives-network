@@ -20,12 +20,7 @@
     .nh-dot{width:8px;height:8px;border-radius:50%;background:#6acd8a;animation:pulse 2s infinite}
     .nh-act{font-family:'JetBrains Mono',monospace;font-size:10px;color:#6acd8a}
 
-    /* ── MANA ── */
-    .nm{padding:0 16px 10px;display:flex;align-items:center;gap:8px}
-    .nm-o{width:12px;height:12px;border-radius:50%;border:1px solid rgba(0,212,255,0.15)}
-    .nm-o.on{background:linear-gradient(180deg,#00D4FF,#0088aa);border-color:rgba(0,212,255,0.4);box-shadow:0 0 6px rgba(0,212,255,0.2)}
-    .nm-t{font-family:'JetBrains Mono',monospace;font-size:10px;color:#554E68}
-    .nm-n{font-family:'JetBrains Mono',monospace;font-size:10px;color:#00D4FF}
+    /* V5: Mana removed */
 
     /* ── TABS ── */
     .nt{display:flex;padding:0 16px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:12px}
@@ -309,7 +304,7 @@
   // ═══════════════════════════════════════
   // STATE
   // ═══════════════════════════════════════
-  var S={tab:'zones',zones:[],sel:null,mana:{cur:5,max:10,next:'42m'},loading:true,battle:null};
+  var S={tab:'zones',zones:[],sel:null,loading:true,battle:null};
 
   function tok(){try{var s=localStorage.getItem('supabase_session');if(s)return JSON.parse(s).access_token;}catch(e){}try{return localStorage.getItem('auth_token');}catch(e){}return null;}
   function api(url){var t=tok();var h={'Content-Type':'application/json'};if(t)h['Authorization']='Bearer '+t;
@@ -317,9 +312,8 @@
 
   function load(){
     S.loading=true;render();
-    Promise.all([api('/api/zones').catch(function(){return[];}),api('/api/mana').catch(function(){return null;})]).then(function(r){
-      S.zones=(r[0]||[]).filter(function(z){return z.is_active!==false&&z.name!=='TEST'}).map(adaptZone);
-      if(r[1])S.mana={cur:r[1].current||r[1].mana||5,max:r[1].max||10,next:r[1].next_in||'42m'};
+    api('/api/zones').catch(function(){return[];}).then(function(r){
+      S.zones=(r||[]).filter(function(z){return z.is_active!==false&&z.name!=='TEST'}).map(adaptZone);
       S.loading=false;render();
     });
   }
@@ -334,15 +328,11 @@
   function render(){
     var app=document.getElementById('app');
     if(S.sel){renderBattle();return;}
-    app.innerHTML=headerHTML()+manaHTML()+tabsHTML()+contentHTML();bind();
+    app.innerHTML=headerHTML()+tabsHTML()+contentHTML();bind();
   }
   function headerHTML(){
     var ac=S.zones.filter(function(z){return z.contested||z.objective}).length;
     return'<div class="nh"><div><div class="nh-t">NETHARA</div><div class="nh-s">Season 1 · '+S.zones.length+' Zones</div></div><div class="nh-live"><div class="nh-dot"></div><span class="nh-act">'+ac+' Active</span></div></div>';
-  }
-  function manaHTML(){
-    var o='';for(var i=1;i<=S.mana.max;i++)o+='<div class="nm-o'+(i<=S.mana.cur?' on':'')+'"></div>';
-    return'<div class="nm">'+o+'<span class="nm-t">'+S.mana.cur+'/'+S.mana.max+' Mana</span><span class="nm-n">Next: '+S.mana.next+'</span></div>';
   }
   function tabsHTML(){return'<div class="nt"><button class="nt-b'+(S.tab==='zones'?' on':'')+'" data-tab="zones">🔥 Hot Zones</button><button class="nt-b'+(S.tab==='guild'?' on':'')+'" data-tab="guild">👥 Guild</button></div>';}
   function contentHTML(){
