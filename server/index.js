@@ -182,6 +182,14 @@ try {
   console.error("❌ Failed to load chronicle routes:", e.message);
 }
 
+try {
+  const dropTicketRoutes = require("./routes/drop-tickets");
+  app.use("/api/drop-tickets", dropTicketRoutes);
+  console.log("✅ Drop Ticket routes loaded");
+} catch (e) {
+  console.error("❌ Failed to load drop ticket routes:", e.message);
+}
+
 // Sorting Hat
 try {
   const sortingHatRoutes = require("./routes/sortingHat");

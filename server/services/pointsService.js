@@ -21,6 +21,12 @@ const supabaseAdmin = createClient(
 // Also need the regular client for reads
 const supabase = require('../config/supabase');
 
+// V5: Drop Ticket integration — earn tickets when Chronicle awards points
+let dropTicketEngine = null;
+try { dropTicketEngine = require('./dropTicketEngine'); } catch (e) { /* not loaded yet */ }
+
+const CHRONICLE_SOURCES = ['chronicle_reply', 'chronicle_named', 'chronicle_wildcard'];
+
 /**
  * Add points to a player. This is the ONLY function that should
  * ever modify seasonal_points or lifetime_points.
@@ -81,6 +87,15 @@ async function addPoints(playerId, amount, source, description) {
         });
     } catch (logErr) {
       // point_log table might not exist yet — that's OK
+    }
+
+    // Step 4: V5 — Auto-earn Drop Ticket for Chronicle participation
+    if (dropTicketEngine && CHRONICLE_SOURCES.includes(source)) {
+      try {
+        await dropTicketEngine.earnTicket(playerId, source);
+      } catch (ticketErr) {
+        // Non-blocking — don't fail points award if tickets fail
+      }
     }
 
     return { success: true, new_seasonal: newSeasonal, new_lifetime: newLifetime };

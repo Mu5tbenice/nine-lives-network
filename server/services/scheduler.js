@@ -4,28 +4,34 @@
 // ═══════════════════════════════════════════════════════
 
 const cron = require('node-cron');
-const territoryControl = require('./territoryControl');
-const activityDecay = require('./activityDecay');
-const narrativeEngine = require('./narrativeEngine');
-const effectEngine = require('./effectEngine');
-const packSystem = require('./packSystem');
-const supabase = require('../config/supabase');
 
-// V3 services (optional — don't crash if missing)
+// All imports are optional — scheduler should NEVER crash on missing modules
+let territoryControl = null;
+let activityDecay = null;
+let narrativeEngine = null;
+let effectEngine = null;
+let packSystem = null;
+let supabase = null;
 let manaRegen = null;
 let nineSystem = null;
 let combatEngine = null;
 let bossEngine = null;
-try { manaRegen = require('./manaRegen'); } catch (e) { console.log('⚠️ manaRegen not loaded'); }
-try { nineSystem = require('./nineSystem'); } catch (e) { console.log('⚠️ nineSystem not loaded'); }
-try { combatEngine = require('./combatEngine'); } catch (e) { console.log('⚠️ combatEngine not loaded'); }
-try { bossEngine = require('./bossEngine'); } catch (e) { console.log('⚠️ bossEngine not loaded'); }
-
-// Optional modules (don't crash if missing)
 let twitterBot = null;
 let nermBot = null;
+let dropTicketEngine = null;
+
+try { territoryControl = require('./territoryControl'); } catch (e) { console.log('⚠️ territoryControl not loaded'); }
+try { activityDecay = require('./activityDecay'); } catch (e) { console.log('⚠️ activityDecay not loaded'); }
+try { narrativeEngine = require('./narrativeEngine'); } catch (e) { console.log('⚠️ narrativeEngine not loaded'); }
+try { effectEngine = require('./effectEngine'); } catch (e) { console.log('⚠️ effectEngine not loaded'); }
+try { packSystem = require('./packSystem'); } catch (e) { console.log('⚠️ packSystem not loaded'); }
+try { supabase = require('../config/supabase'); } catch (e) { console.log('⚠️ supabase not loaded'); }
+try { combatEngine = require('./combatEngine'); } catch (e) { console.log('⚠️ combatEngine not loaded'); }
+try { bossEngine = require('./bossEngine'); } catch (e) { console.log('⚠️ bossEngine not loaded'); }
+try { nineSystem = require('./nineSystem'); } catch (e) { console.log('⚠️ nineSystem not loaded'); }
 try { twitterBot = require('./twitterBot'); } catch (e) { console.log('⚠️ twitterBot not loaded'); }
 try { nermBot = require('./nermBot'); } catch (e) { console.log('⚠️ nermBot not loaded'); }
+try { dropTicketEngine = require('./dropTicketEngine'); } catch (e) { console.log('⚠️ dropTicketEngine not loaded'); }
 
 let jobsInitialized = false;
 const jobLog = {};
@@ -49,13 +55,15 @@ function initializeScheduledJobs() {
     console.log(`[${ts()}] 🏦 MIDNIGHT BANKING`);
     logJob('midnight_banking');
     try {
-      const result = await territoryControl.midnightBanking();
-      console.log('✅ Midnight banking complete:', JSON.stringify(result));
+      if (territoryControl) {
+        const result = await territoryControl.midnightBanking();
+        console.log('✅ Midnight banking complete:', JSON.stringify(result));
+      }
     } catch (e) {
       console.error('❌ Midnight banking error:', e.message);
     }
 
-    // V3: Heal all Nines to full HP at midnight
+    // Heal all Nines to full HP at midnight
     try {
       if (nineSystem) {
         await nineSystem.midnightResetAllNines();
@@ -64,21 +72,23 @@ function initializeScheduledJobs() {
     } catch (e) {
       console.error('❌ Nine midnight reset error:', e.message);
     }
+
+    // V5: Process Drop Tickets at midnight
+    try {
+      if (dropTicketEngine) {
+        console.log(`[${ts()}] 🎫 Processing Drop Tickets...`);
+        const result = await dropTicketEngine.processAllTickets();
+        console.log(`✅ Drop Tickets processed: ${result.processed} players`);
+        logJob('drop_ticket_process');
+      }
+    } catch (e) {
+      console.error('❌ Drop Ticket processing error:', e.message);
+    }
   });
 
   // ════════════════════════════════
-  // V3: MANA REGENERATION — every 5 min
+  // V5: Mana removed — regen job disabled
   // ════════════════════════════════
-  cron.schedule('*/5 * * * *', async () => {
-    try {
-      if (manaRegen) {
-        await manaRegen.regenMana();
-        logJob('mana_regen');
-      }
-    } catch (e) {
-      console.error('❌ Mana regen error:', e.message);
-    }
-  });
 
   // ════════════════════════════════
   // V3: COMBAT CYCLE — every 15 min
@@ -136,8 +146,10 @@ function initializeScheduledJobs() {
     console.log("[" + ts() + "] Processing card upgrades");
     logJob('card_upgrades');
     try {
-      const result = await packSystem.processUpgrades();
-      console.log('✅ Card upgrades:', result.upgraded, 'processed');
+      if (packSystem) {
+        const result = await packSystem.processUpgrades();
+        console.log('✅ Card upgrades:', result.upgraded, 'processed');
+      }
     } catch (e) {
       console.error('❌ Card upgrade error:', e.message);
     }
@@ -150,8 +162,10 @@ function initializeScheduledJobs() {
     console.log(`[${ts()}] 📉 Activity decay`);
     logJob('activity_decay');
     try {
-      const result = await activityDecay.processActivityDecay();
-      console.log('✅ Activity decay:', result);
+      if (activityDecay) {
+        const result = await activityDecay.processActivityDecay();
+        console.log('✅ Activity decay:', result);
+      }
     } catch (e) {
       console.error('❌ Activity decay:', e.message);
     }
@@ -166,8 +180,8 @@ function initializeScheduledJobs() {
     console.log(`[${ts()}] 📜 Chronicle Act 1: The Call`);
     logJob('chronicle_act1');
     try {
-      await territoryControl.setRandomObjective();
-      await narrativeEngine.postAct1();
+      if (territoryControl) await territoryControl.setRandomObjective();
+      if (narrativeEngine) await narrativeEngine.postAct1();
     } catch (e) { console.error('❌ Chronicle Act 1:', e.message); }
   });
 
@@ -176,7 +190,7 @@ function initializeScheduledJobs() {
     console.log(`[${ts()}] 📜 Chronicle Act 2: The March`);
     logJob('chronicle_act2');
     try {
-      await narrativeEngine.postAct2();
+      if (narrativeEngine) await narrativeEngine.postAct2();
     } catch (e) { console.error('❌ Chronicle Act 2:', e.message); }
   });
 
@@ -185,7 +199,7 @@ function initializeScheduledJobs() {
     console.log(`[${ts()}] 📜 Chronicle Act 3: The Storm`);
     logJob('chronicle_act3');
     try {
-      await narrativeEngine.postAct3();
+      if (narrativeEngine) await narrativeEngine.postAct3();
     } catch (e) { console.error('❌ Chronicle Act 3:', e.message); }
   });
 
@@ -194,14 +208,14 @@ function initializeScheduledJobs() {
     console.log(`[${ts()}] 📜 Chronicle Act 4: The Reckoning`);
     logJob('chronicle_act4');
     try {
-      await narrativeEngine.postAct4();
+      if (narrativeEngine) await narrativeEngine.postAct4();
     } catch (e) { console.error('❌ Chronicle Act 4:', e.message); }
   });
 
   // Reply scraping — every 10 min during story hours (8AM-9PM UTC)
   cron.schedule('*/10 8-21 * * *', async () => {
     try {
-      await narrativeEngine.periodicScrape();
+      if (narrativeEngine) await narrativeEngine.periodicScrape();
       logJob('chronicle_scrape');
     } catch (e) { console.error('❌ Chronicle scrape:', e.message); }
   });
@@ -244,8 +258,10 @@ function initializeScheduledJobs() {
 
   cron.schedule('*/5 * * * *', async () => {
     try {
-      const updated = await territoryControl.updateAllZoneControl();
-      if (updated > 0) logJob('zone_control_update');
+      if (territoryControl) {
+        const updated = await territoryControl.updateAllZoneControl();
+        if (updated > 0) logJob('zone_control_update');
+      }
     } catch (e) { console.error('❌ Zone control update:', e.message); }
   });
 
@@ -284,10 +300,10 @@ function initializeScheduledJobs() {
   console.log('');
   console.log('✅ Scheduler initialized:');
   console.log('');
-  console.log('🏦 Midnight:  00:00 banking + heal | 00:05 upgrades | 01:30 decay');
-  console.log('💧 Mana:      */5 regen');
+  console.log('🏦 Midnight:  00:00 banking + heal + drop tickets | 00:05 upgrades | 01:30 decay');
   console.log('⚔️  Combat:    */15 zone cycles + boss cycles');
   console.log('👑 Boss:      Mon 00:30 spawn');
+  console.log('🎫 Tickets:   Midnight auto-roll (earned from Chronicle + login)');
   console.log('');
   console.log('📜 Chronicle:');
   console.log('   08:05 — Act 1: The Call (pre-written hook)');
