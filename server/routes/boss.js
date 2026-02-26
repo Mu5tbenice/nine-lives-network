@@ -7,6 +7,26 @@ const express = require('express');
 const router = express.Router();
 const bossEngine = require('../services/bossEngine');
 const { addXP, XP_REWARDS } = require('../services/xp-engine');
+const supabase = require('../config/supabase');
+
+// Helper: drop an item for a player
+async function dropItem(playerId, source) {
+  try {
+    const roll = Math.random() * 100;
+    let rarity;
+    if (roll < 30) rarity = 'common';
+    else if (roll < 60) rarity = 'uncommon';
+    else if (roll < 85) rarity = 'rare';
+    else if (roll < 96) rarity = 'epic';
+    else rarity = 'legendary';
+
+    const { data: candidates } = await supabase.from('items').select('id, name, rarity, slot').eq('rarity', rarity).eq('is_active', true);
+    if (!candidates || candidates.length === 0) return null;
+    const item = candidates[Math.floor(Math.random() * candidates.length)];
+    await supabase.from('player_items').insert({ player_id: parseInt(playerId), item_id: item.id, source });
+    return item;
+  } catch (e) { return null; }
+}
 
 // GET /api/boss/status — Current boss HP, phase, top contributors
 router.get('/status', async (req, res) => {
@@ -30,6 +50,12 @@ router.post('/deploy', async (req, res) => {
     // V5: Award XP for boss participation
     if (result && !result.error) {
       await addXP(parseInt(player_id), XP_REWARDS.boss_cycle, 'boss_deploy').catch(() => {});
+
+      // V5: 15% chance of item drop per boss participation
+      if (Math.random() < 0.15) {
+        const droppedItem = await dropItem(player_id, 'boss');
+        if (droppedItem) result.item_drop = droppedItem;
+      }
     }
 
     res.json(result);

@@ -226,4 +226,119 @@ router.post('/grant-starters', express.json(), async (req, res) => {
   }
 });
 
+// ── POST /api/items/drop — Award a random item to player ──
+// Body: { player_id, source, slot (optional) }
+router.post('/drop', express.json(), async (req, res) => {
+  try {
+    const { player_id, source, slot } = req.body;
+    if (!player_id) return res.status(400).json({ error: 'player_id required' });
+
+    // Roll rarity: common 40%, uncommon 30%, rare 20%, epic 8%, legendary 2%
+    const roll = Math.random() * 100;
+    let rarity;
+    if (roll < 40) rarity = 'common';
+    else if (roll < 70) rarity = 'uncommon';
+    else if (roll < 90) rarity = 'rare';
+    else if (roll < 98) rarity = 'epic';
+    else rarity = 'legendary';
+
+    // Pick a random item of that rarity (optionally from specific slot)
+    let query = supabase.from('items').select('*').eq('rarity', rarity).eq('is_active', true);
+    if (slot) query = query.eq('slot', slot);
+    const { data: candidates } = await query;
+
+    if (!candidates || candidates.length === 0) {
+      // Fallback to any rarity
+      const { data: fallback } = await supabase.from('items').select('*').eq('is_active', true);
+      if (!fallback || fallback.length === 0) return res.status(500).json({ error: 'No items available' });
+      const item = fallback[Math.floor(Math.random() * fallback.length)];
+      const { data: granted } = await supabase.from('player_items').insert({ player_id: parseInt(player_id), item_id: item.id, source: source || 'drop' }).select('*, item:item_id(*)').single();
+      return res.json({ success: true, item, player_item: granted });
+    }
+
+    const item = candidates[Math.floor(Math.random() * candidates.length)];
+    const { data: granted, error } = await supabase
+      .from('player_items')
+      .insert({ player_id: parseInt(player_id), item_id: item.id, source: source || 'drop' })
+      .select('*, item:item_id(*)')
+      .single();
+
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ success: true, item, player_item: granted, rarity });
+
+  } catch (err) {
+    console.error('Item drop error:', err);
+    res.status(500).json({ error: 'Failed to drop item' });
+  }
+});
+
+// ── POST /api/items/craft — Sacrifice 5 cards for 1 random item ──
+// Body: { player_id, card_ids: [id, id, id, id, id] }
+router.post('/craft', express.json(), async (req, res) => {
+  try {
+    const { player_id, card_ids } = req.body;
+    if (!player_id || !card_ids || card_ids.length < 5) {
+      return res.status(400).json({ error: 'player_id and 5 card_ids required' });
+    }
+
+    // Verify player owns all 5 cards and they're not deployed
+    const { data: cards, error: cardErr } = await supabase
+      .from('player_cards')
+      .select('id')
+      .eq('player_id', player_id)
+      .in('id', card_ids.slice(0, 5));
+
+    if (!cards || cards.length < 5) {
+      return res.status(400).json({ error: 'You need 5 owned cards to craft' });
+    }
+
+    // Check none are deployed
+    const { data: deployed } = await supabase
+      .from('zone_card_slots')
+      .select('card_id')
+      .in('card_id', card_ids.slice(0, 5))
+      .eq('is_active', true);
+
+    if (deployed && deployed.length > 0) {
+      return res.status(400).json({ error: 'Cannot sacrifice deployed cards. Withdraw them first.' });
+    }
+
+    // Delete the 5 cards
+    const { error: delErr } = await supabase
+      .from('player_cards')
+      .delete()
+      .in('id', card_ids.slice(0, 5));
+
+    if (delErr) return res.status(500).json({ error: 'Failed to consume cards' });
+
+    // Roll a random item (better odds than normal drop)
+    const roll = Math.random() * 100;
+    let rarity;
+    if (roll < 25) rarity = 'common';
+    else if (roll < 55) rarity = 'uncommon';
+    else if (roll < 80) rarity = 'rare';
+    else if (roll < 95) rarity = 'epic';
+    else rarity = 'legendary';
+
+    const { data: candidates } = await supabase.from('items').select('*').eq('rarity', rarity).eq('is_active', true);
+    const item = candidates && candidates.length > 0
+      ? candidates[Math.floor(Math.random() * candidates.length)]
+      : null;
+
+    if (!item) return res.status(500).json({ error: 'No items available for craft' });
+
+    const { data: granted } = await supabase
+      .from('player_items')
+      .insert({ player_id: parseInt(player_id), item_id: item.id, source: 'craft' })
+      .select('*, item:item_id(*)')
+      .single();
+
+    res.json({ success: true, item, player_item: granted, rarity, cards_consumed: 5 });
+
+  } catch (err) {
+    console.error('Item craft error:', err);
+    res.status(500).json({ error: 'Failed to craft item' });
+  }
+});
+
 module.exports = router;

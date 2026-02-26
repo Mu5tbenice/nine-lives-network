@@ -56,18 +56,11 @@ const ZONE_UNLOCKS = {
 };
 
 // ═══════════════════════════════════════
-// ITEM SLOT UNLOCK SCHEDULE
+// ITEM SLOTS — All open from level 1
+// Trinket slots (future) will be level-gated
 // ═══════════════════════════════════════
-const ITEM_SLOT_UNLOCKS = {
-  1: "weapon",
-  3: "robe",
-  5: "hat",
-  8: "accessory",
-  10: "eyes",
-  16: "fur",
-  20: "background",
-  25: "expression",
-};
+const ITEM_SLOTS = ["weapon", "outfit", "headwear", "expression", "fur", "familiar"];
+const ITEM_SLOT_UNLOCKS = {}; // Reserved for future trinket slots
 
 // ═══════════════════════════════════════
 // XP REWARD VALUES
@@ -127,42 +120,31 @@ function getMaxZones(level) {
 }
 
 /**
- * Get unlocked item slots at a given level
+ * Get unlocked item slots at a given level (all open from level 1)
  */
 function getUnlockedSlots(level) {
-  const slots = [];
-  for (const [reqLevel, slot] of Object.entries(ITEM_SLOT_UNLOCKS)) {
-    if (level >= parseInt(reqLevel)) {
-      slots.push({ slot, unlockedAt: parseInt(reqLevel) });
-    }
-  }
-  return slots;
+  return ITEM_SLOTS.map(function(slot) {
+    return { slot, unlockedAt: 1 };
+  });
 }
 
 /**
- * Get all unlocks info for a level (zones, slots, next unlock)
+ * Get all unlocks info for a level (zones + next unlock)
  */
 function getUnlocks(level) {
   const maxZones = getMaxZones(level);
   const slots = getUnlockedSlots(level);
 
-  // Find next unlock
+  // Find next zone unlock
   let nextUnlock = null;
-  const allUnlockLevels = [
-    ...Object.keys(ZONE_UNLOCKS).map(Number),
-    ...Object.keys(ITEM_SLOT_UNLOCKS).map(Number),
-  ].sort((a, b) => a - b);
+  const zoneLevels = Object.keys(ZONE_UNLOCKS).map(Number).sort((a, b) => a - b);
 
-  for (const ul of allUnlockLevels) {
+  for (const ul of zoneLevels) {
     if (ul > level) {
-      const isZone = ZONE_UNLOCKS[ul] !== undefined;
-      const isSlot = ITEM_SLOT_UNLOCKS[ul] !== undefined;
       nextUnlock = {
         level: ul,
-        type: isZone ? "zone_slot" : "item_slot",
-        description: isZone
-          ? `Zone slot ${ZONE_UNLOCKS[ul]} unlocked`
-          : `${ITEM_SLOT_UNLOCKS[ul]} slot unlocked`,
+        type: "zone_slot",
+        description: `Zone slot ${ZONE_UNLOCKS[ul]} unlocked`,
       };
       break;
     }
@@ -239,19 +221,35 @@ async function addXP(playerId, amount, source = "unknown") {
             description: `Zone slot ${ZONE_UNLOCKS[l]} unlocked!`,
           });
         }
-        if (ITEM_SLOT_UNLOCKS[l]) {
-          unlocksGained.push({
-            type: "item_slot",
-            level: l,
-            slot: ITEM_SLOT_UNLOCKS[l],
-            description: `${ITEM_SLOT_UNLOCKS[l]} item slot unlocked!`,
-          });
-        }
       }
 
       console.log(
         `[XP] ${playerId} leveled up! ${previousLevel} → ${newLevel} (+${amount} XP from ${source})`
       );
+
+      // V5: Award a random item on level-up
+      try {
+        const roll = Math.random() * 100;
+        let rarity;
+        if (roll < 30) rarity = 'common';
+        else if (roll < 60) rarity = 'uncommon';
+        else if (roll < 85) rarity = 'rare';
+        else if (roll < 96) rarity = 'epic';
+        else rarity = 'legendary';
+
+        const { data: candidates } = await supabaseAdmin.from('items').select('id, name, rarity, slot').eq('rarity', rarity).eq('is_active', true);
+        if (candidates && candidates.length > 0) {
+          const item = candidates[Math.floor(Math.random() * candidates.length)];
+          await supabaseAdmin.from('player_items').insert({ player_id: playerId, item_id: item.id, source: 'level_up' });
+          unlocksGained.push({
+            type: 'item_drop',
+            item: item,
+            description: `Level up reward: ${item.name} (${item.rarity})!`,
+          });
+        }
+      } catch (dropErr) {
+        console.error('[XP] Level-up item drop failed:', dropErr.message);
+      }
     }
 
     return {
@@ -276,5 +274,6 @@ module.exports = {
   getUnlocks,
   XP_REWARDS,
   XP_CURVE,
+  ITEM_SLOTS,
   MAX_LEVEL,
 };

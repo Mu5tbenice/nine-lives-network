@@ -18,12 +18,44 @@ const supabase = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
 const { useCharge } = require('./cardDurability');
 const { addPoints } = require('./pointsService');
-const { addXP, XP_REWARDS } = require('./xp-engine');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+// ── V5: Fetch equipped item stat bonuses for a player ──
+async function getEquippedItemBonuses(playerId) {
+  try {
+    const { data: nine } = await supabase
+      .from('player_nines')
+      .select('equipped_fur, equipped_expression, equipped_headwear, equipped_outfit, equipped_weapon, equipped_familiar')
+      .eq('player_id', playerId)
+      .single();
+    if (!nine) return { atk: 0, hp: 0, spd: 0, def: 0, luck: 0 };
+
+    const slugs = [
+      nine.equipped_fur, nine.equipped_expression, nine.equipped_headwear,
+      nine.equipped_outfit, nine.equipped_weapon, nine.equipped_familiar
+    ].filter(Boolean);
+
+    if (slugs.length === 0) return { atk: 0, hp: 0, spd: 0, def: 0, luck: 0 };
+
+    const { data: items } = await supabase.from('items').select('bonus_atk, bonus_hp, bonus_spd, bonus_def, bonus_luck').in('slug', slugs);
+    if (!items) return { atk: 0, hp: 0, spd: 0, def: 0, luck: 0 };
+
+    return items.reduce((sum, item) => ({
+      atk: sum.atk + (item.bonus_atk || 0),
+      hp: sum.hp + (item.bonus_hp || 0),
+      spd: sum.spd + (item.bonus_spd || 0),
+      def: sum.def + (item.bonus_def || 0),
+      luck: sum.luck + (item.bonus_luck || 0),
+    }), { atk: 0, hp: 0, spd: 0, def: 0, luck: 0 });
+  } catch (err) {
+    console.error('[Combat] Item bonus fetch error:', err.message);
+    return { atk: 0, hp: 0, spd: 0, def: 0, luck: 0 };
+  }
+}
 
 // ── POINTS VALUES (from Game Design V4, Section 19) ──
 const COMBAT_POINTS = {
@@ -161,8 +193,9 @@ async function processZoneCombat(zoneId, regionBonuses) {
     return { knockouts: 0, points_awarded: 0 };
   }
 
-  // Build combatant objects
-  const combatants = deployments.map(d => {
+  // Build combatant objects (async for item bonus lookup)
+  const combatants = [];
+  for (const d of deployments) {
     const activeSlot = (d.card_slots || []).find(s => s.is_active);
     const card = activeSlot?.card || null;
     const spell = card?.spell || null;
@@ -172,6 +205,8 @@ async function processZoneCombat(zoneId, regionBonuses) {
     let hp = d.current_hp;
     let maxHp = d.max_hp || d.nine?.base_hp || 20;
     let spd = d.nine?.base_spd || 5;
+    let def = 0;
+    let luck = 0;
 
     // Add card stats
     if (spell) {
@@ -179,6 +214,14 @@ async function processZoneCombat(zoneId, regionBonuses) {
       hp = hp; // Card HP doesn't add to current HP, it adds to max
       maxHp += spell.base_hp || 0;
     }
+
+    // V5: Add equipped item stat bonuses
+    const itemBonus = await getEquippedItemBonuses(d.player_id);
+    atk += itemBonus.atk;
+    maxHp += itemBonus.hp;
+    spd += itemBonus.spd;
+    def += itemBonus.def;
+    luck += itemBonus.luck;
 
     // Parse card effects
     let effects = [];
@@ -189,7 +232,7 @@ async function processZoneCombat(zoneId, regionBonuses) {
     // Lone Wolf bonus: solo players get 1.5x ATK
     const isLoneWolf = (d.guild_tag || "").startsWith("@");
     if (isLoneWolf) atk = Math.round(atk * 1.5);
-    return {
+    combatants.push({
       deployment_id: d.id,
       player_id: d.player_id,
       nine_id: d.nine_id,
@@ -201,6 +244,8 @@ async function processZoneCombat(zoneId, regionBonuses) {
       hp,
       maxHp,
       spd,
+      def,
+      luck,
       effects,
       card_id: activeSlot?.card_id || null,
       card_name: card?.spell_name || null,
@@ -210,8 +255,8 @@ async function processZoneCombat(zoneId, regionBonuses) {
       damage_taken: 0,
       healing_done: 0,
       knocked_out: false,
-    };
-  });
+    });
+  }
 
   // Check if there are multiple guilds (combat only happens with opposition)
   const guilds = [...new Set(combatants.map(c => c.guild_tag))];
@@ -253,6 +298,9 @@ async function processZoneCombat(zoneId, regionBonuses) {
           // Target lowest HP enemy
           const target = enemies.reduce((min, e) => e.hp < min.hp ? e : min, enemies[0]);
           let dmg = result.damage;
+
+          // V5: DEF reduces effect damage too
+          if (target.def > 0) dmg = Math.max(1, dmg - Math.floor(target.def / 2));
 
           // Check ANCHOR damage reduction
           if (target.statuses.includes('anchored')) dmg = Math.max(1, dmg - 2);
@@ -340,11 +388,18 @@ async function processZoneCombat(zoneId, regionBonuses) {
 
     let damage = c.atk;
 
-    // Crit check
+    // Crit check (base from crit_ready status, boosted by LUCK)
+    const luckCritChance = (c.luck || 0) * 0.03; // 3% per LUCK point
     if (c.statuses.includes('crit_ready') && Math.random() < 0.5) {
       damage = Math.floor(damage * 1.5);
       combatLog.push({ phase: 'attack', actor: c.twitter_handle, result: 'CRIT!' });
+    } else if (luckCritChance > 0 && Math.random() < luckCritChance) {
+      damage = Math.floor(damage * 1.5);
+      combatLog.push({ phase: 'attack', actor: c.twitter_handle, result: 'LUCKY CRIT!' });
     }
+
+    // V5: DEF reduces incoming damage
+    if (target.def > 0) damage = Math.max(1, damage - target.def);
 
     // ANCHOR reduces damage
     if (target.statuses.includes('anchored')) damage = Math.max(1, damage - 2);
@@ -521,8 +576,6 @@ async function processZoneCombat(zoneId, regionBonuses) {
         const pts = Math.round(COMBAT_POINTS.SURVIVE_CYCLE * mult);
         await addPoints(c.player_id, pts, 'zone_survive', `Survived cycle on zone ${zoneId}`);
         pointsAwarded += pts;
-        // V5: Award XP for surviving
-        await addXP(c.player_id, XP_REWARDS.zone_survive, 'zone_survive');
       }
     }
 
@@ -535,8 +588,6 @@ async function processZoneCombat(zoneId, regionBonuses) {
         const pts = Math.round(COMBAT_POINTS.DEAL_KO * mult);
         await addPoints(topKiller.player_id, pts, 'zone_ko', `KO'd @${ko.twitter_handle} on zone ${zoneId}`);
         pointsAwarded += pts;
-        // V5: Award XP for KO
-        await addXP(topKiller.player_id, XP_REWARDS.zone_ko, 'zone_ko');
       }
     }
 
@@ -547,8 +598,6 @@ async function processZoneCombat(zoneId, regionBonuses) {
         const pts = Math.round(COMBAT_POINTS.GUILD_CONTROLS * mult);
         await addPoints(c.player_id, pts, 'zone_control', `Guild controls zone ${zoneId}`);
         pointsAwarded += pts;
-        // V5: Award XP for zone win (guild controls)
-        await addXP(c.player_id, XP_REWARDS.zone_win, 'zone_control');
       }
     }
   }
