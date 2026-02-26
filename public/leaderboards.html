@@ -74,6 +74,7 @@
     .lb-name{font-family:var(--font-mono);font-size:11px;color:var(--text-bright);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .lb-guild{font-family:var(--font-mono);font-size:8px;color:var(--text-faint);background:rgba(255,255,255,0.04);padding:1px 5px;border-radius:3px}
     .lb-house{font-family:var(--font-mono);font-size:8px;margin-top:2px}
+    .lb-lvl{font-family:var(--font-data);font-size:7px;color:var(--gold);background:rgba(212,166,75,0.12);padding:1px 5px;border-radius:3px;border:1px solid rgba(212,166,75,0.2)}
     .lb-score{text-align:right;min-width:55px}
     .lb-score__val{font-family:var(--font-data);font-size:9px;color:var(--gold)}
     .lb-score__label{font-family:var(--font-mono);font-size:8px;color:var(--text-faint)}
@@ -422,6 +423,19 @@ async function loadAll() {
     data.houses = Array.isArray(hR) ? hR : hR.schools || hR.houses || [];
     data.duels = Array.isArray(dR) ? dR : dR.players || [];
     data.clashes = cR && cR.matches ? cR : { matches: [], standings: [] };
+
+    // V5: Fetch levels for all players and merge
+    try {
+      var playerIds = data.players.map(function(p){ return p.id; });
+      var levelPromises = playerIds.slice(0,50).map(function(id){
+        return fetch('/api/levels/'+id).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});
+      });
+      var levels = await Promise.all(levelPromises);
+      var levelMap = {};
+      levels.forEach(function(l){ if(l && l.player_id) levelMap[l.player_id]=l; });
+      data.players.forEach(function(p){ if(levelMap[p.id]) p._level=levelMap[p.id].level; });
+      data.duels.forEach(function(p){ if(levelMap[p.id]) p._level=levelMap[p.id].level; });
+    } catch(e){ /* levels optional */ }
   } catch (e) {
     console.error('Failed to load leaderboard data:', e);
   }
@@ -461,6 +475,7 @@ function playerRow(p, rank, opts) {
     + '<div class="lb-name-row">'
     + (isMe ? '<span style="color:var(--cyan);font-size:10px">★</span> ' : '')
     + '<span class="lb-name">@' + esc(p.twitter_handle || '???') + '</span>'
+    + (p._level ? '<span class="lb-lvl">Lv.' + p._level + '</span>' : '')
     + (p.guild_tag ? '<span class="lb-guild">' + esc(p.guild_tag) + '</span>' : '')
     + '</div>'
     + '<div class="lb-house" style="color:' + h.color + '">' + h.icon + ' ' + h.name + '</div>'

@@ -150,6 +150,14 @@ try {
 }
 
 try {
+  const levelingRoutes = require("./routes/leveling");
+  app.use("/api/levels", levelingRoutes);
+  console.log("✅ Leveling routes loaded");
+} catch (e) {
+  console.error("❌ Failed to load leveling routes:", e.message);
+}
+
+try {
   const clashesRoutes = require("./routes/clashes");
   app.use("/api/clashes", clashesRoutes);
   console.log("✅ Clashes routes loaded");

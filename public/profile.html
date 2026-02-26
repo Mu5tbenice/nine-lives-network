@@ -46,6 +46,19 @@
     .act-date { font-family:var(--font-data); font-size:6px; color:var(--text-muted); margin-left:auto; }
 
     @media(max-width:600px) { .p-stats { grid-template-columns:repeat(2,1fr); } .arena-stats { grid-template-columns:repeat(2,1fr); } }
+
+    /* V5: XP Bar */
+    .xp-section { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:12px; padding:16px 20px; }
+    .xp-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .xp-level { font-family:var(--font-title); font-size:20px; color:var(--gold); }
+    .xp-level-label { font-family:var(--font-data); font-size:7px; color:var(--text-muted); text-transform:uppercase; }
+    .xp-next { font-family:var(--font-data); font-size:8px; color:var(--text-faint); text-align:right; }
+    .xp-track { height:10px; background:rgba(255,255,255,0.04); border-radius:5px; overflow:hidden; border:1px solid rgba(255,255,255,0.06); }
+    .xp-fill { height:100%; border-radius:5px; background:linear-gradient(90deg, #D4A64B, #E8C675); transition:width 0.6s ease; }
+    .xp-numbers { display:flex; justify-content:space-between; margin-top:6px; }
+    .xp-numbers span { font-family:var(--font-data); font-size:7px; color:var(--text-faint); }
+    .xp-zones { font-family:var(--font-data); font-size:8px; color:var(--text-muted); margin-top:8px; text-align:center; }
+    .xp-zones strong { color:var(--gold); }
   </style>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -97,19 +110,28 @@
         var castsRes=await fetch('/api/players/'+pid+'/casts');
         var casts=await castsRes.json();
 
-        renderProfile(player,Array.isArray(casts)?casts:[]);
+        var levelData=null;
+        try {
+          var lvlRes=await fetch('/api/levels/'+pid);
+          levelData=await lvlRes.json();
+        } catch(e){ /* level data optional */ }
+
+        renderProfile(player,Array.isArray(casts)?casts:[],levelData);
       } catch(e){
         console.error('Profile load error:',e);
         document.getElementById('errorState').style.display='block';
       }
     }
 
-    function renderProfile(player,casts){
+    function renderProfile(player,casts,levelData){
       var house=HOUSES[player.school_id]||HOUSES[1];
       var points=player.seasonal_points||0;
       var lifetime=player.lifetime_points||0;
       var streak=player.streak||0;
       var recentCasts=casts.slice(0,5);
+
+      // V5: Level data
+      var lvl=levelData||{level:1,xp:0,progress_percent:0,xp_into_level:0,xp_needed:50,max_zones:1,max_level:false};
 
       var avatarHTML=player.profile_image
         ?'<img src="'+player.profile_image+'" alt="" class="profile-avatar">'
@@ -156,19 +178,29 @@
         +'</div>'
         +'</div>'
 
-        +'<div class="p-stats fade-up fade-up-1">'
+        +'<div class="xp-section fade-up fade-up-1">'
+        +'<div class="xp-header">'
+        +'<div><div class="xp-level">⚔ Level '+lvl.level+'</div><div class="xp-level-label">Nine Rank</div></div>'
+        +'<div class="xp-next">'+(lvl.max_level?'MAX LEVEL':lvl.xp_needed-lvl.xp_into_level+' XP to level '+(lvl.level+1))+'</div>'
+        +'</div>'
+        +'<div class="xp-track"><div class="xp-fill" style="width:'+lvl.progress_percent+'%"></div></div>'
+        +'<div class="xp-numbers"><span>'+lvl.xp.toLocaleString()+' XP</span><span>'+(lvl.max_level?'MAX':lvl.xp_for_next_level?.toLocaleString()+' XP')+'</span></div>'
+        +'<div class="xp-zones">Zone slots: <strong>'+lvl.max_zones+'</strong></div>'
+        +'</div>'
+
+        +'<div class="p-stats fade-up fade-up-2">'
         +'<div class="p-stat"><div class="p-stat__val">'+points+'</div><div class="p-stat__label">Season Pts</div></div>'
         +'<div class="p-stat"><div class="p-stat__val">'+lifetime+'</div><div class="p-stat__label">Lifetime</div></div>'
         +'<div class="p-stat"><div class="p-stat__val">'+streak+'</div><div class="p-stat__label">Streak</div></div>'
         +'<div class="p-stat"><div class="p-stat__val">'+(player.card_count||'—')+'</div><div class="p-stat__label">Cards</div></div>'
         +'</div>'
 
-        +'<div class="card fade-up fade-up-2">'
+        +'<div class="card fade-up fade-up-3">'
         +'<div class="card-header"><span class="label">🏅 Badges</span></div>'
         +'<div class="badges-grid">'+badgesHTML+'</div>'
         +'</div>'
 
-        +'<div class="card fade-up fade-up-3">'
+        +'<div class="card fade-up fade-up-4">'
         +'<div class="card-header"><span class="label">Recent Activity</span></div>'
         +castsHTML
         +'</div>';

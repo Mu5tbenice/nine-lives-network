@@ -6,6 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const gauntletEngine = require('../services/gauntletEngine');
+const { addXP, XP_REWARDS } = require('../services/xp-engine');
 
 // POST /api/gauntlet/start — Start a run (1 mana)
 // Body: { player_id }
@@ -30,6 +31,12 @@ router.post('/fight', async (req, res) => {
       return res.status(400).json({ error: 'run_id, player_id, and card_id required' });
     }
     const result = await gauntletEngine.fightFloor(run_id, player_id, card_id);
+
+    // V5: Award XP for clearing a floor
+    if (result && result.victory) {
+      await addXP(parseInt(player_id), XP_REWARDS.gauntlet_floor, 'gauntlet_floor').catch(() => {});
+    }
+
     res.json(result);
   } catch (err) {
     console.error('Gauntlet fight error:', err);

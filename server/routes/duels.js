@@ -18,6 +18,7 @@
 const express = require('express');
 const router = express.Router();
 const duelEngine = require('../services/duelEngine');
+const { addXP, XP_REWARDS } = require('../services/xp-engine');
 
 // ── POST /api/duels/challenge ──
 // Body: { challenger_id, opponent_id }
@@ -73,6 +74,14 @@ router.post('/submit-card', async (req, res) => {
       return res.status(400).json({ error: 'duel_id, player_id, and card_id required' });
     }
     const result = await duelEngine.submitCard(duel_id, player_id, card_id);
+
+    // V5: Award XP when duel completes
+    if (result && result.winner_id) {
+      await addXP(result.winner_id, XP_REWARDS.duel_win, 'duel_win').catch(() => {});
+      const loserId = result.winner_id === result.challenger_id ? result.opponent_id : result.challenger_id;
+      if (loserId) await addXP(loserId, XP_REWARDS.duel_lose, 'duel_lose').catch(() => {});
+    }
+
     res.json(result);
   } catch (err) {
     console.error('Submit card error:', err);

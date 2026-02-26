@@ -6,6 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const bossEngine = require('../services/bossEngine');
+const { addXP, XP_REWARDS } = require('../services/xp-engine');
 
 // GET /api/boss/status — Current boss HP, phase, top contributors
 router.get('/status', async (req, res) => {
@@ -25,6 +26,12 @@ router.post('/deploy', async (req, res) => {
     const { player_id, card_id } = req.body;
     if (!player_id) return res.status(400).json({ error: 'player_id required' });
     const result = await bossEngine.deployToBoss(player_id, card_id);
+
+    // V5: Award XP for boss participation
+    if (result && !result.error) {
+      await addXP(parseInt(player_id), XP_REWARDS.boss_cycle, 'boss_deploy').catch(() => {});
+    }
+
     res.json(result);
   } catch (err) {
     console.error('Boss deploy error:', err);

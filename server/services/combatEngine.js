@@ -18,6 +18,7 @@ const supabase = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
 const { useCharge } = require('./cardDurability');
 const { addPoints } = require('./pointsService');
+const { addXP, XP_REWARDS } = require('./xp-engine');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
@@ -520,6 +521,8 @@ async function processZoneCombat(zoneId, regionBonuses) {
         const pts = Math.round(COMBAT_POINTS.SURVIVE_CYCLE * mult);
         await addPoints(c.player_id, pts, 'zone_survive', `Survived cycle on zone ${zoneId}`);
         pointsAwarded += pts;
+        // V5: Award XP for surviving
+        await addXP(c.player_id, XP_REWARDS.zone_survive, 'zone_survive');
       }
     }
 
@@ -532,6 +535,8 @@ async function processZoneCombat(zoneId, regionBonuses) {
         const pts = Math.round(COMBAT_POINTS.DEAL_KO * mult);
         await addPoints(topKiller.player_id, pts, 'zone_ko', `KO'd @${ko.twitter_handle} on zone ${zoneId}`);
         pointsAwarded += pts;
+        // V5: Award XP for KO
+        await addXP(topKiller.player_id, XP_REWARDS.zone_ko, 'zone_ko');
       }
     }
 
@@ -542,6 +547,8 @@ async function processZoneCombat(zoneId, regionBonuses) {
         const pts = Math.round(COMBAT_POINTS.GUILD_CONTROLS * mult);
         await addPoints(c.player_id, pts, 'zone_control', `Guild controls zone ${zoneId}`);
         pointsAwarded += pts;
+        // V5: Award XP for zone win (guild controls)
+        await addXP(c.player_id, XP_REWARDS.zone_win, 'zone_control');
       }
     }
   }
