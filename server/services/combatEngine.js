@@ -80,32 +80,61 @@ const REGION_BONUSES = {
 };
 
 // ── EFFECT HANDLERS ──
-// Each effect returns { damage, heal, status } applied to target/self
+// Each effect returns { damage, heal, status, ... } applied to target/self
 const EFFECT_HANDLERS = {
-  BURN:    (value) => ({ damage: value || 3, type: 'fire' }),
-  POISON:  (value) => ({ damage: value || 2, type: 'poison', ticks: true }),
-  HEAL:    (value) => ({ heal: value || 3 }),
-  WARD:    ()      => ({ status: 'shielded', absorb: 3 }),
-  SILENCE: ()      => ({ status: 'silenced' }),
-  HEX:     ()      => ({ status: 'hexed', atkReduction: 2 }),
-  DRAIN:   (value) => ({ damage: value || 2, heal: value || 2 }),
-  SIPHON:  (value) => ({ damage: value || 1, heal: value || 1 }),
-  WEAKEN:  (value) => ({ status: 'weakened', atkReduction: value || 3 }),
-  BLESS:   (value) => ({ heal: value || 2, status: 'blessed' }),
-  AMPLIFY: ()      => ({ status: 'amplified', atkBoost: 2 }),
-  INSPIRE: ()      => ({ status: 'inspired', teamHeal: 1 }),
-  ANCHOR:  ()      => ({ status: 'anchored', damageReduction: 2 }),
-  THORNS:  (value) => ({ status: 'thorns', reflectDamage: value || 2 }),
-  CRIT:    ()      => ({ status: 'crit_ready' }),
-  SURGE:   ()      => ({ status: 'surging', atkBoost: 3 }),
-  HASTE:   ()      => ({ status: 'hasted', extraAttack: true }),
-  LEECH:   (value) => ({ damage: value || 2, heal: Math.floor((value || 2) / 2) }),
-  STUN:    ()      => ({ status: 'stunned' }),
-  FEAR:    ()      => ({ status: 'feared', atkReduction: 4 }),
-  DOOM:    ()      => ({ status: 'doomed', tickDamage: 5, delay: 2 }),
-  REFLECT: ()      => ({ status: 'reflecting', reflectPct: 50 }),
-  CLEANSE: ()      => ({ status: 'cleansed' }),
-  BARRIER: (value) => ({ status: 'barrier', absorb: value || 5 }),
+  // ── Attack Effects ──
+  BURN:      (value) => ({ damage: value || 3, type: 'fire' }),
+  CHAIN:     ()      => ({ status: 'chaining' }),
+  CRIT:      ()      => ({ status: 'crit_ready' }),
+  SURGE:     ()      => ({ status: 'surging', atkBoost: 3 }),
+  PIERCE:    ()      => ({ status: 'piercing' }),
+
+  // ── Defense Effects ──
+  HEAL:      (value) => ({ heal: value || 3 }),
+  WARD:      ()      => ({ status: 'shielded', absorb: 3 }),
+  ANCHOR:    ()      => ({ status: 'anchored', damageReduction: 2 }),
+  THORNS:    (value) => ({ status: 'thorns', reflectDamage: value || 2 }),
+  BARRIER:   (value) => ({ status: 'barrier', barrierHP: value || 5 }),
+
+  // ── Manipulation Effects ──
+  DRAIN:     (value) => ({ damage: value || 2, heal: value || 2 }),
+  SIPHON:    (value) => ({ damage: value || 1, heal: value || 1 }),
+  WEAKEN:    (value) => ({ status: 'weakened', atkReduction: value || 3 }),
+  HEX:       ()      => ({ status: 'hexed', atkReduction: 2 }),
+  SILENCE:   ()      => ({ status: 'silenced' }),
+
+  // ── Utility Effects ──
+  HASTE:     ()      => ({ status: 'hasted', extraAttack: true }),
+  SWIFT:     ()      => ({ status: 'swift' }),
+  DODGE:     ()      => ({ status: 'dodging', dodgeChance: 0.3 }),
+
+  // ── Attrition Effects ──
+  POISON:    (value) => ({ damage: value || 2, type: 'poison', ticks: true }),
+  CORRODE:   ()      => ({ status: 'corroded' }),
+  INFECT:    ()      => ({ status: 'infected' }),
+  LEECH:     (value) => ({ damage: value || 2, heal: Math.floor((value || 2) / 2) }),
+
+  // ── Support Effects ──
+  BLESS:     (value) => ({ heal: value || 2, status: 'blessed' }),
+  AMPLIFY:   ()      => ({ status: 'amplified', atkBoost: 2 }),
+  INSPIRE:   ()      => ({ status: 'inspired', teamHeal: 1 }),
+
+  // ── V5 New Effects ──
+  SHATTER:   ()      => ({ status: 'shatter_ready' }),
+  TETHER:    ()      => ({ status: 'tethering' }),
+  REFLECT:   ()      => ({ status: 'reflecting' }),
+  PHASE:     ()      => ({ status: 'phased' }),
+  MARK:      ()      => ({ status: 'marking' }),
+  CLEANSE:   ()      => ({ status: 'cleansed' }),
+  OVERCHARGE:()      => ({ status: 'overcharged' }),
+  SLOW:      ()      => ({ status: 'slowed', spdReduction: 3 }),
+  TAUNT:     ()      => ({ status: 'taunting' }),
+  STEALTH:   ()      => ({ status: 'stealthed' }),
+
+  // ── Legacy / rare ──
+  STUN:      ()      => ({ status: 'stunned' }),
+  FEAR:      ()      => ({ status: 'feared', atkReduction: 4 }),
+  DOOM:      ()      => ({ status: 'doomed', tickDamage: 5, delay: 2 }),
 };
 
 // ═══════════════════════════════════════════
@@ -251,6 +280,8 @@ async function processZoneCombat(zoneId, regionBonuses) {
       card_name: card?.spell_name || null,
       card_rarity: card?.rarity || null,
       statuses: [],       // Applied this cycle
+      barrierHP: 0,       // BARRIER shield HP
+      tetheredTo: null,   // TETHER link to another combatant
       damage_dealt: 0,
       damage_taken: 0,
       healing_done: 0,
@@ -279,11 +310,14 @@ async function processZoneCombat(zoneId, regionBonuses) {
   for (const c of combatants) {
     if (c.hp <= 0 || c.effects.length === 0) continue;
 
-    // Check if silenced
+    // Check if silenced — all effects blocked
     if (c.statuses.includes('silenced')) {
       combatLog.push({ phase: 'effects', actor: c.twitter_handle, result: 'SILENCED — effects blocked' });
       continue;
     }
+
+    // Check if phased — immune but can't act offensively (still get buffs/heals)
+    const isPhased = c.statuses.includes('phased');
 
     for (const effect of c.effects) {
       const handler = EFFECT_HANDLERS[effect];
@@ -291,30 +325,98 @@ async function processZoneCombat(zoneId, regionBonuses) {
 
       const result = handler();
 
-      // Offensive effects target enemies
-      if (result.damage) {
-        const enemies = combatants.filter(e => e.guild_tag !== c.guild_tag && e.hp > 0);
+      // ── Helper: pick enemy target ──
+      const getEnemies = () => combatants.filter(e => e.guild_tag !== c.guild_tag && e.hp > 0);
+      const getLowestHPEnemy = (enemies) => enemies.reduce((min, e) => e.hp < min.hp ? e : min, enemies[0]);
+      const getMarkedEnemy = (enemies) => enemies.find(e => e.statuses.includes('marked')) || null;
+      const getTauntingEnemy = (enemies) => enemies.find(e => e.statuses.includes('taunting')) || null;
+
+      // ── Apply damage to a target (respects DEF, ANCHOR, WARD, BARRIER, DODGE, PHASE) ──
+      const applyDamage = (target, baseDmg, attacker, isPiercing = false) => {
+        let dmg = baseDmg;
+
+        // DODGE: 30% chance to avoid all damage
+        if (target.statuses.includes('dodging') && Math.random() < 0.3) {
+          combatLog.push({ phase: 'effects', actor: target.twitter_handle, result: 'DODGED!' });
+          return 0;
+        }
+
+        // PHASE: immune to all damage
+        if (target.statuses.includes('phased')) {
+          combatLog.push({ phase: 'effects', actor: target.twitter_handle, result: 'PHASED — immune' });
+          return 0;
+        }
+
+        // DEF reduces effect damage (half value)
+        if (target.def > 0) dmg = Math.max(1, dmg - Math.floor(target.def / 2));
+
+        // ANCHOR damage reduction
+        if (target.statuses.includes('anchored')) dmg = Math.max(1, dmg - 2);
+
+        // WARD absorb (unless PIERCE)
+        if (!isPiercing && target.statuses.includes('shielded')) dmg = Math.max(0, dmg - 3);
+
+        // BARRIER absorb (separate from WARD)
+        if (target.barrierHP && target.barrierHP > 0) {
+          const absorbed = Math.min(dmg, target.barrierHP);
+          target.barrierHP -= absorbed;
+          dmg -= absorbed;
+          if (target.barrierHP <= 0) {
+            target.statuses = target.statuses.filter(s => s !== 'barrier');
+            combatLog.push({ phase: 'effects', actor: target.twitter_handle, result: 'BARRIER broken!' });
+          }
+        }
+
+        // MARK: +50% damage taken
+        if (target.statuses.includes('marked')) dmg = Math.floor(dmg * 1.5);
+
+        target.hp = Math.max(0, target.hp - dmg);
+        target.damage_taken += dmg;
+        attacker.damage_dealt += dmg;
+
+        // REFLECT: return 50% of damage to attacker
+        if (target.statuses.includes('reflecting') && dmg > 0) {
+          const reflected = Math.floor(dmg * 0.5);
+          attacker.hp = Math.max(0, attacker.hp - reflected);
+          attacker.damage_taken += reflected;
+          combatLog.push({ phase: 'effects', actor: target.twitter_handle, result: `REFLECT ${reflected} damage back` });
+        }
+
+        // TETHER: share 30% of damage with tether source
+        if (target.tetheredTo && dmg > 0) {
+          const sharedDmg = Math.floor(dmg * 0.3);
+          const tSource = combatants.find(x => x.twitter_handle === target.tetheredTo && x.hp > 0);
+          if (tSource) {
+            tSource.hp = Math.max(0, tSource.hp - sharedDmg);
+            tSource.damage_taken += sharedDmg;
+            combatLog.push({ phase: 'effects', actor: target.twitter_handle, result: `TETHER — ${sharedDmg} shared to ${tSource.twitter_handle}` });
+          }
+        }
+
+        return dmg;
+      };
+
+      // ────────────────────────────────────────
+      // OFFENSIVE EFFECTS (damage-dealing)
+      // ────────────────────────────────────────
+      if (result.damage && !isPhased) {
+        const enemies = getEnemies();
         if (enemies.length > 0) {
-          // Target lowest HP enemy
-          const target = enemies.reduce((min, e) => e.hp < min.hp ? e : min, enemies[0]);
-          let dmg = result.damage;
+          const isPiercing = c.statuses.includes('piercing');
 
-          // V5: DEF reduces effect damage too
-          if (target.def > 0) dmg = Math.max(1, dmg - Math.floor(target.def / 2));
-
-          // Check ANCHOR damage reduction
-          if (target.statuses.includes('anchored')) dmg = Math.max(1, dmg - 2);
-          // Check WARD absorb
-          if (target.statuses.includes('shielded')) { dmg = Math.max(0, dmg - 3); }
-
-          target.hp = Math.max(0, target.hp - dmg);
-          target.damage_taken += dmg;
-          c.damage_dealt += dmg;
-
-          combatLog.push({
-            phase: 'effects', actor: c.twitter_handle, effect,
-            target: target.twitter_handle, damage: dmg,
-          });
+          // CHAIN: hit 2 targets instead of 1
+          if (c.statuses.includes('chaining') && enemies.length > 1) {
+            const sorted = [...enemies].sort((a, b) => a.hp - b.hp);
+            for (let i = 0; i < Math.min(2, sorted.length); i++) {
+              const dmg = applyDamage(sorted[i], result.damage, c, isPiercing);
+              combatLog.push({ phase: 'effects', actor: c.twitter_handle, effect, target: sorted[i].twitter_handle, damage: dmg, note: `CHAIN ${i+1}` });
+            }
+          } else {
+            // Prefer MARKED target, else lowest HP
+            const target = getMarkedEnemy(enemies) || getLowestHPEnemy(enemies);
+            const dmg = applyDamage(target, result.damage, c, isPiercing);
+            combatLog.push({ phase: 'effects', actor: c.twitter_handle, effect, target: target.twitter_handle, damage: dmg });
+          }
 
           // DRAIN/SIPHON/LEECH: heal self
           if (result.heal) {
@@ -324,50 +426,156 @@ async function processZoneCombat(zoneId, regionBonuses) {
         }
       }
 
-      // Healing effects target self or allies
+      // ────────────────────────────────────────
+      // HEALING EFFECTS (non-damage heals)
+      // ────────────────────────────────────────
       if (result.heal && !result.damage) {
         const allies = combatants.filter(a => a.guild_tag === c.guild_tag && a.hp > 0 && a.hp < a.maxHp);
         if (allies.length > 0) {
-          // Heal lowest HP ally
           const target = allies.reduce((min, a) => a.hp < min.hp ? a : min, allies[0]);
-          const healAmt = result.heal;
+          let healAmt = result.heal;
+
+          // AMPLIFY: +50% heal from next ally effect
+          if (target.statuses.includes('amplified')) {
+            healAmt = Math.floor(healAmt * 1.5);
+            target.statuses = target.statuses.filter(s => s !== 'amplified');
+          }
+
           target.hp = Math.min(target.maxHp, target.hp + healAmt);
           c.healing_done += healAmt;
 
-          combatLog.push({
-            phase: 'effects', actor: c.twitter_handle, effect,
-            target: target.twitter_handle, heal: healAmt,
-          });
+          combatLog.push({ phase: 'effects', actor: c.twitter_handle, effect, target: target.twitter_handle, heal: healAmt });
         }
       }
 
-      // Status effects on enemies
-      if (result.status && (effect === 'SILENCE' || effect === 'HEX' || effect === 'STUN' || effect === 'FEAR' || effect === 'WEAKEN')) {
-        const enemies = combatants.filter(e => e.guild_tag !== c.guild_tag && e.hp > 0);
+      // ────────────────────────────────────────
+      // DEBUFF EFFECTS (status on enemies)
+      // ────────────────────────────────────────
+      const DEBUFF_EFFECTS = ['SILENCE', 'HEX', 'STUN', 'FEAR', 'WEAKEN', 'SLOW', 'MARK', 'CORRODE', 'TETHER'];
+      if (result.status && DEBUFF_EFFECTS.includes(effect) && !isPhased) {
+        const enemies = getEnemies();
         if (enemies.length > 0) {
           const target = enemies[Math.floor(Math.random() * enemies.length)];
           target.statuses.push(result.status);
+
+          // ATK reduction (HEX, WEAKEN, FEAR)
           if (result.atkReduction) target.atk = Math.max(1, target.atk - result.atkReduction);
 
-          combatLog.push({
-            phase: 'effects', actor: c.twitter_handle, effect,
-            target: target.twitter_handle, status: result.status,
-          });
+          // SPD reduction (SLOW)
+          if (result.spdReduction) target.spd = Math.max(0, target.spd - result.spdReduction);
+
+          // CORRODE: reduce max HP by 2 (permanent for this cycle)
+          if (effect === 'CORRODE') {
+            target.maxHp = Math.max(1, target.maxHp - 2);
+            target.hp = Math.min(target.hp, target.maxHp);
+          }
+
+          // TETHER: link target back to caster (target shares damage)
+          if (effect === 'TETHER') {
+            target.tetheredTo = c.twitter_handle;
+          }
+
+          combatLog.push({ phase: 'effects', actor: c.twitter_handle, effect, target: target.twitter_handle, status: result.status });
         }
       }
 
-      // Buff statuses on self
-      if (result.status && (effect === 'AMPLIFY' || effect === 'SURGE' || effect === 'CRIT')) {
+      // ────────────────────────────────────────
+      // BUFF EFFECTS (status on self)
+      // ────────────────────────────────────────
+      const BUFF_EFFECTS = ['AMPLIFY', 'SURGE', 'CRIT', 'PIERCE', 'CHAIN', 'HASTE', 'DODGE', 'SWIFT', 'REFLECT', 'PHASE', 'BARRIER', 'OVERCHARGE', 'TAUNT', 'STEALTH', 'ANCHOR', 'THORNS', 'WARD'];
+      if (result.status && BUFF_EFFECTS.includes(effect)) {
         c.statuses.push(result.status);
         if (result.atkBoost) c.atk += result.atkBoost;
+
+        // BARRIER: set barrierHP on the combatant
+        if (effect === 'BARRIER') {
+          c.barrierHP = result.barrierHP || 5;
+        }
+
+        // OVERCHARGE: +50% ATK this cycle but take 20% of own HP as recoil
+        if (effect === 'OVERCHARGE') {
+          const boost = Math.floor(c.atk * 0.5);
+          c.atk += boost;
+          const recoil = Math.floor(c.maxHp * 0.2);
+          c.hp = Math.max(1, c.hp - recoil);
+          c.damage_taken += recoil;
+          combatLog.push({ phase: 'effects', actor: c.twitter_handle, effect, note: `+${boost} ATK, -${recoil} HP recoil` });
+        }
+
+        // STEALTH: can't be targeted this cycle (handled in Phase 2)
+        if (effect === 'STEALTH') {
+          combatLog.push({ phase: 'effects', actor: c.twitter_handle, effect, result: 'STEALTHED — can\'t be targeted' });
+        }
+
+        // Log non-special buffs
+        if (!['OVERCHARGE', 'STEALTH'].includes(effect)) {
+          combatLog.push({ phase: 'effects', actor: c.twitter_handle, effect, status: result.status });
+        }
       }
 
-      // INSPIRE: heal all allies by 1
+      // ────────────────────────────────────────
+      // CLEANSE: remove all debuffs from self
+      // ────────────────────────────────────────
+      if (effect === 'CLEANSE') {
+        const debuffs = ['silenced', 'hexed', 'weakened', 'stunned', 'feared', 'slowed', 'marked', 'corroded', 'doomed'];
+        const removed = c.statuses.filter(s => debuffs.includes(s));
+        c.statuses = c.statuses.filter(s => !debuffs.includes(s));
+        if (removed.length > 0) {
+          combatLog.push({ phase: 'effects', actor: c.twitter_handle, effect, result: `Cleansed: ${removed.join(', ')}` });
+        }
+      }
+
+      // ────────────────────────────────────────
+      // SHATTER: if target has WARD/BARRIER, destroy it and deal 4 bonus damage
+      // ────────────────────────────────────────
+      if (effect === 'SHATTER' && !isPhased) {
+        const enemies = getEnemies();
+        const shielded = enemies.filter(e => e.statuses.includes('shielded') || e.statuses.includes('barrier'));
+        if (shielded.length > 0) {
+          const target = shielded[0];
+          target.statuses = target.statuses.filter(s => s !== 'shielded' && s !== 'barrier');
+          target.barrierHP = 0;
+          const shatterDmg = 4;
+          target.hp = Math.max(0, target.hp - shatterDmg);
+          target.damage_taken += shatterDmg;
+          c.damage_dealt += shatterDmg;
+          combatLog.push({ phase: 'effects', actor: c.twitter_handle, effect, target: target.twitter_handle, damage: shatterDmg, note: 'Shield destroyed!' });
+        }
+      }
+
+      // ────────────────────────────────────────
+      // INSPIRE: heal ALL allies by 1 HP
+      // ────────────────────────────────────────
       if (result.teamHeal) {
         const allies = combatants.filter(a => a.guild_tag === c.guild_tag && a.hp > 0);
         allies.forEach(a => {
           a.hp = Math.min(a.maxHp, a.hp + result.teamHeal);
         });
+        c.healing_done += allies.length * result.teamHeal;
+        combatLog.push({ phase: 'effects', actor: c.twitter_handle, effect: 'INSPIRE', note: `Team heal +${result.teamHeal} to ${allies.length} allies` });
+      }
+
+      // ────────────────────────────────────────
+      // INFECT: mark self as infected (spreads POISON on KO — handled in Phase 4)
+      // ────────────────────────────────────────
+      if (effect === 'INFECT') {
+        c.statuses.push('infected');
+      }
+
+      // ────────────────────────────────────────
+      // DOOM: mark enemy, 5 damage after 2 cycles (simplified: instant 5 dmg)
+      // ────────────────────────────────────────
+      if (effect === 'DOOM' && !isPhased) {
+        const enemies = getEnemies();
+        if (enemies.length > 0) {
+          const target = enemies[Math.floor(Math.random() * enemies.length)];
+          target.statuses.push('doomed');
+          const doomDmg = 5;
+          target.hp = Math.max(0, target.hp - doomDmg);
+          target.damage_taken += doomDmg;
+          c.damage_dealt += doomDmg;
+          combatLog.push({ phase: 'effects', actor: c.twitter_handle, effect, target: target.twitter_handle, damage: doomDmg, note: 'DOOMED!' });
+        }
       }
     }
   }
@@ -375,16 +583,38 @@ async function processZoneCombat(zoneId, regionBonuses) {
   // ── PHASE 2: Auto-Attack ──
   for (const c of combatants) {
     if (c.hp <= 0) continue;
+
+    // STUNNED: skip attack
     if (c.statuses.includes('stunned')) {
       combatLog.push({ phase: 'attack', actor: c.twitter_handle, result: 'STUNNED — cannot attack' });
       continue;
     }
 
-    const enemies = combatants.filter(e => e.guild_tag !== c.guild_tag && e.hp > 0);
+    // PHASED: can't attack (but immune too)
+    if (c.statuses.includes('phased')) {
+      combatLog.push({ phase: 'attack', actor: c.twitter_handle, result: 'PHASED — cannot attack' });
+      continue;
+    }
+
+    // SLOWED: 50% chance to skip attack
+    if (c.statuses.includes('slowed') && Math.random() < 0.5) {
+      combatLog.push({ phase: 'attack', actor: c.twitter_handle, result: 'SLOWED — attack delayed' });
+      continue;
+    }
+
+    let enemies = combatants.filter(e => e.guild_tag !== c.guild_tag && e.hp > 0);
     if (enemies.length === 0) continue;
 
-    // Target lowest HP enemy
-    const target = enemies.reduce((min, e) => e.hp < min.hp ? e : min, enemies[0]);
+    // Filter out STEALTHED enemies (can't be targeted) unless they're the only ones
+    const visible = enemies.filter(e => !e.statuses.includes('stealthed'));
+    if (visible.length > 0) enemies = visible;
+
+    // TAUNT: must target taunting enemy if one exists
+    const taunter = enemies.find(e => e.statuses.includes('taunting'));
+    // Prefer MARKED target
+    const marked = enemies.find(e => e.statuses.includes('marked'));
+    // Default: lowest HP
+    const target = taunter || marked || enemies.reduce((min, e) => e.hp < min.hp ? e : min, enemies[0]);
 
     let damage = c.atk;
 
@@ -398,17 +628,52 @@ async function processZoneCombat(zoneId, regionBonuses) {
       combatLog.push({ phase: 'attack', actor: c.twitter_handle, result: 'LUCKY CRIT!' });
     }
 
+    // DODGE: 30% chance target avoids all damage
+    if (target.statuses.includes('dodging') && Math.random() < 0.3) {
+      combatLog.push({ phase: 'attack', actor: c.twitter_handle, target: target.twitter_handle, result: 'DODGED!' });
+      continue;
+    }
+
+    // PIERCE: ignore WARD (but not BARRIER or DEF)
+    const isPiercing = c.statuses.includes('piercing');
+
     // V5: DEF reduces incoming damage
     if (target.def > 0) damage = Math.max(1, damage - target.def);
 
     // ANCHOR reduces damage
     if (target.statuses.includes('anchored')) damage = Math.max(1, damage - 2);
 
+    // WARD absorb (unless PIERCE)
+    if (!isPiercing && target.statuses.includes('shielded')) damage = Math.max(0, damage - 3);
+
+    // BARRIER absorb
+    if (target.barrierHP && target.barrierHP > 0) {
+      const absorbed = Math.min(damage, target.barrierHP);
+      target.barrierHP -= absorbed;
+      damage -= absorbed;
+      if (target.barrierHP <= 0) {
+        target.statuses = target.statuses.filter(s => s !== 'barrier');
+        combatLog.push({ phase: 'attack', actor: target.twitter_handle, result: 'BARRIER broken!' });
+      }
+    }
+
+    // MARK: +50% damage taken
+    if (target.statuses.includes('marked')) damage = Math.floor(damage * 1.5);
+
     // THORNS reflect
     if (target.statuses.includes('thorns')) {
       const reflected = 2;
       c.hp = Math.max(0, c.hp - reflected);
       c.damage_taken += reflected;
+      combatLog.push({ phase: 'attack', actor: target.twitter_handle, result: `THORNS — ${reflected} back to ${c.twitter_handle}` });
+    }
+
+    // REFLECT: return 50% of damage
+    if (target.statuses.includes('reflecting') && damage > 0) {
+      const reflected = Math.floor(damage * 0.5);
+      c.hp = Math.max(0, c.hp - reflected);
+      c.damage_taken += reflected;
+      combatLog.push({ phase: 'attack', actor: target.twitter_handle, result: `REFLECT ${reflected} back to ${c.twitter_handle}` });
     }
 
     target.hp = Math.max(0, target.hp - damage);
@@ -421,9 +686,21 @@ async function processZoneCombat(zoneId, regionBonuses) {
       target_hp_remaining: target.hp,
     });
 
-    // HASTE: extra attack
+    // TETHER: share 30% of damage with tether source
+    if (target.tetheredTo && damage > 0) {
+      const sharedDmg = Math.floor(damage * 0.3);
+      const tSource = combatants.find(x => x.twitter_handle === target.tetheredTo && x.hp > 0);
+      if (tSource) {
+        tSource.hp = Math.max(0, tSource.hp - sharedDmg);
+        tSource.damage_taken += sharedDmg;
+        combatLog.push({ phase: 'attack', note: `TETHER — ${sharedDmg} shared to ${tSource.twitter_handle}` });
+      }
+    }
+
+    // HASTE: extra attack at 50% damage
     if (c.statuses.includes('hasted') && enemies.filter(e => e.hp > 0).length > 0) {
-      const target2 = enemies.filter(e => e.hp > 0).reduce((min, e) => e.hp < min.hp ? e : min, enemies.filter(e => e.hp > 0)[0]);
+      const aliveEnemies = enemies.filter(e => e.hp > 0);
+      const target2 = aliveEnemies.reduce((min, e) => e.hp < min.hp ? e : min, aliveEnemies[0]);
       const bonusDmg = Math.floor(c.atk * 0.5);
       target2.hp = Math.max(0, target2.hp - bonusDmg);
       target2.damage_taken += bonusDmg;
@@ -444,6 +721,17 @@ async function processZoneCombat(zoneId, regionBonuses) {
       knockouts++;
       knockedOutPlayers.push(c);
       combatLog.push({ phase: 'knockout', player: c.twitter_handle, guild: c.guild_tag });
+
+      // INFECT: on KO, spread POISON to nearby enemies
+      if (c.statuses.includes('infected')) {
+        const nearbyEnemies = combatants.filter(e => e.guild_tag !== c.guild_tag && e.hp > 0);
+        nearbyEnemies.forEach(e => {
+          const poisonDmg = 2;
+          e.hp = Math.max(0, e.hp - poisonDmg);
+          e.damage_taken += poisonDmg;
+          combatLog.push({ phase: 'knockout', actor: c.twitter_handle, effect: 'INFECT', target: e.twitter_handle, damage: poisonDmg, note: 'POISON spread on death!' });
+        });
+      }
     }
   }
 
