@@ -714,11 +714,103 @@
     // Init PixiJS
     initPixiArena();
 
-    // Connect Socket.io
+    // Load deployed Nines from your existing API
+    loadZoneNines(zone.id);
+
+    // Connect Socket.io for live updates
     connectArenaSocket(zone.id);
 
-    // Check if player is deployed
+    // Check if THIS player is deployed here
     checkDeployment(zone.id);
+  }
+
+  /** Fetch all Nines deployed on this zone and add them to the arena */
+  async function loadZoneNines(zoneId) {
+    try {
+      const res = await fetch(`/api/zones/${zoneId}/deployments`);
+      const data = await res.json();
+      const deployments = data.deployments || [];
+
+      if (deployments.length === 0) {
+        addFeedEvent('No Nines deployed on this zone yet.', 'system');
+        return;
+      }
+
+      // Build guild scores from guild_power
+      if (data.guild_power) {
+        state.guildScores = {};
+        for (const [tag, info] of Object.entries(data.guild_power)) {
+          state.guildScores[tag] = info.total_hp;
+        }
+        updateScoreboard();
+      }
+
+      addFeedEvent(`${deployments.length} Nines deployed on this zone`, 'system');
+
+      // Add each deployed Nine as a sprite
+      for (const d of deployments) {
+        const nine = d.nine || {};
+        const player = d.player || {};
+        const houseName = getHouseNameById(nine.house_id);
+
+        addNineSprite({
+          id: d.player_id,
+          name: nine.name || player.twitter_handle || 'Unknown',
+          house: houseName,
+          guild_id: d.guild_tag,
+          guild_name: d.guild_tag || 'Lone Wolf',
+          current_hp: d.current_hp,
+          max_hp: d.max_hp,
+          position: getSpawnPosition(d.guild_tag, d.player_id),
+          stats: {
+            atk: nine.base_atk || 0,
+            hp: nine.base_hp || 0,
+            spd: nine.base_spd || 0,
+          },
+          is_mercenary: d.is_mercenary,
+          profile_image: player.profile_image,
+        });
+      }
+
+    } catch(e) {
+      console.error('Failed to load zone nines:', e);
+      addFeedEvent('Failed to load zone data.', 'system');
+    }
+  }
+
+  /** Map house_id (school_id number) to house key name */
+  function getHouseNameById(houseId) {
+    const houseMap = {
+      1: 'smoulders', 2: 'darktide', 3: 'stonebark', 4: 'ashenvale',
+      5: 'stormrage', 6: 'nighthollow', 7: 'dawnbringer', 8: 'manastorm', 9: 'plaguemire',
+    };
+    return houseMap[houseId] || 'smoulders';
+  }
+
+  /** Get spawn position — cluster by guild tag */
+  function getSpawnPosition(guildTag, playerId) {
+    // Track guild positions for clustering
+    if (!state._guildAngles) state._guildAngles = {};
+    if (!state._guildCounts) state._guildCounts = {};
+
+    const tag = guildTag || playerId;
+    if (!state._guildAngles[tag]) {
+      const idx = Object.keys(state._guildAngles).length;
+      state._guildAngles[tag] = (idx / 8) * Math.PI * 2; // spread around circle
+      state._guildCounts[tag] = 0;
+    }
+    state._guildCounts[tag]++;
+
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    const angle = state._guildAngles[tag];
+    const radius = 160;
+    const spread = state._guildCounts[tag] * 25;
+
+    return {
+      x: cx + Math.cos(angle) * radius + (Math.random() - 0.5) * spread,
+      y: cy + Math.sin(angle) * radius + (Math.random() - 0.5) * spread,
+    };
   }
 
   function closeArena() {
@@ -736,6 +828,8 @@
       state.arenaApp = null;
     }
     state.nines.clear();
+    state._guildAngles = {};
+    state._guildCounts = {};
     state.currentZoneId = null;
     state.currentZone = null;
 
@@ -883,9 +977,14 @@
 
     state.nines.set(nine.id, {
       container, body, hpFill, hpBg, nameText, ring,
-      hp: nine.current_hp, maxHp: nine.max_hp,
+      hp: nine.current_hp || nine.max_hp || 100,
+      maxHp: nine.max_hp || 100,
+      stats: nine.stats || {},
       targetX: nine.position.x, targetY: nine.position.y,
     });
+
+    // Set initial HP bar
+    updateNineHP(nine.id, nine.current_hp || nine.max_hp || 100, nine.max_hp || 100);
   }
 
   function updateNineHP(nineId, hp, maxHp) {
@@ -1162,29 +1261,33 @@
   // ===== DEPLOYMENT =====
   async function checkDeployment(zoneId) {
     if (!state.playerId) {
-      // Not logged in — show spectator mode
+      // Not logged in — show deploy button (will prompt login)
       document.getElementById('deploy-cta').style.display = 'block';
       document.getElementById('your-nine-panel').style.display = 'none';
       return;
     }
 
     try {
-      const res = await fetch(`/api/arena/deployments/${state.playerId}`);
+      const res = await fetch(`/api/zones/my-deployments/${state.playerId}`);
       const data = await res.json();
-      const deployed = data.deployments?.find(d => d.zone_id === zoneId);
+      const deployed = (data.deployments || []).find(d => d.zone_id === zoneId);
 
       if (deployed) {
         state.isDeployed = true;
         document.getElementById('deploy-cta').style.display = 'none';
         document.getElementById('your-nine-panel').style.display = 'block';
-        // Update your nine panel stats
-        document.getElementById('your-nine-stats').innerHTML = `
-          <div class="your-nine-stat" style="color:#e85a6a">ATK ${deployed.stats.atk}</div>
-          <div class="your-nine-stat" style="color:#6acd8a">HP ${deployed.stats.hp}</div>
-          <div class="your-nine-stat" style="color:#6ac8d8">SPD ${deployed.stats.spd}</div>
-          <div class="your-nine-stat" style="color:#b088e8">DEF ${deployed.stats.def}</div>
-          <div class="your-nine-stat" style="color:#D4A64B">LCK ${deployed.stats.luck}</div>
-        `;
+
+        // Find this player's sprite for stats display
+        const sprite = state.nines.get(state.playerId);
+        if (sprite) {
+          document.getElementById('your-nine-stats').innerHTML = `
+            <div class="your-nine-stat" style="color:#e85a6a">ATK ${sprite.stats?.atk || '?'}</div>
+            <div class="your-nine-stat" style="color:#6acd8a">HP ${sprite.maxHp || '?'}</div>
+            <div class="your-nine-stat" style="color:#6ac8d8">SPD ${sprite.stats?.spd || '?'}</div>
+          `;
+          document.getElementById('your-hp-fill').style.width = `${(sprite.hp / sprite.maxHp) * 100}%`;
+          document.getElementById('your-hp-text').textContent = `${sprite.hp}/${sprite.maxHp}`;
+        }
       } else {
         state.isDeployed = false;
         document.getElementById('deploy-cta').style.display = 'block';
@@ -1197,108 +1300,65 @@
     }
   }
 
-  async function openDeployModal() {
-    const modal = document.getElementById('deploy-modal');
-    modal.classList.add('open');
-    document.getElementById('deploy-zone-name').textContent = state.currentZone?.name || '';
-    state.selectedCards = [];
-    updateDeployButton();
-
-    // Load player cards
-    try {
-      const res = await fetch(`/api/spells/collection/${state.playerId}`);
-      const data = await res.json();
-      state.playerCards = data.cards || data || [];
-      renderDeployCards();
-    } catch(e) {
-      document.getElementById('deploy-card-grid').innerHTML = '<div class="loading-text">Failed to load cards</div>';
-    }
-  }
-
-  function closeDeployModal() {
-    document.getElementById('deploy-modal').classList.remove('open');
-    state.selectedCards = [];
-  }
-
-  function renderDeployCards() {
-    const grid = document.getElementById('deploy-card-grid');
-    grid.innerHTML = state.playerCards.map((card, i) => {
-      const typeColor = TYPE_COLORS[card.spell_type] || '#888';
-      const effects = (card.bonus_effects || []).map(e => e.tag).join(', ');
-      const deployed = card.deployed_zone ? 'deployed-elsewhere' : '';
-      const selected = state.selectedCards.includes(card.id) ? 'selected' : '';
-      return `<div class="deploy-card-slot ${deployed} ${selected}" data-card-id="${card.id}" data-index="${i}">
-        <div class="deploy-card-type" style="color:${typeColor}">${(card.spell_type || '').toUpperCase()}</div>
-        <div class="deploy-card-name">${card.name}</div>
-        <div class="deploy-card-sharpness">⚔️ ${card.sharpness || 100}%</div>
-        ${effects ? `<div class="deploy-card-effects">${effects}</div>` : ''}
-        ${card.deployed_zone ? `<div style="font-family:'Press Start 2P',monospace;font-size:6px;color:var(--red);margin-top:4px;">DEPLOYED</div>` : ''}
-      </div>`;
-    }).join('');
-
-    // Click handlers
-    grid.querySelectorAll('.deploy-card-slot:not(.deployed-elsewhere)').forEach(slot => {
-      slot.addEventListener('click', () => {
-        const cardId = slot.dataset.cardId;
-        if (state.selectedCards.includes(cardId)) {
-          state.selectedCards = state.selectedCards.filter(id => id !== cardId);
-          slot.classList.remove('selected');
-        } else if (state.selectedCards.length < 3) {
-          state.selectedCards.push(cardId);
-          slot.classList.add('selected');
-        }
-        updateDeployButton();
-        updateDeployStatsPreview();
-      });
-    });
-  }
-
-  function updateDeployButton() {
-    const btn = document.getElementById('btn-confirm-deploy');
-    const count = state.selectedCards.length;
-    document.getElementById('deploy-selected-count').textContent = count;
-    btn.disabled = count !== 3;
-    btn.textContent = count === 3 ? '⚔️ DEPLOY TO BATTLE' : `SELECT ${3 - count} MORE CARDS`;
-  }
-
-  function updateDeployStatsPreview() {
-    // TODO: calculate preview stats from selected cards + house base
-  }
-
+  /** Deploy to zone — uses existing /api/zones/deploy (costs 1 mana) */
   async function confirmDeploy() {
-    if (state.selectedCards.length !== 3) return;
+    if (!state.playerId) {
+      alert('Please log in first');
+      return;
+    }
+
+    const btn = document.getElementById('btn-join-battle');
+    btn.textContent = 'DEPLOYING...';
+    btn.disabled = true;
 
     try {
-      const res = await fetch('/api/arena/deploy', {
+      const res = await fetch('/api/zones/deploy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           player_id: state.playerId,
           zone_id: state.currentZoneId,
-          card_ids: state.selectedCards,
         }),
       });
 
       const data = await res.json();
       if (data.success) {
-        closeDeployModal();
         state.isDeployed = true;
         document.getElementById('deploy-cta').style.display = 'none';
         document.getElementById('your-nine-panel').style.display = 'block';
-        addFeedEvent('You have entered the battle!', 'join');
+        addFeedEvent(data.message || 'You have entered the battle!', 'join');
+
+        // Reload zone nines to include yourself
+        state.nines.clear();
+        if (state.arenaApp) {
+          // Remove all Nine containers from stage
+          const toRemove = [];
+          state.arenaApp.stage.children.forEach(child => {
+            if (child.name !== 'ground') toRemove.push(child);
+          });
+          toRemove.forEach(c => state.arenaApp.stage.removeChild(c));
+        }
+        state._guildAngles = {};
+        state._guildCounts = {};
+        await loadZoneNines(state.currentZoneId);
+        checkDeployment(state.currentZoneId);
       } else {
         alert(data.error || 'Deploy failed');
       }
     } catch(e) {
       alert('Deploy failed: ' + e.message);
+    } finally {
+      btn.textContent = '⚔️ JOIN BATTLE';
+      btn.disabled = false;
     }
   }
 
+  /** Withdraw from zone — uses existing /api/zones/withdraw */
   async function withdraw() {
     if (!confirm('Withdraw from this zone?')) return;
 
     try {
-      await fetch('/api/arena/withdraw', {
+      const res = await fetch('/api/zones/withdraw', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1307,10 +1367,18 @@
         }),
       });
 
-      state.isDeployed = false;
-      document.getElementById('your-nine-panel').style.display = 'none';
-      document.getElementById('deploy-cta').style.display = 'block';
-      addFeedEvent('You withdrew from the battle.', 'system');
+      const data = await res.json();
+      if (data.success) {
+        state.isDeployed = false;
+        document.getElementById('your-nine-panel').style.display = 'none';
+        document.getElementById('deploy-cta').style.display = 'block';
+        addFeedEvent('You withdrew from the battle.', 'system');
+
+        // Remove your sprite
+        removeNineSprite(state.playerId);
+      } else {
+        alert(data.error || 'Withdraw failed');
+      }
     } catch(e) {
       alert('Withdraw failed');
     }
@@ -1318,9 +1386,7 @@
 
   // ===== EVENT LISTENERS =====
   document.getElementById('btn-back').addEventListener('click', closeArena);
-  document.getElementById('btn-join-battle').addEventListener('click', openDeployModal);
-  document.getElementById('btn-confirm-deploy').addEventListener('click', confirmDeploy);
-  document.getElementById('btn-cancel-deploy').addEventListener('click', closeDeployModal);
+  document.getElementById('btn-join-battle').addEventListener('click', confirmDeploy);
   document.getElementById('btn-withdraw').addEventListener('click', withdraw);
 
   // ===== START =====
