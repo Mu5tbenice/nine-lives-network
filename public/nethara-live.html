@@ -527,8 +527,6 @@
       const data = await res.json();
       state.zones = data.zones || data || [];
 
-      // Also get arena status for active counts
-      try {
 
       renderZoneList();
       updateActiveCount();
