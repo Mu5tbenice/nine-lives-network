@@ -17,16 +17,20 @@ try {
     cors: { origin: "*", methods: ["GET", "POST"] }
   });
   console.log("✅ Socket.io initialized");
+
+  // Arena combat setup
+  try {
+    const { createClient } = require('@supabase/supabase-js');
+    const arenaSupabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const { setupArenaSockets } = require('./services/arena-sockets');
+    setupArenaSockets(io, arenaSupabase);
+    console.log("✅ Arena combat engine loaded");
+  } catch (e) {
+    console.error("❌ Failed to load arena:", e.message);
+  }
+
 } catch (e) {
   console.log("⚠️ Socket.io not installed — duels will use REST only");
-}
-
-// Arena engine
-const { setupArenaSockets } = require('./services/arena-sockets');
-let arenaManager = null;
-if (io) {
-  arenaManager = setupArenaSockets(io);
-  console.log('⚔️ Arena engine active');
 }
 
 // Middleware
@@ -116,7 +120,6 @@ try {
 try {
   const duelRoutes = require("./routes/duels");
   app.use("/api/duels", duelRoutes);
-  // Wire up Socket.io for real-time duels
   if (io && duelRoutes.setupDuelSockets) {
     duelRoutes.setupDuelSockets(io);
   }
@@ -203,26 +206,17 @@ try {
   const sortingHatRoutes = require("./routes/sortingHat");
   app.use("/api/sorting-hat", sortingHatRoutes);
   console.log("✅ Sorting Hat routes loaded");
-
-// Items
-try {
-  const itemsRoutes = require("./routes/items");
-  app.use("/api/items", itemsRoutes);
-  console.log("✅ Items routes loaded");
-} catch (e) {
-  console.error("❌ Failed to load items routes:", e.message);
-}
-
-// Items
-try {
-  const itemsRoutes = require("./routes/items");
-  app.use("/api/items", itemsRoutes);
-  console.log("✅ Items routes loaded");
-} catch (e) {
-  console.error("❌ Failed to load items routes:", e.message);
-}
 } catch (e) {
   console.error("❌ Failed to load sorting hat routes:", e.message);
+}
+
+// Items
+try {
+  const itemsRoutes = require("./routes/items");
+  app.use("/api/items", itemsRoutes);
+  console.log("✅ Items routes loaded");
+} catch (e) {
+  console.error("❌ Failed to load items routes:", e.message);
 }
 
 // Health check
@@ -254,20 +248,11 @@ try {
   console.error("❌ Failed to load Nerm Telegram bot:", e.message);
 }
 
-// Start server (use `server` instead of `app` for Socket.io)
+// Start server
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`🐱 Nine Lives Network server running on port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
   if (io) console.log(`⚔️ Real-time duels active (Socket.io)`);
 });
 
-try {
-  const arenaRoutes = require('./routes/arena');
-  if (arenaManager) arenaRoutes.setArenaManager(arenaManager);
-  // arenaRoutes.setSupabase(supabase); // uncomment when supabase client is available
-  app.use('/api/arena', arenaRoutes.router);
-  console.log('✅ Arena routes loaded');
-} catch (e) {
-  console.error('❌ Failed to load arena routes:', e.message);
-}
 module.exports = app;

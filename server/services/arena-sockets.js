@@ -1,117 +1,113 @@
 /**
  * ARENA SOCKETS — Nine Lives Network V5
- * 
- * Wires the ArenaManager to Socket.io so clients
- * can watch live zone battles and deploy/withdraw.
- * 
- * Usage in server/index.js:
- *   const { setupArenaSockets } = require('./services/arena-sockets');
- *   const arenaManager = setupArenaSockets(io);
+ * Loads real Nines from DB, starts combat when 2+ present
  */
 
 const { ArenaManager } = require('./arena-engine');
 const { NermEngine } = require('./nerm-engine');
 
-function setupArenaSockets(io) {
+const HOUSE_MAP = {
+  1: 'smoulders', 2: 'darktide', 3: 'stonebark', 4: 'ashenvale',
+  5: 'stormrage', 6: 'nighthollow', 7: 'dawnbringer', 8: 'manastorm', 9: 'plaguemire',
+};
+
+function setupArenaSockets(io, supabase) {
   const arenaManager = new ArenaManager(io);
   const nerm = new NermEngine();
-
-  // Arena namespace
   const arenaIO = io.of('/arena');
 
   arenaIO.on('connection', (socket) => {
     console.log(`👁️ Arena spectator connected: ${socket.id}`);
 
-    // --- JOIN A ZONE (spectate or play) ---
-    socket.on('join_zone', (data) => {
+    socket.on('join_zone', async (data) => {
       const { zoneId } = data;
       if (!zoneId) return;
 
-      // Leave any previous zone room
+      // Leave previous rooms
       for (const room of socket.rooms) {
         if (room.startsWith('zone_')) socket.leave(room);
       }
+      socket.join(`zone_${zoneId}`);
 
-      // Join the zone room
-      const room = `zone_${zoneId}`;
-      socket.join(room);
+      // Load arena if not running
+      let arena = arenaManager.arenas.get(zoneId);
+      if (!arena) {
+        arena = await loadArena(zoneId, arenaManager, supabase, nerm);
+      }
 
-      // Send current arena state
-      const status = arenaManager.getStatus(zoneId);
-      socket.emit('arena:state', status);
-
-      console.log(`👁️ ${socket.id} watching zone ${zoneId} (${status.nines} nines)`);
+      // Send current state
+      if (arena) {
+        socket.emit('arena:state', {
+          active: arena.isRunning,
+          nines: arena.nines.size,
+          round: arena.round,
+          cycle: arena.cycle,
+          snapshot: arena.getNinesSnapshot(),
+        });
+      } else {
+        socket.emit('arena:state', { active: false, nines: 0 });
+      }
     });
 
-    // --- LEAVE A ZONE ---
     socket.on('leave_zone', (data) => {
-      const { zoneId } = data;
-      if (zoneId) socket.leave(`zone_${zoneId}`);
+      if (data && data.zoneId) socket.leave(`zone_${data.zoneId}`);
     });
 
-    // --- DISCONNECT ---
-    socket.on('disconnect', () => {
-      console.log(`👁️ Arena spectator disconnected: ${socket.id}`);
-    });
+    socket.on('disconnect', () => {});
   });
 
-  // --- HOOK NERM INTO ARENA EVENTS ---
-  // Override the Arena emit to also check Nerm
-  const originalArenaClass = arenaManager.constructor;
+  async function loadArena(zoneId, manager, db, nermEngine) {
+    if (!db) {
+      console.error('⚠️ No supabase client for arena');
+      return null;
+    }
 
-  // Patch arena event emission to include Nerm commentary
-  const patchArena = (arena) => {
-    const originalEmit = arena.emit.bind(arena);
+    try {
+      const { data: deployments, error } = await db
+        .from('zone_deployments')
+        .select(`*, player:player_id(twitter_handle, school_id, guild_tag, profile_image), nine:nine_id(name, base_atk, base_hp, base_spd, base_def, base_luck, house_id)`)
+        .eq('zone_id', zoneId)
+        .eq('is_active', true);
 
-    arena.emit = (event, data) => {
-      // Send the original event
-      originalEmit(event, data);
-
-      // Check if Nerm has something to say
-      if (event === 'arena:events' && data.events) {
-        const snapshot = arena.getNinesSnapshot();
-        const nermComment = nerm.processEvents(data.events, snapshot);
-        if (nermComment) {
-          originalEmit('arena:nerm', nermComment);
-        }
+      if (error || !deployments) {
+        console.error('Arena DB error:', error);
+        return null;
       }
 
-      // Round start commentary
-      if (event === 'arena:round_start') {
-        const comment = nerm.onRoundStart(data.round_number);
-        if (comment) {
-          setTimeout(() => originalEmit('arena:nerm', comment), 1500);
-        }
+      const arena = manager.getArena(zoneId);
+
+      for (const d of deployments) {
+        const nine = d.nine || {};
+        const player = d.player || {};
+        arena.addNine({
+          id: d.player_id,
+          name: nine.name || player.twitter_handle || 'Unknown',
+          house: HOUSE_MAP[nine.house_id] || 'smoulders',
+          guild_id: d.guild_tag || null,
+          guild_name: d.guild_tag || 'Lone Wolf',
+          items: {},
+          cards: [],
+          isFirstDeploy: false,
+        });
       }
 
-      // Round end commentary
-      if (event === 'arena:round_end') {
-        const wasClose = Object.values(data.guild_scores).filter(hp => hp > 0).length > 1;
-        const winnerName = data.winner_guild || 'Nobody';
-        const comment = nerm.onRoundEnd(data.round_number, winnerName, wasClose);
-        if (comment) {
-          setTimeout(() => originalEmit('arena:nerm', comment), 1000);
+      // Patch emit for Nerm commentary
+      const origEmit = arena.emit.bind(arena);
+      arena.emit = (event, data) => {
+        origEmit(event, data);
+        if (event === 'arena:events' && data.events) {
+          const c = nermEngine.processEvents(data.events, arena.getNinesSnapshot());
+          if (c) origEmit('arena:nerm', c);
         }
-      }
+      };
 
-      // Cycle end commentary
-      if (event === 'arena:cycle_end') {
-        const comment = nerm.onCycleEnd('the winners', `Zone ${arena.zoneId}`);
-        if (comment) {
-          setTimeout(() => originalEmit('arena:nerm', comment), 2000);
-        }
-      }
-    };
-  };
-
-  // Patch getArena to auto-patch new arenas
-  const originalGetArena = arenaManager.getArena.bind(arenaManager);
-  arenaManager.getArena = (zoneId) => {
-    const isNew = !arenaManager.arenas.has(zoneId);
-    const arena = originalGetArena(zoneId);
-    if (isNew) patchArena(arena);
-    return arena;
-  };
+      console.log(`⚔️ Zone ${zoneId}: ${arena.nines.size} nines loaded`);
+      return arena;
+    } catch (err) {
+      console.error('Arena load error:', err);
+      return null;
+    }
+  }
 
   console.log('⚔️ Arena sockets initialized');
   return arenaManager;
