@@ -15,6 +15,7 @@
 
 const TelegramBot = require("node-telegram-bot-api");
 const Anthropic = require("@anthropic-ai/sdk");
+const supabase = require("../config/supabase");
 
 // ╔══════════════════════════════════════════╗
 // ║                                          ║
@@ -386,9 +387,11 @@ VOICE:
     const strikes = addStrike(chatId, userId, msg.text);
 
     // Track in user memory
-    const mem = getUserMemory(userId);
-    mem.timesRoasted++;
+    const mem = await getUserMemory(userId);
+    mem.times_roasted++;
     mem.notes.push("tried to scam/shill");
+    memoryCache.set(userId, mem);
+    saveUserMemory(userId, mem);
 
     console.log(`🚨 [L${level}] ${userName} (strike ${strikes}) — ${signals.slice(0, 3).join(", ")}`);
 
@@ -591,30 +594,80 @@ Seasons: ~8 weeks. #1 designs a card. Winning house gets exclusive spell.
 Not live yet: $9LV token, The Nines NFTs (Season 2+).`;
 
   // =============================================
-  // USER MEMORY — Nerm remembers people
+  // USER MEMORY — Persistent via Supabase
+  // Local cache so we don't hit DB every message
   // =============================================
 
-  const userMemory = new Map();
+  const memoryCache = new Map();
 
-  function getUserMemory(userId) {
-    if (!userMemory.has(userId)) {
-      userMemory.set(userId, {
-        name: null,
-        house: null,
-        timesRoasted: 0,
-        timesTalked: 0,
-        lastSeen: null,
-        notes: [],
-      });
-    }
-    return userMemory.get(userId);
+  function getDefaultMemory() {
+    return {
+      name: null,
+      house: null,
+      times_roasted: 0,
+      times_talked: 0,
+      notes: [],
+      last_seen: new Date().toISOString(),
+    };
   }
 
-  function updateUserMemory(userId, userName, messageText) {
-    const mem = getUserMemory(userId);
+  async function getUserMemory(userId) {
+    // Check local cache first
+    if (memoryCache.has(userId)) return memoryCache.get(userId);
+
+    // Try Supabase
+    try {
+      const { data, error } = await supabase
+        .from("nerm_user_memory")
+        .select("*")
+        .eq("telegram_user_id", userId)
+        .single();
+
+      if (data && !error) {
+        const mem = {
+          name: data.name,
+          house: data.house,
+          times_roasted: data.times_roasted || 0,
+          times_talked: data.times_talked || 0,
+          notes: data.notes || [],
+          last_seen: data.last_seen,
+        };
+        memoryCache.set(userId, mem);
+        return mem;
+      }
+    } catch (e) {
+      console.error("⚠️ Nerm memory read error:", e.message);
+    }
+
+    // New user — create default
+    const mem = getDefaultMemory();
+    memoryCache.set(userId, mem);
+    return mem;
+  }
+
+  async function saveUserMemory(userId, mem) {
+    try {
+      await supabase
+        .from("nerm_user_memory")
+        .upsert({
+          telegram_user_id: userId,
+          name: mem.name,
+          house: mem.house,
+          times_roasted: mem.times_roasted,
+          times_talked: mem.times_talked,
+          notes: (mem.notes || []).slice(-5),
+          last_seen: new Date().toISOString(),
+        }, { onConflict: "telegram_user_id" });
+    } catch (e) {
+      console.error("⚠️ Nerm memory save error:", e.message);
+    }
+  }
+
+  async function updateUserMemory(userId, userName, messageText) {
+    const mem = await getUserMemory(userId);
     mem.name = userName;
-    mem.timesTalked++;
-    mem.lastSeen = Date.now();
+    mem.times_talked++;
+    mem.last_seen = new Date().toISOString();
 
     const text = (messageText || "").toLowerCase();
     const houses = [
@@ -628,17 +681,22 @@ Not live yet: $9LV token, The Nines NFTs (Season 2+).`;
     }
 
     if (mem.notes.length > 5) mem.notes.shift();
+    memoryCache.set(userId, mem);
+
+    // Save to Supabase (non-blocking — don't await in hot path)
+    saveUserMemory(userId, mem);
+
     return mem;
   }
 
-  function getMemoryContext(userId) {
-    const mem = getUserMemory(userId);
-    if (mem.timesTalked <= 1) return "";
+  async function getMemoryContext(userId) {
+    const mem = await getUserMemory(userId);
+    if (mem.times_talked <= 1) return "";
 
     let parts = [];
     if (mem.house) parts.push(`house: ${mem.house}`);
-    parts.push(`talked ${mem.timesTalked} times`);
-    if (mem.timesRoasted > 0) parts.push(`roasted ${mem.timesRoasted}x`);
+    parts.push(`talked ${mem.times_talked} times`);
+    if (mem.times_roasted > 0) parts.push(`roasted ${mem.times_roasted}x`);
     if (mem.notes.length > 0) parts.push(`notes: ${mem.notes.slice(-2).join("; ")}`);
     return `\n[YOU REMEMBER THIS PERSON: ${parts.join(", ")}]`;
   }
@@ -676,8 +734,8 @@ Not live yet: $9LV token, The Nines NFTs (Season 2+).`;
     const history = getHistory(chatId);
 
     // Update and inject user memory
-    if (userId) updateUserMemory(userId, userName, userMessage);
-    const memCtx = userId ? getMemoryContext(userId) : "";
+    if (userId) await updateUserMemory(userId, userName, userMessage);
+    const memCtx = userId ? await getMemoryContext(userId) : "";
 
     const ctx = userName
       ? `[${userName} says]: ${userMessage}${memCtx}`
