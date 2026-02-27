@@ -21,6 +21,14 @@ try {
   console.log("⚠️ Socket.io not installed — duels will use REST only");
 }
 
+// Arena engine
+const { setupArenaSockets } = require('./services/arena-sockets');
+let arenaManager = null;
+if (io) {
+  arenaManager = setupArenaSockets(io);
+  console.log('⚔️ Arena engine active');
+}
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -253,4 +261,13 @@ server.listen(PORT, "0.0.0.0", () => {
   if (io) console.log(`⚔️ Real-time duels active (Socket.io)`);
 });
 
+try {
+  const arenaRoutes = require('./routes/arena');
+  if (arenaManager) arenaRoutes.setArenaManager(arenaManager);
+  // arenaRoutes.setSupabase(supabase); // uncomment when supabase client is available
+  app.use('/api/arena', arenaRoutes.router);
+  console.log('✅ Arena routes loaded');
+} catch (e) {
+  console.error('❌ Failed to load arena routes:', e.message);
+}
 module.exports = app;

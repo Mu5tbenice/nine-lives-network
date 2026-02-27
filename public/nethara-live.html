@@ -3,597 +3,1330 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nethara — Nine Lives Network</title>
+  <title>Nethara Live — Nine Lives Network</title>
   <link rel="stylesheet" href="/css/variables-v2.css">
   <link rel="stylesheet" href="/css/components-v2.css">
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500;700&family=Crimson+Text:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/card-v4.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Press+Start+2P&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
   <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{background:#0e0a18;color:#CCC5DB;font-family:'Crimson Text',serif;min-height:100vh}
-    .nw{max-width:540px;margin:0 auto;min-height:100vh;padding-bottom:40px}
+    :root {
+      --bg: #0a0812;
+      --bg-card: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --gold: #D4A64B;
+      --bright: #F0ECF8;
+      --body: #CCC5DB;
+      --muted: #847C98;
+      --faint: #554E68;
+      --green: #44cc88;
+      --red: #ff4466;
+      --blue: #5599ff;
+      --cyan: #00D4FF;
+    }
 
-    /* ── HEADER ── */
-    .nh{padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:center}
-    .nh-t{font-family:'Cinzel',serif;font-size:22px;font-weight:800;color:#D4A64B;letter-spacing:2px}
-    .nh-s{font-family:'JetBrains Mono',monospace;font-size:9px;color:#554E68;margin-top:1px}
-    .nh-live{display:flex;align-items:center;gap:6px}
-    .nh-dot{width:8px;height:8px;border-radius:50%;background:#6acd8a;animation:pulse 2s infinite}
-    .nh-act{font-family:'JetBrains Mono',monospace;font-size:10px;color:#6acd8a}
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--body);
+      font-family: 'Crimson Text', serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
 
-    /* V5: Mana removed */
+    /* ====== ZONE LIST VIEW ====== */
+    #zone-list-view { max-width: 520px; margin: 0 auto; }
 
-    /* ── TABS ── */
-    .nt{display:flex;padding:0 16px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:12px}
-    .nt-b{font-family:'JetBrains Mono',monospace;font-size:10px;padding:10px 14px;cursor:pointer;
-      border:none;background:none;color:#554E68;border-bottom:2px solid transparent;transition:all 0.2s}
-    .nt-b.on{color:#D4A64B;border-bottom-color:#D4A64B;font-weight:700}
-    .nt-b:hover{color:#847C98}
+    .nl-header {
+      padding: 16px 16px 12px;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .nl-title { font-family: 'Cinzel', serif; font-size: 22px; font-weight: 700; color: var(--gold); letter-spacing: 3px; }
+    .nl-subtitle { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--faint); margin-top: 4px; }
+    .nl-active-badge { display: flex; align-items: center; gap: 6px; }
+    .nl-active-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    .nl-active-text { font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--green); }
 
-    /* ── ZONE CARD ── */
-    .zc{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;
-      cursor:pointer;overflow:hidden;transition:transform 0.15s,border-color 0.15s;margin-bottom:10px}
-    .zc:hover{transform:translateY(-1px);border-color:rgba(255,255,255,0.12)}
-    .zc-ev{padding:5px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.05)}
-    .zc-obj{background:linear-gradient(90deg,rgba(212,166,75,0.12),transparent);padding:5px 14px;
-      display:flex;align-items:center;gap:6px;border-bottom:1px solid rgba(255,255,255,0.05)}
-    .zc-obj span{font-family:'JetBrains Mono',monospace;font-size:10px;color:#D4A64B;font-weight:700}
-    .zc-b{padding:12px 14px}
-    .zc-name{font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#F0ECF8;margin-bottom:2px}
-    .zc-desc{font-family:'JetBrains Mono',monospace;font-size:9px;color:#847C98;margin-bottom:1px}
-    .zc-reg{font-family:'JetBrains Mono',monospace;font-size:9px;opacity:0.7}
-    .zc-badge{font-family:'JetBrains Mono',monospace;font-size:9px;padding:3px 8px;border-radius:4px;font-weight:700}
-    .zc-badge.cntrl{color:#6acd8a;background:rgba(106,205,138,0.1)}
-    .zc-badge.open{color:#ff4466;background:rgba(255,68,102,0.1)}
-    .zc-bonus{font-family:'JetBrains Mono',monospace;font-size:9px;color:#D4A64B;margin-top:4px;
-      background:rgba(212,166,75,0.08);padding:3px 8px;border-radius:4px;display:inline-block}
-    .gr{display:flex;align-items:center;gap:8px;margin-bottom:3px}
-    .gr-d{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-    .gr-n{font-family:'JetBrains Mono',monospace;font-size:9px;color:#CCC5DB;width:78px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .gr-t{flex:1;height:5px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden}
-    .gr-f{height:100%;border-radius:3px;transition:width 0.5s}
-    .gr-p{font-family:'JetBrains Mono',monospace;font-size:9px;width:28px;text-align:right;font-weight:700}
-    .zc-bot{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
-    .zc-cast{font-family:'JetBrains Mono',monospace;font-size:9px;color:#554E68}
+    /* Player bar */
+    .nl-player-bar {
+      padding: 0 16px 12px;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .nl-stat-pill {
+      display: flex; align-items: center; gap: 4px;
+      font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--faint);
+      background: var(--bg-card); border: 1px solid var(--border);
+      padding: 5px 10px; border-radius: 20px;
+    }
+    .nl-stat-pill .val { color: var(--cyan); }
 
-    /* ── BATTLE VIEW ── */
-    .bv-head{padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,0.06)}
-    .bv-back{background:none;border:none;color:#847C98;font-size:18px;cursor:pointer;padding:4px 8px}
-    .bv-back:hover{color:#F0ECF8}
-    .bv-arena{position:relative;width:100%;height:300px;overflow:hidden;border-bottom:1px solid rgba(255,255,255,0.06)}
+    /* Tabs */
+    .nl-tabs {
+      display: flex; padding: 0 16px;
+      border-bottom: 1px solid var(--border); margin-bottom: 14px;
+    }
+    .nl-tab {
+      font-family: 'Press Start 2P', monospace; font-size: 9px;
+      padding: 10px 12px; cursor: pointer; border: none; background: none;
+      color: var(--faint); border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .nl-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .nl-tab:hover { color: var(--body); }
 
-    /* ── ROSTER ── */
-    .ro-sec{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06)}
-    .ro-ghdr{display:flex;align-items:center;gap:6px;margin-bottom:6px;margin-top:8px}
-    .ro-ghdr:first-child{margin-top:0}
-    .ro-gdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-    .ro-gname{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700}
-    .ro-gpct{font-family:'JetBrains Mono',monospace;font-size:9px;margin-left:auto}
-    .ro-nine{display:flex;align-items:center;gap:8px;padding:4px 8px;margin-bottom:2px;border-radius:6px;
-      cursor:pointer;transition:background 0.15s}
-    .ro-nine:hover,.ro-nine.hl{background:rgba(255,255,255,0.06)}
-    .ro-nine.hl{outline:1px solid rgba(255,255,255,0.12)}
-    .ro-icon{width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-      font-size:8px;font-family:'JetBrains Mono',monospace;font-weight:700}
-    .ro-info{flex:1;min-width:0}
-    .ro-name{font-family:'JetBrains Mono',monospace;font-size:9px;color:#F0ECF8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .ro-spell{font-family:'JetBrains Mono',monospace;font-size:7px;color:#847C98;margin-top:1px}
-    .ro-hp{width:60px;flex-shrink:0}
-    .ro-hpbar{height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin-bottom:1px}
-    .ro-hpfill{height:100%;border-radius:2px;transition:width 0.3s}
-    .ro-hptxt{font-family:'JetBrains Mono',monospace;font-size:7px;color:#554E68;text-align:right}
+    /* Zone cards */
+    .nl-zones { padding: 0 16px 80px; display: flex; flex-direction: column; gap: 12px; }
 
-    /* ── FEED ── */
-    .fd-sec{padding:10px 14px}
-    .fd-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-    .fd-t{font-family:'JetBrains Mono',monospace;font-size:9px;color:#554E68;letter-spacing:1px}
-    .fd-ev{display:flex;gap:8px;margin-bottom:5px;padding:5px 8px;border-radius:6px;
-      border:1px solid rgba(255,255,255,0.04);animation:fadeIn 0.3s ease}
-    .fd-ev.nerm-ev{background:rgba(212,166,75,0.06);border-color:rgba(212,166,75,0.15)}
-    .fd-dot{width:5px;height:5px;border-radius:50%;margin-top:4px;flex-shrink:0}
-    .fd-txt{font-family:'JetBrains Mono',monospace;font-size:9px;color:#CCC5DB;flex:1;line-height:1.4}
-    .fd-tm{font-family:'JetBrains Mono',monospace;font-size:7px;color:#554E68;flex-shrink:0;margin-top:2px}
+    .zone-card {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden; cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .zone-card:hover { transform: translateY(-1px); border-color: rgba(212,166,75,0.3); }
 
-    /* ── GUILD TAB ── */
-    .gh{border-radius:12px;padding:16px;margin-bottom:14px}
-    .gh-t{font-family:'Cinzel',serif;font-size:18px;font-weight:700}
-    .gh-m{font-family:'JetBrains Mono',monospace;font-size:10px;color:#CCC5DB;margin-top:4px}
-    .gs-v{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700}
-    .gs-l{font-family:'JetBrains Mono',monospace;font-size:8px;color:#554E68}
+    .zone-event-banner {
+      padding: 6px 14px; display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      font-family: 'Press Start 2P', monospace; font-size: 9px;
+    }
+    .zone-objective-banner {
+      background: linear-gradient(90deg, rgba(212,166,75,0.15), transparent);
+      padding: 6px 14px; display: flex; align-items: center; gap: 6px;
+      border-bottom: 1px solid var(--border);
+      font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--gold);
+    }
 
-    /* ── LOADING ── */
-    .ld{text-align:center;padding:60px 20px}
-    .ld-spin{width:32px;height:32px;border:3px solid rgba(212,166,75,0.15);border-top-color:#D4A64B;
-      border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
-    .ld-t{font-family:'JetBrains Mono',monospace;font-size:10px;color:#554E68}
+    .zone-card-body { padding: 14px 16px; }
+    .zone-name { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; color: var(--bright); margin-bottom: 2px; }
+    .zone-region { font-family: 'Press Start 2P', monospace; font-size: 8px; opacity: 0.7; }
+    .zone-badge {
+      font-family: 'Press Start 2P', monospace; font-size: 8px;
+      padding: 3px 8px; border-radius: 4px; font-weight: 700;
+    }
+    .zone-badge.contested { color: var(--red); background: rgba(255,68,102,0.1); }
+    .zone-badge.held { color: var(--green); background: rgba(68,204,136,0.1); }
 
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
-    ::-webkit-scrollbar{width:4px;height:4px}
-    ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+    /* Guild bars */
+    .guild-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .guild-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .guild-name { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--body); width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .guild-track { flex: 1; height: 6px; background: rgba(255,255,255,0.04); border-radius: 3px; overflow: hidden; }
+    .guild-fill { height: 100%; border-radius: 3px; transition: width 0.5s; }
+    .guild-pct { font-family: 'Press Start 2P', monospace; font-size: 8px; width: 32px; text-align: right; font-weight: 700; }
+
+    /* Effect pills */
+    .effect-pills { display: flex; gap: 4px; flex-wrap: wrap; }
+    .effect-pill {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; font-weight: 600;
+      padding: 2px 6px; border-radius: 4px;
+    }
+    .zone-casters { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--faint); }
+
+    /* ====== ARENA VIEW ====== */
+    #arena-view { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1000; background: var(--bg); }
+
+    #arena-canvas { width: 100%; height: 100%; }
+
+    /* Arena overlays */
+    .arena-overlay { position: absolute; pointer-events: none; z-index: 10; }
+    .arena-overlay.interactive { pointer-events: auto; }
+
+    .arena-top-bar {
+      position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+      padding: 12px 16px; display: flex; justify-content: space-between; align-items: flex-start;
+      background: linear-gradient(180deg, rgba(10,8,18,0.9) 0%, transparent 100%);
+      pointer-events: auto;
+    }
+    .arena-zone-name { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: var(--bright); }
+    .arena-zone-region { font-family: 'Press Start 2P', monospace; font-size: 8px; margin-top: 2px; }
+    .arena-round-badge {
+      font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--gold);
+      background: rgba(212,166,75,0.12); padding: 6px 14px; border-radius: 8px;
+      border: 1px solid rgba(212,166,75,0.25);
+    }
+    .arena-cycle-timer {
+      font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--faint); margin-top: 4px; text-align: right;
+    }
+
+    /* Guild scoreboard */
+    .arena-scoreboard {
+      position: absolute; top: 70px; right: 12px; z-index: 20;
+      background: rgba(10,8,18,0.85); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 14px; min-width: 160px;
+    }
+    .arena-sb-title { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint); letter-spacing: 1px; margin-bottom: 8px; }
+    .arena-sb-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .arena-sb-guild { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--body); flex: 1; }
+    .arena-sb-wins { font-family: 'Press Start 2P', monospace; font-size: 10px; font-weight: 700; }
+
+    /* Nerm chat bubble */
+    .nerm-bubble-container {
+      position: absolute; bottom: 120px; left: 12px; z-index: 25;
+      max-width: 300px; pointer-events: none;
+    }
+    .nerm-bubble {
+      background: rgba(10,8,18,0.9); border: 1px solid var(--gold);
+      border-radius: 12px 12px 12px 0; padding: 10px 14px;
+      font-family: 'Crimson Text', serif; font-size: 14px; color: var(--bright);
+      font-style: italic; opacity: 0; transition: opacity 0.3s;
+      box-shadow: 0 0 20px rgba(212,166,75,0.1);
+    }
+    .nerm-bubble.visible { opacity: 1; }
+    .nerm-label {
+      font-family: 'Press Start 2P', monospace; font-size: 7px;
+      color: var(--gold); margin-bottom: 4px; letter-spacing: 1px;
+    }
+
+    /* Live feed ticker */
+    .arena-feed {
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
+      background: linear-gradient(0deg, rgba(10,8,18,0.95) 0%, transparent 100%);
+      padding: 40px 12px 12px; pointer-events: auto;
+    }
+    .feed-event {
+      display: flex; gap: 8px; align-items: flex-start;
+      padding: 4px 8px; margin-bottom: 3px;
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--body);
+      opacity: 0; animation: feedIn 0.3s forwards;
+    }
+    .feed-event .feed-name { font-weight: 700; }
+    .feed-event .feed-dmg { color: var(--red); }
+    .feed-event .feed-heal { color: var(--green); }
+    .feed-event .feed-effect { color: var(--gold); }
+    .feed-event .feed-time { color: var(--faint); margin-left: auto; flex-shrink: 0; }
+
+    /* Your Nine panel */
+    .arena-your-nine {
+      position: absolute; bottom: 70px; right: 12px; z-index: 20;
+      background: rgba(10,8,18,0.9); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 14px; min-width: 180px;
+      pointer-events: auto;
+    }
+    .your-nine-title { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--gold); letter-spacing: 1px; margin-bottom: 6px; }
+    .your-nine-hp { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .your-nine-hp-bar { flex: 1; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+    .your-nine-hp-fill { height: 100%; background: linear-gradient(90deg, var(--green), #66eebb); border-radius: 4px; transition: width 0.3s; }
+    .your-nine-hp-text { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--green); }
+    .your-nine-stats { display: flex; gap: 8px; flex-wrap: wrap; }
+    .your-nine-stat { font-family: 'Press Start 2P', monospace; font-size: 7px; }
+
+    /* Deploy / Join Battle CTA */
+    .arena-deploy-cta {
+      position: absolute; bottom: 70px; right: 12px; z-index: 20;
+      pointer-events: auto;
+    }
+    .btn-join-battle {
+      font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700;
+      padding: 14px 28px; border: none; border-radius: 10px; cursor: pointer;
+      background: linear-gradient(135deg, var(--gold), #b8872e);
+      color: #fff; letter-spacing: 2px;
+      box-shadow: 0 4px 20px rgba(212,166,75,0.3);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn-join-battle:hover { transform: translateY(-2px); box-shadow: 0 6px 30px rgba(212,166,75,0.4); }
+
+    /* Back button */
+    .arena-back {
+      position: absolute; top: 12px; left: 12px; z-index: 30;
+      background: rgba(10,8,18,0.7); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px 12px; cursor: pointer;
+      font-family: 'Cinzel', serif; font-size: 16px; color: var(--muted);
+      transition: color 0.2s;
+    }
+    .arena-back:hover { color: var(--bright); }
+
+    /* Round banner */
+    .round-banner {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      z-index: 50; pointer-events: none; text-align: center;
+      opacity: 0; animation: bannerPop 2s forwards;
+    }
+    .round-banner-text {
+      font-family: 'Cinzel', serif; font-size: 32px; font-weight: 800; color: var(--gold);
+      text-shadow: 0 0 40px rgba(212,166,75,0.5), 0 4px 8px rgba(0,0,0,0.8);
+      letter-spacing: 6px;
+    }
+    .round-banner-sub {
+      font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--bright);
+      margin-top: 8px; opacity: 0.8;
+    }
+
+    /* Deploy modal */
+    .deploy-modal {
+      display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      z-index: 100; background: rgba(10,8,18,0.95);
+      overflow-y: auto;
+    }
+    .deploy-modal.open { display: block; }
+    .deploy-inner {
+      max-width: 500px; margin: 40px auto; padding: 20px;
+    }
+    .deploy-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--gold); margin-bottom: 16px; }
+    .deploy-stats-preview {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px; margin-bottom: 16px;
+    }
+    .deploy-stat-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .deploy-stat {
+      font-family: 'Press Start 2P', monospace; font-size: 9px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .deploy-cards-title { font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--faint); letter-spacing: 1px; margin-bottom: 10px; }
+    .deploy-card-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px; margin-bottom: 16px; max-height: 400px; overflow-y: auto;
+    }
+    .deploy-card-slot {
+      background: var(--bg-card); border: 2px solid var(--border);
+      border-radius: 10px; padding: 10px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .deploy-card-slot:hover { border-color: rgba(212,166,75,0.3); }
+    .deploy-card-slot.selected { border-color: var(--gold); background: rgba(212,166,75,0.08); }
+    .deploy-card-slot.deployed-elsewhere { opacity: 0.3; pointer-events: none; }
+    .deploy-card-name { font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; color: var(--bright); }
+    .deploy-card-type { font-family: 'Press Start 2P', monospace; font-size: 7px; margin-top: 2px; }
+    .deploy-card-sharpness { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--cyan); margin-top: 4px; }
+    .deploy-card-effects { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--gold); margin-top: 4px; }
+
+    .btn-deploy {
+      width: 100%; font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700;
+      padding: 16px; border: none; border-radius: 10px; cursor: pointer;
+      background: linear-gradient(135deg, var(--gold), #b8872e);
+      color: #fff; letter-spacing: 2px;
+      box-shadow: 0 4px 20px rgba(212,166,75,0.3);
+      transition: all 0.15s;
+    }
+    .btn-deploy:hover { transform: translateY(-2px); }
+    .btn-deploy:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+    .btn-cancel {
+      width: 100%; margin-top: 8px; font-family: 'Press Start 2P', monospace; font-size: 9px;
+      padding: 12px; border: 1px solid var(--border); border-radius: 10px;
+      cursor: pointer; background: none; color: var(--muted);
+    }
+
+    /* Loading state */
+    .loading-text { text-align: center; padding: 60px 20px; font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--faint); }
+
+    /* Animations */
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    @keyframes feedIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 0.8; transform: none; } }
+    @keyframes bannerPop {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+      20% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+      40% { transform: translate(-50%, -50%) scale(1); }
+      80% { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
   </style>
-  <link rel="icon" type="image/x-icon" href="/favicon.ico">
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 </head>
 <body>
-  <div id="nav-placeholder"></div>
-  <div class="nw" id="app"></div>
 
-  <script src="/js/sprite-renderer.js"></script>
-  <script src="/js/spell-vfx.js"></script>
-  <script>try{var s=document.createElement('script');s.src='/js/nav.js';document.body.appendChild(s)}catch(e){}</script>
-  <script>
-  (function(){
+<!-- ====== ZONE LIST VIEW ====== -->
+<div id="zone-list-view">
+  <div class="nl-header">
+    <div>
+      <div class="nl-title">NETHARA</div>
+      <div class="nl-subtitle" id="season-info">SEASON 1 · DAY --</div>
+    </div>
+    <div class="nl-active-badge">
+      <div class="nl-active-dot"></div>
+      <div class="nl-active-text" id="active-count">-- Active</div>
+    </div>
+  </div>
+
+  <div class="nl-player-bar" id="player-bar">
+    <div class="nl-stat-pill">LVL <span class="val" id="player-level">--</span></div>
+    <div class="nl-stat-pill">🎫 <span class="val" id="player-tickets">--</span></div>
+    <div class="nl-stat-pill">⚔️ <span class="val" id="player-zones">--</span> zones</div>
+  </div>
+
+  <div class="nl-tabs">
+    <button class="nl-tab active" data-tab="hot">🔥 Hot Zones</button>
+    <button class="nl-tab" data-tab="events">⚡ Events</button>
+    <button class="nl-tab" data-tab="regions">🗺️ Regions</button>
+    <button class="nl-tab" data-tab="guild">👥 Guild</button>
+  </div>
+
+  <div class="nl-zones" id="zone-container">
+    <div class="loading-text">Loading zones...</div>
+  </div>
+</div>
+
+<!-- ====== ARENA VIEW ====== -->
+<div id="arena-view">
+  <div id="arena-canvas"></div>
+
+  <button class="arena-back interactive" id="btn-back">← Back</button>
+
+  <div class="arena-top-bar">
+    <div>
+      <div class="arena-zone-name" id="arena-zone-name">--</div>
+      <div class="arena-zone-region" id="arena-zone-region">--</div>
+    </div>
+    <div style="text-align: right;">
+      <div class="arena-round-badge" id="arena-round-badge">ROUND 1</div>
+      <div class="arena-cycle-timer" id="arena-cycle-timer">Cycle 1 · 5:00</div>
+    </div>
+  </div>
+
+  <div class="arena-scoreboard" id="arena-scoreboard">
+    <div class="arena-sb-title">GUILD SCORES</div>
+    <div id="scoreboard-rows"></div>
+  </div>
+
+  <div class="nerm-bubble-container">
+    <div class="nerm-bubble" id="nerm-bubble">
+      <div class="nerm-label">🐱 NERM</div>
+      <div id="nerm-text"></div>
+    </div>
+  </div>
+
+  <div class="arena-feed" id="arena-feed">
+    <!-- Live event feed populated by JS -->
+  </div>
+
+  <!-- Shown if player is NOT deployed here -->
+  <div class="arena-deploy-cta" id="deploy-cta" style="display:none;">
+    <button class="btn-join-battle" id="btn-join-battle">⚔️ JOIN BATTLE</button>
+  </div>
+
+  <!-- Shown if player IS deployed here -->
+  <div class="arena-your-nine" id="your-nine-panel" style="display:none;">
+    <div class="your-nine-title">YOUR NINE</div>
+    <div class="your-nine-hp">
+      <div class="your-nine-hp-bar"><div class="your-nine-hp-fill" id="your-hp-fill" style="width:100%"></div></div>
+      <div class="your-nine-hp-text" id="your-hp-text">--/--</div>
+    </div>
+    <div class="your-nine-stats" id="your-nine-stats"></div>
+    <button style="margin-top:8px; font-family:'Press Start 2P',monospace; font-size:7px; padding:6px 10px; background:rgba(255,68,102,0.1); border:1px solid rgba(255,68,102,0.3); color:var(--red); border-radius:6px; cursor:pointer;" id="btn-withdraw">WITHDRAW</button>
+  </div>
+
+  <!-- Round announcement banner (animated) -->
+  <div class="round-banner" id="round-banner" style="display:none;">
+    <div class="round-banner-text" id="round-banner-text">ROUND 1</div>
+    <div class="round-banner-sub" id="round-banner-sub">FIGHT!</div>
+  </div>
+</div>
+
+<!-- ====== DEPLOY MODAL ====== -->
+<div class="deploy-modal" id="deploy-modal">
+  <div class="deploy-inner">
+    <div class="deploy-title">⚔️ Deploy to <span id="deploy-zone-name"></span></div>
+
+    <div class="deploy-stats-preview">
+      <div style="font-family:'Press Start 2P',monospace; font-size:7px; color:var(--faint); letter-spacing:1px; margin-bottom:8px;">COMBAT STATS PREVIEW</div>
+      <div class="deploy-stat-row" id="deploy-stats-row">
+        <div class="deploy-stat"><span style="color:#e85a6a">ATK</span> <span id="deploy-atk">--</span></div>
+        <div class="deploy-stat"><span style="color:#6acd8a">HP</span> <span id="deploy-hp">--</span></div>
+        <div class="deploy-stat"><span style="color:#6ac8d8">SPD</span> <span id="deploy-spd">--</span></div>
+        <div class="deploy-stat"><span style="color:#b088e8">DEF</span> <span id="deploy-def">--</span></div>
+        <div class="deploy-stat"><span style="color:#D4A64B">LUCK</span> <span id="deploy-luck">--</span></div>
+      </div>
+    </div>
+
+    <div class="deploy-cards-title">SELECT 3 CARDS (<span id="deploy-selected-count">0</span>/3)</div>
+    <div class="deploy-card-grid" id="deploy-card-grid">
+      <div class="loading-text">Loading cards...</div>
+    </div>
+
+    <button class="btn-deploy" id="btn-confirm-deploy" disabled>DEPLOY — SELECT 3 CARDS</button>
+    <button class="btn-cancel" id="btn-cancel-deploy">CANCEL</button>
+  </div>
+</div>
+
+<!-- ====== MAIN SCRIPT ====== -->
+<script>
+(function() {
   'use strict';
 
-  // ═══════════════════════════════════════
-  // HOUSE DATA
-  // ═══════════════════════════════════════
-  var SCHOOL={
-    1:{key:'smoulders',color:'#E03C31',name:'Smoulders',icon:'🔥'},
-    2:{key:'darktide',color:'#00B4D8',name:'Darktide',icon:'🌊'},
-    3:{key:'stonebark',color:'#5CB338',name:'Stonebark',icon:'🌿'},
-    4:{key:'ashenvale',color:'#B0C4DE',name:'Ashenvale',icon:'💨'},
-    5:{key:'stormrage',color:'#FFC800',name:'Stormrage',icon:'⚡'},
-    6:{key:'nighthollow',color:'#7B2D8E',name:'Nighthollow',icon:'🌙'},
-    7:{key:'dawnbringer',color:'#FF8C00',name:'Dawnbringer',icon:'☀️'},
-    8:{key:'manastorm',color:'#5B8FE0',name:'Manastorm',icon:'🔮'},
-    9:{key:'plaguemire',color:'#E84393',name:'Plaguemire',icon:'☠️'}
+  // ===== STATE =====
+  const state = {
+    playerId: null,
+    playerHouse: null,
+    playerLevel: 1,
+    zones: [],
+    currentTab: 'hot',
+    currentZoneId: null,
+    currentZone: null,
+    socket: null,
+    arenaApp: null, // PixiJS app
+    nines: new Map(), // id → pixi sprite data
+    selectedCards: [],
+    playerCards: [],
+    isDeployed: false,
+    feedEvents: [],
+    guildScores: {},
+    roundWins: {},
   };
 
-  // ═══════════════════════════════════════
-  // BIOME SYSTEM
-  // ═══════════════════════════════════════
-  var BIOMES={
-    volcanic:{sky:['#1a0800','#3d1200','#0d0500'],ground:'#1a0a02',
-      particles:{type:'ember',color:'#ff6622',count:25,rise:true},fog:'rgba(180,60,10,0.04)'},
-    ocean:{sky:['#020d1a','#0a2a40','#041520'],ground:'#03101a',
-      particles:{type:'bubble',color:'#2299cc',count:18,rise:true},fog:'rgba(0,120,180,0.03)'},
-    forest:{sky:['#040d04','#0a1f08','#020a02'],ground:'#060e04',
-      particles:{type:'leaf',color:'#44aa33',count:15,rise:false},fog:'rgba(40,120,30,0.04)'},
-    desert:{sky:['#1a1000','#2d1a00','#0d0800'],ground:'#1a1208',
-      particles:{type:'dust',color:'#cc9944',count:12,rise:false},fog:'rgba(180,130,40,0.03)'},
-    arcane:{sky:['#0a0420','#1a0a3d','#060218'],ground:'#08031a',
-      particles:{type:'sparkle',color:'#8855ee',count:20,rise:true},fog:'rgba(100,50,200,0.04)'},
-    highlands:{sky:['#0a0d14','#141d2a','#060910'],ground:'#0a0e14',
-      particles:{type:'mist',color:'#8899aa',count:10,rise:true},fog:'rgba(100,130,160,0.03)'},
-    twilight:{sky:['#0d0518','#1a0a2d','#080312'],ground:'#0a0514',
-      particles:{type:'firefly',color:'#cc88ff',count:16,rise:false},fog:'rgba(140,60,200,0.03)'},
-    crystal:{sky:['#081018','#0a1a2a','#040a12'],ground:'#060d14',
-      particles:{type:'sparkle',color:'#44ddff',count:22,rise:true},fog:'rgba(40,180,240,0.04)'},
-    swamp:{sky:['#080a04','#101408','#040602'],ground:'#0a0c06',
-      particles:{type:'spore',color:'#88aa22',count:14,rise:true},fog:'rgba(80,120,20,0.05)'},
-    plains:{sky:['#0a0812','#141020','#08060e'],ground:'#0c0a14',
-      particles:{type:'dust',color:'#887766',count:8,rise:false},fog:'rgba(100,80,60,0.02)'}
-  };
-  var DESC_BIOME={
-    'volcanic':'volcanic','fire':'volcanic','scorched':'volcanic','inferno':'volcanic','ember':'volcanic','lava':'volcanic',
-    'ocean':'ocean','tidal':'ocean','abyssal':'ocean','coral':'ocean','coast':'ocean','bay':'ocean','sea':'ocean','water':'ocean',
-    'forest':'forest','verdant':'forest','grove':'forest','moss':'forest','woods':'forest','jungle':'forest','tree':'forest',
-    'desert':'desert','sand':'desert','canyon':'desert','oasis':'desert','dune':'desert',
-    'arcane':'arcane','nexus':'arcane','rune':'arcane','power':'arcane','ley':'arcane','mana':'arcane','magic':'arcane','mystic':'arcane',
-    'highlands':'highlands','peaks':'highlands','misty':'highlands','sky':'highlands','mountain':'highlands','cliff':'highlands',
-    'twilight':'twilight','void':'twilight','dusk':'twilight','forgotten':'twilight','shadow':'twilight','dark':'twilight','night':'twilight','ancient':'twilight','ruin':'twilight',
-    'crystal':'crystal','ice':'crystal','frost':'crystal','frozen':'crystal','gem':'crystal','falls':'crystal',
-    'swamp':'swamp','bog':'swamp','marsh':'swamp','toxic':'swamp','plague':'swamp','rot':'swamp',
-    'plains':'plains','wildlands':'plains','field':'plains','meadow':'plains','rest':'plains','dragon':'volcanic'
-  };
-  function getBiome(desc,name){
-    var txt=(desc+' '+name).toLowerCase();
-    var keys=Object.keys(DESC_BIOME);
-    for(var i=0;i<keys.length;i++){if(txt.indexOf(keys[i])>=0)return BIOMES[DESC_BIOME[keys[i]]];}
-    return BIOMES.plains;
-  }
-
-  var TERR_HOUSE={
-    'volcanic':1,'fire':1,'scorched':1,'ember':1,'dragon':1,
-    'ocean':2,'tidal':2,'abyssal':2,'coast':2,'bay':2,'sea':2,
-    'forest':3,'verdant':3,'grove':3,'woods':3,
-    'highlands':4,'peaks':4,'misty':4,'sky':4,'falls':4,
-    'twilight':6,'void':6,'dusk':6,'forgotten':6,'shadow':6,'ancient':6,'ruin':6,
-    'desert':7,'sand':7,'canyon':7,'oasis':7,
-    'arcane':8,'nexus':8,'rune':8,'mana':8,'mystic':8,
-    'plains':9,'wildlands':9,'bog':9,'swamp':9,'rest':9
+  // ===== HOUSE DATA =====
+  const HOUSES = {
+    smoulders:   { color: '#E03C31', name: 'Smoulders', icon: '🔥' },
+    darktide:    { color: '#00B4D8', name: 'Darktide', icon: '🌊' },
+    stonebark:   { color: '#5CB338', name: 'Stonebark', icon: '🌿' },
+    ashenvale:   { color: '#90E0EF', name: 'Ashenvale', icon: '💨' },
+    stormrage:   { color: '#FFC800', name: 'Stormrage', icon: '⚡' },
+    nighthollow: { color: '#7B2D8E', name: 'Nighthollow', icon: '🌙' },
+    dawnbringer: { color: '#FF8C00', name: 'Dawnbringer', icon: '☀️' },
+    manastorm:   { color: '#5B8FE0', name: 'Manastorm', icon: '🔮' },
+    plaguemire:  { color: '#E84393', name: 'Plaguemire', icon: '☠️' },
   };
 
-  var MATCHUPS={
-    smoulders:{s:'stonebark',w:'darktide'},darktide:{s:'smoulders',w:'stonebark'},stonebark:{s:'darktide',w:'smoulders'},
-    stormrage:{s:'ashenvale',w:'nighthollow'},ashenvale:{s:'nighthollow',w:'stormrage'},nighthollow:{s:'stormrage',w:'ashenvale'},
-    dawnbringer:{s:'plaguemire',w:'manastorm'},plaguemire:{s:'manastorm',w:'dawnbringer'},manastorm:{s:'dawnbringer',w:'plaguemire'}
+  const EFFECT_COLORS = {
+    BURN: '#ffaa55', WARD: '#D4A64B', POISON: '#aaee55', ANCHOR: '#ccaa66',
+    HEX: '#bb88ff', HEAL: '#66eebb', SILENCE: '#bb88ff', CHAIN: '#5599ff',
+    CRIT: '#ffd700', BARRIER: '#5599ff', THORNS: '#ff6666', DODGE: '#90E0EF',
   };
 
-  var GUILDS=[
-    {id:1,name:'Bonk Legion',color:'#FFD700',short:'BON'},
-    {id:2,name:'Shadow Paws',color:'#00BFFF',short:'SHP'},
-    {id:3,name:'Night Wolves',color:'#BB88FF',short:'NTW'},
-    {id:4,name:"Pepe's Army",color:'#50FA7B',short:'PEP'},
-    {id:5,name:'Cat Lovers United',color:'#FF79C6',short:'CLU'}
-  ];
-  var NAMES=['EmberFox','BoltCaster','StoneKing','NightShade','PlagueRat','SunWarden','MistWalker',
-    'VoidFang','ArcaneEcho','RootGuard','ThunderPaw','DuskBlade','HolyWhisker','ManaDrain','SporeKitty',
-    'FlameHeart','TideRipper','LeafBlade','GaleRunner','SparkClaw','ShadowMeld','LightBearer','RuneSeer','BlightFur',
-    'EmberClaw','TidalFur','MossWhisker','WindFang','StormEye','NightPaw','DawnTail','ArcanePelt','VenomFur'];
-  var SPELLS=['Ember Strike','Riptide','Root Strike','Gust Blade','Spark','Shadow Bolt','Radiant Strike',
-    'Arcane Siphon','Toxic Dart','Mana Bolt','Chain Lightning','Cyclone Strike','Void Rend','Hold the Line',
-    'Arcane Shield','Regrowth','Tidal Guard','Cinder Guard','Solace','Hex Bolt'];
-  var HK=Object.keys(SCHOOL).map(function(k){return SCHOOL[k].key});
-
-  // ═══════════════════════════════════════
-  // NERM PERSONALITY
-  // ═══════════════════════════════════════
-  var NERM={
-    intro:["Oh good, more violence. I was getting bored.","Welcome to the zone. Try not to embarrass yourselves.",
-      "Another day, another bunch of Nines pretending they know what they're doing.",
-      "Place your bets now. Actually don't. I already know who loses.",
-      "The battlefield is set. The incompetence will follow shortly."],
-    attack:["{a} just LAUNCHED {spell} at {d}. Aggressive.",
-      "Ooh, {a} chose violence today. {spell} incoming.",
-      "{a} with the {spell}! {d} didn't see that coming.",
-      "Classic {a}. Sees a problem, throws a {spell} at it.",
-      "{spell} from {a}! That's gotta sting.",
-      "{a} really said 'you specifically' to {d}."],
-    kill:["DELETED. {a} just erased {d} from the zone.",
-      "AND {d} IS DOWN! {a} shows no mercy.",
-      "RIP {d}. They had a family. Probably.",
-      "{d} sent to the shadow realm by {a}.",
-      "That's a KO! {d} needs to rethink their life choices.",
-      "ELIMINATED. {a} is on a mission today."],
-    crit:["CRITICAL HIT! {a} rolled a nat 20.",
-      "THE DAMAGE! {a} CRITTED {d} into next week.",
-      "25% chance and {a} HIT it. {d} in shambles."],
-    effective:["Type advantage! {a} did their homework.",
-      "Super effective! {a} read the matchup chart.",
-      "House advantage goes BRRRR. Sorry {d}."],
-    resist:["Barely a scratch. Bad matchup for {a}.",
-      "{d} shrugs it off. Wrong house, {a}.",
-      "Resisted! Should've checked the chart first."],
-    heal:["Healing in THIS economy? Bold move {a}.","{a} patches up. Smart, boring, effective."],
-    quiet:["...is anyone going to DO something?",
-      "I've seen more action in an empty zone.",
-      "The suspense is killing me. Unlike anyone here.",
-      "*yawns in Nerm*"],
-    taunt:["At this rate, midnight reset does more damage than anyone.",
-      "Somewhere, a Plaguemire player is cackling.",
-      "Remember: you're fighting over pixels on a website. Let that sink in."]
+  const TYPE_COLORS = {
+    attack: '#ff5555', defend: '#55aaff', support: '#55ff99', manipulation: '#cc77ff', utility: '#ffcc55'
   };
-  function nermSay(cat,vars){
-    var pool=NERM[cat]||NERM.taunt;var t=pool[Math.floor(Math.random()*pool.length)];
-    if(vars){Object.keys(vars).forEach(function(k){t=t.replace(new RegExp('\\{'+k+'\\}','g'),vars[k]);});}
-    return t;
-  }
 
-  // ═══════════════════════════════════════
-  // ZONE ADAPTER
-  // ═══════════════════════════════════════
-  function guessHouse(txt){
-    if(!txt)return null;var d=txt.toLowerCase();
-    var keys=Object.keys(TERR_HOUSE);
-    for(var i=0;i<keys.length;i++){if(d.indexOf(keys[i])>=0)return SCHOOL[TERR_HOUSE[keys[i]]]||null;}
-    return null;
-  }
-  function adaptZone(raw){
-    var ctrl=raw.controlling_school_id?SCHOOL[raw.controlling_school_id]:null;
-    var rh=guessHouse(raw.description)||guessHouse(raw.name)||ctrl||{key:'universal',color:'#D4A64B',name:'Nethara',icon:'✨'};
-    var seed=raw.id*31;var ng=2+((seed*7)%3);var guilds=[];var rem=100;
-    for(var i=0;i<ng;i++){
-      var gi=(seed+i*13)%GUILDS.length;
-      var pct=i===ng-1?rem:Math.max(10,Math.floor(rem*(0.25+((seed+i*17)%40)/100)));
-      rem-=pct;guilds.push({id:GUILDS[gi].id,name:GUILDS[gi].name,color:GUILDS[gi].color,short:GUILDS[gi].short,pct:Math.max(pct,5)});
+  // ===== INIT =====
+  async function init() {
+    // Get player from localStorage (your existing auth system)
+    const stored = localStorage.getItem('player') || localStorage.getItem('nine_lives_player');
+    if (stored) {
+      try {
+        const p = JSON.parse(stored);
+        state.playerId = p.id || p.player_id;
+        state.playerHouse = p.house;
+        state.playerLevel = p.level || 1;
+      } catch(e) {}
     }
-    guilds.sort(function(a,b){return b.pct-a.pct});
-    return{id:raw.id,name:raw.name,description:raw.description||'',region:rh.name+' Territory',
-      region_house:rh.key,house_color:rh.color,house_icon:rh.icon,house_name:rh.name,
-      controller:ctrl,contested:!ctrl,objective:!!raw.is_current_objective,
-      bonus_effect:raw.bonus_effect,narrative_title:raw.narrative_title,
-      guilds:guilds,casters:3+((seed*11)%20),streak:ctrl?1+((seed*3)%7):0};
-  }
-  function mockNines(zone){
-    var count=8+((zone.id*13)%12);var ns=[];
-    for(var i=0;i<count;i++){
-      var g=zone.guilds[(i*3+zone.id)%zone.guilds.length];
-      var house=HK[(i*7+zone.id*3)%HK.length];var mhp=14+((i*11)%14);
-      ns.push({id:i+1,name:NAMES[(i*13+zone.id*7)%NAMES.length],house:house,
-        guild_id:g.id,guild_name:g.name,guild_color:g.color,guild_short:g.short,
-        hp:Math.max(3,mhp-((i*7+zone.id)%mhp)),max_hp:mhp,atk:2+((i*7)%6),spd:1+((i*5)%8),
-        spell:SPELLS[(i*11+zone.id*5)%SPELLS.length],spell_house:HK[(i*11+5)%HK.length]});
-    }return ns;
+
+    setupTabs();
+    await loadZones();
+    updatePlayerBar();
   }
 
-  // ═══════════════════════════════════════
-  // STATE
-  // ═══════════════════════════════════════
-  var S={tab:'zones',zones:[],sel:null,loading:true,battle:null};
-
-  function tok(){try{var s=localStorage.getItem('supabase_session');if(s)return JSON.parse(s).access_token;}catch(e){}try{return localStorage.getItem('auth_token');}catch(e){}return null;}
-  function api(url){var t=tok();var h={'Content-Type':'application/json'};if(t)h['Authorization']='Bearer '+t;
-    return fetch(url,{headers:h}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();});}
-
-  function load(){
-    S.loading=true;render();
-    api('/api/zones').catch(function(){return[];}).then(function(r){
-      S.zones=(r||[]).filter(function(z){return z.is_active!==false&&z.name!=='TEST'}).map(adaptZone);
-      S.loading=false;render();
-    });
-  }
-  function sorted(z){return z.slice().sort(function(a,b){
-    if(a.objective&&!b.objective)return-1;if(b.objective&&!a.objective)return 1;
-    if(a.contested&&!b.contested)return-1;if(b.contested&&!a.contested)return 1;
-    return(b.casters||0)-(a.casters||0);});}
-
-  // ═══════════════════════════════════════
-  // RENDER
-  // ═══════════════════════════════════════
-  function render(){
-    var app=document.getElementById('app');
-    if(S.sel){renderBattle();return;}
-    app.innerHTML=headerHTML()+tabsHTML()+contentHTML();bind();
-  }
-  function headerHTML(){
-    var ac=S.zones.filter(function(z){return z.contested||z.objective}).length;
-    return'<div class="nh"><div><div class="nh-t">NETHARA</div><div class="nh-s">Season 1 · '+S.zones.length+' Zones</div></div><div class="nh-live"><div class="nh-dot"></div><span class="nh-act">'+ac+' Active</span></div></div>';
-  }
-  function tabsHTML(){return'<div class="nt"><button class="nt-b'+(S.tab==='zones'?' on':'')+'" data-tab="zones">🔥 Hot Zones</button><button class="nt-b'+(S.tab==='guild'?' on':'')+'" data-tab="guild">👥 Guild</button></div>';}
-  function contentHTML(){
-    if(S.loading)return'<div class="ld"><div class="ld-spin"></div><div class="ld-t">Loading Nethara...</div></div>';
-    if(S.tab==='zones')return'<div style="padding:0 14px 40px">'+sorted(S.zones).map(zoneCardHTML).join('')+'</div>';
-    if(S.tab==='guild')return guildHTML();return'';
-  }
-  function zoneCardHTML(z){
-    var hc=z.house_color;
-    var s='<div class="zc" data-zid="'+z.id+'" style="border-left:3px solid '+hc+'30">';
-    if(z.narrative_title)s+='<div class="zc-ev" style="background:linear-gradient(90deg,'+hc+'12,transparent)"><span style="font-family:JetBrains Mono,monospace;font-size:9px;font-weight:700;color:'+hc+'">📖 '+z.narrative_title+'</span><span style="font-family:JetBrains Mono,monospace;font-size:9px;color:#D4A64B">ACTIVE</span></div>';
-    if(z.objective)s+='<div class="zc-obj"><span style="font-size:11px">⭐</span><span>DAILY OBJECTIVE — ×1.5 PTS</span></div>';
-    s+='<div class="zc-b"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px"><div><div class="zc-name">'+z.name+'</div>';
-    if(z.description)s+='<div class="zc-desc">'+z.description+'</div>';
-    s+='<div class="zc-reg" style="color:'+hc+'">'+z.house_icon+' '+z.region+'</div></div>';
-    s+=(z.controller?'<span class="zc-badge cntrl" style="color:'+z.controller.color+';background:'+z.controller.color+'15">'+z.controller.icon+' '+z.controller.name+'</span>':'<span class="zc-badge open">CONTESTED</span>');
-    s+='</div>';
-    z.guilds.slice(0,3).forEach(function(g){
-      s+='<div class="gr"><div class="gr-d" style="background:'+g.color+'"></div><div class="gr-n">'+g.name+'</div><div class="gr-t"><div class="gr-f" style="width:'+g.pct+'%;background:linear-gradient(90deg,'+g.color+'90,'+g.color+'40)"></div></div><div class="gr-p" style="color:'+g.color+'">'+g.pct+'%</div></div>';
-    });
-    s+='<div class="zc-bot"><div>';
-    if(z.bonus_effect)s+='<span class="zc-bonus">✨ '+z.bonus_effect+'</span>';
-    return s+'</div><div class="zc-cast">'+z.casters+' casters</div></div></div></div>';
-  }
-
-  // ═══════════════════════════════════════
-  // BATTLE VIEW
-  // ═══════════════════════════════════════
-  function renderBattle(){
-    var z=S.sel;if(!z)return;var hc=z.house_color;
-    var nines=mockNines(z);
-    S.battle={zone:z,nines:nines,feeds:[],intervals:[],raf:null,vfx:null,positions:[]};
-    var app=document.getElementById('app');
-
-    var s='<div class="bv-head" style="background:linear-gradient(180deg,'+hc+'08,transparent)">'+
-      '<button class="bv-back" id="b-back">←</button><div style="flex:1">'+
-      '<div style="font-family:Cinzel,serif;font-size:15px;font-weight:700;color:#F0ECF8">'+z.name+'</div>'+
-      '<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:'+hc+'">'+z.house_icon+' '+z.region;
-    if(z.description)s+=' · '+z.description;
-    s+='</div></div>';
-    s+=(z.controller?'<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:'+z.controller.color+';background:'+z.controller.color+'12;padding:4px 10px;border-radius:6px;border:1px solid '+z.controller.color+'25">'+z.controller.icon+' '+z.controller.name+'</div>':'<div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#ff4466;background:rgba(255,68,102,0.1);padding:4px 10px;border-radius:6px">CONTESTED</div>');
-    s+='</div>';
-
-    s+='<div class="bv-arena" id="b-arena"></div>';
-
-    // ROSTER
-    s+='<div class="ro-sec"><div style="font-family:JetBrains Mono,monospace;font-size:9px;color:#554E68;letter-spacing:1px;margin-bottom:6px">ZONE ROSTER — '+nines.length+' NINES</div>';
-    var gmap={};nines.forEach(function(n){if(!gmap[n.guild_id])gmap[n.guild_id]={g:n,ns:[]};gmap[n.guild_id].ns.push(n);});
-    Object.keys(gmap).forEach(function(gid){
-      var grp=gmap[gid];var g=grp.g;
-      s+='<div class="ro-ghdr"><div class="ro-gdot" style="background:'+g.guild_color+'"></div>'+
-        '<span class="ro-gname" style="color:'+g.guild_color+'">'+g.guild_name+'</span>'+
-        '<span class="ro-gpct" style="color:'+g.guild_color+'">'+grp.ns.length+'</span></div>';
-      grp.ns.forEach(function(n){
-        var hpP=Math.round((n.hp/n.max_hp)*100);var hpC=hpP>60?'#6acd8a':hpP>30?'#D4A64B':'#ff4466';
-        var hs=SCHOOL[Object.keys(SCHOOL).find(function(k){return SCHOOL[k].key===n.house})]||{icon:'✨',color:'#D4A64B'};
-        s+='<div class="ro-nine" data-nid="'+n.id+'"><div class="ro-icon" style="background:'+hs.color+'20;color:'+hs.color+';border:1px solid '+hs.color+'40">'+hs.icon+'</div>'+
-          '<div class="ro-info"><div class="ro-name">'+n.name+'</div><div class="ro-spell" style="color:'+hs.color+'80">'+n.spell+'</div></div>'+
-          '<div class="ro-hp"><div class="ro-hpbar"><div class="ro-hpfill" style="width:'+hpP+'%;background:'+hpC+'"></div></div>'+
-          '<div class="ro-hptxt">'+n.hp+'/'+n.max_hp+'</div></div></div>';
+  // ===== TABS =====
+  function setupTabs() {
+    document.querySelectorAll('.nl-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.nl-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        state.currentTab = tab.dataset.tab;
+        renderZoneList();
       });
     });
-    s+='</div>';
-
-    // FEED
-    s+='<div class="fd-sec"><div class="fd-hdr"><span class="fd-t">BATTLE FEED</span><span style="font-size:14px">😼</span></div><div id="feed-list"></div></div>';
-    app.innerHTML=s;
-    setTimeout(function(){initArena(z,nines);bindBattle();},60);
   }
 
-  // ═══════════════════════════════════════
-  // ARENA
-  // ═══════════════════════════════════════
-  function initArena(zone,nines){
-    var el=document.getElementById('b-arena');if(!el)return;
-    var W=el.clientWidth,H=el.clientHeight;
-    var biome=getBiome(zone.description,zone.name);
+  // ===== LOAD ZONES =====
+  async function loadZones() {
+    try {
+      const res = await fetch('/api/zones');
+      if (!res.ok) throw new Error('Failed to load zones');
+      const data = await res.json();
+      state.zones = data.zones || data || [];
 
-    // Background canvas
-    var bgC=document.createElement('canvas');bgC.width=W;bgC.height=H;
-    bgC.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:1';
-    el.appendChild(bgC);
-    var bx=bgC.getContext('2d');
-    var grad=bx.createLinearGradient(0,0,0,H);
-    grad.addColorStop(0,biome.sky[0]);grad.addColorStop(0.5,biome.sky[1]);grad.addColorStop(1,biome.sky[2]);
-    bx.fillStyle=grad;bx.fillRect(0,0,W,H);
-    bx.fillStyle=biome.ground;bx.fillRect(0,H*0.75,W,H*0.25);
-    var gg=bx.createLinearGradient(0,H*0.72,0,H*0.78);gg.addColorStop(0,'transparent');gg.addColorStop(1,biome.ground);
-    bx.fillStyle=gg;bx.fillRect(0,H*0.72,W,H*0.06);
-    bx.fillStyle=biome.fog;
-    for(var f=0;f<3;f++){bx.beginPath();bx.ellipse(W*(0.2+f*0.3),H*(0.6+f*0.08),W*0.35,H*0.15,0,0,Math.PI*2);bx.fill();}
+      // Also get arena status for active counts
+      try {
+        const arenaRes = await fetch('/api/arena/active');
+        const arenaData = await arenaRes.json();
+        if (arenaData.arenas) {
+          for (const a of arenaData.arenas) {
+            const zone = state.zones.find(z => z.id === a.zoneId);
+            if (zone) {
+              zone.arena_active = true;
+              zone.arena_nines = a.nines;
+              zone.arena_round = a.round;
+              zone.arena_cycle = a.cycle;
+            }
+          }
+        }
+      } catch(e) { /* arena endpoint might not exist yet */ }
 
-    // Particle canvas
-    var pC=document.createElement('canvas');pC.width=W;pC.height=H;
-    pC.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none';
-    el.appendChild(pC);var px=pC.getContext('2d');
-    var parts=[];var pc=biome.particles;
-    for(var p=0;p<pc.count;p++)parts.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-0.5)*0.3,
-      vy:pc.rise?-(0.2+Math.random()*0.5):(0.1+Math.random()*0.3),sz:1+Math.random()*2.5,a:0.2+Math.random()*0.5,ph:Math.random()*Math.PI*2});
-
-    // Sprite layer
-    var sL=document.createElement('div');sL.id='sprite-layer';
-    sL.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:10;pointer-events:none';
-    el.appendChild(sL);
-
-    var positions=[];var gY=H*0.4,gH=H*0.45;
-    nines.forEach(function(n,i){
-      var x=18+Math.random()*(W-36),y=gY+Math.random()*gH,flip=x>W/2;
-      var cfg=null,cv=null;
-      try{cfg=NineSprite.randomConfig(n.house,n.id*7+i*13);}catch(e){}
-      if(cfg){try{cv=NineSprite.createCanvas(cfg,2,flip);}catch(e){}}
-      if(cv){
-        cv.style.cssText='position:absolute;left:'+(x-12)+'px;top:'+(y-12)+'px;z-index:'+(10+Math.floor(y))+
-          ';transition:filter 0.2s,opacity 0.2s;image-rendering:pixelated;pointer-events:auto;cursor:pointer';
-        cv.dataset.nid=n.id;sL.appendChild(cv);
-      }
-      // HP bar
-      var hpP=Math.round((n.hp/n.max_hp)*100),hpC=hpP>60?'#6acd8a':hpP>30?'#D4A64B':'#ff4466';
-      var hd=document.createElement('div');
-      hd.style.cssText='position:absolute;left:'+(x-10)+'px;top:'+(y+(cv?cv.height/2+2:20))+'px;width:20px;height:2px;background:rgba(0,0,0,0.5);border-radius:1px;overflow:hidden;z-index:'+(11+Math.floor(y));
-      hd.innerHTML='<div style="width:'+hpP+'%;height:100%;background:'+hpC+';border-radius:1px"></div>';
-      hd.dataset.nid=n.id;hd.className='hp-bar';sL.appendChild(hd);
-      // Guild glow
-      var gl=document.createElement('div');
-      gl.style.cssText='position:absolute;left:'+(x-8)+'px;top:'+(y+(cv?cv.height/2+4:22))+'px;width:16px;height:4px;background:radial-gradient(ellipse,'+n.guild_color+'50,transparent);border-radius:50%;z-index:'+(9+Math.floor(y))+';pointer-events:none';
-      gl.dataset.nid=n.id;gl.className='guild-glow';sL.appendChild(gl);
-      positions.push({nine:n,x:x,y:y,canvas:cv});
-    });
-    S.battle.positions=positions;
-
-    // VFX canvas
-    var vC=document.createElement('canvas');vC.width=W;vC.height=H;
-    vC.style.cssText='position:absolute;top:0;left:0;width:100%;height:100%;z-index:30;pointer-events:none';
-    el.appendChild(vC);
-    try{S.battle.vfx=new SpellVFX.Engine();}catch(e){}
-
-    // Animation
-    var t=0;
-    function anim(){
-      if(!document.getElementById('b-arena'))return;
-      px.clearRect(0,0,W,H);t+=0.016;
-      parts.forEach(function(p){
-        p.x+=p.vx+Math.sin(t*0.5+p.ph)*0.15;p.y+=p.vy;
-        if(p.y<-5)p.y=H+5;if(p.y>H+5)p.y=-5;if(p.x<-5)p.x=W+5;if(p.x>W+5)p.x=-5;
-        var fl=0.7+Math.sin(t*2+p.ph)*0.3;px.globalAlpha=p.a*fl;px.fillStyle=pc.color;
-        if(pc.type==='sparkle'||pc.type==='firefly'){
-          px.beginPath();px.arc(p.x,p.y,p.sz*0.8,0,Math.PI*2);px.fill();
-          px.globalAlpha=p.a*fl*0.3;px.beginPath();px.arc(p.x,p.y,p.sz*2,0,Math.PI*2);px.fill();
-        }else{px.fillRect(p.x,p.y,p.sz,p.sz);}
-      });px.globalAlpha=1;
-      if(S.battle&&S.battle.vfx){try{S.battle.vfx.update();S.battle.vfx.render(vC);}catch(e){}}
-      S.battle.raf=requestAnimationFrame(anim);
+      renderZoneList();
+      updateActiveCount();
+    } catch(e) {
+      document.getElementById('zone-container').innerHTML = '<div class="loading-text">Failed to load zones. Retrying...</div>';
+      setTimeout(loadZones, 3000);
     }
-    anim();
-
-    // Combat
-    addFeed('😼',nermSay('intro'),'#D4A64B',true);
-    var ci=setInterval(function(){if(!document.getElementById('b-arena')){clearInterval(ci);return;}doCombat();},1200+Math.random()*600);
-    S.battle.intervals.push(ci);
-    var qi=setInterval(function(){if(!document.getElementById('b-arena')){clearInterval(qi);return;}if(Math.random()<0.2)addFeed('😼',nermSay('quiet'),'#D4A64B',true);},14000);
-    S.battle.intervals.push(qi);
-    var ti=setInterval(function(){if(!document.getElementById('b-arena')){clearInterval(ti);return;}if(Math.random()<0.3)addFeed('😼',nermSay('taunt'),'#D4A64B',true);},20000);
-    S.battle.intervals.push(ti);
   }
 
-  function doCombat(){
-    var b=S.battle;if(!b||!b.positions.length)return;
-    var pos=b.positions;var from=pos[Math.floor(Math.random()*pos.length)];
-    var tgts=pos.filter(function(p){return p.nine.guild_id!==from.nine.guild_id});
-    if(!tgts.length)tgts=pos.filter(function(p){return p!==from});if(!tgts.length)return;
-    tgts.sort(function(a,b){return a.nine.hp-b.nine.hp});var to=tgts[0];
-    var ch=from.nine.spell_house||from.nine.house;var sp=from.nine.spell||'Mana Bolt';
-    if(b.vfx){try{b.vfx.fire(from.x,from.y,to.x,to.y,ch,function(){applyDmg(from,to,sp);});}catch(e){applyDmg(from,to,sp);}}
-    else applyDmg(from,to,sp);
-    if(Math.random()<0.4)addFeed('😼',nermSay('attack',{a:from.nine.name,d:to.nine.name,spell:sp}),'#D4A64B',true);
-    else{var hc=(SCHOOL[Object.keys(SCHOOL).find(function(k){return SCHOOL[k].key===ch})]||{color:'#D4A64B'}).color;
-      addFeed(from.nine.guild_color,'<span style="color:'+from.nine.guild_color+'">'+from.nine.name+'</span> → <span style="color:'+hc+'">'+sp+'</span> → '+to.nine.name,from.nine.guild_color,false);}
-  }
-  function applyDmg(from,to,sp){
-    var dmg=from.nine.atk||4;var m=MATCHUPS[from.nine.house];var mt='n';
-    if(m){if(m.s===to.nine.house)mt='s';else if(m.w===to.nine.house)mt='w';}
-    var crit=Math.random()<0.12;
-    if(mt==='s'){dmg=Math.round(dmg*1.3);if(Math.random()<0.3)addFeed('😼',nermSay('effective',{a:from.nine.name,d:to.nine.name}),'#D4A64B',true);}
-    else if(mt==='w'){dmg=Math.round(dmg*0.8);if(Math.random()<0.3)addFeed('😼',nermSay('resist',{a:from.nine.name,d:to.nine.name}),'#D4A64B',true);}
-    if(crit){dmg*=2;addFeed('😼',nermSay('crit',{a:from.nine.name,d:to.nine.name}),'#D4A64B',true);}
-    if(S.battle.vfx)try{S.battle.vfx.spawnDmg(to.x,to.y-15,dmg,crit?'crit':'damage');}catch(e){}
-    to.nine.hp=Math.max(0,to.nine.hp-dmg);
-    if(to.nine.hp<=0){addFeed('😼',nermSay('kill',{a:from.nine.name,d:to.nine.name}),'#ff4466',true);to.nine.hp=to.nine.max_hp;}
-    updateHP(to.nine);
-    if(Math.random()<0.1){var h=2+Math.floor(Math.random()*4);from.nine.hp=Math.min(from.nine.max_hp,from.nine.hp+h);updateHP(from.nine);
-      if(S.battle.vfx)try{S.battle.vfx.spawnDmg(from.x,from.y-15,h,'heal');}catch(e){}
-      if(Math.random()<0.3)addFeed('😼',nermSay('heal',{a:from.nine.name}),'#6acd8a',true);}
-  }
-  function updateHP(n){
-    var el=document.querySelector('.ro-nine[data-nid="'+n.id+'"]');if(!el)return;
-    var p=Math.round((n.hp/n.max_hp)*100),c=p>60?'#6acd8a':p>30?'#D4A64B':'#ff4466';
-    var f=el.querySelector('.ro-hpfill'),t=el.querySelector('.ro-hptxt');
-    if(f){f.style.width=p+'%';f.style.background=c;}if(t)t.textContent=n.hp+'/'+n.max_hp;
+  // ===== RENDER ZONE LIST =====
+  function renderZoneList() {
+    const container = document.getElementById('zone-container');
+    let zones = [...state.zones];
+
+    // Filter by tab
+    if (state.currentTab === 'events') {
+      zones = zones.filter(z => z.event || z.daily_objective);
+    } else if (state.currentTab === 'hot') {
+      // Sort: objectives first, then events, then by caster count
+      zones.sort((a, b) => {
+        if (a.daily_objective && !b.daily_objective) return -1;
+        if (b.daily_objective && !a.daily_objective) return 1;
+        if (a.event && !b.event) return -1;
+        if (b.event && !a.event) return 1;
+        return (b.arena_nines || b.casters || 0) - (a.arena_nines || a.casters || 0);
+      });
+    }
+
+    if (state.currentTab === 'regions') {
+      renderRegionsTab(container);
+      return;
+    }
+    if (state.currentTab === 'guild') {
+      renderGuildTab(container);
+      return;
+    }
+
+    if (zones.length === 0) {
+      container.innerHTML = '<div class="loading-text">No zones to show.</div>';
+      return;
+    }
+
+    container.innerHTML = zones.map(zone => buildZoneCard(zone)).join('');
+
+    // Attach click handlers
+    container.querySelectorAll('.zone-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const zoneId = parseInt(card.dataset.zoneId);
+        const zone = state.zones.find(z => z.id === zoneId);
+        if (zone) openArena(zone);
+      });
+    });
   }
 
-  // FEED
-  function addFeed(dot,text,col,isN){
-    if(!S.battle)return;S.battle.feeds.unshift({dot:dot,text:text,col:col,n:isN,ts:Date.now()});
-    if(S.battle.feeds.length>12)S.battle.feeds=S.battle.feeds.slice(0,12);
-    var el=document.getElementById('feed-list');if(!el)return;
-    el.innerHTML=S.battle.feeds.map(function(f){
-      var age=Math.floor((Date.now()-f.ts)/1000);var ts=age<60?age+'s':Math.floor(age/60)+'m';
-      return'<div class="fd-ev'+(f.n?' nerm-ev':'')+'">'+(f.n?'<span style="font-size:11px;flex-shrink:0">😼</span>':'<div class="fd-dot" style="background:'+f.dot+'"></div>')+
-        '<div class="fd-txt">'+f.text+'</div><div class="fd-tm">'+ts+'</div></div>';
+  function buildZoneCard(zone) {
+    const h = HOUSES[zone.house || zone.region_house] || { color: '#888', name: '???', icon: '❓' };
+    const guilds = zone.guilds || zone.guild_presence || [];
+    const casters = zone.arena_nines || zone.casters || 0;
+    const effects = zone.active_effects || zone.effects || [];
+    const contested = zone.contested || (guilds.length > 1 && guilds[0] && guilds[1] && guilds[0].pct - guilds[1].pct < 15);
+
+    let bannerHTML = '';
+    if (zone.daily_objective) {
+      bannerHTML += `<div class="zone-objective-banner">⭐ DAILY OBJECTIVE — ×1.5 POINTS</div>`;
+    }
+    if (zone.event) {
+      bannerHTML += `<div class="zone-event-banner" style="background:linear-gradient(90deg,${h.color}20,transparent);">
+        <span style="color:${h.color}">${zone.event.icon || '⚡'} ${(zone.event.type || zone.event.name || '').toUpperCase()}</span>
+        <span style="color:var(--gold)">${zone.event.time || zone.event.duration || ''}</span>
+      </div>`;
+    }
+
+    let guildsHTML = guilds.slice(0, 3).map(g => {
+      const gColor = g.color || '#888';
+      return `<div class="guild-bar-row">
+        <div class="guild-dot" style="background:${gColor}"></div>
+        <div class="guild-name">${g.name || g.guild_name || '???'}</div>
+        <div class="guild-track"><div class="guild-fill" style="width:${g.pct || g.control || 0}%;background:linear-gradient(90deg,${gColor}90,${gColor}40)"></div></div>
+        <div class="guild-pct" style="color:${gColor}">${g.pct || g.control || 0}%</div>
+      </div>`;
+    }).join('');
+
+    let effectsHTML = effects.map(e => {
+      const eName = typeof e === 'string' ? e : e.name || e;
+      const eColor = EFFECT_COLORS[eName] || '#888';
+      return `<span class="effect-pill" style="background:${eColor}15;color:${eColor};border:1px solid ${eColor}30">${eName}</span>`;
+    }).join('');
+
+    let badgeHTML = '';
+    if (contested) {
+      badgeHTML = `<span class="zone-badge contested">CONTESTED</span>`;
+    } else if (zone.held_days || zone.streak) {
+      badgeHTML = `<span class="zone-badge held">HELD ${zone.held_days || zone.streak}d</span>`;
+    }
+
+    return `<div class="zone-card" data-zone-id="${zone.id}">
+      ${bannerHTML}
+      <div class="zone-card-body">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+          <div>
+            <div class="zone-name">${zone.name}</div>
+            <div class="zone-region" style="color:${h.color}">${h.icon} ${zone.region || zone.region_name || h.name}</div>
+          </div>
+          <div>${badgeHTML}</div>
+        </div>
+        <div style="margin-bottom:10px">${guildsHTML}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="effect-pills">${effectsHTML}</div>
+          <div class="zone-casters">${casters} ${zone.arena_active ? 'fighting' : 'casters'}</div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderRegionsTab(container) {
+    // Group zones by region
+    const regions = {};
+    for (const z of state.zones) {
+      const rName = z.region || z.region_name || 'Unknown';
+      if (!regions[rName]) regions[rName] = { name: rName, house: z.house || z.region_house, zones: [] };
+      regions[rName].zones.push(z);
+    }
+
+    container.innerHTML = Object.values(regions).map(r => {
+      const h = HOUSES[r.house] || { color: '#888', name: '???', icon: '❓' };
+      return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;border-left:3px solid ${h.color};">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:var(--bright)">${h.icon} ${r.name}</div>
+            <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--muted);margin-top:2px">${r.zones.length} zones</div>
+          </div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:${h.color};background:${h.color}15;padding:4px 10px;border-radius:6px">${h.name}</div>
+        </div>
+      </div>`;
     }).join('');
   }
 
-  // HIGHLIGHT
-  function hlNine(nid){
-    document.querySelectorAll('#sprite-layer canvas[data-nid]').forEach(function(cv){
-      var id=parseInt(cv.dataset.nid);
-      if(nid&&id!==nid){cv.style.opacity='0.2';cv.style.filter='brightness(0.3)';}
-      else if(nid&&id===nid){cv.style.opacity='1';cv.style.filter='brightness(1.5) drop-shadow(0 0 6px #fff)';}
-      else{cv.style.opacity='1';cv.style.filter='none';}
+  function renderGuildTab(container) {
+    container.innerHTML = '<div class="loading-text">Guild view coming soon</div>';
+    // TODO: fetch guild data and render
+  }
+
+  function updateActiveCount() {
+    const active = state.zones.filter(z => z.arena_active || z.contested || z.event).length;
+    document.getElementById('active-count').textContent = `${active} Active`;
+  }
+
+  function updatePlayerBar() {
+    document.getElementById('player-level').textContent = state.playerLevel || '--';
+    // TODO: fetch real ticket count and zone count
+  }
+
+  // ===== ARENA VIEW =====
+  function openArena(zone) {
+    state.currentZone = zone;
+    state.currentZoneId = zone.id;
+    state.feedEvents = [];
+    state.guildScores = {};
+    state.roundWins = {};
+
+    // Update UI
+    document.getElementById('zone-list-view').style.display = 'none';
+    document.getElementById('arena-view').style.display = 'block';
+    document.getElementById('arena-zone-name').textContent = zone.name;
+    const h = HOUSES[zone.house || zone.region_house] || { color: '#888', icon: '❓' };
+    document.getElementById('arena-zone-region').style.color = h.color;
+    document.getElementById('arena-zone-region').textContent = `${h.icon} ${zone.region || zone.region_name || ''}`;
+
+    // Init PixiJS
+    initPixiArena();
+
+    // Connect Socket.io
+    connectArenaSocket(zone.id);
+
+    // Check if player is deployed
+    checkDeployment(zone.id);
+  }
+
+  function closeArena() {
+    document.getElementById('arena-view').style.display = 'none';
+    document.getElementById('zone-list-view').style.display = 'block';
+
+    // Cleanup
+    if (state.socket) {
+      state.socket.emit('leave_zone', { zoneId: state.currentZoneId });
+      state.socket.disconnect();
+      state.socket = null;
+    }
+    if (state.arenaApp) {
+      state.arenaApp.destroy(true);
+      state.arenaApp = null;
+    }
+    state.nines.clear();
+    state.currentZoneId = null;
+    state.currentZone = null;
+
+    // Refresh zone data
+    loadZones();
+  }
+
+  // ===== PIXI ARENA =====
+  function initPixiArena() {
+    const container = document.getElementById('arena-canvas');
+    container.innerHTML = '';
+
+    const app = new PIXI.Application({
+      width: window.innerWidth,
+      height: window.innerHeight,
+      backgroundColor: 0x0a0812,
+      antialias: true,
+      resolution: window.devicePixelRatio || 1,
+      autoDensity: true,
     });
-    document.querySelectorAll('.hp-bar,.guild-glow').forEach(function(e){
-      e.style.opacity=(nid&&parseInt(e.dataset.nid)!==nid)?'0.15':'1';
-    });
-    document.querySelectorAll('.ro-nine').forEach(function(e){
-      if(nid&&parseInt(e.dataset.nid)===nid)e.classList.add('hl');else e.classList.remove('hl');
+
+    container.appendChild(app.view);
+    app.view.style.width = '100%';
+    app.view.style.height = '100%';
+    state.arenaApp = app;
+
+    // Draw arena ground
+    drawArenaGround(app);
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+      if (state.arenaApp) {
+        state.arenaApp.renderer.resize(window.innerWidth, window.innerHeight);
+        drawArenaGround(state.arenaApp);
+      }
     });
   }
 
-  // GUILD TAB
-  function guildHTML(){
-    var g=GUILDS[0],gc=g.color,ct=S.zones.filter(function(z){return z.controller}).length;
-    var s='<div style="padding:0 14px 40px"><div class="gh" style="background:linear-gradient(135deg,'+gc+'12,transparent);border:1px solid '+gc+'25"><div class="gh-t" style="color:'+gc+'">'+g.name+'</div><div class="gh-m">Guild overview</div>'+
-      '<div style="display:flex;gap:16px;margin-top:12px"><div style="text-align:center"><div class="gs-v" style="color:#6acd8a">'+ct+'</div><div class="gs-l">CONTROLLED</div></div>'+
-      '<div style="text-align:center"><div class="gs-v" style="color:#D4A64B">'+S.zones.length+'</div><div class="gs-l">TOTAL</div></div></div></div>';
-    S.zones.filter(function(z){return z.controller}).slice(0,5).forEach(function(z){
-      s+='<div style="display:flex;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:4px;align-items:center"><span style="font-size:12px">'+z.controller.icon+'</span><div style="flex:1"><div style="font-family:JetBrains Mono,monospace;font-size:10px;color:#F0ECF8">'+z.name+'</div><div style="font-family:JetBrains Mono,monospace;font-size:8px;color:'+z.controller.color+'">'+z.controller.name+' · '+z.streak+'d</div></div></div>';
-    });
-    if(!ct)s+='<div style="text-align:center;padding:30px;font-family:JetBrains Mono,monospace;font-size:10px;color:#554E68">No zones controlled yet.</div>';
-    return s+'</div>';
+  function drawArenaGround(app) {
+    // Remove old ground
+    const existing = app.stage.getChildByName('ground');
+    if (existing) app.stage.removeChild(existing);
+
+    const ground = new PIXI.Graphics();
+    ground.name = 'ground';
+    const cx = app.screen.width / 2;
+    const cy = app.screen.height / 2;
+
+    // Isometric diamond arena floor
+    const h = HOUSES[state.currentZone?.house || state.currentZone?.region_house] || { color: '#444' };
+    const hColor = parseInt(h.color.replace('#', ''), 16);
+
+    ground.beginFill(0x12101e);
+    ground.moveTo(cx, cy - 250);
+    ground.lineTo(cx + 400, cy);
+    ground.lineTo(cx, cy + 250);
+    ground.lineTo(cx - 400, cy);
+    ground.closePath();
+    ground.endFill();
+
+    // Subtle grid lines
+    ground.lineStyle(1, hColor, 0.06);
+    for (let i = -6; i <= 6; i++) {
+      ground.moveTo(cx + i * 60, cy - 250 + Math.abs(i) * 40);
+      ground.lineTo(cx + i * 60, cy + 250 - Math.abs(i) * 40);
+    }
+
+    // Border glow
+    ground.lineStyle(2, hColor, 0.15);
+    ground.moveTo(cx, cy - 250);
+    ground.lineTo(cx + 400, cy);
+    ground.lineTo(cx, cy + 250);
+    ground.lineTo(cx - 400, cy);
+    ground.closePath();
+
+    app.stage.addChildAt(ground, 0);
   }
 
-  // EVENTS
-  function bind(){
-    document.querySelectorAll('.nt-b').forEach(function(t){t.onclick=function(){S.tab=t.dataset.tab;S.sel=null;render();};});
-    document.querySelectorAll('.zc').forEach(function(c){c.onclick=function(){var id=parseInt(c.dataset.zid);window.location.href='/zone-battle.html?id='+id;};});
-  }
-  function bindBattle(){
-    var bb=document.getElementById('b-back');if(bb)bb.onclick=function(){cleanup();S.sel=null;render();};
-    document.querySelectorAll('.ro-nine').forEach(function(e){
-      e.onmouseenter=function(){hlNine(parseInt(e.dataset.nid));};
-      e.onmouseleave=function(){hlNine(null);};
-    });
-    document.querySelectorAll('#sprite-layer canvas[data-nid]').forEach(function(cv){
-      cv.onmouseenter=function(){hlNine(parseInt(cv.dataset.nid));};
-      cv.onmouseleave=function(){hlNine(null);};
-    });
-  }
-  function cleanup(){if(!S.battle)return;S.battle.intervals.forEach(function(i){clearInterval(i);});if(S.battle.raf)cancelAnimationFrame(S.battle.raf);S.battle=null;}
+  // ===== NINE SPRITES =====
+  function addNineSprite(nine) {
+    if (!state.arenaApp) return;
+    const app = state.arenaApp;
 
-  load();
-  })();
-  </script>
+    const container = new PIXI.Container();
+    container.x = nine.position.x;
+    container.y = nine.position.y;
+    container.sortableChildren = true;
+
+    const h = HOUSES[nine.house] || { color: '#888' };
+    const hColor = parseInt(h.color.replace('#', ''), 16);
+
+    // Guild ring
+    const ring = new PIXI.Graphics();
+    ring.lineStyle(2, hColor, 0.6);
+    ring.drawEllipse(0, 18, 14, 6);
+    ring.zIndex = 0;
+    container.addChild(ring);
+
+    // Cat body (simple isometric sprite placeholder — circle + ears)
+    const body = new PIXI.Graphics();
+    body.beginFill(hColor, 0.8);
+    body.drawCircle(0, 0, 12);
+    body.endFill();
+    // Ears
+    body.beginFill(hColor);
+    body.moveTo(-8, -10); body.lineTo(-4, -18); body.lineTo(0, -10);
+    body.moveTo(0, -10); body.lineTo(4, -18); body.lineTo(8, -10);
+    body.endFill();
+    // Eyes
+    body.beginFill(0x000000);
+    body.drawCircle(-4, -2, 2);
+    body.drawCircle(4, -2, 2);
+    body.endFill();
+    body.zIndex = 1;
+    container.addChild(body);
+
+    // Name label
+    const nameStyle = new PIXI.TextStyle({
+      fontFamily: 'monospace', fontSize: 8, fill: 0xF0ECF8,
+      dropShadow: true, dropShadowColor: 0x000000, dropShadowDistance: 1,
+    });
+    const nameText = new PIXI.Text(nine.name || '???', nameStyle);
+    nameText.anchor.set(0.5, 1);
+    nameText.y = -24;
+    nameText.zIndex = 3;
+    container.addChild(nameText);
+
+    // HP bar background
+    const hpBg = new PIXI.Graphics();
+    hpBg.beginFill(0x222222, 0.8);
+    hpBg.drawRoundedRect(-16, 22, 32, 4, 2);
+    hpBg.endFill();
+    hpBg.zIndex = 2;
+    container.addChild(hpBg);
+
+    // HP bar fill
+    const hpFill = new PIXI.Graphics();
+    hpFill.beginFill(0x44cc88);
+    hpFill.drawRoundedRect(-16, 22, 32, 4, 2);
+    hpFill.endFill();
+    hpFill.zIndex = 2;
+    container.addChild(hpFill);
+
+    app.stage.addChild(container);
+
+    state.nines.set(nine.id, {
+      container, body, hpFill, hpBg, nameText, ring,
+      hp: nine.current_hp, maxHp: nine.max_hp,
+      targetX: nine.position.x, targetY: nine.position.y,
+    });
+  }
+
+  function updateNineHP(nineId, hp, maxHp) {
+    const sprite = state.nines.get(nineId);
+    if (!sprite) return;
+    sprite.hp = hp;
+    sprite.maxHp = maxHp;
+    const pct = Math.max(0, hp / maxHp);
+    sprite.hpFill.clear();
+    const color = pct > 0.5 ? 0x44cc88 : pct > 0.25 ? 0xffaa55 : 0xff4466;
+    sprite.hpFill.beginFill(color);
+    sprite.hpFill.drawRoundedRect(-16, 22, 32 * pct, 4, 2);
+    sprite.hpFill.endFill();
+  }
+
+  function removeNineSprite(nineId) {
+    const sprite = state.nines.get(nineId);
+    if (!sprite || !state.arenaApp) return;
+    state.arenaApp.stage.removeChild(sprite.container);
+    state.nines.delete(nineId);
+  }
+
+  function showFloatingText(x, y, text, color = 0xff4466) {
+    if (!state.arenaApp) return;
+    const style = new PIXI.TextStyle({
+      fontFamily: "'Press Start 2P', monospace", fontSize: 10, fill: color, fontWeight: '700',
+      dropShadow: true, dropShadowColor: 0x000000, dropShadowDistance: 1,
+    });
+    const t = new PIXI.Text(text, style);
+    t.anchor.set(0.5);
+    t.x = x + (Math.random() - 0.5) * 20;
+    t.y = y - 10;
+    state.arenaApp.stage.addChild(t);
+
+    // Animate up and fade
+    let frame = 0;
+    const ticker = () => {
+      frame++;
+      t.y -= 1;
+      t.alpha = Math.max(0, 1 - frame / 40);
+      if (frame > 40) {
+        state.arenaApp.ticker.remove(ticker);
+        state.arenaApp.stage.removeChild(t);
+      }
+    };
+    state.arenaApp.ticker.add(ticker);
+  }
+
+  // ===== SOCKET.IO =====
+  function connectArenaSocket(zoneId) {
+    const socket = io('/arena', { transports: ['websocket', 'polling'] });
+    state.socket = socket;
+
+    socket.on('connect', () => {
+      socket.emit('join_zone', { zoneId });
+    });
+
+    // Current state (on first join)
+    socket.on('arena:state', (data) => {
+      if (data.snapshot) {
+        for (const nine of data.snapshot) {
+          addNineSprite(nine);
+          updateNineHP(nine.id, nine.current_hp, nine.max_hp);
+        }
+      }
+      if (data.round) updateRoundBadge(data.round, data.cycle);
+    });
+
+    // New Nine joins
+    socket.on('arena:nine_joined', (data) => {
+      addNineSprite(data);
+      addFeedEvent(`${data.player_name} entered the arena`, 'join');
+    });
+
+    // Nine leaves
+    socket.on('arena:nine_left', (data) => {
+      removeNineSprite(data.nine_id);
+    });
+
+    // Round start
+    socket.on('arena:round_start', (data) => {
+      showRoundBanner(`ROUND ${data.round_number}`, 'FIGHT!');
+      updateRoundBadge(data.round_number);
+      // Refresh Nine positions
+      if (data.nines) {
+        for (const nine of data.nines) {
+          if (!state.nines.has(nine.id)) addNineSprite(nine);
+          updateNineHP(nine.id, nine.current_hp, nine.max_hp);
+        }
+      }
+    });
+
+    // Batched combat events
+    socket.on('arena:events', (data) => {
+      if (!data.events) return;
+      for (const ev of data.events) {
+        processArenaEvent(ev);
+      }
+    });
+
+    // Individual event types
+    socket.on('arena:attack', (data) => processArenaEvent({ type: 'attack', ...data }));
+
+    // Round end
+    socket.on('arena:round_end', (data) => {
+      showRoundBanner(`ROUND ${data.round_number} OVER`, `${data.winner_guild || 'Draw'} wins!`);
+      if (data.guild_scores) state.guildScores = data.guild_scores;
+      updateScoreboard();
+    });
+
+    // Round heal
+    socket.on('arena:round_heal', (data) => {
+      if (data.nines) {
+        for (const n of data.nines) {
+          updateNineHP(n.id, n.hp_after, state.nines.get(n.id)?.maxHp || n.hp_after);
+          const sprite = state.nines.get(n.id);
+          if (sprite) showFloatingText(sprite.container.x, sprite.container.y, `+HEAL`, 0x44cc88);
+        }
+      }
+    });
+
+    // Cycle end
+    socket.on('arena:cycle_end', (data) => {
+      showRoundBanner('CYCLE COMPLETE', 'Sharpness -1%');
+    });
+
+    // Nerm commentary
+    socket.on('arena:nerm', (data) => {
+      showNermBubble(data.message);
+    });
+
+    socket.on('disconnect', () => {
+      addFeedEvent('Connection lost. Reconnecting...', 'system');
+    });
+  }
+
+  function processArenaEvent(ev) {
+    switch (ev.type) {
+      case 'attack': {
+        const sprite = state.nines.get(ev.to);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y, `-${ev.damage}`, ev.crit ? 0xffd700 : 0xff4466);
+          if (ev.crit) showFloatingText(sprite.container.x, sprite.container.y - 15, 'CRIT!', 0xffd700);
+          // Flash red
+          sprite.body.tint = 0xff4444;
+          setTimeout(() => { if (sprite.body) sprite.body.tint = 0xffffff; }, 150);
+        }
+        addFeedEvent(`${getNineName(ev.from)} → ${getNineName(ev.to)} -${ev.damage}${ev.crit ? ' CRIT!' : ''}`, 'attack');
+        break;
+      }
+      case 'damage': {
+        updateNineHP(ev.target_id, ev.new_hp, state.nines.get(ev.target_id)?.maxHp || 100);
+        updateYourNinePanel(ev.target_id);
+        break;
+      }
+      case 'heal': {
+        const sprite = state.nines.get(ev.nine_id);
+        if (sprite) showFloatingText(sprite.container.x, sprite.container.y, `+${ev.amount}`, 0x44cc88);
+        updateNineHP(ev.nine_id, ev.new_hp, state.nines.get(ev.nine_id)?.maxHp || 100);
+        break;
+      }
+      case 'ko': {
+        addFeedEvent(`💀 ${getNineName(ev.nine_id)} was KO'd${ev.killer_id ? ` by ${getNineName(ev.killer_id)}` : ''}`, 'ko');
+        // Fade out sprite
+        const sprite = state.nines.get(ev.nine_id);
+        if (sprite) {
+          sprite.container.alpha = 0.3;
+          showFloatingText(sprite.container.x, sprite.container.y, 'KO', 0xff4466);
+        }
+        break;
+      }
+      case 'dodge': {
+        const sprite = state.nines.get(ev.nine_id);
+        if (sprite) showFloatingText(sprite.container.x, sprite.container.y, 'DODGE', 0x90E0EF);
+        break;
+      }
+      case 'ward_pop': {
+        const sprite = state.nines.get(ev.nine_id);
+        if (sprite) showFloatingText(sprite.container.x, sprite.container.y, 'WARD!', 0xD4A64B);
+        break;
+      }
+      case 'effect': {
+        processEffectEvent(ev);
+        break;
+      }
+    }
+  }
+
+  function processEffectEvent(ev) {
+    const effectColors = {
+      BURN_APPLY: 0xffaa55, BURN_TICK: 0xffaa55, POISON_APPLY: 0xaaee55, POISON_TICK: 0xaaee55,
+      CORRODE_TICK: 0xaaee55, SILENCE: 0xbb88ff, HEX: 0xbb88ff, WEAKEN: 0x999999,
+      ANCHOR_SAVE: 0xffd700, SHATTER: 0xff4466, INFECT: 0xaaee55, CHAIN: 0x5599ff,
+      DRAIN: 0xff4466, SIPHON: 0xff4466, TAUNT: 0xff4466, REFLECT: 0x5599ff,
+      INSPIRE: 0xffd700, BLESS: 0x44cc88, HASTE: 0x90E0EF, STEALTH: 0x7B2D8E,
+      CLEANSE: 0xffffff, LEECH_FIELD: 0xaaee55,
+    };
+
+    const targetId = ev.target_id || ev.nine_id;
+    const sprite = state.nines.get(targetId);
+    const color = effectColors[ev.effect_type] || 0xD4A64B;
+
+    if (sprite) {
+      showFloatingText(sprite.container.x, sprite.container.y - 20, ev.effect_type.replace('_', ' '), color);
+    }
+
+    if (ev.effect_type === 'ANCHOR_SAVE') {
+      addFeedEvent(`⚓ ${getNineName(targetId)} saved by ANCHOR at 1 HP!`, 'effect');
+    }
+  }
+
+  function getNineName(id) {
+    const sprite = state.nines.get(id);
+    return sprite?.nameText?.text || '???';
+  }
+
+  // ===== UI UPDATES =====
+  function showRoundBanner(text, sub) {
+    const banner = document.getElementById('round-banner');
+    document.getElementById('round-banner-text').textContent = text;
+    document.getElementById('round-banner-sub').textContent = sub || '';
+    banner.style.display = 'block';
+    banner.style.animation = 'none';
+    banner.offsetHeight; // force reflow
+    banner.style.animation = 'bannerPop 2.5s forwards';
+    setTimeout(() => { banner.style.display = 'none'; }, 2500);
+  }
+
+  function updateRoundBadge(round, cycle) {
+    document.getElementById('arena-round-badge').textContent = `ROUND ${round || 1}`;
+    if (cycle) document.getElementById('arena-cycle-timer').textContent = `Cycle ${cycle}`;
+  }
+
+  function addFeedEvent(text, type) {
+    const feed = document.getElementById('arena-feed');
+    const div = document.createElement('div');
+    div.className = 'feed-event';
+    const colorClass = type === 'ko' ? 'feed-dmg' : type === 'effect' ? 'feed-effect' : type === 'heal' ? 'feed-heal' : '';
+    div.innerHTML = `<span class="${colorClass}">${text}</span>`;
+    feed.appendChild(div);
+
+    // Keep only last 8 events
+    while (feed.children.length > 8) {
+      feed.removeChild(feed.firstChild);
+    }
+  }
+
+  function showNermBubble(text) {
+    const bubble = document.getElementById('nerm-bubble');
+    document.getElementById('nerm-text').textContent = text;
+    bubble.classList.add('visible');
+    setTimeout(() => bubble.classList.remove('visible'), 6000);
+  }
+
+  function updateScoreboard() {
+    const rows = document.getElementById('scoreboard-rows');
+    const entries = Object.entries(state.guildScores).sort((a, b) => b[1] - a[1]);
+    rows.innerHTML = entries.map(([guild, hp]) => {
+      return `<div class="arena-sb-row">
+        <div class="arena-sb-guild">${guild}</div>
+        <div class="arena-sb-wins" style="color:${hp > 0 ? 'var(--green)' : 'var(--faint)'}">${hp} HP</div>
+      </div>`;
+    }).join('');
+  }
+
+  function updateYourNinePanel(nineId) {
+    if (nineId !== state.playerId) return;
+    const sprite = state.nines.get(nineId);
+    if (!sprite) return;
+    document.getElementById('your-hp-fill').style.width = `${(sprite.hp / sprite.maxHp) * 100}%`;
+    document.getElementById('your-hp-text').textContent = `${sprite.hp}/${sprite.maxHp}`;
+  }
+
+  // ===== DEPLOYMENT =====
+  async function checkDeployment(zoneId) {
+    if (!state.playerId) {
+      // Not logged in — show spectator mode
+      document.getElementById('deploy-cta').style.display = 'block';
+      document.getElementById('your-nine-panel').style.display = 'none';
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/arena/deployments/${state.playerId}`);
+      const data = await res.json();
+      const deployed = data.deployments?.find(d => d.zone_id === zoneId);
+
+      if (deployed) {
+        state.isDeployed = true;
+        document.getElementById('deploy-cta').style.display = 'none';
+        document.getElementById('your-nine-panel').style.display = 'block';
+        // Update your nine panel stats
+        document.getElementById('your-nine-stats').innerHTML = `
+          <div class="your-nine-stat" style="color:#e85a6a">ATK ${deployed.stats.atk}</div>
+          <div class="your-nine-stat" style="color:#6acd8a">HP ${deployed.stats.hp}</div>
+          <div class="your-nine-stat" style="color:#6ac8d8">SPD ${deployed.stats.spd}</div>
+          <div class="your-nine-stat" style="color:#b088e8">DEF ${deployed.stats.def}</div>
+          <div class="your-nine-stat" style="color:#D4A64B">LCK ${deployed.stats.luck}</div>
+        `;
+      } else {
+        state.isDeployed = false;
+        document.getElementById('deploy-cta').style.display = 'block';
+        document.getElementById('your-nine-panel').style.display = 'none';
+      }
+    } catch(e) {
+      // Fallback: show deploy button
+      document.getElementById('deploy-cta').style.display = 'block';
+      document.getElementById('your-nine-panel').style.display = 'none';
+    }
+  }
+
+  async function openDeployModal() {
+    const modal = document.getElementById('deploy-modal');
+    modal.classList.add('open');
+    document.getElementById('deploy-zone-name').textContent = state.currentZone?.name || '';
+    state.selectedCards = [];
+    updateDeployButton();
+
+    // Load player cards
+    try {
+      const res = await fetch(`/api/spells/collection/${state.playerId}`);
+      const data = await res.json();
+      state.playerCards = data.cards || data || [];
+      renderDeployCards();
+    } catch(e) {
+      document.getElementById('deploy-card-grid').innerHTML = '<div class="loading-text">Failed to load cards</div>';
+    }
+  }
+
+  function closeDeployModal() {
+    document.getElementById('deploy-modal').classList.remove('open');
+    state.selectedCards = [];
+  }
+
+  function renderDeployCards() {
+    const grid = document.getElementById('deploy-card-grid');
+    grid.innerHTML = state.playerCards.map((card, i) => {
+      const typeColor = TYPE_COLORS[card.spell_type] || '#888';
+      const effects = (card.bonus_effects || []).map(e => e.tag).join(', ');
+      const deployed = card.deployed_zone ? 'deployed-elsewhere' : '';
+      const selected = state.selectedCards.includes(card.id) ? 'selected' : '';
+      return `<div class="deploy-card-slot ${deployed} ${selected}" data-card-id="${card.id}" data-index="${i}">
+        <div class="deploy-card-type" style="color:${typeColor}">${(card.spell_type || '').toUpperCase()}</div>
+        <div class="deploy-card-name">${card.name}</div>
+        <div class="deploy-card-sharpness">⚔️ ${card.sharpness || 100}%</div>
+        ${effects ? `<div class="deploy-card-effects">${effects}</div>` : ''}
+        ${card.deployed_zone ? `<div style="font-family:'Press Start 2P',monospace;font-size:6px;color:var(--red);margin-top:4px;">DEPLOYED</div>` : ''}
+      </div>`;
+    }).join('');
+
+    // Click handlers
+    grid.querySelectorAll('.deploy-card-slot:not(.deployed-elsewhere)').forEach(slot => {
+      slot.addEventListener('click', () => {
+        const cardId = slot.dataset.cardId;
+        if (state.selectedCards.includes(cardId)) {
+          state.selectedCards = state.selectedCards.filter(id => id !== cardId);
+          slot.classList.remove('selected');
+        } else if (state.selectedCards.length < 3) {
+          state.selectedCards.push(cardId);
+          slot.classList.add('selected');
+        }
+        updateDeployButton();
+        updateDeployStatsPreview();
+      });
+    });
+  }
+
+  function updateDeployButton() {
+    const btn = document.getElementById('btn-confirm-deploy');
+    const count = state.selectedCards.length;
+    document.getElementById('deploy-selected-count').textContent = count;
+    btn.disabled = count !== 3;
+    btn.textContent = count === 3 ? '⚔️ DEPLOY TO BATTLE' : `SELECT ${3 - count} MORE CARDS`;
+  }
+
+  function updateDeployStatsPreview() {
+    // TODO: calculate preview stats from selected cards + house base
+  }
+
+  async function confirmDeploy() {
+    if (state.selectedCards.length !== 3) return;
+
+    try {
+      const res = await fetch('/api/arena/deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_id: state.playerId,
+          zone_id: state.currentZoneId,
+          card_ids: state.selectedCards,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        closeDeployModal();
+        state.isDeployed = true;
+        document.getElementById('deploy-cta').style.display = 'none';
+        document.getElementById('your-nine-panel').style.display = 'block';
+        addFeedEvent('You have entered the battle!', 'join');
+      } else {
+        alert(data.error || 'Deploy failed');
+      }
+    } catch(e) {
+      alert('Deploy failed: ' + e.message);
+    }
+  }
+
+  async function withdraw() {
+    if (!confirm('Withdraw from this zone?')) return;
+
+    try {
+      await fetch('/api/arena/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_id: state.playerId,
+          zone_id: state.currentZoneId,
+        }),
+      });
+
+      state.isDeployed = false;
+      document.getElementById('your-nine-panel').style.display = 'none';
+      document.getElementById('deploy-cta').style.display = 'block';
+      addFeedEvent('You withdrew from the battle.', 'system');
+    } catch(e) {
+      alert('Withdraw failed');
+    }
+  }
+
+  // ===== EVENT LISTENERS =====
+  document.getElementById('btn-back').addEventListener('click', closeArena);
+  document.getElementById('btn-join-battle').addEventListener('click', openDeployModal);
+  document.getElementById('btn-confirm-deploy').addEventListener('click', confirmDeploy);
+  document.getElementById('btn-cancel-deploy').addEventListener('click', closeDeployModal);
+  document.getElementById('btn-withdraw').addEventListener('click', withdraw);
+
+  // ===== START =====
+  init();
+
+})();
+</script>
 </body>
 </html>
