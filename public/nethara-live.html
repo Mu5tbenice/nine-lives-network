@@ -529,20 +529,6 @@
 
       // Also get arena status for active counts
       try {
-        const arenaRes = await fetch('/api/arena/active');
-        const arenaData = await arenaRes.json();
-        if (arenaData.arenas) {
-          for (const a of arenaData.arenas) {
-            const zone = state.zones.find(z => z.id === a.zoneId);
-            if (zone) {
-              zone.arena_active = true;
-              zone.arena_nines = a.nines;
-              zone.arena_round = a.round;
-              zone.arena_cycle = a.cycle;
-            }
-          }
-        }
-      } catch(e) { /* arena endpoint might not exist yet */ }
 
       renderZoneList();
       updateActiveCount();
