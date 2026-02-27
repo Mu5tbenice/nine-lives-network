@@ -302,31 +302,6 @@ function scoreReply(text, houseId) {
 async function awardPoints(playerId, points, source) {
   await centralAddPoints(playerId, points, source || 'chronicle', 'Chronicle points');
 }
-    // Try RPC first
-    const { error } = await supabase.rpc("increment_player_points", {
-      p_player_id: playerId,
-      p_points: points,
-    });
-
-    if (error) {
-      // Fallback: manual update
-      const { data: player } = await supabase
-        .from("players")
-        .select("seasonal_points, lifetime_points")
-        .eq("id", playerId)
-        .single();
-
-      if (player) {
-        await supabase.from("players").update({
-          seasonal_points: (player.seasonal_points || 0) + points,
-          lifetime_points: (player.lifetime_points || 0) + points,
-        }).eq("id", playerId);
-      }
-    }
-  } catch (err) {
-    console.error(`[Chronicle] Points error for ${playerId}:`, err.message);
-  }
-}
 
 // ════════════════════════════════════
 // AI STORY GENERATION (Anthropic)
