@@ -491,16 +491,23 @@
 
   // ===== INIT =====
   async function init() {
-    // Get player from localStorage (your existing auth system)
-    const stored = localStorage.getItem('player') || localStorage.getItem('nine_lives_player');
-    if (stored) {
-      try {
-        const p = JSON.parse(stored);
-        state.playerId = p.id || p.player_id;
-        state.playerHouse = p.house;
-        state.playerLevel = p.level || 1;
-      } catch(e) {}
+  // Get player from localStorage (matches dashboard save keys)
+  const stored = localStorage.getItem('9lv_player');
+  const rawId = localStorage.getItem('player_id');
+  if (stored) {
+    try {
+      const p = JSON.parse(stored);
+      state.playerId = p.id || p.player_id;
+      state.playerHouse = p.school_id;
+      state.playerLevel = p.level || 1;
+    } catch(e) {
+      // Fallback: use raw player_id if JSON parse fails
+      if (rawId) state.playerId = parseInt(rawId);
     }
+  } else if (rawId) {
+    // Dashboard only saved the ID (first visit before full load)
+    state.playerId = parseInt(rawId);
+  }
 
     setupTabs();
     await loadZones();
