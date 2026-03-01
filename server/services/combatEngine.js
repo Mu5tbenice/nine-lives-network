@@ -11,6 +11,7 @@
 //   Phase 5: Power calculation (surviving HP = zone control)
 //   Step 6:  Durability tick (cards lose 1 charge)
 //   Step 7:  Log the cycle
+//   Step 7b: Broadcast to arena socket (live viewers)
 //   Step 8:  POINTS — award season points
 // ═══════════════════════════════════════════════════════
 
@@ -837,6 +838,85 @@ async function processZoneCombat(zoneId, regionBonuses) {
         log: combatLog,
       },
     });
+
+  // ══════════════════════════════════════════════════
+  // STEP 7b: BROADCAST TO ARENA SOCKET (live viewers)
+  // ══════════════════════════════════════════════════
+  try {
+    if (global.__arenaSocket && global.__arenaSocket._broadcastToZone) {
+      const broadcast = global.__arenaSocket._broadcastToZone;
+      const cycleNumber = (count || 0) + 1;
+
+      // Round start — send all fighter HP states
+      broadcast(zoneId, 'arena:round_start', {
+        round_number: cycleNumber,
+        nines: combatants.map(c => ({
+          id: c.player_id,
+          current_hp: Math.max(0, c.hp),
+          max_hp: c.maxHp,
+          alive: !c.knocked_out && c.hp > 0,
+        })),
+      });
+
+      // Convert combat log to arena events the frontend understands
+      const arenaEvents = combatLog.map(log => {
+        const findId = (handle) => {
+          const found = combatants.find(c => c.twitter_handle === handle);
+          return found ? found.player_id : null;
+        };
+
+        if (log.phase === 'attack' && log.target && log.damage !== undefined) {
+          return {
+            type: 'attack',
+            from: findId(log.actor),
+            to: findId(log.target),
+            damage: log.damage,
+            crit: (log.result || '').includes('CRIT'),
+          };
+        }
+        if (log.phase === 'attack' && (log.result || '').includes('DODGED')) {
+          return { type: 'dodge', nine_id: findId(log.target || log.actor) };
+        }
+        if (log.phase === 'effects' && log.heal) {
+          return { type: 'heal', nine_id: findId(log.target || log.actor), amount: log.heal, new_hp: null };
+        }
+        if (log.phase === 'effects' && log.effect) {
+          return { type: 'effect', effect_type: log.effect, target_id: findId(log.target || log.actor) };
+        }
+        if (log.phase === 'effects' && log.damage) {
+          return {
+            type: 'attack',
+            from: findId(log.actor),
+            to: findId(log.target),
+            damage: log.damage,
+            crit: false,
+          };
+        }
+        if (log.phase === 'knockout') {
+          return { type: 'ko', nine_id: findId(log.player) };
+        }
+        return null;
+      }).filter(Boolean);
+
+      // Send all events as a batch
+      if (arenaEvents.length > 0) {
+        broadcast(zoneId, 'arena:events', { events: arenaEvents });
+      }
+
+      // Round end — winner and scores
+      broadcast(zoneId, 'arena:round_end', {
+        round_number: cycleNumber,
+        winner_guild: controllingGuild,
+        guild_scores: guildPower,
+      });
+
+      // Cycle end notification
+      broadcast(zoneId, 'arena:cycle_end', { zone_id: zoneId, cycle: cycleNumber });
+    }
+  } catch (socketErr) {
+    // Socket broadcast is non-critical — don't break combat
+    console.error('[Combat] Socket broadcast error:', socketErr.message);
+  }
 
   // ══════════════════════════════════════════════════
   // STEP 8: AWARD POINTS (NEW — Season Scoring V4)
