@@ -485,42 +485,40 @@
     CRIT: '#ffd700', BARRIER: '#5599ff', THORNS: '#ff6666', DODGE: '#90E0EF',
   };
 
+  // Map school_id numbers to house keys (DB uses numbers, UI uses strings)
+  const SCHOOL_TO_HOUSE = {
+    1: 'smoulders', 2: 'darktide', 3: 'stonebark', 4: 'ashenvale',
+    5: 'stormrage', 6: 'nighthollow', 7: 'dawnbringer', 8: 'manastorm', 9: 'plaguemire'
+  };
+
   const TYPE_COLORS = {
     attack: '#ff5555', defend: '#55aaff', support: '#55ff99', manipulation: '#cc77ff', utility: '#ffcc55'
   };
 
   // ===== INIT =====
   async function init() {
-  // Get player from localStorage (matches dashboard save keys)
-  const stored = localStorage.getItem('9lv_player');
-  const rawId = localStorage.getItem('player_id');
-
-  if (stored) {
-    try {
-      const p = JSON.parse(stored);
-      state.playerId = p.id || p.player_id;
-      state.playerHouse = p.school_id;
-      state.playerLevel = p.level || 1;
-      console.log('🐱 Arena: logged in as player', state.playerId);
-    } catch(e) {
-      if (rawId) {
-        state.playerId = parseInt(rawId);
-        console.log('🐱 Arena: logged in via player_id fallback', state.playerId);
+    // Get player from localStorage (matches dashboard save keys)
+    const stored = localStorage.getItem('9lv_player');
+    const rawId = localStorage.getItem('player_id');
+    if (stored) {
+      try {
+        const p = JSON.parse(stored);
+        state.playerId = p.id || p.player_id;
+        state.playerHouse = p.school_id;
+        state.playerLevel = p.level || 1;
+        console.log('🐱 Arena: logged in as player', state.playerId);
+      } catch(e) {
+        if (rawId) {
+          state.playerId = parseInt(rawId);
+          console.log('🐱 Arena: logged in via player_id fallback', state.playerId);
+        }
       }
+    } else if (rawId) {
+      state.playerId = parseInt(rawId);
+      console.log('🐱 Arena: logged in via player_id only', state.playerId);
+    } else {
+      console.log('🐱 Arena: not logged in — guest mode');
     }
-  } else if (rawId) {
-    state.playerId = parseInt(rawId);
-    console.log('🐱 Arena: logged in via player_id only', state.playerId);
-  } else {
-    console.log('🐱 Arena: not logged in — guest mode');
-  }
-      // Fallback: use raw player_id if JSON parse fails
-      if (rawId) state.playerId = parseInt(rawId);
-    }
-  } else if (rawId) {
-    // Dashboard only saved the ID (first visit before full load)
-    state.playerId = parseInt(rawId);
-  }
 
     setupTabs();
     await loadZones();
@@ -562,12 +560,13 @@
 
     // Filter by tab
     if (state.currentTab === 'events') {
-      zones = zones.filter(z => z.event || z.daily_objective);
+      zones = zones.filter(function(z) { return z.event || z.is_current_objective || z.daily_objective; });
     } else if (state.currentTab === 'hot') {
-      // Sort: objectives first, then events, then by caster count
-      zones.sort((a, b) => {
-        if (a.daily_objective && !b.daily_objective) return -1;
-        if (b.daily_objective && !a.daily_objective) return 1;
+      zones.sort(function(a, b) {
+        const aObj = a.daily_objective || a.is_current_objective;
+        const bObj = b.daily_objective || b.is_current_objective;
+        if (aObj && !bObj) return -1;
+        if (bObj && !aObj) return 1;
         if (a.event && !b.event) return -1;
         if (b.event && !a.event) return 1;
         return (b.arena_nines || b.casters || 0) - (a.arena_nines || a.casters || 0);
@@ -601,85 +600,116 @@
   }
 
   function buildZoneCard(zone) {
-    const h = HOUSES[zone.house || zone.region_house] || { color: '#888', name: '???', icon: '❓' };
+    // Map controlling_school_id or school_id to a house
+    const houseKey = zone.house
+      || zone.region_house
+      || SCHOOL_TO_HOUSE[zone.controlling_school_id]
+      || SCHOOL_TO_HOUSE[zone.school_id]
+      || null;
+    const h = (houseKey && HOUSES[houseKey]) || { color: '#666', name: 'Unclaimed', icon: '⚔️' };
+
+    const regionName = zone.region || zone.region_name || zone.description || '';
     const guilds = zone.guilds || zone.guild_presence || [];
-    const casters = zone.arena_nines || zone.casters || 0;
+    const casters = zone.arena_nines || zone.casters || zone.deployment_count || 0;
     const effects = zone.active_effects || zone.effects || [];
+    const isObjective = zone.daily_objective || zone.is_current_objective || false;
     const contested = zone.contested || (guilds.length > 1 && guilds[0] && guilds[1] && guilds[0].pct - guilds[1].pct < 15);
 
     let bannerHTML = '';
-    if (zone.daily_objective) {
-      bannerHTML += `<div class="zone-objective-banner">⭐ DAILY OBJECTIVE — ×1.5 POINTS</div>`;
+    if (isObjective) {
+      bannerHTML += '<div class="zone-objective-banner">⭐ DAILY OBJECTIVE — ×1.5 POINTS</div>';
     }
     if (zone.event) {
-      bannerHTML += `<div class="zone-event-banner" style="background:linear-gradient(90deg,${h.color}20,transparent);">
-        <span style="color:${h.color}">${zone.event.icon || '⚡'} ${(zone.event.type || zone.event.name || '').toUpperCase()}</span>
-        <span style="color:var(--gold)">${zone.event.time || zone.event.duration || ''}</span>
-      </div>`;
+      bannerHTML += '<div class="zone-event-banner" style="background:linear-gradient(90deg,' + h.color + '20,transparent);">'
+        + '<span style="color:' + h.color + '">' + (zone.event.icon || '⚡') + ' ' + ((zone.event.type || zone.event.name || '').toUpperCase()) + '</span>'
+        + '<span style="color:var(--gold)">' + (zone.event.time || zone.event.duration || '') + '</span>'
+        + '</div>';
     }
 
-    let guildsHTML = guilds.slice(0, 3).map(g => {
+    let guildsHTML = guilds.slice(0, 3).map(function(g) {
       const gColor = g.color || '#888';
-      return `<div class="guild-bar-row">
-        <div class="guild-dot" style="background:${gColor}"></div>
-        <div class="guild-name">${g.name || g.guild_name || '???'}</div>
-        <div class="guild-track"><div class="guild-fill" style="width:${g.pct || g.control || 0}%;background:linear-gradient(90deg,${gColor}90,${gColor}40)"></div></div>
-        <div class="guild-pct" style="color:${gColor}">${g.pct || g.control || 0}%</div>
-      </div>`;
+      return '<div class="guild-bar-row">'
+        + '<div class="guild-dot" style="background:' + gColor + '"></div>'
+        + '<div class="guild-name">' + (g.name || g.guild_name || '???') + '</div>'
+        + '<div class="guild-track"><div class="guild-fill" style="width:' + (g.pct || g.control || 0) + '%;background:linear-gradient(90deg,' + gColor + '90,' + gColor + '40)"></div></div>'
+        + '<div class="guild-pct" style="color:' + gColor + '">' + (g.pct || g.control || 0) + '%</div>'
+        + '</div>';
     }).join('');
 
-    let effectsHTML = effects.map(e => {
-      const eName = typeof e === 'string' ? e : e.name || e;
+    if (guilds.length === 0) {
+      if (zone.controlling_school_id && SCHOOL_TO_HOUSE[zone.controlling_school_id]) {
+        const controlHouse = HOUSES[SCHOOL_TO_HOUSE[zone.controlling_school_id]];
+        if (controlHouse) {
+          guildsHTML = '<div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:' + controlHouse.color + ';opacity:0.7;padding:2px 0;">'
+            + controlHouse.icon + ' Held by ' + controlHouse.name + '</div>';
+        }
+      } else {
+        guildsHTML = '<div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:var(--faint);padding:2px 0;">⚔️ Unclaimed — deploy to capture!</div>';
+      }
+    }
+
+    let effectsHTML = effects.map(function(e) {
+      const eName = typeof e === 'string' ? e : (e.name || e);
       const eColor = EFFECT_COLORS[eName] || '#888';
-      return `<span class="effect-pill" style="background:${eColor}15;color:${eColor};border:1px solid ${eColor}30">${eName}</span>`;
+      return '<span class="effect-pill" style="background:' + eColor + '15;color:' + eColor + ';border:1px solid ' + eColor + '30">' + eName + '</span>';
     }).join('');
 
     let badgeHTML = '';
     if (contested) {
-      badgeHTML = `<span class="zone-badge contested">CONTESTED</span>`;
+      badgeHTML = '<span class="zone-badge contested">CONTESTED</span>';
     } else if (zone.held_days || zone.streak) {
-      badgeHTML = `<span class="zone-badge held">HELD ${zone.held_days || zone.streak}d</span>`;
+      badgeHTML = '<span class="zone-badge held">HELD ' + (zone.held_days || zone.streak) + 'd</span>';
+    } else if (zone.controlling_school_id) {
+      badgeHTML = '<span class="zone-badge held">HELD</span>';
     }
 
-    return `<div class="zone-card" data-zone-id="${zone.id}">
-      ${bannerHTML}
-      <div class="zone-card-body">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
-          <div>
-            <div class="zone-name">${zone.name}</div>
-            <div class="zone-region" style="color:${h.color}">${h.icon} ${zone.region || zone.region_name || h.name}</div>
-          </div>
-          <div>${badgeHTML}</div>
-        </div>
-        <div style="margin-bottom:10px">${guildsHTML}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div class="effect-pills">${effectsHTML}</div>
-          <div class="zone-casters">${casters} ${zone.arena_active ? 'fighting' : 'casters'}</div>
-        </div>
-      </div>
-    </div>`;
+    let narrativeHTML = '';
+    if (zone.narrative_title) {
+      narrativeHTML = '<div style="padding:4px 14px;font-family:\'Crimson Text\',serif;font-size:11px;color:var(--gold);font-style:italic;border-bottom:1px solid var(--border);opacity:0.8;">"' + zone.narrative_title + '"</div>';
+    }
+
+    return '<div class="zone-card" data-zone-id="' + zone.id + '">'
+      + bannerHTML
+      + narrativeHTML
+      + '<div class="zone-card-body">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">'
+          + '<div>'
+            + '<div class="zone-name">' + zone.name + '</div>'
+            + '<div class="zone-region" style="color:' + h.color + '">' + h.icon + ' ' + regionName + '</div>'
+          + '</div>'
+          + '<div>' + badgeHTML + '</div>'
+        + '</div>'
+        + '<div style="margin-bottom:10px">' + guildsHTML + '</div>'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;">'
+          + '<div class="effect-pills">' + effectsHTML + '</div>'
+          + '<div class="zone-casters">' + (casters > 0 ? casters + ' fighting' : 'No fighters yet') + '</div>'
+        + '</div>'
+      + '</div>'
+    + '</div>';
   }
 
   function renderRegionsTab(container) {
-    // Group zones by region
     const regions = {};
     for (const z of state.zones) {
-      const rName = z.region || z.region_name || 'Unknown';
-      if (!regions[rName]) regions[rName] = { name: rName, house: z.house || z.region_house, zones: [] };
+      const rName = z.region || z.region_name || z.description || 'Unknown';
+      if (!regions[rName]) {
+        const hKey = SCHOOL_TO_HOUSE[z.controlling_school_id] || SCHOOL_TO_HOUSE[z.school_id] || null;
+        regions[rName] = { name: rName, house: hKey, zones: [] };
+      }
       regions[rName].zones.push(z);
     }
 
-    container.innerHTML = Object.values(regions).map(r => {
-      const h = HOUSES[r.house] || { color: '#888', name: '???', icon: '❓' };
-      return `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;border-left:3px solid ${h.color};">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div>
-            <div style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:var(--bright)">${h.icon} ${r.name}</div>
-            <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--muted);margin-top:2px">${r.zones.length} zones</div>
-          </div>
-          <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:${h.color};background:${h.color}15;padding:4px 10px;border-radius:6px">${h.name}</div>
-        </div>
-      </div>`;
+    container.innerHTML = Object.values(regions).map(function(r) {
+      const h = (r.house && HOUSES[r.house]) || { color: '#666', name: 'Unclaimed', icon: '⚔️' };
+      return '<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;border-left:3px solid ' + h.color + ';">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;">'
+          + '<div>'
+            + '<div style="font-family:\'Cinzel\',serif;font-size:14px;font-weight:700;color:var(--bright)">' + h.icon + ' ' + r.name + '</div>'
+            + '<div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:var(--muted);margin-top:2px">' + r.zones.length + ' zones</div>'
+          + '</div>'
+          + '<div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:' + h.color + ';background:' + h.color + '15;padding:4px 10px;border-radius:6px">' + h.name + '</div>'
+        + '</div>'
+      + '</div>';
     }).join('');
   }
 
@@ -689,8 +719,10 @@
   }
 
   function updateActiveCount() {
-    const active = state.zones.filter(z => z.arena_active || z.contested || z.event).length;
-    document.getElementById('active-count').textContent = `${active} Active`;
+    const active = state.zones.filter(function(z) {
+      return z.arena_active || z.contested || z.event || z.is_current_objective || z.controlling_school_id;
+    }).length;
+    document.getElementById('active-count').textContent = active + ' Active';
   }
 
   function updatePlayerBar() {
@@ -712,9 +744,9 @@
     document.getElementById('zone-list-view').style.display = 'none';
     document.getElementById('arena-view').style.display = 'block';
     document.getElementById('arena-zone-name').textContent = zone.name;
-    const h = HOUSES[zone.house || zone.region_house] || { color: '#888', icon: '❓' };
+    const h = HOUSES[zone.house || zone.region_house || SCHOOL_TO_HOUSE[zone.controlling_school_id] || SCHOOL_TO_HOUSE[zone.school_id]] || { color: '#888', icon: '❓' };
     document.getElementById('arena-zone-region').style.color = h.color;
-    document.getElementById('arena-zone-region').textContent = `${h.icon} ${zone.region || zone.region_name || ''}`;
+    document.getElementById('arena-zone-region').textContent = `${h.icon} ${zone.region || zone.region_name || zone.description || ''}`;
 
     // Init PixiJS
     initPixiArena();
@@ -900,7 +932,7 @@
     const cy = app.screen.height / 2;
 
     // Isometric diamond arena floor
-    const h = HOUSES[state.currentZone?.house || state.currentZone?.region_house] || { color: '#444' };
+    const h = HOUSES[state.currentZone?.house || state.currentZone?.region_house || SCHOOL_TO_HOUSE[state.currentZone?.controlling_school_id] || SCHOOL_TO_HOUSE[state.currentZone?.school_id]] || { color: '#444' };
     const hColor = parseInt(h.color.replace('#', ''), 16);
 
     ground.beginFill(0x12101e);
