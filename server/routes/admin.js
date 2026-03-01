@@ -12,6 +12,7 @@ const supabase = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
@@ -216,20 +217,31 @@ router.get('/zone-influence/:id', async (req, res) => {
 // GET /api/admin/clashes — list active clashes
 router.get('/clashes', async (req, res) => {
   try {
-    const { data, error } = await supabase
+    // Try community_clashes first, fall back to guild_clashes
+    let data, error;
+    ({ data, error } = await supabase
       .from('community_clashes')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false }));
+
+    if (error) {
+      // Try guild_clashes table as fallback
+      ({ data, error } = await supabase
+        .from('guild_clashes')
+        .select('*')
+        .order('created_at', { ascending: false }));
+    }
+
     if (error) throw error;
 
     // Format for frontend compatibility
     const formatted = (data || []).map(c => ({
       id: c.id,
-      team_a: { tag: c.team_a_tag, color: c.team_a_color, points: c.team_a_points },
-      team_b: { tag: c.team_b_tag, color: c.team_b_color, points: c.team_b_points },
+      team_a: { tag: c.team_a_tag || c.guild_a, color: c.team_a_color || c.color_a, points: c.team_a_points || c.score_a || 0 },
+      team_b: { tag: c.team_b_tag || c.guild_b, color: c.team_b_color || c.color_b, points: c.team_b_points || c.score_b || 0 },
       season: c.season,
       week: c.week,
-      is_active: c.is_active,
+      is_active: c.is_active !== undefined ? c.is_active : (c.status === 'active'),
     }));
 
     res.json(formatted);
@@ -239,17 +251,37 @@ router.get('/clashes', async (req, res) => {
 // POST /api/admin/clashes — create a clash
 router.post('/clashes', async (req, res) => {
   try {
-    const { team_a_tag, team_a_color, team_b_tag, team_b_color, season, week } = req.body;
-    if (!team_a_tag || !team_b_tag) return res.status(400).json({ error: 'Both team tags required' });
+    const { team_a_tag, team_a_color, team_b_tag, team_b_color, season, week,
+            guild_a, guild_b, color_a, color_b } = req.body;
 
-    const { data, error } = await supabaseAdmin.from('community_clashes').insert({
-      team_a_tag,
-      team_a_color: team_a_color || '#D4A64B',
-      team_b_tag,
-      team_b_color: team_b_color || '#00D4FF',
+    const teamA = team_a_tag || guild_a;
+    const teamB = team_b_tag || guild_b;
+    if (!teamA || !teamB) return res.status(400).json({ error: 'Both team tags required' });
+
+    // Try community_clashes first
+    let data, error;
+    ({ data, error } = await supabaseAdmin.from('community_clashes').insert({
+      team_a_tag: teamA,
+      team_a_color: team_a_color || color_a || '#D4A64B',
+      team_b_tag: teamB,
+      team_b_color: team_b_color || color_b || '#00D4FF',
       season: season || 0,
       week: week || 1,
-    }).select().single();
+    }).select().single());
+
+    if (error) {
+      // Fallback to guild_clashes
+      ({ data, error } = await supabaseAdmin.from('guild_clashes').insert({
+        guild_a: teamA,
+        guild_b: teamB,
+        color_a: team_a_color || color_a || '#D4A64B',
+        color_b: team_b_color || color_b || '#00D4FF',
+        week: week || 1,
+        status: 'upcoming',
+        score_a: 0,
+        score_b: 0,
+      }).select().single());
+    }
 
     if (error) throw error;
     res.json({ success: true, clash: data });
@@ -286,39 +318,75 @@ router.delete('/clash/:id', async (req, res) => {
 // ║  SPELL MANAGEMENT                  ║
 // ╚═══════════════════════════════════╝
 
+// Helper: safely parse bonus_effects from DB (handles double-serialization)
+function parseEffects(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
+  }
+  return [];
+}
+
 // GET /api/admin/spells — list all spells
 router.get('/spells', async (req, res) => {
   try {
     const { data, error } = await supabase.from('spells').select('*').order('id');
     if (error) throw error;
-    res.json({ spells: data || [] });
+
+    // Normalize bonus_effects for each spell
+    const spells = (data || []).map(s => ({
+      ...s,
+      bonus_effects: parseEffects(s.bonus_effects),
+    }));
+
+    res.json({ spells });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // POST /api/admin/spells — create spell
 router.post('/spells', async (req, res) => {
   try {
-    const { name, slug, house, tier, mana_cost, spell_type, base_effect, bonus_effects, flavor_text, motto } = req.body;
-    if (!name || !slug) return res.status(400).json({ error: 'Name and slug required' });
+    const { name, slug, house, tier, mana_cost, spell_type,
+            base_effect, bonus_effects, flavor_text, motto,
+            base_atk, base_hp, base_spd, base_def, base_luck,
+            in_pack_pool, is_active } = req.body;
+    if (!name) return res.status(400).json({ error: 'Name required' });
 
-    const { data, error } = await supabaseAdmin.from('spells').insert({
+    // Auto-generate slug if not provided
+    const finalSlug = (slug && slug.trim()) ? slug.trim() : name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+    const insertData = {
       name: name.trim(),
-      slug: slug.trim(),
+      slug: finalSlug,
       house: house || 'universal',
       tier: tier || 0,
       mana_cost: mana_cost || 1,
       spell_type: spell_type || 'attack',
-      base_effect: base_effect || '+10 influence',
-      bonus_effects: JSON.stringify(bonus_effects || []),
+      base_effect: base_effect || '',
+      bonus_effects: bonus_effects || [],  // Pass array directly — Supabase JSONB handles it
       flavor_text: flavor_text || '',
       motto: motto || null,
-      is_active: true,
+      is_active: is_active !== undefined ? is_active : true,
       is_always_available: false,
-    }).select().single();
+      in_pack_pool: in_pack_pool !== undefined ? in_pack_pool : true,
+    };
+
+    // Add V5 stats if provided
+    if (base_atk !== undefined) insertData.base_atk = base_atk;
+    if (base_hp !== undefined) insertData.base_hp = base_hp;
+    if (base_spd !== undefined) insertData.base_spd = base_spd;
+    if (base_def !== undefined) insertData.base_def = base_def;
+    if (base_luck !== undefined) insertData.base_luck = base_luck;
+
+    const { data, error } = await supabaseAdmin.from('spells').insert(insertData).select().single();
 
     if (error) throw error;
     console.log('[Admin] Created spell: ' + data.id + ' - ' + data.name);
-    res.json({ success: true, spell: data });
+    res.json({ success: true, spell: { ...data, bonus_effects: parseEffects(data.bonus_effects) } });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -334,7 +402,8 @@ router.put('/spell/:id', async (req, res) => {
     const updates = {};
     allowed.forEach(f => {
       if (req.body[f] !== undefined) {
-        updates[f] = f === 'bonus_effects' ? JSON.stringify(req.body[f]) : req.body[f];
+        // Pass bonus_effects as-is (array) — do NOT JSON.stringify for JSONB columns
+        updates[f] = req.body[f];
       }
     });
 
@@ -342,7 +411,7 @@ router.put('/spell/:id', async (req, res) => {
 
     const { data, error } = await supabaseAdmin.from('spells').update(updates).eq('id', spellId).select().single();
     if (error) throw error;
-    res.json({ success: true, spell: data });
+    res.json({ success: true, spell: { ...data, bonus_effects: parseEffects(data.bonus_effects) } });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -511,13 +580,21 @@ router.get('/recent-actions', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+
 // ╔═══════════════════════════════════╗
 // ║  SPELL IMAGE UPLOAD                ║
 // ╚═══════════════════════════════════╝
 
+// Ensure the upload directory exists
+const spellImagesDir = path.join(__dirname, '../../public/assets/images/spells');
+if (!fs.existsSync(spellImagesDir)) {
+  fs.mkdirSync(spellImagesDir, { recursive: true });
+  console.log('[Admin] Created spell images directory:', spellImagesDir);
+}
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, '../../public/assets/images/spells'));
+    cb(null, spellImagesDir);
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
@@ -557,107 +634,5 @@ router.post('/spell/:id/upload-image', upload.single('image'), async (req, res) 
   }
 });
 
-// ═══════════════════════════════════════════════════════
-// GUILD CLASH ADMIN ROUTES
-// Add these to your existing server/routes/admin.js file
-// (paste at the bottom, BEFORE the module.exports line)
-// ═══════════════════════════════════════════════════════
 
-/**
- * POST /api/admin/clashes
- * Create a new guild clash matchup
- */
-router.post('/clashes', async (req, res) => {
-  try {
-    const { week, guild_a, guild_b, color_a, color_b, status, score_a, score_b } = req.body;
-
-    if (!guild_a || !guild_b) {
-      return res.status(400).json({ error: 'Both guild names are required' });
-    }
-
-    const { data: clash, error } = await supabase
-      .from('guild_clashes')
-      .insert({
-        week: week || 1,
-        guild_a,
-        guild_b,
-        color_a: color_a || '#FFD700',
-        color_b: color_b || '#00BFFF',
-        status: status || 'upcoming',
-        score_a: score_a || 0,
-        score_b: score_b || 0
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating clash:', error);
-      return res.status(500).json({ error: 'Failed to create clash' });
-    }
-
-    res.json(clash);
-  } catch (error) {
-    console.error('Error in create clash:', error);
-    res.status(500).json({ error: 'Failed to create clash' });
-  }
-});
-
-/**
- * PUT /api/admin/clashes/:id
- * Update a clash matchup (scores, status, etc.)
- */
-router.put('/clashes/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updates = {};
-
-    // Only include fields that were sent
-    const allowed = ['week', 'guild_a', 'guild_b', 'color_a', 'color_b', 'status', 'score_a', 'score_b'];
-    allowed.forEach(field => {
-      if (req.body[field] !== undefined) updates[field] = req.body[field];
-    });
-
-    const { data: clash, error } = await supabase
-      .from('guild_clashes')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating clash:', error);
-      return res.status(500).json({ error: 'Failed to update clash' });
-    }
-
-    res.json(clash);
-  } catch (error) {
-    console.error('Error in update clash:', error);
-    res.status(500).json({ error: 'Failed to update clash' });
-  }
-});
-
-/**
- * DELETE /api/admin/clashes/:id
- * Delete a clash matchup
- */
-router.delete('/clashes/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const { error } = await supabase
-      .from('guild_clashes')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error deleting clash:', error);
-      return res.status(500).json({ error: 'Failed to delete clash' });
-    }
-
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error in delete clash:', error);
-    res.status(500).json({ error: 'Failed to delete clash' });
-  }
-});
 module.exports = router;

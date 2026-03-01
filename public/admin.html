@@ -1013,11 +1013,35 @@ let sortAsc = true;
 
 async function loadSpells() {
   try {
-    allSpells = await fetch('/api/spells').then(r => r.json());
+    const raw = await fetch('/api/spells').then(r => r.json());
+    // Handle both array and {spells: [...]} response formats
+    const spellsArray = Array.isArray(raw) ? raw : (raw.spells || []);
+    // Normalize bonus_effects (fix double-serialization)
+    allSpells = spellsArray.map(s => ({
+      ...s,
+      bonus_effects: parseEffects(s.bonus_effects),
+    }));
     renderSpells();
   } catch (e) {
     toast('Failed to load spells: ' + e.message, 'error');
   }
+}
+
+// Safely parse bonus_effects from DB (handles double-serialized strings)
+function parseEffects(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      // Could be double-serialized: a string that parses to another string
+      if (typeof parsed === 'string') {
+        try { return JSON.parse(parsed); } catch { return []; }
+      }
+      return Array.isArray(parsed) ? parsed : [];
+    } catch { return []; }
+  }
+  return [];
 }
 
 function renderSpells() {
@@ -1053,7 +1077,11 @@ function renderSpells() {
     const tc = TYPE_COLORS[s.spell_type] || '#999';
     const hi = HOUSE_ICONS[s.house] || '?';
     const imgSrc = s.image_url ? `/assets/images/spells/${s.image_url}` : '';
-    const effects = (s.bonus_effects || []).map(e => typeof e === 'string' ? e : e.tag).join(', ');
+    const effects = (s.bonus_effects || []).map(e => {
+      if (typeof e === 'string') return e;
+      if (e && e.tag) return e.tag;
+      return '';
+    }).filter(Boolean).join(', ');
 
     return `<tr>
       <td>${imgSrc ? `<img src="${imgSrc}" class="spell-img-cell" onerror="this.style.display='none'">` : `<div class="spell-img-placeholder">?</div>`}</td>
@@ -1093,6 +1121,18 @@ document.querySelectorAll('#spells-table thead th[data-sort]').forEach(th => {
   document.getElementById(id).addEventListener('change', renderSpells);
 });
 
+// Auto-generate slug from name
+document.getElementById('spell-edit-name').addEventListener('input', (e) => {
+  const slugField = document.getElementById('spell-edit-slug');
+  // Only auto-generate if slug is empty or was auto-generated
+  if (!slugField.dataset.manual) {
+    slugField.value = e.target.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+  }
+});
+document.getElementById('spell-edit-slug').addEventListener('input', () => {
+  document.getElementById('spell-edit-slug').dataset.manual = 'true';
+});
+
 // Quick toggles
 async function togglePool(id, val) {
   try {
@@ -1127,6 +1167,7 @@ function openNewSpell() {
   document.getElementById('spell-edit-id').value = '';
   document.getElementById('spell-edit-name').value = '';
   document.getElementById('spell-edit-slug').value = '';
+  document.getElementById('spell-edit-slug').dataset.manual = '';
   document.getElementById('spell-edit-house').value = 'universal';
   document.getElementById('spell-edit-type').value = 'attack';
   document.getElementById('spell-edit-tier').value = '1';
@@ -1153,6 +1194,7 @@ function editSpell(id) {
   document.getElementById('spell-edit-id').value = s.id;
   document.getElementById('spell-edit-name').value = s.name || '';
   document.getElementById('spell-edit-slug').value = s.slug || '';
+  document.getElementById('spell-edit-slug').dataset.manual = 'true'; // Don't overwrite existing slug
   document.getElementById('spell-edit-house').value = s.house || 'universal';
   document.getElementById('spell-edit-type').value = s.spell_type || 'attack';
   document.getElementById('spell-edit-tier').value = s.tier || 0;
@@ -1242,9 +1284,18 @@ async function saveSpell() {
     if (tag) bonus_effects.push({ tag, desc });
   });
 
+  const name = document.getElementById('spell-edit-name').value.trim();
+  let slug = document.getElementById('spell-edit-slug').value.trim();
+
+  // Auto-generate slug from name if empty
+  if (!slug && name) {
+    slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    document.getElementById('spell-edit-slug').value = slug;
+  }
+
   const payload = {
-    name: document.getElementById('spell-edit-name').value.trim(),
-    slug: document.getElementById('spell-edit-slug').value.trim(),
+    name,
+    slug,
     house: document.getElementById('spell-edit-house').value,
     spell_type: document.getElementById('spell-edit-type').value,
     tier: parseInt(document.getElementById('spell-edit-tier').value),
