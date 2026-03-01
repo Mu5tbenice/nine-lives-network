@@ -1887,14 +1887,14 @@
 
     // Slower arc upward with scale pop
     let frame = 0;
-    const totalFrames = 60; // ~1 second
+    const totalFrames = 90; // ~1.5 seconds (was 60)
     const startY = t.y;
-    const startScale = 1.3;
+    const startScale = 1.4;
     const ticker = () => {
       frame++;
       const progress = frame / totalFrames;
-      t.y = startY - progress * 35; // float up 35px
-      t.alpha = progress < 0.3 ? 1 : Math.max(0, 1 - (progress - 0.3) / 0.7);
+      t.y = startY - progress * 45; // float up 45px (was 35)
+      t.alpha = progress < 0.4 ? 1 : Math.max(0, 1 - (progress - 0.4) / 0.6);
       const scale = startScale - (startScale - 0.8) * progress;
       t.scale.set(scale, scale);
       if (frame >= totalFrames) {
@@ -1933,9 +1933,9 @@
     const dy = (targetY - startY) * 0.7;
 
     let frame = 0;
-    const lungeFrames = 12; // fast lunge
-    const holdFrames = 6;   // hold at target
-    const returnFrames = 16; // slower return
+    const lungeFrames = 16; // lunge forward
+    const holdFrames = 10;  // hold at target (was 6)
+    const returnFrames = 20; // slower return (was 16)
     const totalFrames = lungeFrames + holdFrames + returnFrames;
 
     const ticker = () => {
@@ -2030,8 +2030,8 @@
   function spawnParticles(x, y, color, count, type) {
     if (!state.arenaApp) return;
     const particles = [];
-    // Boost count for more chaos
-    const boostedCount = Math.round(count * 1.8);
+    // Boost count for NOITA-level chaos
+    const boostedCount = Math.round(count * 2.5);
 
     for (let i = 0; i < boostedCount; i++) {
       const p = new PIXI.Graphics();
@@ -2107,8 +2107,8 @@
       }
 
       // Wider initial spread
-      p.x = x + (Math.random() - 0.5) * 30;
-      p.y = y + (Math.random() - 0.5) * 24;
+      p.x = x + (Math.random() - 0.5) * 36;
+      p.y = y + (Math.random() - 0.5) * 28;
       p.zIndex = 99;
       state.arenaApp.stage.addChild(p);
 
@@ -2119,9 +2119,9 @@
         vy: type === 'heal' ? -(1.5 + Math.random() * 2.5) :
             type === 'fire' ? -(Math.random() * 2) :
             (Math.random() - 0.5) * speed,
-        life: 25 + Math.random() * 20,
+        life: 55 + Math.random() * 35,
         frame: 0,
-        spin: (Math.random() - 0.5) * 0.3,
+        spin: (Math.random() - 0.5) * 0.25,
       });
     }
 
@@ -2178,15 +2178,16 @@
     const startX = nine.container.x;
     const startY = nine.container.y;
     let frame = 0;
-    const totalFrames = 45;
+    const totalFrames = 65; // ~1 second (was 45)
 
     // Red flash
     if (nine.spriteGroup) {
       nine.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff2222; });
     }
 
-    // Explosion particles
-    spawnParticles(startX, startY, 0xff4466, 15, 'fire');
+    // Big firework explosion
+    spawnParticles(startX, startY, 0xff4466, 18, 'fire');
+    spawnFireworkExplosion(startX, startY, 0xff4466);
 
     const ticker = () => {
       frame++;
@@ -2381,7 +2382,7 @@
     // Legacy fallback for old event format
     socket.on('arena:event', (ev) => processArenaEvent(ev));
     socket.on('arena:events', (data) => {
-      if (data.events) data.events.forEach((ev, i) => setTimeout(() => processArenaEvent(ev), i * 400));
+      if (data.events) data.events.forEach((ev, i) => setTimeout(() => processArenaEvent(ev), i * 2000));
     });
 
     // ── ROUND END — show round results
@@ -2550,31 +2551,33 @@
         const cardType = (ev.card_type || 'attack').toLowerCase();
 
         if (cardType === 'attack' || !ev.effect) {
-          // ATTACK: projectile bolt toward target
-          animateProjectile(fromId, toId, ev.from_house, () => {
-            if (target) {
-              const sz = ev.crit ? 16 : 12;
-              showFloatingText(target.container.x, target.container.y, `-${ev.damage}`, ev.crit ? 0xffd700 : 0xff4466, sz);
-              if (ev.crit) {
-                showFloatingText(target.container.x, target.container.y - 25, 'CRIT!', 0xffd700, 14);
-                spawnParticles(target.container.x, target.container.y, 0xffd700, 12, 'lightning');
-                screenFlash(0xffd700, 0.2);
+          // ATTACK: lunge toward target → projectile bolt → firework impact
+          animateLunge(fromId, toId, () => {
+            animateProjectile(fromId, toId, ev.from_house, () => {
+              if (target) {
+                const sz = ev.crit ? 18 : 14;
+                showFloatingText(target.container.x, target.container.y, `-${ev.damage}`, ev.crit ? 0xffd700 : 0xff4466, sz);
+                if (ev.crit) {
+                  showFloatingText(target.container.x, target.container.y - 25, 'CRIT!', 0xffd700, 16);
+                  spawnParticles(target.container.x, target.container.y, 0xffd700, 14, 'lightning');
+                  screenFlash(0xffd700, 0.25);
+                }
+                spawnParticles(target.container.x, target.container.y, getHouseColor(ev.from_house), 10, 'fire');
+                shakeSprite(target);
+                if (target.spriteGroup) {
+                  target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff4444; });
+                  setTimeout(() => { if (target.spriteGroup) target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 300);
+                }
               }
-              spawnParticles(target.container.x, target.container.y, getHouseColor(ev.from_house), 8, 'fire');
-              shakeSprite(target);
-              if (target.spriteGroup) {
-                target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff4444; });
-                setTimeout(() => { if (target.spriteGroup) target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 200);
-              }
-            }
-            if (ev.new_hp != null) updateNineHP(toId, ev.new_hp, target?.maxHp);
+              if (ev.new_hp != null) updateNineHP(toId, ev.new_hp, target?.maxHp);
+            });
           });
         } else if (cardType === 'manipulation') {
-          // MANIPULATION: hex bolt / dark projectile
+          // MANIPULATION: hex bolt / dark projectile with firework
           animateProjectile(fromId, toId, 'nighthollow', () => {
             if (target) {
-              showFloatingText(target.container.x, target.container.y, `-${ev.damage}`, 0xbb88ff, 12);
-              spawnParticles(target.container.x, target.container.y, 0xbb88ff, 10, 'default');
+              showFloatingText(target.container.x, target.container.y, `-${ev.damage}`, 0xbb88ff, 14);
+              spawnParticles(target.container.x, target.container.y, 0xbb88ff, 12, 'default');
               shakeSprite(target);
             }
             if (ev.new_hp != null) updateNineHP(toId, ev.new_hp, target?.maxHp);
@@ -2769,76 +2772,363 @@
     const endY = target.container.y - 5;
     const color = getHouseColor(house);
 
-    // Create projectile
-    const bolt = new PIXI.Graphics();
-    bolt.beginFill(color, 0.95);
-    bolt.drawCircle(0, 0, 4);
-    bolt.endFill();
-    // Glow ring
-    bolt.beginFill(color, 0.3);
-    bolt.drawCircle(0, 0, 8);
-    bolt.endFill();
-    bolt.x = startX;
-    bolt.y = startY;
-    bolt.zIndex = 100;
-    state.arenaApp.stage.addChild(bolt);
-
-    // Trail particles
-    const trail = [];
-
-    // Casting flash on attacker
+    // ── PHASE 1: CHARGE-UP (attacker glows + particles gather) ──
+    attacker.isAnimating = true;
     if (attacker.spriteGroup) {
-      attacker.spriteGroup.scale.set(1.1, 1.1);
-      setTimeout(() => { if (attacker.spriteGroup) attacker.spriteGroup.scale.set(1, 1); }, 200);
+      attacker.spriteGroup.scale.set(1.15, 1.15);
+      // Flash white briefly
+      attacker.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; });
+      setTimeout(() => {
+        if (attacker.spriteGroup) {
+          attacker.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; });
+          attacker.spriteGroup.scale.set(1, 1);
+        }
+      }, 250);
     }
-    spawnParticles(startX, startY, color, 4, 'fire');
+
+    // Gathering particles swirl toward attacker
+    for (let i = 0; i < 8; i++) {
+      const gp = new PIXI.Graphics();
+      gp.beginFill(color, 0.7);
+      gp.drawRect(-2, -2, 4, 4);
+      gp.endFill();
+      const angle = (i / 8) * Math.PI * 2;
+      const dist = 30 + Math.random() * 20;
+      gp.x = startX + Math.cos(angle) * dist;
+      gp.y = startY + Math.sin(angle) * dist;
+      gp.zIndex = 98;
+      state.arenaApp.stage.addChild(gp);
+
+      let gf = 0;
+      const gTicker = () => {
+        gf++;
+        const t = gf / 15;
+        gp.x = startX + Math.cos(angle) * dist * (1 - t);
+        gp.y = startY + Math.sin(angle) * dist * (1 - t);
+        gp.alpha = 1 - t * 0.5;
+        gp.scale.set(1 - t * 0.6);
+        if (gf >= 15) {
+          state.arenaApp.ticker.remove(gTicker);
+          state.arenaApp.stage.removeChild(gp);
+        }
+      };
+      state.arenaApp.ticker.add(gTicker);
+    }
+
+    // Small casting flash
+    spawnParticles(startX, startY, color, 6, 'fire');
 
     // Flip attacker to face target
     if (attacker.spriteGroup) {
       attacker.spriteGroup.scale.x = (endX < startX) ? -Math.abs(attacker.spriteGroup.scale.x) : Math.abs(attacker.spriteGroup.scale.x);
     }
 
-    let frame = 0;
-    const totalFrames = 18;
-    const ticker = () => {
-      frame++;
-      const t = frame / totalFrames;
-      const ease = t < 0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2; // ease in-out
+    // ── PHASE 2: PROJECTILE FLIGHT (delayed 300ms for charge) ──
+    setTimeout(() => {
+      // Create main bolt — bigger, brighter
+      const bolt = new PIXI.Graphics();
+      bolt.beginFill(0xffffff, 0.95);
+      bolt.drawCircle(0, 0, 3);
+      bolt.endFill();
+      bolt.beginFill(color, 0.9);
+      bolt.drawCircle(0, 0, 6);
+      bolt.endFill();
+      bolt.beginFill(color, 0.3);
+      bolt.drawCircle(0, 0, 12);
+      bolt.endFill();
+      bolt.x = startX;
+      bolt.y = startY;
+      bolt.zIndex = 100;
+      state.arenaApp.stage.addChild(bolt);
 
-      bolt.x = startX + (endX - startX) * ease;
-      bolt.y = startY + (endY - startY) * ease - Math.sin(t * Math.PI) * 20; // arc
-      bolt.scale.set(1 + Math.sin(t * Math.PI) * 0.5);
-      bolt.rotation += 0.2;
+      const trail = [];
+      let frame = 0;
+      const totalFrames = 70; // ~1.2 seconds flight — SLOW dramatic arc
+      const arcHeight = 45 + Math.random() * 25;
 
-      // Drop trail particle every 3 frames
-      if (frame % 3 === 0) {
-        const tp = new PIXI.Graphics();
-        tp.beginFill(color, 0.5);
-        tp.drawCircle(0, 0, 2);
-        tp.endFill();
-        tp.x = bolt.x; tp.y = bolt.y; tp.zIndex = 99;
-        state.arenaApp.stage.addChild(tp);
-        trail.push({ gfx: tp, life: 12, f: 0 });
+      const ticker = () => {
+        frame++;
+        const t = frame / totalFrames;
+        const ease = t < 0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
+
+        bolt.x = startX + (endX - startX) * ease;
+        bolt.y = startY + (endY - startY) * ease - Math.sin(t * Math.PI) * arcHeight;
+        bolt.scale.set(0.8 + Math.sin(t * Math.PI) * 0.6);
+        bolt.rotation += 0.12;
+
+        // CONTINUOUS TRAIL — spawn debris EVERY FRAME
+        const trailCount = 2 + Math.floor(Math.random() * 2);
+        for (let ti = 0; ti < trailCount; ti++) {
+          const tp = new PIXI.Graphics();
+          const ts = 1.5 + Math.random() * 2.5;
+          tp.beginFill(color, 0.7);
+          tp.drawRect(-ts/2, -ts/2, ts, ts);
+          tp.endFill();
+          // White core on some
+          if (Math.random() < 0.3) {
+            tp.beginFill(0xffffff, 0.4);
+            tp.drawRect(-0.5, -0.5, 1, 1);
+            tp.endFill();
+          }
+          tp.x = bolt.x + (Math.random()-0.5) * 8;
+          tp.y = bolt.y + (Math.random()-0.5) * 8;
+          tp.zIndex = 99;
+          state.arenaApp.stage.addChild(tp);
+          trail.push({
+            gfx: tp, life: 28 + Math.random() * 18, f: 0,
+            vx: (Math.random()-0.5) * 0.8,
+            vy: 0.2 + Math.random() * 0.4,
+            gravity: 0.04,
+          });
+        }
+
+        // Fade + gravity on trail debris
+        for (const tp of trail) {
+          tp.f++;
+          tp.vy += tp.gravity;
+          tp.gfx.x += tp.vx;
+          tp.gfx.y += tp.vy;
+          tp.gfx.alpha = Math.max(0, 0.7 - tp.f / tp.life);
+          tp.gfx.scale.set(Math.max(0.15, 1 - tp.f / tp.life * 0.5));
+        }
+
+        if (frame >= totalFrames) {
+          state.arenaApp.ticker.remove(ticker);
+          state.arenaApp.stage.removeChild(bolt);
+          for (const tp of trail) state.arenaApp.stage.removeChild(tp.gfx);
+
+          // ── PHASE 3: FIREWORK IMPACT EXPLOSION ──
+          spawnFireworkExplosion(endX, endY, color);
+          shakeCamera();
+          if (onHit) onHit();
+        }
+      };
+      state.arenaApp.ticker.add(ticker);
+    }, 300); // charge delay
+
+    attacker.isAnimating = false;
+  }
+
+  /** NOITA-STYLE FIREWORK EXPLOSION — massive multi-ring pixel debris cascade */
+  function spawnFireworkExplosion(x, y, color) {
+    if (!state.arenaApp) return;
+
+    // ═══ RING 1: Inner core burst — 40 fast bright pixels ═══
+    const ring1Count = 40;
+    for (let i = 0; i < ring1Count; i++) {
+      const p = new PIXI.Graphics();
+      const size = 2 + Math.random() * 3;
+      p.beginFill(color, 0.9);
+      p.drawRect(-size/2, -size/2, size, size);
+      p.endFill();
+      p.beginFill(0xffffff, 0.5);
+      p.drawRect(-0.5, -0.5, 1, 1);
+      p.endFill();
+      p.x = x + (Math.random()-0.5) * 4;
+      p.y = y + (Math.random()-0.5) * 4;
+      p.zIndex = 99;
+      state.arenaApp.stage.addChild(p);
+
+      const angle = (i / ring1Count) * Math.PI * 2 + (Math.random()-0.5)*0.3;
+      const speed = 2.5 + Math.random() * 3;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
+      const life = 50 + Math.random() * 30;
+      let pf = 0;
+
+      const pt = () => {
+        pf++;
+        p.x += vx * 0.97; // slight friction
+        p.y += vy * 0.97 + 0.04; // gravity
+        p.rotation += 0.08;
+        p.alpha = Math.max(0, 1 - pf / life);
+        p.scale.set(Math.max(0.2, 1 - pf / life * 0.4));
+
+        // Trailing ember sparks — every 4 frames while alive
+        if (pf % 4 === 0 && pf < life * 0.6) {
+          const sp = new PIXI.Graphics();
+          const ss = 1 + Math.random() * 1.5;
+          sp.beginFill(color, 0.5);
+          sp.drawRect(-ss/2, -ss/2, ss, ss);
+          sp.endFill();
+          sp.x = p.x; sp.y = p.y; sp.zIndex = 97;
+          state.arenaApp.stage.addChild(sp);
+          let sf = 0;
+          const sLife = 18 + Math.random() * 10;
+          const st = () => {
+            sf++;
+            sp.alpha = Math.max(0, 0.5 - sf / sLife);
+            sp.y -= 0.15 + Math.random() * 0.2;
+            sp.x += (Math.random()-0.5) * 0.3;
+            if (sp.alpha <= 0) { state.arenaApp.ticker.remove(st); state.arenaApp.stage.removeChild(sp); }
+          };
+          state.arenaApp.ticker.add(st);
+        }
+
+        if (pf >= life) {
+          state.arenaApp.ticker.remove(pt);
+          state.arenaApp.stage.removeChild(p);
+        }
+      };
+      state.arenaApp.ticker.add(pt);
+    }
+
+    // ═══ RING 2: Delayed outer ring — 30 bigger, slower debris ═══
+    setTimeout(() => {
+      for (let i = 0; i < 30; i++) {
+        const p = new PIXI.Graphics();
+        const size = 3 + Math.random() * 5;
+        p.beginFill(color, 0.8);
+        p.drawRect(-size/2, -size/2, size, size);
+        p.endFill();
+        p.x = x; p.y = y; p.zIndex = 98;
+        state.arenaApp.stage.addChild(p);
+
+        const angle = (i / 30) * Math.PI * 2 + Math.random() * 0.4;
+        const speed = 1.5 + Math.random() * 2;
+        const vx = Math.cos(angle) * speed;
+        const vy = Math.sin(angle) * speed;
+        const life = 60 + Math.random() * 25;
+        let pf = 0;
+
+        const pt = () => {
+          pf++;
+          p.x += vx * 0.98;
+          p.y += vy * 0.98 + 0.05;
+          p.alpha = Math.max(0, 0.8 - pf / life);
+          p.scale.set(Math.max(0.3, 1 - pf / life * 0.3));
+
+          // Sub-embers
+          if (pf % 5 === 0 && pf < life * 0.5) {
+            const sp = new PIXI.Graphics();
+            sp.beginFill(color, 0.35);
+            sp.drawRect(-1, -1, 2, 2);
+            sp.endFill();
+            sp.x = p.x; sp.y = p.y; sp.zIndex = 96;
+            state.arenaApp.stage.addChild(sp);
+            let sf = 0;
+            const st = () => {
+              sf++;
+              sp.alpha = Math.max(0, 0.35 - sf * 0.025);
+              sp.y -= 0.2;
+              if (sp.alpha <= 0) { state.arenaApp.ticker.remove(st); state.arenaApp.stage.removeChild(sp); }
+            };
+            state.arenaApp.ticker.add(st);
+          }
+
+          if (pf >= life) { state.arenaApp.ticker.remove(pt); state.arenaApp.stage.removeChild(p); }
+        };
+        state.arenaApp.ticker.add(pt);
       }
+    }, 50);
 
-      // Fade trail
-      for (const tp of trail) {
-        tp.f++;
-        tp.gfx.alpha = Math.max(0, 1 - tp.f / tp.life);
-        tp.gfx.scale.set(Math.max(0.1, 1 - tp.f / tp.life));
-      }
+    // ═══ RING 3: White flash pixels — 15 fast, no gravity ═══
+    for (let i = 0; i < 15; i++) {
+      const p = new PIXI.Graphics();
+      p.beginFill(0xffffff, 0.9);
+      p.drawRect(-1, -1, 2, 2);
+      p.endFill();
+      p.x = x; p.y = y; p.zIndex = 100;
+      state.arenaApp.stage.addChild(p);
+      const angle = (i / 15) * Math.PI * 2;
+      const speed = 4 + Math.random() * 2;
+      const vx = Math.cos(angle) * speed;
+      const vy = Math.sin(angle) * speed;
+      let pf = 0;
+      const pt = () => {
+        pf++;
+        p.x += vx * 0.94;
+        p.y += vy * 0.94;
+        p.alpha = Math.max(0, 0.9 - pf * 0.06);
+        if (p.alpha <= 0) { state.arenaApp.ticker.remove(pt); state.arenaApp.stage.removeChild(p); }
+      };
+      state.arenaApp.ticker.add(pt);
+    }
 
-      if (frame >= totalFrames) {
-        state.arenaApp.ticker.remove(ticker);
-        state.arenaApp.stage.removeChild(bolt);
-        for (const tp of trail) state.arenaApp.stage.removeChild(tp.gfx);
-        // IMPACT EXPLOSION
-        spawnParticles(endX, endY, color, 6, 'explosion');
-        if (onHit) onHit();
-        shakeCamera();
+    // ═══ SCATTER SPARKS — 25 tiny chaotic ones ═══
+    for (let i = 0; i < 25; i++) {
+      const p = new PIXI.Graphics();
+      const s = 1 + Math.random() * 2;
+      p.beginFill(color, 0.7);
+      p.drawRect(-s/2, -s/2, s, s);
+      p.endFill();
+      p.x = x + (Math.random()-0.5)*8;
+      p.y = y + (Math.random()-0.5)*8;
+      p.zIndex = 98;
+      state.arenaApp.stage.addChild(p);
+      const speed = 3 + Math.random() * 3;
+      const angle = Math.random() * Math.PI * 2;
+      let vx = Math.cos(angle) * speed;
+      let vy = Math.sin(angle) * speed;
+      let pf = 0;
+      const life = 40 + Math.random() * 25;
+      const pt = () => {
+        pf++;
+        p.x += vx; p.y += vy;
+        vy += 0.07; // gravity
+        vx *= 0.99;
+        p.alpha = Math.max(0, 1 - pf / life);
+        // Sparkle cross
+        if (pf % 6 === 0 && pf < life * 0.5) {
+          const sp = new PIXI.Graphics();
+          sp.beginFill(0xffffff, 0.5);
+          sp.drawRect(-0.5, -2, 1, 4);
+          sp.drawRect(-2, -0.5, 4, 1);
+          sp.endFill();
+          sp.x = p.x; sp.y = p.y; sp.zIndex = 97;
+          state.arenaApp.stage.addChild(sp);
+          let sf = 0;
+          const st = () => {
+            sf++;
+            sp.alpha = Math.max(0, 0.5 - sf * 0.05);
+            if (sp.alpha <= 0) { state.arenaApp.ticker.remove(st); state.arenaApp.stage.removeChild(sp); }
+          };
+          state.arenaApp.ticker.add(st);
+        }
+        if (pf >= life) { state.arenaApp.ticker.remove(pt); state.arenaApp.stage.removeChild(p); }
+      };
+      state.arenaApp.ticker.add(pt);
+    }
+
+    // ═══ EXPANDING RING ═══
+    const ring = new PIXI.Graphics();
+    ring.lineStyle(3, color, 0.6);
+    ring.drawCircle(0, 0, 5);
+    ring.x = x; ring.y = y; ring.zIndex = 98;
+    state.arenaApp.stage.addChild(ring);
+    let rf = 0;
+    const rTicker = () => {
+      rf++;
+      ring.scale.set(1 + rf * 0.6);
+      ring.alpha = Math.max(0, 0.6 - rf * 0.035);
+      const lw = Math.max(0.5, 3 - rf * 0.15);
+      ring.clear();
+      ring.lineStyle(lw, color, ring.alpha);
+      ring.drawCircle(0, 0, 5);
+      if (ring.alpha <= 0) {
+        state.arenaApp.ticker.remove(rTicker);
+        state.arenaApp.stage.removeChild(ring);
       }
     };
-    state.arenaApp.ticker.add(ticker);
+    state.arenaApp.ticker.add(rTicker);
+
+    // ═══ SECONDARY EXPLOSION — delayed cascade ═══
+    setTimeout(() => {
+      const ox = x + (Math.random()-0.5) * 25;
+      const oy = y + (Math.random()-0.5) * 20;
+      spawnParticles(ox, oy, typeof color === 'number' ? color : parseInt(color.replace('#',''), 16), 18, 'explosion');
+      screenFlash(typeof color === 'number' ? color : parseInt(color.replace('#',''), 16), 0.1);
+    }, 180);
+
+    // ═══ THIRD MINI POP ═══
+    setTimeout(() => {
+      const ox2 = x + (Math.random()-0.5) * 35;
+      const oy2 = y + (Math.random()-0.5) * 25;
+      spawnParticles(ox2, oy2, typeof color === 'number' ? color : parseInt(color.replace('#',''), 16), 12, 'fire');
+    }, 350);
+
+    // Big screen flash
+    screenFlash(typeof color === 'number' ? color : parseInt(color.replace('#',''), 16), 0.2);
   }
 
   /** Shield pop animation — golden rings expand around Nine */
