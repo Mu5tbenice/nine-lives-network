@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════
 // server/services/packSystem.js
 // Daily Pack Generation + Card Collection + Pack Inventory
+// V5 UPDATE: Removed tier/mana_cost references, uses rarity_weights from spells table
 // ═══════════════════════════════════════════════════════
 
 const supabase = require('../config/supabase');
@@ -14,15 +15,10 @@ const RARITIES = {
   legendary: { weight: 2,  pointMult: 3.0,  infMult: 2.0  },
 };
 
-// Tier-specific rarity weights (T3 cards have better odds)
-const TIER_RARITY_WEIGHTS = {
-  0: { common: 100, uncommon: 0, rare: 0, epic: 0, legendary: 0 },
-  1: { common: 55, uncommon: 25, rare: 12, epic: 6, legendary: 2 },
-  2: { common: 55, uncommon: 25, rare: 12, epic: 6, legendary: 2 },
-  3: { common: 25, uncommon: 25, rare: 25, epic: 17, legendary: 8 },
-};
+// V5: Default rarity weights (used when spell has no rarity_weights column)
+const DEFAULT_RARITY_WEIGHTS = { common: 55, uncommon: 25, rare: 12, epic: 6, legendary: 2 };
 
-// V3: Durability charges by rarity
+// V5: Durability charges by rarity (kept from V3)
 const CHARGES_BY_RARITY = {
   common: 5,
   uncommon: 8,
@@ -34,7 +30,7 @@ const CHARGES_BY_RARITY = {
 // Rarity stat bonuses (applied on top of base stats)
 const RARITY_BONUSES = {
   common:    { atk: 0, hp: 0 },
-  uncommon:  { atk: 1, hp: 0 },  // +1 to one stat
+  uncommon:  { atk: 1, hp: 0 },
   rare:      { atk: 1, hp: 1 },
   epic:      { atk: 2, hp: 2 },
   legendary: { atk: 3, hp: 3 },
@@ -53,9 +49,37 @@ const ALLIANCES = {
   plaguemire: null,
 };
 
+// ── HELPER: Parse rarity_weights from a spell ──
+function parseRarityWeights(spell) {
+  if (!spell || !spell.rarity_weights) return DEFAULT_RARITY_WEIGHTS;
+  try {
+    const w = typeof spell.rarity_weights === 'string'
+      ? JSON.parse(spell.rarity_weights)
+      : spell.rarity_weights;
+    return w || DEFAULT_RARITY_WEIGHTS;
+  } catch {
+    return DEFAULT_RARITY_WEIGHTS;
+  }
+}
+
+// ── HELPER: Check if a spell is a "basic" (always-common) spell ──
+function isBasicSpell(spell) {
+  const weights = parseRarityWeights(spell);
+  // Basic spells only have { common: 100 }
+  return weights.common === 100 && !weights.uncommon && !weights.rare && !weights.epic && !weights.legendary;
+}
+
+// ── HELPER: Split spells into basics and non-basics ──
+function splitSpellPool(allSpells) {
+  const basics = allSpells.filter(s => isBasicSpell(s));
+  const nonBasics = allSpells.filter(s => !isBasicSpell(s));
+  return { basics, nonBasics };
+}
+
 // ── ROLL RARITY ──
-function rollRarity(tier = 1) {
-  const weights = TIER_RARITY_WEIGHTS[tier] || TIER_RARITY_WEIGHTS[1];
+// V5: Uses spell's own rarity_weights instead of tier
+function rollRarity(spell = null) {
+  const weights = spell ? parseRarityWeights(spell) : DEFAULT_RARITY_WEIGHTS;
   const roll = Math.random() * 100;
   let cumulative = 0;
   for (const [rarity, weight] of Object.entries(weights)) {
@@ -148,6 +172,26 @@ async function grantDailyPack(playerId) {
   }
 }
 
+// ── CHECK IF DAILY PACK WAS CLAIMED TODAY ──
+async function isDailyClaimedToday(playerId) {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const { data } = await supabase
+      .from('pack_inventory')
+      .select('id')
+      .eq('player_id', playerId)
+      .eq('pack_type', 'daily')
+      .eq('source', 'daily_login')
+      .gte('granted_at', today + 'T00:00:00Z')
+      .lte('granted_at', today + 'T23:59:59Z')
+      .limit(1);
+    return data && data.length > 0;
+  } catch (err) {
+    console.error('isDailyClaimedToday error:', err);
+    return false;
+  }
+}
+
 // ── GET PLAYER'S UNOPENED PACKS ──
 async function getPackInventory(playerId) {
   try {
@@ -213,8 +257,8 @@ async function openPackFromInventory(playerId, packInventoryId) {
       return { success: false, error: 'No spells available in pool' };
     }
 
-    const basics = allSpells.filter(s => s.tier === 0);
-    const nonBasics = allSpells.filter(s => s.tier > 0);
+    // V5: Split by rarity_weights instead of tier
+    const { basics, nonBasics } = splitSpellPool(allSpells);
 
     // 3. Generate cards based on pack type
     const cards = generateCardsForPackType(pack.pack_type, pack.pack_data, basics, nonBasics);
@@ -247,7 +291,7 @@ async function openPackFromInventory(playerId, packInventoryId) {
         spell_name: c.name,
         spell_house: c.house,
         spell_type: c.type,
-        spell_tier: c.tier,
+        spell_tier: 0,
         spell_effects: c.effects,
         rarity: c.rarity,
         source: 'pack',
@@ -277,29 +321,30 @@ function generateCardsForPackType(packType, packData, basics, nonBasics) {
   const cards = [];
   const guaranteedRarity = packData?.guaranteed_rarity || null;
 
+  // Safety: if no nonBasics available, use all spells
+  const safeNonBasics = nonBasics.length > 0 ? nonBasics : basics;
+
   switch (packType) {
     case 'daily': {
       // 1 Basic Attack + 1 Basic Defend + 3 Random
-      const basicAttack = basics.find(s => s.spell_type === 'attack') || basics[0];
-      const basicDefend = basics.find(s => s.spell_type === 'defend') || basics[0];
+      const basicAttack = basics.find(s => s.spell_type === 'attack') || safeNonBasics[0];
+      const basicDefend = basics.find(s => s.spell_type === 'defend') || safeNonBasics[0];
       cards.push(buildCard(basicAttack, 'common'));
       cards.push(buildCard(basicDefend, 'common'));
       for (let i = 0; i < 3; i++) {
-        const spell = nonBasics[Math.floor(Math.random() * nonBasics.length)];
-        cards.push(buildCard(spell, rollRarity(spell.tier)));
+        const spell = safeNonBasics[Math.floor(Math.random() * safeNonBasics.length)];
+        cards.push(buildCard(spell, rollRarity(spell)));
       }
       break;
     }
 
     case 'boss': {
-      // 5 Random, higher tier bias, guaranteed rare minimum on first card
-      const t2Plus = nonBasics.filter(s => s.tier >= 2);
-      const pool = t2Plus.length >= 5 ? t2Plus : nonBasics;
+      // 5 Random, guaranteed rare minimum on first card
       for (let i = 0; i < 5; i++) {
-        const spell = pool[Math.floor(Math.random() * pool.length)];
+        const spell = safeNonBasics[Math.floor(Math.random() * safeNonBasics.length)];
         const rarity = i === 0
           ? rollRarityGuaranteed(guaranteedRarity || 'rare')
-          : rollRarity(spell.tier);
+          : rollRarity(spell);
         cards.push(buildCard(spell, rarity));
       }
       break;
@@ -308,10 +353,10 @@ function generateCardsForPackType(packType, packData, basics, nonBasics) {
     case 'event': {
       // 5 Random, guaranteed rare+ on first card
       for (let i = 0; i < 5; i++) {
-        const spell = nonBasics[Math.floor(Math.random() * nonBasics.length)];
+        const spell = safeNonBasics[Math.floor(Math.random() * safeNonBasics.length)];
         const rarity = i === 0
           ? rollRarityGuaranteed(guaranteedRarity || 'rare')
-          : rollRarity(spell.tier);
+          : rollRarity(spell);
         cards.push(buildCard(spell, rarity));
       }
       break;
@@ -320,10 +365,10 @@ function generateCardsForPackType(packType, packData, basics, nonBasics) {
     case 'seasonal': {
       // 5 Random, guaranteed epic+ on first card
       for (let i = 0; i < 5; i++) {
-        const spell = nonBasics[Math.floor(Math.random() * nonBasics.length)];
+        const spell = safeNonBasics[Math.floor(Math.random() * safeNonBasics.length)];
         const rarity = i === 0
           ? rollRarityGuaranteed(guaranteedRarity || 'epic')
-          : rollRarity(spell.tier);
+          : rollRarity(spell);
         cards.push(buildCard(spell, rarity));
       }
       break;
@@ -332,14 +377,14 @@ function generateCardsForPackType(packType, packData, basics, nonBasics) {
     case 'welcome':
     case 'reward':
     default: {
-      // Same as daily for now — 1 basic atk + 1 basic def + 3 random
-      const basicAttack = basics.find(s => s.spell_type === 'attack') || basics[0];
-      const basicDefend = basics.find(s => s.spell_type === 'defend') || basics[0];
+      // Same as daily — 1 basic atk + 1 basic def + 3 random
+      const basicAttack = basics.find(s => s.spell_type === 'attack') || safeNonBasics[0];
+      const basicDefend = basics.find(s => s.spell_type === 'defend') || safeNonBasics[0];
       cards.push(buildCard(basicAttack, 'common'));
       cards.push(buildCard(basicDefend, 'common'));
       for (let i = 0; i < 3; i++) {
-        const spell = nonBasics[Math.floor(Math.random() * nonBasics.length)];
-        cards.push(buildCard(spell, rollRarity(spell.tier)));
+        const spell = safeNonBasics[Math.floor(Math.random() * safeNonBasics.length)];
+        cards.push(buildCard(spell, rollRarity(spell)));
       }
       break;
     }
@@ -366,8 +411,8 @@ function buildCard(spell, rarity) {
     name: spell.name,
     house: spell.house,
     type: spell.spell_type,
-    tier: spell.tier || 0,
-    cost: spell.mana_cost || 1,
+    tier: 0,   // V5: tiers removed
+    cost: 1,   // V5: mana costs removed
     base_effect: spell.base_effect || '',
     effects: effects,
     rarity: rarity,
@@ -420,8 +465,8 @@ async function generateDailyPack(playerId) {
       return { success: false, error: 'No spells available in pool' };
     }
 
-    const basics = allSpells.filter(s => s.tier === 0);
-    const nonBasics = allSpells.filter(s => s.tier > 0);
+    // V5: Split by rarity_weights instead of tier
+    const { basics, nonBasics } = splitSpellPool(allSpells);
 
     const cards = generateCardsForPackType('daily', null, basics, nonBasics);
 
@@ -461,7 +506,7 @@ async function generateDailyPack(playerId) {
         spell_name: c.name,
         spell_house: c.house,
         spell_type: c.type,
-        spell_tier: c.tier,
+        spell_tier: 0,
         spell_effects: c.effects,
         rarity: c.rarity,
         source: 'pack',
@@ -521,7 +566,7 @@ async function useCardFromHand(playerId, cardIndex) {
 async function getCollection(playerId, filters = {}) {
   let query = supabase
     .from('player_cards')
-    .select('*, spell:spell_id(name, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects, flavor_text, image_url, mana_cost, tier)')
+    .select('*, spell:spell_id(name, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects, flavor_text, image_url)')
     .eq('player_id', playerId)
     .order('acquired_at', { ascending: false });
 
@@ -619,9 +664,10 @@ module.exports = {
   getCollection,
   getCollectionStats,
   processUpgrades,
-  // New inventory functions
+  // Inventory functions
   grantPack,
   grantDailyPack,
+  isDailyClaimedToday,
   getPackInventory,
   getPackInventorySummary,
   openPackFromInventory,

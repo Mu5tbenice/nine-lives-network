@@ -1,6 +1,7 @@
 // ═══════════════════════════════════════════════════════
 // server/routes/packs.js
 // Pack opening, inventory, hand management, and collection APIs
+// V5 UPDATE: inventory endpoint now returns daily_claimed status
 // ═══════════════════════════════════════════════════════
 const express = require('express');
 const router = express.Router();
@@ -14,7 +15,8 @@ const packSystem = require('../services/packSystem');
 // GET /api/packs/inventory/:player_id
 router.get('/inventory/:player_id', async (req, res) => {
   try {
-    const packs = await packSystem.getPackInventory(parseInt(req.params.player_id));
+    const playerId = parseInt(req.params.player_id);
+    const packs = await packSystem.getPackInventory(playerId);
     const summary = {};
     packs.forEach(p => {
       if (!summary[p.pack_type]) {
@@ -24,11 +26,15 @@ router.get('/inventory/:player_id', async (req, res) => {
       summary[p.pack_type].packs.push(p);
     });
 
+    // Check if daily pack was already claimed today
+    const dailyClaimed = await packSystem.isDailyClaimedToday(playerId);
+
     return res.json({
       success: true,
       total: packs.length,
       packs: packs,
       summary: summary,
+      daily_claimed: dailyClaimed,
     });
   } catch (err) {
     console.error('Get inventory error:', err);
