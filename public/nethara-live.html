@@ -527,7 +527,6 @@
       const data = await res.json();
       state.zones = data.zones || data || [];
 
-
       renderZoneList();
       updateActiveCount();
     } catch(e) {
@@ -686,6 +685,8 @@
     state.feedEvents = [];
     state.guildScores = {};
     state.roundWins = {};
+    state._guildAngles = {};
+    state._guildCounts = {};
 
     // Update UI
     document.getElementById('zone-list-view').style.display = 'none';
@@ -698,17 +699,17 @@
     // Init PixiJS
     initPixiArena();
 
-    // Load deployed Nines from your existing API
-    loadZoneNines(zone.id);
-
-    // Connect Socket.io for live updates
+    // Connect Socket.io — this is the ONLY source of Nines
     connectArenaSocket(zone.id);
+
+    // Also load from REST for immediate display (socket may take a moment)
+    loadZoneNines(zone.id);
 
     // Check if THIS player is deployed here
     checkDeployment(zone.id);
   }
 
-  /** Fetch all Nines deployed on this zone and add them to the arena */
+  /** Fetch deployed Nines from REST API for immediate display */
   async function loadZoneNines(zoneId) {
     try {
       const res = await fetch(`/api/zones/${zoneId}/deployments`);
@@ -720,7 +721,7 @@
         return;
       }
 
-      // Build guild scores from guild_power
+      // Build guild scores
       if (data.guild_power) {
         state.guildScores = {};
         for (const [tag, info] of Object.entries(data.guild_power)) {
@@ -729,10 +730,11 @@
         updateScoreboard();
       }
 
-      addFeedEvent(`${deployments.length} Nines deployed on this zone`, 'system');
+      addFeedEvent(`${deployments.length} Nines on this zone`, 'system');
 
-      // Add each deployed Nine as a sprite
+      // Add sprites (skip if socket already added them)
       for (const d of deployments) {
+        if (state.nines.has(d.player_id)) continue; // already loaded by socket
         const nine = d.nine || {};
         const player = d.player || {};
         const houseName = getHouseNameById(nine.house_id);
@@ -746,54 +748,68 @@
           current_hp: d.current_hp,
           max_hp: d.max_hp,
           position: getSpawnPosition(d.guild_tag, d.player_id),
-          stats: {
-            atk: nine.base_atk || 0,
-            hp: nine.base_hp || 0,
-            spd: nine.base_spd || 0,
-          },
+          stats: { atk: nine.base_atk || 0, hp: nine.base_hp || 0, spd: nine.base_spd || 0 },
           is_mercenary: d.is_mercenary,
-          profile_image: player.profile_image,
         });
       }
-
     } catch(e) {
       console.error('Failed to load zone nines:', e);
-      addFeedEvent('Failed to load zone data.', 'system');
     }
   }
 
-  /** Map house_id (school_id number) to house key name */
+  /** Map house_id to house key name */
   function getHouseNameById(houseId) {
-    const houseMap = {
-      1: 'smoulders', 2: 'darktide', 3: 'stonebark', 4: 'ashenvale',
-      5: 'stormrage', 6: 'nighthollow', 7: 'dawnbringer', 8: 'manastorm', 9: 'plaguemire',
-    };
+    const houseMap = { 1:'smoulders', 2:'darktide', 3:'stonebark', 4:'ashenvale', 5:'stormrage', 6:'nighthollow', 7:'dawnbringer', 8:'manastorm', 9:'plaguemire' };
     return houseMap[houseId] || 'smoulders';
   }
 
-  /** Get spawn position — cluster by guild tag */
+  /** Get spawn position — cluster by guild, clamped to arena diamond */
   function getSpawnPosition(guildTag, playerId) {
-    // Track guild positions for clustering
     if (!state._guildAngles) state._guildAngles = {};
     if (!state._guildCounts) state._guildCounts = {};
 
-    const tag = guildTag || playerId;
+    const tag = guildTag || String(playerId);
     if (!state._guildAngles[tag]) {
       const idx = Object.keys(state._guildAngles).length;
-      state._guildAngles[tag] = (idx / 8) * Math.PI * 2; // spread around circle
+      state._guildAngles[tag] = (idx / 8) * Math.PI * 2 - Math.PI / 2;
       state._guildCounts[tag] = 0;
     }
     state._guildCounts[tag]++;
 
-    const cx = window.innerWidth / 2;
-    const cy = window.innerHeight / 2;
+    const cx = (state.arenaApp ? state.arenaApp.screen.width : window.innerWidth) / 2;
+    const cy = (state.arenaApp ? state.arenaApp.screen.height : window.innerHeight) / 2;
     const angle = state._guildAngles[tag];
-    const radius = 160;
-    const spread = state._guildCounts[tag] * 25;
+    const radius = Math.min(cx, cy) * 0.4; // 40% of half-screen
+    const spread = state._guildCounts[tag] * 22;
+
+    const x = cx + Math.cos(angle) * radius + (Math.random() - 0.5) * spread;
+    const y = cy + Math.sin(angle) * radius * 0.6 + (Math.random() - 0.5) * spread; // flatten for isometric
+
+    // Clamp to safe area (keep 60px from edges)
+    const margin = 60;
+    const maxW = (state.arenaApp ? state.arenaApp.screen.width : window.innerWidth) - margin;
+    const maxH = (state.arenaApp ? state.arenaApp.screen.height : window.innerHeight) - margin;
 
     return {
-      x: cx + Math.cos(angle) * radius + (Math.random() - 0.5) * spread,
-      y: cy + Math.sin(angle) * radius + (Math.random() - 0.5) * spread,
+      x: Math.max(margin, Math.min(maxW, x)),
+      y: Math.max(margin, Math.min(maxH, y)),
+    };
+  }
+
+  /** Convert engine position (centered at 400,300) to screen position */
+  function engineToScreen(pos) {
+    if (!pos) return getSpawnPosition('unknown', Math.random());
+    const cx = (state.arenaApp ? state.arenaApp.screen.width : window.innerWidth) / 2;
+    const cy = (state.arenaApp ? state.arenaApp.screen.height : window.innerHeight) / 2;
+    // Engine uses 400,300 as center — scale to screen
+    const scaleX = cx / 400;
+    const scaleY = cy / 300;
+    const margin = 60;
+    const maxW = (state.arenaApp ? state.arenaApp.screen.width : window.innerWidth) - margin;
+    const maxH = (state.arenaApp ? state.arenaApp.screen.height : window.innerHeight) - margin;
+    return {
+      x: Math.max(margin, Math.min(maxW, pos.x * scaleX)),
+      y: Math.max(margin, Math.min(maxH, pos.y * scaleY)),
     };
   }
 
@@ -1024,22 +1040,42 @@
 
     socket.on('connect', () => {
       socket.emit('join_zone', { zoneId });
+      addFeedEvent('Connected to arena', 'system');
     });
 
-    // Current state (on first join)
+    // Current state (on first join) — engine sends snapshot with combat positions
     socket.on('arena:state', (data) => {
       if (data.snapshot) {
         for (const nine of data.snapshot) {
-          addNineSprite(nine);
-          updateNineHP(nine.id, nine.current_hp, nine.max_hp);
+          if (state.nines.has(nine.id)) {
+            // Already loaded from REST — just update HP
+            updateNineHP(nine.id, nine.current_hp, nine.max_hp);
+          } else {
+            // New from engine — add with mapped position
+            nine.position = engineToScreen(nine.position);
+            addNineSprite(nine);
+          }
         }
       }
       if (data.round) updateRoundBadge(data.round, data.cycle);
+      if (data.active) addFeedEvent('Combat is active!', 'system');
     });
 
-    // New Nine joins
+    // New Nine joins mid-battle
     socket.on('arena:nine_joined', (data) => {
-      addNineSprite(data);
+      if (!state.nines.has(data.nine_id)) {
+        addNineSprite({
+          id: data.nine_id,
+          name: data.player_name,
+          house: data.house,
+          guild_id: data.guild_id,
+          guild_name: data.guild,
+          current_hp: data.stats?.hp || 10,
+          max_hp: data.stats?.hp || 10,
+          position: engineToScreen(data.position),
+          stats: data.stats || {},
+        });
+      }
       addFeedEvent(`${data.player_name} entered the arena`, 'join');
     });
 
@@ -1052,11 +1088,14 @@
     socket.on('arena:round_start', (data) => {
       showRoundBanner(`ROUND ${data.round_number}`, 'FIGHT!');
       updateRoundBadge(data.round_number);
-      // Refresh Nine positions
       if (data.nines) {
         for (const nine of data.nines) {
-          if (!state.nines.has(nine.id)) addNineSprite(nine);
-          updateNineHP(nine.id, nine.current_hp, nine.max_hp);
+          if (state.nines.has(nine.id)) {
+            updateNineHP(nine.id, nine.current_hp, nine.max_hp);
+            // Revive faded sprites
+            const sprite = state.nines.get(nine.id);
+            if (sprite && nine.alive) sprite.container.alpha = 1;
+          }
         }
       }
     });
@@ -1075,8 +1114,10 @@
     // Round end
     socket.on('arena:round_end', (data) => {
       showRoundBanner(`ROUND ${data.round_number} OVER`, `${data.winner_guild || 'Draw'} wins!`);
-      if (data.guild_scores) state.guildScores = data.guild_scores;
-      updateScoreboard();
+      if (data.guild_scores) {
+        state.guildScores = data.guild_scores;
+        updateScoreboard();
+      }
     });
 
     // Round heal
@@ -1085,7 +1126,7 @@
         for (const n of data.nines) {
           updateNineHP(n.id, n.hp_after, state.nines.get(n.id)?.maxHp || n.hp_after);
           const sprite = state.nines.get(n.id);
-          if (sprite) showFloatingText(sprite.container.x, sprite.container.y, `+HEAL`, 0x44cc88);
+          if (sprite) showFloatingText(sprite.container.x, sprite.container.y, '+HEAL', 0x44cc88);
         }
       }
     });
@@ -1097,7 +1138,8 @@
 
     // Nerm commentary
     socket.on('arena:nerm', (data) => {
-      showNermBubble(data.message);
+      const msg = typeof data === 'string' ? data : (data.message || data.text || data.comment || '');
+      if (msg) showNermBubble(msg);
     });
 
     socket.on('disconnect', () => {
