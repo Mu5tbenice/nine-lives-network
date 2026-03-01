@@ -205,9 +205,10 @@ function buildCardV4(s, options) {
 
   // ── Art image or gradient area ──
   var hasArt = s.image_url && s.image_url.length > 0;
+  var artSrc = (s.image_url.indexOf('http') === 0) ? s.image_url : '/assets/images/spells/' + s.image_url;
   var artImg = hasArt
-    ? '<div class="sc-art-img" style="background-image:url(/assets/images/spells/' + _esc(s.image_url) + ')"></div>'
-    : '';
+      ? '<div class="sc-art-img" style="background-image:url(' + _esc(artSrc) + ')"></div>'
+      : '';
 
   // ── STAT ROW ──
   var statHtml = '';
