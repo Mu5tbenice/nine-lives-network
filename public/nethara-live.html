@@ -255,13 +255,20 @@
     /* Deploy modal */
     .deploy-modal {
       display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      z-index: 100; background: rgba(10,8,18,0.95);
+      z-index: 2000; background: rgba(10,8,18,0.95);
       overflow-y: auto;
     }
     .deploy-modal.open { display: block; }
     .deploy-inner {
-      max-width: 500px; margin: 40px auto; padding: 20px;
+      max-width: 500px; margin: 20px auto; padding: 20px; position: relative;
     }
+    .deploy-close-x {
+      position: absolute; top: 8px; right: 12px; z-index: 5;
+      background: none; border: none; color: var(--muted); font-size: 28px;
+      cursor: pointer; padding: 4px 10px; line-height: 1;
+      transition: color 0.2s;
+    }
+    .deploy-close-x:hover { color: var(--bright); }
     .deploy-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--gold); margin-bottom: 16px; }
     .deploy-stats-preview {
       background: var(--bg-card); border: 1px solid var(--border);
@@ -499,14 +506,16 @@
     <div class="round-banner-sub" id="round-banner-sub">FIGHT!</div>
   </div>
 </div>
+<!-- arena-view ends above -->
 
-<!-- ====== DEPLOY MODAL ====== -->
+<!-- ====== DEPLOY MODAL — must be OUTSIDE arena-view, above everything ====== -->
 <div class="deploy-modal" id="deploy-modal">
   <div class="deploy-inner">
+    <button class="deploy-close-x" id="btn-close-deploy">&times;</button>
     <div class="deploy-title">⚔️ Deploy to <span id="deploy-zone-name"></span></div>
 
     <div class="deploy-stats-preview">
-      <div style="font-family:'Press Start 2P',monospace; font-size:7px; color:var(--faint); letter-spacing:1px; margin-bottom:8px;">COMBAT STATS PREVIEW</div>
+      <div style="font-family:'Press Start 2P',monospace; font-size:7px; color:var(--faint); letter-spacing:1px; margin-bottom:8px;">CARD STATS BONUS</div>
       <div class="deploy-stat-row" id="deploy-stats-row">
         <div class="deploy-stat"><span style="color:#e85a6a">ATK</span> <span id="deploy-atk">--</span></div>
         <div class="deploy-stat"><span style="color:#6acd8a">HP</span> <span id="deploy-hp">--</span></div>
@@ -521,7 +530,7 @@
       <div class="loading-text">Loading cards...</div>
     </div>
 
-    <button class="btn-deploy" id="btn-confirm-deploy" disabled>DEPLOY — SELECT 3 CARDS</button>
+    <button class="btn-deploy" id="btn-confirm-deploy" disabled>SELECT 3 CARDS TO DEPLOY</button>
     <button class="btn-cancel" id="btn-cancel-deploy">CANCEL</button>
   </div>
 </div>
@@ -545,6 +554,7 @@
     nines: new Map(), // id → pixi sprite data
     selectedCards: [],
     playerCards: [],
+    _deployNoCards: false,
     isDeployed: false,
     feedEvents: [],
     guildScores: {},
@@ -970,6 +980,11 @@
   function closeArena() {
     document.getElementById('arena-view').style.display = 'none';
     document.getElementById('zone-list-view').style.display = 'block';
+
+    // Close deploy modal if open
+    document.getElementById('deploy-modal').classList.remove('open');
+    state.selectedCards = [];
+    state._deployNoCards = false;
 
     // Stop countdown
     stopCountdown();
@@ -2514,6 +2529,7 @@
 
     // Reset selection
     state.selectedCards = [];
+    state._deployNoCards = false;
     document.getElementById('deploy-selected-count').textContent = '0';
     document.getElementById('btn-confirm-deploy').disabled = true;
     document.getElementById('btn-confirm-deploy').textContent = 'SELECT 3 CARDS TO DEPLOY';
@@ -2533,105 +2549,141 @@
     grid.innerHTML = '<div class="loading-text">Loading your cards...</div>';
 
     try {
-      // Try multiple endpoints — different server setups may use different routes
       let cards = [];
       let deployedCardIds = [];
 
-      // Get cards already deployed on OTHER zones (so we can grey them out)
+      // Get cards already deployed on OTHER zones
       try {
         const depRes = await fetch(`/api/zones/my-deployments/${state.playerId}`);
-        const depData = await depRes.json();
-        for (const dep of (depData.deployments || [])) {
-          if (dep.zone_id !== state.currentZoneId && dep.card_ids) {
-            deployedCardIds.push(...dep.card_ids);
+        if (depRes.ok) {
+          const depData = await depRes.json();
+          for (const dep of (depData.deployments || [])) {
+            if (dep.zone_id !== state.currentZoneId && dep.card_ids) {
+              deployedCardIds.push(...dep.card_ids);
+            }
           }
         }
       } catch(e) { /* non-critical */ }
 
-      // Fetch player's card collection
+      // Fetch player's card collection — try multiple endpoints
       const endpoints = [
-        `/api/player-cards/${state.playerId}`,
         `/api/spells/collection/${state.playerId}`,
+        `/api/player-cards/${state.playerId}`,
         `/api/players/${state.playerId}/cards`,
+        `/api/packs/collection/${state.playerId}`,
+        `/api/nines/${state.playerId}/cards`,
       ];
 
       for (const url of endpoints) {
         try {
           const res = await fetch(url);
-          if (res.ok) {
-            const data = await res.json();
-            cards = data.cards || data.player_cards || data.collection || data || [];
-            if (Array.isArray(cards) && cards.length > 0) break;
+          if (!res.ok) continue;
+          const data = await res.json();
+          const maybeCards = data.cards || data.player_cards || data.collection || data.spells || (Array.isArray(data) ? data : null);
+          if (Array.isArray(maybeCards) && maybeCards.length > 0) {
+            cards = maybeCards;
+            console.log('✅ Loaded', cards.length, 'cards from', url);
+            break;
           }
         } catch(e) { continue; }
       }
 
       if (!Array.isArray(cards) || cards.length === 0) {
-        grid.innerHTML = '<div class="loading-text">No cards found. Open daily packs to get cards!</div>';
+        // NO CARDS — show fallback deploy option
+        state._deployNoCards = true;
+        grid.innerHTML = `
+          <div style="text-align:center; padding:20px 0;">
+            <div style="font-size:24px; margin-bottom:12px;">📦</div>
+            <div style="font-family:'Cinzel',serif; font-size:14px; color:var(--bright); margin-bottom:8px;">No Cards Found</div>
+            <div style="font-family:monospace; font-size:10px; color:var(--muted); margin-bottom:4px; line-height:1.6;">
+              Open daily packs to build your collection!<br>
+              You can still deploy with your base house stats.
+            </div>
+          </div>`;
+        document.getElementById('btn-confirm-deploy').disabled = false;
+        document.getElementById('btn-confirm-deploy').textContent = '⚔️ DEPLOY WITH BASE STATS';
         return;
       }
 
       state.playerCards = cards;
+      renderCardGrid(cards, deployedCardIds);
 
-      // Render card grid
-      grid.innerHTML = cards.map((card, index) => {
-        const houseKey = card.house || SCHOOL_TO_HOUSE[card.school_id] || 'universal';
-        const hColor = HOUSES[houseKey]?.color || '#888';
-        const typeColor = TYPE_COLORS[card.spell_type || card.type || 'attack'] || '#888';
-        const sharpness = card.sharpness ?? card.current_sharpness ?? 100;
-        const sharpColor = sharpness > 60 ? 'var(--cyan)' : sharpness > 30 ? 'var(--gold)' : 'var(--red)';
-        const cardId = card.player_card_id || card.id;
-        const isDeployedElsewhere = deployedCardIds.includes(cardId);
+    } catch(e) {
+      console.error('Card loading error:', e);
+      // Error fallback — still let them deploy
+      state._deployNoCards = true;
+      grid.innerHTML = `
+        <div style="text-align:center; padding:20px 0;">
+          <div style="font-family:monospace; font-size:10px; color:var(--red); margin-bottom:8px;">Error loading cards</div>
+          <div style="font-family:monospace; font-size:9px; color:var(--muted);">You can still deploy with base stats.</div>
+        </div>`;
+      document.getElementById('btn-confirm-deploy').disabled = false;
+      document.getElementById('btn-confirm-deploy').textContent = '⚔️ DEPLOY WITH BASE STATS';
+    }
+  }
 
-        // Build effects text
-        const effects = [];
+  /** Render card selection grid */
+  function renderCardGrid(cards, deployedCardIds) {
+    const grid = document.getElementById('deploy-card-grid');
+
+    grid.innerHTML = cards.map((card, index) => {
+      const houseKey = (card.house || SCHOOL_TO_HOUSE[card.school_id] || 'universal').toLowerCase();
+      const hColor = HOUSES[houseKey]?.color || '#888';
+      const spellType = (card.spell_type || card.type || 'attack').toLowerCase();
+      const typeColor = TYPE_COLORS[spellType] || TYPE_COLORS.attack || '#888';
+      const sharpness = card.sharpness ?? card.current_sharpness ?? 100;
+      const sharpColor = sharpness > 60 ? 'var(--cyan)' : sharpness > 30 ? 'var(--gold)' : 'var(--red)';
+      const cardId = card.player_card_id || card.id;
+      const isDeployedElsewhere = deployedCardIds.includes(cardId);
+
+      // Build effects text
+      const effects = [];
+      try {
         if (card.bonus_effects) {
-          (Array.isArray(card.bonus_effects) ? card.bonus_effects : []).forEach(e => {
+          const effs = Array.isArray(card.bonus_effects) ? card.bonus_effects
+            : (typeof card.bonus_effects === 'string' ? JSON.parse(card.bonus_effects) : []);
+          effs.forEach(e => {
             effects.push(typeof e === 'string' ? e : (e.tag || e.name || ''));
           });
         }
-        if (card.base_effect) effects.push(card.base_effect);
+      } catch(e) { /* ignore parse errors */ }
+      if (card.base_effect) effects.push(card.base_effect);
 
-        // Rarity color
-        const rarityColors = { common: '#999', uncommon: '#66dd66', rare: '#55bbff', epic: '#bb88ff', legendary: '#ffd700' };
-        const rColor = rarityColors[card.rarity] || '#999';
+      const rarityColors = { common: '#999', uncommon: '#66dd66', rare: '#55bbff', epic: '#bb88ff', legendary: '#ffd700' };
+      const rColor = rarityColors[(card.rarity || 'common').toLowerCase()] || '#999';
 
-        return `<div class="deploy-card-slot ${isDeployedElsewhere ? 'deployed-elsewhere' : ''}"
-                     data-index="${index}"
-                     data-card-id="${cardId}"
-                     style="border-color:${hColor}30">
-          <div class="deploy-card-type" style="color:${typeColor}">${(card.spell_type || card.type || '???').toUpperCase()}</div>
-          <div class="deploy-card-name">${card.name || '???'}</div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin:3px 0;">
-            <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${rColor}">${(card.rarity || 'common').toUpperCase()}</span>
-            <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${hColor}">${(HOUSES[houseKey]?.name || 'Universal')}</span>
+      return `<div class="deploy-card-slot ${isDeployedElsewhere ? 'deployed-elsewhere' : ''}"
+                   data-index="${index}"
+                   data-card-id="${cardId}"
+                   style="border-color:${hColor}30">
+        <div class="deploy-card-type" style="color:${typeColor}">${spellType.toUpperCase()}</div>
+        <div class="deploy-card-name">${card.name || '???'}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:3px 0;">
+          <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${rColor}">${(card.rarity || 'common').toUpperCase()}</span>
+          <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${hColor}">${(HOUSES[houseKey]?.name || 'Universal')}</span>
+        </div>
+        ${effects.filter(Boolean).length ? `<div class="deploy-card-effects">${effects.filter(Boolean).slice(0, 3).join(' · ')}</div>` : ''}
+        <div style="display:flex;gap:6px;margin-top:4px;font-family:'Press Start 2P',monospace;font-size:6px;">
+          ${card.base_atk ? `<span style="color:#e85a6a">ATK ${card.base_atk}</span>` : ''}
+          ${card.base_hp ? `<span style="color:#6acd8a">HP ${card.base_hp}</span>` : ''}
+          ${card.base_spd ? `<span style="color:#6ac8d8">SPD ${card.base_spd}</span>` : ''}
+          ${card.base_def ? `<span style="color:#b088e8">DEF ${card.base_def}</span>` : ''}
+          ${card.base_luck ? `<span style="color:#D4A64B">LCK ${card.base_luck}</span>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;margin-top:3px;">
+          <div style="flex:1;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden">
+            <div style="width:${sharpness}%;height:100%;background:${sharpColor};border-radius:2px"></div>
           </div>
-          ${effects.length ? `<div class="deploy-card-effects">${effects.slice(0, 3).join(' · ')}</div>` : ''}
-          <div style="display:flex;gap:6px;margin-top:4px;font-family:'Press Start 2P',monospace;font-size:6px;">
-            ${card.base_atk ? `<span style="color:#e85a6a">ATK ${card.base_atk}</span>` : ''}
-            ${card.base_hp ? `<span style="color:#6acd8a">HP ${card.base_hp}</span>` : ''}
-            ${card.base_spd ? `<span style="color:#6ac8d8">SPD ${card.base_spd}</span>` : ''}
-            ${card.base_def ? `<span style="color:#b088e8">DEF ${card.base_def}</span>` : ''}
-            ${card.base_luck ? `<span style="color:#D4A64B">LCK ${card.base_luck}</span>` : ''}
-          </div>
-          <div class="deploy-card-sharpness" style="display:flex;align-items:center;gap:4px;">
-            <div style="flex:1;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden">
-              <div style="width:${sharpness}%;height:100%;background:${sharpColor};border-radius:2px"></div>
-            </div>
-            <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:${sharpColor}">${sharpness}%</span>
-          </div>
-          ${isDeployedElsewhere ? '<div style="font-family:\'Press Start 2P\',monospace;font-size:5px;color:var(--red);margin-top:3px;">DEPLOYED ELSEWHERE</div>' : ''}
-        </div>`;
-      }).join('');
+          <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:${sharpColor}">${sharpness}%</span>
+        </div>
+        ${isDeployedElsewhere ? '<div style="font-family:\'Press Start 2P\',monospace;font-size:5px;color:var(--red);margin-top:3px;">DEPLOYED ELSEWHERE</div>' : ''}
+      </div>`;
+    }).join('');
 
-      // Attach click handlers to each card
-      grid.querySelectorAll('.deploy-card-slot:not(.deployed-elsewhere)').forEach(slot => {
-        slot.addEventListener('click', () => toggleCardSelection(slot));
-      });
-
-    } catch(e) {
-      grid.innerHTML = `<div class="loading-text">Error loading cards: ${e.message}</div>`;
-    }
+    // Attach click handlers
+    grid.querySelectorAll('.deploy-card-slot:not(.deployed-elsewhere)').forEach(slot => {
+      slot.addEventListener('click', () => toggleCardSelection(slot));
+    });
   }
 
   /** Toggle a card's selection in the deploy modal */
@@ -2699,6 +2751,7 @@
   function closeDeployModal() {
     document.getElementById('deploy-modal').classList.remove('open');
     state.selectedCards = [];
+    state._deployNoCards = false;
   }
 
   /** Deploy to zone — sends selected card IDs */
@@ -2708,7 +2761,8 @@
       return;
     }
 
-    if (state.selectedCards.length < 3) {
+    // If we have cards available but haven't selected 3, block
+    if (!state._deployNoCards && state.selectedCards.length < 3) {
       alert('Select 3 cards first');
       return;
     }
@@ -2717,17 +2771,20 @@
     btn.textContent = 'DEPLOYING...';
     btn.disabled = true;
 
-    const cardIds = state.selectedCards.map(c => c.cardId);
+    // Build deploy payload — include card_ids only if cards were selected
+    const payload = {
+      player_id: state.playerId,
+      zone_id: state.currentZoneId,
+    };
+    if (state.selectedCards.length > 0) {
+      payload.card_ids = state.selectedCards.map(c => c.cardId);
+    }
 
     try {
       const res = await fetch('/api/zones/deploy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          player_id: state.playerId,
-          zone_id: state.currentZoneId,
-          card_ids: cardIds,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
@@ -2807,6 +2864,7 @@
   document.getElementById('btn-withdraw').addEventListener('click', withdraw);
   document.getElementById('btn-confirm-deploy').addEventListener('click', confirmDeploy);
   document.getElementById('btn-cancel-deploy').addEventListener('click', closeDeployModal);
+  document.getElementById('btn-close-deploy').addEventListener('click', closeDeployModal);
 
   // ===== START =====
   init();
