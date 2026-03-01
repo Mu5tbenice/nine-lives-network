@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════
    card-v4.js — THE card renderer for Nine Lives Network
-   v4.2 — Single source of truth
+   v4.3 — Stats moved below effects, art shifted up
 
    HOW TO USE:
    1. Include card-v4.css in your page
@@ -53,15 +53,15 @@ var PILL_MAP = {
   'MARK':'red','CLEANSE':'green','OVERCHARGE':'orange','SLOW':'blue',
   'TAUNT':'brown','STEALTH':'dark','BARRIER':'gold','STUN':'yellow',
   'FEAR':'purple','DOOM':'dark','LEECH':'purple',
-  'SPREAD':'red','STRIP':'red','ERUPTION':'red','PULL':'blue','REFLECT':'cyan',
-  'CLOAK':'dark','STEALTH':'dark','SWAP':'pink','CONVERT':'cyan','PERSIST':'gold',
+  'SPREAD':'red','STRIP':'red','ERUPTION':'red','PULL':'blue',
+  'CLOAK':'dark','SWAP':'pink','CONVERT':'cyan','PERSIST':'gold',
   'REACH':'white','SWEEP':'gray','FIZZLE':'yellow','NIGHT':'dark',
   'STEAL':'red','FREEZE':'ice','ABSORB':'blue','RANDOMIZE':'pink','NEGATE':'white',
   'REFUND':'cyan','WITHER':'brown','PLAGUE':'toxic','TOXIC':'toxic','LOCKOUT':'red',
   'UNDERDOG':'gold','AURA':'gold','GIFT':'white','JUSTICE':'gold','SAFE':'gold',
   'RESTORE':'cyan','RESET':'cyan','REVEAL':'white','DOT':'green','BONUS':'gold',
   'PURGE':'orange','PUSH':'ice','SHUFFLE':'blue','CURSE':'purple','VANISH':'dark',
-  'IMMUNE':'cyan','PUSH':'ice',
+  'IMMUNE':'cyan',
 };
 
 function _pillColor(tag) {
@@ -201,11 +201,9 @@ function buildCardV4(s, options) {
     ? '<img class="sc-crest-watermark" src="' + houseImg + '" onerror="this.style.display=\'none\'">'
     : '';
 
-  // ── V5: Mana removed — no mana pill on cards ──
-
   // ── Art image or gradient area ──
   var hasArt = s.image_url && s.image_url.length > 0;
-  var artSrc = (s.image_url.indexOf('http') === 0) ? s.image_url : '/assets/images/spells/' + s.image_url;
+  var artSrc = (s.image_url && s.image_url.indexOf('http') === 0) ? s.image_url : '/assets/images/spells/' + s.image_url;
   var artImg = hasArt
       ? '<div class="sc-art-img" style="background-image:url(' + _esc(artSrc) + ')"></div>'
       : '';
@@ -284,6 +282,9 @@ function buildCardV4(s, options) {
   }
 
   // ═══ ASSEMBLE ═══
+  // v4.3 LAYOUT CHANGE: Stats moved below effects, above house rule
+  // Old order: stats → rule → type/effects → house
+  // New order: type/effects → stats → rule → house
   return '<div class="spell-card' + sizeClass + stateClasses + '"'
     + ' data-house="' + s.house + '"'
     + ' data-type="' + spellType + '"'
@@ -318,21 +319,21 @@ function buildCardV4(s, options) {
     + '</div>'
     + crestWM
 
-    // Body
+    // Body — NEW ORDER: effects first, stats at bottom
     + '<div class="sc-body">'
       + '<div class="sc-top">' + logoInline + '<div class="sc-name">' + _esc(s.name) + '</div></div>'
       + '<div style="flex:1"></div>'
       + '<div class="sc-info-panel">'
-      + statHtml
-      + ruleHtml
-      + '<div class="sc-info">'
-        + '<div class="sc-type-row">' + typeHtml + '<span class="sc-type-spacer"></span>' + rarityHtml + '</div>'
-        + effectHtml
-        + pillsHtml
-        + sharpHtml
-        + flavorHtml
-      + '</div>'
-      + '<div class="sc-bottom house-name-' + s.house + '" style="color:' + hc + '">' + houseName.toUpperCase() + '</div>'
+        + '<div class="sc-info">'
+          + '<div class="sc-type-row">' + typeHtml + '<span class="sc-type-spacer"></span>' + rarityHtml + '</div>'
+          + effectHtml
+          + pillsHtml
+          + sharpHtml
+          + flavorHtml
+        + '</div>'
+        + statHtml
+        + ruleHtml
+        + '<div class="sc-bottom house-name-' + s.house + '" style="color:' + hc + '">' + houseName.toUpperCase() + '</div>'
       + '</div>'
     + '</div>'
 
@@ -405,7 +406,6 @@ function fitCardNames(container) {
   names.forEach(function(el) {
     if (el._fitDone) return;
     el._fitDone = true;
-    // Remove ellipsis so we can measure true width
     el.style.textOverflow = 'clip';
     var baseSize = parseFloat(window.getComputedStyle(el).fontSize) || 15;
     var fs = baseSize;
@@ -415,7 +415,6 @@ function fitCardNames(container) {
       el.style.fontSize = fs + 'px';
       safety++;
     }
-    // Restore ellipsis as final fallback
     el.style.textOverflow = 'ellipsis';
   });
 }
@@ -427,28 +426,23 @@ function _showTooltip(pill) {
   var tip = pill.querySelector('.tip');
   if (!tip) return;
 
-  // Create or reuse body-level tooltip
   if (!_scTooltip) {
     _scTooltip = document.createElement('div');
     _scTooltip.className = 'sc-tooltip';
     document.body.appendChild(_scTooltip);
   }
 
-  // Copy content and show
   _scTooltip.innerHTML = tip.innerHTML;
   _scTooltip.style.display = 'block';
   _scTooltip.style.visibility = 'hidden';
 
-  // Position above the pill
   var pr = pill.getBoundingClientRect();
   var tr = _scTooltip.getBoundingClientRect();
 
   var top = pr.top - tr.height - 8;
   var left = pr.left + (pr.width / 2) - (tr.width / 2);
 
-  // Flip below if near top of screen
   if (top < 8) top = pr.bottom + 8;
-  // Keep on screen horizontally
   if (left < 8) left = 8;
   if (left + tr.width > window.innerWidth - 8) left = window.innerWidth - tr.width - 8;
 
@@ -478,6 +472,7 @@ function initCards(container) {
   fitCardNames(container);
   fixTooltipPositions(container);
 }
+
 /* ═══ BACKWARD COMPAT — aliases for existing pages ═══ */
 var buildSpellCard = buildCardV4;
 

@@ -82,7 +82,7 @@
   z-index: 2;
   border-radius: 10px 10px 0 0;
   background-size: cover;
-  background-position: center;
+  background-position: center 40%;
   -webkit-mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
   mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
   pointer-events: none;
@@ -294,6 +294,11 @@
 .sc-stat-label--spd  { color: rgba(106,200,216,0.5); }
 .sc-stat-label--def  { color: rgba(176,136,232,0.5); }
 .sc-stat-label--luck { color: rgba(212,166,75,0.5); }
+
+/* ═══ STAT ROW bottom spacing (v4.3 — stats now below effects) ═══ */
+.sc-stat-row {
+  margin-top: 4px;
+}
 
 /* ═══ THIN HOUSE RULE ═══ */
 .sc-rule {
