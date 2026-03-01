@@ -14,12 +14,13 @@ const supabase = createClient(
 
 // ——— CONFIG ———
 const CYCLE_INTERVAL_MS = 5 * 60 * 1000;
+const BUFFER_BETWEEN_CYCLES_MS = 30 * 1000; // 30s regroup between cycles
 const ROUNDS_PER_CYCLE = 3;
 const WAVES_PER_ROUND = 3;
 const HEAL_BETWEEN_ROUNDS_PCT = 0.20;
 const SHARPNESS_LOSS_PER_CYCLE = 1;
 const LONE_WOLF_ATK_BONUS = 1.5;
-const HP_SCALE = 10;
+const HP_SCALE = 3; // ×3 HP — killable but not instant
 
 const HOUSE_MAP = {
   1: 'smoulders', 2: 'darktide', 3: 'stonebark', 4: 'ashenvale',
@@ -37,26 +38,40 @@ let intervalHandle = null;
 function startCombatEngine() {
   if (running) return;
   running = true;
-  console.log(`⚔️ V6 Combat Engine — ${ROUNDS_PER_CYCLE}R × ${WAVES_PER_ROUND}W, HP×${HP_SCALE}, every ${CYCLE_INTERVAL_MS/1000}s`);
-  nextCycleAt = Date.now() + CYCLE_INTERVAL_MS;
-  runAllZoneCycles();
-  intervalHandle = setInterval(runAllZoneCycles, CYCLE_INTERVAL_MS);
+  console.log(`⚔️ V6 Combat Engine — ${ROUNDS_PER_CYCLE}R × ${WAVES_PER_ROUND}W, HP×${HP_SCALE}, ${BUFFER_BETWEEN_CYCLES_MS/1000}s buffer`);
+  // First cycle after a short delay
+  nextCycleAt = Date.now() + 10000;
+  scheduleNextCycle(10000);
 }
 
 function stopCombatEngine() {
   running = false;
-  if (intervalHandle) clearInterval(intervalHandle);
+  if (intervalHandle) clearTimeout(intervalHandle);
 }
 
 function getNextCycleAt() { return nextCycleAt || (Date.now() + CYCLE_INTERVAL_MS); }
 function getCycleIntervalMs() { return CYCLE_INTERVAL_MS; }
+
+/** Schedule next cycle using setTimeout (not setInterval — accounts for combat duration) */
+function scheduleNextCycle(delayMs) {
+  if (!running) return;
+  if (intervalHandle) clearTimeout(intervalHandle);
+  intervalHandle = setTimeout(async () => {
+    await runAllZoneCycles();
+    if (running) {
+      // After combat completes, wait buffer then schedule next
+      nextCycleAt = Date.now() + BUFFER_BETWEEN_CYCLES_MS;
+      scheduleNextCycle(BUFFER_BETWEEN_CYCLES_MS);
+    }
+  }, delayMs);
+}
 
 async function runAllZoneCycles() {
   try {
     const { data: activeZones } = await supabase
       .from('zone_deployments').select('zone_id').eq('is_active', true);
     if (!activeZones || activeZones.length === 0) {
-      nextCycleAt = Date.now() + CYCLE_INTERVAL_MS;
+      console.log('⚔️ No active zones, skipping cycle');
       return;
     }
     const zoneIds = [...new Set(activeZones.map(d => d.zone_id))];
@@ -64,10 +79,8 @@ async function runAllZoneCycles() {
       try { await runZoneCycle(zoneId); }
       catch (e) { console.error(`⚔️ Zone ${zoneId} error:`, e.message); }
     }
-    nextCycleAt = Date.now() + CYCLE_INTERVAL_MS;
   } catch (e) {
     console.error('⚔️ Engine error:', e.message);
-    nextCycleAt = Date.now() + CYCLE_INTERVAL_MS;
   }
 }
 
@@ -272,7 +285,8 @@ async function runZoneCycle(zoneId) {
 
   broadcastToZone(zoneId, 'arena:cycle_end', {
     cycle_number: cycleNum, winner_guild: winnerGuild, guild_scores: guildScores,
-    next_cycle_at: getNextCycleAt(), cycle_interval_ms: CYCLE_INTERVAL_MS,
+    next_cycle_at: Date.now() + BUFFER_BETWEEN_CYCLES_MS,
+    buffer_ms: BUFFER_BETWEEN_CYCLES_MS,
     nines: fighters.map(f => ({
       id: f.player_id, current_hp: f.hp, max_hp: f.maxHp,
       alive: f.alive, guild: f.guild, streak: survivalStreaks[f.player_id] || 0,

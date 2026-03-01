@@ -124,9 +124,21 @@
     .zone-casters { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--faint); }
 
     /* ====== ARENA VIEW ====== */
-    #arena-view { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1000; background: var(--bg); }
-
-    #arena-canvas { width: 100%; height: 100%; }
+    #arena-view { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1000; background: #0a0812; }
+    #arena-canvas canvas { display: block; }
+    #arena-canvas {
+      width: 100%; height: 100%; position: relative;
+      background-size: cover; background-position: center center;
+      background-repeat: no-repeat; background-color: #0a0812;
+      transition: background-image 0.8s ease;
+    }
+    /* Darken overlay so UI is readable over bright biome art */
+    #arena-canvas::before {
+      content: ''; position: absolute; inset: 0; z-index: 0;
+      background: radial-gradient(ellipse at center, rgba(10,8,18,0.3) 0%, rgba(10,8,18,0.7) 70%, rgba(10,8,18,0.92) 100%);
+      pointer-events: none;
+    }
+    #arena-canvas canvas { position: relative; z-index: 1; }
 
     /* Arena overlays */
     .arena-overlay { position: absolute; pointer-events: none; z-index: 10; }
@@ -353,12 +365,31 @@
     /* Equipped card slots */
     .arena-card-slots {
       position: absolute; bottom: 70px; left: 12px; z-index: 20;
-      pointer-events: auto; display: flex; gap: 6px;
+      pointer-events: auto;
+      background: rgba(10,8,18,0.92); border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px 10px 10px; backdrop-filter: blur(6px);
     }
+    .build-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 6px; padding: 0 2px;
+    }
+    .build-title {
+      font-family: 'Cinzel', serif; font-size: 10px; font-weight: 700;
+      color: var(--gold); letter-spacing: 1px;
+    }
+    .build-sub {
+      font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint);
+    }
+    .build-cards { display: flex; gap: 6px; }
     .arena-card-slot {
-      width: 80px; background: rgba(10,8,18,0.88); border: 1.5px solid var(--border);
+      width: 82px; background: rgba(255,255,255,0.03); border: 1.5px solid var(--border);
       border-radius: 8px; padding: 6px 8px; position: relative; overflow: hidden;
-      transition: border-color 0.2s;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .arena-card-slot:hover { border-color: rgba(212,166,75,0.3); transform: translateY(-1px); }
+    .slot-wave-label {
+      display: block; font-family: 'Press Start 2P', monospace; font-size: 5px;
+      color: var(--faint); letter-spacing: 0.5px; margin-bottom: 4px; opacity: 0.6;
     }
     .arena-card-slot:hover { border-color: rgba(212,166,75,0.3); }
     .arena-card-slot .slot-number {
@@ -385,11 +416,20 @@
     }
     .arena-card-slot.empty {
       border-style: dashed; opacity: 0.4;
-      display: flex; align-items: center; justify-content: center;
-      min-height: 60px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 65px;
     }
     .arena-card-slot.empty .slot-empty-text {
       font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--faint);
+    }
+    .arena-card-slot.wave-active {
+      border-color: var(--gold) !important; background: rgba(212,166,75,0.08);
+      box-shadow: 0 0 12px rgba(212,166,75,0.3), inset 0 0 8px rgba(212,166,75,0.1);
+      animation: waveGlow 0.6s ease-in-out infinite alternate;
+    }
+    @keyframes waveGlow {
+      from { box-shadow: 0 0 8px rgba(212,166,75,0.2); }
+      to { box-shadow: 0 0 16px rgba(212,166,75,0.5), inset 0 0 10px rgba(212,166,75,0.15); }
     }
     .arena-card-slot.active-effect {
       animation: cardGlow 2s infinite;
@@ -466,11 +506,26 @@
     <div class="countdown-sub" id="countdown-sub">Round 0/3</div>
   </div>
 
-  <!-- Equipped card slots (shown when deployed) -->
+  <!-- YOUR BUILD — equipped cards with wave labels -->
   <div class="arena-card-slots" id="arena-card-slots" style="display:none;">
-    <div class="arena-card-slot empty" id="card-slot-0"><span class="slot-empty-text">SLOT 1</span></div>
-    <div class="arena-card-slot empty" id="card-slot-1"><span class="slot-empty-text">SLOT 2</span></div>
-    <div class="arena-card-slot empty" id="card-slot-2"><span class="slot-empty-text">SLOT 3</span></div>
+    <div class="build-header">
+      <span class="build-title">YOUR BUILD</span>
+      <span class="build-sub">3 CARDS · 3 WAVES</span>
+    </div>
+    <div class="build-cards">
+      <div class="arena-card-slot empty" id="card-slot-0">
+        <span class="slot-wave-label">WAVE 1</span>
+        <span class="slot-empty-text">SLOT 1</span>
+      </div>
+      <div class="arena-card-slot empty" id="card-slot-1">
+        <span class="slot-wave-label">WAVE 2</span>
+        <span class="slot-empty-text">SLOT 2</span>
+      </div>
+      <div class="arena-card-slot empty" id="card-slot-2">
+        <span class="slot-wave-label">WAVE 3</span>
+        <span class="slot-empty-text">SLOT 3</span>
+      </div>
+    </div>
   </div>
 
   <div class="nerm-bubble-container">
@@ -1032,7 +1087,7 @@
     const app = new PIXI.Application({
       width: window.innerWidth,
       height: window.innerHeight,
-      backgroundColor: 0x0a0812,
+      backgroundAlpha: 0,
       antialias: true,
       resolution: window.devicePixelRatio || 1,
       autoDensity: true,
@@ -1044,7 +1099,10 @@
     app.stage.sortableChildren = true;
     state.arenaApp = app;
 
-    // Draw arena ground
+    // Set biome background image
+    setBiomeBackground(container);
+
+    // Draw arena ground overlay (subtle grid over biome image)
     drawArenaGround(app);
 
     // Handle resize
@@ -1071,6 +1129,33 @@
     });
   }
 
+  /** Set biome background image based on current zone's house */
+  function setBiomeBackground(container) {
+    const hKey = state.currentZone?.house
+      || state.currentZone?.region_house
+      || SCHOOL_TO_HOUSE[state.currentZone?.controlling_school_id]
+      || SCHOOL_TO_HOUSE[state.currentZone?.school_id]
+      || null;
+
+    // Map house keys to biome image filenames
+    // As you create more biome art, add them here
+    const biomeImages = {
+      plaguemire:  '/assets/images/biomes/Hanwu-Boglands.png',
+      stonebark:   '/assets/images/biomes/Hanwu-Boglands.png', // reuse until we have more
+      darktide:    '/assets/images/biomes/Hanwu-Boglands.png',
+      smoulders:   '/assets/images/biomes/Hanwu-Boglands.png',
+      ashenvale:   '/assets/images/biomes/Hanwu-Boglands.png',
+      stormrage:   '/assets/images/biomes/Hanwu-Boglands.png',
+      nighthollow: '/assets/images/biomes/Hanwu-Boglands.png',
+      dawnbringer: '/assets/images/biomes/Hanwu-Boglands.png',
+      manastorm:   '/assets/images/biomes/Hanwu-Boglands.png',
+    };
+
+    const imgUrl = biomeImages[hKey] || biomeImages.plaguemire;
+    container.style.backgroundImage = `url('${imgUrl}')`;
+    console.log(`🏔️ Biome background: ${hKey || 'default'} → ${imgUrl}`);
+  }
+
   function drawArenaGround(app) {
     // Remove old ground layers
     const existing = app.stage.getChildByName('ground');
@@ -1094,29 +1179,24 @@
 
     // ── HOUSE THEME PALETTES ──
     const themes = {
-      smoulders:   { floor: 0x1a0e0a, tile: 0x2a1510, accent: 0xff4422, fog: 0xff3300, ambientType: 'embers' },
-      darktide:    { floor: 0x0a0e1a, tile: 0x0e1828, accent: 0x00B4D8, fog: 0x003366, ambientType: 'bubbles' },
-      stonebark:   { floor: 0x0e1a0a, tile: 0x162810, accent: 0x5CB338, fog: 0x1a3300, ambientType: 'leaves' },
-      ashenvale:   { floor: 0x0e1418, tile: 0x141e24, accent: 0x90E0EF, fog: 0x88ccee, ambientType: 'wind' },
-      stormrage:   { floor: 0x1a180a, tile: 0x28220e, accent: 0xFFC800, fog: 0xffaa00, ambientType: 'sparks' },
-      nighthollow: { floor: 0x120a18, tile: 0x1c1028, accent: 0x7B2D8E, fog: 0x6633aa, ambientType: 'wisps' },
-      dawnbringer: { floor: 0x1a140a, tile: 0x281e10, accent: 0xFF8C00, fog: 0xff6600, ambientType: 'rays' },
-      manastorm:   { floor: 0x0a1018, tile: 0x101a28, accent: 0x5B8FE0, fog: 0x3366cc, ambientType: 'crystals' },
-      plaguemire:  { floor: 0x180a14, tile: 0x28101e, accent: 0xE84393, fog: 0xcc2266, ambientType: 'miasma' },
+      smoulders:   { accent: 0xff4422, fog: 0xff3300, ambientType: 'embers' },
+      darktide:    { accent: 0x00B4D8, fog: 0x003366, ambientType: 'bubbles' },
+      stonebark:   { accent: 0x5CB338, fog: 0x1a3300, ambientType: 'leaves' },
+      ashenvale:   { accent: 0x90E0EF, fog: 0x88ccee, ambientType: 'wind' },
+      stormrage:   { accent: 0xFFC800, fog: 0xffaa00, ambientType: 'sparks' },
+      nighthollow: { accent: 0x7B2D8E, fog: 0x6633aa, ambientType: 'wisps' },
+      dawnbringer: { accent: 0xFF8C00, fog: 0xff6600, ambientType: 'rays' },
+      manastorm:   { accent: 0x5B8FE0, fog: 0x3366cc, ambientType: 'crystals' },
+      plaguemire:  { accent: 0xE84393, fog: 0xcc2266, ambientType: 'miasma' },
     };
     const theme = themes[hKey] || themes.nighthollow;
 
-    // ══════ GROUND LAYER ══════
+    // ══════ GROUND OVERLAY — subtle iso grid over biome image ══════
     const ground = new PIXI.Graphics();
     ground.name = 'ground';
     ground.zIndex = -10;
 
-    // Dark background fill
-    ground.beginFill(theme.floor);
-    ground.drawRect(0, 0, app.screen.width, app.screen.height);
-    ground.endFill();
-
-    // Isometric diamond floor with tiles
+    // Subtle isometric diamond tiles — very low alpha
     const tileW = 48;
     const tileH = 24;
     const gridCols = 18;
@@ -1124,37 +1204,20 @@
 
     for (let row = -gridRows; row <= gridRows; row++) {
       for (let col = -gridCols; col <= gridCols; col++) {
-        // Iso transform
         const isoX = cx + (col - row) * (tileW / 2);
         const isoY = cy + (col + row) * (tileH / 2);
-
-        // Skip tiles outside screen
         if (isoX < -tileW || isoX > app.screen.width + tileW) continue;
         if (isoY < -tileH || isoY > app.screen.height + tileH) continue;
 
-        // Distance from center for fade
         const dist = Math.sqrt((isoX - cx) ** 2 + ((isoY - cy) * 1.8) ** 2);
-        const maxDist = Math.min(app.screen.width, app.screen.height) * 0.6;
+        const maxDist = Math.min(app.screen.width, app.screen.height) * 0.55;
         if (dist > maxDist) continue;
 
         const fade = Math.max(0, 1 - dist / maxDist);
-        const alpha = 0.12 + fade * 0.25;
 
-        // Checkerboard coloring
-        const isLight = (col + row) % 2 === 0;
-        const tileColor = isLight ? theme.tile : theme.floor;
-
-        ground.beginFill(tileColor, alpha);
-        ground.moveTo(isoX, isoY - tileH / 2);
-        ground.lineTo(isoX + tileW / 2, isoY);
-        ground.lineTo(isoX, isoY + tileH / 2);
-        ground.lineTo(isoX - tileW / 2, isoY);
-        ground.closePath();
-        ground.endFill();
-
-        // Tile edge lines (very subtle)
-        if (fade > 0.3) {
-          ground.lineStyle(0.5, theme.accent, 0.04 * fade);
+        // Very subtle tile edges only — no fill, just grid lines
+        if (fade > 0.2) {
+          ground.lineStyle(0.5, theme.accent, 0.06 * fade);
           ground.moveTo(isoX, isoY - tileH / 2);
           ground.lineTo(isoX + tileW / 2, isoY);
           ground.lineTo(isoX, isoY + tileH / 2);
@@ -1165,10 +1228,10 @@
       }
     }
 
-    // Center arena border — glowing diamond
+    // Arena boundary diamond — glowing border
     const arenaW = 320;
     const arenaH = 180;
-    ground.lineStyle(2, theme.accent, 0.25);
+    ground.lineStyle(2, theme.accent, 0.3);
     ground.moveTo(cx, cy - arenaH);
     ground.lineTo(cx + arenaW, cy);
     ground.lineTo(cx, cy + arenaH);
@@ -1176,8 +1239,8 @@
     ground.closePath();
     ground.lineStyle(0);
 
-    // Inner glow ring
-    ground.lineStyle(1, theme.accent, 0.08);
+    // Inner ring
+    ground.lineStyle(1, theme.accent, 0.1);
     ground.moveTo(cx, cy - arenaH * 0.7);
     ground.lineTo(cx + arenaW * 0.7, cy);
     ground.lineTo(cx, cy + arenaH * 0.7);
@@ -1186,22 +1249,21 @@
 
     app.stage.addChildAt(ground, 0);
 
-    // ══════ ENVIRONMENT LAYER ══════
+    // ══════ ENVIRONMENT LAYER — pillars and runes ══════
     const env = new PIXI.Container();
     env.name = 'environment';
     env.zIndex = -5;
 
-    // Corner pillars / decorations
+    // Corner pillars
     const pillarPositions = [
-      { x: cx, y: cy - arenaH - 10 },         // top
-      { x: cx + arenaW + 10, y: cy },          // right
-      { x: cx, y: cy + arenaH + 10 },          // bottom
-      { x: cx - arenaW - 10, y: cy },          // left
+      { x: cx, y: cy - arenaH - 10 },
+      { x: cx + arenaW + 10, y: cy },
+      { x: cx, y: cy + arenaH + 10 },
+      { x: cx - arenaW - 10, y: cy },
     ];
 
-    pillarPositions.forEach((pos, i) => {
+    pillarPositions.forEach((pos) => {
       const pillar = new PIXI.Graphics();
-      // Pillar base (isometric block)
       pillar.beginFill(theme.accent, 0.15);
       pillar.moveTo(pos.x, pos.y - 16);
       pillar.lineTo(pos.x + 10, pos.y - 10);
@@ -1209,11 +1271,9 @@
       pillar.lineTo(pos.x - 10, pos.y - 10);
       pillar.closePath();
       pillar.endFill();
-      // Pillar column
       pillar.beginFill(theme.accent, 0.10);
       pillar.drawRect(pos.x - 3, pos.y - 28, 6, 16);
       pillar.endFill();
-      // Top crystal/flame
       pillar.beginFill(theme.accent, 0.4);
       pillar.moveTo(pos.x, pos.y - 36);
       pillar.lineTo(pos.x + 4, pos.y - 28);
@@ -1223,7 +1283,7 @@
       env.addChild(pillar);
     });
 
-    // Rune circles at corners of inner diamond
+    // Rune circles
     const runePositions = [
       { x: cx + arenaW * 0.5, y: cy - arenaH * 0.5 },
       { x: cx + arenaW * 0.5, y: cy + arenaH * 0.5 },
@@ -1233,41 +1293,17 @@
 
     runePositions.forEach(pos => {
       const rune = new PIXI.Graphics();
-      rune.lineStyle(1, theme.accent, 0.15);
+      rune.lineStyle(1, theme.accent, 0.2);
       rune.drawCircle(pos.x, pos.y, 8);
-      rune.lineStyle(0.5, theme.accent, 0.08);
+      rune.lineStyle(0.5, theme.accent, 0.1);
       rune.drawCircle(pos.x, pos.y, 12);
-      // Small inner dot
-      rune.beginFill(theme.accent, 0.2);
+      rune.beginFill(theme.accent, 0.25);
       rune.drawCircle(pos.x, pos.y, 2);
       rune.endFill();
       env.addChild(rune);
     });
 
     app.stage.addChild(env);
-
-    // ══════ FOG / ATMOSPHERE LAYER ══════
-    const fog = new PIXI.Graphics();
-    fog.name = 'fog';
-    fog.zIndex = -1;
-
-    // Radial vignette
-    for (let r = 0; r < 6; r++) {
-      const radius = Math.min(app.screen.width, app.screen.height) * (0.2 + r * 0.12);
-      fog.beginFill(theme.fog, 0.005 * (6 - r));
-      fog.drawCircle(cx, cy, radius);
-      fog.endFill();
-    }
-
-    // Edge darkness vignette
-    fog.beginFill(0x000000, 0.4);
-    fog.drawRect(0, 0, app.screen.width, 50);
-    fog.endFill();
-    fog.beginFill(0x000000, 0.4);
-    fog.drawRect(0, app.screen.height - 50, app.screen.width, 50);
-    fog.endFill();
-
-    app.stage.addChild(fog);
 
     // ══════ AMBIENT PARTICLES ══════
     startAmbientParticles(app, theme);
@@ -1677,67 +1713,102 @@
     state.arenaApp.ticker.add(ticker);
   }
 
-  /** Spawn particle burst at a position */
+  /** Spawn FLASHY particle burst — bigger, louder, more pixelated */
   function spawnParticles(x, y, color, count, type) {
     if (!state.arenaApp) return;
     const particles = [];
-    for (let i = 0; i < count; i++) {
+    // Boost count for more chaos
+    const boostedCount = Math.round(count * 1.8);
+
+    for (let i = 0; i < boostedCount; i++) {
       const p = new PIXI.Graphics();
       const particleColor = typeof color === 'number' ? color : 0xffffff;
 
       if (type === 'fire') {
-        // Fire particles: small flickering triangles
+        // Fire: chunky pixel squares that flicker
+        const s = 2 + Math.random() * 4;
+        p.beginFill(particleColor, 0.95);
+        p.drawRect(-s/2, -s/2, s, s); // pixel squares, not triangles
+        p.endFill();
+        // Inner bright core
+        p.beginFill(0xffffff, 0.5);
+        p.drawRect(-s/4, -s/4, s/2, s/2);
+        p.endFill();
+      } else if (type === 'explosion') {
+        // BIG explosion chunks
+        const s = 3 + Math.random() * 6;
         p.beginFill(particleColor, 0.9);
-        const s = 2 + Math.random() * 3;
-        p.moveTo(0, -s); p.lineTo(-s * 0.6, s * 0.5); p.lineTo(s * 0.6, s * 0.5);
-        p.closePath();
+        p.drawRect(-s/2, -s/2, s, s);
+        p.endFill();
+        p.beginFill(0xffffff, 0.7);
+        p.drawRect(-1, -1, 2, 2);
         p.endFill();
       } else if (type === 'poison') {
-        // Poison: small circles that rise
-        p.beginFill(particleColor, 0.8);
-        p.drawCircle(0, 0, 1.5 + Math.random() * 2);
+        // Poison: bubbling pixel circles
+        const s = 2 + Math.random() * 3;
+        p.beginFill(particleColor, 0.85);
+        p.drawRect(-s/2, -s/2, s, s);
         p.endFill();
       } else if (type === 'heal') {
-        // Heal: sparkle crosses
-        const s = 1.5 + Math.random() * 2;
+        // Heal: sparkle plus signs, bigger
+        const s = 2 + Math.random() * 3;
         p.beginFill(particleColor, 0.9);
-        p.drawRect(-s, -0.5, s * 2, 1);
-        p.drawRect(-0.5, -s, 1, s * 2);
+        p.drawRect(-s, -1, s * 2, 2);
+        p.drawRect(-1, -s, 2, s * 2);
+        p.endFill();
+        p.beginFill(0xffffff, 0.4);
+        p.drawRect(-1, -1, 2, 2);
         p.endFill();
       } else if (type === 'shield') {
-        // Shield: ring segments
-        p.lineStyle(1.5, particleColor, 0.8);
+        // Shield: hex segments + sparkle
+        const s = 2 + Math.random() * 3;
+        p.lineStyle(2, particleColor, 0.85);
         const angle = Math.random() * Math.PI * 2;
-        p.arc(0, 0, 15 + Math.random() * 5, angle, angle + 0.5);
+        p.arc(0, 0, 18 + Math.random() * 8, angle, angle + 0.6);
+        // Inner sparkle
+        p.beginFill(0xffffff, 0.3);
+        p.drawRect(-1, -1, 2, 2);
+        p.endFill();
       } else if (type === 'lightning') {
-        // Lightning: small bolts
-        p.lineStyle(1.5, particleColor, 0.9);
-        const segs = 3;
+        // Lightning: jagged pixel bolts, bigger
+        p.lineStyle(2, particleColor, 0.95);
+        const segs = 4;
         let px = 0, py = 0;
         for (let s = 0; s < segs; s++) {
-          const nx = px + (Math.random() - 0.5) * 8;
-          const ny = py + 3 + Math.random() * 4;
+          const nx = px + (Math.random() - 0.5) * 12;
+          const ny = py + 3 + Math.random() * 5;
           p.moveTo(px, py);
           p.lineTo(nx, ny);
           px = nx; py = ny;
         }
+        // White flash core
+        p.lineStyle(1, 0xffffff, 0.6);
+        p.moveTo(0, 0);
+        p.lineTo((Math.random()-0.5)*8, 6+Math.random()*4);
       } else {
-        // Default: circles
-        p.beginFill(particleColor, 0.8);
-        p.drawCircle(0, 0, 1 + Math.random() * 2.5);
+        // Default: pixel squares
+        const s = 2 + Math.random() * 3;
+        p.beginFill(particleColor, 0.85);
+        p.drawRect(-s/2, -s/2, s, s);
         p.endFill();
       }
 
-      p.x = x + (Math.random() - 0.5) * 20;
-      p.y = y + (Math.random() - 0.5) * 16;
+      // Wider initial spread
+      p.x = x + (Math.random() - 0.5) * 30;
+      p.y = y + (Math.random() - 0.5) * 24;
       p.zIndex = 99;
       state.arenaApp.stage.addChild(p);
+
+      const speed = type === 'explosion' ? 5 : 3.5;
       particles.push({
         gfx: p,
-        vx: (Math.random() - 0.5) * 3,
-        vy: type === 'heal' ? -(1 + Math.random() * 2) : (Math.random() - 0.5) * 3,
-        life: 30 + Math.random() * 20,
+        vx: (Math.random() - 0.5) * speed,
+        vy: type === 'heal' ? -(1.5 + Math.random() * 2.5) :
+            type === 'fire' ? -(Math.random() * 2) :
+            (Math.random() - 0.5) * speed,
+        life: 25 + Math.random() * 20,
         frame: 0,
+        spin: (Math.random() - 0.5) * 0.3,
       });
     }
 
@@ -1747,17 +1818,39 @@
         p.frame++;
         p.gfx.x += p.vx;
         p.gfx.y += p.vy;
-        if (type === 'fire') p.vy -= 0.15; // fire rises
-        if (type === 'poison') p.vy -= 0.08; // poison drifts up
+        p.gfx.rotation += p.spin;
+        if (type === 'fire') p.vy -= 0.18;
+        if (type === 'explosion') { p.vy += 0.1; p.vx *= 0.97; }
+        if (type === 'poison') p.vy -= 0.1;
         p.gfx.alpha = Math.max(0, 1 - p.frame / p.life);
-        p.gfx.scale.set(1 - p.frame / p.life * 0.5);
+        const shrink = Math.max(0.1, 1 - p.frame / p.life * 0.6);
+        p.gfx.scale.set(shrink);
         if (p.frame < p.life) allDone = false;
       }
       if (allDone) {
         state.arenaApp.ticker.remove(ticker);
-        for (const p of particles) {
-          state.arenaApp.stage.removeChild(p.gfx);
-        }
+        for (const p of particles) state.arenaApp.stage.removeChild(p.gfx);
+      }
+    };
+    state.arenaApp.ticker.add(ticker);
+  }
+
+  /** SCREEN FLASH — full viewport white/color flash on big hits */
+  function screenFlash(color, alpha) {
+    if (!state.arenaApp) return;
+    const flash = new PIXI.Graphics();
+    flash.beginFill(color || 0xffffff, alpha || 0.3);
+    flash.drawRect(0, 0, state.arenaApp.screen.width, state.arenaApp.screen.height);
+    flash.endFill();
+    flash.zIndex = 200;
+    state.arenaApp.stage.addChild(flash);
+    let frame = 0;
+    const ticker = () => {
+      frame++;
+      flash.alpha = Math.max(0, (alpha || 0.3) - frame * 0.05);
+      if (flash.alpha <= 0) {
+        state.arenaApp.ticker.remove(ticker);
+        state.arenaApp.stage.removeChild(flash);
       }
     };
     state.arenaApp.ticker.add(ticker);
@@ -1946,17 +2039,28 @@
       const maxSpd = data.max_spd || 1;
       console.log(`🎮 ROUND ${data.round_number} — ${data.events.length} events, maxSPD ${maxSpd}`);
 
-      // Schedule each event based on: wave offset + SPD stagger
-      // Wave 1 starts at 0ms, Wave 2 at 1500ms, Wave 3 at 3000ms
-      // Within a wave, SPD determines head start: fastest=0ms, slowest=~500ms
       const WAVE_GAP = 1500;
-      const SPD_FACTOR = 80; // ms per SPD point difference
+      const SPD_FACTOR = 80;
+
+      // Glow card slots per wave
+      for (let w = 1; w <= 3; w++) {
+        const waveStart = (w - 1) * WAVE_GAP;
+        setTimeout(() => {
+          // Remove all wave-active
+          document.querySelectorAll('.arena-card-slot').forEach(el => el.classList.remove('wave-active'));
+          const slot = document.getElementById(`card-slot-${w-1}`);
+          if (slot) slot.classList.add('wave-active');
+        }, waveStart);
+      }
+      // Clear glow after all waves
+      setTimeout(() => {
+        document.querySelectorAll('.arena-card-slot').forEach(el => el.classList.remove('wave-active'));
+      }, 3 * WAVE_GAP + 1000);
 
       data.events.forEach(ev => {
         const waveOffset = ((ev.wave || 1) - 1) * WAVE_GAP;
         const spdOffset = (maxSpd - (ev.spd || 0)) * SPD_FACTOR;
         const totalDelay = waveOffset + spdOffset;
-
         setTimeout(() => processArenaEvent(ev), totalDelay);
       });
     });
@@ -2022,7 +2126,7 @@
       }
     });
 
-    // ── CYCLE END — final results
+    // ── CYCLE END — final results, 30s countdown to next
     socket.on('arena:cycle_end', (data) => {
       console.log('🎮 CYCLE END:', data);
       const winner = data.winner_guild || 'No winner';
@@ -2030,13 +2134,19 @@
       state.currentCycle = cycleNum;
       state.isFighting = false;
       state.currentRound = 0;
-      // Use server's next cycle time if available, else estimate 5 min
+
+      // Use server-provided buffer time (30s), not the old 5-min interval
       if (data.next_cycle_at) {
         state.cycleEndTime = data.next_cycle_at;
-      } else if (data.cycle_interval_ms) {
-        state.cycleEndTime = Date.now() + data.cycle_interval_ms;
+      } else if (data.buffer_ms) {
+        state.cycleEndTime = Date.now() + data.buffer_ms;
       } else {
-        state.cycleEndTime = Date.now() + 5 * 60 * 1000;
+        state.cycleEndTime = Date.now() + 30000; // 30s fallback
+      }
+
+      // CRITICAL: Restart the countdown interval if it stopped
+      if (!state.countdownInterval) {
+        state.countdownInterval = setInterval(updateCountdownDisplay, 250);
       }
       updateCountdownDisplay();
 
@@ -2129,6 +2239,7 @@
               if (ev.crit) {
                 showFloatingText(target.container.x, target.container.y - 25, 'CRIT!', 0xffd700, 14);
                 spawnParticles(target.container.x, target.container.y, 0xffd700, 12, 'lightning');
+                screenFlash(0xffd700, 0.2);
               }
               spawnParticles(target.container.x, target.container.y, getHouseColor(ev.from_house), 8, 'fire');
               shakeSprite(target);
@@ -2216,7 +2327,12 @@
         addFeedEvent(`💀 ${getNineName(koId)} was KO'd!`, 'ko');
         animateKO(koId);
         const sprite = state.nines.get(koId);
-        if (sprite) showFloatingText(sprite.container.x, (sprite.container.y || 0) - 30, 'K.O.', 0xff2222, 16);
+        if (sprite) {
+          showFloatingText(sprite.container.x, (sprite.container.y || 0) - 30, 'K.O.', 0xff2222, 18);
+          spawnParticles(sprite.container.x, sprite.container.y, 0xff4466, 20, 'explosion');
+          spawnParticles(sprite.container.x, sprite.container.y, 0xffffff, 8, 'lightning');
+          screenFlash(0xff2222, 0.25);
+        }
         break;
       }
 
@@ -2397,6 +2513,8 @@
         state.arenaApp.ticker.remove(ticker);
         state.arenaApp.stage.removeChild(bolt);
         for (const tp of trail) state.arenaApp.stage.removeChild(tp.gfx);
+        // IMPACT EXPLOSION
+        spawnParticles(endX, endY, color, 6, 'explosion');
         if (onHit) onHit();
         shakeCamera();
       }
@@ -2666,7 +2784,7 @@
       return;
     }
 
-    // No timing data yet — show waiting state
+    // No timing data yet
     if (!state.cycleEndTime) {
       labelEl.textContent = 'NEXT CYCLE';
       timeEl.textContent = 'WAITING';
@@ -2680,14 +2798,23 @@
     const totalSeconds = Math.ceil(remaining / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
-    const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    const timeStr = minutes > 0 ? `${minutes}:${seconds.toString().padStart(2, '0')}` : `0:${seconds.toString().padStart(2, '0')}`;
 
-    // Timer expired — next cycle should fire any moment
+    // Timer expired — combat should start any moment
     if (totalSeconds <= 0) {
-      labelEl.textContent = 'COMBAT STARTING';
-      timeEl.textContent = 'NOW';
+      labelEl.textContent = '⚔️ COMBAT';
+      timeEl.textContent = 'IMMINENT';
       timeEl.className = 'countdown-time fighting';
       subEl.textContent = 'Waiting for server...';
+      return;
+    }
+
+    // Short buffer (≤30s) = regrouping phase
+    if (totalSeconds <= 30 && state.currentCycle > 0) {
+      labelEl.textContent = 'REGROUPING';
+      timeEl.textContent = timeStr;
+      timeEl.className = 'countdown-time urgent';
+      subEl.textContent = `Next combat in ${totalSeconds}s`;
       return;
     }
 
@@ -2695,8 +2822,7 @@
     timeEl.textContent = timeStr;
     subEl.textContent = state.currentCycle ? `After cycle ${state.currentCycle}` : 'Awaiting combat...';
 
-    // Urgent when < 30 seconds
-    if (totalSeconds <= 30) {
+    if (totalSeconds <= 60) {
       timeEl.className = 'countdown-time urgent';
     } else {
       timeEl.className = 'countdown-time';
@@ -2718,7 +2844,7 @@
     if (!slotsContainer) return;
 
     state.equippedCards = cards || [];
-    slotsContainer.style.display = 'flex';
+    slotsContainer.style.display = 'block';
 
     for (let i = 0; i < 3; i++) {
       const slotEl = document.getElementById(`card-slot-${i}`);
@@ -2727,7 +2853,7 @@
 
       if (!card) {
         slotEl.className = 'arena-card-slot empty';
-        slotEl.innerHTML = `<span class="slot-empty-text">SLOT ${i + 1}</span>`;
+        slotEl.innerHTML = `<span class="slot-wave-label">WAVE ${i+1}</span><span class="slot-empty-text">EMPTY</span>`;
         continue;
       }
 
@@ -2747,7 +2873,7 @@
       slotEl.style.borderColor = hColor + '50';
       slotEl.style.background = `linear-gradient(135deg, rgba(10,8,18,0.92), ${hColor}08)`;
       slotEl.innerHTML = `
-        <div class="slot-number">${i + 1}</div>
+        <span class="slot-wave-label" style="color:${hColor}">WAVE ${i+1}</span>
         <div class="slot-type" style="color:${typeColor}">${(card.spell_type || card.type || '???').toUpperCase()}</div>
         <div class="slot-name">${card.name || '???'}</div>
         ${effects.length ? `<div class="slot-effects">${effects.slice(0, 2).join(' · ')}</div>` : ''}

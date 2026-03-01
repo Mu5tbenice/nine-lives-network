@@ -259,7 +259,7 @@ app.get('/api/combat/next-cycle', (req, res) => {
 // ── START COMBAT ENGINE ──
 if (combatEngine && combatEngine.startCombatEngine) {
   combatEngine.startCombatEngine();
-  console.log("⚔️ Combat engine started — cycles running every 5 minutes");
+  console.log("⚔️ Combat engine started — V6 wave combat, 30s buffer");
 }
 // Health check
 app.get("/api/health", (req, res) => {
@@ -268,19 +268,6 @@ app.get("/api/health", (req, res) => {
 
 // Redirect old world.html to map.html
 app.get("/world.html", (req, res) => res.redirect("/map.html"));
-
-// ═══════════════════════════════════════════
-// ARENA SOCKET NAMESPACE — real-time combat
-// ═══════════════════════════════════════════
-if (io) {
-  try {
-    const setupArenaSocket = require("./services/arenaSocket");
-    setupArenaSocket(io);
-    console.log("⚔️ Arena socket namespace active");
-  } catch (e) {
-    console.error("❌ Failed to load arena socket:", e.message);
-  }
-}
 
 // Start scheduler for automated tasks
 try {
