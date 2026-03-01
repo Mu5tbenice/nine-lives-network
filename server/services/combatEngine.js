@@ -846,6 +846,7 @@ async function processZoneCombat(zoneId, regionBonuses) {
     if (global.__arenaSocket && global.__arenaSocket._broadcastToZone) {
       const broadcast = global.__arenaSocket._broadcastToZone;
       const cycleNumber = (count || 0) + 1;
+      console.log(`[Combat] 📡 Broadcasting to zone ${zoneId}: ${combatLog.length} events, ${combatants.length} combatants`);
 
       // Round start — send all fighter HP states
       broadcast(zoneId, 'arena:round_start', {
@@ -916,6 +917,9 @@ async function processZoneCombat(zoneId, regionBonuses) {
   } catch (socketErr) {
     // Socket broadcast is non-critical — don't break combat
     console.error('[Combat] Socket broadcast error:', socketErr.message);
+  }
+  if (!global.__arenaSocket || !global.__arenaSocket._broadcastToZone) {
+    console.log('[Combat] ⚠️ No arena socket available for broadcast');
   }
 
   // ══════════════════════════════════════════════════

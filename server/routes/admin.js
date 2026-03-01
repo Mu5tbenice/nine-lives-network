@@ -12,7 +12,6 @@ const supabase = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
@@ -583,27 +582,9 @@ router.get('/recent-actions', async (req, res) => {
 // ║  SPELL IMAGE UPLOAD                ║
 // ╚═══════════════════════════════════╝
 
-// Ensure the upload directory exists
-const spellImagesDir = path.join(__dirname, '../../public/assets/images/spells');
-if (!fs.existsSync(spellImagesDir)) {
-  fs.mkdirSync(spellImagesDir, { recursive: true });
-  console.log('[Admin] Created spell images directory:', spellImagesDir);
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, spellImagesDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const spellId = req.params.id;
-    const safeName = `spell-${spellId}${ext}`;
-    cb(null, safeName);
-  }
-});
-
+// Use memory storage — file goes to Supabase Storage, not local disk
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
@@ -617,17 +598,39 @@ router.post('/spell/:id/upload-image', upload.single('image'), async (req, res) 
   try {
     if (!req.file) return res.status(400).json({ error: 'No image file provided' });
     const spellId = parseInt(req.params.id);
-    const filename = req.file.filename;
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const storagePath = `spell-${spellId}${ext}`;
+
+    // Upload to Supabase Storage (upsert = overwrite if exists)
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+      .from('spell-images')
+      .upload(storagePath, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: true
+      });
+
+    if (uploadError) throw uploadError;
+
+    // Get the public URL
+    const { data: urlData } = supabaseAdmin.storage
+      .from('spell-images')
+      .getPublicUrl(storagePath);
+
+    const publicUrl = urlData.publicUrl;
+
+    // Save the full URL in the database
     const { data, error } = await supabaseAdmin
       .from('spells')
-      .update({ image_url: filename })
+      .update({ image_url: publicUrl })
       .eq('id', spellId)
       .select()
       .single();
     if (error) throw error;
-    console.log(`[Admin] Uploaded image for spell ${spellId}: ${filename}`);
-    res.json({ success: true, filename, spell: data });
+
+    console.log(`[Admin] Uploaded image for spell ${spellId}: ${publicUrl}`);
+    res.json({ success: true, filename: storagePath, url: publicUrl, spell: data });
   } catch (e) {
+    console.error('[Admin] Image upload error:', e.message);
     res.status(500).json({ error: e.message });
   }
 });

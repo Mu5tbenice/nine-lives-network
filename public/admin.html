@@ -595,13 +595,6 @@
           <option value="manipulation">Manipulation</option>
           <option value="utility">Utility</option>
         </select>
-        <select id="spell-filter-tier">
-          <option value="">All Tiers</option>
-          <option value="0">T0</option>
-          <option value="1">T1</option>
-          <option value="2">T2</option>
-          <option value="3">T3</option>
-        </select>
         <select id="spell-filter-image">
           <option value="">All</option>
           <option value="has-image">Has Image</option>
@@ -619,7 +612,6 @@
               <th data-sort="name">NAME</th>
               <th data-sort="house">HOUSE</th>
               <th data-sort="spell_type">TYPE</th>
-              <th data-sort="tier">TIER</th>
               <th>ATK</th>
               <th>HP</th>
               <th>SPD</th>
@@ -770,20 +762,6 @@
           <option value="manipulation">Manipulation</option>
           <option value="utility">Utility</option>
         </select>
-      </div>
-
-      <div class="form-group">
-        <label>TIER</label>
-        <select id="spell-edit-tier">
-          <option value="0">T0 (Basic)</option>
-          <option value="1">T1</option>
-          <option value="2">T2</option>
-          <option value="3">T3</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>MANA COST</label>
-        <input type="number" id="spell-edit-mana" min="0" max="5" value="1">
       </div>
 
       <!-- STATS -->
@@ -1013,49 +991,23 @@ let sortAsc = true;
 
 async function loadSpells() {
   try {
-    const raw = await fetch('/api/spells').then(r => r.json());
-    // Handle both array and {spells: [...]} response formats
-    const spellsArray = Array.isArray(raw) ? raw : (raw.spells || []);
-    // Normalize bonus_effects (fix double-serialization)
-    allSpells = spellsArray.map(s => ({
-      ...s,
-      bonus_effects: parseEffects(s.bonus_effects),
-    }));
+    allSpells = await fetch('/api/spells').then(r => r.json());
     renderSpells();
   } catch (e) {
     toast('Failed to load spells: ' + e.message, 'error');
   }
 }
 
-// Safely parse bonus_effects from DB (handles double-serialized strings)
-function parseEffects(raw) {
-  if (!raw) return [];
-  if (Array.isArray(raw)) return raw;
-  if (typeof raw === 'string') {
-    try {
-      const parsed = JSON.parse(raw);
-      // Could be double-serialized: a string that parses to another string
-      if (typeof parsed === 'string') {
-        try { return JSON.parse(parsed); } catch { return []; }
-      }
-      return Array.isArray(parsed) ? parsed : [];
-    } catch { return []; }
-  }
-  return [];
-}
-
 function renderSpells() {
   const search = document.getElementById('spell-search').value.toLowerCase();
   const houseF = document.getElementById('spell-filter-house').value;
   const typeF = document.getElementById('spell-filter-type').value;
-  const tierF = document.getElementById('spell-filter-tier').value;
   const imageF = document.getElementById('spell-filter-image').value;
 
   let filtered = allSpells.filter(s => {
     if (search && !s.name.toLowerCase().includes(search) && !s.slug?.toLowerCase().includes(search)) return false;
     if (houseF && s.house !== houseF) return false;
     if (typeF && s.spell_type !== typeF) return false;
-    if (tierF !== '' && s.tier !== parseInt(tierF)) return false;
     if (imageF === 'has-image' && !s.image_url) return false;
     if (imageF === 'no-image' && s.image_url) return false;
     return true;
@@ -1076,12 +1028,8 @@ function renderSpells() {
     const hc = HOUSE_COLORS[s.house] || '#999';
     const tc = TYPE_COLORS[s.spell_type] || '#999';
     const hi = HOUSE_ICONS[s.house] || '?';
-    const imgSrc = s.image_url ? `/assets/images/spells/${s.image_url}` : '';
-    const effects = (s.bonus_effects || []).map(e => {
-      if (typeof e === 'string') return e;
-      if (e && e.tag) return e.tag;
-      return '';
-    }).filter(Boolean).join(', ');
+    const imgSrc = s.image_url ? (s.image_url.startsWith('http') ? s.image_url : `/assets/images/spells/${s.image_url}`) : '';
+    const effects = (s.bonus_effects || []).map(e => typeof e === 'string' ? e : e.tag).join(', ');
 
     return `<tr>
       <td>${imgSrc ? `<img src="${imgSrc}" class="spell-img-cell" onerror="this.style.display='none'">` : `<div class="spell-img-placeholder">?</div>`}</td>
@@ -1089,7 +1037,6 @@ function renderSpells() {
       <td style="font-family:'Cinzel',serif; font-weight:700; color:var(--bright);">${s.name}</td>
       <td><span class="house-badge" style="background:${hc}18; color:${hc}; border:1px solid ${hc}30;">${hi} ${s.house}</span></td>
       <td><span class="type-badge" style="background:${tc}18; color:${tc}; border:1px solid ${tc}30;">${s.spell_type}</span></td>
-      <td style="font-family:monospace; color:var(--muted);">T${s.tier}</td>
       <td class="stat-val" style="color:var(--atk);">${s.base_atk || 0}</td>
       <td class="stat-val" style="color:var(--hp);">${s.base_hp || 0}</td>
       <td class="stat-val" style="color:var(--spd);">${s.base_spd || 0}</td>
@@ -1116,21 +1063,9 @@ document.querySelectorAll('#spells-table thead th[data-sort]').forEach(th => {
 });
 
 // Filters
-['spell-search', 'spell-filter-house', 'spell-filter-type', 'spell-filter-tier', 'spell-filter-image'].forEach(id => {
+['spell-search', 'spell-filter-house', 'spell-filter-type', 'spell-filter-image'].forEach(id => {
   document.getElementById(id).addEventListener('input', renderSpells);
   document.getElementById(id).addEventListener('change', renderSpells);
-});
-
-// Auto-generate slug from name
-document.getElementById('spell-edit-name').addEventListener('input', (e) => {
-  const slugField = document.getElementById('spell-edit-slug');
-  // Only auto-generate if slug is empty or was auto-generated
-  if (!slugField.dataset.manual) {
-    slugField.value = e.target.value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-  }
-});
-document.getElementById('spell-edit-slug').addEventListener('input', () => {
-  document.getElementById('spell-edit-slug').dataset.manual = 'true';
 });
 
 // Quick toggles
@@ -1167,11 +1102,8 @@ function openNewSpell() {
   document.getElementById('spell-edit-id').value = '';
   document.getElementById('spell-edit-name').value = '';
   document.getElementById('spell-edit-slug').value = '';
-  document.getElementById('spell-edit-slug').dataset.manual = '';
   document.getElementById('spell-edit-house').value = 'universal';
   document.getElementById('spell-edit-type').value = 'attack';
-  document.getElementById('spell-edit-tier').value = '1';
-  document.getElementById('spell-edit-mana').value = '1';
   document.getElementById('spell-edit-atk').value = '0';
   document.getElementById('spell-edit-hp').value = '0';
   document.getElementById('spell-edit-spd').value = '0';
@@ -1194,11 +1126,8 @@ function editSpell(id) {
   document.getElementById('spell-edit-id').value = s.id;
   document.getElementById('spell-edit-name').value = s.name || '';
   document.getElementById('spell-edit-slug').value = s.slug || '';
-  document.getElementById('spell-edit-slug').dataset.manual = 'true'; // Don't overwrite existing slug
   document.getElementById('spell-edit-house').value = s.house || 'universal';
   document.getElementById('spell-edit-type').value = s.spell_type || 'attack';
-  document.getElementById('spell-edit-tier').value = s.tier || 0;
-  document.getElementById('spell-edit-mana').value = s.mana_cost || 1;
   document.getElementById('spell-edit-atk').value = s.base_atk || 0;
   document.getElementById('spell-edit-hp').value = s.base_hp || 0;
   document.getElementById('spell-edit-spd').value = s.base_spd || 0;
@@ -1220,9 +1149,10 @@ function editSpell(id) {
   // Image
   resetImageUpload();
   if (s.image_url) {
+    const editImgSrc = s.image_url.startsWith('http') ? s.image_url : `/assets/images/spells/${s.image_url}`;
     document.getElementById('image-preview-container').innerHTML =
-      `<img src="/assets/images/spells/${s.image_url}" style="max-height:150px; border-radius:8px;" onerror="this.parentElement.innerHTML='<p style=color:var(--red)>Image not found</p>'">
-       <p style="color:var(--muted); font-size:11px; margin-top:6px;">Current: ${s.image_url}</p>
+      `<img src="${editImgSrc}" style="max-height:150px; border-radius:8px;" onerror="this.parentElement.innerHTML='<p style=color:var(--red)>Image not found</p>'">
+       <p style="color:var(--muted); font-size:11px; margin-top:6px;">Current: ${s.image_url.startsWith('http') ? '☁️ Cloud Storage' : s.image_url}</p>
        <p style="color:var(--faint); font-size:11px;">Drop new image to replace</p>`;
   }
 
@@ -1284,22 +1214,11 @@ async function saveSpell() {
     if (tag) bonus_effects.push({ tag, desc });
   });
 
-  const name = document.getElementById('spell-edit-name').value.trim();
-  let slug = document.getElementById('spell-edit-slug').value.trim();
-
-  // Auto-generate slug from name if empty
-  if (!slug && name) {
-    slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    document.getElementById('spell-edit-slug').value = slug;
-  }
-
   const payload = {
-    name,
-    slug,
+    name: document.getElementById('spell-edit-name').value.trim(),
+    slug: document.getElementById('spell-edit-slug').value.trim(),
     house: document.getElementById('spell-edit-house').value,
     spell_type: document.getElementById('spell-edit-type').value,
-    tier: parseInt(document.getElementById('spell-edit-tier').value),
-    mana_cost: parseInt(document.getElementById('spell-edit-mana').value),
     base_atk: parseInt(document.getElementById('spell-edit-atk').value) || 0,
     base_hp: parseInt(document.getElementById('spell-edit-hp').value) || 0,
     base_spd: parseInt(document.getElementById('spell-edit-spd').value) || 0,

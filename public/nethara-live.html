@@ -1190,13 +1190,14 @@
 
     // Round start
     socket.on('arena:round_start', (data) => {
+      console.log('🎮 ROUND START:', data.round_number, '— Nines:', data.nines?.length);
+      addFeedEvent(`⚔️ ROUND ${data.round_number} — FIGHT!`, 'system');
       showRoundBanner(`ROUND ${data.round_number}`, 'FIGHT!');
       updateRoundBadge(data.round_number);
       if (data.nines) {
         for (const nine of data.nines) {
           if (state.nines.has(nine.id)) {
             updateNineHP(nine.id, nine.current_hp, nine.max_hp);
-            // Revive faded sprites
             const sprite = state.nines.get(nine.id);
             if (sprite && nine.alive) sprite.container.alpha = 1;
           }
@@ -1204,24 +1205,30 @@
       }
     });
 
-    // Batched combat events
+    // Batched combat events — STAGGER with 400ms delays so animations are visible
     socket.on('arena:events', (data) => {
-      if (!data.events) return;
-      for (const ev of data.events) {
-        processArenaEvent(ev);
-      }
+      if (!data.events || data.events.length === 0) return;
+      console.log('🎮 COMBAT EVENTS:', data.events.length, data.events.map(e => e.type));
+      data.events.forEach((ev, i) => {
+        setTimeout(() => processArenaEvent(ev), i * 400);
+      });
     });
 
     // Individual event types
     socket.on('arena:attack', (data) => processArenaEvent({ type: 'attack', ...data }));
 
-    // Round end
+    // Round end — delay to show after staggered events finish
     socket.on('arena:round_end', (data) => {
-      showRoundBanner(`ROUND ${data.round_number} OVER`, `${data.winner_guild || 'Draw'} wins!`);
-      if (data.guild_scores) {
-        state.guildScores = data.guild_scores;
-        updateScoreboard();
-      }
+      console.log('🎮 ROUND END:', data.round_number, 'Winner:', data.winner_guild);
+      const delay = 3000; // show after events finish animating
+      setTimeout(() => {
+        addFeedEvent(`🏆 Round ${data.round_number}: ${data.winner_guild || 'Draw'} wins!`, 'system');
+        showRoundBanner(`ROUND ${data.round_number} OVER`, `${data.winner_guild || 'Draw'} wins!`);
+        if (data.guild_scores) {
+          state.guildScores = data.guild_scores;
+          updateScoreboard();
+        }
+      }, delay);
     });
 
     // Round heal
@@ -1237,6 +1244,7 @@
 
     // Cycle end
     socket.on('arena:cycle_end', (data) => {
+      console.log('🎮 CYCLE END:', data);
       showRoundBanner('CYCLE COMPLETE', 'Sharpness -1%');
     });
 
@@ -1252,9 +1260,11 @@
   }
 
   function processArenaEvent(ev) {
+    console.log('🎮 Processing event:', ev.type, ev);
     switch (ev.type) {
       case 'attack': {
         const sprite = state.nines.get(ev.to);
+        console.log('  Attack sprite lookup:', ev.to, '→', sprite ? 'FOUND' : 'NOT FOUND', 'Map keys:', [...state.nines.keys()]);
         if (sprite) {
           showFloatingText(sprite.container.x, sprite.container.y, `-${ev.damage}`, ev.crit ? 0xffd700 : 0xff4466);
           if (ev.crit) showFloatingText(sprite.container.x, sprite.container.y - 15, 'CRIT!', 0xffd700);
