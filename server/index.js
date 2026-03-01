@@ -17,18 +17,6 @@ try {
     cors: { origin: "*", methods: ["GET", "POST"] }
   });
   console.log("✅ Socket.io initialized");
-
-  // Arena combat setup
-  try {
-    const { createClient } = require('@supabase/supabase-js');
-    const arenaSupabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-    const { setupArenaSockets } = require('./services/arena-sockets');
-    setupArenaSockets(io, arenaSupabase);
-    console.log("✅ Arena combat engine loaded");
-  } catch (e) {
-    console.error("❌ Failed to load arena:", e.message);
-  }
-
 } catch (e) {
   console.log("⚠️ Socket.io not installed — duels will use REST only");
 }
@@ -80,9 +68,9 @@ try {
 try {
   const zonesRoutes = require('./routes/zones');
   app.use('/api/zones', zonesRoutes);
-  console.log("✅ Zones V3 routes loaded");
+  console.log("✅ Zones routes loaded");
 } catch (e) {
-  console.error("❌ Failed to load zones V3 routes:", e.message);
+  console.error("❌ Failed to load zones routes:", e.message);
 }
 
 try {
@@ -120,6 +108,7 @@ try {
 try {
   const duelRoutes = require("./routes/duels");
   app.use("/api/duels", duelRoutes);
+  // Wire up Socket.io for real-time duels
   if (io && duelRoutes.setupDuelSockets) {
     duelRoutes.setupDuelSockets(io);
   }
@@ -161,14 +150,6 @@ try {
 }
 
 try {
-  const levelingRoutes = require("./routes/leveling");
-  app.use("/api/levels", levelingRoutes);
-  console.log("✅ Leveling routes loaded");
-} catch (e) {
-  console.error("❌ Failed to load leveling routes:", e.message);
-}
-
-try {
   const clashesRoutes = require("./routes/clashes");
   app.use("/api/clashes", clashesRoutes);
   console.log("✅ Clashes routes loaded");
@@ -184,24 +165,7 @@ try {
   console.error("❌ Failed to load packs routes:", e.message);
 }
 
-// Chronicle
-try {
-  const chronicleRoutes = require("./routes/chronicle");
-  app.use("/api/chronicle", chronicleRoutes);
-  console.log("✅ Chronicle routes loaded");
-} catch (e) {
-  console.error("❌ Failed to load chronicle routes:", e.message);
-}
-
-try {
-  const dropTicketRoutes = require("./routes/drop-tickets");
-  app.use("/api/drop-tickets", dropTicketRoutes);
-  console.log("✅ Drop Ticket routes loaded");
-} catch (e) {
-  console.error("❌ Failed to load drop ticket routes:", e.message);
-}
-
-// Sorting Hat
+// Sorting Hat — FIXED: was accidentally nesting items inside this try block
 try {
   const sortingHatRoutes = require("./routes/sortingHat");
   app.use("/api/sorting-hat", sortingHatRoutes);
@@ -210,7 +174,7 @@ try {
   console.error("❌ Failed to load sorting hat routes:", e.message);
 }
 
-// Items
+// Items — FIXED: now its own try/catch, no longer nested or duplicated
 try {
   const itemsRoutes = require("./routes/items");
   app.use("/api/items", itemsRoutes);
@@ -227,6 +191,19 @@ app.get("/api/health", (req, res) => {
 // Redirect old world.html to map.html
 app.get("/world.html", (req, res) => res.redirect("/map.html"));
 
+// ═══════════════════════════════════════════
+// ARENA SOCKET NAMESPACE — real-time combat
+// ═══════════════════════════════════════════
+if (io) {
+  try {
+    const setupArenaSocket = require("./services/arenaSocket");
+    setupArenaSocket(io);
+    console.log("⚔️ Arena socket namespace active");
+  } catch (e) {
+    console.error("❌ Failed to load arena socket:", e.message);
+  }
+}
+
 // Start scheduler for automated tasks
 try {
   const scheduler = require("./services/scheduler");
@@ -240,19 +217,11 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
-// Start Nerm Telegram bot
-try {
-  const { startNermBot } = require("./services/nerm-telegram");
-  startNermBot();
-} catch (e) {
-  console.error("❌ Failed to load Nerm Telegram bot:", e.message);
-}
-
-// Start server
+// Start server (use `server` instead of `app` for Socket.io)
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`🐱 Nine Lives Network server running on port ${PORT}`);
   console.log(`📍 http://localhost:${PORT}`);
-  if (io) console.log(`⚔️ Real-time duels active (Socket.io)`);
+  if (io) console.log(`⚔️ Real-time duels + arena active (Socket.io)`);
 });
 
 module.exports = app;

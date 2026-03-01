@@ -1,15 +1,13 @@
 // ═══════════════════════════════════════════════════════
 // server/routes/zones.js
-// V3 Zone Deployment + Card Slot System
+// V5 Zone Deployment + 3-Card Loadout System
 // ═══════════════════════════════════════════════════════
 
 const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
-const { spendMana } = require('../services/manaRegen');
 const { getNine, healNine } = require('../services/nineSystem');
-const { getEffectiveStats, RARITY_BONUSES } = require('../services/cardDurability');
 const { addPoints } = require('../services/pointsService');
 
 const supabaseAdmin = createClient(
@@ -17,14 +15,18 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Zone deploy points (from Game Design V4, Section 19)
+// V5: Max cards per zone deployment
+const MAX_CARDS_PER_ZONE = 3;
+
+// V5 Zone points (from Game Design V5, Section 21)
 const ZONE_POINTS = {
-  DEPLOY: 5,  // +5 for deploying to a zone
+  DEPLOY: 5,       // +5 for deploying to a zone
+  FLIP_ZONE: 15,   // +15 for flipping a zone to your guild
 };
 
 // ═══════════════════════════════════════════
 // POST /api/zones/deploy
-// Deploy your Nine to a zone (costs 1 mana)
+// Deploy your Nine to a zone (V5: FREE — no mana cost)
 // Body: { player_id, zone_id }
 // ═══════════════════════════════════════════
 router.post('/deploy', async (req, res) => {
@@ -54,11 +56,22 @@ router.post('/deploy', async (req, res) => {
       return res.status(400).json({ error: 'Already deployed on this zone' });
     }
 
-    // Spend 1 mana
-    const manaResult = await spendMana(player_id, 1);
-    if (!manaResult.success) {
-      return res.status(400).json({ error: manaResult.error });
+    // V5: Check zone deployment limit (2 zones at start, 3 at level 10)
+    const { data: currentDeploys } = await supabase
+      .from('zone_deployments')
+      .select('id')
+      .eq('player_id', player_id)
+      .eq('is_active', true);
+
+    const playerLevel = nine.level || 1;
+    const maxZones = playerLevel >= 10 ? 3 : 2;
+    if ((currentDeploys || []).length >= maxZones) {
+      return res.status(400).json({
+        error: `Already deployed to ${maxZones} zones (max for level ${playerLevel}). Withdraw from one first.`
+      });
     }
+
+    // V5: Deploy is FREE — no mana cost
 
     // Get player's guild tag
     const { data: player } = await supabase
@@ -91,18 +104,32 @@ router.post('/deploy', async (req, res) => {
       return res.status(500).json({ error: 'Failed to deploy' });
     }
 
-    // ── AWARD DEPLOY POINTS (+5) ──
+    // Award deploy points (+5)
     await addPoints(player_id, ZONE_POINTS.DEPLOY, 'zone_deploy', `Deployed to zone ${zone_id}`);
+
+    // Notify arena socket viewers
+    try {
+      if (global.__arenaSocket) {
+        global.__arenaSocket._broadcastToZone(zone_id, 'arena:nine_joined', {
+          nine_id: player_id,
+          player_name: nine.name || player?.twitter_handle || 'Unknown',
+          house: nine.house_key || 'smoulders',
+          guild: player?.guild_tag || 'Lone Wolf',
+          guild_id: player?.guild_tag,
+          stats: { atk: nine.base_atk, hp: nine.base_hp, spd: nine.base_spd, def: nine.base_def || 0, luck: nine.base_luck || 0 },
+          equipped_images: nine.equipped_images || {},
+        });
+      }
+    } catch (e) { /* socket broadcast is non-critical */ }
 
     res.json({
       success: true,
       deployment,
-      mana_remaining: manaResult.mana,
       points_earned: ZONE_POINTS.DEPLOY,
       message: player?.guild_tag
         ? `Deployed to zone ${zone_id}! Fighting for ${player.guild_tag} (+${ZONE_POINTS.DEPLOY} pts)`
-        : `Lone Wolf deployed! 1.5x ATK bonus active. (+${ZONE_POINTS.DEPLOY} pts)`,
-      is_lone_wolf: player?.guild_tag ? false : true,
+        : `Lone Wolf deployed! 1.5× ATK bonus active. (+${ZONE_POINTS.DEPLOY} pts)`,
+      is_lone_wolf: !(player?.guild_tag),
     });
 
   } catch (err) {
@@ -137,7 +164,7 @@ router.post('/withdraw', async (req, res) => {
       return res.status(404).json({ error: 'No active deployment on this zone' });
     }
 
-    // Remove card from slot (if any)
+    // Remove all cards from slots
     await supabaseAdmin
       .from('zone_card_slots')
       .update({ is_active: false })
@@ -150,9 +177,16 @@ router.post('/withdraw', async (req, res) => {
       .update({ is_active: false, updated_at: new Date().toISOString() })
       .eq('id', deployment.id);
 
+    // Notify arena socket viewers
+    try {
+      if (global.__arenaSocket) {
+        global.__arenaSocket._broadcastToZone(zone_id, 'arena:nine_left', { nine_id: player_id });
+      }
+    } catch (e) { /* non-critical */ }
+
     res.json({
       success: true,
-      message: 'Withdrawn from zone. Card returned to hand.',
+      message: 'Withdrawn from zone. Cards returned to hand.',
     });
 
   } catch (err) {
@@ -162,17 +196,23 @@ router.post('/withdraw', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════
-// POST /api/zones/play-card
-// Play a card on a zone you're deployed to
-// Body: { player_id, zone_id, card_id }
-// Costs mana based on tier: T0/T1=1, T2=2, T3=3
+// POST /api/zones/equip-card
+// Equip a card to one of your 3 loadout slots
+// V5: FREE — no mana cost, no tiers
+// Body: { player_id, zone_id, card_id, slot_number }
+// slot_number: 1, 2, or 3
 // ═══════════════════════════════════════════
-router.post('/play-card', async (req, res) => {
+router.post('/equip-card', async (req, res) => {
   try {
-    const { player_id, zone_id, card_id } = req.body;
+    const { player_id, zone_id, card_id, slot_number } = req.body;
 
     if (!player_id || !zone_id || !card_id) {
       return res.status(400).json({ error: 'player_id, zone_id, and card_id required' });
+    }
+
+    const slot = parseInt(slot_number) || 1;
+    if (slot < 1 || slot > MAX_CARDS_PER_ZONE) {
+      return res.status(400).json({ error: `slot_number must be 1-${MAX_CARDS_PER_ZONE}` });
     }
 
     // Find active deployment on this zone
@@ -188,93 +228,96 @@ router.post('/play-card', async (req, res) => {
       return res.status(400).json({ error: 'Not deployed on this zone — deploy first' });
     }
 
-    // Get the card
+    // Get the card from player's collection
     const { data: card } = await supabase
       .from('player_cards')
-      .select('*, spell:spell_id(name, base_atk, base_hp, tier, mana_cost, bonus_effects)')
+      .select('*, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)')
       .eq('id', card_id)
       .eq('player_id', player_id)
       .single();
 
     if (!card) {
-      return res.status(404).json({ error: 'Card not found' });
+      return res.status(404).json({ error: 'Card not found in your collection' });
     }
 
-    if (card.is_exhausted) {
-      return res.status(400).json({ error: 'Card is exhausted — recharge it first' });
-    }
+    // V5: Check sharpness instead of exhaustion — 0% sharpness still works (50% power)
+    // Cards can always be equipped, sharpness just affects effectiveness
 
-    // Check card isn't already active on ANOTHER zone
-    const { data: existingSlot } = await supabase
+    // Check card isn't already equipped on ANOTHER zone
+    const { data: existingSlots } = await supabase
       .from('zone_card_slots')
       .select('id, deployment:deployment_id(zone_id)')
       .eq('card_id', card_id)
-      .eq('is_active', true)
-      .single();
+      .eq('is_active', true);
 
-    if (existingSlot) {
+    const otherZoneSlot = (existingSlots || []).find(s =>
+      s.deployment && s.deployment.zone_id !== zone_id
+    );
+    if (otherZoneSlot) {
       return res.status(400).json({
-        error: 'Card is already active on another zone. Remove it first.',
+        error: 'Card is already equipped on another zone. Unequip it first.',
       });
     }
 
-    // Calculate mana cost based on tier
-    const tier = card.spell_tier || card.spell?.tier || 0;
-    let manaCost = 1;
-    if (tier >= 3) manaCost = 3;
-    else if (tier >= 2) manaCost = 2;
-
-    // Spend mana
-    const manaResult = await spendMana(player_id, manaCost);
-    if (!manaResult.success) {
-      return res.status(400).json({ error: manaResult.error });
-    }
-
-    // Remove any existing card from this deployment slot
+    // Remove any existing card in this specific slot
     await supabaseAdmin
       .from('zone_card_slots')
       .update({ is_active: false })
       .eq('deployment_id', deployment.id)
+      .eq('slot_number', slot)
       .eq('is_active', true);
 
-    // Place new card in slot
-    const { data: slot, error: slotErr } = await supabaseAdmin
+    // Also remove this card if it's in a different slot on THIS zone
+    await supabaseAdmin
+      .from('zone_card_slots')
+      .update({ is_active: false })
+      .eq('deployment_id', deployment.id)
+      .eq('card_id', card_id)
+      .eq('is_active', true);
+
+    // Place card in slot
+    const { data: newSlot, error: slotErr } = await supabaseAdmin
       .from('zone_card_slots')
       .insert({
         deployment_id: deployment.id,
         card_id: card_id,
+        slot_number: slot,
         is_active: true,
       })
       .select()
       .single();
 
     if (slotErr) {
-      console.error('Card slot error:', slotErr);
-      return res.status(500).json({ error: 'Failed to play card' });
+      console.error('Equip card error:', slotErr);
+      return res.status(500).json({ error: 'Failed to equip card' });
     }
+
+    const spellName = card.spell?.name || card.spell_name || 'Card';
 
     res.json({
       success: true,
-      slot,
-      mana_cost: manaCost,
-      mana_remaining: manaResult.mana,
-      message: `${card.spell_name || 'Card'} played on zone ${zone_id}!`,
+      slot: newSlot,
+      message: `${spellName} equipped in slot ${slot} on zone ${zone_id}!`,
     });
 
   } catch (err) {
-    console.error('Play card error:', err);
+    console.error('Equip card error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
 // ═══════════════════════════════════════════
-// POST /api/zones/remove-card
-// Remove active card from a zone slot (free)
-// Body: { player_id, zone_id }
+// POST /api/zones/unequip-card
+// Remove a card from a specific slot (free)
+// Body: { player_id, zone_id, slot_number }
 // ═══════════════════════════════════════════
-router.post('/remove-card', async (req, res) => {
+router.post('/unequip-card', async (req, res) => {
   try {
-    const { player_id, zone_id } = req.body;
+    const { player_id, zone_id, slot_number } = req.body;
+
+    if (!player_id || !zone_id || !slot_number) {
+      return res.status(400).json({ error: 'player_id, zone_id, and slot_number required' });
+    }
 
     const { data: deployment } = await supabase
       .from('zone_deployments')
@@ -288,23 +331,29 @@ router.post('/remove-card', async (req, res) => {
       return res.status(404).json({ error: 'No active deployment on this zone' });
     }
 
-    await supabaseAdmin
+    const { data: removed } = await supabaseAdmin
       .from('zone_card_slots')
       .update({ is_active: false })
       .eq('deployment_id', deployment.id)
-      .eq('is_active', true);
+      .eq('slot_number', parseInt(slot_number))
+      .eq('is_active', true)
+      .select();
 
-    res.json({ success: true, message: 'Card removed from zone slot' });
+    res.json({
+      success: true,
+      removed: (removed || []).length,
+      message: `Slot ${slot_number} cleared`,
+    });
 
   } catch (err) {
-    console.error('Remove card error:', err);
+    console.error('Unequip card error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
 // ═══════════════════════════════════════════
 // GET /api/zones/:zoneId/deployments
-// List all Nines deployed on a zone
+// List all Nines deployed on a zone with their loadouts
 // ═══════════════════════════════════════════
 router.get('/:zoneId/deployments', async (req, res) => {
   try {
@@ -315,8 +364,8 @@ router.get('/:zoneId/deployments', async (req, res) => {
       .select(`
         *,
         player:player_id(twitter_handle, profile_image, school_id),
-        nine:nine_id(name, base_atk, base_hp, base_spd, house_id, equipped_images),
-        card_slot:zone_card_slots(card_id, is_active)
+        nine:nine_id(name, base_atk, base_hp, base_spd, base_def, base_luck, house_id, equipped_images),
+        card_slots:zone_card_slots(id, card_id, slot_number, is_active)
       `)
       .eq('zone_id', zoneId)
       .eq('is_active', true);
@@ -326,9 +375,15 @@ router.get('/:zoneId/deployments', async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch deployments' });
     }
 
+    // Filter card_slots to only active ones
+    const cleaned = (deployments || []).map(d => ({
+      ...d,
+      card_slots: (d.card_slots || []).filter(s => s.is_active),
+    }));
+
     // Calculate guild power totals
     const guildPower = {};
-    (deployments || []).forEach(d => {
+    cleaned.forEach(d => {
       const tag = d.guild_tag || 'unaffiliated';
       if (!guildPower[tag]) guildPower[tag] = { total_hp: 0, count: 0 };
       guildPower[tag].total_hp += d.current_hp;
@@ -337,9 +392,9 @@ router.get('/:zoneId/deployments', async (req, res) => {
 
     res.json({
       zone_id: zoneId,
-      deployments: deployments || [],
+      deployments: cleaned,
       guild_power: guildPower,
-      total_nines: (deployments || []).length,
+      total_nines: cleaned.length,
     });
 
   } catch (err) {
@@ -361,7 +416,7 @@ router.get('/my-deployments/:playerId', async (req, res) => {
       .select(`
         *,
         zone:zone_id(name, description),
-        card_slot:zone_card_slots(card_id, is_active)
+        card_slots:zone_card_slots(id, card_id, slot_number, is_active)
       `)
       .eq('player_id', playerId)
       .eq('is_active', true);
@@ -371,13 +426,67 @@ router.get('/my-deployments/:playerId', async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch' });
     }
 
+    // Filter to active card slots only
+    const cleaned = (deployments || []).map(d => ({
+      ...d,
+      card_slots: (d.card_slots || []).filter(s => s.is_active),
+    }));
+
     res.json({
-      deployments: deployments || [],
-      total: (deployments || []).length,
+      deployments: cleaned,
+      total: cleaned.length,
     });
 
   } catch (err) {
     console.error('My deployments error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ═══════════════════════════════════════════
+// GET /api/zones/:zoneId/my-loadout/:playerId
+// Get this player's 3-card loadout on a specific zone
+// ═══════════════════════════════════════════
+router.get('/:zoneId/my-loadout/:playerId', async (req, res) => {
+  try {
+    const zoneId = parseInt(req.params.zoneId);
+    const playerId = parseInt(req.params.playerId);
+
+    // Find deployment
+    const { data: deployment } = await supabase
+      .from('zone_deployments')
+      .select('id')
+      .eq('player_id', playerId)
+      .eq('zone_id', zoneId)
+      .eq('is_active', true)
+      .single();
+
+    if (!deployment) {
+      return res.json({ loadout: [], slots_used: 0, slots_max: MAX_CARDS_PER_ZONE });
+    }
+
+    // Get active card slots with card details
+    const { data: slots } = await supabase
+      .from('zone_card_slots')
+      .select(`
+        id, card_id, slot_number,
+        card:card_id(
+          id, player_id, sharpness,
+          spell:spell_id(name, spell_type, house, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects, image_url)
+        )
+      `)
+      .eq('deployment_id', deployment.id)
+      .eq('is_active', true)
+      .order('slot_number');
+
+    res.json({
+      loadout: slots || [],
+      slots_used: (slots || []).length,
+      slots_max: MAX_CARDS_PER_ZONE,
+    });
+
+  } catch (err) {
+    console.error('Loadout error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });
@@ -398,6 +507,31 @@ router.get('/', async (req, res) => {
     console.error('Error fetching zones:', err);
     res.status(500).json({ error: 'Failed to fetch zones' });
   }
+});
+
+// ═══════════════════════════════════════════
+// BACKWARD COMPAT: keep old /play-card and /remove-card
+// working but redirect to new equip system
+// ═══════════════════════════════════════════
+router.post('/play-card', async (req, res) => {
+  // Map old single-card system to slot 1
+  req.body.slot_number = req.body.slot_number || 1;
+  // Forward to equip-card handler
+  const handler = router.stack.find(r => r.route && r.route.path === '/equip-card');
+  if (handler) {
+    return handler.route.stack[0].handle(req, res);
+  }
+  res.status(500).json({ error: 'Equip handler not found' });
+});
+
+router.post('/remove-card', async (req, res) => {
+  // Map old remove to unequip slot 1
+  req.body.slot_number = req.body.slot_number || 1;
+  const handler = router.stack.find(r => r.route && r.route.path === '/unequip-card');
+  if (handler) {
+    return handler.route.stack[0].handle(req, res);
+  }
+  res.status(500).json({ error: 'Unequip handler not found' });
 });
 
 module.exports = router;

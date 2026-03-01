@@ -494,13 +494,26 @@
   // Get player from localStorage (matches dashboard save keys)
   const stored = localStorage.getItem('9lv_player');
   const rawId = localStorage.getItem('player_id');
+
   if (stored) {
     try {
       const p = JSON.parse(stored);
       state.playerId = p.id || p.player_id;
       state.playerHouse = p.school_id;
       state.playerLevel = p.level || 1;
+      console.log('🐱 Arena: logged in as player', state.playerId);
     } catch(e) {
+      if (rawId) {
+        state.playerId = parseInt(rawId);
+        console.log('🐱 Arena: logged in via player_id fallback', state.playerId);
+      }
+    }
+  } else if (rawId) {
+    state.playerId = parseInt(rawId);
+    console.log('🐱 Arena: logged in via player_id only', state.playerId);
+  } else {
+    console.log('🐱 Arena: not logged in — guest mode');
+  }
       // Fallback: use raw player_id if JSON parse fails
       if (rawId) state.playerId = parseInt(rawId);
     }
