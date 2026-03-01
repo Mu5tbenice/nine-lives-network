@@ -183,6 +183,84 @@ try {
   console.error("❌ Failed to load items routes:", e.message);
 }
 
+// ── COMBAT ENGINE ──
+let combatEngine = null;
+try {
+  combatEngine = require("./services/combatEngine");
+  console.log("✅ Combat engine loaded");
+} catch (e) {
+  console.error("❌ Failed to load combat engine:", e.message);
+}
+
+// ── ARENA SOCKET NAMESPACE ──
+if (io) {
+  const arenaNamespace = io.of('/arena');
+
+  arenaNamespace.on('connection', (socket) => {
+    console.log('⚔️ Arena client connected:', socket.id);
+
+    socket.on('join_zone', (data) => {
+      const zoneId = data.zoneId || data.zone_id;
+      if (!zoneId) return;
+
+      const room = `zone_${zoneId}`;
+      socket.join(room);
+      console.log(`⚔️ ${socket.id} joined ${room}`);
+
+      // Send initial state with countdown timing
+      socket.emit('arena:state', {
+        active: true,
+        cycle: combatEngine ? (combatEngine._zoneCycles?.[zoneId] || 0) : 0,
+        next_cycle_at: combatEngine?.getNextCycleAt ? combatEngine.getNextCycleAt() : (Date.now() + 5 * 60 * 1000),
+        cycle_interval_ms: combatEngine?.getCycleIntervalMs ? combatEngine.getCycleIntervalMs() : (5 * 60 * 1000),
+      });
+    });
+
+    socket.on('leave_zone', (data) => {
+      const zoneId = data.zoneId || data.zone_id;
+      if (zoneId) {
+        socket.leave(`zone_${zoneId}`);
+        console.log(`⚔️ ${socket.id} left zone_${zoneId}`);
+      }
+    });
+
+    socket.on('disconnect', () => {
+      console.log('⚔️ Arena client disconnected:', socket.id);
+    });
+  });
+
+  // Set up global broadcast function so combat engine can send events
+  global.__arenaSocket = {
+    _broadcastToZone: function(zoneId, event, data) {
+      arenaNamespace.to(`zone_${zoneId}`).emit(event, data);
+    }
+  };
+
+  console.log("✅ Arena socket namespace ready");
+}
+
+// ── COMBAT TIMER ROUTE ──
+app.get('/api/combat/next-cycle', (req, res) => {
+  try {
+    res.json({
+      next_cycle_at: combatEngine?.getNextCycleAt ? combatEngine.getNextCycleAt() : (Date.now() + 5 * 60 * 1000),
+      cycle_interval_ms: combatEngine?.getCycleIntervalMs ? combatEngine.getCycleIntervalMs() : (5 * 60 * 1000),
+      server_time: Date.now(),
+    });
+  } catch (e) {
+    res.json({
+      next_cycle_at: Date.now() + 5 * 60 * 1000,
+      cycle_interval_ms: 5 * 60 * 1000,
+      server_time: Date.now(),
+    });
+  }
+});
+
+// ── START COMBAT ENGINE ──
+if (combatEngine && combatEngine.startCombatEngine) {
+  combatEngine.startCombatEngine();
+  console.log("⚔️ Combat engine started — cycles running every 5 minutes");
+}
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });

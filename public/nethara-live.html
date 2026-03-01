@@ -2006,8 +2006,14 @@
       state.currentCycle = cycleNum;
       state.isFighting = false;
       state.currentRound = 0;
-      // Set next cycle countdown: 5 minutes from now
-      state.cycleEndTime = Date.now() + 5 * 60 * 1000;
+      // Use server's next cycle time if available, else estimate 5 min
+      if (data.next_cycle_at) {
+        state.cycleEndTime = data.next_cycle_at;
+      } else if (data.cycle_interval_ms) {
+        state.cycleEndTime = Date.now() + data.cycle_interval_ms;
+      } else {
+        state.cycleEndTime = Date.now() + 5 * 60 * 1000;
+      }
       updateCountdownDisplay();
 
       showRoundBanner('CYCLE COMPLETE', `${winner} controls zone`);
@@ -2270,13 +2276,37 @@
   function startCountdown() {
     if (state.countdownInterval) clearInterval(state.countdownInterval);
 
-    // Default: assume next cycle in 5 minutes if no server info
-    if (!state.cycleEndTime) {
-      state.cycleEndTime = Date.now() + 5 * 60 * 1000;
-    }
+    // Try to fetch actual timing from server
+    fetchCycleTiming();
 
     state.countdownInterval = setInterval(updateCountdownDisplay, 250);
     updateCountdownDisplay();
+  }
+
+  /** Fetch actual next cycle timestamp from server */
+  async function fetchCycleTiming() {
+    try {
+      const res = await fetch('/api/combat/next-cycle');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.next_cycle_at) {
+          state.cycleEndTime = data.next_cycle_at;
+        } else if (data.cycle_interval_ms) {
+          // Server running but doesn't have exact time — estimate
+          state.cycleEndTime = Date.now() + data.cycle_interval_ms;
+        }
+        if (data.cycle_number) state.currentCycle = data.cycle_number;
+        console.log('⏱️ Synced cycle timing from server:', new Date(state.cycleEndTime).toLocaleTimeString());
+        return;
+      }
+    } catch (e) {
+      // Endpoint may not exist yet
+    }
+
+    // Fallback: if no server timing, don't show a fake countdown
+    if (!state.cycleEndTime) {
+      state.cycleEndTime = null; // will show "Waiting..." instead of wrong timer
+    }
   }
 
   function stopCountdown() {
@@ -2300,19 +2330,37 @@
       return;
     }
 
+    // No timing data yet — show waiting state
+    if (!state.cycleEndTime) {
+      labelEl.textContent = 'NEXT CYCLE';
+      timeEl.textContent = 'WAITING';
+      timeEl.className = 'countdown-time';
+      subEl.textContent = 'Syncing with server...';
+      return;
+    }
+
     const now = Date.now();
-    const remaining = Math.max(0, (state.cycleEndTime || now) - now);
+    const remaining = Math.max(0, state.cycleEndTime - now);
     const totalSeconds = Math.ceil(remaining / 1000);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
 
+    // Timer expired — next cycle should fire any moment
+    if (totalSeconds <= 0) {
+      labelEl.textContent = 'COMBAT STARTING';
+      timeEl.textContent = 'NOW';
+      timeEl.className = 'countdown-time fighting';
+      subEl.textContent = 'Waiting for server...';
+      return;
+    }
+
     labelEl.textContent = 'NEXT CYCLE IN';
     timeEl.textContent = timeStr;
-    subEl.textContent = state.currentCycle ? `After cycle ${state.currentCycle}` : 'Waiting for combat...';
+    subEl.textContent = state.currentCycle ? `After cycle ${state.currentCycle}` : 'Awaiting combat...';
 
     // Urgent when < 30 seconds
-    if (totalSeconds <= 30 && totalSeconds > 0) {
+    if (totalSeconds <= 30) {
       timeEl.className = 'countdown-time urgent';
     } else {
       timeEl.className = 'countdown-time';
@@ -2321,9 +2369,7 @@
     // Auto-update cycle timer text in top bar
     const timerEl = document.getElementById('arena-cycle-timer');
     if (timerEl) {
-      timerEl.textContent = state.isFighting
-        ? `Cycle ${state.currentCycle} · Fighting`
-        : `Cycle ${state.currentCycle || '?'} · ${timeStr}`;
+      timerEl.textContent = `Cycle ${state.currentCycle || '?'} · ${timeStr}`;
     }
   }
 
@@ -2454,16 +2500,224 @@
     }
   }
 
-  /** Deploy to zone — uses existing /api/zones/deploy (costs 1 mana) */
+  // ===== DEPLOY MODAL — CARD SELECTION =====
+
+  /** Open modal, load player's card collection */
+  async function openDeployModal() {
+    if (!state.playerId) {
+      alert('Please log in first');
+      return;
+    }
+
+    // Set zone name
+    document.getElementById('deploy-zone-name').textContent = state.currentZone?.name || 'Unknown Zone';
+
+    // Reset selection
+    state.selectedCards = [];
+    document.getElementById('deploy-selected-count').textContent = '0';
+    document.getElementById('btn-confirm-deploy').disabled = true;
+    document.getElementById('btn-confirm-deploy').textContent = 'SELECT 3 CARDS TO DEPLOY';
+
+    // Reset stat preview
+    document.getElementById('deploy-atk').textContent = '--';
+    document.getElementById('deploy-hp').textContent = '--';
+    document.getElementById('deploy-spd').textContent = '--';
+    document.getElementById('deploy-def').textContent = '--';
+    document.getElementById('deploy-luck').textContent = '--';
+
+    // Show modal
+    document.getElementById('deploy-modal').classList.add('open');
+
+    // Load player's cards
+    const grid = document.getElementById('deploy-card-grid');
+    grid.innerHTML = '<div class="loading-text">Loading your cards...</div>';
+
+    try {
+      // Try multiple endpoints — different server setups may use different routes
+      let cards = [];
+      let deployedCardIds = [];
+
+      // Get cards already deployed on OTHER zones (so we can grey them out)
+      try {
+        const depRes = await fetch(`/api/zones/my-deployments/${state.playerId}`);
+        const depData = await depRes.json();
+        for (const dep of (depData.deployments || [])) {
+          if (dep.zone_id !== state.currentZoneId && dep.card_ids) {
+            deployedCardIds.push(...dep.card_ids);
+          }
+        }
+      } catch(e) { /* non-critical */ }
+
+      // Fetch player's card collection
+      const endpoints = [
+        `/api/player-cards/${state.playerId}`,
+        `/api/spells/collection/${state.playerId}`,
+        `/api/players/${state.playerId}/cards`,
+      ];
+
+      for (const url of endpoints) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            cards = data.cards || data.player_cards || data.collection || data || [];
+            if (Array.isArray(cards) && cards.length > 0) break;
+          }
+        } catch(e) { continue; }
+      }
+
+      if (!Array.isArray(cards) || cards.length === 0) {
+        grid.innerHTML = '<div class="loading-text">No cards found. Open daily packs to get cards!</div>';
+        return;
+      }
+
+      state.playerCards = cards;
+
+      // Render card grid
+      grid.innerHTML = cards.map((card, index) => {
+        const houseKey = card.house || SCHOOL_TO_HOUSE[card.school_id] || 'universal';
+        const hColor = HOUSES[houseKey]?.color || '#888';
+        const typeColor = TYPE_COLORS[card.spell_type || card.type || 'attack'] || '#888';
+        const sharpness = card.sharpness ?? card.current_sharpness ?? 100;
+        const sharpColor = sharpness > 60 ? 'var(--cyan)' : sharpness > 30 ? 'var(--gold)' : 'var(--red)';
+        const cardId = card.player_card_id || card.id;
+        const isDeployedElsewhere = deployedCardIds.includes(cardId);
+
+        // Build effects text
+        const effects = [];
+        if (card.bonus_effects) {
+          (Array.isArray(card.bonus_effects) ? card.bonus_effects : []).forEach(e => {
+            effects.push(typeof e === 'string' ? e : (e.tag || e.name || ''));
+          });
+        }
+        if (card.base_effect) effects.push(card.base_effect);
+
+        // Rarity color
+        const rarityColors = { common: '#999', uncommon: '#66dd66', rare: '#55bbff', epic: '#bb88ff', legendary: '#ffd700' };
+        const rColor = rarityColors[card.rarity] || '#999';
+
+        return `<div class="deploy-card-slot ${isDeployedElsewhere ? 'deployed-elsewhere' : ''}"
+                     data-index="${index}"
+                     data-card-id="${cardId}"
+                     style="border-color:${hColor}30">
+          <div class="deploy-card-type" style="color:${typeColor}">${(card.spell_type || card.type || '???').toUpperCase()}</div>
+          <div class="deploy-card-name">${card.name || '???'}</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin:3px 0;">
+            <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${rColor}">${(card.rarity || 'common').toUpperCase()}</span>
+            <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${hColor}">${(HOUSES[houseKey]?.name || 'Universal')}</span>
+          </div>
+          ${effects.length ? `<div class="deploy-card-effects">${effects.slice(0, 3).join(' · ')}</div>` : ''}
+          <div style="display:flex;gap:6px;margin-top:4px;font-family:'Press Start 2P',monospace;font-size:6px;">
+            ${card.base_atk ? `<span style="color:#e85a6a">ATK ${card.base_atk}</span>` : ''}
+            ${card.base_hp ? `<span style="color:#6acd8a">HP ${card.base_hp}</span>` : ''}
+            ${card.base_spd ? `<span style="color:#6ac8d8">SPD ${card.base_spd}</span>` : ''}
+            ${card.base_def ? `<span style="color:#b088e8">DEF ${card.base_def}</span>` : ''}
+            ${card.base_luck ? `<span style="color:#D4A64B">LCK ${card.base_luck}</span>` : ''}
+          </div>
+          <div class="deploy-card-sharpness" style="display:flex;align-items:center;gap:4px;">
+            <div style="flex:1;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden">
+              <div style="width:${sharpness}%;height:100%;background:${sharpColor};border-radius:2px"></div>
+            </div>
+            <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:${sharpColor}">${sharpness}%</span>
+          </div>
+          ${isDeployedElsewhere ? '<div style="font-family:\'Press Start 2P\',monospace;font-size:5px;color:var(--red);margin-top:3px;">DEPLOYED ELSEWHERE</div>' : ''}
+        </div>`;
+      }).join('');
+
+      // Attach click handlers to each card
+      grid.querySelectorAll('.deploy-card-slot:not(.deployed-elsewhere)').forEach(slot => {
+        slot.addEventListener('click', () => toggleCardSelection(slot));
+      });
+
+    } catch(e) {
+      grid.innerHTML = `<div class="loading-text">Error loading cards: ${e.message}</div>`;
+    }
+  }
+
+  /** Toggle a card's selection in the deploy modal */
+  function toggleCardSelection(slot) {
+    const index = parseInt(slot.dataset.index);
+    const cardId = slot.dataset.cardId;
+
+    if (slot.classList.contains('selected')) {
+      // Deselect
+      slot.classList.remove('selected');
+      state.selectedCards = state.selectedCards.filter(c => c.index !== index);
+    } else {
+      // Can't select more than 3
+      if (state.selectedCards.length >= 3) {
+        // Flash the counter red briefly
+        const counter = document.getElementById('deploy-selected-count');
+        counter.style.color = 'var(--red)';
+        setTimeout(() => { counter.style.color = ''; }, 500);
+        return;
+      }
+      // Select
+      slot.classList.add('selected');
+      state.selectedCards.push({ index, cardId, card: state.playerCards[index] });
+    }
+
+    // Update counter
+    document.getElementById('deploy-selected-count').textContent = state.selectedCards.length;
+
+    // Update button state
+    const btn = document.getElementById('btn-confirm-deploy');
+    if (state.selectedCards.length === 3) {
+      btn.disabled = false;
+      btn.textContent = '⚔️ DEPLOY TO BATTLE';
+    } else {
+      btn.disabled = true;
+      btn.textContent = `SELECT ${3 - state.selectedCards.length} MORE CARD${state.selectedCards.length === 2 ? '' : 'S'}`;
+    }
+
+    // Update stats preview (house base + card bonuses)
+    updateDeployStatsPreview();
+  }
+
+  /** Update the combined stats preview as cards are selected */
+  function updateDeployStatsPreview() {
+    // Start with base stats (would need house data — use placeholders if not available)
+    let atk = 0, hp = 0, spd = 0, def = 0, luck = 0;
+
+    for (const sel of state.selectedCards) {
+      const c = sel.card;
+      if (!c) continue;
+      atk += c.base_atk || 0;
+      hp += c.base_hp || 0;
+      spd += c.base_spd || 0;
+      def += c.base_def || 0;
+      luck += c.base_luck || 0;
+    }
+
+    document.getElementById('deploy-atk').textContent = atk > 0 ? `+${atk}` : '--';
+    document.getElementById('deploy-hp').textContent = hp > 0 ? `+${hp}` : '--';
+    document.getElementById('deploy-spd').textContent = spd > 0 ? `+${spd}` : '--';
+    document.getElementById('deploy-def').textContent = def > 0 ? `+${def}` : '--';
+    document.getElementById('deploy-luck').textContent = luck > 0 ? `+${luck}` : '--';
+  }
+
+  function closeDeployModal() {
+    document.getElementById('deploy-modal').classList.remove('open');
+    state.selectedCards = [];
+  }
+
+  /** Deploy to zone — sends selected card IDs */
   async function confirmDeploy() {
     if (!state.playerId) {
       alert('Please log in first');
       return;
     }
 
-    const btn = document.getElementById('btn-join-battle');
+    if (state.selectedCards.length < 3) {
+      alert('Select 3 cards first');
+      return;
+    }
+
+    const btn = document.getElementById('btn-confirm-deploy');
     btn.textContent = 'DEPLOYING...';
     btn.disabled = true;
+
+    const cardIds = state.selectedCards.map(c => c.cardId);
 
     try {
       const res = await fetch('/api/zones/deploy', {
@@ -2472,30 +2726,30 @@
         body: JSON.stringify({
           player_id: state.playerId,
           zone_id: state.currentZoneId,
+          card_ids: cardIds,
         }),
       });
 
       const data = await res.json();
       if (data.success) {
+        // Close modal
+        closeDeployModal();
+
         state.isDeployed = true;
         document.getElementById('deploy-cta').style.display = 'none';
         document.getElementById('your-nine-panel').style.display = 'block';
         addFeedEvent(data.message || 'You have entered the battle!', 'join');
 
         // Show equipped cards
-        if (data.cards) {
-          renderCardSlots(data.cards);
-        } else {
-          loadEquippedCards(state.currentZoneId);
-        }
+        const equippedCards = state.selectedCards.map(c => c.card);
+        renderCardSlots(equippedCards);
 
         // Reload zone nines to include yourself
         state.nines.clear();
         if (state.arenaApp) {
-          // Remove all Nine containers from stage
           const toRemove = [];
           state.arenaApp.stage.children.forEach(child => {
-            if (child.name !== 'ground') toRemove.push(child);
+            if (child.name !== 'ground' && child.name !== 'environment' && child.name !== 'fog') toRemove.push(child);
           });
           toRemove.forEach(c => state.arenaApp.stage.removeChild(c));
         }
@@ -2505,16 +2759,17 @@
         checkDeployment(state.currentZoneId);
       } else {
         alert(data.error || 'Deploy failed');
+        btn.textContent = '⚔️ DEPLOY TO BATTLE';
+        btn.disabled = false;
       }
     } catch(e) {
       alert('Deploy failed: ' + e.message);
-    } finally {
-      btn.textContent = '⚔️ JOIN BATTLE';
+      btn.textContent = '⚔️ DEPLOY TO BATTLE';
       btn.disabled = false;
     }
   }
 
-  /** Withdraw from zone — uses existing /api/zones/withdraw */
+  /** Withdraw from zone */
   async function withdraw() {
     if (!confirm('Withdraw from this zone?')) return;
 
@@ -2548,8 +2803,10 @@
 
   // ===== EVENT LISTENERS =====
   document.getElementById('btn-back').addEventListener('click', closeArena);
-  document.getElementById('btn-join-battle').addEventListener('click', confirmDeploy);
+  document.getElementById('btn-join-battle').addEventListener('click', openDeployModal);
   document.getElementById('btn-withdraw').addEventListener('click', withdraw);
+  document.getElementById('btn-confirm-deploy').addEventListener('click', confirmDeploy);
+  document.getElementById('btn-cancel-deploy').addEventListener('click', closeDeployModal);
 
   // ===== START =====
   init();

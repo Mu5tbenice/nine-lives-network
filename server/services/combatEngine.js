@@ -30,6 +30,9 @@ const HOUSE_MAP = {
 // Track cycle counts per zone
 const zoneCycles = {};
 
+// Track when the next cycle will fire (for countdown sync)
+let nextCycleAt = null;
+
 // ——— MAIN LOOP ———
 let running = false;
 let intervalHandle = null;
@@ -40,8 +43,26 @@ function startCombatEngine() {
   console.log(`⚔️ Combat Engine started — ${ROUNDS_PER_CYCLE} rounds per cycle, every ${CYCLE_INTERVAL_MS / 1000}s`);
 
   // Run immediately once, then on interval
+  nextCycleAt = Date.now(); // first cycle is now
   runAllZoneCycles();
-  intervalHandle = setInterval(runAllZoneCycles, CYCLE_INTERVAL_MS);
+  intervalHandle = setInterval(() => {
+    nextCycleAt = Date.now();
+    runAllZoneCycles();
+    // Set next cycle time after this one finishes
+    // (will be overwritten when cycle actually completes)
+  }, CYCLE_INTERVAL_MS);
+  // Set the NEXT cycle time
+  nextCycleAt = Date.now() + CYCLE_INTERVAL_MS;
+}
+
+/** Get the timestamp of the next cycle start (for client sync) */
+function getNextCycleAt() {
+  return nextCycleAt || (Date.now() + CYCLE_INTERVAL_MS);
+}
+
+/** Get cycle interval in ms */
+function getCycleIntervalMs() {
+  return CYCLE_INTERVAL_MS;
 }
 
 function stopCombatEngine() {
@@ -58,7 +79,11 @@ async function runAllZoneCycles() {
       .select('zone_id')
       .eq('is_active', true);
 
-    if (!activeZones || activeZones.length === 0) return;
+    if (!activeZones || activeZones.length === 0) {
+      // No active zones — still set next cycle time
+      nextCycleAt = Date.now() + CYCLE_INTERVAL_MS;
+      return;
+    }
 
     const zoneIds = [...new Set(activeZones.map(d => d.zone_id))];
 
@@ -69,8 +94,12 @@ async function runAllZoneCycles() {
         console.error(`⚔️ Combat error zone ${zoneId}:`, e.message);
       }
     }
+
+    // Set next cycle timestamp AFTER all zones finish
+    nextCycleAt = Date.now() + CYCLE_INTERVAL_MS;
   } catch (e) {
     console.error('⚔️ Combat Engine error:', e.message);
+    nextCycleAt = Date.now() + CYCLE_INTERVAL_MS;
   }
 }
 
@@ -304,6 +333,8 @@ async function runZoneCycle(zoneId) {
     cycle_number: cycleNum,
     winner_guild: winnerGuild,
     guild_scores: guildScores,
+    next_cycle_at: getNextCycleAt(),
+    cycle_interval_ms: CYCLE_INTERVAL_MS,
     nines: fighters.map(f => ({
       id: f.player_id,
       current_hp: f.hp,
@@ -662,4 +693,4 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-module.exports = { startCombatEngine, stopCombatEngine, runZoneCycle };
+module.exports = { startCombatEngine, stopCombatEngine, runZoneCycle, getNextCycleAt, getCycleIntervalMs };
