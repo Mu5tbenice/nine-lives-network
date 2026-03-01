@@ -315,7 +315,7 @@ router.get('/:zoneId/deployments', async (req, res) => {
       .select(`
         *,
         player:player_id(twitter_handle, profile_image, school_id),
-        nine:nine_id(name, base_atk, base_hp, base_spd, house_id),
+        nine:nine_id(name, base_atk, base_hp, base_spd, house_id, equipped_images),
         card_slot:zone_card_slots(card_id, is_active)
       `)
       .eq('zone_id', zoneId)

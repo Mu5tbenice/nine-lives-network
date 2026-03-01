@@ -117,11 +117,60 @@ router.get('/equipped/:player_id', async (req, res) => {
   }
 });
 
-// ── POST /api/items/equip — Equip an item ──
+// ── POST /api/items/equip — Equip item(s) ──
+// Supports two modes:
+//   Single: { player_id, item_slug }
+//   Builder bulk: { player_id, equipment: {fur:'id',...}, images: {fur:'FILE.png',...} }
 router.post('/equip', express.json(), async (req, res) => {
   try {
-    const { player_id, item_slug } = req.body;
-    if (!player_id || !item_slug) return res.status(400).json({ error: 'player_id and item_slug required' });
+    const { player_id, item_slug, equipment, images } = req.body;
+    if (!player_id) return res.status(400).json({ error: 'player_id required' });
+
+    // ── BUILDER BULK MODE ──
+    if (equipment && typeof equipment === 'object') {
+      const update = {};
+      const SLOT_COLUMNS = {
+        fur: 'equipped_fur',
+        expression: 'equipped_expression',
+        headwear: 'equipped_headwear',
+        outfit: 'equipped_outfit',
+        weapon: 'equipped_weapon',
+        familiar: 'equipped_familiar',
+        trinket1: 'equipped_trinket_1',
+        trinket2: 'equipped_trinket_2',
+      };
+
+      // Map builder slot IDs to DB columns
+      Object.keys(equipment).forEach(slot => {
+        const col = SLOT_COLUMNS[slot];
+        if (col) {
+          const val = equipment[slot];
+          update[col] = (val && val !== 'none') ? val : null;
+        }
+      });
+
+      // Build equipped_images from filenames for arena rendering
+      if (images && typeof images === 'object') {
+        const imageMap = {};
+        Object.keys(images).forEach(slot => {
+          if (images[slot]) {
+            imageMap[slot] = '/assets/nine/' + slot + '/' + images[slot];
+          }
+        });
+        update.equipped_images = imageMap;
+      }
+
+      const { error } = await supabase
+        .from('player_nines')
+        .update(update)
+        .eq('player_id', player_id);
+
+      if (error) return res.status(500).json({ error: error.message });
+      return res.json({ success: true, mode: 'bulk', slots_updated: Object.keys(update).length });
+    }
+
+    // ── SINGLE ITEM MODE (inventory system) ──
+    if (!item_slug) return res.status(400).json({ error: 'item_slug or equipment object required' });
 
     // Verify item exists
     const { data: item } = await supabase.from('items').select('*').eq('slug', item_slug).single();
@@ -139,7 +188,6 @@ router.post('/equip', express.json(), async (req, res) => {
     // Determine which column to update
     let column;
     if (item.slot === 'trinket') {
-      // Check trinket_1 first, then trinket_2
       const { data: nine } = await supabase
         .from('player_nines')
         .select('equipped_trinket_1, equipped_trinket_2')

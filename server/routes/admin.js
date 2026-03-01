@@ -350,7 +350,7 @@ router.get('/spells', async (req, res) => {
 // POST /api/admin/spells — create spell
 router.post('/spells', async (req, res) => {
   try {
-    const { name, slug, house, tier, mana_cost, spell_type,
+    const { name, slug, house, spell_type,
             base_effect, bonus_effects, flavor_text, motto,
             base_atk, base_hp, base_spd, base_def, base_luck,
             in_pack_pool, is_active } = req.body;
@@ -363,8 +363,6 @@ router.post('/spells', async (req, res) => {
       name: name.trim(),
       slug: finalSlug,
       house: house || 'universal',
-      tier: tier || 0,
-      mana_cost: mana_cost || 1,
       spell_type: spell_type || 'attack',
       base_effect: base_effect || '',
       bonus_effects: bonus_effects || [],  // Pass array directly — Supabase JSONB handles it
@@ -394,7 +392,7 @@ router.post('/spells', async (req, res) => {
 router.put('/spell/:id', async (req, res) => {
   try {
     const spellId = parseInt(req.params.id);
-    const allowed = ['name', 'slug', 'house', 'tier', 'mana_cost', 'spell_type',
+    const allowed = ['name', 'slug', 'house', 'spell_type',
        'base_effect', 'bonus_effects', 'flavor_text', 'motto',
        'is_active', 'is_always_available', 'image_url', 'in_pack_pool',
        'base_atk', 'base_hp', 'base_spd', 'base_def', 'base_luck',

@@ -750,6 +750,7 @@
           position: getSpawnPosition(d.guild_tag, d.player_id),
           stats: { atk: nine.base_atk || 0, hp: nine.base_hp || 0, spd: nine.base_spd || 0 },
           is_mercenary: d.is_mercenary,
+          equipped_images: nine.equipped_images || {},
         });
       }
     } catch(e) {
@@ -908,7 +909,11 @@
     app.stage.addChildAt(ground, 0);
   }
 
-  // ===== NINE SPRITES =====
+  // ===== NINE SPRITES — LAYERED ITEM RENDERING =====
+  // Layer order matches builder: fur → outfit → weapon → expression → headwear → familiar
+  const ITEM_LAYER_ORDER = ['fur', 'outfit', 'weapon', 'expression', 'headwear', 'familiar'];
+  const SPRITE_SIZE = 48; // px — adjust if too big/small on arena
+
   function addNineSprite(nine) {
     if (!state.arenaApp) return;
     const app = state.arenaApp;
@@ -921,30 +926,76 @@
     const h = HOUSES[nine.house] || { color: '#888' };
     const hColor = parseInt(h.color.replace('#', ''), 16);
 
-    // Guild ring
+    // House-colored ground ring
     const ring = new PIXI.Graphics();
     ring.lineStyle(2, hColor, 0.6);
     ring.drawEllipse(0, 18, 14, 6);
     ring.zIndex = 0;
     container.addChild(ring);
 
-    // Cat body (simple isometric sprite placeholder — circle + ears)
-    const body = new PIXI.Graphics();
-    body.beginFill(hColor, 0.8);
-    body.drawCircle(0, 0, 12);
-    body.endFill();
-    // Ears
-    body.beginFill(hColor);
-    body.moveTo(-8, -10); body.lineTo(-4, -18); body.lineTo(0, -10);
-    body.moveTo(0, -10); body.lineTo(4, -18); body.lineTo(8, -10);
-    body.endFill();
-    // Eyes
-    body.beginFill(0x000000);
-    body.drawCircle(-4, -2, 2);
-    body.drawCircle(4, -2, 2);
-    body.endFill();
-    body.zIndex = 1;
-    container.addChild(body);
+    // Soft house glow behind sprite
+    const glow = new PIXI.Graphics();
+    glow.beginFill(hColor, 0.06);
+    glow.drawCircle(0, 0, 22);
+    glow.endFill();
+    glow.zIndex = 0;
+    container.addChild(glow);
+
+    // Sprite container for item layers (or fallback)
+    const spriteGroup = new PIXI.Container();
+    spriteGroup.sortableChildren = true;
+    spriteGroup.zIndex = 1;
+
+    // Try to load equipped item images as layers
+    const images = nine.equipped_images || {};
+    let hasAnyImage = false;
+
+    ITEM_LAYER_ORDER.forEach(function(slot, index) {
+      const imgPath = images[slot];
+      if (!imgPath) return;
+      hasAnyImage = true;
+
+      try {
+        const texture = PIXI.Texture.from(imgPath);
+        const sprite = new PIXI.Sprite(texture);
+        sprite.anchor.set(0.5, 0.6);
+        sprite.width = SPRITE_SIZE;
+        sprite.height = SPRITE_SIZE;
+        sprite.zIndex = index + 1;
+        spriteGroup.addChild(sprite);
+
+        // Remove layer if image fails to load
+        if (texture.baseTexture) {
+          texture.baseTexture.on('error', function() {
+            if (spriteGroup.children.includes(sprite)) {
+              spriteGroup.removeChild(sprite);
+            }
+          });
+        }
+      } catch(e) {
+        console.warn('Failed to load sprite layer:', slot, imgPath);
+      }
+    });
+
+    // Fallback: if no item images, draw classic circle+ears sprite
+    if (!hasAnyImage) {
+      const body = new PIXI.Graphics();
+      body.beginFill(hColor, 0.8);
+      body.drawCircle(0, 0, 12);
+      body.endFill();
+      body.beginFill(hColor);
+      body.moveTo(-8, -10); body.lineTo(-4, -18); body.lineTo(0, -10);
+      body.moveTo(0, -10); body.lineTo(4, -18); body.lineTo(8, -10);
+      body.endFill();
+      body.beginFill(0x000000);
+      body.drawCircle(-4, -2, 2);
+      body.drawCircle(4, -2, 2);
+      body.endFill();
+      body.zIndex = 1;
+      spriteGroup.addChild(body);
+    }
+
+    container.addChild(spriteGroup);
 
     // Name label
     const nameStyle = new PIXI.TextStyle({
@@ -953,7 +1004,7 @@
     });
     const nameText = new PIXI.Text(nine.name || '???', nameStyle);
     nameText.anchor.set(0.5, 1);
-    nameText.y = -24;
+    nameText.y = hasAnyImage ? -28 : -24;
     nameText.zIndex = 3;
     container.addChild(nameText);
 
@@ -976,7 +1027,7 @@
     app.stage.addChild(container);
 
     state.nines.set(nine.id, {
-      container, body, hpFill, hpBg, nameText, ring,
+      container, spriteGroup, hpFill, hpBg, nameText, ring, glow,
       hp: nine.current_hp || nine.max_hp || 100,
       maxHp: nine.max_hp || 100,
       stats: nine.stats || {},
@@ -1074,6 +1125,7 @@
           max_hp: data.stats?.hp || 10,
           position: engineToScreen(data.position),
           stats: data.stats || {},
+          equipped_images: data.equipped_images || {},
         });
       }
       addFeedEvent(`${data.player_name} entered the arena`, 'join');
@@ -1154,9 +1206,13 @@
         if (sprite) {
           showFloatingText(sprite.container.x, sprite.container.y, `-${ev.damage}`, ev.crit ? 0xffd700 : 0xff4466);
           if (ev.crit) showFloatingText(sprite.container.x, sprite.container.y - 15, 'CRIT!', 0xffd700);
-          // Flash red
-          sprite.body.tint = 0xff4444;
-          setTimeout(() => { if (sprite.body) sprite.body.tint = 0xffffff; }, 150);
+          // Flash red on hit
+          if (sprite.spriteGroup) {
+            sprite.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff4444; });
+            setTimeout(() => {
+              if (sprite.spriteGroup) sprite.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; });
+            }, 150);
+          }
         }
         addFeedEvent(`${getNineName(ev.from)} → ${getNineName(ev.to)} -${ev.damage}${ev.crit ? ' CRIT!' : ''}`, 'attack');
         break;

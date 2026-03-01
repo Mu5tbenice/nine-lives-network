@@ -251,13 +251,13 @@ var SLOTS = [
   {id:'fur',       label:'Skin',       icon:'🐾', layer:'GEAR',z:1},
   {id:'outfit',    label:'Armour',     icon:'👘', layer:'GEAR',z:2},
   {id:'weapon',    label:'Weapon',     icon:'⚔️', layer:'GEAR',z:3},
-  {id:'expression',label:'Face',       icon:'👁', layer:'GEAR',z:5},
-  {id:'headwear',  label:'Helm',       icon:'👑', layer:'GEAR',z:4},
+  {id:'expression',label:'Face',       icon:'👁', layer:'GEAR',z:4},
+  {id:'headwear',  label:'Helm',       icon:'👑', layer:'GEAR',z:5},
   {id:'familiar',  label:'Off-Hand',   icon:'🛡', layer:'GEAR',z:6},
   {id:'trinket1',  label:'Trinket',    icon:'💎', layer:'LOOT',z:0},
   {id:'trinket2',  label:'Trinket',    icon:'🔮', layer:'LOOT',z:0}
 ];
-var LO = ['fur','outfit','weapon','headwear','expression','familiar'];
+var LO = ['fur','outfit','weapon','expression','headwear','familiar'];
 
 var ITEMS = {
   fur:[
@@ -570,7 +570,7 @@ function saveEquipment(callback) {
     fetch('/api/items/equip',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({player_id:pid,equipment:slotIds})
+      body:JSON.stringify({player_id:pid,equipment:slotIds,images:slotFiles})
     }).then(function(){if(callback)callback();}).catch(function(){if(callback)callback();});
   } else {
     if(callback)callback();

@@ -89,7 +89,7 @@ router.get('/rotation/:house', async (req, res) => {
 // POST /api/spells
 router.post('/', requireAdmin, async (req, res) => {
   try {
-    const { name, slug, house, tier, mana_cost, spell_type, base_effect, bonus_effects, flavor_text, motto, is_active, image_url } = req.body;
+    const { name, slug, house, spell_type, base_effect, bonus_effects, flavor_text, motto, is_active, image_url } = req.body;
     const finalSlug = slug || (name || 'spell').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
     const { data, error } = await supabase
