@@ -260,74 +260,85 @@ var SLOTS = [
 var LO = ['fur','outfit','weapon','expression','headwear','familiar'];
 
 var ITEMS = {
-  fur:[
-    {id:'none',name:'None',f:null,s:{},r:'none',d:'No fur selected'},
-    {id:'grey',name:'Grey',f:'GREY.png',s:{hp:1},r:'common',d:'Classic grey coat'},
-    {id:'smoke',name:'Smoke Grey',f:'SMOKEGREY.png',s:{def:1},r:'common',d:'Dark smoky fur'},
-    {id:'calico',name:'Calico',f:'CALICO.png',s:{luck:1},r:'common',d:'Patchy and proud'},
-    {id:'tuxedo',name:'Tuxedo',f:'TUXEDO.png',s:{spd:1},r:'common',d:'Dapper black and white'},
-    {id:'snow',name:'Snowwhite',f:'SNOWWHITE.png',s:{hp:1,def:1},r:'uncommon',d:'Pure as freshly fallen snow'},
-    {id:'pink',name:'Dusty Pink',f:'DUSTYPINK.png',s:{luck:1,spd:1},r:'uncommon',d:'Soft rosy fur'},
-    {id:'ember',name:'Ember Orange',f:'EMBERORANGE.png',s:{atk:1,hp:1},r:'uncommon',d:'Warm like smouldering coals'},
-    {id:'ocean',name:'Ocean Blue',f:'OCEANBLUE.png',s:{spd:1,def:1},r:'uncommon',d:'Cool as deep water'},
-    {id:'void',name:'Void Purple',f:'VOIDPURPLE.png',s:{atk:1,luck:1},r:'rare',d:'Infused with void energy'},
-    {id:'alien',name:'Alien Green',f:'ALIENGREEN.png',s:{spd:2,luck:1},r:'rare',d:'Otherworldly and unsettling'},
-    {id:'gold',name:'Golden',f:'GOLDEN.png',s:{luck:2,atk:1},r:'rare',d:'Radiates wealth and power'}
-  ],
-  outfit:[
-    {id:'none',name:'None',f:null,s:{},r:'none',d:'No outfit'},
-    {id:'apprentice',name:'Apprentice Robe',f:'APPRENTICE.png',s:{hp:1,def:1},r:'common',d:'Standard issue robes'},
-    {id:'tunic_b',name:'Blue Tunic',f:'SIMPLETUNIC_BLUE.png',s:{hp:2},r:'common',d:'Simple but comfortable'},
-    {id:'tunic_g',name:'Green Tunic',f:'SIMPLETUNIC_GREEN.png',s:{hp:1,spd:1},r:'common',d:'Forest-coloured garb'},
-    {id:'tunic_r',name:'Red Tunic',f:'SIMPLETUNIC_RED.png',s:{atk:1,hp:1},r:'common',d:'Bold and battle-ready'},
-    {id:'tunic_p',name:'Pink Tunic',f:'SIMPLETUNIC_PINK.png',s:{luck:1,hp:1},r:'uncommon',d:'Stylish and eye-catching'},
-    {id:'mantle',name:'Red Mantle',f:'MANTLE_RED.png',s:{atk:1,def:1,hp:1},r:'uncommon',d:"A commander's cloak"},
-    {id:'tattered',name:'Tattered Cloak',f:'TATTERED%20CLOAK.png',s:{atk:2,spd:1,luck:1},r:'rare',d:'Worn by something ancient'}
-  ],
-  weapon:[
-    {id:'none',name:'Bare Paws',f:null,s:{},r:'none',d:'No weapon equipped'},
-    {id:'sword',name:'Short Sword',f:'SHORTSWORD.png',s:{atk:2},r:'common',d:'Reliable steel blade'},
-    {id:'orb',name:'Mystic Orb',f:'ORB.png',s:{luck:1,atk:1},r:'common',d:'Floats with inner light'},
-    {id:'crystal',name:'Crystal Staff',f:'CRYSTALSTAFF.png',s:{atk:2,spd:1},r:'uncommon',d:'Hums with stored mana'},
-    {id:'crystal_g',name:'Emerald Staff',f:'CRYSTALSTAFF_GREEN.png',s:{atk:2,hp:1},r:'uncommon',d:'Infused with nature magic'},
-    {id:'crystal_p',name:'Amethyst Staff',f:'CRYSTALSTAFF_PURPLE.png',s:{atk:2,luck:1},r:'uncommon',d:'Crackles with void energy'},
-    {id:'crystal_k',name:'Rose Staff',f:'CRYSTALSTAFF_PINK.png',s:{atk:2,def:1},r:'uncommon',d:'Shimmers with dawn light'},
-    {id:'daggers',name:'Dual Daggers',f:'DUALDAGGERS.png',s:{atk:3,spd:1},r:'rare',d:'Fast and deadly'}
-  ],
-  expression:[
-    {id:'none',name:'Default',f:null,s:{},r:'none',d:'Neutral expression'},
-    {id:'grumpy',name:'Grumpy',f:'GRUMPY.png',s:{atk:1},r:'common',d:'Permanently unimpressed'},
-    {id:'happy',name:'Happy',f:'HAPPY.png',s:{luck:1},r:'common',d:'A rare genuine smile'},
-    {id:'derp',name:'Derp',f:'DERP.png',s:{luck:2},r:'common',d:'Something went wrong'},
-    {id:'laugh',name:'Laughing',f:'LAUGH.png',s:{hp:1,luck:1},r:'uncommon',d:'Finds everything amusing'},
-    {id:'glow',name:'Glowing',f:'GLOWING.png',s:{atk:1,spd:1},r:'uncommon',d:'Eyes bright with power'},
-    {id:'glow_r',name:'Crimson Glow',f:'GLOWING_RED.png',s:{atk:2},r:'uncommon',d:'Eyes burning with fury'},
-    {id:'glow_g',name:'Emerald Glow',f:'GLOWING_GREEN.png',s:{hp:2},r:'uncommon',d:'Eyes pulsing with life force'},
-    {id:'glow_p',name:'Void Glow',f:'GLOWING_PURPLE.png',s:{atk:1,luck:1},r:'rare',d:'Sees between dimensions'},
-    {id:'glow_y',name:'Golden Glow',f:'GLOWING_YELLOW.png',s:{luck:2,atk:1},r:'rare',d:'Radiates ancient wisdom'}
-  ],
-  headwear:[
-    {id:'none',name:'None',f:null,s:{},r:'none',d:'No headwear'},
-    {id:'app',name:'Apprentice Hat',f:'APPRENTICE.png',s:{def:1},r:'common',d:'Standard pointy hat'},
-    {id:'app_b',name:'Blue Wizard Hat',f:'APPRENTICE_BLUE.png',s:{def:1,spd:1},r:'common',d:'Enchanted with wind'},
-    {id:'app_r',name:'Red Wizard Hat',f:'APPRENTICE_RED.png',s:{def:1,atk:1},r:'common',d:'Singed at the edges'},
-    {id:'app_g',name:'Green Wizard Hat',f:'APPRENTICE_GREEN.png',s:{def:1,hp:1},r:'common',d:'Smells faintly of moss'},
-    {id:'app_pu',name:'Purple Wizard Hat',f:'APPRENTICE_PURPLE.png',s:{def:1,luck:1},r:'uncommon',d:'Whispers dark secrets'},
-    {id:'app_pk',name:'Pink Wizard Hat',f:'APPRENTICE_PINK.png',s:{def:1,luck:1},r:'uncommon',d:'Sparkles in moonlight'},
-    {id:'hood',name:'Worn Hood',f:'WORNHOOD.png',s:{spd:1,def:1},r:'uncommon',d:'Low profile, high stealth'},
-    {id:'hood_b',name:'Blue Hood',f:'WORNHOOD_BLUE.png',s:{spd:1,def:1},r:'uncommon',d:'Carries the chill of the deep'},
-    {id:'hood_r',name:'Red Hood',f:'WORNHOOD_RED.png',s:{atk:1,def:1},r:'uncommon',d:'Stained from past battles'},
-    {id:'hood_pu',name:'Void Hood',f:'WORNHOOD_PURPLE.png',s:{luck:1,def:1,spd:1},r:'rare',d:'Shadows cling to the fabric'},
-    {id:'hood_g',name:'Forest Hood',f:'WORNHOOD_GREEN.png',s:{hp:1,def:1,spd:1},r:'rare',d:'Woven from living vines'},
-    {id:'hood_pk',name:'Rose Hood',f:'WORNHOOD_PINK.png',s:{luck:2,def:1},r:'rare',d:'Radiates a faint warmth'}
-  ],
-  familiar:[
-    {id:'none',name:'None',f:null,s:{},r:'none',d:'No off-hand item'},
-    {id:'orb',name:'Arcane Orb',f:'ORB.png',s:{luck:1,atk:1},r:'uncommon',d:'A floating familiar orb'}
-  ],
-  trinket1:[{id:'none',name:'Empty',f:null,s:{},r:'none',d:'Find trinkets in chests & drops'}],
-  trinket2:[{id:'none',name:'Empty',f:null,s:{},r:'none',d:'Find trinkets in chests & drops'}]
+  fur:      [{id:'none',name:'None',f:null,s:{},r:'none',d:'No skin selected'}],
+  outfit:   [{id:'none',name:'None',f:null,s:{},r:'none',d:'No outfit'}],
+  weapon:   [{id:'none',name:'Bare Paws',f:null,s:{},r:'none',d:'No weapon equipped'}],
+  expression:[{id:'none',name:'Default',f:null,s:{},r:'none',d:'Neutral expression'}],
+  headwear: [{id:'none',name:'None',f:null,s:{},r:'none',d:'No headwear'}],
+  familiar: [{id:'none',name:'None',f:null,s:{},r:'none',d:'No off-hand item'}],
+  trinket1: [{id:'none',name:'Empty',f:null,s:{},r:'none',d:'Find trinkets in chests & drops'}],
+  trinket2: [{id:'none',name:'Empty',f:null,s:{},r:'none',d:'Find trinkets in chests & drops'}]
 };
+
+/* Load OWNED items from player inventory via API */
+var _itemsLoaded = false;
+function loadItemsFromAPI(callback) {
+  // Get player ID from localStorage
+  var pid = null;
+  try { pid = JSON.parse(localStorage.getItem('9lv_player')).id; } catch(e) {}
+
+  if (!pid) {
+    console.warn('No player ID found, using empty item slots');
+    if (callback) callback();
+    return;
+  }
+
+  fetch('/api/items/inventory/' + pid)
+    .then(function(r) { return r.json(); })
+    .then(function(inventory) {
+      if (!Array.isArray(inventory) || inventory.length === 0) {
+        console.warn('No owned items found for player ' + pid);
+        if (callback) callback();
+        return;
+      }
+      console.log('Loaded ' + inventory.length + ' owned items from inventory');
+
+      // Map owned items to builder format, grouped by slot
+      inventory.forEach(function(entry) {
+        var item = entry.item; // nested item object from player_items join
+        if (!item || !item.is_active) return;
+        var slot = item.slot;
+        // Map trinket slot to trinket1 (trinket2 shares the same pool)
+        if (slot === 'trinket') slot = 'trinket1';
+        if (!ITEMS[slot]) return; // unknown slot, skip
+
+        // Don't add duplicates (player might own multiples)
+        var already = ITEMS[slot].find(function(existing) { return existing.id === item.slug; });
+        if (already) return;
+
+        // Build stats object (only non-zero values)
+        var stats = {};
+        if (item.bonus_atk) stats.atk = item.bonus_atk;
+        if (item.bonus_hp) stats.hp = item.bonus_hp;
+        if (item.bonus_spd) stats.spd = item.bonus_spd;
+        if (item.bonus_def) stats.def = item.bonus_def;
+        if (item.bonus_luck) stats.luck = item.bonus_luck;
+
+        var mapped = {
+          id: item.slug,
+          name: item.name,
+          f: item.image_file || null,
+          s: stats,
+          r: item.rarity || 'common',
+          d: item.description || ''
+        };
+
+        ITEMS[slot].push(mapped);
+
+        // Trinkets share the same pool
+        if (item.slot === 'trinket') {
+          ITEMS['trinket2'].push(mapped);
+        }
+      });
+
+      _itemsLoaded = true;
+      if (callback) callback();
+    })
+    .catch(function(err) {
+      console.error('Failed to load inventory:', err);
+      if (callback) callback();
+    });
+}
 
 var TC = {Attack:'#e85a6a',attack:'#e85a6a',Defend:'#5599ff',defend:'#5599ff',Support:'#6acd8a',support:'#6acd8a',Manipulation:'#b088e8',manipulation:'#b088e8',Utility:'#6ac8d8',utility:'#6ac8d8'};
 var PACK_V4 = [
@@ -364,13 +375,42 @@ var step=1,aSlot=null,pSlot=null,pItem=null,revd=[],oMode=null;
 var _skipIntro = new URLSearchParams(window.location.search).get('skip_intro') === '1';
 
 var eq={};
-SLOTS.forEach(function(s){
-  var pool=ITEMS[s.id];
-  if(!_skipIntro && pool.length>1){
-    var idx=1+Math.floor(Math.random()*(pool.length-1));
-    eq[s.id]=pool[idx];
-  } else {
-    eq[s.id]=pool[0];
+
+/* Initialize equipment defaults — called after items load */
+function initEquipment() {
+  SLOTS.forEach(function(s){
+    var pool=ITEMS[s.id];
+    if(!pool || pool.length === 0) { eq[s.id] = {id:'none',name:'None',f:null,s:{},r:'none',d:''}; return; }
+    if(!_skipIntro && pool.length>1){
+      var idx=1+Math.floor(Math.random()*(pool.length-1));
+      eq[s.id]=pool[idx];
+    } else {
+      eq[s.id]=pool[0];
+    }
+  });
+}
+
+/* Boot: load items from API, then init everything */
+loadItemsFromAPI(function() {
+  initEquipment();
+  renderSlots(); renderStats(); renderLayers(); updCount();
+
+  // If edit mode, load saved equipment after API items are available
+  if (_skipIntro) {
+    try {
+      var eqStr = localStorage.getItem('9lv_equipment');
+      if (eqStr) {
+        var eqData = JSON.parse(eqStr);
+        var savedItems = eqData.items || {};
+        Object.keys(savedItems).forEach(function(slot) {
+          var itemId = savedItems[slot];
+          if (!itemId || !ITEMS[slot]) return;
+          var found = ITEMS[slot].find(function(it) { return it.id === itemId; });
+          if (found) eq[slot] = found;
+        });
+        renderSlots(); renderStats(); renderLayers(); updCount();
+      }
+    } catch(e) { console.log('Edit mode: could not load equipment', e); }
   }
 });
 
@@ -584,8 +624,7 @@ function enterNethara(){
   });
 }
 
-/* INIT */
-renderSlots();renderStats();renderLayers();updCount();
+/* INIT — handled by loadItemsFromAPI callback above */
 
 /* ══════════════════════════════════════ */
 /*  SKIP INTRO — EDIT MODE              */
@@ -648,20 +687,7 @@ renderSlots();renderStats();renderLayers();updCount();
       b.textContent = '💾 SAVE & BACK TO DASHBOARD';
     });
   }
-  try {
-    var eqStr = localStorage.getItem('9lv_equipment');
-    if (eqStr) {
-      var eqData = JSON.parse(eqStr);
-      var savedItems = eqData.items || {};
-      Object.keys(savedItems).forEach(function(slot) {
-        var itemId = savedItems[slot];
-        if (!itemId || !ITEMS[slot]) return;
-        var found = ITEMS[slot].find(function(it) { return it.id === itemId; });
-        if (found) eq[slot] = found;
-      });
-      renderSlots(); renderStats(); renderLayers(); updCount();
-    }
-  } catch(e) { console.log('Edit mode: could not load equipment', e); }
+  /* Equipment loading now handled by loadItemsFromAPI callback */
   /* ═══ GUILD TAG — autosave in edit mode ═══ */
   var guildEditSection = document.getElementById('guildTagEdit');
   if (guildEditSection) guildEditSection.classList.add('show');

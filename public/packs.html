@@ -209,7 +209,7 @@
     .pack-card.reward .open-label, .pack-card.welcome .open-label { color: #88ddaa; border-color: rgba(136,221,170,0.3); background: rgba(136,221,170,0.08); }
 
     /* ═══ BUY PACK CARD ═══ */
-    .buy.pack-card {
+    .buy-pack-card {
       min-height: 320px; display: flex; flex-direction: column; align-items: center; justify-content: center;
       border-radius: 14px; padding: 28px 20px; cursor: pointer;
       position: relative; overflow: hidden; transition: all 0.25s;
@@ -217,7 +217,6 @@
     }
     .buy-pack-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
     .buy-pack-card .pack-icon { margin-bottom: 8px; }
-    }
     .buy-pack-card .pack-icon img {
       width: 100%; max-width: 120px; height: auto; border-radius: 8px;
       filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
@@ -225,6 +224,7 @@
     .pack-card .pack-icon img {
       width: 100%; max-width: 160px; height: auto; border-radius: 8px;
       filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+    }
     .buy-pack-card .pack-name { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; margin-bottom: 2px; }
     .buy-pack-card .pack-desc { font-family: monospace; font-size: 9px; color: var(--muted); margin-bottom: 14px; }
     .buy-pack-card .price-btn {
@@ -904,10 +904,10 @@
         const meta = PACK_META[type] || PACK_META.reward;
         const oldestPack = packs[0];
         html += `
-          <div class="pack-card ${type}" onclick="startCeremony(${oldestPack.id}, '${type}')">
-            ${packs.length > 1 ? `<div class="pack-count">${packs.length}</div>` : ''}
-            <div class="pack-icon">${meta.icon}</div>
-            <div class="pack-name">${meta.name}</div>
+        <div class="pack-card ${type}" onclick="startCeremony(${oldestPack.id}, '${type}')">
+          ${packs.length > 1 ? `<div class="pack-count">${packs.length}</div>` : ''}
+          <div class="pack-icon"><img src="/assets/images/booster-pack.png" alt="${meta.name}"></div>
+          <div class="pack-name">${meta.name}</div>
             <div class="pack-desc">${meta.desc}</div>
             <div class="open-label">TAP TO OPEN</div>
           </div>`;

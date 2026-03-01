@@ -315,6 +315,32 @@ router.post('/complete-registration', express.json(), async (req, res) => {
     // ========================================
 
     // ========================================
+    // GRANT STARTER ITEMS
+    // ========================================
+    try {
+      const { data: starters } = await supabase
+        .from('items')
+        .select('id')
+        .eq('is_starter', true)
+        .eq('is_active', true);
+
+      if (starters && starters.length > 0) {
+        const rows = starters.map(item => ({
+          player_id: player.id,
+          item_id: item.id,
+          source: 'starter',
+        }));
+        await supabase
+          .from('player_items')
+          .upsert(rows, { onConflict: 'player_id,item_id', ignoreDuplicates: true });
+        console.log(`🎒 ${starters.length} starter items granted to @${twitter_handle}`);
+      }
+    } catch (itemError) {
+      console.error('🎒 Starter items grant failed:', itemError.message);
+    }
+    // ========================================
+
+    // ========================================
     // NERM AUTO-FOLLOW: Always watching...
     // ========================================
     try {
