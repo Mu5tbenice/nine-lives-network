@@ -321,6 +321,77 @@
       100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
     }
 
+    /* Countdown timer */
+    .arena-countdown {
+      position: absolute; top: 60px; left: 50%; transform: translateX(-50%); z-index: 30;
+      text-align: center; pointer-events: none;
+    }
+    .countdown-label {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint);
+      letter-spacing: 2px; margin-bottom: 4px;
+    }
+    .countdown-time {
+      font-family: 'Press Start 2P', monospace; font-size: 22px; color: var(--cyan);
+      text-shadow: 0 0 20px rgba(0,212,255,0.4), 0 2px 4px rgba(0,0,0,0.8);
+      letter-spacing: 3px;
+    }
+    .countdown-time.urgent { color: var(--red); text-shadow: 0 0 20px rgba(255,68,102,0.5); animation: countdownPulse 1s infinite; }
+    .countdown-time.fighting { color: var(--gold); text-shadow: 0 0 20px rgba(212,166,75,0.5); }
+    .countdown-sub {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--muted);
+      margin-top: 4px;
+    }
+    @keyframes countdownPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+    /* Equipped card slots */
+    .arena-card-slots {
+      position: absolute; bottom: 70px; left: 12px; z-index: 20;
+      pointer-events: auto; display: flex; gap: 6px;
+    }
+    .arena-card-slot {
+      width: 80px; background: rgba(10,8,18,0.88); border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 6px 8px; position: relative; overflow: hidden;
+      transition: border-color 0.2s;
+    }
+    .arena-card-slot:hover { border-color: rgba(212,166,75,0.3); }
+    .arena-card-slot .slot-number {
+      position: absolute; top: 3px; right: 5px;
+      font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--faint); opacity: 0.5;
+    }
+    .arena-card-slot .slot-type {
+      font-family: 'Press Start 2P', monospace; font-size: 5px; font-weight: 700;
+      margin-bottom: 2px; letter-spacing: 0.5px;
+    }
+    .arena-card-slot .slot-name {
+      font-family: 'Cinzel', serif; font-size: 9px; font-weight: 700; color: var(--bright);
+      line-height: 1.2; margin-bottom: 3px;
+    }
+    .arena-card-slot .slot-effects {
+      font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--gold);
+      line-height: 1.4;
+    }
+    .arena-card-slot .slot-sharpness {
+      margin-top: 3px; height: 3px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden;
+    }
+    .arena-card-slot .slot-sharpness-fill {
+      height: 100%; border-radius: 2px; transition: width 0.3s;
+    }
+    .arena-card-slot.empty {
+      border-style: dashed; opacity: 0.4;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 60px;
+    }
+    .arena-card-slot.empty .slot-empty-text {
+      font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--faint);
+    }
+    .arena-card-slot.active-effect {
+      animation: cardGlow 2s infinite;
+    }
+    @keyframes cardGlow {
+      0%,100% { box-shadow: none; }
+      50% { box-shadow: 0 0 8px rgba(212,166,75,0.2); }
+    }
+
     /* Scrollbar */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
@@ -379,6 +450,20 @@
   <div class="arena-scoreboard" id="arena-scoreboard">
     <div class="arena-sb-title">GUILD SCORES</div>
     <div id="scoreboard-rows"></div>
+  </div>
+
+  <!-- Countdown timer -->
+  <div class="arena-countdown" id="arena-countdown">
+    <div class="countdown-label" id="countdown-label">NEXT CYCLE IN</div>
+    <div class="countdown-time" id="countdown-time">--:--</div>
+    <div class="countdown-sub" id="countdown-sub">Round 0/3</div>
+  </div>
+
+  <!-- Equipped card slots (shown when deployed) -->
+  <div class="arena-card-slots" id="arena-card-slots" style="display:none;">
+    <div class="arena-card-slot empty" id="card-slot-0"><span class="slot-empty-text">SLOT 1</span></div>
+    <div class="arena-card-slot empty" id="card-slot-1"><span class="slot-empty-text">SLOT 2</span></div>
+    <div class="arena-card-slot empty" id="card-slot-2"><span class="slot-empty-text">SLOT 3</span></div>
   </div>
 
   <div class="nerm-bubble-container">
@@ -464,6 +549,15 @@
     feedEvents: [],
     guildScores: {},
     roundWins: {},
+    // Countdown timer
+    cycleEndTime: null,       // timestamp when current cycle ends / next cycle starts
+    countdownInterval: null,  // setInterval ref
+    currentRound: 0,
+    totalRounds: 3,
+    currentCycle: 0,
+    isFighting: false,        // true during active combat rounds
+    // Equipped cards for this zone
+    equippedCards: [],
   };
 
   // ===== HOUSE DATA =====
@@ -751,6 +845,13 @@
     // Init PixiJS
     initPixiArena();
 
+    // Start countdown timer (will sync with server on first cycle event)
+    state.cycleEndTime = null;
+    state.isFighting = false;
+    state.currentRound = 0;
+    state.currentCycle = 0;
+    startCountdown();
+
     // Connect Socket.io — this is the ONLY source of Nines
     connectArenaSocket(zone.id);
 
@@ -870,6 +971,12 @@
     document.getElementById('arena-view').style.display = 'none';
     document.getElementById('zone-list-view').style.display = 'block';
 
+    // Stop countdown
+    stopCountdown();
+
+    // Hide card slots
+    hideCardSlots();
+
     // Cleanup
     if (state.socket) {
       state.socket.emit('leave_zone', { zoneId: state.currentZoneId });
@@ -877,6 +984,17 @@
       state.socket = null;
     }
     if (state.arenaApp) {
+      // Remove ambient particles
+      if (state._ambientParticles) {
+        state._ambientParticles.forEach(p => {
+          if (p.gfx && p.gfx.parent) p.gfx.parent.removeChild(p.gfx);
+        });
+        state._ambientParticles = null;
+      }
+      if (state._ambientTicker) {
+        state.arenaApp.ticker.remove(state._ambientTicker);
+        state._ambientTicker = null;
+      }
       state.arenaApp.destroy(true);
       state.arenaApp = null;
     }
@@ -885,6 +1003,7 @@
     state._guildCounts = {};
     state.currentZoneId = null;
     state.currentZone = null;
+    state.equippedCards = [];
 
     // Refresh zone data
     loadZones();
@@ -907,6 +1026,7 @@
     container.appendChild(app.view);
     app.view.style.width = '100%';
     app.view.style.height = '100%';
+    app.stage.sortableChildren = true;
     state.arenaApp = app;
 
     // Draw arena ground
@@ -917,6 +1037,7 @@
       if (state.arenaApp) {
         state.arenaApp.renderer.resize(window.innerWidth, window.innerHeight);
         drawArenaGround(state.arenaApp);
+        state.arenaApp.stage.sortChildren();
       }
     });
 
@@ -936,43 +1057,302 @@
   }
 
   function drawArenaGround(app) {
-    // Remove old ground
+    // Remove old ground layers
     const existing = app.stage.getChildByName('ground');
     if (existing) app.stage.removeChild(existing);
+    const existingEnv = app.stage.getChildByName('environment');
+    if (existingEnv) app.stage.removeChild(existingEnv);
+    const existingFog = app.stage.getChildByName('fog');
+    if (existingFog) app.stage.removeChild(existingFog);
 
-    const ground = new PIXI.Graphics();
-    ground.name = 'ground';
     const cx = app.screen.width / 2;
     const cy = app.screen.height / 2;
 
-    // Isometric diamond arena floor
-    const h = HOUSES[state.currentZone?.house || state.currentZone?.region_house || SCHOOL_TO_HOUSE[state.currentZone?.controlling_school_id] || SCHOOL_TO_HOUSE[state.currentZone?.school_id]] || { color: '#444' };
+    // Resolve house for theming
+    const hKey = state.currentZone?.house
+      || state.currentZone?.region_house
+      || SCHOOL_TO_HOUSE[state.currentZone?.controlling_school_id]
+      || SCHOOL_TO_HOUSE[state.currentZone?.school_id]
+      || null;
+    const h = (hKey && HOUSES[hKey]) || { color: '#666' };
     const hColor = parseInt(h.color.replace('#', ''), 16);
 
-    ground.beginFill(0x12101e);
-    ground.moveTo(cx, cy - 250);
-    ground.lineTo(cx + 400, cy);
-    ground.lineTo(cx, cy + 250);
-    ground.lineTo(cx - 400, cy);
-    ground.closePath();
+    // ── HOUSE THEME PALETTES ──
+    const themes = {
+      smoulders:   { floor: 0x1a0e0a, tile: 0x2a1510, accent: 0xff4422, fog: 0xff3300, ambientType: 'embers' },
+      darktide:    { floor: 0x0a0e1a, tile: 0x0e1828, accent: 0x00B4D8, fog: 0x003366, ambientType: 'bubbles' },
+      stonebark:   { floor: 0x0e1a0a, tile: 0x162810, accent: 0x5CB338, fog: 0x1a3300, ambientType: 'leaves' },
+      ashenvale:   { floor: 0x0e1418, tile: 0x141e24, accent: 0x90E0EF, fog: 0x88ccee, ambientType: 'wind' },
+      stormrage:   { floor: 0x1a180a, tile: 0x28220e, accent: 0xFFC800, fog: 0xffaa00, ambientType: 'sparks' },
+      nighthollow: { floor: 0x120a18, tile: 0x1c1028, accent: 0x7B2D8E, fog: 0x6633aa, ambientType: 'wisps' },
+      dawnbringer: { floor: 0x1a140a, tile: 0x281e10, accent: 0xFF8C00, fog: 0xff6600, ambientType: 'rays' },
+      manastorm:   { floor: 0x0a1018, tile: 0x101a28, accent: 0x5B8FE0, fog: 0x3366cc, ambientType: 'crystals' },
+      plaguemire:  { floor: 0x180a14, tile: 0x28101e, accent: 0xE84393, fog: 0xcc2266, ambientType: 'miasma' },
+    };
+    const theme = themes[hKey] || themes.nighthollow;
+
+    // ══════ GROUND LAYER ══════
+    const ground = new PIXI.Graphics();
+    ground.name = 'ground';
+    ground.zIndex = -10;
+
+    // Dark background fill
+    ground.beginFill(theme.floor);
+    ground.drawRect(0, 0, app.screen.width, app.screen.height);
     ground.endFill();
 
-    // Subtle grid lines
-    ground.lineStyle(1, hColor, 0.06);
-    for (let i = -6; i <= 6; i++) {
-      ground.moveTo(cx + i * 60, cy - 250 + Math.abs(i) * 40);
-      ground.lineTo(cx + i * 60, cy + 250 - Math.abs(i) * 40);
+    // Isometric diamond floor with tiles
+    const tileW = 48;
+    const tileH = 24;
+    const gridCols = 18;
+    const gridRows = 14;
+
+    for (let row = -gridRows; row <= gridRows; row++) {
+      for (let col = -gridCols; col <= gridCols; col++) {
+        // Iso transform
+        const isoX = cx + (col - row) * (tileW / 2);
+        const isoY = cy + (col + row) * (tileH / 2);
+
+        // Skip tiles outside screen
+        if (isoX < -tileW || isoX > app.screen.width + tileW) continue;
+        if (isoY < -tileH || isoY > app.screen.height + tileH) continue;
+
+        // Distance from center for fade
+        const dist = Math.sqrt((isoX - cx) ** 2 + ((isoY - cy) * 1.8) ** 2);
+        const maxDist = Math.min(app.screen.width, app.screen.height) * 0.6;
+        if (dist > maxDist) continue;
+
+        const fade = Math.max(0, 1 - dist / maxDist);
+        const alpha = 0.12 + fade * 0.25;
+
+        // Checkerboard coloring
+        const isLight = (col + row) % 2 === 0;
+        const tileColor = isLight ? theme.tile : theme.floor;
+
+        ground.beginFill(tileColor, alpha);
+        ground.moveTo(isoX, isoY - tileH / 2);
+        ground.lineTo(isoX + tileW / 2, isoY);
+        ground.lineTo(isoX, isoY + tileH / 2);
+        ground.lineTo(isoX - tileW / 2, isoY);
+        ground.closePath();
+        ground.endFill();
+
+        // Tile edge lines (very subtle)
+        if (fade > 0.3) {
+          ground.lineStyle(0.5, theme.accent, 0.04 * fade);
+          ground.moveTo(isoX, isoY - tileH / 2);
+          ground.lineTo(isoX + tileW / 2, isoY);
+          ground.lineTo(isoX, isoY + tileH / 2);
+          ground.lineTo(isoX - tileW / 2, isoY);
+          ground.closePath();
+          ground.lineStyle(0);
+        }
+      }
     }
 
-    // Border glow
-    ground.lineStyle(2, hColor, 0.15);
-    ground.moveTo(cx, cy - 250);
-    ground.lineTo(cx + 400, cy);
-    ground.lineTo(cx, cy + 250);
-    ground.lineTo(cx - 400, cy);
+    // Center arena border — glowing diamond
+    const arenaW = 320;
+    const arenaH = 180;
+    ground.lineStyle(2, theme.accent, 0.25);
+    ground.moveTo(cx, cy - arenaH);
+    ground.lineTo(cx + arenaW, cy);
+    ground.lineTo(cx, cy + arenaH);
+    ground.lineTo(cx - arenaW, cy);
+    ground.closePath();
+    ground.lineStyle(0);
+
+    // Inner glow ring
+    ground.lineStyle(1, theme.accent, 0.08);
+    ground.moveTo(cx, cy - arenaH * 0.7);
+    ground.lineTo(cx + arenaW * 0.7, cy);
+    ground.lineTo(cx, cy + arenaH * 0.7);
+    ground.lineTo(cx - arenaW * 0.7, cy);
     ground.closePath();
 
     app.stage.addChildAt(ground, 0);
+
+    // ══════ ENVIRONMENT LAYER ══════
+    const env = new PIXI.Container();
+    env.name = 'environment';
+    env.zIndex = -5;
+
+    // Corner pillars / decorations
+    const pillarPositions = [
+      { x: cx, y: cy - arenaH - 10 },         // top
+      { x: cx + arenaW + 10, y: cy },          // right
+      { x: cx, y: cy + arenaH + 10 },          // bottom
+      { x: cx - arenaW - 10, y: cy },          // left
+    ];
+
+    pillarPositions.forEach((pos, i) => {
+      const pillar = new PIXI.Graphics();
+      // Pillar base (isometric block)
+      pillar.beginFill(theme.accent, 0.15);
+      pillar.moveTo(pos.x, pos.y - 16);
+      pillar.lineTo(pos.x + 10, pos.y - 10);
+      pillar.lineTo(pos.x, pos.y - 4);
+      pillar.lineTo(pos.x - 10, pos.y - 10);
+      pillar.closePath();
+      pillar.endFill();
+      // Pillar column
+      pillar.beginFill(theme.accent, 0.10);
+      pillar.drawRect(pos.x - 3, pos.y - 28, 6, 16);
+      pillar.endFill();
+      // Top crystal/flame
+      pillar.beginFill(theme.accent, 0.4);
+      pillar.moveTo(pos.x, pos.y - 36);
+      pillar.lineTo(pos.x + 4, pos.y - 28);
+      pillar.lineTo(pos.x - 4, pos.y - 28);
+      pillar.closePath();
+      pillar.endFill();
+      env.addChild(pillar);
+    });
+
+    // Rune circles at corners of inner diamond
+    const runePositions = [
+      { x: cx + arenaW * 0.5, y: cy - arenaH * 0.5 },
+      { x: cx + arenaW * 0.5, y: cy + arenaH * 0.5 },
+      { x: cx - arenaW * 0.5, y: cy + arenaH * 0.5 },
+      { x: cx - arenaW * 0.5, y: cy - arenaH * 0.5 },
+    ];
+
+    runePositions.forEach(pos => {
+      const rune = new PIXI.Graphics();
+      rune.lineStyle(1, theme.accent, 0.15);
+      rune.drawCircle(pos.x, pos.y, 8);
+      rune.lineStyle(0.5, theme.accent, 0.08);
+      rune.drawCircle(pos.x, pos.y, 12);
+      // Small inner dot
+      rune.beginFill(theme.accent, 0.2);
+      rune.drawCircle(pos.x, pos.y, 2);
+      rune.endFill();
+      env.addChild(rune);
+    });
+
+    app.stage.addChild(env);
+
+    // ══════ FOG / ATMOSPHERE LAYER ══════
+    const fog = new PIXI.Graphics();
+    fog.name = 'fog';
+    fog.zIndex = -1;
+
+    // Radial vignette
+    for (let r = 0; r < 6; r++) {
+      const radius = Math.min(app.screen.width, app.screen.height) * (0.2 + r * 0.12);
+      fog.beginFill(theme.fog, 0.005 * (6 - r));
+      fog.drawCircle(cx, cy, radius);
+      fog.endFill();
+    }
+
+    // Edge darkness vignette
+    fog.beginFill(0x000000, 0.4);
+    fog.drawRect(0, 0, app.screen.width, 50);
+    fog.endFill();
+    fog.beginFill(0x000000, 0.4);
+    fog.drawRect(0, app.screen.height - 50, app.screen.width, 50);
+    fog.endFill();
+
+    app.stage.addChild(fog);
+
+    // ══════ AMBIENT PARTICLES ══════
+    startAmbientParticles(app, theme);
+  }
+
+  /** Ambient floating particles based on house theme */
+  function startAmbientParticles(app, theme) {
+    // Remove old ambient ticker if any
+    if (state._ambientTicker) {
+      app.ticker.remove(state._ambientTicker);
+    }
+    if (state._ambientParticles) {
+      state._ambientParticles.forEach(p => {
+        if (p.gfx && p.gfx.parent) p.gfx.parent.removeChild(p.gfx);
+      });
+    }
+
+    const particles = [];
+    const count = 25;
+    const cx = app.screen.width / 2;
+    const cy = app.screen.height / 2;
+
+    for (let i = 0; i < count; i++) {
+      const p = new PIXI.Graphics();
+      const size = 1 + Math.random() * 2.5;
+
+      if (theme.ambientType === 'embers') {
+        p.beginFill(Math.random() > 0.5 ? 0xff6633 : 0xffaa44, 0.6);
+        p.moveTo(0, -size); p.lineTo(-size * 0.5, size * 0.3); p.lineTo(size * 0.5, size * 0.3);
+        p.closePath();
+        p.endFill();
+      } else if (theme.ambientType === 'bubbles') {
+        p.lineStyle(0.5, 0x00ccff, 0.4);
+        p.drawCircle(0, 0, size);
+      } else if (theme.ambientType === 'leaves') {
+        p.beginFill(Math.random() > 0.5 ? 0x44bb33 : 0x88cc44, 0.4);
+        p.drawEllipse(0, 0, size * 1.5, size * 0.5);
+        p.endFill();
+      } else if (theme.ambientType === 'sparks') {
+        p.beginFill(0xffdd00, 0.7);
+        p.drawCircle(0, 0, size * 0.5);
+        p.endFill();
+      } else if (theme.ambientType === 'wisps') {
+        p.beginFill(0xbb88ff, 0.4);
+        p.drawCircle(0, 0, size);
+        p.endFill();
+      } else if (theme.ambientType === 'crystals') {
+        p.beginFill(0x6699ee, 0.5);
+        p.moveTo(0, -size); p.lineTo(size * 0.7, 0); p.lineTo(0, size); p.lineTo(-size * 0.7, 0);
+        p.closePath();
+        p.endFill();
+      } else if (theme.ambientType === 'miasma') {
+        p.beginFill(0xcc44aa, 0.3);
+        p.drawCircle(0, 0, size * 1.5);
+        p.endFill();
+      } else {
+        // Default: generic dust
+        p.beginFill(theme.accent, 0.3);
+        p.drawCircle(0, 0, size);
+        p.endFill();
+      }
+
+      p.x = Math.random() * app.screen.width;
+      p.y = Math.random() * app.screen.height;
+      p.zIndex = -2;
+      app.stage.addChild(p);
+
+      particles.push({
+        gfx: p,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: theme.ambientType === 'embers' ? -(0.2 + Math.random() * 0.5) :
+            theme.ambientType === 'bubbles' ? -(0.1 + Math.random() * 0.3) :
+            (Math.random() - 0.5) * 0.3,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.3 + Math.random() * 0.5,
+      });
+    }
+
+    state._ambientParticles = particles;
+
+    const ticker = (delta) => {
+      const time = performance.now() / 1000;
+      for (const p of particles) {
+        p.gfx.x += p.vx * delta;
+        p.gfx.y += p.vy * delta;
+        // Gentle horizontal sway
+        p.gfx.x += Math.sin(time * p.speed + p.phase) * 0.3;
+        // Gentle alpha pulse
+        p.gfx.alpha = 0.2 + Math.sin(time * 0.8 + p.phase) * 0.15;
+
+        // Wrap around screen
+        if (p.gfx.x < -20) p.gfx.x = app.screen.width + 20;
+        if (p.gfx.x > app.screen.width + 20) p.gfx.x = -20;
+        if (p.gfx.y < -20) p.gfx.y = app.screen.height + 20;
+        if (p.gfx.y > app.screen.height + 20) p.gfx.y = -20;
+      }
+    };
+
+    state._ambientTicker = ticker;
+    app.ticker.add(ticker);
   }
 
   // ===== NINE SPRITES — LAYERED ITEM RENDERING =====
@@ -1469,6 +1849,18 @@
       }
       if (data.round) updateRoundBadge(data.round, data.cycle);
       if (data.active) addFeedEvent('Combat is active!', 'system');
+
+      // Sync countdown timing from server
+      if (data.next_cycle_at) {
+        state.cycleEndTime = data.next_cycle_at;
+      } else if (data.cycle_interval_ms) {
+        state.cycleEndTime = Date.now() + data.cycle_interval_ms;
+      } else if (!state.cycleEndTime) {
+        // Default 5 min if server doesn't send timing
+        state.cycleEndTime = Date.now() + 5 * 60 * 1000;
+      }
+      if (data.cycle) state.currentCycle = data.cycle;
+      updateCountdownDisplay();
     });
 
     // New Nine joins mid-battle
@@ -1499,22 +1891,31 @@
     socket.on('arena:cycle_start', (data) => {
       const cycleNum = data.cycle_number || data.cycle || '?';
       const totalRounds = data.total_rounds || 3;
+      state.currentCycle = cycleNum;
+      state.totalRounds = totalRounds;
+      state.currentRound = 0;
+      state.isFighting = true;
       console.log('🎮 CYCLE START:', cycleNum, '— Rounds:', totalRounds);
       addFeedEvent(`⚔️ COMBAT CYCLE ${cycleNum} — ${totalRounds} Rounds!`, 'system');
       showRoundBanner(`CYCLE ${cycleNum}`, `${totalRounds} Rounds Begin!`);
+      updateCountdownDisplay();
     });
 
     // ── ROUND START — happens 3 times per cycle
     socket.on('arena:round_start', (data) => {
-      console.log('🎮 ROUND START:', data.round_number, 'of', data.total_rounds);
-      const roundLabel = `ROUND ${data.round_number} of ${data.total_rounds}`;
+      state.currentRound = data.round_number || 1;
+      state.totalRounds = data.total_rounds || 3;
+      state.isFighting = true;
+      console.log('🎮 ROUND START:', state.currentRound, 'of', state.totalRounds);
+      const roundLabel = `ROUND ${state.currentRound} of ${state.totalRounds}`;
       addFeedEvent(`⚔️ ${roundLabel} — FIGHT!`, 'system');
       showRoundBanner(roundLabel, 'FIGHT!');
-      updateRoundBadge(data.round_number, data.total_rounds);
+      updateRoundBadge(state.currentRound, state.totalRounds);
+      updateCountdownDisplay();
       // Sync HP states
       if (data.nines) {
         for (const nine of data.nines) {
-          const nineId = nine.player_id || nine.id;
+          const nineId = resolveNineId(nine);
           if (state.nines.has(nineId)) {
             updateNineHP(nineId, nine.hp || nine.current_hp, nine.maxHp || nine.max_hp);
             const sprite = state.nines.get(nineId);
@@ -1545,6 +1946,7 @@
     // ── ROUND END — show round results
     socket.on('arena:round_end', (data) => {
       console.log('🎮 ROUND END:', data.round_number, 'of', data.total_rounds);
+      state.currentRound = data.round_number || state.currentRound;
 
       const roundLabel = `ROUND ${data.round_number}/${data.total_rounds}`;
       addFeedEvent(`🏆 ${roundLabel} complete`, 'system');
@@ -1553,7 +1955,7 @@
       // Sync HP from server
       if (data.nines) {
         for (const nine of data.nines) {
-          const nineId = nine.player_id || nine.id;
+          const nineId = resolveNineId(nine);
           updateNineHP(nineId, nine.current_hp || nine.hp, nine.max_hp || nine.maxHp);
         }
       }
@@ -1574,14 +1976,14 @@
       if (data.heals) {
         data.heals.forEach((h, i) => {
           setTimeout(() => {
-            const nineId = h.nine_id;
+            const nineId = resolveNineId(h);
             updateNineHP(nineId, h.new_hp, null);
             const sprite = state.nines.get(nineId);
             if (sprite) {
               showFloatingText(sprite.container.x, sprite.container.y, `+${h.amount}`, 0x44ffaa, 11);
               spawnParticles(sprite.container.x, sprite.container.y, 0x44ffaa, 8, 'heal');
             }
-          }, i * 200); // stagger heal visuals slightly
+          }, i * 200);
         });
       }
 
@@ -1589,7 +1991,7 @@
       if (data.nines) {
         setTimeout(() => {
           for (const nine of data.nines) {
-            const nineId = nine.player_id || nine.id;
+            const nineId = resolveNineId(nine);
             updateNineHP(nineId, nine.current_hp || nine.hp, nine.max_hp || nine.maxHp);
           }
         }, 1500);
@@ -1601,13 +2003,20 @@
       console.log('🎮 CYCLE END:', data);
       const winner = data.winner_guild || 'No winner';
       const cycleNum = data.cycle_number || data.cycle || '?';
+      state.currentCycle = cycleNum;
+      state.isFighting = false;
+      state.currentRound = 0;
+      // Set next cycle countdown: 5 minutes from now
+      state.cycleEndTime = Date.now() + 5 * 60 * 1000;
+      updateCountdownDisplay();
+
       showRoundBanner('CYCLE COMPLETE', `${winner} controls zone`);
       addFeedEvent(`🏁 Cycle ${cycleNum} complete — ${winner} controls zone`, 'system');
 
       // Sync final HP state
       if (data.nines) {
         for (const nine of data.nines) {
-          const nineId = nine.player_id || nine.id;
+          const nineId = resolveNineId(nine);
           updateNineHP(nineId, nine.current_hp || nine.hp, nine.max_hp || nine.maxHp);
         }
       }
@@ -1629,14 +2038,47 @@
     });
   }
 
+  /** Resolve Nine ID from various event formats — server might send player_id, nine_id, id, from, to */
+  function resolveNineId(obj) {
+    if (!obj) return null;
+    // Try multiple ID fields
+    const candidates = [obj.player_id, obj.nine_id, obj.id, obj.from, obj.to];
+    for (const c of candidates) {
+      if (c && state.nines.has(c)) return c;
+    }
+    // Try string/number coercion
+    for (const c of candidates) {
+      if (c === undefined || c === null) continue;
+      const asStr = String(c);
+      const asNum = Number(c);
+      if (state.nines.has(asStr)) return asStr;
+      if (!isNaN(asNum) && state.nines.has(asNum)) return asNum;
+    }
+    // Return first truthy candidate as fallback
+    return obj.player_id || obj.nine_id || obj.id || null;
+  }
+
+  /** Resolve a specific field from event for sprite lookup */
+  function resolveId(rawId) {
+    if (rawId === undefined || rawId === null) return null;
+    if (state.nines.has(rawId)) return rawId;
+    const asStr = String(rawId);
+    if (state.nines.has(asStr)) return asStr;
+    const asNum = Number(rawId);
+    if (!isNaN(asNum) && state.nines.has(asNum)) return asNum;
+    return rawId; // fallback
+  }
+
   function processArenaEvent(ev) {
     switch (ev.type) {
       case 'attack': {
-        const targetSprite = state.nines.get(ev.to);
-        const attackerSprite = state.nines.get(ev.from);
+        const fromId = resolveId(ev.from);
+        const toId = resolveId(ev.to);
+        const targetSprite = state.nines.get(toId);
+        const attackerSprite = state.nines.get(fromId);
 
         // Lunge animation — damage happens on hit
-        animateLunge(ev.from, ev.to, () => {
+        animateLunge(fromId, toId, () => {
           // ON HIT callback
           if (targetSprite) {
             // Damage number
@@ -1658,20 +2100,26 @@
           }
         });
 
-        addFeedEvent(`⚔️ ${getNineName(ev.from)} → ${getNineName(ev.to)} -${ev.damage}${ev.crit ? ' CRIT!' : ''}`, 'attack');
+        // If no sprites found, still show the animation-less version with floating text
+        if (!attackerSprite && !targetSprite) {
+          addFeedEvent(`⚔️ ${ev.from_name || '???'} → ${ev.to_name || '???'} -${ev.damage}${ev.crit ? ' CRIT!' : ''}`, 'attack');
+        } else {
+          addFeedEvent(`⚔️ ${getNineName(fromId)} → ${getNineName(toId)} -${ev.damage}${ev.crit ? ' CRIT!' : ''}`, 'attack');
+        }
         break;
       }
       case 'damage': {
-        updateNineHP(ev.target_id, ev.new_hp, state.nines.get(ev.target_id)?.maxHp || 100);
-        updateYourNinePanel(ev.target_id);
+        const targetId = resolveId(ev.target_id);
+        updateNineHP(targetId, ev.new_hp, state.nines.get(targetId)?.maxHp || 100);
+        updateYourNinePanel(targetId);
         break;
       }
       case 'heal': {
-        const sprite = state.nines.get(ev.nine_id);
+        const healId = resolveId(ev.nine_id);
+        const sprite = state.nines.get(healId);
         if (sprite) {
           showFloatingText(sprite.container.x, sprite.container.y, `+${ev.amount}`, 0x44ffaa, 12);
           spawnParticles(sprite.container.x, sprite.container.y, 0x44ffaa, 10, 'heal');
-          // Green flash
           if (sprite.spriteGroup) {
             sprite.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0x44ff88; });
             setTimeout(() => {
@@ -1679,24 +2127,25 @@
             }, 300);
           }
         }
-        updateNineHP(ev.nine_id, ev.new_hp, state.nines.get(ev.nine_id)?.maxHp || 100);
+        updateNineHP(healId, ev.new_hp, state.nines.get(healId)?.maxHp || 100);
         break;
       }
       case 'ko': {
-        addFeedEvent(`💀 ${getNineName(ev.nine_id)} was KO'd!`, 'ko');
-        animateKO(ev.nine_id);
+        const koId = resolveId(ev.nine_id);
+        addFeedEvent(`💀 ${getNineName(koId)} was KO'd!`, 'ko');
+        animateKO(koId);
         showFloatingText(
-          state.nines.get(ev.nine_id)?.container?.x || 0,
-          (state.nines.get(ev.nine_id)?.container?.y || 0) - 30,
+          state.nines.get(koId)?.container?.x || 0,
+          (state.nines.get(koId)?.container?.y || 0) - 30,
           'K.O.', 0xff2222, 16
         );
         break;
       }
       case 'dodge': {
-        const sprite = state.nines.get(ev.nine_id);
+        const dodgeId = resolveId(ev.nine_id);
+        const sprite = state.nines.get(dodgeId);
         if (sprite) {
           showFloatingText(sprite.container.x, sprite.container.y, 'DODGE!', 0x90E0EF, 11);
-          // Quick sidestep animation
           const origX = sprite.container.x;
           sprite.container.x += 15;
           sprite.container.alpha = 0.5;
@@ -1708,7 +2157,8 @@
         break;
       }
       case 'ward_pop': {
-        const sprite = state.nines.get(ev.nine_id);
+        const wardId = resolveId(ev.nine_id);
+        const sprite = state.nines.get(wardId);
         if (sprite) {
           showFloatingText(sprite.container.x, sprite.container.y, 'BLOCKED!', 0xD4A64B, 11);
           spawnParticles(sprite.container.x, sprite.container.y, 0xD4A64B, 10, 'shield');
@@ -1723,7 +2173,7 @@
   }
 
   function processEffectEvent(ev) {
-    const targetId = ev.target_id || ev.nine_id;
+    const targetId = resolveId(ev.target_id || ev.nine_id);
     const sprite = state.nines.get(targetId);
 
     // Get particle config
@@ -1813,6 +2263,148 @@
     document.getElementById('your-hp-text').textContent = `${sprite.hp}/${sprite.maxHp}`;
   }
 
+  // ═══════════════════════════════════════════
+  // COUNTDOWN TIMER SYSTEM
+  // ═══════════════════════════════════════════
+
+  function startCountdown() {
+    if (state.countdownInterval) clearInterval(state.countdownInterval);
+
+    // Default: assume next cycle in 5 minutes if no server info
+    if (!state.cycleEndTime) {
+      state.cycleEndTime = Date.now() + 5 * 60 * 1000;
+    }
+
+    state.countdownInterval = setInterval(updateCountdownDisplay, 250);
+    updateCountdownDisplay();
+  }
+
+  function stopCountdown() {
+    if (state.countdownInterval) {
+      clearInterval(state.countdownInterval);
+      state.countdownInterval = null;
+    }
+  }
+
+  function updateCountdownDisplay() {
+    const labelEl = document.getElementById('countdown-label');
+    const timeEl = document.getElementById('countdown-time');
+    const subEl = document.getElementById('countdown-sub');
+    if (!labelEl || !timeEl) return;
+
+    if (state.isFighting) {
+      labelEl.textContent = 'COMBAT ACTIVE';
+      timeEl.textContent = `ROUND ${state.currentRound}/${state.totalRounds}`;
+      timeEl.className = 'countdown-time fighting';
+      subEl.textContent = `Cycle ${state.currentCycle}`;
+      return;
+    }
+
+    const now = Date.now();
+    const remaining = Math.max(0, (state.cycleEndTime || now) - now);
+    const totalSeconds = Math.ceil(remaining / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    labelEl.textContent = 'NEXT CYCLE IN';
+    timeEl.textContent = timeStr;
+    subEl.textContent = state.currentCycle ? `After cycle ${state.currentCycle}` : 'Waiting for combat...';
+
+    // Urgent when < 30 seconds
+    if (totalSeconds <= 30 && totalSeconds > 0) {
+      timeEl.className = 'countdown-time urgent';
+    } else {
+      timeEl.className = 'countdown-time';
+    }
+
+    // Auto-update cycle timer text in top bar
+    const timerEl = document.getElementById('arena-cycle-timer');
+    if (timerEl) {
+      timerEl.textContent = state.isFighting
+        ? `Cycle ${state.currentCycle} · Fighting`
+        : `Cycle ${state.currentCycle || '?'} · ${timeStr}`;
+    }
+  }
+
+  // ═══════════════════════════════════════════
+  // EQUIPPED CARD SLOTS
+  // ═══════════════════════════════════════════
+
+  function renderCardSlots(cards) {
+    const slotsContainer = document.getElementById('arena-card-slots');
+    if (!slotsContainer) return;
+
+    state.equippedCards = cards || [];
+    slotsContainer.style.display = 'flex';
+
+    for (let i = 0; i < 3; i++) {
+      const slotEl = document.getElementById(`card-slot-${i}`);
+      if (!slotEl) continue;
+      const card = cards[i];
+
+      if (!card) {
+        slotEl.className = 'arena-card-slot empty';
+        slotEl.innerHTML = `<span class="slot-empty-text">SLOT ${i + 1}</span>`;
+        continue;
+      }
+
+      const houseKey = card.house || SCHOOL_TO_HOUSE[card.school_id] || 'universal';
+      const hColor = HOUSES[houseKey]?.color || '#888';
+      const typeColor = TYPE_COLORS[card.spell_type || card.type || 'attack'] || '#888';
+      const sharpness = card.sharpness ?? card.current_sharpness ?? 100;
+      const sharpColor = sharpness > 60 ? 'var(--cyan)' : sharpness > 30 ? 'var(--gold)' : 'var(--red)';
+
+      const effects = [];
+      if (card.bonus_effects) {
+        card.bonus_effects.forEach(e => effects.push(e.tag || e.name || e));
+      }
+      if (card.base_effect) effects.push(card.base_effect);
+
+      slotEl.className = 'arena-card-slot';
+      slotEl.style.borderColor = hColor + '50';
+      slotEl.style.background = `linear-gradient(135deg, rgba(10,8,18,0.92), ${hColor}08)`;
+      slotEl.innerHTML = `
+        <div class="slot-number">${i + 1}</div>
+        <div class="slot-type" style="color:${typeColor}">${(card.spell_type || card.type || '???').toUpperCase()}</div>
+        <div class="slot-name">${card.name || '???'}</div>
+        ${effects.length ? `<div class="slot-effects">${effects.slice(0, 2).join(' · ')}</div>` : ''}
+        <div class="slot-sharpness">
+          <div class="slot-sharpness-fill" style="width:${sharpness}%;background:${sharpColor}"></div>
+        </div>
+      `;
+    }
+  }
+
+  function hideCardSlots() {
+    const slotsContainer = document.getElementById('arena-card-slots');
+    if (slotsContainer) slotsContainer.style.display = 'none';
+  }
+
+  /** Fetch equipped cards for this deployment */
+  async function loadEquippedCards(zoneId) {
+    if (!state.playerId) return;
+    try {
+      const res = await fetch(`/api/zones/my-deployments/${state.playerId}`);
+      const data = await res.json();
+      const deployment = (data.deployments || []).find(d => d.zone_id === zoneId);
+      if (deployment && deployment.cards) {
+        renderCardSlots(deployment.cards);
+      } else if (deployment && deployment.card_ids) {
+        // Cards might be just IDs — fetch card details
+        const cardRes = await fetch(`/api/spells/by-ids`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ids: deployment.card_ids }),
+        });
+        const cardData = await cardRes.json();
+        renderCardSlots(cardData.cards || []);
+      }
+    } catch (e) {
+      console.warn('Could not load equipped cards:', e);
+    }
+  }
+
   // ===== DEPLOYMENT =====
   async function checkDeployment(zoneId) {
     if (!state.playerId) {
@@ -1831,6 +2423,13 @@
         state.isDeployed = true;
         document.getElementById('deploy-cta').style.display = 'none';
         document.getElementById('your-nine-panel').style.display = 'block';
+
+        // Load equipped cards for slot display
+        if (deployed.cards) {
+          renderCardSlots(deployed.cards);
+        } else {
+          loadEquippedCards(zoneId);
+        }
 
         // Find this player's sprite for stats display
         const sprite = state.nines.get(state.playerId);
@@ -1883,6 +2482,13 @@
         document.getElementById('your-nine-panel').style.display = 'block';
         addFeedEvent(data.message || 'You have entered the battle!', 'join');
 
+        // Show equipped cards
+        if (data.cards) {
+          renderCardSlots(data.cards);
+        } else {
+          loadEquippedCards(state.currentZoneId);
+        }
+
         // Reload zone nines to include yourself
         state.nines.clear();
         if (state.arenaApp) {
@@ -1927,6 +2533,7 @@
         state.isDeployed = false;
         document.getElementById('your-nine-panel').style.display = 'none';
         document.getElementById('deploy-cta').style.display = 'block';
+        hideCardSlots();
         addFeedEvent('You withdrew from the battle.', 'system');
 
         // Remove your sprite
