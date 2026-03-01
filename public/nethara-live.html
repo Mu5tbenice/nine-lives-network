@@ -1431,16 +1431,40 @@
     });
 
     // ── IDLE ANIMATION TICKER ──
-    // Gentle bobbing so Nines look alive
+    // Wander + bob so Nines look alive
     app.ticker.add((delta) => {
       const time = performance.now() / 1000;
       state.nines.forEach((nine) => {
         if (nine.isAnimating) return; // don't interfere with attack/ko anims
+
+        // BOB — gentle vertical oscillation
         const bob = Math.sin(time * 1.5 + nine.bobPhase) * 2;
         nine.spriteGroup.y = bob;
+
         // Subtle scale pulse
         const pulse = 1 + Math.sin(time * 2 + nine.bobPhase) * 0.015;
         nine.spriteGroup.scale.set(pulse, pulse);
+
+        // WANDER — drift to random nearby positions
+        if (!nine.wanderTarget || !nine.wanderTimer) {
+          nine.wanderTarget = {
+            x: nine.homeX + (Math.random() - 0.5) * 40,
+            y: nine.homeY + (Math.random() - 0.5) * 25,
+          };
+          nine.wanderTimer = 100 + Math.random() * 140; // 1.5-4s between wanders
+          // Store home position on first run
+          if (!nine.homeX) {
+            nine.homeX = nine.container.x;
+            nine.homeY = nine.container.y;
+          }
+        }
+        nine.wanderTimer -= delta;
+
+        // Smooth drift toward wander target
+        const wx = nine.wanderTarget.x - nine.container.x;
+        const wy = nine.wanderTarget.y - nine.container.y;
+        nine.container.x += wx * 0.015;
+        nine.container.y += wy * 0.015;
       });
     });
   }
@@ -1885,16 +1909,16 @@
     t.zIndex = 100;
     state.arenaApp.stage.addChild(t);
 
-    // Slower arc upward with scale pop
+    // Ultra slow arc with glow
     let frame = 0;
-    const totalFrames = 90; // ~1.5 seconds (was 60)
+    const totalFrames = 150; // ~2.5 seconds visible
     const startY = t.y;
-    const startScale = 1.4;
+    const startScale = 1.5;
     const ticker = () => {
       frame++;
       const progress = frame / totalFrames;
-      t.y = startY - progress * 45; // float up 45px (was 35)
-      t.alpha = progress < 0.4 ? 1 : Math.max(0, 1 - (progress - 0.4) / 0.6);
+      t.y = startY - progress * 30; // barely drift up — 30px over 2.5s
+      t.alpha = progress < 0.5 ? 1 : Math.max(0, 1 - (progress - 0.5) / 0.5);
       const scale = startScale - (startScale - 0.8) * progress;
       t.scale.set(scale, scale);
       if (frame >= totalFrames) {
@@ -2382,7 +2406,7 @@
     // Legacy fallback for old event format
     socket.on('arena:event', (ev) => processArenaEvent(ev));
     socket.on('arena:events', (data) => {
-      if (data.events) data.events.forEach((ev, i) => setTimeout(() => processArenaEvent(ev), i * 2000));
+      if (data.events) data.events.forEach((ev, i) => setTimeout(() => processArenaEvent(ev), i * 2800));
     });
 
     // ── ROUND END — show round results
@@ -2551,26 +2575,27 @@
         const cardType = (ev.card_type || 'attack').toLowerCase();
 
         if (cardType === 'attack' || !ev.effect) {
-          // ATTACK: lunge toward target → projectile bolt → firework impact
-          animateLunge(fromId, toId, () => {
-            animateProjectile(fromId, toId, ev.from_house, () => {
-              if (target) {
-                const sz = ev.crit ? 18 : 14;
-                showFloatingText(target.container.x, target.container.y, `-${ev.damage}`, ev.crit ? 0xffd700 : 0xff4466, sz);
-                if (ev.crit) {
-                  showFloatingText(target.container.x, target.container.y - 25, 'CRIT!', 0xffd700, 16);
-                  spawnParticles(target.container.x, target.container.y, 0xffd700, 14, 'lightning');
-                  screenFlash(0xffd700, 0.25);
-                }
-                spawnParticles(target.container.x, target.container.y, getHouseColor(ev.from_house), 10, 'fire');
-                shakeSprite(target);
-                if (target.spriteGroup) {
-                  target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff4444; });
-                  setTimeout(() => { if (target.spriteGroup) target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 300);
-                }
+          // ATTACK: missile from standing position → firework impact
+          // No lunge — lunge only for melee weapons (future)
+          animateProjectile(fromId, toId, ev.from_house, () => {
+            if (target) {
+              const sz = ev.crit ? 22 : 16;
+              showFloatingText(target.container.x, target.container.y, `-${ev.damage}`, ev.crit ? 0xffd700 : 0xff4466, sz);
+              if (ev.crit) {
+                showFloatingText(target.container.x, target.container.y - 30, 'CRIT!', 0xffd700, 20);
+                spawnParticles(target.container.x, target.container.y, 0xffd700, 16, 'lightning');
+                screenFlash(0xffd700, 0.25);
+                // Extra firework on crit
+                setTimeout(() => spawnFireworkExplosion(target.container.x + (Math.random()-0.5)*20, target.container.y + (Math.random()-0.5)*15, 0xffd700), 150);
               }
-              if (ev.new_hp != null) updateNineHP(toId, ev.new_hp, target?.maxHp);
-            });
+              spawnParticles(target.container.x, target.container.y, getHouseColor(ev.from_house), 12, 'fire');
+              shakeSprite(target);
+              if (target.spriteGroup) {
+                target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff4444; });
+                setTimeout(() => { if (target.spriteGroup) target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 450);
+              }
+            }
+            if (ev.new_hp != null) updateNineHP(toId, ev.new_hp, target?.maxHp);
           });
         } else if (cardType === 'manipulation') {
           // MANIPULATION: hex bolt / dark projectile with firework
@@ -2823,78 +2848,140 @@
       attacker.spriteGroup.scale.x = (endX < startX) ? -Math.abs(attacker.spriteGroup.scale.x) : Math.abs(attacker.spriteGroup.scale.x);
     }
 
-    // ── PHASE 2: PROJECTILE FLIGHT (delayed 300ms for charge) ──
+    // ── PHASE 2: MISSILE FLIGHT (delayed 450ms for charge) ──
     setTimeout(() => {
-      // Create main bolt — bigger, brighter
-      const bolt = new PIXI.Graphics();
-      bolt.beginFill(0xffffff, 0.95);
-      bolt.drawCircle(0, 0, 3);
-      bolt.endFill();
-      bolt.beginFill(color, 0.9);
-      bolt.drawCircle(0, 0, 6);
-      bolt.endFill();
-      bolt.beginFill(color, 0.3);
-      bolt.drawCircle(0, 0, 12);
-      bolt.endFill();
-      bolt.x = startX;
-      bolt.y = startY;
-      bolt.zIndex = 100;
-      state.arenaApp.stage.addChild(bolt);
+      // Create elongated missile container
+      const missile = new PIXI.Container();
+      missile.zIndex = 100;
+      missile.x = startX;
+      missile.y = startY;
+
+      // Outer glow (big dim ellipse)
+      const glow = new PIXI.Graphics();
+      glow.beginFill(color, 0.12);
+      glow.drawEllipse(0, 0, 30, 10);
+      glow.endFill();
+      missile.addChild(glow);
+
+      // Mid glow
+      const midG = new PIXI.Graphics();
+      midG.beginFill(color, 0.3);
+      midG.drawEllipse(0, 0, 18, 6);
+      midG.endFill();
+      missile.addChild(midG);
+
+      // Missile body (elongated ellipse)
+      const body = new PIXI.Graphics();
+      body.beginFill(color, 0.85);
+      body.drawEllipse(0, 0, 12, 4);
+      body.endFill();
+      missile.addChild(body);
+
+      // White hot nose
+      const nose = new PIXI.Graphics();
+      nose.beginFill(0xffffff, 1);
+      nose.drawEllipse(5, 0, 5, 2);
+      nose.endFill();
+      missile.addChild(nose);
+
+      // White core center
+      const core = new PIXI.Graphics();
+      core.beginFill(0xffffff, 0.9);
+      core.drawEllipse(0, 0, 4, 1.5);
+      core.endFill();
+      missile.addChild(core);
+
+      state.arenaApp.stage.addChild(missile);
 
       const trail = [];
       let frame = 0;
-      const totalFrames = 70; // ~1.2 seconds flight — SLOW dramatic arc
-      const arcHeight = 45 + Math.random() * 25;
+      let prevX = startX, prevY = startY;
+      const totalFrames = 90; // 1.5 SECONDS of flight
+      const arcHeight = 55 + Math.random() * 30;
 
       const ticker = () => {
         frame++;
         const t = frame / totalFrames;
         const ease = t < 0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
 
-        bolt.x = startX + (endX - startX) * ease;
-        bolt.y = startY + (endY - startY) * ease - Math.sin(t * Math.PI) * arcHeight;
-        bolt.scale.set(0.8 + Math.sin(t * Math.PI) * 0.6);
-        bolt.rotation += 0.12;
+        const newX = startX + (endX - startX) * ease;
+        const newY = startY + (endY - startY) * ease - Math.sin(t * Math.PI) * arcHeight;
 
-        // CONTINUOUS TRAIL — spawn debris EVERY FRAME
-        const trailCount = 2 + Math.floor(Math.random() * 2);
+        // Rotate missile to face flight direction
+        const dx = newX - prevX;
+        const dy = newY - prevY;
+        if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
+          missile.rotation = Math.atan2(dy, dx);
+        }
+
+        prevX = missile.x;
+        prevY = missile.y;
+        missile.x = newX;
+        missile.y = newY;
+
+        // Pulse size
+        const pulse = 0.85 + Math.sin(t * Math.PI) * 0.35;
+        missile.scale.set(pulse);
+
+        // ═══ HEAVY CONTINUOUS TRAIL — 3-5 debris PER FRAME ═══
+        const trailCount = 3 + Math.floor(Math.random() * 3);
         for (let ti = 0; ti < trailCount; ti++) {
           const tp = new PIXI.Graphics();
-          const ts = 1.5 + Math.random() * 2.5;
-          tp.beginFill(color, 0.7);
+          const ts = 1.5 + Math.random() * 3;
+          tp.beginFill(color, 0.75);
           tp.drawRect(-ts/2, -ts/2, ts, ts);
           tp.endFill();
-          // White core on some
           if (Math.random() < 0.3) {
             tp.beginFill(0xffffff, 0.4);
             tp.drawRect(-0.5, -0.5, 1, 1);
             tp.endFill();
           }
-          tp.x = bolt.x + (Math.random()-0.5) * 8;
-          tp.y = bolt.y + (Math.random()-0.5) * 8;
+          tp.x = missile.x + (Math.random()-0.5) * 10 - dx * ti * 0.4;
+          tp.y = missile.y + (Math.random()-0.5) * 10 - dy * ti * 0.4;
           tp.zIndex = 99;
           state.arenaApp.stage.addChild(tp);
           trail.push({
-            gfx: tp, life: 28 + Math.random() * 18, f: 0,
-            vx: (Math.random()-0.5) * 0.8,
-            vy: 0.2 + Math.random() * 0.4,
-            gravity: 0.04,
+            gfx: tp, life: 32 + Math.random() * 22, f: 0,
+            vx: -dx * 0.2 + (Math.random()-0.5) * 1.0,
+            vy: -dy * 0.2 + 0.3 + Math.random() * 0.5,
+            gravity: 0.05,
           });
         }
 
-        // Fade + gravity on trail debris
+        // White sparkle every 2 frames
+        if (frame % 2 === 0) {
+          const sp = new PIXI.Graphics();
+          sp.beginFill(0xffffff, 0.8);
+          sp.drawRect(-1, -1, 2, 2);
+          sp.endFill();
+          sp.x = missile.x;
+          sp.y = missile.y;
+          sp.zIndex = 99;
+          state.arenaApp.stage.addChild(sp);
+          trail.push({ gfx: sp, life: 16, f: 0, vx: (Math.random()-0.5)*0.4, vy: -0.4-Math.random()*0.3, gravity: 0 });
+        }
+
+        // Physics on trail debris (gravity + fade)
         for (const tp of trail) {
           tp.f++;
-          tp.vy += tp.gravity;
+          if (tp.gravity) tp.vy += tp.gravity;
           tp.gfx.x += tp.vx;
           tp.gfx.y += tp.vy;
-          tp.gfx.alpha = Math.max(0, 0.7 - tp.f / tp.life);
-          tp.gfx.scale.set(Math.max(0.15, 1 - tp.f / tp.life * 0.5));
+          tp.gfx.alpha = Math.max(0, 0.75 - tp.f / tp.life);
+          tp.gfx.scale.set(Math.max(0.15, 1 - tp.f / tp.life * 0.45));
+        }
+
+        // Clean up dead trail particles during flight
+        for (let ti = trail.length - 1; ti >= 0; ti--) {
+          if (trail[ti].f >= trail[ti].life) {
+            state.arenaApp.stage.removeChild(trail[ti].gfx);
+            trail.splice(ti, 1);
+          }
         }
 
         if (frame >= totalFrames) {
           state.arenaApp.ticker.remove(ticker);
-          state.arenaApp.stage.removeChild(bolt);
+          state.arenaApp.stage.removeChild(missile);
           for (const tp of trail) state.arenaApp.stage.removeChild(tp.gfx);
 
           // ── PHASE 3: FIREWORK IMPACT EXPLOSION ──
@@ -2904,7 +2991,7 @@
         }
       };
       state.arenaApp.ticker.add(ticker);
-    }, 300); // charge delay
+    }, 450); // charge delay
 
     attacker.isAnimating = false;
   }
