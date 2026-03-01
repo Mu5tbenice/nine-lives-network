@@ -919,6 +919,20 @@
         drawArenaGround(state.arenaApp);
       }
     });
+
+    // ── IDLE ANIMATION TICKER ──
+    // Gentle bobbing so Nines look alive
+    app.ticker.add((delta) => {
+      const time = performance.now() / 1000;
+      state.nines.forEach((nine) => {
+        if (nine.isAnimating) return; // don't interfere with attack/ko anims
+        const bob = Math.sin(time * 1.5 + nine.bobPhase) * 2;
+        nine.spriteGroup.y = bob;
+        // Subtle scale pulse
+        const pulse = 1 + Math.sin(time * 2 + nine.bobPhase) * 0.015;
+        nine.spriteGroup.scale.set(pulse, pulse);
+      });
+    });
   }
 
   function drawArenaGround(app) {
@@ -1083,7 +1097,10 @@
       hp: nine.current_hp || nine.max_hp || 100,
       maxHp: nine.max_hp || 100,
       stats: nine.stats || {},
+      homeX: nine.position.x, homeY: nine.position.y,
       targetX: nine.position.x, targetY: nine.position.y,
+      bobPhase: Math.random() * Math.PI * 2, // random start so they don't all bob in sync
+      isAnimating: false,
     });
 
     // Set initial HP bar
@@ -1110,30 +1127,320 @@
     state.nines.delete(nineId);
   }
 
-  function showFloatingText(x, y, text, color = 0xff4466) {
+  function showFloatingText(x, y, text, color = 0xff4466, size = 12) {
     if (!state.arenaApp) return;
     const style = new PIXI.TextStyle({
-      fontFamily: "'Press Start 2P', monospace", fontSize: 10, fill: color, fontWeight: '700',
-      dropShadow: true, dropShadowColor: 0x000000, dropShadowDistance: 1,
+      fontFamily: "'Press Start 2P', monospace", fontSize: size, fill: color, fontWeight: '700',
+      dropShadow: true, dropShadowColor: 0x000000, dropShadowDistance: 2, dropShadowBlur: 2,
+      stroke: 0x000000, strokeThickness: 3,
     });
     const t = new PIXI.Text(text, style);
     t.anchor.set(0.5);
-    t.x = x + (Math.random() - 0.5) * 20;
-    t.y = y - 10;
+    t.x = x + (Math.random() - 0.5) * 16;
+    t.y = y - 20;
+    t.zIndex = 100;
     state.arenaApp.stage.addChild(t);
 
-    // Animate up and fade
+    // Slower arc upward with scale pop
     let frame = 0;
+    const totalFrames = 60; // ~1 second
+    const startY = t.y;
+    const startScale = 1.3;
     const ticker = () => {
       frame++;
-      t.y -= 1;
-      t.alpha = Math.max(0, 1 - frame / 40);
-      if (frame > 40) {
+      const progress = frame / totalFrames;
+      t.y = startY - progress * 35; // float up 35px
+      t.alpha = progress < 0.3 ? 1 : Math.max(0, 1 - (progress - 0.3) / 0.7);
+      const scale = startScale - (startScale - 0.8) * progress;
+      t.scale.set(scale, scale);
+      if (frame >= totalFrames) {
         state.arenaApp.ticker.remove(ticker);
         state.arenaApp.stage.removeChild(t);
       }
     };
     state.arenaApp.ticker.add(ticker);
+  }
+
+  // ═══════════════════════════════════════════
+  // COMBAT ANIMATION SYSTEM
+  // ═══════════════════════════════════════════
+
+  /** Animate a Nine lunging toward a target position, then returning */
+  function animateLunge(attackerId, targetId, onHit) {
+    const attacker = state.nines.get(attackerId);
+    const target = state.nines.get(targetId);
+    if (!attacker || !target || !state.arenaApp) {
+      if (onHit) onHit();
+      return;
+    }
+
+    attacker.isAnimating = true;
+    const startX = attacker.container.x;
+    const startY = attacker.container.y;
+    const targetX = target.container.x;
+    const targetY = target.container.y;
+
+    // Flip sprite to face target direction
+    const facingLeft = targetX < startX;
+    attacker.spriteGroup.scale.x = facingLeft ? -1 : 1;
+
+    // Move 70% toward target (not all the way — stop just short)
+    const dx = (targetX - startX) * 0.7;
+    const dy = (targetY - startY) * 0.7;
+
+    let frame = 0;
+    const lungeFrames = 12; // fast lunge
+    const holdFrames = 6;   // hold at target
+    const returnFrames = 16; // slower return
+    const totalFrames = lungeFrames + holdFrames + returnFrames;
+
+    const ticker = () => {
+      frame++;
+
+      if (frame <= lungeFrames) {
+        // Lunge forward (ease-in)
+        const t = frame / lungeFrames;
+        const ease = t * t; // accelerate
+        attacker.container.x = startX + dx * ease;
+        attacker.container.y = startY + dy * ease;
+        // Lean forward
+        attacker.spriteGroup.rotation = Math.atan2(dy, dx) * 0.15 * (facingLeft ? -1 : 1);
+        // Scale up slightly for impact feel (preserve flip)
+        const scaleAmt = 1 + t * 0.15;
+        attacker.spriteGroup.scale.set(facingLeft ? -scaleAmt : scaleAmt, scaleAmt);
+
+      } else if (frame === lungeFrames + 1) {
+        // HIT MOMENT — trigger damage, particles, screen shake
+        if (onHit) onHit();
+        // Shake the target
+        shakeSprite(target);
+        // Camera shake (subtle)
+        shakeCamera();
+
+      } else if (frame <= lungeFrames + holdFrames) {
+        // Hold position
+
+      } else {
+        // Return to home (ease-out)
+        const t = (frame - lungeFrames - holdFrames) / returnFrames;
+        const ease = 1 - (1 - t) * (1 - t); // decelerate
+        attacker.container.x = startX + dx * (1 - ease);
+        attacker.container.y = startY + dy * (1 - ease);
+        attacker.spriteGroup.rotation *= 0.85; // straighten up
+        const scale = 1.15 - 0.15 * ease;
+        attacker.spriteGroup.scale.set(facingLeft ? -scale : scale, scale);
+      }
+
+      if (frame >= totalFrames) {
+        state.arenaApp.ticker.remove(ticker);
+        attacker.container.x = startX;
+        attacker.container.y = startY;
+        attacker.spriteGroup.rotation = 0;
+        attacker.spriteGroup.scale.set(1, 1); // reset flip + scale
+        attacker.isAnimating = false;
+      }
+    };
+    state.arenaApp.ticker.add(ticker);
+  }
+
+  /** Shake a sprite briefly on hit */
+  function shakeSprite(nine) {
+    if (!nine || !state.arenaApp) return;
+    nine.isAnimating = true;
+    const origX = nine.container.x;
+    let frame = 0;
+    const ticker = () => {
+      frame++;
+      const intensity = Math.max(0, 5 - frame * 0.5);
+      nine.container.x = origX + (Math.random() - 0.5) * intensity;
+      if (frame >= 10) {
+        state.arenaApp.ticker.remove(ticker);
+        nine.container.x = origX;
+        nine.isAnimating = false;
+      }
+    };
+    state.arenaApp.ticker.add(ticker);
+  }
+
+  /** Subtle camera shake on big hits */
+  function shakeCamera() {
+    if (!state.arenaApp) return;
+    const stage = state.arenaApp.stage;
+    const origX = stage.x, origY = stage.y;
+    let frame = 0;
+    const ticker = () => {
+      frame++;
+      const intensity = Math.max(0, 3 - frame * 0.4);
+      stage.x = origX + (Math.random() - 0.5) * intensity;
+      stage.y = origY + (Math.random() - 0.5) * intensity;
+      if (frame >= 8) {
+        state.arenaApp.ticker.remove(ticker);
+        stage.x = origX;
+        stage.y = origY;
+      }
+    };
+    state.arenaApp.ticker.add(ticker);
+  }
+
+  /** Spawn particle burst at a position */
+  function spawnParticles(x, y, color, count, type) {
+    if (!state.arenaApp) return;
+    const particles = [];
+    for (let i = 0; i < count; i++) {
+      const p = new PIXI.Graphics();
+      const particleColor = typeof color === 'number' ? color : 0xffffff;
+
+      if (type === 'fire') {
+        // Fire particles: small flickering triangles
+        p.beginFill(particleColor, 0.9);
+        const s = 2 + Math.random() * 3;
+        p.moveTo(0, -s); p.lineTo(-s * 0.6, s * 0.5); p.lineTo(s * 0.6, s * 0.5);
+        p.closePath();
+        p.endFill();
+      } else if (type === 'poison') {
+        // Poison: small circles that rise
+        p.beginFill(particleColor, 0.8);
+        p.drawCircle(0, 0, 1.5 + Math.random() * 2);
+        p.endFill();
+      } else if (type === 'heal') {
+        // Heal: sparkle crosses
+        const s = 1.5 + Math.random() * 2;
+        p.beginFill(particleColor, 0.9);
+        p.drawRect(-s, -0.5, s * 2, 1);
+        p.drawRect(-0.5, -s, 1, s * 2);
+        p.endFill();
+      } else if (type === 'shield') {
+        // Shield: ring segments
+        p.lineStyle(1.5, particleColor, 0.8);
+        const angle = Math.random() * Math.PI * 2;
+        p.arc(0, 0, 15 + Math.random() * 5, angle, angle + 0.5);
+      } else if (type === 'lightning') {
+        // Lightning: small bolts
+        p.lineStyle(1.5, particleColor, 0.9);
+        const segs = 3;
+        let px = 0, py = 0;
+        for (let s = 0; s < segs; s++) {
+          const nx = px + (Math.random() - 0.5) * 8;
+          const ny = py + 3 + Math.random() * 4;
+          p.moveTo(px, py);
+          p.lineTo(nx, ny);
+          px = nx; py = ny;
+        }
+      } else {
+        // Default: circles
+        p.beginFill(particleColor, 0.8);
+        p.drawCircle(0, 0, 1 + Math.random() * 2.5);
+        p.endFill();
+      }
+
+      p.x = x + (Math.random() - 0.5) * 20;
+      p.y = y + (Math.random() - 0.5) * 16;
+      p.zIndex = 99;
+      state.arenaApp.stage.addChild(p);
+      particles.push({
+        gfx: p,
+        vx: (Math.random() - 0.5) * 3,
+        vy: type === 'heal' ? -(1 + Math.random() * 2) : (Math.random() - 0.5) * 3,
+        life: 30 + Math.random() * 20,
+        frame: 0,
+      });
+    }
+
+    const ticker = () => {
+      let allDone = true;
+      for (const p of particles) {
+        p.frame++;
+        p.gfx.x += p.vx;
+        p.gfx.y += p.vy;
+        if (type === 'fire') p.vy -= 0.15; // fire rises
+        if (type === 'poison') p.vy -= 0.08; // poison drifts up
+        p.gfx.alpha = Math.max(0, 1 - p.frame / p.life);
+        p.gfx.scale.set(1 - p.frame / p.life * 0.5);
+        if (p.frame < p.life) allDone = false;
+      }
+      if (allDone) {
+        state.arenaApp.ticker.remove(ticker);
+        for (const p of particles) {
+          state.arenaApp.stage.removeChild(p.gfx);
+        }
+      }
+    };
+    state.arenaApp.ticker.add(ticker);
+  }
+
+  /** Animate a KO — spin, shrink, fade */
+  function animateKO(nineId) {
+    const nine = state.nines.get(nineId);
+    if (!nine || !state.arenaApp) return;
+    nine.isAnimating = true;
+
+    const startX = nine.container.x;
+    const startY = nine.container.y;
+    let frame = 0;
+    const totalFrames = 45;
+
+    // Red flash
+    if (nine.spriteGroup) {
+      nine.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff2222; });
+    }
+
+    // Explosion particles
+    spawnParticles(startX, startY, 0xff4466, 15, 'fire');
+
+    const ticker = () => {
+      frame++;
+      const t = frame / totalFrames;
+
+      // Spin
+      nine.spriteGroup.rotation = t * Math.PI * 3;
+      // Shrink
+      const scale = Math.max(0, 1 - t);
+      nine.spriteGroup.scale.set(scale, scale);
+      // Fade
+      nine.container.alpha = Math.max(0.15, 1 - t);
+      // Rise slightly
+      nine.container.y = startY - t * 15;
+
+      if (frame >= totalFrames) {
+        state.arenaApp.ticker.remove(ticker);
+        nine.spriteGroup.rotation = 0;
+        nine.spriteGroup.scale.set(0.3, 0.3);
+        nine.container.alpha = 0.15;
+        nine.container.y = startY;
+        nine.isAnimating = false;
+      }
+    };
+    state.arenaApp.ticker.add(ticker);
+  }
+
+  /** Get effect particle config */
+  function getEffectParticles(effectType) {
+    const effects = {
+      BURN_APPLY:   { color: 0xff8833, count: 12, type: 'fire' },
+      BURN_TICK:    { color: 0xff6622, count: 8,  type: 'fire' },
+      POISON_APPLY: { color: 0x88ee44, count: 10, type: 'poison' },
+      POISON_TICK:  { color: 0x66cc33, count: 6,  type: 'poison' },
+      HEAL:         { color: 0x44ffaa, count: 10, type: 'heal' },
+      BLESS:        { color: 0x44ff88, count: 8,  type: 'heal' },
+      WARD:         { color: 0xD4A64B, count: 8,  type: 'shield' },
+      BARRIER:      { color: 0x5599ff, count: 8,  type: 'shield' },
+      ANCHOR_SAVE:  { color: 0xffd700, count: 15, type: 'shield' },
+      SILENCE:      { color: 0xbb88ff, count: 8,  type: 'default' },
+      HEX:          { color: 0x9966dd, count: 8,  type: 'default' },
+      HASTE:        { color: 0x90E0EF, count: 8,  type: 'lightning' },
+      INSPIRE:      { color: 0xffd700, count: 8,  type: 'heal' },
+      CORRODE_TICK: { color: 0x88aa33, count: 6,  type: 'poison' },
+      DRAIN:        { color: 0xff3366, count: 8,  type: 'default' },
+      SIPHON:       { color: 0xff3366, count: 6,  type: 'default' },
+      SHATTER:      { color: 0xff4466, count: 20, type: 'fire' },
+      INFECT:       { color: 0x66cc33, count: 12, type: 'poison' },
+      CLEANSE:      { color: 0xffffff, count: 12, type: 'heal' },
+      REFLECT:      { color: 0x5599ff, count: 10, type: 'shield' },
+      STEALTH:      { color: 0x7B2D8E, count: 8,  type: 'default' },
+      CHAIN:        { color: 0x5599ff, count: 8,  type: 'lightning' },
+      LEECH_FIELD:  { color: 0x88ee44, count: 6,  type: 'poison' },
+    };
+    return effects[effectType] || { color: 0xD4A64B, count: 6, type: 'default' };
   }
 
   // ===== SOCKET.IO =====
@@ -1188,64 +1495,127 @@
       removeNineSprite(data.nine_id);
     });
 
-    // Round start
+    // ── CYCLE START — new 5-min cycle beginning
+    socket.on('arena:cycle_start', (data) => {
+      const cycleNum = data.cycle_number || data.cycle || '?';
+      const totalRounds = data.total_rounds || 3;
+      console.log('🎮 CYCLE START:', cycleNum, '— Rounds:', totalRounds);
+      addFeedEvent(`⚔️ COMBAT CYCLE ${cycleNum} — ${totalRounds} Rounds!`, 'system');
+      showRoundBanner(`CYCLE ${cycleNum}`, `${totalRounds} Rounds Begin!`);
+    });
+
+    // ── ROUND START — happens 3 times per cycle
     socket.on('arena:round_start', (data) => {
-      console.log('🎮 ROUND START:', data.round_number, '— Nines:', data.nines?.length);
-      addFeedEvent(`⚔️ ROUND ${data.round_number} — FIGHT!`, 'system');
-      showRoundBanner(`ROUND ${data.round_number}`, 'FIGHT!');
-      updateRoundBadge(data.round_number);
+      console.log('🎮 ROUND START:', data.round_number, 'of', data.total_rounds);
+      const roundLabel = `ROUND ${data.round_number} of ${data.total_rounds}`;
+      addFeedEvent(`⚔️ ${roundLabel} — FIGHT!`, 'system');
+      showRoundBanner(roundLabel, 'FIGHT!');
+      updateRoundBadge(data.round_number, data.total_rounds);
+      // Sync HP states
       if (data.nines) {
         for (const nine of data.nines) {
-          if (state.nines.has(nine.id)) {
-            updateNineHP(nine.id, nine.current_hp, nine.max_hp);
-            const sprite = state.nines.get(nine.id);
+          const nineId = nine.player_id || nine.id;
+          if (state.nines.has(nineId)) {
+            updateNineHP(nineId, nine.hp || nine.current_hp, nine.maxHp || nine.max_hp);
+            const sprite = state.nines.get(nineId);
             if (sprite && nine.alive) sprite.container.alpha = 1;
           }
         }
       }
     });
 
-    // Batched combat events — STAGGER with 400ms delays so animations are visible
+    // ── COMBAT EVENTS — individual events from engine (staggered server-side)
+    socket.on('arena:event', (ev) => {
+      processArenaEvent(ev);
+    });
+
+    // ── COMBAT EVENTS — bulk (legacy fallback)
     socket.on('arena:events', (data) => {
       if (!data.events || data.events.length === 0) return;
-      console.log('🎮 COMBAT EVENTS:', data.events.length, data.events.map(e => e.type));
+      console.log('🎮 ROUND', data.round || '?', 'EVENTS:', data.events.length);
       data.events.forEach((ev, i) => {
-        setTimeout(() => processArenaEvent(ev), i * 400);
+        const delay = ev.type === 'attack' ? i * 900 : i * 600;
+        setTimeout(() => processArenaEvent(ev), delay);
       });
     });
 
-    // Individual event types
+    // Individual event types (fallback)
     socket.on('arena:attack', (data) => processArenaEvent({ type: 'attack', ...data }));
 
-    // Round end — delay to show after staggered events finish
+    // ── ROUND END — show round results
     socket.on('arena:round_end', (data) => {
-      console.log('🎮 ROUND END:', data.round_number, 'Winner:', data.winner_guild);
-      const delay = 3000; // show after events finish animating
-      setTimeout(() => {
-        addFeedEvent(`🏆 Round ${data.round_number}: ${data.winner_guild || 'Draw'} wins!`, 'system');
-        showRoundBanner(`ROUND ${data.round_number} OVER`, `${data.winner_guild || 'Draw'} wins!`);
-        if (data.guild_scores) {
-          state.guildScores = data.guild_scores;
-          updateScoreboard();
-        }
-      }, delay);
-    });
+      console.log('🎮 ROUND END:', data.round_number, 'of', data.total_rounds);
 
-    // Round heal
-    socket.on('arena:round_heal', (data) => {
+      const roundLabel = `ROUND ${data.round_number}/${data.total_rounds}`;
+      addFeedEvent(`🏆 ${roundLabel} complete`, 'system');
+      showRoundBanner(`${roundLabel} OVER`, 'Fighters regroup...');
+
+      // Sync HP from server
       if (data.nines) {
-        for (const n of data.nines) {
-          updateNineHP(n.id, n.hp_after, state.nines.get(n.id)?.maxHp || n.hp_after);
-          const sprite = state.nines.get(n.id);
-          if (sprite) showFloatingText(sprite.container.x, sprite.container.y, '+HEAL', 0x44cc88);
+        for (const nine of data.nines) {
+          const nineId = nine.player_id || nine.id;
+          updateNineHP(nineId, nine.current_hp || nine.hp, nine.max_hp || nine.maxHp);
         }
+      }
+
+      if (data.guild_scores) {
+        state.guildScores = data.guild_scores;
+        updateScoreboard();
       }
     });
 
-    // Cycle end
+    // ── HEAL PHASE — between rounds, survivors heal 25%
+    socket.on('arena:heal_phase', (data) => {
+      console.log('🎮 HEAL PHASE: after round', data.round_just_ended, '→ next round', data.next_round);
+      addFeedEvent(`💚 Between-round heal — 25% HP restored`, 'system');
+      showRoundBanner('HEALING', '+25% HP');
+
+      // Animate heal on all alive Nines
+      if (data.heals) {
+        data.heals.forEach((h, i) => {
+          setTimeout(() => {
+            const nineId = h.nine_id;
+            updateNineHP(nineId, h.new_hp, null);
+            const sprite = state.nines.get(nineId);
+            if (sprite) {
+              showFloatingText(sprite.container.x, sprite.container.y, `+${h.amount}`, 0x44ffaa, 11);
+              spawnParticles(sprite.container.x, sprite.container.y, 0x44ffaa, 8, 'heal');
+            }
+          }, i * 200); // stagger heal visuals slightly
+        });
+      }
+
+      // Also sync full HP state
+      if (data.nines) {
+        setTimeout(() => {
+          for (const nine of data.nines) {
+            const nineId = nine.player_id || nine.id;
+            updateNineHP(nineId, nine.current_hp || nine.hp, nine.max_hp || nine.maxHp);
+          }
+        }, 1500);
+      }
+    });
+
+    // ── CYCLE END — final results
     socket.on('arena:cycle_end', (data) => {
       console.log('🎮 CYCLE END:', data);
-      showRoundBanner('CYCLE COMPLETE', 'Sharpness -1%');
+      const winner = data.winner_guild || 'No winner';
+      const cycleNum = data.cycle_number || data.cycle || '?';
+      showRoundBanner('CYCLE COMPLETE', `${winner} controls zone`);
+      addFeedEvent(`🏁 Cycle ${cycleNum} complete — ${winner} controls zone`, 'system');
+
+      // Sync final HP state
+      if (data.nines) {
+        for (const nine of data.nines) {
+          const nineId = nine.player_id || nine.id;
+          updateNineHP(nineId, nine.current_hp || nine.hp, nine.max_hp || nine.maxHp);
+        }
+      }
+
+      if (data.guild_scores) {
+        state.guildScores = data.guild_scores;
+        updateScoreboard();
+      }
     });
 
     // Nerm commentary
@@ -1260,23 +1630,35 @@
   }
 
   function processArenaEvent(ev) {
-    console.log('🎮 Processing event:', ev.type, ev);
     switch (ev.type) {
       case 'attack': {
-        const sprite = state.nines.get(ev.to);
-        console.log('  Attack sprite lookup:', ev.to, '→', sprite ? 'FOUND' : 'NOT FOUND', 'Map keys:', [...state.nines.keys()]);
-        if (sprite) {
-          showFloatingText(sprite.container.x, sprite.container.y, `-${ev.damage}`, ev.crit ? 0xffd700 : 0xff4466);
-          if (ev.crit) showFloatingText(sprite.container.x, sprite.container.y - 15, 'CRIT!', 0xffd700);
-          // Flash red on hit
-          if (sprite.spriteGroup) {
-            sprite.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff4444; });
-            setTimeout(() => {
-              if (sprite.spriteGroup) sprite.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; });
-            }, 150);
+        const targetSprite = state.nines.get(ev.to);
+        const attackerSprite = state.nines.get(ev.from);
+
+        // Lunge animation — damage happens on hit
+        animateLunge(ev.from, ev.to, () => {
+          // ON HIT callback
+          if (targetSprite) {
+            // Damage number
+            const dmgSize = ev.crit ? 16 : 12;
+            showFloatingText(targetSprite.container.x, targetSprite.container.y, `-${ev.damage}`, ev.crit ? 0xffd700 : 0xff4466, dmgSize);
+            if (ev.crit) {
+              showFloatingText(targetSprite.container.x, targetSprite.container.y - 25, 'CRIT!', 0xffd700, 14);
+              spawnParticles(targetSprite.container.x, targetSprite.container.y, 0xffd700, 10, 'lightning');
+            }
+            // Impact particles (red sparks)
+            spawnParticles(targetSprite.container.x, targetSprite.container.y, 0xff5555, 6, 'fire');
+            // Red flash on target
+            if (targetSprite.spriteGroup) {
+              targetSprite.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff4444; });
+              setTimeout(() => {
+                if (targetSprite.spriteGroup) targetSprite.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; });
+              }, 200);
+            }
           }
-        }
-        addFeedEvent(`${getNineName(ev.from)} → ${getNineName(ev.to)} -${ev.damage}${ev.crit ? ' CRIT!' : ''}`, 'attack');
+        });
+
+        addFeedEvent(`⚔️ ${getNineName(ev.from)} → ${getNineName(ev.to)} -${ev.damage}${ev.crit ? ' CRIT!' : ''}`, 'attack');
         break;
       }
       case 'damage': {
@@ -1286,28 +1668,51 @@
       }
       case 'heal': {
         const sprite = state.nines.get(ev.nine_id);
-        if (sprite) showFloatingText(sprite.container.x, sprite.container.y, `+${ev.amount}`, 0x44cc88);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y, `+${ev.amount}`, 0x44ffaa, 12);
+          spawnParticles(sprite.container.x, sprite.container.y, 0x44ffaa, 10, 'heal');
+          // Green flash
+          if (sprite.spriteGroup) {
+            sprite.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0x44ff88; });
+            setTimeout(() => {
+              if (sprite.spriteGroup) sprite.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; });
+            }, 300);
+          }
+        }
         updateNineHP(ev.nine_id, ev.new_hp, state.nines.get(ev.nine_id)?.maxHp || 100);
         break;
       }
       case 'ko': {
-        addFeedEvent(`💀 ${getNineName(ev.nine_id)} was KO'd${ev.killer_id ? ` by ${getNineName(ev.killer_id)}` : ''}`, 'ko');
-        // Fade out sprite
-        const sprite = state.nines.get(ev.nine_id);
-        if (sprite) {
-          sprite.container.alpha = 0.3;
-          showFloatingText(sprite.container.x, sprite.container.y, 'KO', 0xff4466);
-        }
+        addFeedEvent(`💀 ${getNineName(ev.nine_id)} was KO'd!`, 'ko');
+        animateKO(ev.nine_id);
+        showFloatingText(
+          state.nines.get(ev.nine_id)?.container?.x || 0,
+          (state.nines.get(ev.nine_id)?.container?.y || 0) - 30,
+          'K.O.', 0xff2222, 16
+        );
         break;
       }
       case 'dodge': {
         const sprite = state.nines.get(ev.nine_id);
-        if (sprite) showFloatingText(sprite.container.x, sprite.container.y, 'DODGE', 0x90E0EF);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y, 'DODGE!', 0x90E0EF, 11);
+          // Quick sidestep animation
+          const origX = sprite.container.x;
+          sprite.container.x += 15;
+          sprite.container.alpha = 0.5;
+          setTimeout(() => {
+            sprite.container.x = origX;
+            sprite.container.alpha = 1;
+          }, 300);
+        }
         break;
       }
       case 'ward_pop': {
         const sprite = state.nines.get(ev.nine_id);
-        if (sprite) showFloatingText(sprite.container.x, sprite.container.y, 'WARD!', 0xD4A64B);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y, 'BLOCKED!', 0xD4A64B, 11);
+          spawnParticles(sprite.container.x, sprite.container.y, 0xD4A64B, 10, 'shield');
+        }
         break;
       }
       case 'effect': {
@@ -1318,25 +1723,27 @@
   }
 
   function processEffectEvent(ev) {
-    const effectColors = {
-      BURN_APPLY: 0xffaa55, BURN_TICK: 0xffaa55, POISON_APPLY: 0xaaee55, POISON_TICK: 0xaaee55,
-      CORRODE_TICK: 0xaaee55, SILENCE: 0xbb88ff, HEX: 0xbb88ff, WEAKEN: 0x999999,
-      ANCHOR_SAVE: 0xffd700, SHATTER: 0xff4466, INFECT: 0xaaee55, CHAIN: 0x5599ff,
-      DRAIN: 0xff4466, SIPHON: 0xff4466, TAUNT: 0xff4466, REFLECT: 0x5599ff,
-      INSPIRE: 0xffd700, BLESS: 0x44cc88, HASTE: 0x90E0EF, STEALTH: 0x7B2D8E,
-      CLEANSE: 0xffffff, LEECH_FIELD: 0xaaee55,
-    };
-
     const targetId = ev.target_id || ev.nine_id;
     const sprite = state.nines.get(targetId);
-    const color = effectColors[ev.effect_type] || 0xD4A64B;
+
+    // Get particle config
+    const particles = getEffectParticles(ev.effect_type);
 
     if (sprite) {
-      showFloatingText(sprite.container.x, sprite.container.y - 20, ev.effect_type.replace('_', ' '), color);
+      // Spawn particles for every effect
+      spawnParticles(sprite.container.x, sprite.container.y, particles.color, particles.count, particles.type);
+      // Floating text
+      const label = ev.effect_type.replace(/_/g, ' ');
+      showFloatingText(sprite.container.x, sprite.container.y - 25, label, particles.color, 9);
     }
 
+    // Special feed messages
     if (ev.effect_type === 'ANCHOR_SAVE') {
       addFeedEvent(`⚓ ${getNineName(targetId)} saved by ANCHOR at 1 HP!`, 'effect');
+    } else if (ev.effect_type === 'SILENCE') {
+      addFeedEvent(`🤫 ${getNineName(targetId)} SILENCED!`, 'effect');
+    } else if (ev.effect_type === 'SHATTER') {
+      addFeedEvent(`💥 ${getNineName(targetId)} SHATTERED — splash damage!`, 'effect');
     }
   }
 
@@ -1357,9 +1764,13 @@
     setTimeout(() => { banner.style.display = 'none'; }, 2500);
   }
 
-  function updateRoundBadge(round, cycle) {
-    document.getElementById('arena-round-badge').textContent = `ROUND ${round || 1}`;
-    if (cycle) document.getElementById('arena-cycle-timer').textContent = `Cycle ${cycle}`;
+  function updateRoundBadge(round, totalRounds) {
+    const badge = document.getElementById('arena-round-badge');
+    if (totalRounds) {
+      badge.textContent = `ROUND ${round || 1}/${totalRounds}`;
+    } else {
+      badge.textContent = `ROUND ${round || 1}`;
+    }
   }
 
   function addFeedEvent(text, type) {
