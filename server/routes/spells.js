@@ -3,13 +3,13 @@
  * Mounted at /api/spells in index.js
  *
  * Public:
- *   GET /                    â€” all spells
- *   GET /rotation/:house     â€” daily rotation for a house
+ *   GET /                    — all spells
+ *   GET /rotation/:house     — daily rotation for a house
  *
  * Admin (requires x-admin-key header):
- *   POST   /                 â€” create a spell
- *   PUT    /:id              â€” update a spell
- *   DELETE /:id              â€” delete a spell
+ *   POST   /                 — create a spell
+ *   PUT    /:id              — update a spell
+ *   DELETE /:id              — delete a spell
  */
 
 const express = require('express');
@@ -35,7 +35,6 @@ router.get('/', async (req, res) => {
       .from('spells')
       .select('*')
       .order('house')
-      .order('tier')
       .order('name');
     if (error) throw error;
     res.json(data);
@@ -53,7 +52,6 @@ router.get('/rotation/:house', async (req, res) => {
       .from('spells')
       .select('*')
       .eq('house', 'universal')
-      .eq('tier', 0)
       .eq('is_active', true);
     if (uErr) throw uErr;
 
@@ -62,7 +60,7 @@ router.get('/rotation/:house', async (req, res) => {
       .select('*')
       .eq('house', house)
       .eq('is_active', true)
-      .order('tier');
+      .order('name');
     if (hErr) throw hErr;
 
     const today = new Date();
@@ -100,11 +98,9 @@ router.post('/', requireAdmin, async (req, res) => {
         name: name || 'New Spell',
         slug: finalSlug,
         house: (house || 'universal').toLowerCase(),
-        tier: tier || 0,
-        mana_cost: mana_cost || 1,
         spell_type: spell_type || 'attack',
         base_effect: base_effect || '',
-        bonus_effects: bonus_effects || '[]',
+        bonus_effects: bonus_effects || [],
         flavor_text: flavor_text || null,
         motto: motto || null,
         is_active: is_active !== false,
@@ -124,7 +120,7 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const updates = {};
-    const allowed = ['name', 'slug', 'house', 'tier', 'mana_cost', 'spell_type', 'base_effect', 'bonus_effects', 'flavor_text', 'motto', 'is_active', 'image_url', 'in_pack_pool', 'base_atk', 'base_hp', 'base_spd', 'base_def', 'base_luck', 'rarity_weights'];
+    const allowed = ['name', 'slug', 'house', 'spell_type', 'base_effect', 'bonus_effects', 'flavor_text', 'motto', 'is_active', 'image_url', 'in_pack_pool', 'base_atk', 'base_hp', 'base_spd', 'base_def', 'base_luck', 'rarity_weights'];
     allowed.forEach(key => {
       if (req.body[key] !== undefined) updates[key] = req.body[key];
     });

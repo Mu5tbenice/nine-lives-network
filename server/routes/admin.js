@@ -442,8 +442,8 @@ router.get('/players', async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('players')
-      .select('id, twitter_handle, school_id, community_tag, mana, seasonal_points, lifetime_points, streak, lives, arcane_energy, is_active, created_at')
-      .order('seasonal_points', { ascending: false });
+      .select('*')
+      .order('created_at', { ascending: false });
     if (error) throw error;
     res.json(data || []);
   } catch (e) { res.status(500).json({ error: e.message }); }
