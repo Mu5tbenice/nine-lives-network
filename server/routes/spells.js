@@ -37,7 +37,19 @@ router.get('/', async (req, res) => {
       .order('house')
       .order('name');
     if (error) throw error;
-    res.json(data);
+
+    // Fix image URLs — convert filenames to full Supabase Storage URLs
+    const fixed = (data || []).map(spell => {
+      if (spell.image_url && spell.image_url.indexOf('http') !== 0) {
+        const { data: urlData } = supabase.storage
+          .from('spell-images')
+          .getPublicUrl(spell.image_url);
+        spell.image_url = urlData.publicUrl;
+      }
+      return spell;
+    });
+
+    res.json(fixed);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
@@ -76,10 +88,23 @@ router.get('/rotation/:house', async (req, res) => {
       picked.push(pool.splice(idx, 1)[0]);
     }
 
+    // Fix image URLs for all spell arrays
+    function fixImageUrls(spells) {
+      return (spells || []).map(spell => {
+        if (spell.image_url && spell.image_url.indexOf('http') !== 0) {
+          const { data: urlData } = supabase.storage
+            .from('spell-images')
+            .getPublicUrl(spell.image_url);
+          spell.image_url = urlData.publicUrl;
+        }
+        return spell;
+      });
+    }
+
     res.json({
-      always: universals || [],
-      rotation: picked,
-      all_house_spells: houseSpells || []
+      always: fixImageUrls(universals),
+      rotation: fixImageUrls(picked),
+      all_house_spells: fixImageUrls(houseSpells)
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
