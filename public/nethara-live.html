@@ -1421,6 +1421,9 @@
     // Draw arena ground overlay (subtle grid over biome image)
     drawArenaGround(app);
 
+    // Assign initial round positions so Nines spread out
+    setTimeout(() => setRoundPositions(), 500);
+
     // Handle resize
     window.addEventListener('resize', () => {
       if (state.arenaApp) {
@@ -1445,31 +1448,42 @@
         const pulse = 1 + Math.sin(time * 2 + nine.bobPhase) * 0.015;
         nine.spriteGroup.scale.set(pulse, pulse);
 
-        // WANDER — drift to random nearby positions
-        if (!nine.wanderTarget || !nine.wanderTimer) {
-          nine.wanderTarget = {
-            x: nine.homeX + (Math.random() - 0.5) * 40,
-            y: nine.homeY + (Math.random() - 0.5) * 25,
-          };
-          nine.wanderTimer = 100 + Math.random() * 140; // 1.5-4s between wanders
-          // Store home position on first run
-          if (!nine.homeX) {
-            nine.homeX = nine.container.x;
-            nine.homeY = nine.container.y;
+        // ROUND POSITION — each Nine picks ONE spot per round and walks there
+        // roundTarget is set by setRoundPositions() at round start
+        if (nine.roundTarget) {
+          const wx = nine.roundTarget.x - nine.container.x;
+          const wy = nine.roundTarget.y - nine.container.y;
+          const dist = Math.sqrt(wx*wx + wy*wy);
+          if (dist > 2) {
+            // Slow deliberate walk — looks like actual movement
+            const speed = Math.min(0.8, dist * 0.008);
+            const angle = Math.atan2(wy, wx);
+            nine.container.x += Math.cos(angle) * speed;
+            nine.container.y += Math.sin(angle) * speed;
           }
         }
-        nine.wanderTimer -= delta;
-
-        // Smooth drift toward wander target
-        const wx = nine.wanderTarget.x - nine.container.x;
-        const wy = nine.wanderTarget.y - nine.container.y;
-        nine.container.x += wx * 0.015;
-        nine.container.y += wy * 0.015;
       });
     });
   }
 
   /** Set biome background image based on current zone's house */
+  /** Assign each Nine a single position for this round — they walk there and hold */
+  function setRoundPositions() {
+    const app = state.arenaApp;
+    if (!app) return;
+    const W = app.screen.width;
+    const H = app.screen.height;
+    const padding = 60; // stay away from edges
+
+    state.nines.forEach((nine) => {
+      nine.roundTarget = {
+        x: padding + Math.random() * (W - padding * 2),
+        y: padding + Math.random() * (H - padding * 2),
+      };
+    });
+    console.log('🎯 Round positions assigned');
+  }
+
   function setBiomeBackground(container) {
     const hKey = state.currentZone?.house
       || state.currentZone?.region_house
@@ -2054,8 +2068,8 @@
   function spawnParticles(x, y, color, count, type) {
     if (!state.arenaApp) return;
     const particles = [];
-    // Boost count for NOITA-level chaos
-    const boostedCount = Math.round(count * 2.5);
+    // Boost count slightly
+    const boostedCount = Math.round(count * 1.5);
 
     for (let i = 0; i < boostedCount; i++) {
       const p = new PIXI.Graphics();
@@ -2358,6 +2372,9 @@
       showRoundBanner(roundLabel, 'FIGHT!');
       updateRoundBadge(state.currentRound, state.totalRounds);
       updateCountdownDisplay();
+
+      // New round — Nines pick fresh positions and walk there
+      setRoundPositions();
       // Sync HP states
       if (data.nines) {
         for (const nine of data.nines) {
@@ -2856,38 +2873,38 @@
       missile.x = startX;
       missile.y = startY;
 
-      // Outer glow (big dim ellipse)
+      // Outer glow (subtle)
       const glow = new PIXI.Graphics();
-      glow.beginFill(color, 0.12);
-      glow.drawEllipse(0, 0, 30, 10);
+      glow.beginFill(color, 0.08);
+      glow.drawEllipse(0, 0, 16, 5);
       glow.endFill();
       missile.addChild(glow);
 
       // Mid glow
       const midG = new PIXI.Graphics();
-      midG.beginFill(color, 0.3);
-      midG.drawEllipse(0, 0, 18, 6);
+      midG.beginFill(color, 0.25);
+      midG.drawEllipse(0, 0, 10, 3.5);
       midG.endFill();
       missile.addChild(midG);
 
-      // Missile body (elongated ellipse)
+      // Missile body (small elongated core)
       const body = new PIXI.Graphics();
-      body.beginFill(color, 0.85);
-      body.drawEllipse(0, 0, 12, 4);
+      body.beginFill(color, 0.9);
+      body.drawEllipse(0, 0, 7, 2.5);
       body.endFill();
       missile.addChild(body);
 
       // White hot nose
       const nose = new PIXI.Graphics();
       nose.beginFill(0xffffff, 1);
-      nose.drawEllipse(5, 0, 5, 2);
+      nose.drawEllipse(3, 0, 3, 1.5);
       nose.endFill();
       missile.addChild(nose);
 
       // White core center
       const core = new PIXI.Graphics();
-      core.beginFill(0xffffff, 0.9);
-      core.drawEllipse(0, 0, 4, 1.5);
+      core.beginFill(0xffffff, 0.85);
+      core.drawEllipse(0, 0, 2.5, 1);
       core.endFill();
       missile.addChild(core);
 
@@ -2897,7 +2914,7 @@
       let frame = 0;
       let prevX = startX, prevY = startY;
       const totalFrames = 90; // 1.5 SECONDS of flight
-      const arcHeight = 55 + Math.random() * 30;
+      // NO ARC — straight line missile
 
       const ticker = () => {
         frame++;
@@ -2905,7 +2922,7 @@
         const ease = t < 0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
 
         const newX = startX + (endX - startX) * ease;
-        const newY = startY + (endY - startY) * ease - Math.sin(t * Math.PI) * arcHeight;
+        const newY = startY + (endY - startY) * ease; // straight line — no arc
 
         // Rotate missile to face flight direction
         const dx = newX - prevX;
@@ -2919,32 +2936,32 @@
         missile.x = newX;
         missile.y = newY;
 
-        // Pulse size
-        const pulse = 0.85 + Math.sin(t * Math.PI) * 0.35;
+        // Pulse size — subtler
+        const pulse = 0.9 + Math.sin(t * Math.PI) * 0.15;
         missile.scale.set(pulse);
 
-        // ═══ HEAVY CONTINUOUS TRAIL — 3-5 debris PER FRAME ═══
-        const trailCount = 3 + Math.floor(Math.random() * 3);
+        // ═══ LONG-LASTING FIREWORK TRAIL — lingers in the air ═══
+        const trailCount = 2 + Math.floor(Math.random() * 2);
         for (let ti = 0; ti < trailCount; ti++) {
           const tp = new PIXI.Graphics();
-          const ts = 1.5 + Math.random() * 3;
-          tp.beginFill(color, 0.75);
+          const ts = 1 + Math.random() * 2;
+          tp.beginFill(color, 0.65);
           tp.drawRect(-ts/2, -ts/2, ts, ts);
           tp.endFill();
-          if (Math.random() < 0.3) {
-            tp.beginFill(0xffffff, 0.4);
+          if (Math.random() < 0.25) {
+            tp.beginFill(0xffffff, 0.35);
             tp.drawRect(-0.5, -0.5, 1, 1);
             tp.endFill();
           }
-          tp.x = missile.x + (Math.random()-0.5) * 10 - dx * ti * 0.4;
-          tp.y = missile.y + (Math.random()-0.5) * 10 - dy * ti * 0.4;
+          tp.x = missile.x + (Math.random()-0.5) * 6 - dx * ti * 0.3;
+          tp.y = missile.y + (Math.random()-0.5) * 6 - dy * ti * 0.3;
           tp.zIndex = 99;
           state.arenaApp.stage.addChild(tp);
           trail.push({
-            gfx: tp, life: 32 + Math.random() * 22, f: 0,
-            vx: -dx * 0.2 + (Math.random()-0.5) * 1.0,
-            vy: -dy * 0.2 + 0.3 + Math.random() * 0.5,
-            gravity: 0.05,
+            gfx: tp, life: 55 + Math.random() * 40, f: 0, // LONG life — 55-95 frames
+            vx: -dx * 0.1 + (Math.random()-0.5) * 0.4,
+            vy: -dy * 0.1 + 0.15 + Math.random() * 0.25, // gentle fall
+            gravity: 0.015, // very light gravity — floats
           });
         }
 
@@ -2996,226 +3013,103 @@
     attacker.isAnimating = false;
   }
 
-  /** NOITA-STYLE FIREWORK EXPLOSION — massive multi-ring pixel debris cascade */
+  /** SMALL BEAUTIFUL FIREWORK — delicate starburst with long sparkle trails */
   function spawnFireworkExplosion(x, y, color) {
     if (!state.arenaApp) return;
 
-    // ═══ RING 1: Inner core burst — 40 fast bright pixels ═══
-    const ring1Count = 40;
-    for (let i = 0; i < ring1Count; i++) {
+    // ═══ STARBURST — 18 outward rays with trailing sparkles ═══
+    const rayCount = 18;
+    for (let i = 0; i < rayCount; i++) {
       const p = new PIXI.Graphics();
-      const size = 2 + Math.random() * 3;
+      const size = 1.5 + Math.random() * 2;
       p.beginFill(color, 0.9);
       p.drawRect(-size/2, -size/2, size, size);
       p.endFill();
-      p.beginFill(0xffffff, 0.5);
+      p.beginFill(0xffffff, 0.6);
       p.drawRect(-0.5, -0.5, 1, 1);
       p.endFill();
-      p.x = x + (Math.random()-0.5) * 4;
-      p.y = y + (Math.random()-0.5) * 4;
-      p.zIndex = 99;
+      p.x = x; p.y = y; p.zIndex = 99;
       state.arenaApp.stage.addChild(p);
 
-      const angle = (i / ring1Count) * Math.PI * 2 + (Math.random()-0.5)*0.3;
-      const speed = 2.5 + Math.random() * 3;
-      const vx = Math.cos(angle) * speed;
-      const vy = Math.sin(angle) * speed;
-      const life = 50 + Math.random() * 30;
+      const angle = (i / rayCount) * Math.PI * 2 + (Math.random()-0.5)*0.2;
+      const speed = 1.8 + Math.random() * 1.5;
       let pf = 0;
+      const life = 55 + Math.random() * 30;
 
       const pt = () => {
         pf++;
-        p.x += vx * 0.97; // slight friction
-        p.y += vy * 0.97 + 0.04; // gravity
-        p.rotation += 0.08;
+        p.x += Math.cos(angle) * speed * 0.97;
+        p.y += Math.sin(angle) * speed * 0.97 + 0.025;
         p.alpha = Math.max(0, 1 - pf / life);
-        p.scale.set(Math.max(0.2, 1 - pf / life * 0.4));
+        p.scale.set(Math.max(0.2, 1 - pf / life * 0.3));
 
-        // Trailing ember sparks — every 4 frames while alive
-        if (pf % 4 === 0 && pf < life * 0.6) {
+        // Long trailing sparkle
+        if (pf % 3 === 0 && pf < life * 0.7) {
           const sp = new PIXI.Graphics();
-          const ss = 1 + Math.random() * 1.5;
-          sp.beginFill(color, 0.5);
+          const ss = 0.8 + Math.random() * 1;
+          sp.beginFill(color, 0.45);
           sp.drawRect(-ss/2, -ss/2, ss, ss);
           sp.endFill();
           sp.x = p.x; sp.y = p.y; sp.zIndex = 97;
           state.arenaApp.stage.addChild(sp);
           let sf = 0;
-          const sLife = 18 + Math.random() * 10;
+          const sLife = 40 + Math.random() * 25;
           const st = () => {
             sf++;
-            sp.alpha = Math.max(0, 0.5 - sf / sLife);
-            sp.y -= 0.15 + Math.random() * 0.2;
-            sp.x += (Math.random()-0.5) * 0.3;
+            sp.alpha = Math.max(0, 0.45 - sf / sLife * 0.45);
+            sp.y += 0.08;
+            sp.x += (Math.random()-0.5) * 0.1;
             if (sp.alpha <= 0) { state.arenaApp.ticker.remove(st); state.arenaApp.stage.removeChild(sp); }
           };
           state.arenaApp.ticker.add(st);
         }
 
-        if (pf >= life) {
-          state.arenaApp.ticker.remove(pt);
-          state.arenaApp.stage.removeChild(p);
-        }
-      };
-      state.arenaApp.ticker.add(pt);
-    }
-
-    // ═══ RING 2: Delayed outer ring — 30 bigger, slower debris ═══
-    setTimeout(() => {
-      for (let i = 0; i < 30; i++) {
-        const p = new PIXI.Graphics();
-        const size = 3 + Math.random() * 5;
-        p.beginFill(color, 0.8);
-        p.drawRect(-size/2, -size/2, size, size);
-        p.endFill();
-        p.x = x; p.y = y; p.zIndex = 98;
-        state.arenaApp.stage.addChild(p);
-
-        const angle = (i / 30) * Math.PI * 2 + Math.random() * 0.4;
-        const speed = 1.5 + Math.random() * 2;
-        const vx = Math.cos(angle) * speed;
-        const vy = Math.sin(angle) * speed;
-        const life = 60 + Math.random() * 25;
-        let pf = 0;
-
-        const pt = () => {
-          pf++;
-          p.x += vx * 0.98;
-          p.y += vy * 0.98 + 0.05;
-          p.alpha = Math.max(0, 0.8 - pf / life);
-          p.scale.set(Math.max(0.3, 1 - pf / life * 0.3));
-
-          // Sub-embers
-          if (pf % 5 === 0 && pf < life * 0.5) {
-            const sp = new PIXI.Graphics();
-            sp.beginFill(color, 0.35);
-            sp.drawRect(-1, -1, 2, 2);
-            sp.endFill();
-            sp.x = p.x; sp.y = p.y; sp.zIndex = 96;
-            state.arenaApp.stage.addChild(sp);
-            let sf = 0;
-            const st = () => {
-              sf++;
-              sp.alpha = Math.max(0, 0.35 - sf * 0.025);
-              sp.y -= 0.2;
-              if (sp.alpha <= 0) { state.arenaApp.ticker.remove(st); state.arenaApp.stage.removeChild(sp); }
-            };
-            state.arenaApp.ticker.add(st);
-          }
-
-          if (pf >= life) { state.arenaApp.ticker.remove(pt); state.arenaApp.stage.removeChild(p); }
-        };
-        state.arenaApp.ticker.add(pt);
-      }
-    }, 50);
-
-    // ═══ RING 3: White flash pixels — 15 fast, no gravity ═══
-    for (let i = 0; i < 15; i++) {
-      const p = new PIXI.Graphics();
-      p.beginFill(0xffffff, 0.9);
-      p.drawRect(-1, -1, 2, 2);
-      p.endFill();
-      p.x = x; p.y = y; p.zIndex = 100;
-      state.arenaApp.stage.addChild(p);
-      const angle = (i / 15) * Math.PI * 2;
-      const speed = 4 + Math.random() * 2;
-      const vx = Math.cos(angle) * speed;
-      const vy = Math.sin(angle) * speed;
-      let pf = 0;
-      const pt = () => {
-        pf++;
-        p.x += vx * 0.94;
-        p.y += vy * 0.94;
-        p.alpha = Math.max(0, 0.9 - pf * 0.06);
-        if (p.alpha <= 0) { state.arenaApp.ticker.remove(pt); state.arenaApp.stage.removeChild(p); }
-      };
-      state.arenaApp.ticker.add(pt);
-    }
-
-    // ═══ SCATTER SPARKS — 25 tiny chaotic ones ═══
-    for (let i = 0; i < 25; i++) {
-      const p = new PIXI.Graphics();
-      const s = 1 + Math.random() * 2;
-      p.beginFill(color, 0.7);
-      p.drawRect(-s/2, -s/2, s, s);
-      p.endFill();
-      p.x = x + (Math.random()-0.5)*8;
-      p.y = y + (Math.random()-0.5)*8;
-      p.zIndex = 98;
-      state.arenaApp.stage.addChild(p);
-      const speed = 3 + Math.random() * 3;
-      const angle = Math.random() * Math.PI * 2;
-      let vx = Math.cos(angle) * speed;
-      let vy = Math.sin(angle) * speed;
-      let pf = 0;
-      const life = 40 + Math.random() * 25;
-      const pt = () => {
-        pf++;
-        p.x += vx; p.y += vy;
-        vy += 0.07; // gravity
-        vx *= 0.99;
-        p.alpha = Math.max(0, 1 - pf / life);
-        // Sparkle cross
-        if (pf % 6 === 0 && pf < life * 0.5) {
-          const sp = new PIXI.Graphics();
-          sp.beginFill(0xffffff, 0.5);
-          sp.drawRect(-0.5, -2, 1, 4);
-          sp.drawRect(-2, -0.5, 4, 1);
-          sp.endFill();
-          sp.x = p.x; sp.y = p.y; sp.zIndex = 97;
-          state.arenaApp.stage.addChild(sp);
-          let sf = 0;
-          const st = () => {
-            sf++;
-            sp.alpha = Math.max(0, 0.5 - sf * 0.05);
-            if (sp.alpha <= 0) { state.arenaApp.ticker.remove(st); state.arenaApp.stage.removeChild(sp); }
-          };
-          state.arenaApp.ticker.add(st);
-        }
         if (pf >= life) { state.arenaApp.ticker.remove(pt); state.arenaApp.stage.removeChild(p); }
       };
       state.arenaApp.ticker.add(pt);
     }
 
-    // ═══ EXPANDING RING ═══
+    // ═══ WHITE FLASH — 8 fast bright pixels ═══
+    for (let i = 0; i < 8; i++) {
+      const p = new PIXI.Graphics();
+      p.beginFill(0xffffff, 0.85);
+      p.drawRect(-1, -1, 2, 2);
+      p.endFill();
+      p.x = x; p.y = y; p.zIndex = 100;
+      state.arenaApp.stage.addChild(p);
+      const angle = (i / 8) * Math.PI * 2;
+      const speed = 3 + Math.random() * 1.5;
+      let pf = 0;
+      const pt = () => {
+        pf++;
+        p.x += Math.cos(angle) * speed * 0.92;
+        p.y += Math.sin(angle) * speed * 0.92;
+        p.alpha = Math.max(0, 0.85 - pf * 0.07);
+        if (p.alpha <= 0) { state.arenaApp.ticker.remove(pt); state.arenaApp.stage.removeChild(p); }
+      };
+      state.arenaApp.ticker.add(pt);
+    }
+
+    // ═══ DELICATE EXPANDING RING ═══
     const ring = new PIXI.Graphics();
-    ring.lineStyle(3, color, 0.6);
-    ring.drawCircle(0, 0, 5);
+    ring.lineStyle(1.5, color, 0.5);
+    ring.drawCircle(0, 0, 3);
     ring.x = x; ring.y = y; ring.zIndex = 98;
     state.arenaApp.stage.addChild(ring);
     let rf = 0;
     const rTicker = () => {
       rf++;
-      ring.scale.set(1 + rf * 0.6);
-      ring.alpha = Math.max(0, 0.6 - rf * 0.035);
-      const lw = Math.max(0.5, 3 - rf * 0.15);
+      const radius = 3 + rf * 2.5;
+      const alpha = Math.max(0, 0.5 - rf * 0.03);
       ring.clear();
-      ring.lineStyle(lw, color, ring.alpha);
-      ring.drawCircle(0, 0, 5);
-      if (ring.alpha <= 0) {
-        state.arenaApp.ticker.remove(rTicker);
-        state.arenaApp.stage.removeChild(ring);
-      }
+      ring.lineStyle(Math.max(0.3, 1.5 - rf * 0.06), color, alpha);
+      ring.drawCircle(0, 0, radius);
+      if (alpha <= 0) { state.arenaApp.ticker.remove(rTicker); state.arenaApp.stage.removeChild(ring); }
     };
     state.arenaApp.ticker.add(rTicker);
 
-    // ═══ SECONDARY EXPLOSION — delayed cascade ═══
-    setTimeout(() => {
-      const ox = x + (Math.random()-0.5) * 25;
-      const oy = y + (Math.random()-0.5) * 20;
-      spawnParticles(ox, oy, typeof color === 'number' ? color : parseInt(color.replace('#',''), 16), 18, 'explosion');
-      screenFlash(typeof color === 'number' ? color : parseInt(color.replace('#',''), 16), 0.1);
-    }, 180);
-
-    // ═══ THIRD MINI POP ═══
-    setTimeout(() => {
-      const ox2 = x + (Math.random()-0.5) * 35;
-      const oy2 = y + (Math.random()-0.5) * 25;
-      spawnParticles(ox2, oy2, typeof color === 'number' ? color : parseInt(color.replace('#',''), 16), 12, 'fire');
-    }, 350);
-
-    // Big screen flash
-    screenFlash(typeof color === 'number' ? color : parseInt(color.replace('#',''), 16), 0.2);
+    // Gentle screen flash
+    screenFlash(typeof color === 'number' ? color : parseInt(color.replace('#',''), 16), 0.1);
   }
 
   /** Shield pop animation — golden rings expand around Nine */

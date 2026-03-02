@@ -269,6 +269,13 @@ app.get("/api/health", (req, res) => {
 // Redirect old world.html to map.html
 app.get("/world.html", (req, res) => res.redirect("/map.html"));
 
+try {
+  const { startNermBot } = require("./services/nerm-telegram");
+  startNermBot();
+  console.log("✅ Nerm Telegram bot loaded");
+} catch (e) {
+  console.error("❌ Failed to load Nerm Telegram bot:", e.message);
+}
 // Start scheduler for automated tasks
 try {
   const scheduler = require("./services/scheduler");
