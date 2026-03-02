@@ -13,7 +13,24 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js"></script>
   <script src="/js/card-global.js" defer></script>
   <script src="/js/card-particles.js" defer></script>
-  <script src="/js/card-v4.js" defer></script>
+  <script>
+    // Load card-v4.js safely — its MutationObserver can crash if expected elements don't exist
+    (function() {
+      var s = document.createElement('script');
+      s.src = '/js/card-v4.js';
+      s.defer = true;
+      s.onerror = function() { console.warn('card-v4.js failed to load'); };
+      // Wrap in try-catch by intercepting errors from this script
+      window.addEventListener('error', function cardV4Guard(e) {
+        if (e.filename && e.filename.indexOf('card-v4') !== -1) {
+          console.warn('card-v4.js error caught:', e.message);
+          e.preventDefault();
+          return true;
+        }
+      });
+      document.head.appendChild(s);
+    })();
+  </script>
   <style>
     :root {
       --bg: #1a1528;
@@ -292,7 +309,7 @@
     .your-nine-title { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--gold); letter-spacing: 1px; margin-bottom: 6px; }
     .your-nine-hp { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
     .your-nine-hp-bar { flex: 1; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
-    .your-nine-hp-fill { height: 100%; background: linear-gradient(90deg, var(--green), #66eebb); border-radius: 4px; transition: width 0.3s; }
+    .your-nine-hp-fill { height: 100%; background: linear-gradient(90deg, var(--green), #66eebb); border-radius: 4px; transition: width 0.4s ease, background 0.4s ease; }
     .your-nine-hp-text { font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--green); }
     .your-nine-stats { display: flex; gap: 8px; flex-wrap: wrap; }
     .your-nine-stat { font-family: 'Press Start 2P', monospace; font-size: 8px; }
@@ -604,7 +621,7 @@
 
       /* Build panel — full width tray at bottom */
       .arena-card-slots {
-        position: absolute; bottom: 56px; left: 0; right: 0;
+        position: absolute; bottom: 120px; left: 0; right: 0;
         border-radius: 14px 14px 0 0; padding: 8px 12px 10px;
         border-left: none; border-right: none; border-bottom: none;
         max-width: 100%;
@@ -621,10 +638,10 @@
       .arena-card-slot .slot-effects { font-size: 6px; }
       .arena-card-slot.empty { min-height: 70px; }
 
-      /* Your Nine panel — full width bar */
+      /* Your Nine panel — full width bar just above feed */
       .arena-your-nine {
-        position: absolute; bottom: 56px; left: 0; right: 0;
-        border-radius: 14px 14px 0 0; padding: 10px 16px;
+        position: absolute; bottom: 52px; left: 0; right: 0;
+        border-radius: 0; padding: 8px 16px;
         min-width: auto; border-left: none; border-right: none; border-bottom: none;
       }
       .your-nine-title { font-size: 7px; }
@@ -940,7 +957,7 @@
     ashenvale:   { color: '#90E0EF', name: 'Ashenvale', icon: '💨', crest: '/assets/images/houses/HouseAshenvale.png', biome: '/assets/images/biomes/ashenvale.png' },
     stormrage:   { color: '#FFC800', name: 'Stormrage', icon: '⚡', crest: '/assets/images/houses/Housestormrage.png', biome: '/assets/images/biomes/stormrage.png' },
     nighthollow: { color: '#7B2D8E', name: 'Nighthollow', icon: '🌙', crest: '/assets/images/houses/Housenighthollow.png', biome: '/assets/images/biomes/nighthollow.png' },
-    dawnbringer: { color: '#FF8C00', name: 'Dawnbringer', icon: '☀️', crest: '/assets/images/houses/House-dawnbringer.png', biome: '/assets/images/biomes/dawnbringer.png' },
+    dawnbringer: { color: '#FF8C00', name: 'Dawnbringer', icon: '☀️', crest: '/assets/images/houses/HouseDwnbringer.png', biome: '/assets/images/biomes/dawnbringer.png' },
     manastorm:   { color: '#5B8FE0', name: 'Manastorm', icon: '🔮', crest: '/assets/images/houses/Housemanastorm.png', biome: '/assets/images/biomes/manastorm.png' },
     plaguemire:  { color: '#E84393', name: 'Plaguemire', icon: '☠️', crest: '/assets/images/houses/Houseplaguemire.png', biome: '/assets/images/biomes/plaguemire.png' },
   };
@@ -1317,6 +1334,11 @@
           is_mercenary: d.is_mercenary,
           equipped_images: nine.equipped_images || {},
         });
+      }
+
+      // If server didn't send guild_power, compute from loaded nines
+      if (!data.guild_power) {
+        setTimeout(recalcGuildScores, 500);
       }
     } catch(e) {
       console.error('Failed to load zone nines:', e);
@@ -1926,14 +1948,27 @@
   function updateNineHP(nineId, hp, maxHp) {
     const sprite = state.nines.get(nineId);
     if (!sprite) return;
+    if (maxHp != null) sprite.maxHp = maxHp;
     sprite.hp = hp;
-    sprite.maxHp = maxHp;
-    const pct = Math.max(0, hp / maxHp);
+    const mhp = sprite.maxHp || 100;
+    const pct = Math.max(0, hp / mhp);
     sprite.hpFill.clear();
     const color = pct > 0.5 ? 0x44cc88 : pct > 0.25 ? 0xffaa55 : 0xff4466;
     sprite.hpFill.beginFill(color);
     sprite.hpFill.drawRoundedRect(-16, 22, 32 * pct, 4, 2);
     sprite.hpFill.endFill();
+
+    // Always update Your Nine panel if this is the player
+    if (nineId === state.playerId) {
+      const fill = document.getElementById('your-hp-fill');
+      const text = document.getElementById('your-hp-text');
+      if (fill) {
+        fill.style.width = `${pct * 100}%`;
+        fill.style.background = pct > 0.5 ? 'var(--green)' : pct > 0.25 ? 'var(--gold)' : 'var(--red)';
+        fill.style.transition = 'width 0.4s ease, background 0.4s ease';
+      }
+      if (text) text.textContent = `${hp}/${mhp}`;
+    }
   }
 
   function removeNineSprite(nineId) {
@@ -1952,22 +1987,26 @@
     });
     const t = new PIXI.Text(text, style);
     t.anchor.set(0.5);
+    const arcDir = (Math.random() > 0.5 ? 1 : -1);
+    const arcAmount = 20 + Math.random() * 25;
     t.x = x + (Math.random() - 0.5) * 16;
     t.y = y - 20;
     t.zIndex = 100;
     state.arenaApp.stage.addChild(t);
 
-    // Ultra slow arc with glow
     let frame = 0;
-    const totalFrames = 150; // ~2.5 seconds visible
+    const totalFrames = 120;
+    const startX = t.x;
     const startY = t.y;
-    const startScale = 1.5;
+    const startScale = 1.4;
     const ticker = () => {
       frame++;
-      const progress = frame / totalFrames;
-      t.y = startY - progress * 30; // barely drift up — 30px over 2.5s
-      t.alpha = progress < 0.5 ? 1 : Math.max(0, 1 - (progress - 0.5) / 0.5);
-      const scale = startScale - (startScale - 0.8) * progress;
+      const p = frame / totalFrames;
+      // Arc: rise up + curve sideways using sine
+      t.y = startY - p * 40;
+      t.x = startX + Math.sin(p * Math.PI) * arcAmount * arcDir;
+      t.alpha = p < 0.4 ? 1 : Math.max(0, 1 - (p - 0.4) / 0.6);
+      const scale = startScale - (startScale - 0.7) * p;
       t.scale.set(scale, scale);
       if (frame >= totalFrames) {
         state.arenaApp.ticker.remove(ticker);
@@ -3477,6 +3516,14 @@
   }
 
   function updateScoreboard() {
+    // If server didn't send scores, compute from loaded nines
+    if (Object.keys(state.guildScores).length === 0 && state.nines.size > 0) {
+      state.nines.forEach((sprite) => {
+        const tag = sprite.guild || sprite.house || '???';
+        state.guildScores[tag] = (state.guildScores[tag] || 0) + (sprite.hp || 0);
+      });
+    }
+
     const rows = document.getElementById('scoreboard-rows');
     const entries = Object.entries(state.guildScores).sort((a, b) => b[1] - a[1]);
     rows.innerHTML = entries.map(([guild, hp], i) => {
@@ -3492,6 +3539,16 @@
         </div>
       </div>`;
     }).join('');
+  }
+
+  /** Recompute guild scores from all loaded nines */
+  function recalcGuildScores() {
+    state.guildScores = {};
+    state.nines.forEach((sprite) => {
+      const tag = sprite.guild || sprite.house || '???';
+      state.guildScores[tag] = (state.guildScores[tag] || 0) + (sprite.hp || 0);
+    });
+    updateScoreboard();
   }
 
   function updateYourNinePanel(nineId) {
@@ -3777,7 +3834,6 @@
   // ===== DEPLOYMENT =====
   async function checkDeployment(zoneId) {
     if (!state.playerId) {
-      // Not logged in — show deploy button (will prompt login)
       document.getElementById('deploy-cta').style.display = 'block';
       document.getElementById('your-nine-panel').style.display = 'none';
       return;
@@ -3793,43 +3849,57 @@
         document.getElementById('deploy-cta').style.display = 'none';
         document.getElementById('your-nine-panel').style.display = 'block';
 
-        // Load equipped cards for slot display
-        if (deployed.cards) {
-          renderCardSlots(deployed.cards);
-        } else {
-          loadEquippedCards(zoneId);
+        // Try to load equipped cards from multiple sources
+        let cards = null;
+        if (deployed.cards && deployed.cards.length > 0) {
+          cards = deployed.cards;
+        } else if (deployed.card_ids && deployed.card_ids.length > 0) {
+          // Try by-ids endpoint first
+          try {
+            const cardRes = await fetch('/api/spells/by-ids', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ids: deployed.card_ids }),
+            });
+            if (cardRes.ok) {
+              const cardData = await cardRes.json();
+              cards = cardData.cards || cardData.spells || [];
+            }
+          } catch(e) { console.warn('by-ids failed:', e); }
+
+          // Fallback: fetch player's full collection and match by ID
+          if (!cards || cards.length === 0) {
+            try {
+              const collRes = await fetch(`/api/player-cards/${state.playerId}`);
+              if (collRes.ok) {
+                const collData = await collRes.json();
+                const allCards = collData.cards || collData.player_cards || [];
+                cards = deployed.card_ids.map(id => allCards.find(c => (c.player_card_id || c.id) == id)).filter(Boolean);
+              }
+            } catch(e) { console.warn('collection fetch failed:', e); }
+          }
+
+          // Last resort: make stub cards from IDs
+          if (!cards || cards.length === 0) {
+            cards = deployed.card_ids.map((id, i) => ({
+              id, name: `Card #${id}`, spell_type: 'attack', rarity: 'common',
+              house: 'universal', base_atk: 0, base_hp: 0,
+            }));
+          }
         }
 
-        // Find this player's sprite for stats display
-        const sprite = state.nines.get(state.playerId);
-        if (sprite) {
-          // Sum card stats on top of base stats
-          let cardAtk = 0, cardHp = 0, cardSpd = 0, cardDef = 0, cardLuck = 0;
-          if (state.equippedCards && state.equippedCards.length > 0) {
-            state.equippedCards.forEach(c => {
-              if (!c) return;
-              cardAtk  += c.base_atk  || 0;
-              cardHp   += c.base_hp   || 0;
-              cardSpd  += c.base_spd  || 0;
-              cardDef  += c.base_def  || 0;
-              cardLuck += c.base_luck || 0;
-            });
-          }
-          const totalAtk  = (sprite.stats?.atk  || 0) + cardAtk;
-          const totalHp   = (sprite.maxHp        || 0) + cardHp;
-          const totalSpd  = (sprite.stats?.spd   || 0) + cardSpd;
-          const totalDef  = (sprite.stats?.def   || 0) + cardDef;
-          const totalLuck = (sprite.stats?.luck  || 0) + cardLuck;
+        if (cards && cards.length > 0) {
+          renderCardSlots(cards);
+        } else {
+          // Show empty build panel with swap button
+          renderCardSlots([]);
+        }
 
-          document.getElementById('your-nine-stats').innerHTML = `
-            <div class="your-nine-stat" style="color:#e85a6a">⚔ ATK ${totalAtk}</div>
-            <div class="your-nine-stat" style="color:#6acd8a">♥ HP ${totalHp}</div>
-            <div class="your-nine-stat" style="color:#6ac8d8">◈ SPD ${totalSpd}</div>
-            <div class="your-nine-stat" style="color:#b088e8">⛊ DEF ${totalDef}</div>
-            <div class="your-nine-stat" style="color:#D4A64B">★ LUCK ${totalLuck}</div>
-          `;
-          document.getElementById('your-hp-fill').style.width = `${(sprite.hp / sprite.maxHp) * 100}%`;
-          document.getElementById('your-hp-text').textContent = `${sprite.hp}/${sprite.maxHp}`;
+        // Update Your Nine stats (retry if sprite not loaded yet)
+        updateYourNineStats();
+        if (!state.nines.has(state.playerId)) {
+          setTimeout(updateYourNineStats, 1500);
+          setTimeout(updateYourNineStats, 4000);
         }
       } else {
         state.isDeployed = false;
@@ -3837,10 +3907,48 @@
         document.getElementById('your-nine-panel').style.display = 'none';
       }
     } catch(e) {
-      // Fallback: show deploy button
+      console.warn('checkDeployment error:', e);
       document.getElementById('deploy-cta').style.display = 'block';
       document.getElementById('your-nine-panel').style.display = 'none';
     }
+  }
+
+  /** Update Your Nine stats display from sprite + equipped cards */
+  function updateYourNineStats() {
+    const sprite = state.nines.get(state.playerId);
+    if (!sprite) return;
+
+    let cardAtk = 0, cardHp = 0, cardSpd = 0, cardDef = 0, cardLuck = 0;
+    if (state.equippedCards && state.equippedCards.length > 0) {
+      state.equippedCards.forEach(c => {
+        if (!c) return;
+        cardAtk  += c.base_atk  || 0;
+        cardHp   += c.base_hp   || 0;
+        cardSpd  += c.base_spd  || 0;
+        cardDef  += c.base_def  || 0;
+        cardLuck += c.base_luck || 0;
+      });
+    }
+    const totalAtk  = (sprite.stats?.atk  || 0) + cardAtk;
+    const totalHp   = (sprite.maxHp        || 0) + cardHp;
+    const totalSpd  = (sprite.stats?.spd   || 0) + cardSpd;
+    const totalDef  = (sprite.stats?.def   || 0) + cardDef;
+    const totalLuck = (sprite.stats?.luck  || 0) + cardLuck;
+
+    const statsEl = document.getElementById('your-nine-stats');
+    if (statsEl) {
+      statsEl.innerHTML = `
+        <div class="your-nine-stat" style="color:#e85a6a">⚔ ATK ${totalAtk}</div>
+        <div class="your-nine-stat" style="color:#6acd8a">♥ HP ${totalHp}</div>
+        <div class="your-nine-stat" style="color:#6ac8d8">◈ SPD ${totalSpd}</div>
+        <div class="your-nine-stat" style="color:#b088e8">⛊ DEF ${totalDef}</div>
+        <div class="your-nine-stat" style="color:#D4A64B">★ LUCK ${totalLuck}</div>
+      `;
+    }
+    const fill = document.getElementById('your-hp-fill');
+    const text = document.getElementById('your-hp-text');
+    if (fill) fill.style.width = `${(sprite.hp / sprite.maxHp) * 100}%`;
+    if (text) text.textContent = `${sprite.hp}/${sprite.maxHp}`;
   }
 
   // ===== DEPLOY MODAL — CARD SELECTION =====
