@@ -645,6 +645,8 @@
               <th>ID</th>
               <th>NAME</th>
               <th>TYPE</th>
+              <th>HOUSE</th>
+              <th>IMAGE</th>
               <th>BONUS</th>
               <th>OBJECTIVE</th>
               <th>CONTROLLER</th>
@@ -868,10 +870,32 @@
         </select>
       </div>
       <div class="form-group">
-        <label>BONUS EFFECT</label>
-        <input type="text" id="zone-edit-bonus" placeholder="e.g. +2 ATK">
+          <label>BONUS EFFECT</label>
+          <input type="text" id="zone-edit-bonus" placeholder="e.g. +2 ATK">
+        </div>
+        <div class="form-group full">
+          <label>IMAGE URL</label>
+          <input type="text" id="zone-edit-image" placeholder="/assets/images/biomes/my-zone.png">
+          <div style="font-size:10px;color:var(--faint);margin-top:4px;">
+            Full path to the zone background image. Upload to <code>/public/assets/images/biomes/</code> on Replit first.
+          </div>
+        </div>
+        <div class="form-group">
+          <label>HOUSE (optional)</label>
+          <select id="zone-edit-house">
+            <option value="">None — Neutral Zone</option>
+            <option value="1">🔥 Smoulders</option>
+            <option value="2">🌊 Darktide</option>
+            <option value="3">🌿 Stonebark</option>
+            <option value="4">💨 Ashenvale</option>
+            <option value="5">⚡ Stormrage</option>
+            <option value="6">🌙 Nighthollow</option>
+            <option value="7">☀️ Dawnbringer</option>
+            <option value="8">🔮 Manastorm</option>
+            <option value="9">☠️ Plaguemire</option>
+          </select>
+        </div>
       </div>
-    </div>
     <div class="modal-actions">
       <button class="btn btn-red btn-sm" id="zone-delete-btn" onclick="deleteZone()" style="margin-right:auto;">DELETE</button>
       <button class="btn" onclick="closeZoneModal()">CANCEL</button>
