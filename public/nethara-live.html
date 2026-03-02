@@ -890,6 +890,8 @@
     isDeployed: false,
     feedEvents: [],
     guildScores: {},
+    guildRoundWins: {},
+    guildKOs: {},
     roundWins: {},
     // Countdown timer
     cycleEndTime: null,       // timestamp when current cycle ends / next cycle starts
@@ -1211,6 +1213,8 @@
     state.feedEvents = [];
     state.guildScores = {};
     state.roundWins = {};
+    state.guildRoundWins = {};
+    state.guildKOs = {};
     state._guildAngles = {};
     state._guildCounts = {};
 
@@ -1296,7 +1300,27 @@
     const houseMap = { 1:'smoulders', 2:'darktide', 3:'stonebark', 4:'ashenvale', 5:'stormrage', 6:'nighthollow', 7:'dawnbringer', 8:'manastorm', 9:'plaguemire' };
     return houseMap[houseId] || 'smoulders';
   }
+  
+  // ═══════ ARENA DIAMOND BOUNDARY ═══════
+  // These MUST match the values in drawArenaGround()
+  const ARENA_HALF_W = 320;
+  const ARENA_HALF_H = 180;
 
+  /** Check if a point is inside the isometric diamond */
+  function isInsideDiamond(x, y, cx, cy) {
+    return (Math.abs(x - cx) / ARENA_HALF_W + Math.abs(y - cy) / ARENA_HALF_H) <= 1;
+  }
+
+  /** Clamp any point to stay inside the diamond */
+  function clampToDiamond(x, y, cx, cy, shrink) {
+    const s = shrink || 0.85; // keep away from the very edge
+    const dx = x - cx;
+    const dy = y - cy;
+    const dist = Math.abs(dx) / (ARENA_HALF_W * s) + Math.abs(dy) / (ARENA_HALF_H * s);
+    if (dist <= 1) return { x, y }; // already inside
+    return { x: cx + dx / dist, y: cy + dy / dist };
+  }
+  
   /** Get spawn position — cluster by guild, clamped to arena diamond */
   function getSpawnPosition(guildTag, playerId) {
     if (!state._guildAngles) state._guildAngles = {};
@@ -1313,21 +1337,14 @@
     const cx = (state.arenaApp ? state.arenaApp.screen.width : window.innerWidth) / 2;
     const cy = (state.arenaApp ? state.arenaApp.screen.height : window.innerHeight) / 2;
     const angle = state._guildAngles[tag];
-    const radius = Math.min(cx, cy) * 0.4; // 40% of half-screen
-    const spread = state._guildCounts[tag] * 22;
+    const radius = Math.min(ARENA_HALF_W, ARENA_HALF_H) * 0.55;
+    const spread = Math.min(state._guildCounts[tag] * 18, 60);
 
     const x = cx + Math.cos(angle) * radius + (Math.random() - 0.5) * spread;
-    const y = cy + Math.sin(angle) * radius * 0.6 + (Math.random() - 0.5) * spread; // flatten for isometric
+    const y = cy + Math.sin(angle) * radius * 0.6 + (Math.random() - 0.5) * spread;
 
-    // Clamp to safe area (keep 60px from edges)
-    const margin = 60;
-    const maxW = (state.arenaApp ? state.arenaApp.screen.width : window.innerWidth) - margin;
-    const maxH = (state.arenaApp ? state.arenaApp.screen.height : window.innerHeight) - margin;
-
-    return {
-      x: Math.max(margin, Math.min(maxW, x)),
-      y: Math.max(margin, Math.min(maxH, y)),
-    };
+    // Clamp to diamond (not rectangle)
+    return clampToDiamond(x, y, cx, cy, 0.82);
   }
 
   /** Convert engine position (centered at 400,300) to screen position */
@@ -1335,16 +1352,12 @@
     if (!pos) return getSpawnPosition('unknown', Math.random());
     const cx = (state.arenaApp ? state.arenaApp.screen.width : window.innerWidth) / 2;
     const cy = (state.arenaApp ? state.arenaApp.screen.height : window.innerHeight) / 2;
-    // Engine uses 400,300 as center — scale to screen
     const scaleX = cx / 400;
     const scaleY = cy / 300;
-    const margin = 60;
-    const maxW = (state.arenaApp ? state.arenaApp.screen.width : window.innerWidth) - margin;
-    const maxH = (state.arenaApp ? state.arenaApp.screen.height : window.innerHeight) - margin;
-    return {
-      x: Math.max(margin, Math.min(maxW, pos.x * scaleX)),
-      y: Math.max(margin, Math.min(maxH, pos.y * scaleY)),
-    };
+    const rawX = pos.x * scaleX;
+    const rawY = pos.y * scaleY;
+    // Clamp to diamond instead of rectangle
+    return clampToDiamond(rawX, rawY, cx, cy, 0.85);
   }
 
   function closeArena() {
@@ -1471,17 +1484,23 @@
   function setRoundPositions() {
     const app = state.arenaApp;
     if (!app) return;
-    const W = app.screen.width;
-    const H = app.screen.height;
-    const padding = 60; // stay away from edges
+    const cx = app.screen.width / 2;
+    const cy = app.screen.height / 2;
 
     state.nines.forEach((nine) => {
-      nine.roundTarget = {
-        x: padding + Math.random() * (W - padding * 2),
-        y: padding + Math.random() * (H - padding * 2),
-      };
+      // Generate random point inside the diamond
+      let x, y, tries = 0;
+      do {
+        x = cx + (Math.random() - 0.5) * ARENA_HALF_W * 1.6;
+        y = cy + (Math.random() - 0.5) * ARENA_HALF_H * 1.6;
+        tries++;
+      } while (!isInsideDiamond(x, y, cx, cy) && tries < 30);
+
+      // Safety clamp in case loop maxed out
+      const clamped = clampToDiamond(x, y, cx, cy, 0.82);
+      nine.roundTarget = clamped;
     });
-    console.log('🎯 Round positions assigned');
+    console.log('🎯 Round positions assigned (diamond-clamped)');
   }
 
   function setBiomeBackground(container) {
@@ -2359,6 +2378,9 @@
       addFeedEvent(`⚔️ COMBAT CYCLE ${cycleNum} — ${totalRounds} Rounds!`, 'system');
       showRoundBanner(`CYCLE ${cycleNum}`, `${totalRounds} Rounds Begin!`);
       updateCountdownDisplay();
+
+      // Refresh all Nines from server so HP/positions are current
+      loadZoneNines(state.currentZoneId);
     });
 
     // ── ROUND START — happens 3 times per cycle
@@ -2447,10 +2469,18 @@
       }
 
       if (data.guild_scores) {
-        state.guildScores = data.guild_scores;
-        updateScoreboard();
-      }
-    });
+          state.guildScores = data.guild_scores;
+
+          // Track which guild won this round (highest HP)
+          const entries = Object.entries(data.guild_scores);
+          if (entries.length > 0) {
+            const winner = entries.sort((a, b) => b[1] - a[1])[0][0];
+            state.guildRoundWins[winner] = (state.guildRoundWins[winner] || 0) + 1;
+          }
+
+          updateScoreboard();
+        }
+      });
 
     // ── HEAL PHASE — between rounds, survivors heal 25%
     socket.on('arena:heal_phase', (data) => {
@@ -2512,21 +2542,30 @@
       addFeedEvent(`🏁 Cycle ${cycleNum} complete — ${winner} controls zone`, 'system');
 
       // Nerm comments on the cycle result
-      nermRoundComment('cycle_end', data);
+        nermRoundComment('cycle_end', data);
 
-      // Sync final HP state
-      if (data.nines) {
-        for (const nine of data.nines) {
-          const nineId = resolveNineId(nine);
-          updateNineHP(nineId, nine.current_hp || nine.hp, nine.max_hp || nine.maxHp);
+        // Sync final HP state
+        if (data.nines) {
+          for (const nine of data.nines) {
+            const nineId = resolveNineId(nine);
+            updateNineHP(nineId, nine.current_hp || nine.hp, nine.max_hp || nine.maxHp);
+          }
         }
-      }
 
-      if (data.guild_scores) {
-        state.guildScores = data.guild_scores;
-        updateScoreboard();
-      }
-    });
+        if (data.guild_scores) {
+          state.guildScores = data.guild_scores;
+          updateScoreboard();
+        }
+
+        // Re-sync timing so next countdown is accurate
+        fetchCycleTiming();
+
+        // Refresh deployment data (HP, cards, etc.) after cycle completes
+        if (state.currentZoneId) {
+          loadZoneNines(state.currentZoneId);
+          checkDeployment(state.currentZoneId);
+        }
+      });
 
     // Nerm commentary
     socket.on('arena:nerm', (data) => {
@@ -2689,6 +2728,10 @@
       case 'ko': {
         const koId = resolveId(ev.nine_id);
         addFeedEvent(`💀 ${getNineName(koId)} was KO'd!`, 'ko');
+        // Track guild KO
+        if (ev.attacker_guild) {
+          state.guildKOs[ev.attacker_guild] = (state.guildKOs[ev.attacker_guild] || 0) + 1;
+        }
         animateKO(koId);
         const sprite = state.nines.get(koId);
         if (sprite) {
@@ -3435,10 +3478,17 @@
   function updateScoreboard() {
     const rows = document.getElementById('scoreboard-rows');
     const entries = Object.entries(state.guildScores).sort((a, b) => b[1] - a[1]);
-    rows.innerHTML = entries.map(([guild, hp]) => {
+    rows.innerHTML = entries.map(([guild, hp], i) => {
+      const wins = state.guildRoundWins[guild] || 0;
+      const kos = state.guildKOs[guild] || 0;
+      const isLeader = i === 0 && hp > 0;
       return `<div class="arena-sb-row">
-        <div class="arena-sb-guild">${guild}</div>
-        <div class="arena-sb-wins" style="color:${hp > 0 ? 'var(--green)' : 'var(--faint)'}">${hp} HP</div>
+        <div class="arena-sb-guild">${isLeader ? '👑 ' : ''}${guild}</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--green)">${hp} HP</span>
+          <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold)">${wins}W</span>
+          ${kos > 0 ? `<span style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--red)">${kos}KO</span>` : ''}
+        </div>
       </div>`;
     }).join('');
   }
@@ -3670,10 +3720,30 @@
         // Find this player's sprite for stats display
         const sprite = state.nines.get(state.playerId);
         if (sprite) {
+          // Sum card stats on top of base stats
+          let cardAtk = 0, cardHp = 0, cardSpd = 0, cardDef = 0, cardLuck = 0;
+          if (state.equippedCards && state.equippedCards.length > 0) {
+            state.equippedCards.forEach(c => {
+              if (!c) return;
+              cardAtk  += c.base_atk  || 0;
+              cardHp   += c.base_hp   || 0;
+              cardSpd  += c.base_spd  || 0;
+              cardDef  += c.base_def  || 0;
+              cardLuck += c.base_luck || 0;
+            });
+          }
+          const totalAtk  = (sprite.stats?.atk  || 0) + cardAtk;
+          const totalHp   = (sprite.maxHp        || 0) + cardHp;
+          const totalSpd  = (sprite.stats?.spd   || 0) + cardSpd;
+          const totalDef  = (sprite.stats?.def   || 0) + cardDef;
+          const totalLuck = (sprite.stats?.luck  || 0) + cardLuck;
+
           document.getElementById('your-nine-stats').innerHTML = `
-            <div class="your-nine-stat" style="color:#e85a6a">ATK ${sprite.stats?.atk || '?'}</div>
-            <div class="your-nine-stat" style="color:#6acd8a">HP ${sprite.maxHp || '?'}</div>
-            <div class="your-nine-stat" style="color:#6ac8d8">SPD ${sprite.stats?.spd || '?'}</div>
+            <div class="your-nine-stat" style="color:#e85a6a">⚔ ATK ${totalAtk}</div>
+            <div class="your-nine-stat" style="color:#6acd8a">♥ HP ${totalHp}</div>
+            <div class="your-nine-stat" style="color:#6ac8d8">◈ SPD ${totalSpd}</div>
+            <div class="your-nine-stat" style="color:#b088e8">⛊ DEF ${totalDef}</div>
+            <div class="your-nine-stat" style="color:#D4A64B">★ LUCK ${totalLuck}</div>
           `;
           document.getElementById('your-hp-fill').style.width = `${(sprite.hp / sprite.maxHp) * 100}%`;
           document.getElementById('your-hp-text').textContent = `${sprite.hp}/${sprite.maxHp}`;
