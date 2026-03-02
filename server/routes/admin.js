@@ -133,7 +133,7 @@ router.get('/zones', async (req, res) => {
 router.put('/zone/:id', async (req, res) => {
   try {
     const zoneId = parseInt(req.params.id);
-    const allowed = ['name', 'description', 'image_url', 'video_url', 'zone_type', 'bonus_effect', 'is_current_objective'];
+    const allowed = ['name', 'description', 'image_url', 'video_url', 'zone_type', 'bonus_effect', 'is_current_objective', 'school_id'];
     const updates = {};
     allowed.forEach(f => { if (req.body[f] !== undefined) updates[f] = req.body[f]; });
 
@@ -150,7 +150,7 @@ router.put('/zone/:id', async (req, res) => {
 // POST /api/admin/zones — create a zone
 router.post('/zones', async (req, res) => {
   try {
-    const { name, description, zone_type, image_url, video_url, bonus_effect } = req.body;
+    const { name, description, zone_type, image_url, video_url, bonus_effect, school_id } = req.body;
     if (!name) return res.status(400).json({ error: 'Name required' });
 
     const { data, error } = await supabaseAdmin.from('zones').insert({
@@ -159,6 +159,7 @@ router.post('/zones', async (req, res) => {
       image_url: image_url || null,
       video_url: video_url || null,
       bonus_effect: bonus_effect || null,
+      school_id: school_id || null,
     }).select().single();
 
     if (error) throw error;

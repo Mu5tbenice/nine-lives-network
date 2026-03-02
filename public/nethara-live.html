@@ -1080,18 +1080,18 @@
     const isObjective = zone.daily_objective || zone.is_current_objective || false;
     const contested = zone.contested || (guilds.length > 1 && guilds[0] && guilds[1] && guilds[0].pct - guilds[1].pct < 15);
 
-    // Biome banner
-    const biomeImg = BIOME_IMAGES[houseKey] || BIOME_IMAGES.plaguemire;
+    // Biome banner — use zone.image_url from database first, then house biome fallback
+    const biomeImg = zone.image_url || BIOME_IMAGES[houseKey] || BIOME_FALLBACK;
     const crestImg = HOUSE_CREST_IMAGES[houseKey] || '';
     const crestHTML = crestImg
       ? '<div class="zone-card-house-crest"><img src="' + crestImg + '" alt="' + h.name + '"></div>'
-      : '<div class="zone-card-house-crest"><span>' + h.icon + '</span></div>';
+      : (houseKey ? '<div class="zone-card-house-crest"><span>' + h.icon + '</span></div>' : '');
     const fighterBadge = casters > 0
       ? '<div class="zone-card-fighter-count">⚔️ ' + casters + '</div>'
       : '';
 
     const imgBanner = '<div class="zone-card-img-wrap" style="background:linear-gradient(135deg,' + h.color + '15,transparent)">'
-      + '<img src="' + biomeImg + '" alt="' + (regionName || zone.name) + '" loading="lazy" onerror="if(this.src.indexOf(\'Hanwu\')===-1){this.src=\'' + BIOME_FALLBACK + '\'}else{this.style.display=\'none\'}">'
+      + '<img src="' + biomeImg + '" alt="' + (regionName || zone.name) + '" loading="lazy" onerror="this.style.display=\'none\'">'
       + crestHTML + fighterBadge
       + '<div class="zone-card-overlay-region" style="color:' + h.color + '">' + h.icon + ' ' + regionName + '</div>'
       + '<div class="zone-card-overlay-name">' + zone.name + '</div>'
@@ -1504,22 +1504,23 @@
   }
 
   function setBiomeBackground(container) {
+    // Priority: zone's own image_url → house biome → fallback
+    const zoneImg = state.currentZone?.image_url;
     const hKey = state.currentZone?.house
       || state.currentZone?.region_house
       || SCHOOL_TO_HOUSE[state.currentZone?.controlling_school_id]
       || SCHOOL_TO_HOUSE[state.currentZone?.school_id]
       || null;
 
-    const imgUrl = (hKey && BIOME_IMAGES[hKey]) || BIOME_FALLBACK;
+    const imgUrl = zoneImg || (hKey && BIOME_IMAGES[hKey]) || BIOME_FALLBACK;
 
     // Preload with fallback
     const img = new Image();
     img.onload = () => {
       container.style.backgroundImage = `url('${imgUrl}')`;
-      console.log(`🏔️ Biome: ${hKey || 'default'} → ${imgUrl}`);
+      console.log(`🏔️ Biome: ${state.currentZone?.name || 'unknown'} → ${imgUrl}`);
     };
     img.onerror = () => {
-      // Fallback to Boglands placeholder
       container.style.backgroundImage = `url('${BIOME_FALLBACK}')`;
       console.log(`🏔️ Biome fallback → ${BIOME_FALLBACK}`);
     };
