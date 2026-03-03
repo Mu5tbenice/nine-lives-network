@@ -183,6 +183,14 @@ try {
   console.error("❌ Failed to load items routes:", e.message);
 }
 
+try {
+  const statsRoutes = require("./routes/stats");
+  app.use("/api/stats", statsRoutes);
+  console.log("✅ Stats routes loaded");
+} catch (e) {
+  console.error("❌ Failed to load stats routes:", e.message);
+}
+
 // ── COMBAT ENGINE ──
 let combatEngine = null;
 try {

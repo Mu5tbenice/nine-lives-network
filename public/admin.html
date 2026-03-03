@@ -645,6 +645,8 @@
               <th>ID</th>
               <th>NAME</th>
               <th>TYPE</th>
+              <th>HOUSE</th>
+              <th>IMAGE</th>
               <th>BONUS</th>
               <th>OBJECTIVE</th>
               <th>CONTROLLER</th>
@@ -868,10 +870,32 @@
         </select>
       </div>
       <div class="form-group">
-        <label>BONUS EFFECT</label>
-        <input type="text" id="zone-edit-bonus" placeholder="e.g. +2 ATK">
+          <label>BONUS EFFECT</label>
+          <input type="text" id="zone-edit-bonus" placeholder="e.g. +2 ATK">
+        </div>
+        <div class="form-group full">
+          <label>IMAGE URL</label>
+          <input type="text" id="zone-edit-image" placeholder="/assets/images/biomes/my-zone.png">
+          <div style="font-size:10px;color:var(--faint);margin-top:4px;">
+            Full path to the zone background image. Upload to <code>/public/assets/images/biomes/</code> on Replit first.
+          </div>
+        </div>
+        <div class="form-group">
+          <label>HOUSE (optional)</label>
+          <select id="zone-edit-house">
+            <option value="">None — Neutral Zone</option>
+            <option value="1">🔥 Smoulders</option>
+            <option value="2">🌊 Darktide</option>
+            <option value="3">🌿 Stonebark</option>
+            <option value="4">💨 Ashenvale</option>
+            <option value="5">⚡ Stormrage</option>
+            <option value="6">🌙 Nighthollow</option>
+            <option value="7">☀️ Dawnbringer</option>
+            <option value="8">🔮 Manastorm</option>
+            <option value="9">☠️ Plaguemire</option>
+          </select>
+        </div>
       </div>
-    </div>
     <div class="modal-actions">
       <button class="btn btn-red btn-sm" id="zone-delete-btn" onclick="deleteZone()" style="margin-right:auto;">DELETE</button>
       <button class="btn" onclick="closeZoneModal()">CANCEL</button>
@@ -1308,59 +1332,70 @@ async function loadZones() {
   }
 }
 
-function renderZones() {
-  const tbody = document.getElementById('zones-tbody');
-  tbody.innerHTML = allZones.map(z => `
-    <tr>
-      <td style="font-family:monospace; color:var(--faint);">${z.id}</td>
-      <td style="font-family:'Cinzel',serif; font-weight:700; color:var(--bright);">${z.name}</td>
-      <td style="font-family:monospace; font-size:11px; color:var(--muted);">${z.zone_type || 'neutral'}</td>
-      <td style="font-family:monospace; font-size:11px; color:var(--gold);">${z.bonus_effect || '—'}</td>
-      <td>${z.is_current_objective ? '<span style="color:var(--gold); font-family:monospace; font-size:10px;">⭐ ACTIVE</span>' : '—'}</td>
-      <td style="font-family:monospace; font-size:11px; color:var(--muted);">${z.controlling_school_id || '—'}</td>
-      <td>
-        <button class="btn btn-sm" onclick="editZone(${z.id})">✏️</button>
-        <button class="btn btn-sm" onclick="setObjective(${z.id})" title="Set as objective">🎯</button>
-      </td>
-    </tr>
-  `).join('');
-}
+  const HOUSE_LABELS = {1:'🔥 Smoulders',2:'🌊 Darktide',3:'🌿 Stonebark',4:'💨 Ashenvale',5:'⚡ Stormrage',6:'🌙 Nighthollow',7:'☀️ Dawnbringer',8:'🔮 Manastorm',9:'☠️ Plaguemire'};
 
-function openNewZone() {
-  document.getElementById('zone-edit-id').value = '';
-  document.getElementById('zone-edit-name').value = '';
-  document.getElementById('zone-edit-desc').value = '';
-  document.getElementById('zone-edit-type').value = 'neutral';
-  document.getElementById('zone-edit-bonus').value = '';
-  document.getElementById('zone-delete-btn').style.display = 'none';
-  document.getElementById('zone-modal-title').textContent = 'New Zone';
-  document.getElementById('zone-modal').classList.add('open');
-}
+  function renderZones() {
+    const tbody = document.getElementById('zones-tbody');
+    tbody.innerHTML = allZones.map(z => `
+      <tr>
+        <td style="font-family:monospace; color:var(--faint);">${z.id}</td>
+        <td style="font-family:'Cinzel',serif; font-weight:700; color:var(--bright);">${z.name}</td>
+        <td style="font-family:monospace; font-size:11px; color:var(--muted);">${z.zone_type || 'neutral'}</td>
+        <td style="font-family:monospace; font-size:11px; color:var(--muted);">${HOUSE_LABELS[z.school_id] || '—'}</td>
+        <td style="font-family:monospace; font-size:10px; color:${z.image_url ? 'var(--green)' : 'var(--faint)'};">${z.image_url ? '✅ Set' : '—'}</td>
+        <td style="font-family:monospace; font-size:11px; color:var(--gold);">${z.bonus_effect || '—'}</td>
+        <td>${z.is_current_objective ? '<span style="color:var(--gold); font-family:monospace; font-size:10px;">⭐ ACTIVE</span>' : '—'}</td>
+        <td style="font-family:monospace; font-size:11px; color:var(--muted);">${z.controlling_school_id ? (HOUSE_LABELS[z.controlling_school_id] || z.controlling_school_id) : '—'}</td>
+        <td>
+          <button class="btn btn-sm" onclick="editZone(${z.id})">✏️</button>
+          <button class="btn btn-sm" onclick="setObjective(${z.id})" title="Set as objective">🎯</button>
+        </td>
+      </tr>
+    `).join('');
+  }
 
-function editZone(id) {
-  const z = allZones.find(x => x.id === id);
-  if (!z) return;
-  document.getElementById('zone-edit-id').value = z.id;
-  document.getElementById('zone-edit-name').value = z.name || '';
-  document.getElementById('zone-edit-desc').value = z.description || '';
-  document.getElementById('zone-edit-type').value = z.zone_type || 'neutral';
-  document.getElementById('zone-edit-bonus').value = z.bonus_effect || '';
-  document.getElementById('zone-delete-btn').style.display = 'block';
-  document.getElementById('zone-modal-title').textContent = 'Edit: ' + z.name;
-  document.getElementById('zone-modal').classList.add('open');
-}
+  function openNewZone() {
+    document.getElementById('zone-edit-id').value = '';
+    document.getElementById('zone-edit-name').value = '';
+    document.getElementById('zone-edit-desc').value = '';
+    document.getElementById('zone-edit-type').value = 'neutral';
+    document.getElementById('zone-edit-bonus').value = '';
+    document.getElementById('zone-edit-image').value = '';
+    document.getElementById('zone-edit-house').value = '';
+    document.getElementById('zone-delete-btn').style.display = 'none';
+    document.getElementById('zone-modal-title').textContent = 'New Zone';
+    document.getElementById('zone-modal').classList.add('open');
+  }
+
+  function editZone(id) {
+    const z = allZones.find(x => x.id === id);
+    if (!z) return;
+    document.getElementById('zone-edit-id').value = z.id;
+    document.getElementById('zone-edit-name').value = z.name || '';
+    document.getElementById('zone-edit-desc').value = z.description || '';
+    document.getElementById('zone-edit-type').value = z.zone_type || 'neutral';
+    document.getElementById('zone-edit-bonus').value = z.bonus_effect || '';
+    document.getElementById('zone-edit-image').value = z.image_url || '';
+    document.getElementById('zone-edit-house').value = z.school_id || '';
+    document.getElementById('zone-delete-btn').style.display = 'block';
+    document.getElementById('zone-modal-title').textContent = 'Edit: ' + z.name;
+    document.getElementById('zone-modal').classList.add('open');
+  }
 
 function closeZoneModal() {
   document.getElementById('zone-modal').classList.remove('open');
 }
 
-async function saveZone() {
+  async function saveZone() {
   const id = document.getElementById('zone-edit-id').value;
+  const houseVal = document.getElementById('zone-edit-house').value;
   const payload = {
     name: document.getElementById('zone-edit-name').value.trim(),
     description: document.getElementById('zone-edit-desc').value.trim(),
     zone_type: document.getElementById('zone-edit-type').value,
     bonus_effect: document.getElementById('zone-edit-bonus').value.trim() || null,
+    image_url: document.getElementById('zone-edit-image').value.trim() || null,
+    school_id: houseVal ? parseInt(houseVal) : null,
   };
   if (!payload.name) { toast('Name required', 'error'); return; }
 
