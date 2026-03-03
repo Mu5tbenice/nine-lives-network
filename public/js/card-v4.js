@@ -74,7 +74,7 @@ function _pillColor(tag) {
 
 // ── EFFECT TOOLTIPS (from Game Design V4 + Effects V5) ──
 var EFFECT_TIPS = {
-  BURN:    'Extra damage at end of each remaining round this cycle',
+  BURN:    'Extra fire damage per attack',
   CHAIN:   'Attack hits 2 targets instead of 1',
   CRIT:    '25% chance to deal double ATK damage',
   SURGE:   '+50% ATK this round, take 2 recoil damage',
@@ -92,7 +92,7 @@ var EFFECT_TIPS = {
   HASTE:   'Gain +3 SPD this round (act first)',
   SWIFT:   'If played in Round 1, this effect triggers twice',
   DODGE:   '30% chance to avoid all damage this round',
-  POISON:  '2 damage per round, persists through heal (stacks x3)',
+  POISON:  'DOT ticking every 3s for 12s, stacks x3',
   CORRODE: 'Target loses 2 max HP permanently this battle',
   INFECT:  'On KO, POISON spreads to all enemies',
   LEECH:   'Deal 2 damage, heal self for 1',

@@ -1511,7 +1511,7 @@
         const pulse = 1 + Math.sin(time * 2 + nine.bobPhase) * 0.015;
         nine.spriteGroup.scale.set(pulse, pulse);
 
-        // ROUND POSITION — each Nine picks ONE spot per round and walks there
+        // REPOSITION — each Nine picks a new spot every ~25s
         // roundTarget is set by setRoundPositions() at round start
         if (nine.roundTarget) {
           const wx = nine.roundTarget.x - nine.container.x;

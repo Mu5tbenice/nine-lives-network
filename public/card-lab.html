@@ -109,7 +109,7 @@ var SAMPLES = [
     mana_cost: 2,
     base_atk: 3, base_hp: 4, base_spd: 0, base_def: 1, base_luck: 0,
     base_effect: '',
-    bonus_effects: [{ tag: "HEX", desc: "Target loses 2 ATK this cycle" }],
+    bonus_effects: [{ tag: "HEX", desc: "Target loses 2 ATK for 10s" }],
     flavor_text: "Roots hold faster than chains.",
     image_url: '',
     current_charges: 8, max_charges: 8
@@ -125,7 +125,7 @@ var SAMPLES = [
     base_effect: '',
     bonus_effects: [
       { tag: "SILENCE", desc: "Target's card effect doesn't activate" },
-      { tag: "WEAKEN", desc: "Target deals 50% damage this cycle" }
+      { tag: "WEAKEN", desc: "Target deals 50% damage for 10s" }
     ],
     flavor_text: "The realm itself demands order. Facts were checked.",
     image_url: '',
@@ -142,7 +142,7 @@ var SAMPLES = [
     base_effect: '',
     bonus_effects: [
       { tag: "CHAIN", desc: "Attack hits 2 targets instead of 1" },
-      { tag: "HASTE", desc: "+3 SPD this cycle" }
+      { tag: "HASTE", desc: "+3 SPD for 10s" }
     ],
     flavor_text: "Wind doesn't warn. It arrives.",
     image_url: '',
@@ -158,7 +158,7 @@ var SAMPLES = [
     base_atk: 1, base_hp: 9, base_spd: 0, base_def: 3, base_luck: 0,
     base_effect: '',
     bonus_effects: [
-      { tag: "ANCHOR", desc: "Can't drop below 1 HP this cycle" },
+      { tag: "ANCHOR", desc: "Can't drop below 1 HP for 10s" },
       { tag: "WARD", desc: "Absorb next hit" },
       { tag: "HEAL", desc: "Restore HP to self or ally" }
     ],
@@ -177,7 +177,7 @@ var SAMPLES = [
     base_effect: '',
     bonus_effects: [
       { tag: "CHAIN", desc: "Attack hits 2 targets" },
-      { tag: "BURN +5", desc: "5 extra damage per cycle" }
+      { tag: "BURN +5", desc: "5 extra damage per attack" }
     ],
     flavor_text: "Everything burns eventually.",
     image_url: '',
@@ -195,7 +195,7 @@ var SAMPLES = [
     bonus_effects: [
       { tag: "SILENCE", desc: "Target's card effect doesn't activate" },
       { tag: "WEAKEN", desc: "Target deals 50% damage" },
-      { tag: "HEX", desc: "Target loses 2 ATK this cycle" }
+      { tag: "HEX", desc: "Target loses 2 ATK for 10s" }
     ],
     flavor_text: "Forget the light. Forget everything.",
     image_url: '',
@@ -211,7 +211,7 @@ var SAMPLES = [
     base_atk: 7, base_hp: 3, base_spd: 0, base_def: 0, base_luck: 1,
     base_effect: '',
     bonus_effects: [
-      { tag: "POISON", desc: "Damage per cycle, stacks" },
+      { tag: "POISON", desc: "Damage per attack, stacks" },
       { tag: "CORRODE", desc: "Enemies lose 1 max HP" },
       { tag: "INFECT", desc: "On KO, poison spreads" }
     ],
@@ -247,8 +247,8 @@ var SAMPLES = [
     base_atk: 3, base_hp: 7, base_spd: 0, base_def: 0, base_luck: 2,
     base_effect: '',
     bonus_effects: [
-      { tag: "BLESS", desc: "Allies heal +2 HP per cycle" },
-      { tag: "INSPIRE", desc: "Allies get +1 ATK next cycle" },
+      { tag: "BLESS", desc: "Allies heal +2 HP per attack" },
+      { tag: "INSPIRE", desc: "+3 ATK, +3 SPD to all allies for 10s" },
       { tag: "HEAL", desc: "Restore HP" }
     ],
     flavor_text: "Rise. The world needs you standing.",
