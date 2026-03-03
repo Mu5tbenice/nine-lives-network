@@ -48,3 +48,4 @@ temp/
 # package-lock.jsonproject.zip
 *.zip
 public/assets/images/wizard-cat.mp4
+.local/
