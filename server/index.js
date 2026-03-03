@@ -194,7 +194,7 @@ try {
 // ── COMBAT ENGINE ──
 let combatEngine = null;
 try {
-  combatEngine = require("./services/combatEngine");
+  combatEngine = require("./services/combatEngineV2");
   console.log("✅ Combat engine loaded");
 } catch (e) {
   console.error("❌ Failed to load combat engine:", e.message);
@@ -248,6 +248,32 @@ if (io) {
 }
 
 // ── COMBAT TIMER ROUTE ──
+// ── V2 SNAPSHOT TIMER ROUTE ──
+app.get('/api/combat/next-snapshot', (req, res) => {
+  try {
+    res.json({
+      next_snapshot_at: combatEngine?.getNextSnapshotAt ? combatEngine.getNextSnapshotAt() : (Date.now() + 15 * 60 * 1000),
+      server_time: Date.now(),
+    });
+  } catch (e) {
+    res.json({
+      next_snapshot_at: Date.now() + 15 * 60 * 1000,
+      server_time: Date.now(),
+    });
+  }
+});
+
+// ── V2 ZONE STATUS ROUTE ──
+app.get('/api/combat/zone-status/:zoneId', (req, res) => {
+  try {
+    const zoneId = parseInt(req.params.zoneId);
+    const status = combatEngine?.getZoneStatus ? combatEngine.getZoneStatus(zoneId) : { active: false };
+    res.json(status);   
+  } catch (e) {
+    res.json({ active: false, error: e.message });
+  }
+});
+
 app.get('/api/combat/next-cycle', (req, res) => {
   try {
     res.json({
