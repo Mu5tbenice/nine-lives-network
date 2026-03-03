@@ -6,7 +6,7 @@
 
 const supabase = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
-const effectEngine = require('./effectEngine');
+const effectEngine = require('./effectsEngine');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,

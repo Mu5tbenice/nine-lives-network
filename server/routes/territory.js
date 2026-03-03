@@ -3,7 +3,7 @@ const router = express.Router();
 const supabase = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
 const packSystem = require('../services/packSystem');
-const effectEngine = require('../services/effectEngine');
+const effectEngine = require('../services/effectsEngine');
 const scoringV2 = require('../services/scoringV2');
 
 // Admin client for writes

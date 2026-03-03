@@ -1,588 +1,937 @@
-// ═══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // server/services/combatEngine.js
-// V6 Wave-Based Combat — Royal Rumble Edition
-// 3 rounds per cycle, 3 waves per round (1 per card slot)
-// All Nines fire simultaneously, SPD = head start stagger
-// HP ×10 for longer fights and survival streaks
-// ═══════════════════════════════════════════════════════════════
+// Combat V2 — Continuous Real-Time Combat Engine
+// Source: 9LV_COMBAT_V2_LOCKED.md Section 8
+//
+// How it works:
+// - Server tick every 2 seconds
+// - Each Nine has individual attack timer based on SPD
+// - Auto-attacks lowest HP enemy
+// - Effects process via effectsEngine.js
+// - 15-minute snapshots score zone control
+// - All events broadcast via Socket.io
+// ═══════════════════════════════════════════════════════
 
+const supabase = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient(
+const {
+  calculateNineStats,
+  calculateAttackInterval,
+  calculateDamage,
+  rollCrit,
+} = require('./statCalculation');
+const {
+  EffectTracker,
+  resolveAttackEffects,
+  resolveKOEffects,
+  resolveDeployEffects,
+  getIncomingDamageModifiers,
+  getActiveStatModifiers,
+  getEquippedEffects,
+  EFFECTS,
+} = require('./effectsEngine');
+const { addPoints } = require('./pointsService');
+
+const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// ——— CONFIG ———
-const CYCLE_INTERVAL_MS = 5 * 60 * 1000;
-const BUFFER_BETWEEN_CYCLES_MS = 30 * 1000; // 30s regroup between cycles
-const ROUNDS_PER_CYCLE = 3;
-const WAVES_PER_ROUND = 3;
-const HEAL_BETWEEN_ROUNDS_PCT = 0.20;
-const SHARPNESS_LOSS_PER_CYCLE = 1;
-const LONE_WOLF_ATK_BONUS = 1.5;
-const HP_SCALE = 3; // ×3 HP — killable but not instant
+// ─── CONFIG ────────────────────────────────────────────
 
-const HOUSE_MAP = {
-  1: 'smoulders', 2: 'darktide', 3: 'stonebark', 4: 'ashenvale',
-  5: 'stormrage', 6: 'nighthollow', 7: 'dawnbringer', 8: 'manastorm', 9: 'plaguemire'
+const TICK_INTERVAL_MS = 2000;          // 2 second server tick
+const SNAPSHOT_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes
+const KO_COOLDOWN_MS = 60 * 1000;       // 1 minute KO cooldown per zone
+const MAX_ZONE_POP = 50;                // max Nines per zone
+const SHARPNESS_LOSS_PER_SNAPSHOT = 1;  // -1% per snapshot
+
+// Zone scoring points (from V5 Section 21)
+const ZONE_POINTS = {
+  SURVIVE_SNAPSHOT: 3,   // +3 per snapshot survived (player), +2 (guild)
+  WIN_SNAPSHOT: 5,       // +5 for winning guild snapshot (player), +3 (guild)
+  KO_ENEMY: 10,          // +10 for knocking someone out (player), +5 (guild)
+  FLIP_ZONE: 15,         // +15 for flipping a zone (player), +8 (guild)
+  HOLD_FULL_DAY: 25,     // +25 for holding a zone all day
 };
 
-// State
-const zoneCycles = {};
-const survivalStreaks = {};
-let nextCycleAt = null;
-let running = false;
-let intervalHandle = null;
+// ─── ZONE STATE ────────────────────────────────────────
+// In-memory state for each active zone
 
-// ——— LIFECYCLE ———
-function startCombatEngine() {
-  if (running) return;
-  running = true;
-  console.log(`⚔️ V6 Combat Engine — ${ROUNDS_PER_CYCLE}R × ${WAVES_PER_ROUND}W, HP×${HP_SCALE}, ${BUFFER_BETWEEN_CYCLES_MS/1000}s buffer`);
-  // First cycle after a short delay
-  nextCycleAt = Date.now() + 10000;
-  scheduleNextCycle(10000);
-}
-
-function stopCombatEngine() {
-  running = false;
-  if (intervalHandle) clearTimeout(intervalHandle);
-}
-
-function getNextCycleAt() { return nextCycleAt || (Date.now() + CYCLE_INTERVAL_MS); }
-function getCycleIntervalMs() { return CYCLE_INTERVAL_MS; }
-
-/** Schedule next cycle using setTimeout (not setInterval — accounts for combat duration) */
-function scheduleNextCycle(delayMs) {
-  if (!running) return;
-  if (intervalHandle) clearTimeout(intervalHandle);
-  intervalHandle = setTimeout(async () => {
-    await runAllZoneCycles();
-    if (running) {
-      // After combat completes, wait buffer then schedule next
-      nextCycleAt = Date.now() + BUFFER_BETWEEN_CYCLES_MS;
-      scheduleNextCycle(BUFFER_BETWEEN_CYCLES_MS);
-    }
-  }, delayMs);
-}
-
-async function runAllZoneCycles() {
-  try {
-    const { data: activeZones } = await supabase
-      .from('zone_deployments').select('zone_id').eq('is_active', true);
-    if (!activeZones || activeZones.length === 0) {
-      console.log('⚔️ No active zones, skipping cycle');
-      return;
-    }
-    const zoneIds = [...new Set(activeZones.map(d => d.zone_id))];
-    for (const zoneId of zoneIds) {
-      try { await runZoneCycle(zoneId); }
-      catch (e) { console.error(`⚔️ Zone ${zoneId} error:`, e.message); }
-    }
-  } catch (e) {
-    console.error('⚔️ Engine error:', e.message);
+class ZoneState {
+  constructor(zoneId) {
+    this.zoneId = zoneId;
+    this.nines = new Map();           // nineId → NineCombatState
+    this.effectTracker = new EffectTracker();
+    this.lastSnapshotAt = Date.now();
+    this.snapshotCount = 0;
+    this.controllingGuild = null;
+    this.koCooldowns = new Map();     // playerId → expiresAt (per zone)
   }
 }
 
+// Combat state for a single Nine on a zone
+class NineCombatState {
+  constructor(data) {
+    this.id = data.playerId;
+    this.nineId = data.nineId;
+    this.name = data.name;
+    this.guildTag = data.guildTag;
+    this.houseSlug = data.houseSlug;
 
-// ═══════════════════════════════════════════════════════════════
-// SINGLE ZONE CYCLE
-// ═══════════════════════════════════════════════════════════════
-async function runZoneCycle(zoneId) {
-  if (!zoneCycles[zoneId]) zoneCycles[zoneId] = 0;
-  zoneCycles[zoneId]++;
-  const cycleNum = zoneCycles[zoneId];
+    // Stats (calculated from house + cards + items)
+    this.stats = data.stats;          // { atk, hp, spd, def, luck }
+    this.maxHp = data.stats.hp;
+    this.hp = data.stats.hp;          // current HP
 
-  // Load deployments
-  const { data: deployments, error } = await supabase
-    .from('zone_deployments')
-    .select(`
-      id, player_id, nine_id, guild_tag, current_hp, max_hp, is_mercenary, is_active,
-      nine:nine_id(name, base_atk, base_hp, base_spd, base_def, base_luck, house_id),
-      player:player_id(twitter_handle)
-    `)
-    .eq('zone_id', zoneId).eq('is_active', true).gt('current_hp', 0);
+    // Attack timing
+    this.attackInterval = calculateAttackInterval(data.stats.spd);
+    this.lastAttackAt = Date.now();   // starts ready to attack
+    this.nextAttackAt = Date.now() + this.attackInterval * 1000;
 
-  if (error || !deployments || deployments.length < 2) return;
+    // Card data (for effect processing)
+    this.cards = data.cards || [];
 
-  // Build fighters with per-slot card data
-  const fighters = [];
-  for (const d of deployments) {
-    const nine = d.nine || {};
-    const { data: cardSlots } = await supabase
-      .from('zone_card_slots')
-      .select(`
-        card_id, slot_number,
-        card:card_id(
-          id, sharpness, spell_id,
-          spell:spell_id(name, spell_type, house, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)
-        )
-      `)
-      .eq('deployment_id', d.id).eq('is_active', true)
-      .order('slot_number', { ascending: true });
-
-    let totalAtk = nine.base_atk || 0;
-    let totalHp = (nine.base_hp || 0) * HP_SCALE;
-    let totalSpd = nine.base_spd || 0;
-    let totalDef = nine.base_def || 0;
-    let totalLuck = nine.base_luck || 0;
-    const allEffects = [];
-    const slotCards = [null, null, null];
-
-    for (const slot of (cardSlots || [])) {
-      const card = slot.card;
-      if (!card || !card.spell) continue;
-      const spell = card.spell;
-      const sharp = (card.sharpness != null ? card.sharpness : 100) / 100;
-      const sharpMult = 0.5 + sharp / 2;
-
-      totalAtk += Math.round((spell.base_atk || 0) * sharpMult);
-      totalHp += Math.round((spell.base_hp || 0) * HP_SCALE * sharpMult);
-      totalSpd += Math.round((spell.base_spd || 0) * sharpMult);
-      totalDef += Math.round((spell.base_def || 0) * sharpMult);
-      totalLuck += Math.round((spell.base_luck || 0) * sharpMult);
-
-      const cardEffects = [];
-      if (spell.bonus_effects && Array.isArray(spell.bonus_effects)) {
-        for (const eff of spell.bonus_effects) {
-          const obj = { tag: eff.tag || eff.name || '', desc: eff.desc || '', source: spell.name, sharpness: sharp };
-          cardEffects.push(obj);
-          allEffects.push(obj);
-        }
-      }
-
-      const idx = Math.min(2, Math.max(0, (slot.slot_number || 1) - 1));
-      slotCards[idx] = {
-        name: spell.name,
-        type: (spell.spell_type || 'attack').toLowerCase(),
-        house: (spell.house || '').toLowerCase(),
-        effects: cardEffects,
-      };
-    }
-
-    if (d.is_mercenary) totalAtk = Math.round(totalAtk * LONE_WOLF_ATK_BONUS);
-
-    const scaledMax = Math.max(totalHp, HP_SCALE * 5);
-    // On first cycle or if DB has old unscaled HP, use calculated max
-    const hp = (d.max_hp >= scaledMax * 0.5) ? Math.min(d.current_hp, scaledMax) : scaledMax;
-
-    fighters.push({
-      deployment_id: d.id,
-      player_id: d.player_id,
-      nine_id: d.nine_id,
-      name: nine.name || d.player?.twitter_handle || 'Unknown',
-      guild: d.guild_tag || 'Lone Wolf',
-      house: HOUSE_MAP[nine.house_id] || 'unknown',
-      house_id: nine.house_id,
-      hp, maxHp: scaledMax,
-      baseAtk: Math.max(1, totalAtk), atk: Math.max(1, totalAtk),
-      baseSpd: totalSpd, spd: totalSpd,
-      def: totalDef, luck: totalLuck,
-      effects: allEffects,
-      slotCards,
-      alive: true,
-      cards: (cardSlots || []).map(s => s.card_id),
-      _hasWard: false, _hasAnchor: false, _silenced: false,
-      _hasThorns: 0, _hasTaunt: false, _hasStealth: false,
-    });
+    // Flags
+    this.isAlive = true;
+    this.deployedAt = Date.now();
   }
-
-  const uniqueGuilds = new Set(fighters.map(f => f.guild));
-  if (uniqueGuilds.size < 2) return;
-
-  const maxSpd = Math.max(...fighters.map(f => f.spd), 1);
-
-  // ——— CYCLE START ———
-  broadcastToZone(zoneId, 'arena:cycle_start', {
-    cycle_number: cycleNum,
-    total_rounds: ROUNDS_PER_CYCLE,
-    waves_per_round: WAVES_PER_ROUND,
-    max_spd: maxSpd,
-    nines: fighters.map(f => ({
-      id: f.player_id, name: f.name, house: f.house,
-      current_hp: f.hp, max_hp: f.maxHp, spd: f.spd, alive: f.alive,
-      slot_cards: f.slotCards,
-    })),
-  });
-
-  // ——— RUN ROUNDS ———
-  for (let round = 1; round <= ROUNDS_PER_CYCLE; round++) {
-    const aliveGuilds = new Set(fighters.filter(f => f.alive).map(f => f.guild));
-    if (aliveGuilds.size < 2) break;
-
-    // Reset per-round temps
-    for (const f of fighters) {
-      f._hasWard = false; f._hasAnchor = false; f._silenced = false;
-      f._hasThorns = 0; f._hasTaunt = false; f._hasStealth = false;
-      f.atk = f.baseAtk; f.spd = f.baseSpd;
-    }
-
-    broadcastToZone(zoneId, 'arena:round_start', {
-      round_number: round, total_rounds: ROUNDS_PER_CYCLE,
-      cycle_number: cycleNum, max_spd: maxSpd,
-      nines: fighters.map(f => ({
-        id: f.player_id, current_hp: f.hp, max_hp: f.maxHp, spd: f.spd, alive: f.alive,
-      })),
-    });
-
-    await sleep(1500);
-
-    // Run all 3 waves — returns full event list
-    const events = runWaveRound(fighters, round, maxSpd);
-
-    // Send ALL events at once — frontend choreographs timing from wave + spd
-    broadcastToZone(zoneId, 'arena:round_events', {
-      round_number: round, cycle_number: cycleNum,
-      max_spd: maxSpd, events,
-    });
-
-    // Wait for frontend animations (3 waves × ~1.8s + buffer)
-    await sleep(7000);
-
-    broadcastToZone(zoneId, 'arena:round_end', {
-      round_number: round, total_rounds: ROUNDS_PER_CYCLE, cycle_number: cycleNum,
-      nines: fighters.map(f => ({
-        id: f.player_id, current_hp: f.hp, max_hp: f.maxHp, alive: f.alive,
-      })),
-    });
-
-    // Heal between rounds
-    if (round < ROUNDS_PER_CYCLE) {
-      await sleep(1500);
-      const heals = [];
-      for (const f of fighters) {
-        if (!f.alive) continue;
-        const amt = Math.round(f.maxHp * HEAL_BETWEEN_ROUNDS_PCT);
-        const old = f.hp;
-        f.hp = Math.min(f.maxHp, f.hp + amt);
-        if (f.hp > old) heals.push({ type: 'heal', nine_id: f.player_id, amount: f.hp - old, new_hp: f.hp, source: 'round_heal' });
-      }
-      broadcastToZone(zoneId, 'arena:heal_phase', {
-        round_just_ended: round, next_round: round + 1, heals,
-        nines: fighters.map(f => ({ id: f.player_id, current_hp: f.hp, max_hp: f.maxHp, alive: f.alive })),
-      });
-      await sleep(2500);
-    }
-  }
-
-  // ——— CYCLE END ———
-  const guildScores = {};
-  for (const f of fighters) {
-    if (!guildScores[f.guild]) guildScores[f.guild] = 0;
-    if (f.alive) guildScores[f.guild] += f.hp;
-  }
-  const sorted = Object.entries(guildScores).sort((a, b) => b[1] - a[1]);
-  const winnerGuild = sorted.length > 0 ? sorted[0][0] : null;
-
-  // Survival streaks
-  for (const f of fighters) {
-    if (f.alive) {
-      survivalStreaks[f.player_id] = (survivalStreaks[f.player_id] || 0) + 1;
-    } else {
-      survivalStreaks[f.player_id] = 0;
-    }
-  }
-
-  broadcastToZone(zoneId, 'arena:cycle_end', {
-    cycle_number: cycleNum, winner_guild: winnerGuild, guild_scores: guildScores,
-    next_cycle_at: Date.now() + BUFFER_BETWEEN_CYCLES_MS,
-    buffer_ms: BUFFER_BETWEEN_CYCLES_MS,
-    nines: fighters.map(f => ({
-      id: f.player_id, current_hp: f.hp, max_hp: f.maxHp,
-      alive: f.alive, guild: f.guild, streak: survivalStreaks[f.player_id] || 0,
-    })),
-  });
-
-  // DB updates
-  for (const f of fighters) {
-    await supabase.from('zone_deployments').update({
-      current_hp: f.hp, max_hp: f.maxHp, is_active: f.alive,
-      updated_at: new Date().toISOString(),
-    }).eq('id', f.deployment_id);
-  }
-
-  // Sharpness
-  for (const f of fighters) {
-    for (const cid of (f.cards || [])) {
-      if (!cid) continue;
-      await supabase.rpc('decrease_sharpness', { card_id_input: cid, amount: SHARPNESS_LOSS_PER_CYCLE }).catch(() => {
-        supabase.from('player_cards').update({ sharpness: Math.max(0, 100 - SHARPNESS_LOSS_PER_CYCLE) }).eq('id', cid).then(() => {});
-      });
-    }
-  }
-
-  // Points + streaks
-  try {
-    let addPoints;
-    try { addPoints = require('./pointsService').addPoints; } catch(e) { addPoints = null; }
-    if (addPoints) {
-      for (const f of fighters) {
-        if (f.alive) {
-          await addPoints(f.player_id, 3, 'zone_survive', `Survived cycle ${cycleNum}`);
-          if (f.guild === winnerGuild) await addPoints(f.player_id, 5, 'zone_win', `Won cycle ${cycleNum}`);
-          const s = survivalStreaks[f.player_id] || 0;
-          if (s === 3) await addPoints(f.player_id, 5, 'streak_3', '3 cycle streak');
-          if (s === 5) await addPoints(f.player_id, 10, 'streak_5', '5 cycle streak');
-          if (s === 10) await addPoints(f.player_id, 20, 'streak_10', '10 cycle streak!');
-          if (s === 20) await addPoints(f.player_id, 50, 'streak_20', 'LEGENDARY 20 cycle streak!');
-        }
-      }
-      for (const ko of fighters.filter(f => !f.alive)) {
-        const killers = fighters.filter(f => f.guild !== ko.guild && f.alive);
-        if (killers.length > 0) {
-          const killer = killers[Math.floor(Math.random() * killers.length)];
-          await addPoints(killer.player_id, 10, 'zone_ko', `KO'd ${ko.name}`);
-        }
-      }
-    }
-  } catch(e) { console.error('⚔️ Points error:', e.message); }
-
-  console.log(`⚔️ Zone ${zoneId} C${cycleNum}: ${fighters.length}f, winner=${winnerGuild}, ${fighters.filter(f=>!f.alive).length} KOs`);
 }
 
+// ─── ENGINE STATE ──────────────────────────────────────
 
-// ═══════════════════════════════════════════════════════════════
-// WAVE ROUND — 3 waves, all Nines simultaneous, SPD = stagger
-// ═══════════════════════════════════════════════════════════════
-function runWaveRound(fighters, roundNum, maxSpd) {
-  const events = [];
+const zones = new Map();              // zoneId → ZoneState
+let tickTimer = null;
+let snapshotTimer = null;
+let engineRunning = false;
+let lastTickAt = Date.now();
 
-  for (let wave = 1; wave <= WAVES_PER_ROUND; wave++) {
-    const alive = fighters.filter(f => f.alive);
-    alive.sort((a, b) => b.spd - a.spd);
+// ─── MAIN TICK LOOP ────────────────────────────────────
+// Runs every 2 seconds. For each zone:
+// 1. Check each Nine's attack timer
+// 2. If timer elapsed → resolve attack + effects
+// 3. Check KOs
+// 4. Process DOTs (POISON, CORRODE, BURN ticks)
+// 5. Cleanup expired effects
+// 6. Broadcast state changes
 
-    for (const f of alive) {
-      const card = f.slotCards[wave - 1];
-      const cardType = card ? card.type : 'attack';
-      const cardName = card ? card.name : 'Auto-Attack';
-      const cardEffects = card ? card.effects : [];
-      const ev = { wave, spd: f.spd, from: f.player_id, from_name: f.name, from_house: f.house };
+async function tick() {
+  const now = Date.now();
+  lastTickAt = now;
 
-      // ——— CARD EFFECTS (if not silenced) ———
-      if (!f._silenced) {
-        for (const eff of cardEffects) {
-          const tag = (eff.tag || '').toUpperCase();
+  for (const [zoneId, zone] of zones) {
+    if (zone.nines.size === 0) continue;
 
-          // Self/ally buffs
-          if (tag.startsWith('HEAL')) {
-            const amt = parseVal(tag, 3) * HP_SCALE;
-            f.hp = Math.min(f.maxHp, f.hp + amt);
-            events.push({ ...ev, type: 'cast', card_type: 'support', card_name: cardName, effect: 'HEAL', to: f.player_id, to_name: f.name, heal: amt, new_hp: f.hp });
-          }
-          if (tag.startsWith('WARD')) {
-            f._hasWard = true;
-            events.push({ ...ev, type: 'cast', card_type: 'defend', card_name: cardName, effect: 'WARD', to: f.player_id, to_name: f.name });
-          }
-          if (tag.startsWith('ANCHOR')) {
-            f._hasAnchor = true;
-            events.push({ ...ev, type: 'cast', card_type: 'defend', card_name: cardName, effect: 'ANCHOR', to: f.player_id, to_name: f.name });
-          }
-          if (tag.startsWith('BARRIER')) {
-            events.push({ ...ev, type: 'cast', card_type: 'defend', card_name: cardName, effect: 'BARRIER', to: f.player_id, to_name: f.name });
-          }
-          if (tag.startsWith('THORNS')) { f._hasThorns = parseVal(tag, 2); }
-          if (tag.startsWith('TAUNT')) {
-            f._hasTaunt = true;
-            events.push({ ...ev, type: 'cast', card_type: 'defend', card_name: cardName, effect: 'TAUNT', to: f.player_id, to_name: f.name });
-          }
-          if (tag.startsWith('HASTE')) {
-            f.spd += 3;
-            events.push({ ...ev, type: 'cast', card_type: 'utility', card_name: cardName, effect: 'HASTE', to: f.player_id, to_name: f.name });
-          }
-          if (tag.startsWith('STEALTH') && roundNum === 1) {
-            f._hasStealth = true;
-            events.push({ ...ev, type: 'cast', card_type: 'utility', card_name: cardName, effect: 'STEALTH', to: f.player_id, to_name: f.name });
-          }
-          if (tag.startsWith('CLEANSE')) {
-            events.push({ ...ev, type: 'cast', card_type: 'utility', card_name: cardName, effect: 'CLEANSE', to: f.player_id, to_name: f.name });
-          }
-          if (tag.startsWith('REFLECT')) {
-            events.push({ ...ev, type: 'cast', card_type: 'defend', card_name: cardName, effect: 'REFLECT', to: f.player_id, to_name: f.name });
-          }
+    const tickEvents = [];
 
-          // Team buffs
-          if (tag.startsWith('INSPIRE')) {
-            const amt = parseVal(tag, 1);
-            for (const a of fighters.filter(x => x.guild === f.guild && x.player_id !== f.player_id && x.alive)) {
-              a.atk += amt;
-              events.push({ ...ev, type: 'cast', card_type: 'support', card_name: cardName, effect: 'INSPIRE', to: a.player_id, to_name: a.name });
-            }
-          }
-          if (tag.startsWith('BLESS')) {
-            const amt = parseVal(tag, 2) * HP_SCALE;
-            for (const a of fighters.filter(x => x.guild === f.guild && x.alive)) {
-              a.hp = Math.min(a.maxHp, a.hp + amt);
-              events.push({ ...ev, type: 'cast', card_type: 'support', card_name: cardName, effect: 'BLESS', to: a.player_id, to_name: a.name, heal: amt, new_hp: a.hp });
-            }
-          }
-          if (tag.startsWith('AMPLIFY')) {
-            events.push({ ...ev, type: 'cast', card_type: 'support', card_name: cardName, effect: 'AMPLIFY', to: f.player_id, to_name: f.name });
-          }
-
-          // Enemy debuffs
-          const enemies = fighters.filter(x => x.guild !== f.guild && x.alive && !x._hasStealth);
-          if (enemies.length > 0) {
-            const t = enemies[Math.floor(Math.random() * enemies.length)];
-            if (tag.startsWith('SILENCE')) {
-              t._silenced = true;
-              events.push({ ...ev, type: 'cast', card_type: 'manipulation', card_name: cardName, effect: 'SILENCE', to: t.player_id, to_name: t.name });
-            }
-            if (tag.startsWith('HEX')) {
-              t.atk = Math.max(0, t.atk - parseVal(tag, 2));
-              events.push({ ...ev, type: 'cast', card_type: 'manipulation', card_name: cardName, effect: 'HEX', to: t.player_id, to_name: t.name });
-            }
-            if (tag.startsWith('WEAKEN')) {
-              t.atk = Math.round(t.atk * 0.5);
-              events.push({ ...ev, type: 'cast', card_type: 'manipulation', card_name: cardName, effect: 'WEAKEN', to: t.player_id, to_name: t.name });
-            }
-            if (tag.startsWith('DRAIN')) {
-              const amt = parseVal(tag, 3) * HP_SCALE;
-              const stolen = Math.min(amt, t.hp);
-              t.hp -= stolen; f.hp = Math.min(f.maxHp, f.hp + stolen);
-              events.push({ ...ev, type: 'cast', card_type: 'manipulation', card_name: cardName, effect: 'DRAIN', to: t.player_id, to_name: t.name, damage: stolen, new_hp: t.hp });
-            }
-            if (tag.startsWith('SLOW')) {
-              t.spd = Math.max(0, t.spd - parseVal(tag, 3));
-              events.push({ ...ev, type: 'cast', card_type: 'manipulation', card_name: cardName, effect: 'SLOW', to: t.player_id, to_name: t.name });
-            }
-            if (tag.startsWith('SIPHON')) {
-              for (const en of enemies) { const s = Math.min(HP_SCALE, en.hp); en.hp -= s; f.hp = Math.min(f.maxHp, f.hp + s); }
-              events.push({ ...ev, type: 'cast', card_type: 'manipulation', card_name: cardName, effect: 'SIPHON', to: t.player_id, to_name: t.name });
-            }
-            if (tag.startsWith('MARK')) {
-              events.push({ ...ev, type: 'cast', card_type: 'manipulation', card_name: cardName, effect: 'MARK', to: t.player_id, to_name: t.name });
-            }
-          }
-        }
-      }
-
-      // ——— AUTO-ATTACK (every Nine, every wave) ———
-      let enemies = fighters.filter(x => x.guild !== f.guild && x.alive && !x._hasStealth);
-      if (enemies.length === 0) continue;
-      const taunters = enemies.filter(x => x._hasTaunt);
-      if (taunters.length > 0) enemies = taunters;
-      enemies.sort((a, b) => a.hp - b.hp);
-      const target = enemies[0];
-
-      let dmg = Math.max(1, Math.round(f.atk / WAVES_PER_ROUND));
-      let isCrit = false;
-      if (Math.random() < Math.min(0.5, f.luck * 0.03)) { dmg *= 2; isCrit = true; }
-      dmg = Math.max(1, dmg - Math.round(target.def / WAVES_PER_ROUND));
-
-      // Dodge
-      if (Math.random() < Math.min(0.4, target.luck * 0.02)) {
-        events.push({ type: 'dodge', wave, spd: f.spd, nine_id: target.player_id, from: f.player_id });
-        continue;
-      }
-      // Ward
-      if (target._hasWard) {
-        target._hasWard = false;
-        events.push({ type: 'ward_pop', wave, spd: f.spd, nine_id: target.player_id, from: f.player_id });
-        continue;
-      }
-
-      target.hp = Math.max(0, target.hp - dmg);
-      events.push({
-        type: 'cast', wave, spd: f.spd,
-        card_type: cardType, card_name: cardName,
-        from: f.player_id, from_name: f.name, from_house: f.house,
-        to: target.player_id, to_name: target.name,
-        damage: dmg, crit: isCrit, effect: null, new_hp: target.hp, round: roundNum,
-      });
-
-      // BURN on hit
-      for (const eff of cardEffects) {
-        const tag = (eff.tag || '').toUpperCase();
-        if (tag.startsWith('BURN')) {
-          const bd = parseVal(tag, 3);
-          target.hp = Math.max(0, target.hp - bd);
-          events.push({ type: 'effect_tick', wave, spd: f.spd, effect: 'BURN', target_id: target.player_id, damage: bd, new_hp: target.hp });
-        }
-        if (tag.startsWith('CHAIN')) {
-          const others = fighters.filter(x => x.guild !== f.guild && x.alive && x.player_id !== target.player_id);
-          if (others.length > 0) {
-            const t2 = others[Math.floor(Math.random() * others.length)];
-            const cd = Math.round(dmg * 0.6);
-            t2.hp = Math.max(0, t2.hp - cd);
-            events.push({ type: 'cast', wave, spd: f.spd, card_type: 'attack', card_name: 'Chain',
-              from: f.player_id, from_name: f.name, from_house: f.house,
-              to: t2.player_id, to_name: t2.name, damage: cd, effect: 'CHAIN', new_hp: t2.hp, round: roundNum });
-          }
-        }
-        if (tag.startsWith('PIERCE')) {
-          // Pierce ignores WARD/BARRIER - already applied since we skip ward check above
-        }
-      }
-
-      // Thorns
-      if (target._hasThorns && target.alive) {
-        f.hp = Math.max(0, f.hp - target._hasThorns);
-        events.push({ type: 'effect_tick', wave, spd: f.spd, effect: 'THORNS', target_id: f.player_id, damage: target._hasThorns, new_hp: f.hp });
+    // Collect alive Nines grouped by guild
+    const aliveNines = [];
+    for (const [nineId, nine] of zone.nines) {
+      if (nine.isAlive && nine.hp > 0) {
+        aliveNines.push(nine);
       }
     }
 
-    // KO check after each wave
-    for (const f of fighters) {
-      if (f.hp <= 0 && f.alive) {
-        if (f._hasAnchor) {
-          f.hp = 1; f._hasAnchor = false;
-          events.push({ type: 'anchor_save', wave, nine_id: f.player_id });
+    if (aliveNines.length === 0) continue;
+
+    // ── Process each Nine's attack ──
+    for (const attacker of aliveNines) {
+      if (!attacker.isAlive || attacker.hp <= 0) continue;
+
+      // Check if PHASED (can't attack while phased)
+      if (zone.effectTracker.hasEffect(attacker.id, 'PHASE')) continue;
+
+      // Check if attack timer has elapsed
+      if (now < attacker.nextAttackAt) continue;
+
+      // ── This Nine attacks! ──
+
+      // Get stat modifiers from active effects
+      const mods = getActiveStatModifiers(attacker.id, zone.effectTracker);
+      let effectiveAtk = attacker.stats.atk + (mods.atk || 0);
+      let effectiveSpd = attacker.stats.spd + (mods.spd || 0);
+
+      // SURGE: +50% ATK
+      if (mods._surgeActive) {
+        effectiveAtk = Math.floor(effectiveAtk * 1.5);
+      }
+
+      // Find target: lowest HP enemy (or TAUNT target)
+      const enemies = aliveNines.filter(n =>
+        n.id !== attacker.id &&
+        n.guildTag !== attacker.guildTag &&
+        n.isAlive && n.hp > 0
+      );
+
+      if (enemies.length === 0) continue; // no enemies on this zone
+
+      let target = null;
+
+      // Check for TAUNT — forced targeting
+      const taunter = enemies.find(e => zone.effectTracker.hasEffect(e.id, 'TAUNT'));
+      if (taunter) {
+        target = taunter;
+      } else {
+        // Check for STEALTH — filter out stealthed enemies
+        const targetable = enemies.filter(e => !zone.effectTracker.hasEffect(e.id, 'STEALTH'));
+        if (targetable.length > 0) {
+          // Target lowest HP
+          targetable.sort((a, b) => a.hp - b.hp);
+          target = targetable[0];
         } else {
-          f.alive = false; f.hp = 0;
-          events.push({ type: 'ko', wave, nine_id: f.player_id, round: roundNum });
-          // Shatter
-          for (const eff of f.effects) {
-            if ((eff.tag||'').toUpperCase().startsWith('SHATTER')) {
-              const sd = parseVal(eff.tag, 3);
-              for (const en of fighters.filter(x => x.guild !== f.guild && x.alive)) {
-                en.hp = Math.max(0, en.hp - sd);
-                events.push({ type: 'effect_tick', wave, effect: 'SHATTER', target_id: en.player_id, damage: sd, new_hp: en.hp });
+          // All stealthed — can't attack anyone
+          continue;
+        }
+      }
+
+      // ── Calculate damage ──
+      const defenderMods = getActiveStatModifiers(target.id, zone.effectTracker);
+      const effectiveDef = target.stats.def + (defenderMods.def || 0);
+
+      let damage = calculateDamage(effectiveAtk, effectiveDef);
+
+      // WEAKEN on attacker: 50% damage
+      if (mods._weakened) {
+        damage = Math.floor(damage * 0.5);
+      }
+
+      // EXECUTE: +50% damage if target below 30% HP
+      const attackerEffects = getEquippedEffects(attacker);
+      if (attackerEffects.some(e => e.name === 'EXECUTE') && target.hp < target.maxHp * 0.3) {
+        damage = Math.floor(damage * 1.5);
+      }
+
+      // Crit check
+      const isCrit = rollCrit(attacker.stats.luck);
+      if (isCrit) {
+        damage *= 2;
+      }
+
+      // ── Process incoming damage modifiers on target ──
+      const hasPierce = attackerEffects.some(e => e.name === 'PIERCE');
+      const dmgResult = getIncomingDamageModifiers(
+        target.id, attacker.id, damage, hasPierce, zone.effectTracker, now
+      );
+      damage = dmgResult.finalDamage;
+      tickEvents.push(...dmgResult.events);
+
+      // MARK on target: +25% already handled in getIncomingDamageModifiers
+
+      // ── Apply damage to target ──
+      if (damage > 0 && !dmgResult.blocked) {
+        // ANCHOR check: can't drop below 1 HP
+        if (zone.effectTracker.hasEffect(target.id, 'ANCHOR')) {
+          target.hp = Math.max(1, target.hp - damage);
+        } else {
+          target.hp -= damage;
+        }
+
+        // DRAIN: heal attacker for 5% of damage dealt
+        if (attackerEffects.some(e => e.name === 'DRAIN')) {
+          const drainHeal = Math.max(1, Math.floor(damage * 0.05));
+          attacker.hp = Math.min(attacker.maxHp, attacker.hp + drainHeal);
+          tickEvents.push({
+            type: 'effect_heal',
+            source: attacker.id,
+            target: attacker.id,
+            effect: 'DRAIN',
+            value: drainHeal,
+          });
+        }
+
+        tickEvents.push({
+          type: 'attack',
+          source: attacker.id,
+          target: target.id,
+          damage,
+          isCrit,
+          targetHp: target.hp,
+          targetMaxHp: target.maxHp,
+        });
+      }
+
+      // ── Apply reflected damage to attacker ──
+      if (dmgResult.reflected > 0) {
+        attacker.hp -= dmgResult.reflected;
+        tickEvents.push({
+          type: 'reflected_damage',
+          source: target.id,
+          target: attacker.id,
+          damage: dmgResult.reflected,
+        });
+      }
+
+      // ── CHAIN: hit a second target ──
+      if (attackerEffects.some(e => e.name === 'CHAIN')) {
+        const otherEnemies = enemies.filter(e => e.id !== target.id && e.hp > 0);
+        if (otherEnemies.length > 0) {
+          const chainTarget = otherEnemies[Math.floor(Math.random() * otherEnemies.length)];
+          const chainDamage = Math.floor(damage * 0.75); // chain does 75% damage
+          chainTarget.hp -= chainDamage;
+          tickEvents.push({
+            type: 'chain_attack',
+            source: attacker.id,
+            target: chainTarget.id,
+            damage: chainDamage,
+            targetHp: chainTarget.hp,
+          });
+        }
+      }
+
+      // ── Resolve card effects (BURN, HEAL, SILENCE, etc.) ──
+      const zoneContext = {
+        allies: aliveNines.filter(n => n.guildTag === attacker.guildTag && n.id !== attacker.id && n.hp > 0),
+        enemies: enemies,
+      };
+      const effectEvents = resolveAttackEffects(attacker, target, zoneContext, zone.effectTracker, now);
+      tickEvents.push(...effectEvents);
+
+      // ── Apply HEAL events ──
+      for (const evt of effectEvents) {
+        if (evt.type === 'effect_heal' && evt.target && evt.value) {
+          const healTarget = zone.nines.get(evt.target);
+          if (healTarget && healTarget.isAlive) {
+            healTarget.hp = Math.min(healTarget.maxHp, healTarget.hp + evt.value);
+          }
+        }
+      }
+
+      // ── PARASITE tick: heal parasite owner when host attacks ──
+      for (const [parasiteOwner, hostId] of zone.effectTracker.parasiteLinks) {
+        if (hostId === attacker.id) {
+          const owner = zone.nines.get(parasiteOwner);
+          if (owner && owner.isAlive) {
+            owner.hp = Math.min(owner.maxHp, owner.hp + 3);
+            tickEvents.push({
+              type: 'effect_heal',
+              source: parasiteOwner,
+              target: parasiteOwner,
+              effect: 'PARASITE',
+              value: 3,
+            });
+          }
+        }
+      }
+
+      // ── Reset attack timer ──
+      const newInterval = calculateAttackInterval(effectiveSpd);
+      attacker.attackInterval = newInterval;
+      attacker.lastAttackAt = now;
+      attacker.nextAttackAt = now + newInterval * 1000;
+    }
+
+    // ── Process DOTs (POISON, BURN ticks) ──
+    for (const [nineId, nine] of zone.nines) {
+      if (!nine.isAlive || nine.hp <= 0) continue;
+
+      const effects = zone.effectTracker.getEffects(nineId);
+
+      // POISON: +X damage per 3 seconds
+      const poisonEffects = effects.filter(e => e.effect === 'POISON' && !e.consumed);
+      for (const poison of poisonEffects) {
+        const interval = (EFFECTS.POISON.dotInterval || 3) * 1000;
+        const lastTick = poison.data.lastDotTick || poison.appliedAt;
+        if (now - lastTick >= interval) {
+          nine.hp -= poison.value;
+          poison.data.lastDotTick = now;
+          tickEvents.push({
+            type: 'dot_damage',
+            target: nineId,
+            effect: 'POISON',
+            damage: poison.value,
+            targetHp: nine.hp,
+          });
+        }
+      }
+
+      // BURN: damage applied on attack (already handled in resolveAttackEffects)
+      // BURN ticks as extra damage per attacker's attack — tracked by effectsEngine
+      const burnEffects = effects.filter(e => e.effect === 'BURN' && !e.consumed);
+      for (const burn of burnEffects) {
+        // BURN ticks every 2 seconds (each server tick)
+        const lastTick = burn.data.lastBurnTick || burn.appliedAt;
+        if (now - lastTick >= 2000) {
+          nine.hp -= burn.value;
+          burn.data.lastBurnTick = now;
+          tickEvents.push({
+            type: 'dot_damage',
+            target: nineId,
+            effect: 'BURN',
+            damage: burn.value,
+            targetHp: nine.hp,
+          });
+        }
+      }
+
+      // CORRODE aura: -1 max HP to all enemies every 10 seconds
+      if (getEquippedEffects(nine).some(e => e.name === 'CORRODE') && nine.isAlive) {
+        const lastCorrode = zone.effectTracker.corrodeTimers.get(nineId) || 0;
+        if (now - lastCorrode >= 10000) {
+          zone.effectTracker.corrodeTimers.set(nineId, now);
+          const enemies = aliveNines.filter(n => n.guildTag !== nine.guildTag && n.hp > 0);
+          for (const enemy of enemies) {
+            enemy.maxHp = Math.max(1, enemy.maxHp - 1);
+            if (enemy.hp > enemy.maxHp) enemy.hp = enemy.maxHp;
+            tickEvents.push({
+              type: 'effect_trigger',
+              source: nineId,
+              target: enemy.id,
+              effect: 'CORRODE',
+              value: 1,
+            });
+          }
+        }
+      }
+    }
+
+    // ── Check for KOs ──
+    for (const [nineId, nine] of zone.nines) {
+      if (!nine.isAlive) continue;
+      if (nine.hp > 0) continue;
+
+      // This Nine is KO'd
+      nine.isAlive = false;
+      nine.hp = 0;
+
+      // Resolve KO effects (SHATTER, INFECT, RESURRECT, FEAST)
+      const zoneContext = {
+        enemies: aliveNines.filter(n => n.guildTag !== nine.guildTag && n.hp > 0),
+        allies: aliveNines.filter(n => n.guildTag === nine.guildTag && n.id !== nineId && n.hp > 0),
+      };
+      const koEvents = resolveKOEffects(nine, null, zoneContext, zone.effectTracker, now);
+      tickEvents.push(...koEvents);
+
+      // Check for RESURRECT
+      const resEvent = koEvents.find(e => e.type === 'effect_resurrect');
+      if (resEvent) {
+        nine.isAlive = true;
+        nine.hp = resEvent.value;
+        tickEvents.push({
+          type: 'resurrect',
+          target: nineId,
+          hp: resEvent.value,
+        });
+      } else {
+        // Apply SHATTER damage to enemies
+        const shatterEvent = koEvents.find(e => e.type === 'effect_aoe_damage' && e.effect === 'SHATTER');
+        if (shatterEvent) {
+          for (const enemyId of shatterEvent.targets) {
+            const enemy = zone.nines.get(enemyId);
+            if (enemy && enemy.isAlive) {
+              enemy.hp -= shatterEvent.value;
+            }
+          }
+        }
+
+        // Apply FEAST heals
+        for (const evt of koEvents) {
+          if (evt.type === 'effect_heal' && evt.effect === 'FEAST') {
+            const healer = zone.nines.get(evt.target);
+            if (healer && healer.isAlive) {
+              healer.hp = Math.min(healer.maxHp, healer.hp + evt.value);
+            }
+          }
+        }
+
+        // Set KO cooldown for this zone
+        zone.koCooldowns.set(nineId, now + KO_COOLDOWN_MS);
+
+        // Clear effects
+        zone.effectTracker.clearAllEffects(nineId);
+
+        // Update database
+        try {
+          await supabaseAdmin
+            .from('zone_deployments')
+            .update({ is_active: false, ko_at: new Date().toISOString() })
+            .eq('player_id', nineId)
+            .eq('zone_id', zoneId)
+            .eq('is_active', true);
+        } catch (e) {
+          console.error(`KO DB update error for ${nineId}:`, e.message);
+        }
+
+        // Award KO points to killer (if we tracked one)
+        // For now, KO points go to whoever last attacked this Nine
+        tickEvents.push({
+          type: 'ko',
+          target: nineId,
+          targetName: nine.name,
+          targetGuild: nine.guildTag,
+          zone_id: zoneId,
+        });
+      }
+    }
+
+    // ── Cleanup expired effects ──
+    zone.effectTracker.cleanupExpired(now);
+
+    // ── Broadcast tick events to arena viewers ──
+    if (tickEvents.length > 0 && global.__arenaSocket) {
+      global.__arenaSocket._broadcastToZone(zoneId, 'arena:tick', {
+        zone_id: zoneId,
+        tick_at: now,
+        events: tickEvents,
+        // Send condensed HP state for all Nines
+        nines: Array.from(zone.nines.values()).map(n => ({
+          id: n.id,
+          name: n.name,
+          guild: n.guildTag,
+          house: n.houseSlug,
+          hp: n.hp,
+          maxHp: n.maxHp,
+          isAlive: n.isAlive,
+          nextAttackAt: n.nextAttackAt,
+          activeEffects: zone.effectTracker.getEffects(n.id).map(e => ({
+            effect: e.effect,
+            expiresAt: e.expiresAt,
+            value: e.value,
+            stacks: e.stacks,
+          })),
+        })),
+      });
+    }
+  }
+}
+
+
+// ─── 15-MINUTE SNAPSHOT ────────────────────────────────
+// Scores zone control, degrades sharpness, awards points
+
+async function snapshot() {
+  const now = Date.now();
+  console.log(`📸 Zone snapshot at ${new Date(now).toISOString()}`);
+
+  for (const [zoneId, zone] of zones) {
+    if (zone.nines.size === 0) continue;
+
+    zone.snapshotCount++;
+
+    // ── Calculate guild HP totals ──
+    const guildHP = {};
+    const guildMembers = {};
+
+    for (const [nineId, nine] of zone.nines) {
+      if (!nine.isAlive || nine.hp <= 0) continue;
+
+      const guild = nine.guildTag || 'lone_wolf';
+      if (!guildHP[guild]) {
+        guildHP[guild] = 0;
+        guildMembers[guild] = [];
+      }
+      guildHP[guild] += nine.hp;
+      guildMembers[guild].push(nineId);
+    }
+
+    // ── Determine winner ──
+    let winningGuild = null;
+    let highestHP = 0;
+    for (const [guild, totalHp] of Object.entries(guildHP)) {
+      if (totalHp > highestHP) {
+        highestHP = totalHp;
+        winningGuild = guild;
+      }
+    }
+
+    // ── Check for zone flip ──
+    const previousController = zone.controllingGuild;
+    const isFlip = winningGuild && winningGuild !== previousController;
+    zone.controllingGuild = winningGuild;
+
+    // ── Award points ──
+    for (const [nineId, nine] of zone.nines) {
+      if (!nine.isAlive || nine.hp <= 0) continue;
+
+      try {
+        // Survive snapshot: +3 points
+        await addPoints(nineId, ZONE_POINTS.SURVIVE_SNAPSHOT, 'zone_survive', `Survived snapshot on zone ${zoneId}`);
+
+        // Winning guild members: +5 points
+        if (nine.guildTag === winningGuild) {
+          await addPoints(nineId, ZONE_POINTS.WIN_SNAPSHOT, 'zone_win', `Guild won snapshot on zone ${zoneId}`);
+        }
+
+        // Zone flip bonus: +15 points
+        if (isFlip && nine.guildTag === winningGuild) {
+          await addPoints(nineId, ZONE_POINTS.FLIP_ZONE, 'zone_flip', `Flipped zone ${zoneId}`);
+        }
+      } catch (e) {
+        console.error(`Snapshot points error for ${nineId}:`, e.message);
+      }
+    }
+
+    // ── Degrade sharpness for all deployed cards ──
+    try {
+      const playerIds = Array.from(zone.nines.keys());
+      if (playerIds.length > 0) {
+        // Get all active deployments on this zone
+        const { data: deployments } = await supabase
+          .from('zone_deployments')
+          .select('id, player_id')
+          .eq('zone_id', zoneId)
+          .eq('is_active', true);
+
+        if (deployments) {
+          for (const dep of deployments) {
+            // Get card slots for this deployment
+            const { data: slots } = await supabase
+              .from('zone_card_slots')
+              .select('card_id')
+              .eq('deployment_id', dep.id)
+              .eq('is_active', true);
+
+            if (slots) {
+              const cardIds = slots.map(s => s.card_id).filter(Boolean);
+              if (cardIds.length > 0) {
+                // Check if Nine has OVERCHARGE (2x sharpness loss)
+                const nine = zone.nines.get(dep.player_id);
+                const hasOvercharge = nine ? getEquippedEffects(nine).some(e => e.name === 'OVERCHARGE') : false;
+                const sharpnessLoss = hasOvercharge ? SHARPNESS_LOSS_PER_SNAPSHOT * 2 : SHARPNESS_LOSS_PER_SNAPSHOT;
+
+                await supabaseAdmin.rpc('degrade_sharpness', {
+                  card_ids: cardIds,
+                  loss_amount: sharpnessLoss,
+                });
               }
             }
           }
         }
       }
+    } catch (e) {
+      console.error(`Sharpness degradation error on zone ${zoneId}:`, e.message);
     }
-  }
 
-  // DOT ticks end of round
-  for (const f of fighters) {
-    if (!f.alive) continue;
-    for (const en of fighters) {
-      if (en.guild === f.guild || !en.alive) continue;
-      for (const eff of en.effects) {
-        const tag = (eff.tag||'').toUpperCase();
-        if (tag.startsWith('POISON')) {
-          const d = parseVal(tag, 2);
-          f.hp = Math.max(0, f.hp - d);
-          events.push({ type: 'effect_tick', wave: 3, spd: 0, effect: 'POISON', target_id: f.player_id, damage: d, new_hp: f.hp });
+    // ── Update zone control in database ──
+    try {
+      await supabaseAdmin
+        .from('zones')
+        .update({
+          controlled_by: winningGuild,
+          last_snapshot_at: new Date(now).toISOString(),
+          snapshot_count: zone.snapshotCount,
+        })
+        .eq('id', zoneId);
+    } catch (e) {
+      console.error(`Zone control update error for zone ${zoneId}:`, e.message);
+    }
+
+    // ── Broadcast snapshot to arena viewers ──
+    if (global.__arenaSocket) {
+      global.__arenaSocket._broadcastToZone(zoneId, 'arena:snapshot', {
+        zone_id: zoneId,
+        snapshot_number: zone.snapshotCount,
+        guild_hp: guildHP,
+        winner: winningGuild,
+        is_flip: isFlip,
+        previous_controller: previousController,
+        next_snapshot_at: now + SNAPSHOT_INTERVAL_MS,
+      });
+    }
+
+    console.log(`  Zone ${zoneId}: ${winningGuild || 'no controller'} (${highestHP} HP)${isFlip ? ' ← FLIPPED!' : ''}`);
+  }
+}
+
+
+// ─── LOAD ZONE STATE FROM DATABASE ─────────────────────
+// On engine start, load all active deployments into memory
+
+async function loadZoneState() {
+  try {
+    console.log('⚔️ Loading active zone deployments...');
+
+    const { data: deployments, error } = await supabase
+      .from('zone_deployments')
+      .select(`
+        id, player_id, nine_id, zone_id, guild_tag, current_hp, max_hp,
+        player:player_id(twitter_handle, school_id),
+        nine:nine_id(name, house_id)
+      `)
+      .eq('is_active', true);
+
+    if (error) {
+      console.error('Failed to load deployments:', error.message);
+      return;
+    }
+
+    if (!deployments || deployments.length === 0) {
+      console.log('⚔️ No active deployments found');
+      return;
+    }
+
+    for (const dep of deployments) {
+      const zoneId = dep.zone_id;
+
+      // Create zone state if needed
+      if (!zones.has(zoneId)) {
+        zones.set(zoneId, new ZoneState(zoneId));
+      }
+      const zone = zones.get(zoneId);
+
+      // Calculate full stats for this Nine on this zone
+      try {
+        const stats = await calculateNineStats(dep.player_id, zoneId);
+
+        const nineCombat = new NineCombatState({
+          playerId: dep.player_id,
+          nineId: dep.nine_id,
+          name: dep.nine?.name || dep.player?.twitter_handle || 'Unknown',
+          guildTag: dep.guild_tag || 'Lone Wolf',
+          houseSlug: dep.nine?.house_id ? getHouseSlug(dep.nine.house_id) : 'unknown',
+          stats: {
+            atk: stats.atk,
+            hp: stats.hp,
+            spd: stats.spd,
+            def: stats.def,
+            luck: stats.luck,
+          },
+          cards: stats.cards || [],
+        });
+
+        // Use stored HP if less than max (they were mid-fight)
+        if (dep.current_hp && dep.current_hp < nineCombat.maxHp) {
+          nineCombat.hp = dep.current_hp;
         }
-        if (tag.startsWith('CORRODE')) {
-          f.maxHp = Math.max(HP_SCALE, f.maxHp - HP_SCALE);
-          f.hp = Math.min(f.hp, f.maxHp);
-          events.push({ type: 'effect_tick', wave: 3, spd: 0, effect: 'CORRODE', target_id: f.player_id, new_hp: f.hp });
-        }
+
+        zone.nines.set(dep.player_id, nineCombat);
+
+        // Resolve deploy effects
+        const deployEvents = resolveDeployEffects(nineCombat, {
+          allies: Array.from(zone.nines.values()).filter(n => n.guildTag === nineCombat.guildTag && n.id !== nineCombat.id),
+          enemies: Array.from(zone.nines.values()).filter(n => n.guildTag !== nineCombat.guildTag),
+        }, zone.effectTracker, Date.now());
+
+      } catch (e) {
+        console.error(`Failed to load Nine ${dep.player_id} on zone ${zoneId}:`, e.message);
       }
     }
+
+    console.log(`⚔️ Loaded ${deployments.length} Nines across ${zones.size} zones`);
+
+  } catch (e) {
+    console.error('Zone state load error:', e.message);
+  }
+}
+
+
+// ─── PUBLIC API: ADD/REMOVE NINES ──────────────────────
+// Called by zones.js when players deploy/withdraw
+
+async function addNineToZone(playerId, zoneId, nineData) {
+  if (!zones.has(zoneId)) {
+    zones.set(zoneId, new ZoneState(zoneId));
+  }
+  const zone = zones.get(zoneId);
+
+  // Check KO cooldown
+  const cooldownExpiry = zone.koCooldowns.get(playerId);
+  if (cooldownExpiry && Date.now() < cooldownExpiry) {
+    const remaining = Math.ceil((cooldownExpiry - Date.now()) / 1000);
+    return { error: `KO cooldown: ${remaining}s remaining on this zone` };
   }
 
-  // Final KO check
-  for (const f of fighters) {
-    if (f.hp <= 0 && f.alive) {
-      if (f._hasAnchor) { f.hp = 1; f._hasAnchor = false; events.push({ type: 'anchor_save', wave: 3, nine_id: f.player_id }); }
-      else { f.alive = false; f.hp = 0; events.push({ type: 'ko', wave: 3, nine_id: f.player_id, round: roundNum }); }
+  // Check zone population
+  const aliveCount = Array.from(zone.nines.values()).filter(n => n.isAlive).length;
+  if (aliveCount >= MAX_ZONE_POP) {
+    return { error: `Zone is full (${MAX_ZONE_POP} max)` };
+  }
+
+  // Calculate stats
+  const stats = await calculateNineStats(playerId, zoneId);
+
+  const nineCombat = new NineCombatState({
+    playerId,
+    nineId: nineData.nineId,
+    name: nineData.name,
+    guildTag: nineData.guildTag,
+    houseSlug: nineData.houseSlug,
+    stats: {
+      atk: stats.atk,
+      hp: stats.hp,
+      spd: stats.spd,
+      def: stats.def,
+      luck: stats.luck,
+    },
+    cards: stats.cards || [],
+  });
+
+  zone.nines.set(playerId, nineCombat);
+
+  // Resolve deploy effects (SWIFT, GRAVITY, BARRIER)
+  const deployContext = {
+    allies: Array.from(zone.nines.values()).filter(n => n.guildTag === nineCombat.guildTag && n.id !== playerId && n.isAlive),
+    enemies: Array.from(zone.nines.values()).filter(n => n.guildTag !== nineCombat.guildTag && n.isAlive),
+  };
+  const deployEvents = resolveDeployEffects(nineCombat, deployContext, zone.effectTracker, Date.now());
+
+  // Handle GRAVITY: all enemies hit this Nine once at 50% damage
+  const gravityEvent = deployEvents.find(e => e.effect === 'GRAVITY');
+  if (gravityEvent) {
+    for (const enemy of deployContext.enemies) {
+      if (!enemy.isAlive || enemy.hp <= 0) continue;
+      const gravDamage = Math.floor(calculateDamage(enemy.stats.atk, nineCombat.stats.def) * 0.5);
+      nineCombat.hp -= gravDamage;
+
+      // THORNS from SWIFT+GRAVITY combo
+      const thornsVal = zone.effectTracker.getStackedValue(nineCombat.id, 'THORNS');
+      const effectiveThorns = zone.effectTracker.hasEffect(nineCombat.id, 'SWIFT') ? thornsVal * 2 : thornsVal;
+      if (effectiveThorns > 0) {
+        enemy.hp -= effectiveThorns;
+      }
+    }
+    // ANCHOR prevents death from GRAVITY
+    if (zone.effectTracker.hasEffect(nineCombat.id, 'ANCHOR')) {
+      nineCombat.hp = Math.max(1, nineCombat.hp);
     }
   }
 
-  return events;
+  // Broadcast deployment
+  if (global.__arenaSocket) {
+    global.__arenaSocket._broadcastToZone(zoneId, 'arena:nine_joined', {
+      id: playerId,
+      name: nineCombat.name,
+      guild: nineCombat.guildTag,
+      house: nineCombat.houseSlug,
+      hp: nineCombat.hp,
+      maxHp: nineCombat.maxHp,
+      stats: nineCombat.stats,
+      deployEvents,
+    });
+  }
+
+  return { success: true, stats: nineCombat.stats, hp: nineCombat.hp };
+}
+
+function removeNineFromZone(playerId, zoneId) {
+  const zone = zones.get(zoneId);
+  if (!zone) return;
+
+  zone.effectTracker.clearAllEffects(playerId);
+  zone.nines.delete(playerId);
+
+  // Broadcast withdrawal
+  if (global.__arenaSocket) {
+    global.__arenaSocket._broadcastToZone(zoneId, 'arena:nine_left', {
+      id: playerId,
+      zone_id: zoneId,
+    });
+  }
 }
 
 
-// ——— HELPERS ———
-function parseVal(tag, def) { const m = (tag||'').match(/[+-]?\d+/); return m ? parseInt(m[0]) : def; }
-function broadcastToZone(zoneId, event, data) {
-  try { if (global.__arenaSocket) global.__arenaSocket._broadcastToZone(zoneId, event, data); } catch(e) {}
-}
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+// ─── ENGINE CONTROL ────────────────────────────────────
 
-module.exports = { startCombatEngine, stopCombatEngine, runZoneCycle, getNextCycleAt, getCycleIntervalMs };
+async function startCombatEngine() {
+  if (engineRunning) {
+    console.log('⚔️ Combat engine already running');
+    return;
+  }
+
+  console.log('⚔️ Starting Combat V2 engine...');
+  console.log(`   Tick interval: ${TICK_INTERVAL_MS}ms`);
+  console.log(`   Snapshot interval: ${SNAPSHOT_INTERVAL_MS / 1000}s`);
+
+  // Load existing zone state
+  await loadZoneState();
+
+  // Start tick loop
+  tickTimer = setInterval(async () => {
+    try {
+      await tick();
+    } catch (e) {
+      console.error('Tick error:', e.message);
+    }
+  }, TICK_INTERVAL_MS);
+
+  // Start snapshot loop
+  snapshotTimer = setInterval(async () => {
+    try {
+      await snapshot();
+    } catch (e) {
+      console.error('Snapshot error:', e.message);
+    }
+  }, SNAPSHOT_INTERVAL_MS);
+
+  engineRunning = true;
+  console.log('⚔️ Combat V2 engine running!');
+}
+
+function stopCombatEngine() {
+  if (tickTimer) clearInterval(tickTimer);
+  if (snapshotTimer) clearInterval(snapshotTimer);
+  tickTimer = null;
+  snapshotTimer = null;
+  engineRunning = false;
+  console.log('⚔️ Combat engine stopped');
+}
+
+// ─── HELPERS ───────────────────────────────────────────
+
+const HOUSE_SLUGS = {
+  1: 'smoulders', 2: 'darktide', 3: 'stonebark',
+  4: 'ashenvale', 5: 'stormrage', 6: 'nighthollow',
+  7: 'dawnbringer', 8: 'manastorm', 9: 'plaguemire',
+};
+
+function getHouseSlug(houseId) {
+  return HOUSE_SLUGS[houseId] || 'unknown';
+}
+
+// ─── COMPATIBILITY METHODS ─────────────────────────────
+// These match the old combat engine interface so index.js doesn't break
+
+function getNextCycleAt() {
+  // Return next snapshot time
+  const elapsed = Date.now() - (Array.from(zones.values())[0]?.lastSnapshotAt || Date.now());
+  return Date.now() + (SNAPSHOT_INTERVAL_MS - elapsed);
+}
+
+function getCycleIntervalMs() {
+  return SNAPSHOT_INTERVAL_MS;
+}
+
+// ─── STATUS ────────────────────────────────────────────
+
+function getEngineStatus() {
+  const zoneStats = {};
+  for (const [zoneId, zone] of zones) {
+    const alive = Array.from(zone.nines.values()).filter(n => n.isAlive);
+    zoneStats[zoneId] = {
+      totalNines: zone.nines.size,
+      aliveNines: alive.length,
+      controlledBy: zone.controllingGuild,
+      snapshotCount: zone.snapshotCount,
+    };
+  }
+
+  return {
+    running: engineRunning,
+    tickIntervalMs: TICK_INTERVAL_MS,
+    snapshotIntervalMs: SNAPSHOT_INTERVAL_MS,
+    lastTickAt,
+    activeZones: zones.size,
+    zones: zoneStats,
+  };
+}
+
+
+// ─── EXPORTS ───────────────────────────────────────────
+
+module.exports = {
+  // Engine control
+  startCombatEngine,
+  stopCombatEngine,
+  getEngineStatus,
+
+  // Zone management (called by zones.js routes)
+  addNineToZone,
+  removeNineFromZone,
+
+  // Compatibility with old engine interface
+  getNextCycleAt,
+  getCycleIntervalMs,
+
+  // Direct access (for admin/debug)
+  zones,
+  tick,
+  snapshot,
+};
