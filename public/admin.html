@@ -711,6 +711,26 @@
         </div>
       </div>
 
+      <h2 style="font-family:'Cinzel',serif; color:var(--gold); margin:24px 0 16px;">⚔️ V2 Combat Engine</h2>
+      <div id="combat-status-panel" class="action-card" style="margin-bottom:16px;">
+        <div class="loading">Loading combat status...</div>
+      </div>
+      <div class="action-grid">
+        <div class="action-card">
+          <h3>📸 Force Snapshot</h3>
+          <p>Trigger 15-min zone scoring now. Counts guild HP, assigns zone control, degrades sharpness.</p>
+          <button class="btn btn-gold" onclick="forceSnapshot()">TRIGGER SNAPSHOT</button>
+        </div>
+        <div class="action-card">
+          <h3>🔄 Reload Zone</h3>
+          <p>Force reload a zone's combat state from the database.</p>
+          <select id="reload-zone-select" style="background:var(--card-bg);color:var(--body);border:1px solid var(--border);padding:6px 10px;border-radius:6px;margin-bottom:8px;width:100%;font-size:12px;">
+            <option value="">Select zone...</option>
+          </select>
+          <button class="btn" onclick="reloadZone()">RELOAD</button>
+        </div>
+      </div>
+
       <h2 style="font-family:'Cinzel',serif; color:var(--gold); margin:24px 0 16px;">Scheduler Status</h2>
       <div id="scheduler-status" class="action-card">
         <div class="loading">Loading scheduler status</div>
@@ -1489,6 +1509,58 @@ document.getElementById('player-search').addEventListener('input', renderPlayers
 
 // ═══════════════════════════════════════
 // SYSTEM ACTIONS
+
+// V2 COMBAT ENGINE
+async function loadCombatStatus() {
+  try {
+    const data = await adminFetch('/api/admin/combat-status');
+    const el = document.getElementById('combat-status-panel');
+    if (!data || !data.engine) {
+      el.innerHTML = '<p style="color:var(--red);">Engine not loaded</p>';
+      return;
+    }
+    const snapshotIn = data.next_snapshot_at ? Math.max(0, Math.round((data.next_snapshot_at - data.server_time) / 1000)) : 0;
+    const mins = Math.floor(snapshotIn / 60);
+    const secs = snapshotIn % 60;
+    let html = '<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px;">';
+    html += '<div><span style="color:var(--faint);font-size:10px;">ENGINE</span><br><span style="color:var(--green);font-weight:700;">● RUNNING</span></div>';
+    html += '<div><span style="color:var(--faint);font-size:10px;">NEXT SNAPSHOT</span><br><span style="color:var(--gold);font-weight:700;">' + mins + 'm ' + secs + 's</span></div>';
+    html += '</div>';
+    if (data.zones && data.zones.length > 0) {
+      html += '<table class="data-table" style="font-size:11px;"><thead><tr><th>Zone</th><th>Nines</th><th>Alive</th><th>Guilds</th></tr></thead><tbody>';
+      const sel = document.getElementById('reload-zone-select');
+      sel.innerHTML = '<option value="">Select zone...</option>';
+      data.zones.forEach(function(z) {
+        const guilds = z.guilds ? Object.entries(z.guilds).map(function(g) { return g[0] + ': ' + g[1] + ' HP'; }).join(', ') : '—';
+        html += '<tr><td>' + z.name + '</td><td>' + (z.nines || 0) + '</td><td>' + (z.alive || 0) + '</td><td>' + guilds + '</td></tr>';
+        sel.innerHTML += '<option value="' + z.id + '">' + z.name + '</option>';
+      });
+      html += '</tbody></table>';
+    }
+    el.innerHTML = html;
+  } catch (e) {
+    document.getElementById('combat-status-panel').innerHTML = '<p style="color:var(--red);">Failed: ' + e.message + '</p>';
+  }
+}
+
+async function forceSnapshot() {
+  if (!confirm('Trigger zone snapshot now? This will score all zones and degrade sharpness.')) return;
+  try {
+    await adminFetch('/api/admin/force-snapshot', { method: 'POST', body: '{}' });
+    alert('Snapshot triggered!');
+    loadCombatStatus();
+  } catch (e) { alert('Error: ' + e.message); }
+}
+
+async function reloadZone() {
+  var zoneId = document.getElementById('reload-zone-select').value;
+  if (!zoneId) return alert('Select a zone first');
+  try {
+    var result = await adminFetch('/api/admin/reload-zone', { method: 'POST', body: JSON.stringify({ zone_id: parseInt(zoneId) }) });
+    alert('Zone reloaded! ' + (result.nines_loaded || 0) + ' Nines loaded.');
+    loadCombatStatus();
+  } catch (e) { alert('Error: ' + e.message); }
+}
 // ═══════════════════════════════════════
 async function forceAction(action) {
   try {
@@ -1540,6 +1612,7 @@ async function init() {
     loadZones(),
     loadPlayers(),
     loadSchedulerStatus(),
+    loadCombatStatus(),
   ]);
 }
 
