@@ -1,722 +1,805 @@
 // ═══════════════════════════════════════════════════════
 // server/services/duelEngine.js
-// V3 Quick Duels — Real-Time 1v1 Nine Battles
+// Duel V2 — Team Battle Lobbies (1v1, 3v3, 5v5)
 //
-// How it works:
-//   1. Player A challenges Player B
-//   2. Player B accepts → both Nines enter at full HP
-//   3. Each round: both pick a card (30 sec timer)
-//   4. Cards reveal simultaneously
-//   5. ATK damage applied + effects fire
-//   6. First Nine to 0 HP loses
-//   7. Cards NOT consumed (no durability cost)
+// Flow:
+// 1. Player creates a lobby (picks mode: 1v1/3v3/5v5)
+// 2. Players join Team A or Team B
+// 3. Each player picks 3 cards from their collection
+// 4. When both teams full + all cards picked → fight begins
+// 5. V2 combat runs (same formulas as zones)
+// 6. No respawns — last team standing wins
+// 7. Elo updated, points/XP awarded
 //
-// Why it's fun:
-//   - House stats matter (Smoulders = glass cannon, Stonebark = wall)
-//   - Card effects matter (BURN stacks, HEAL survives, SILENCE shuts down)
-//   - Reading your opponent (will they attack or defend?)
-//   - Your Nine's identity carries over from zone battles
+// No sharpness loss. Cards fight at current sharpness.
 // ═══════════════════════════════════════════════════════
 
 const supabase = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
+const {
+  calculateDamage,
+  calculateAttackInterval,
+  rollCrit,
+  applySharpness,
+} = require('./statCalculation');
+const {
+  EffectTracker,
+  resolveAttackEffects,
+  resolveKOEffects,
+  getIncomingDamageModifiers,
+  getActiveStatModifiers,
+  getEquippedEffects,
+} = require('./effectsEngine');
+const { addPoints } = require('./pointsService');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// ── In-memory state ──
-const activeDuels = new Map();       // duel_id → duel state
-const pendingChallenges = new Map(); // challenge_id → challenge info
-const playerSockets = new Map();     // player_id → socket
+// ─── CONFIG ────────────────────────────────────────────
 
-// ── CONSTANTS ──
-const ROUND_TIMEOUT_MS = 30000;      // 30 seconds per round
-const CHALLENGE_EXPIRE_MS = 120000;  // 2 minutes to accept
-const MAX_ROUNDS = 10;               // safety cap (most duels end in 3-6)
-
-// ── EFFECT LOGIC FOR DUELS ──
-// Simplified from zone combat — no persistent ticks, just per-round
-const DUEL_EFFECTS = {
-  // Damage effects (hit opponent)
-  BURN:    { damage: 3, message: 'burned' },
-  POISON:  { damage: 2, message: 'poisoned' },
-  DRAIN:   { damage: 2, selfHeal: 2, message: 'drained' },
-  SIPHON:  { damage: 1, selfHeal: 1, message: 'siphoned' },
-  LEECH:   { damage: 2, selfHeal: 1, message: 'leeched' },
-  DOOM:    { damage: 5, message: 'doomed' },
-
-  // Healing effects (help yourself)
-  HEAL:    { selfHeal: 3, message: 'healed' },
-  BLESS:   { selfHeal: 2, atkBoost: 1, message: 'blessed' },
-  INSPIRE: { selfHeal: 2, message: 'inspired' },
-  CLEANSE: { selfHeal: 1, removeDebuffs: true, message: 'cleansed' },
-
-  // Offensive debuffs (weaken opponent)
-  SILENCE: { oppEffectsBlocked: true, message: 'silenced' },
-  HEX:     { oppAtkReduce: 2, message: 'hexed' },
-  WEAKEN:  { oppAtkReduce: 3, message: 'weakened' },
-  FEAR:    { oppAtkReduce: 4, message: 'feared' },
-  STUN:    { oppSkipAttack: true, message: 'stunned' },
-
-  // Defensive buffs (protect yourself)
-  WARD:    { shield: 3, message: 'warded' },
-  BARRIER: { shield: 5, message: 'barriered' },
-  ANCHOR:  { damageReduce: 2, message: 'anchored' },
-  THORNS:  { reflect: 2, message: 'thorned' },
-  REFLECT: { reflectPct: 50, message: 'reflecting' },
-
-  // Offensive buffs (boost yourself)
-  AMPLIFY: { atkBoost: 2, message: 'amplified' },
-  SURGE:   { atkBoost: 3, message: 'surging' },
-  CRIT:    { critChance: 50, message: 'crit ready' },
-  HASTE:   { extraAttack: true, message: 'hasted' },
+const MODES = {
+  '1v1': { teamSize: 1, label: '1v1 Duel' },
+  '3v3': { teamSize: 3, label: '3v3 Team Battle' },
+  '5v5': { teamSize: 5, label: '5v5 War' },
 };
 
-// ═══════════════════════════════════════════
-// Socket management
-// ═══════════════════════════════════════════
-function registerSocket(playerId, socket) {
-  playerSockets.set(String(playerId), socket);
-}
+const CARDS_PER_PLAYER = 3;
+const TICK_INTERVAL_MS = 500;           // Duels tick faster (0.5s) for excitement
+const MAX_DUEL_DURATION_MS = 120000;    // 2 min max — prevent infinite loops
+const LOBBY_TIMEOUT_MS = 300000;        // 5 min lobby timeout
 
-function unregisterSocket(playerId) {
-  playerSockets.delete(String(playerId));
-  // If player disconnects during duel, they forfeit after timeout
-}
+const DUEL_POINTS = {
+  WIN: 8,
+  LOSE: 2,
+  WIN_STREAK_BONUS: 5,    // 3+ win streak
+  PERFECT_BONUS: 5,       // Win without losing anyone
+};
 
-function getSocket(playerId) {
-  return playerSockets.get(String(playerId));
-}
+const DUEL_XP = {
+  WIN: 4,
+  LOSE: 1,
+};
 
-function emitToPlayer(playerId, event, data) {
-  const socket = getSocket(playerId);
-  if (socket) socket.emit(event, data);
-}
+// Base Elo
+const ELO_BASE = 1000;
+const ELO_K_FACTOR = 32;
 
-// ═══════════════════════════════════════════
-// Create a challenge
-// ═══════════════════════════════════════════
-async function createChallenge(challengerId, opponentId) {
-  if (String(challengerId) === String(opponentId)) {
-    return { success: false, error: 'Cannot duel yourself' };
+// ─── LOBBY STORAGE ─────────────────────────────────────
+// In-memory. Lobbies are short-lived (5 min max).
+
+const lobbies = new Map();        // lobbyId → Lobby
+const activeDuels = new Map();    // duelId → DuelState
+const playerLobby = new Map();    // playerId → lobbyId (quick lookup)
+
+class Lobby {
+  constructor(id, creatorId, mode) {
+    this.id = id;
+    this.mode = mode;                           // '1v1', '3v3', '5v5'
+    this.teamSize = MODES[mode].teamSize;
+    this.createdAt = Date.now();
+    this.creatorId = creatorId;
+    this.status = 'waiting';                    // waiting → ready → fighting → complete
+
+    // Teams: { playerId → { name, houseSlug, cards: [], ready: false } }
+    this.teamA = new Map();
+    this.teamB = new Map();
   }
 
-  // Check neither player is in an active duel
-  for (const [, duel] of activeDuels) {
-    if (duel.status !== 'active') continue;
-    if (duel.p1.id == challengerId || duel.p2.id == challengerId) {
-      return { success: false, error: 'You are already in a duel' };
-    }
-    if (duel.p1.id == opponentId || duel.p2.id == opponentId) {
-      return { success: false, error: 'Opponent is already in a duel' };
-    }
+  get teamACount() { return this.teamA.size; }
+  get teamBCount() { return this.teamB.size; }
+  get isFull() { return this.teamACount >= this.teamSize && this.teamBCount >= this.teamSize; }
+
+  get allReady() {
+    if (!this.isFull) return false;
+    for (const p of this.teamA.values()) { if (!p.ready) return false; }
+    for (const p of this.teamB.values()) { if (!p.ready) return false; }
+    return true;
   }
 
-  // Get both players + their Nines
-  const { data: p1 } = await supabase
+  getPlayerTeam(playerId) {
+    if (this.teamA.has(playerId)) return 'A';
+    if (this.teamB.has(playerId)) return 'B';
+    return null;
+  }
+
+  toJSON() {
+    return {
+      id: this.id,
+      mode: this.mode,
+      teamSize: this.teamSize,
+      status: this.status,
+      createdAt: this.createdAt,
+      teamA: Array.from(this.teamA.entries()).map(([id, p]) => ({
+        playerId: id, name: p.name, house: p.houseSlug, ready: p.ready,
+        cardCount: (p.cards || []).length,
+      })),
+      teamB: Array.from(this.teamB.entries()).map(([id, p]) => ({
+        playerId: id, name: p.name, house: p.houseSlug, ready: p.ready,
+        cardCount: (p.cards || []).length,
+      })),
+    };
+  }
+}
+
+// ─── LOBBY MANAGEMENT ──────────────────────────────────
+
+function generateId() {
+  return 'duel_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+}
+
+/**
+ * Create a new duel lobby
+ * @param {string} creatorId - Player who creates
+ * @param {string} mode - '1v1', '3v3', or '5v5'
+ * @returns {object} { lobby }
+ */
+async function createLobby(creatorId, mode) {
+  if (!MODES[mode]) {
+    return { error: `Invalid mode. Use: ${Object.keys(MODES).join(', ')}` };
+  }
+
+  // Check player isn't already in a lobby
+  if (playerLobby.has(creatorId)) {
+    return { error: 'Already in a lobby. Leave it first.' };
+  }
+
+  const lobbyId = generateId();
+  const lobby = new Lobby(lobbyId, creatorId, mode);
+  lobbies.set(lobbyId, lobby);
+
+  return { success: true, lobby: lobby.toJSON() };
+}
+
+/**
+ * Join a lobby on a specific team
+ * @param {string} lobbyId
+ * @param {string} playerId
+ * @param {string} team - 'A' or 'B'
+ */
+async function joinLobby(lobbyId, playerId, team) {
+  const lobby = lobbies.get(lobbyId);
+  if (!lobby) return { error: 'Lobby not found' };
+  if (lobby.status !== 'waiting') return { error: 'Lobby already started' };
+
+  if (playerLobby.has(playerId)) {
+    return { error: 'Already in a lobby. Leave it first.' };
+  }
+
+  const targetTeam = team === 'B' ? lobby.teamB : lobby.teamA;
+  if (targetTeam.size >= lobby.teamSize) {
+    return { error: `Team ${team} is full` };
+  }
+
+  // Get player info
+  const { data: player } = await supabase
     .from('players')
-    .select('id, twitter_handle, school_id')
-    .eq('id', challengerId)
+    .select('twitter_handle, school_id')
+    .eq('id', playerId)
     .single();
 
-  const { data: p2 } = await supabase
-    .from('players')
-    .select('id, twitter_handle, school_id')
-    .eq('id', opponentId)
+  if (!player) return { error: 'Player not found' };
+
+  // Get house slug
+  const { data: house } = await supabase
+    .from('houses')
+    .select('slug, name, atk, hp, spd, def, luck')
+    .eq('id', player.school_id)
     .single();
 
-  if (!p1 || !p2) return { success: false, error: 'Player not found' };
-
-  const challengeId = 'ch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-
-  const challenge = {
-    id: challengeId,
-    challenger: p1,
-    opponent: p2,
-    created_at: Date.now(),
-    expires_at: Date.now() + CHALLENGE_EXPIRE_MS,
-  };
-
-  pendingChallenges.set(challengeId, challenge);
-
-  // Notify opponent
-  emitToPlayer(opponentId, 'duel:challenge', {
-    challenge_id: challengeId,
-    challenger: { handle: p1.twitter_handle, school_id: p1.school_id },
-    expires_in_seconds: Math.floor(CHALLENGE_EXPIRE_MS / 1000),
+  targetTeam.set(playerId, {
+    name: player.twitter_handle || 'Unknown',
+    houseSlug: house?.slug || 'unknown',
+    house: house || {},
+    cards: [],
+    ready: false,
   });
 
-  // Auto-expire
-  setTimeout(() => {
-    if (pendingChallenges.has(challengeId)) {
-      pendingChallenges.delete(challengeId);
-      emitToPlayer(challengerId, 'duel:expired', { challenge_id: challengeId });
-    }
-  }, CHALLENGE_EXPIRE_MS);
+  playerLobby.set(playerId, lobbyId);
 
-  return { success: true, challenge_id: challengeId };
+  return { success: true, lobby: lobby.toJSON() };
 }
 
-// ═══════════════════════════════════════════
-// Accept challenge → start the duel
-// ═══════════════════════════════════════════
-async function acceptChallenge(challengeId, acceptingPlayerId) {
-  const challenge = pendingChallenges.get(challengeId);
-  if (!challenge) return { success: false, error: 'Challenge not found or expired' };
-  if (challenge.opponent.id != acceptingPlayerId) return { success: false, error: 'Not your challenge' };
-  if (Date.now() > challenge.expires_at) {
-    pendingChallenges.delete(challengeId);
-    return { success: false, error: 'Challenge expired' };
+/**
+ * Leave a lobby
+ */
+function leaveLobby(playerId) {
+  const lobbyId = playerLobby.get(playerId);
+  if (!lobbyId) return { error: 'Not in a lobby' };
+
+  const lobby = lobbies.get(lobbyId);
+  if (!lobby) {
+    playerLobby.delete(playerId);
+    return { error: 'Lobby not found' };
   }
 
-  pendingChallenges.delete(challengeId);
-
-  // Get both Nines
-  const { data: nine1 } = await supabase
-    .from('player_nines')
-    .select('*')
-    .eq('player_id', challenge.challenger.id)
-    .single();
-
-  const { data: nine2 } = await supabase
-    .from('player_nines')
-    .select('*')
-    .eq('player_id', challenge.opponent.id)
-    .single();
-
-  if (!nine1 || !nine2) return { success: false, error: 'Both players need a Nine to duel' };
-
-  const duelId = 'duel_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-
-  const duel = {
-    id: duelId,
-    status: 'active',
-    current_round: 1,
-    p1: {
-      id: challenge.challenger.id,
-      handle: challenge.challenger.twitter_handle,
-      school_id: challenge.challenger.school_id,
-      hp: nine1.base_hp,
-      maxHp: nine1.base_hp,
-      atk: nine1.base_atk,
-      spd: nine1.base_spd,
-      card: null,
-      usedCards: [],
-    },
-    p2: {
-      id: challenge.opponent.id,
-      handle: challenge.opponent.twitter_handle,
-      school_id: challenge.opponent.school_id,
-      hp: nine2.base_hp,
-      maxHp: nine2.base_hp,
-      atk: nine2.base_atk,
-      spd: nine2.base_spd,
-      card: null,
-      usedCards: [],
-    },
-    rounds: [],
-    winner: null,
-    started_at: Date.now(),
-    round_deadline: Date.now() + ROUND_TIMEOUT_MS,
-    roundTimer: null,
-  };
-
-  activeDuels.set(duelId, duel);
-
-  // Notify both players
-  const startData = {
-    duel_id: duelId,
-    round: 1,
-    timeout_seconds: Math.floor(ROUND_TIMEOUT_MS / 1000),
-  };
-
-  emitToPlayer(duel.p1.id, 'duel:start', {
-    ...startData,
-    your_nine: { hp: duel.p1.hp, atk: duel.p1.atk, spd: duel.p1.spd },
-    opponent: { handle: duel.p2.handle, school_id: duel.p2.school_id, hp: duel.p2.hp },
-  });
-
-  emitToPlayer(duel.p2.id, 'duel:start', {
-    ...startData,
-    your_nine: { hp: duel.p2.hp, atk: duel.p2.atk, spd: duel.p2.spd },
-    opponent: { handle: duel.p1.handle, school_id: duel.p1.school_id, hp: duel.p1.hp },
-  });
-
-  // Start round timer
-  startRoundTimer(duelId);
-
-  return { success: true, duel_id: duelId };
-}
-
-// ═══════════════════════════════════════════
-// Decline a challenge
-// ═══════════════════════════════════════════
-function declineChallenge(challengeId, playerId) {
-  const ch = pendingChallenges.get(challengeId);
-  if (!ch || ch.opponent.id != playerId) return { success: false, error: 'Not found' };
-  pendingChallenges.delete(challengeId);
-  emitToPlayer(ch.challenger.id, 'duel:declined', { challenge_id: challengeId });
-  return { success: true };
-}
-
-// ═══════════════════════════════════════════
-// Submit a card for this round
-// ═══════════════════════════════════════════
-async function submitCard(duelId, playerId, cardId) {
-  const duel = activeDuels.get(duelId);
-  if (!duel) return { success: false, error: 'Duel not found' };
-  if (duel.status !== 'active') return { success: false, error: 'Duel is over' };
-
-  const isP1 = duel.p1.id == playerId;
-  const isP2 = duel.p2.id == playerId;
-  if (!isP1 && !isP2) return { success: false, error: 'Not in this duel' };
-
-  const player = isP1 ? duel.p1 : duel.p2;
-
-  if (player.card) return { success: false, error: 'Already submitted this round' };
-
-  // Check card wasn't used in a previous round
-  if (player.usedCards.includes(cardId)) {
-    return { success: false, error: 'Card already used in this duel' };
+  if (lobby.status !== 'waiting') {
+    return { error: 'Cannot leave — duel already started' };
   }
 
-  // Get card data
-  const { data: card } = await supabase
+  lobby.teamA.delete(playerId);
+  lobby.teamB.delete(playerId);
+  playerLobby.delete(playerId);
+
+  // If lobby is empty, delete it
+  if (lobby.teamA.size === 0 && lobby.teamB.size === 0) {
+    lobbies.delete(lobbyId);
+    return { success: true, message: 'Left lobby (lobby closed — empty)' };
+  }
+
+  return { success: true, lobby: lobby.toJSON() };
+}
+
+/**
+ * Pick 3 cards for the duel
+ * @param {string} lobbyId
+ * @param {string} playerId
+ * @param {number[]} cardIds - Array of 3 player_cards IDs
+ */
+async function pickCards(lobbyId, playerId, cardIds) {
+  const lobby = lobbies.get(lobbyId);
+  if (!lobby) return { error: 'Lobby not found' };
+  if (lobby.status !== 'waiting') return { error: 'Lobby already started' };
+
+  const team = lobby.getPlayerTeam(playerId);
+  if (!team) return { error: 'Not in this lobby' };
+
+  if (!cardIds || cardIds.length !== CARDS_PER_PLAYER) {
+    return { error: `Pick exactly ${CARDS_PER_PLAYER} cards` };
+  }
+
+  // Verify cards belong to this player
+  const { data: cards } = await supabase
     .from('player_cards')
-    .select('*, spell:spell_id(base_atk, base_hp, name, bonus_effects)')
-    .eq('id', cardId)
-    .eq('player_id', playerId)
-    .single();
+    .select('id, spell_id, sharpness, spells(id, name, house, spell_type, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects, stat_pattern)')
+    .in('id', cardIds)
+    .eq('player_id', playerId);
 
-  if (!card) return { success: false, error: 'Card not found' };
-
-  // Parse effects
-  let effects = [];
-  try {
-    if (card.spell_effects) {
-      effects = Array.isArray(card.spell_effects) ? card.spell_effects : JSON.parse(card.spell_effects);
-    }
-  } catch (e) { effects = []; }
-
-  player.card = {
-    card_id: card.id,
-    name: card.spell_name || card.spell?.name || 'Unknown',
-    atk: card.spell?.base_atk || 3,
-    hp: card.spell?.base_hp || 2,
-    rarity: card.rarity || 'common',
-    house: card.spell_house || 'universal',
-    type: card.spell_type || 'attack',
-    effects: effects,
-  };
-
-  player.usedCards.push(cardId);
-
-  // Tell opponent a card is locked in
-  const oppId = isP1 ? duel.p2.id : duel.p1.id;
-  emitToPlayer(oppId, 'duel:opponent_locked', {
-    duel_id: duelId,
-    round: duel.current_round,
-  });
-
-  // Both submitted? Resolve!
-  if (duel.p1.card && duel.p2.card) {
-    return await resolveRound(duelId);
+  if (!cards || cards.length !== CARDS_PER_PLAYER) {
+    return { error: 'One or more cards not found in your collection' };
   }
 
-  return { success: true, message: 'Card locked in. Waiting for opponent...' };
+  const teamMap = team === 'A' ? lobby.teamA : lobby.teamB;
+  const playerData = teamMap.get(playerId);
+  playerData.cards = cards;
+  playerData.ready = true;
+
+  // Check if all players are ready
+  const result = { success: true, lobby: lobby.toJSON() };
+
+  if (lobby.allReady) {
+    lobby.status = 'ready';
+    result.allReady = true;
+    result.message = 'All players ready — start the fight!';
+  }
+
+  return result;
 }
 
-// ═══════════════════════════════════════════
-// Resolve a round — the fun part
-// ═══════════════════════════════════════════
-async function resolveRound(duelId) {
-  const duel = activeDuels.get(duelId);
-  if (!duel) return { success: false };
+// ─── OPEN LOBBIES ──────────────────────────────────────
 
-  // Clear round timer
-  if (duel.roundTimer) clearTimeout(duel.roundTimer);
+/**
+ * List open lobbies that players can join
+ */
+function listOpenLobbies() {
+  const open = [];
+  const now = Date.now();
 
-  const p1 = duel.p1;
-  const p2 = duel.p2;
-  const c1 = p1.card;
-  const c2 = p2.card;
-
-  // If someone didn't submit (timeout), they play with base stats only
-  if (!c1) p1.card = { name: 'No card', atk: 0, hp: 0, effects: [], type: 'none', rarity: 'common', house: 'universal' };
-  if (!c2) p2.card = { name: 'No card', atk: 0, hp: 0, effects: [], type: 'none', rarity: 'common', house: 'universal' };
-
-  const roundLog = [];
-
-  // Track modifiers for this round
-  let p1AtkMod = 0, p2AtkMod = 0;
-  let p1Shield = 0, p2Shield = 0;
-  let p1DmgReduce = 0, p2DmgReduce = 0;
-  let p1Reflect = 0, p2Reflect = 0;
-  let p1SkipAtk = false, p2SkipAtk = false;
-  let p1EffectsBlocked = false, p2EffectsBlocked = false;
-  let p1ExtraAtk = false, p2ExtraAtk = false;
-  let p1BonusDmg = 0, p2BonusDmg = 0;
-  let p1Healing = 0, p2Healing = 0;
-
-  // ── Determine speed order (higher SPD resolves effects first) ──
-  const p1First = p1.spd >= p2.spd; // ties go to P1
-
-  const first = p1First ? { p: p1, opp: p2, tag: 'p1' } : { p: p2, opp: p1, tag: 'p2' };
-  const second = p1First ? { p: p2, opp: p1, tag: 'p2' } : { p: p1, opp: p2, tag: 'p1' };
-
-  // ── Process effects in speed order ──
-  for (const turn of [first, second]) {
-    const myCard = turn.p.card;
-    const isP1Turn = turn.tag === 'p1';
-    const blocked = isP1Turn ? p1EffectsBlocked : p2EffectsBlocked;
-
-    if (blocked) {
-      roundLog.push(`${turn.p.handle}'s effects were SILENCED!`);
+  for (const [id, lobby] of lobbies) {
+    // Cleanup expired lobbies
+    if (now - lobby.createdAt > LOBBY_TIMEOUT_MS) {
+      // Clean up player mappings
+      for (const pid of lobby.teamA.keys()) playerLobby.delete(pid);
+      for (const pid of lobby.teamB.keys()) playerLobby.delete(pid);
+      lobbies.delete(id);
       continue;
     }
 
-    for (const effectName of (myCard.effects || [])) {
-      const effect = DUEL_EFFECTS[effectName];
-      if (!effect) continue;
-
-      // Damage to opponent
-      if (effect.damage) {
-        if (isP1Turn) p2BonusDmg += effect.damage;
-        else p1BonusDmg += effect.damage;
-        roundLog.push(`${turn.p.handle}'s ${effectName} deals ${effect.damage} damage!`);
-      }
-
-      // Self heal
-      if (effect.selfHeal) {
-        if (isP1Turn) p1Healing += effect.selfHeal;
-        else p2Healing += effect.selfHeal;
-        roundLog.push(`${turn.p.handle} ${effect.message} for ${effect.selfHeal} HP`);
-      }
-
-      // ATK boost
-      if (effect.atkBoost) {
-        if (isP1Turn) p1AtkMod += effect.atkBoost;
-        else p2AtkMod += effect.atkBoost;
-        roundLog.push(`${turn.p.handle} ${effect.message}! +${effect.atkBoost} ATK`);
-      }
-
-      // Shield
-      if (effect.shield) {
-        if (isP1Turn) p1Shield += effect.shield;
-        else p2Shield += effect.shield;
-        roundLog.push(`${turn.p.handle} ${effect.message}! Absorbs ${effect.shield} damage`);
-      }
-
-      // Damage reduction
-      if (effect.damageReduce) {
-        if (isP1Turn) p1DmgReduce += effect.damageReduce;
-        else p2DmgReduce += effect.damageReduce;
-      }
-
-      // Reflect
-      if (effect.reflect) {
-        if (isP1Turn) p1Reflect += effect.reflect;
-        else p2Reflect += effect.reflect;
-      }
-      if (effect.reflectPct) {
-        if (isP1Turn) p1Reflect += 999; // flag for % based
-        else p2Reflect += 999;
-      }
-
-      // Debuffs on opponent
-      if (effect.oppEffectsBlocked) {
-        if (isP1Turn) p2EffectsBlocked = true;
-        else p1EffectsBlocked = true;
-        roundLog.push(`${turn.opp.handle} was SILENCED!`);
-      }
-      if (effect.oppAtkReduce) {
-        if (isP1Turn) p2AtkMod -= effect.oppAtkReduce;
-        else p1AtkMod -= effect.oppAtkReduce;
-        roundLog.push(`${turn.opp.handle} was ${effect.message}! -${effect.oppAtkReduce} ATK`);
-      }
-      if (effect.oppSkipAttack) {
-        if (isP1Turn) p2SkipAtk = true;
-        else p1SkipAtk = true;
-        roundLog.push(`${turn.opp.handle} was STUNNED!`);
-      }
-
-      // Extra attack
-      if (effect.extraAttack) {
-        if (isP1Turn) p1ExtraAtk = true;
-        else p2ExtraAtk = true;
-      }
-
-      // Crit chance
-      if (effect.critChance && Math.random() * 100 < effect.critChance) {
-        if (isP1Turn) p1AtkMod += Math.floor(p1.card.atk * 0.5);
-        else p2AtkMod += Math.floor(p2.card.atk * 0.5);
-        roundLog.push(`${turn.p.handle} lands a CRITICAL HIT!`);
-      }
+    if (lobby.status === 'waiting') {
+      open.push(lobby.toJSON());
     }
   }
 
-  // ── Apply attacks ──
-  // P1 attacks P2
-  if (!p1SkipAtk) {
-    let p1TotalAtk = Math.max(0, (p1.atk + p1.card.atk + p1AtkMod));
-    let p1Dmg = Math.max(0, p1TotalAtk - p2DmgReduce);
-
-    // Shield absorb
-    if (p2Shield > 0) {
-      const absorbed = Math.min(p2Shield, p1Dmg);
-      p1Dmg -= absorbed;
-      roundLog.push(`${p2.handle}'s shield absorbs ${absorbed} damage`);
-    }
-
-    // Reflect
-    if (p2Reflect > 0 && p2Reflect < 999) {
-      const reflected = Math.min(p2Reflect, p1Dmg);
-      p1.hp = Math.max(0, p1.hp - reflected);
-      roundLog.push(`${p1.handle} takes ${reflected} reflected damage!`);
-    }
-
-    p2.hp = Math.max(0, p2.hp - p1Dmg);
-    roundLog.push(`${p1.handle} hits ${p2.handle} for ${p1Dmg} damage (${p2.hp} HP left)`);
-
-    // HASTE extra attack
-    if (p1ExtraAtk) {
-      const bonusHit = Math.floor(p1TotalAtk * 0.5);
-      p2.hp = Math.max(0, p2.hp - bonusHit);
-      roundLog.push(`${p1.handle} HASTE bonus hit for ${bonusHit}!`);
-    }
-  } else {
-    roundLog.push(`${p1.handle} is STUNNED and can't attack!`);
-  }
-
-  // P2 attacks P1
-  if (!p2SkipAtk) {
-    let p2TotalAtk = Math.max(0, (p2.atk + p2.card.atk + p2AtkMod));
-    let p2Dmg = Math.max(0, p2TotalAtk - p1DmgReduce);
-
-    if (p1Shield > 0) {
-      const absorbed = Math.min(p1Shield, p2Dmg);
-      p2Dmg -= absorbed;
-      roundLog.push(`${p1.handle}'s shield absorbs ${absorbed} damage`);
-    }
-
-    if (p1Reflect > 0 && p1Reflect < 999) {
-      const reflected = Math.min(p1Reflect, p2Dmg);
-      p2.hp = Math.max(0, p2.hp - reflected);
-      roundLog.push(`${p2.handle} takes ${reflected} reflected damage!`);
-    }
-
-    p1.hp = Math.max(0, p1.hp - p2Dmg);
-    roundLog.push(`${p2.handle} hits ${p1.handle} for ${p2Dmg} damage (${p1.hp} HP left)`);
-
-    if (p2ExtraAtk) {
-      const bonusHit = Math.floor(p2TotalAtk * 0.5);
-      p1.hp = Math.max(0, p1.hp - bonusHit);
-      roundLog.push(`${p2.handle} HASTE bonus hit for ${bonusHit}!`);
-    }
-  } else {
-    roundLog.push(`${p2.handle} is STUNNED and can't attack!`);
-  }
-
-  // Apply bonus effect damage
-  p2.hp = Math.max(0, p2.hp - p2BonusDmg);
-  p1.hp = Math.max(0, p1.hp - p1BonusDmg);
-
-  // Apply healing (capped at max HP)
-  p1.hp = Math.min(p1.maxHp, p1.hp + p1Healing);
-  p2.hp = Math.min(p2.maxHp, p2.hp + p2Healing);
-
-  // ── Record round ──
-  const roundResult = {
-    round: duel.current_round,
-    p1_card: { name: p1.card.name, atk: p1.card.atk, rarity: p1.card.rarity, effects: p1.card.effects },
-    p2_card: { name: p2.card.name, atk: p2.card.atk, rarity: p2.card.rarity, effects: p2.card.effects },
-    p1_hp_after: p1.hp,
-    p2_hp_after: p2.hp,
-    log: roundLog,
-  };
-
-  duel.rounds.push(roundResult);
-
-  // ── Check for winner ──
-  let gameOver = false;
-  if (p1.hp <= 0 && p2.hp <= 0) {
-    // Double KO — higher remaining HP wins, or it's a draw
-    duel.winner = 'draw';
-    gameOver = true;
-  } else if (p1.hp <= 0) {
-    duel.winner = p2.id;
-    gameOver = true;
-  } else if (p2.hp <= 0) {
-    duel.winner = p1.id;
-    gameOver = true;
-  } else if (duel.current_round >= MAX_ROUNDS) {
-    // Max rounds — higher HP wins
-    duel.winner = p1.hp > p2.hp ? p1.id : p2.hp > p1.hp ? p2.id : 'draw';
-    gameOver = true;
-  }
-
-  if (gameOver) {
-    duel.status = 'finished';
-
-    // Build result data
-    const resultData = {
-      duel_id: duelId,
-      winner: duel.winner === 'draw' ? null : duel.winner,
-      is_draw: duel.winner === 'draw',
-      rounds: duel.rounds,
-      final_hp: { p1: p1.hp, p2: p2.hp },
-      round_result: roundResult,
-    };
-
-    // Notify both players
-    emitToPlayer(p1.id, 'duel:finished', {
-      ...resultData,
-      you_won: duel.winner === p1.id,
-      opponent: { handle: p2.handle, school_id: p2.school_id },
-    });
-
-    emitToPlayer(p2.id, 'duel:finished', {
-      ...resultData,
-      you_won: duel.winner === p2.id,
-      opponent: { handle: p1.handle, school_id: p1.school_id },
-    });
-
-    // Save to database
-    await saveDuelResult(duel);
-
-    // Clean up after a delay
-    setTimeout(() => activeDuels.delete(duelId), 60000);
-
-    return { success: true, game_over: true, result: resultData };
-  }
-
-  // ── Next round ──
-  duel.current_round++;
-  p1.card = null;
-  p2.card = null;
-  duel.round_deadline = Date.now() + ROUND_TIMEOUT_MS;
-
-  const nextRoundData = {
-    duel_id: duelId,
-    round: duel.current_round,
-    timeout_seconds: Math.floor(ROUND_TIMEOUT_MS / 1000),
-    round_result: roundResult,
-  };
-
-  emitToPlayer(p1.id, 'duel:next_round', {
-    ...nextRoundData,
-    your_hp: p1.hp,
-    opponent_hp: p2.hp,
-  });
-
-  emitToPlayer(p2.id, 'duel:next_round', {
-    ...nextRoundData,
-    your_hp: p2.hp,
-    opponent_hp: p1.hp,
-  });
-
-  startRoundTimer(duelId);
-
-  return { success: true, game_over: false, round_result: roundResult };
+  return open;
 }
 
-// ═══════════════════════════════════════════
-// Round timer — auto-resolve if someone doesn't pick
-// ═══════════════════════════════════════════
-function startRoundTimer(duelId) {
-  const duel = activeDuels.get(duelId);
-  if (!duel) return;
+// ─── FIGHT SIMULATION ──────────────────────────────────
+// Runs the full V2 combat to completion (no respawns)
 
-  if (duel.roundTimer) clearTimeout(duel.roundTimer);
+/**
+ * Start and run a duel fight
+ * Returns the full fight log for the arena viewer to replay
+ */
+async function startFight(lobbyId) {
+  const lobby = lobbies.get(lobbyId);
+  if (!lobby) return { error: 'Lobby not found' };
+  if (lobby.status !== 'ready') return { error: 'Lobby not ready — players still picking cards' };
 
-  duel.roundTimer = setTimeout(async () => {
-    const d = activeDuels.get(duelId);
-    if (!d || d.status !== 'active') return;
+  lobby.status = 'fighting';
+  const duelId = generateId();
 
-    // Auto-resolve with whatever cards are submitted (or none)
-    if (!d.p1.card) {
-      emitToPlayer(d.p1.id, 'duel:timeout', { round: d.current_round });
+  // ── Build fighters ──
+  const teamAFighters = [];
+  const teamBFighters = [];
+
+  for (const [playerId, pData] of lobby.teamA) {
+    teamAFighters.push(buildFighter(playerId, pData, 'A'));
+  }
+  for (const [playerId, pData] of lobby.teamB) {
+    teamBFighters.push(buildFighter(playerId, pData, 'B'));
+  }
+
+  const allFighters = [...teamAFighters, ...teamBFighters];
+
+  // ── Run combat simulation ──
+  const effectTracker = new EffectTracker();
+  const fightLog = [];          // Array of tick events for replay
+  let tickCount = 0;
+  const maxTicks = MAX_DUEL_DURATION_MS / TICK_INTERVAL_MS;
+  const startTime = Date.now();
+
+  // Initialize barriers and passives
+  for (const fighter of allFighters) {
+    const allies = fighter.team === 'A' ? teamAFighters : teamBFighters;
+    const enemies = fighter.team === 'A' ? teamBFighters : teamAFighters;
+    const deployEvents = require('./effectsEngine').resolveDeployEffects(
+      fighter,
+      { allies: allies.filter(a => a.id !== fighter.id), enemies },
+      effectTracker,
+      startTime
+    );
+    if (deployEvents.length > 0) {
+      fightLog.push({ tick: 0, events: deployEvents });
     }
-    if (!d.p2.card) {
-      emitToPlayer(d.p2.id, 'duel:timeout', { round: d.current_round });
+  }
+
+  // ── Tick loop ──
+  while (tickCount < maxTicks) {
+    tickCount++;
+    const now = startTime + tickCount * TICK_INTERVAL_MS;
+    const tickEvents = [];
+
+    // Check if one team is wiped
+    const teamAAlive = teamAFighters.filter(f => f.isAlive && f.hp > 0);
+    const teamBAlive = teamBFighters.filter(f => f.isAlive && f.hp > 0);
+
+    if (teamAAlive.length === 0 || teamBAlive.length === 0) break;
+
+    // ── Process each fighter's attack ──
+    for (const fighter of allFighters) {
+      if (!fighter.isAlive || fighter.hp <= 0) continue;
+      if (effectTracker.hasEffect(fighter.id, 'PHASE')) continue;
+
+      // Check attack timer
+      if (now < fighter.nextAttackAt) continue;
+
+      // Get stat modifiers
+      const mods = getActiveStatModifiers(fighter.id, effectTracker);
+      let effectiveAtk = fighter.stats.atk + (mods.atk || 0);
+      let effectiveSpd = fighter.stats.spd + (mods.spd || 0);
+      if (mods._surgeActive) effectiveAtk = Math.floor(effectiveAtk * 1.5);
+
+      // Find enemies
+      const enemies = fighter.team === 'A' ? teamBAlive : teamAAlive;
+      const allies = fighter.team === 'A' ? teamAAlive : teamBAlive;
+
+      if (enemies.length === 0) continue;
+
+      // Target selection
+      let target = null;
+      const taunter = enemies.find(e => effectTracker.hasEffect(e.id, 'TAUNT'));
+      if (taunter) {
+        target = taunter;
+      } else {
+        const targetable = enemies.filter(e => !effectTracker.hasEffect(e.id, 'STEALTH'));
+        if (targetable.length === 0) continue;
+        targetable.sort((a, b) => a.hp - b.hp);
+        target = targetable[0];
+      }
+
+      // Calculate damage
+      const defenderMods = getActiveStatModifiers(target.id, effectTracker);
+      const effectiveDef = target.stats.def + (defenderMods.def || 0);
+      let damage = calculateDamage(effectiveAtk, effectiveDef);
+
+      if (mods._weakened) damage = Math.floor(damage * 0.5);
+
+      // Execute check
+      const fEffects = getEquippedEffects(fighter);
+      if (fEffects.some(e => e.name === 'EXECUTE') && target.hp < target.maxHp * 0.3) {
+        damage = Math.floor(damage * 1.5);
+      }
+
+      // Crit
+      const isCrit = rollCrit(fighter.stats.luck);
+      if (isCrit) damage *= 2;
+
+      // Incoming damage modifiers
+      const hasPierce = fEffects.some(e => e.name === 'PIERCE');
+      const dmgResult = getIncomingDamageModifiers(target.id, fighter.id, damage, hasPierce, effectTracker, now);
+      damage = dmgResult.finalDamage;
+      tickEvents.push(...dmgResult.events);
+
+      // Apply damage
+      if (damage > 0 && !dmgResult.blocked) {
+        if (effectTracker.hasEffect(target.id, 'ANCHOR')) {
+          target.hp = Math.max(1, target.hp - damage);
+        } else {
+          target.hp -= damage;
+        }
+
+        // DRAIN
+        if (fEffects.some(e => e.name === 'DRAIN')) {
+          const drainHeal = Math.max(1, Math.floor(damage * 0.05));
+          fighter.hp = Math.min(fighter.maxHp, fighter.hp + drainHeal);
+        }
+
+        tickEvents.push({
+          type: 'attack',
+          source: fighter.id,
+          sourceName: fighter.name,
+          target: target.id,
+          targetName: target.name,
+          damage,
+          isCrit,
+          targetHp: target.hp,
+          targetMaxHp: target.maxHp,
+        });
+      }
+
+      // Reflected damage
+      if (dmgResult.reflected > 0) {
+        fighter.hp -= dmgResult.reflected;
+        tickEvents.push({
+          type: 'reflected_damage',
+          source: target.id,
+          target: fighter.id,
+          damage: dmgResult.reflected,
+        });
+      }
+
+      // CHAIN
+      if (fEffects.some(e => e.name === 'CHAIN')) {
+        const otherEnemies = enemies.filter(e => e.id !== target.id && e.hp > 0);
+        if (otherEnemies.length > 0) {
+          const chainTarget = otherEnemies[Math.floor(Math.random() * otherEnemies.length)];
+          const chainDmg = Math.floor(damage * 0.75);
+          chainTarget.hp -= chainDmg;
+          tickEvents.push({
+            type: 'chain_attack',
+            source: fighter.id,
+            target: chainTarget.id,
+            targetName: chainTarget.name,
+            damage: chainDmg,
+          });
+        }
+      }
+
+      // Resolve card effects
+      const zoneContext = {
+        allies: allies.filter(a => a.id !== fighter.id && a.hp > 0),
+        enemies: enemies.filter(e => e.hp > 0),
+      };
+      const effectEvents = resolveAttackEffects(fighter, target, zoneContext, effectTracker, now);
+      tickEvents.push(...effectEvents);
+
+      // Apply heal events
+      for (const evt of effectEvents) {
+        if (evt.type === 'effect_heal' && evt.target && evt.value) {
+          const healTarget = allFighters.find(f => f.id === evt.target);
+          if (healTarget && healTarget.isAlive) {
+            healTarget.hp = Math.min(healTarget.maxHp, healTarget.hp + evt.value);
+          }
+        }
+      }
+
+      // Reset attack timer
+      const newInterval = calculateAttackInterval(effectiveSpd);
+      fighter.attackInterval = newInterval;
+      fighter.lastAttackAt = now;
+      fighter.nextAttackAt = now + newInterval * 1000;
     }
 
-    await resolveRound(duelId);
-  }, ROUND_TIMEOUT_MS);
-}
+    // ── Process DOTs ──
+    for (const fighter of allFighters) {
+      if (!fighter.isAlive || fighter.hp <= 0) continue;
 
-// ═══════════════════════════════════════════
-// Save duel result to database
-// ═══════════════════════════════════════════
-async function saveDuelResult(duel) {
-  try {
-    await supabaseAdmin
-      .from('duel_history')
-      .insert({
-        player1_id: duel.p1.id,
-        player2_id: duel.p2.id,
-        winner_id: duel.winner === 'draw' ? null : duel.winner,
-        is_draw: duel.winner === 'draw',
-        rounds_played: duel.rounds.length,
-        round_data: duel.rounds,
-        p1_hp_final: duel.p1.hp,
-        p2_hp_final: duel.p2.hp,
+      const effects = effectTracker.getEffects(fighter.id);
+
+      // POISON ticks
+      const poisons = effects.filter(e => e.effect === 'POISON' && !e.consumed);
+      for (const p of poisons) {
+        const lastTick = p.data.lastDotTick || p.appliedAt;
+        if (now - lastTick >= 3000) {
+          fighter.hp -= p.value;
+          p.data.lastDotTick = now;
+          tickEvents.push({ type: 'dot_damage', target: fighter.id, effect: 'POISON', damage: p.value, targetHp: fighter.hp });
+        }
+      }
+
+      // BURN ticks
+      const burns = effects.filter(e => e.effect === 'BURN' && !e.consumed);
+      for (const b of burns) {
+        const lastTick = b.data.lastBurnTick || b.appliedAt;
+        if (now - lastTick >= 2000) {
+          fighter.hp -= b.value;
+          b.data.lastBurnTick = now;
+          tickEvents.push({ type: 'dot_damage', target: fighter.id, effect: 'BURN', damage: b.value, targetHp: fighter.hp });
+        }
+      }
+    }
+
+    // ── Check KOs ──
+    for (const fighter of allFighters) {
+      if (!fighter.isAlive) continue;
+      if (fighter.hp > 0) continue;
+
+      fighter.isAlive = false;
+      fighter.hp = 0;
+
+      const enemies = fighter.team === 'A'
+        ? teamBFighters.filter(f => f.hp > 0)
+        : teamAFighters.filter(f => f.hp > 0);
+
+      const koEvents = resolveKOEffects(fighter, null, {
+        enemies,
+        allies: (fighter.team === 'A' ? teamAFighters : teamBFighters).filter(f => f.id !== fighter.id && f.hp > 0),
+      }, effectTracker, now);
+      tickEvents.push(...koEvents);
+
+      // Apply SHATTER damage
+      const shatterEvt = koEvents.find(e => e.type === 'effect_aoe_damage' && e.effect === 'SHATTER');
+      if (shatterEvt) {
+        for (const eid of shatterEvt.targets) {
+          const e = allFighters.find(f => f.id === eid);
+          if (e && e.isAlive) e.hp -= shatterEvt.value;
+        }
+      }
+
+      // Apply FEAST heals
+      for (const evt of koEvents) {
+        if (evt.type === 'effect_heal' && evt.effect === 'FEAST') {
+          const h = allFighters.find(f => f.id === evt.target);
+          if (h && h.isAlive) h.hp = Math.min(h.maxHp, h.hp + evt.value);
+        }
+      }
+
+      // RESURRECT in duels — allowed (no cooldown tracking needed for short fights)
+      const resEvt = koEvents.find(e => e.type === 'effect_resurrect');
+      if (resEvt) {
+        fighter.isAlive = true;
+        fighter.hp = resEvt.value;
+      } else {
+        effectTracker.clearAllEffects(fighter.id);
+        tickEvents.push({
+          type: 'ko',
+          target: fighter.id,
+          targetName: fighter.name,
+          targetTeam: fighter.team,
+        });
+      }
+    }
+
+    // Cleanup expired effects
+    effectTracker.cleanupExpired(now);
+
+    // Record tick
+    if (tickEvents.length > 0) {
+      fightLog.push({
+        tick: tickCount,
+        time: tickCount * TICK_INTERVAL_MS,
+        events: tickEvents,
+        state: allFighters.map(f => ({
+          id: f.id,
+          name: f.name,
+          team: f.team,
+          hp: f.hp,
+          maxHp: f.maxHp,
+          isAlive: f.isAlive,
+        })),
       });
-  } catch (err) {
-    console.error('[Duel] Save error:', err.message);
-  }
-}
-
-// ═══════════════════════════════════════════
-// Get active duel for a player
-// ═══════════════════════════════════════════
-function getActiveDuel(playerId) {
-  for (const [, duel] of activeDuels) {
-    if (duel.status !== 'active') continue;
-    if (duel.p1.id == playerId || duel.p2.id == playerId) {
-      return duel;
     }
   }
-  return null;
-}
 
-// ═══════════════════════════════════════════
-// Get pending challenges for a player
-// ═══════════════════════════════════════════
-function getPendingChallenges(playerId) {
-  const challenges = [];
-  for (const [, ch] of pendingChallenges) {
-    if (ch.opponent.id == playerId && Date.now() < ch.expires_at) {
-      challenges.push(ch);
+  // ── Determine winner ──
+  const teamASurvivors = teamAFighters.filter(f => f.isAlive && f.hp > 0);
+  const teamBSurvivors = teamBFighters.filter(f => f.isAlive && f.hp > 0);
+
+  let winner = null;
+  if (teamASurvivors.length > 0 && teamBSurvivors.length === 0) {
+    winner = 'A';
+  } else if (teamBSurvivors.length > 0 && teamASurvivors.length === 0) {
+    winner = 'B';
+  } else if (teamASurvivors.length > 0 && teamBSurvivors.length > 0) {
+    // Time ran out — team with more total HP wins
+    const aHp = teamASurvivors.reduce((s, f) => s + f.hp, 0);
+    const bHp = teamBSurvivors.reduce((s, f) => s + f.hp, 0);
+    winner = aHp >= bHp ? 'A' : 'B';
+  } else {
+    winner = 'draw';
+  }
+
+  const isPerfect = winner !== 'draw' && (
+    (winner === 'A' && teamAFighters.every(f => f.isAlive && f.hp > 0)) ||
+    (winner === 'B' && teamBFighters.every(f => f.isAlive && f.hp > 0))
+  );
+
+  // ── Award points, XP, Elo ──
+  const winnerTeam = winner === 'A' ? lobby.teamA : (winner === 'B' ? lobby.teamB : null);
+  const loserTeam = winner === 'A' ? lobby.teamB : (winner === 'B' ? lobby.teamA : null);
+
+  const results = [];
+
+  if (winnerTeam) {
+    for (const [pid] of winnerTeam) {
+      let pts = DUEL_POINTS.WIN;
+      if (isPerfect) pts += DUEL_POINTS.PERFECT_BONUS;
+
+      try {
+        await addPoints(pid, pts, 'duel_win', `Won ${lobby.mode} duel`);
+        await updateElo(pid, true);
+      } catch (e) { console.error('Duel points error:', e.message); }
+
+      results.push({ playerId: pid, result: 'win', points: pts });
     }
   }
-  return challenges;
+
+  if (loserTeam) {
+    for (const [pid] of loserTeam) {
+      try {
+        await addPoints(pid, DUEL_POINTS.LOSE, 'duel_lose', `Lost ${lobby.mode} duel`);
+        await updateElo(pid, false);
+      } catch (e) { console.error('Duel points error:', e.message); }
+
+      results.push({ playerId: pid, result: 'lose', points: DUEL_POINTS.LOSE });
+    }
+  }
+
+  // ── Save to database ──
+  try {
+    await supabaseAdmin.from('duel_history').insert({
+      duel_id: duelId,
+      mode: lobby.mode,
+      winner_team: winner,
+      is_perfect: isPerfect,
+      team_a: Array.from(lobby.teamA.keys()),
+      team_b: Array.from(lobby.teamB.keys()),
+      duration_ticks: tickCount,
+      duration_ms: tickCount * TICK_INTERVAL_MS,
+      fight_log: fightLog.length > 200 ? fightLog.slice(-200) : fightLog, // Cap log size
+      results,
+      created_at: new Date().toISOString(),
+    });
+  } catch (e) {
+    console.error('Duel history save error:', e.message);
+  }
+
+  // ── Cleanup lobby ──
+  lobby.status = 'complete';
+  for (const pid of lobby.teamA.keys()) playerLobby.delete(pid);
+  for (const pid of lobby.teamB.keys()) playerLobby.delete(pid);
+  lobbies.delete(lobbyId);
+
+  return {
+    success: true,
+    duelId,
+    mode: lobby.mode,
+    winner,
+    isPerfect,
+    durationMs: tickCount * TICK_INTERVAL_MS,
+    results,
+    fightLog,
+    finalState: allFighters.map(f => ({
+      id: f.id,
+      name: f.name,
+      team: f.team,
+      house: f.houseSlug,
+      hp: f.hp,
+      maxHp: f.maxHp,
+      isAlive: f.isAlive,
+    })),
+  };
 }
 
-// ═══════════════════════════════════════════
-// Get duel history from DB
-// ═══════════════════════════════════════════
-async function getDuelHistory(playerId, limit = 20) {
+
+// ─── FIGHTER BUILDER ───────────────────────────────────
+
+function buildFighter(playerId, pData, team) {
+  const house = pData.house || {};
+  const cards = pData.cards || [];
+
+  // Calculate total stats: house + 3 cards + items
+  // For duels: cards use current sharpness (no loss)
+  const totals = {
+    atk: house.atk || 0,
+    hp: house.hp || 0,
+    spd: house.spd || 0,
+    def: house.def || 0,
+    luck: house.luck || 0,
+  };
+
+  for (const card of cards) {
+    const spell = card.spells || {};
+    const sharp = card.sharpness != null ? card.sharpness : 100;
+
+    totals.atk += applySharpness(spell.base_atk || 0, sharp);
+    totals.hp += applySharpness(spell.base_hp || 0, sharp);
+    totals.spd += applySharpness(spell.base_spd || 0, sharp);
+    totals.def += applySharpness(spell.base_def || 0, sharp);
+    totals.luck += applySharpness(spell.base_luck || 0, sharp);
+  }
+
+  const attackInterval = calculateAttackInterval(totals.spd);
+  const startTime = Date.now();
+
+  return {
+    id: playerId,
+    name: pData.name,
+    team,
+    houseSlug: pData.houseSlug,
+    stats: totals,
+    maxHp: totals.hp,
+    hp: totals.hp,
+    attackInterval,
+    lastAttackAt: startTime,
+    nextAttackAt: startTime + attackInterval * 1000,
+    isAlive: true,
+    cards: cards,   // For effect processing
+  };
+}
+
+
+// ─── ELO ───────────────────────────────────────────────
+
+async function getElo(playerId) {
   const { data } = await supabase
-    .from('duel_history')
-    .select('*')
-    .or(`player1_id.eq.${playerId},player2_id.eq.${playerId}`)
-    .order('created_at', { ascending: false })
-    .limit(limit);
-
-  return data || [];
+    .from('players')
+    .select('duel_elo')
+    .eq('id', playerId)
+    .single();
+  return data?.duel_elo || ELO_BASE;
 }
+
+async function updateElo(playerId, won) {
+  try {
+    const current = await getElo(playerId);
+    // Simplified Elo — uses expected score against average
+    const expected = 1 / (1 + Math.pow(10, (ELO_BASE - current) / 400));
+    const actual = won ? 1 : 0;
+    const newElo = Math.round(current + ELO_K_FACTOR * (actual - expected));
+
+    await supabaseAdmin
+      .from('players')
+      .update({ duel_elo: Math.max(100, newElo) })
+      .eq('id', playerId);
+
+    return newElo;
+  } catch (e) {
+    console.error('Elo update error:', e.message);
+    return null;
+  }
+}
+
+// ─── EXPORTS ───────────────────────────────────────────
 
 module.exports = {
-  registerSocket,
-  unregisterSocket,
-  createChallenge,
-  acceptChallenge,
-  declineChallenge,
-  submitCard,
-  getActiveDuel,
-  getPendingChallenges,
-  getDuelHistory,
+  // Lobby management
+  createLobby,
+  joinLobby,
+  leaveLobby,
+  pickCards,
+  listOpenLobbies,
+
+  // Fight
+  startFight,
+
+  // Storage access (for routes/sockets)
+  lobbies,
+  activeDuels,
+  playerLobby,
+
+  // Config
+  MODES,
+  CARDS_PER_PLAYER,
 };
