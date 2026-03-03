@@ -605,12 +605,153 @@ function processEffects(nine, target, zoneNines, events) {
         break;
       }
 
-      // Catch-all for unimplemented effects
+      case 'SURGE': {
+        // Passive: +50% ATK already applied via _hasSurge flag in attack loop
+        // Cost: -2% sharpness per snapshot instead of -1% (handled in snapshot)
+        nine._hasSurge = true;
+        break;
+      }
+
+      case 'DODGE': {
+        // Passive: 30% chance to avoid damage — checked in main attack loop
+        nine._hasDodge = true;
+        nine._dodgeChance = value || 30;
+        break;
+      }
+
+      case 'PHASE': {
+        // Skip attacks for duration, next attack deals +50% damage
+        if (!nine._phased) {
+          nine._phased = true;
+          nine._phaseBonus = true;
+          // Pause attacks for the duration
+          nine.nextAttackAt = Date.now() + duration;
+          setTimeout(() => {
+            nine._phased = false;
+            // Next attack gets +50% — consumed on use in attack loop
+          }, duration);
+          events.push({ type: 'effect_phase', source: nine.id, target: nine.id, duration });
+        }
+        break;
+      }
+
+      case 'SWIFT': {
+        // First attack after deploy: effects trigger at 2x
+        // Set flag — consumed on first processEffects call
+        if (!nine._swiftUsed) {
+          nine._hasSwift = true;
+        }
+        break;
+      }
+
+      case 'TETHER': {
+        // Link to target: 50% of damage dealt to either is shared
+        if (!target._tetheredTo && !nine._tetheredTo) {
+          nine._tetheredTo = target.id;
+          target._tetheredTo = nine.id;
+          setTimeout(() => {
+            nine._tetheredTo = null;
+            target._tetheredTo = null;
+          }, duration);
+          events.push({ type: 'effect_tether', source: nine.id, target: target.id, duration });
+        }
+        break;
+      }
+
+      case 'AMPLIFY': {
+        // Next ally to attack gets +50% effect strength
+        const ampAllies = getAllies(zoneNines, nine).filter(a => a.isAlive && !a._amplified);
+        if (ampAllies.length > 0) {
+          // Buff the ally with highest ATK (most likely to attack next)
+          const ampTarget = ampAllies.reduce((hi, a) => a.atk > hi.atk ? a : hi, ampAllies[0]);
+          ampTarget._amplified = true;
+          ampTarget._amplifyMult = 1.5;
+          setTimeout(() => {
+            ampTarget._amplified = false;
+            ampTarget._amplifyMult = 1.0;
+          }, duration);
+          events.push({ type: 'effect_amplify', source: nine.id, target: ampTarget.id, duration });
+        }
+        break;
+      }
+
+      case 'OVERCHARGE': {
+        // Effect triggers twice this attack — process all other effects again
+        // Cost: -2% sharpness per snapshot instead of -1% (handled in snapshot)
+        nine._hasOvercharge = true;
+        if (!nine._overchargeProcessed) {
+          nine._overchargeProcessed = true;
+          // Re-run effects (excluding OVERCHARGE itself to prevent infinite loop)
+          const otherEffects = nine.effects.filter(e => parseEffect(e.tag).name !== 'OVERCHARGE');
+          const savedEffects = nine.effects;
+          nine.effects = otherEffects;
+          processEffects(nine, target, zoneNines, events);
+          nine.effects = savedEffects;
+          nine._overchargeProcessed = false;
+        }
+        break;
+      }
+
+      case 'MIRROR': {
+        // Reflect next hit — same as REFLECT but different tag name
+        if (!nine._reflectActive) {
+          nine._reflectActive = true;
+          setTimeout(() => { nine._reflectActive = false; }, duration);
+          events.push({ type: 'effect_mirror', source: nine.id, target: nine.id, duration });
+        }
+        break;
+      }
+
+      case 'PARASITE': {
+        // Attach DOT to target: 3 damage every 3s, heals caster for same amount
+        if (!target._parasited) {
+          target._parasited = true;
+          const parasiteVal = value || 3;
+          const parasiteInterval = setInterval(() => {
+            if (!target.isAlive || !nine.isAlive) { clearInterval(parasiteInterval); target._parasited = false; return; }
+            const dmg = dealDamage(target, parasiteVal, nine);
+            if (dmg > 0) {
+              healTarget(nine, dmg);
+              broadcast(target._zoneId, 'arena:tick', [{
+                type: 'dot_damage', source: nine.id, target: target.id,
+                damage: dmg, effect: 'PARASITE', targetHp: target.currentHp
+              }]);
+            }
+          }, 3000);
+          setTimeout(() => {
+            clearInterval(parasiteInterval);
+            target._parasited = false;
+          }, 12000);
+          events.push({ type: 'effect_parasite', source: nine.id, target: target.id });
+        }
+        break;
+      }
+
+      case 'GRAVITY': {
+        // On deploy: slow ALL enemies on zone by -10 SPD for duration
+        if (!nine._gravityUsed) {
+          nine._gravityUsed = true;
+          const gravEnemies = getEnemies(zoneNines, nine);
+          for (const ge of gravEnemies) {
+            if (!ge._gravitySlowed) {
+              ge._gravitySlowed = true;
+              ge.spd = Math.max(0, ge.spd - 10);
+              ge.attackInterval = getAttackInterval(ge.spd);
+              setTimeout(() => {
+                ge.spd += 10;
+                ge.attackInterval = getAttackInterval(ge.spd);
+                ge._gravitySlowed = false;
+              }, duration);
+            }
+          }
+          events.push({ type: 'effect_gravity', source: nine.id, target: nine.id });
+        }
+        break;
+      }
+
+      // Catch-all for any future effects
       default: {
-        // SURGE, SWIFT, DODGE, PHASE, TETHER, AMPLIFY, SHATTER, INFECT,
-        // OVERCHARGE, MIRROR, PARASITE, GRAVITY — to be implemented
-        // For now just emit a generic event so the arena viewer sees something
-        if (name && name !== 'SURGE') {
+        if (name) {
           events.push({ type: `effect_${name.toLowerCase()}`, source: nine.id, target: target?.id || nine.id });
         }
         break;
@@ -618,8 +759,17 @@ function processEffects(nine, target, zoneNines, events) {
     }
   }
 
-  // SURGE is passive — always active, handled at stat calc time
-  // (already +50% ATK, +25% damage taken baked into createNineState for future)
+  // SWIFT: if this Nine has SWIFT and hasn't used it, mark it consumed
+  // (the double-trigger happened via OVERCHARGE-style logic above)
+  if (nine._hasSwift && !nine._swiftUsed) {
+    nine._swiftUsed = true;
+    // SWIFT doubles the effects on first attack — we just ran them once,
+    // so run them a second time
+    const savedSwift = nine._hasSwift;
+    nine._hasSwift = false; // prevent infinite loop
+    processEffects(nine, target, zoneNines, events);
+    nine._hasSwift = savedSwift;
+  }
 }
 
 // ═══════════════════════════════════════
@@ -796,8 +946,25 @@ async function tick() {
       // Check for PIERCE — bypasses WARD and BARRIER
       const hasPierce = nine.effects.some(e => parseEffect(e.tag).name === 'PIERCE');
 
+      // DODGE check — target has chance to avoid all damage
+      if (target._hasDodge && Math.random() * 100 < (target._dodgeChance || 30)) {
+        tickEvents.push({ type: 'effect_dodge', source: target.id, target: target.id });
+        // Process effects even on dodge (caster's effects still fire)
+        processEffects(nine, target, nines, tickEvents);
+        continue; // Skip damage entirely
+      }
+
       // Calculate damage
-      let damage = calcDamage(nine.atk, target.def);
+      let atkValue = nine.atk;
+      // SURGE: +50% ATK
+      if (nine._hasSurge) atkValue = Math.round(atkValue * 1.5);
+      // PHASE bonus: +50% on first attack after phase ends
+      if (nine._phaseBonus && !nine._phased) {
+        atkValue = Math.round(atkValue * 1.5);
+        nine._phaseBonus = false;
+      }
+
+      let damage = calcDamage(atkValue, target.def);
       const isCrit = rollCrit(nine.luck);
       if (isCrit) damage *= 2;
 
@@ -816,6 +983,17 @@ async function tick() {
         actualDamage = damage;
       } else {
         actualDamage = dealDamage(target, damage, nine);
+      }
+
+      // TETHER: share 50% of damage with tethered partner
+      if (target._tetheredTo && actualDamage > 0) {
+        const tethered = nines.get(target._tetheredTo);
+        if (tethered && tethered.isAlive) {
+          const sharedDmg = Math.round(actualDamage * 0.5);
+          dealDamage(tethered, sharedDmg, nine);
+          tickEvents.push({ type: 'effect_tether', source: target.id, target: tethered.id,
+            damage: sharedDmg, targetHp: tethered.currentHp });
+        }
       }
 
       nine._lastDamageDealt = actualDamage;
@@ -1017,6 +1195,24 @@ async function processSnapshot() {
         if (cardIds.length > 0) {
           // Reduce sharpness by 1%
           await supabaseAdmin.rpc('degrade_sharpness', { card_ids: cardIds, amount: SHARPNESS_LOSS });
+
+          // SURGE / OVERCHARGE penalty: extra -1% (total -2% per snapshot)
+          // Find Nines with these effects and get their card IDs
+          const penaltyDeployIds = [...nines.values()]
+            .filter(n => n._hasSurge || n._hasOvercharge)
+            .map(n => n.deploymentId)
+            .filter(Boolean);
+          if (penaltyDeployIds.length > 0) {
+            const { data: penaltySlots } = await supabase
+              .from('zone_card_slots')
+              .select('card_id')
+              .in('deployment_id', penaltyDeployIds)
+              .eq('is_active', true);
+            const penaltyCardIds = (penaltySlots || []).map(s => s.card_id).filter(Boolean);
+            if (penaltyCardIds.length > 0) {
+              await supabaseAdmin.rpc('degrade_sharpness', { card_ids: penaltyCardIds, amount: 1 });
+            }
+          }
         }
       }
     } catch (e) {
