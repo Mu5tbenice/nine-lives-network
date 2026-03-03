@@ -783,16 +783,16 @@
       </div>
     </div>
     <div style="text-align:right;">
-      <div class="arena-round-badge" id="arena-round-badge">ROUND 1</div>
-      <div class="arena-cycle-timer" id="arena-cycle-timer">Cycle 1</div>
+      <div class="arena-round-badge" id="arena-round-badge">LIVE</div>
+      <div class="arena-cycle-timer" id="arena-cycle-timer">Continuous combat</div>
     </div>
   </div>
 
   <!-- Center: Countdown timer -->
   <div class="arena-countdown" id="arena-countdown">
-    <div class="countdown-label" id="countdown-label">NEXT CYCLE IN</div>
+    <div class="countdown-label" id="countdown-label">NEXT SNAPSHOT</div>
     <div class="countdown-time" id="countdown-time">--:--</div>
-    <div class="countdown-sub" id="countdown-sub">Round 0/3</div>
+    <div class="countdown-sub" id="countdown-sub">Zone scored every 15 min</div>
   </div>
 
   <!-- Right side: Scoreboard -->
@@ -809,15 +809,15 @@
     </div>
     <div class="build-cards">
       <div class="arena-card-slot empty" id="card-slot-0">
-        <span class="slot-wave-label">WAVE 1</span>
+        <span class="slot-wave-label">CARD 1</span>
         <span class="slot-empty-text">SLOT 1</span>
       </div>
       <div class="arena-card-slot empty" id="card-slot-1">
-        <span class="slot-wave-label">WAVE 2</span>
+        <span class="slot-wave-label">CARD 2</span>
         <span class="slot-empty-text">SLOT 2</span>
       </div>
       <div class="arena-card-slot empty" id="card-slot-2">
-        <span class="slot-wave-label">WAVE 3</span>
+        <span class="slot-wave-label">CARD 3</span>
         <span class="slot-empty-text">SLOT 3</span>
       </div>
     </div>
@@ -852,7 +852,7 @@
 
   <!-- Round banner (animated overlay) -->
   <div class="round-banner" id="round-banner" style="display:none;">
-    <div class="round-banner-text" id="round-banner-text">ROUND 1</div>
+    <div class="round-banner-text" id="round-banner-text">COMBAT LIVE</div>
     <div class="round-banner-sub" id="round-banner-sub">FIGHT!</div>
   </div>
 </div>
@@ -939,12 +939,13 @@
     guildKOs: {},
     roundWins: {},
     // Countdown timer
-    cycleEndTime: null,       // timestamp when current cycle ends / next cycle starts
+    cycleEndTime: null,       // timestamp when next snapshot fires
     countdownInterval: null,  // setInterval ref
-    currentRound: 0,
-    totalRounds: 3,
-    currentCycle: 0,
-    isFighting: false,        // true during active combat rounds
+    currentRound: 0,          // legacy compat
+    totalRounds: 3,           // legacy compat
+    currentCycle: 0,          // legacy compat
+    isFighting: false,        // true when combat is active on zone
+    snapshotCount: 0,         // how many snapshots scored this session
     // Equipped cards for this zone
     equippedCards: [],
   };
@@ -1479,6 +1480,12 @@
 
     // Assign initial round positions so Nines spread out
     setTimeout(() => setRoundPositions(), 500);
+
+    // V2: Periodically reassign positions since there are no round boundaries
+    // Nines slowly drift to new spots every 20-30 seconds
+    setInterval(() => {
+      if (state.nines.size > 0) setRoundPositions();
+    }, 25000);
 
     // Handle resize
     window.addEventListener('resize', () => {
@@ -2281,8 +2288,8 @@
   }
 
   /** Animate a KO — spin, shrink, fade */
-  function animateKO(nineId) {
-    const nine = state.nines.get(nineId);
+  function animateKO(nineIdOrSprite) {
+    const nine = (typeof nineIdOrSprite === 'object') ? nineIdOrSprite : state.nines.get(nineIdOrSprite);
     if (!nine || !state.arenaApp) return;
     nine.isAnimating = true;
 
@@ -2420,100 +2427,127 @@
       removeNineSprite(data.nine_id);
     });
 
-    // ── CYCLE START — new 5-min cycle beginning
-    socket.on('arena:cycle_start', (data) => {
-      const cycleNum = data.cycle_number || data.cycle || '?';
-      const totalRounds = data.total_rounds || 3;
-      state.currentCycle = cycleNum;
-      state.totalRounds = totalRounds;
-      state.currentRound = 0;
+    // ── V2 CONTINUOUS COMBAT ──────────────────────
+    // Combat ticks every 2 seconds. Events stream continuously.
+    // All 3 cards are active at once (no waves/rounds).
+    // 15-minute snapshots score zone control.
+
+    // ── TICK EVENTS — V2 combat engine sends events every 2s
+    socket.on('arena:tick', (data) => {
+      if (!data.events || data.events.length === 0) return;
       state.isFighting = true;
-      console.log('🎮 CYCLE START:', cycleNum, '— Rounds:', totalRounds);
-      addFeedEvent(`⚔️ COMBAT CYCLE ${cycleNum} — ${totalRounds} Rounds!`, 'system');
-      showRoundBanner(`CYCLE ${cycleNum}`, `${totalRounds} Rounds Begin!`);
-      updateCountdownDisplay();
 
-      // Refresh all Nines from server so HP/positions are current
-      loadZoneNines(state.currentZoneId);
-    });
+      // Stagger events slightly so animations don't all fire at once
+      data.events.forEach((ev, i) => {
+        setTimeout(() => processArenaEvent(ev), i * 300);
+      });
 
-    // ── ROUND START — happens 3 times per cycle
-    socket.on('arena:round_start', (data) => {
-      state.currentRound = data.round_number || 1;
-      state.totalRounds = data.total_rounds || 3;
-      state.isFighting = true;
-      console.log('🎮 ROUND START:', state.currentRound, 'of', state.totalRounds);
-      const roundLabel = `ROUND ${state.currentRound} of ${state.totalRounds}`;
-      addFeedEvent(`⚔️ ${roundLabel} — FIGHT!`, 'system');
-      showRoundBanner(roundLabel, 'FIGHT!');
-      updateRoundBadge(state.currentRound, state.totalRounds);
-      updateCountdownDisplay();
-
-      // New round — Nines pick fresh positions and walk there
-      setRoundPositions();
-      // Sync HP states
-      if (data.nines) {
-        for (const nine of data.nines) {
+      // Sync HP state if provided
+      if (data.state) {
+        for (const nine of data.state) {
           const nineId = resolveNineId(nine);
           if (state.nines.has(nineId)) {
-            updateNineHP(nineId, nine.hp || nine.current_hp, nine.maxHp || nine.max_hp);
+            updateNineHP(nineId, nine.hp, nine.maxHp);
             const sprite = state.nines.get(nineId);
-            if (sprite && nine.alive) sprite.container.alpha = 1;
+            if (sprite) sprite.container.alpha = nine.isAlive ? 1 : 0.15;
           }
         }
       }
     });
 
-    // ── V6 WAVE COMBAT — all events for a round arrive at once, frontend choreographs timing
-    socket.on('arena:round_events', (data) => {
-      if (!data.events || data.events.length === 0) return;
-      const maxSpd = data.max_spd || 1;
-      console.log(`🎮 ROUND ${data.round_number} — ${data.events.length} events, maxSPD ${maxSpd}`);
+    // ── SNAPSHOT — 15-minute zone control scoring
+    socket.on('arena:snapshot', (data) => {
+      const winner = data.winner_guild || 'No winner';
+      state.snapshotCount = (state.snapshotCount || 0) + 1;
+      console.log('📸 SNAPSHOT:', data);
+      showRoundBanner('ZONE SCORED', `${winner} controls zone`);
+      addFeedEvent(`📸 15-min snapshot — ${winner} controls zone!`, 'system');
+      nermRoundComment('cycle_end', data);
 
-      const WAVE_GAP = 1500;
-      const SPD_FACTOR = 80;
-
-      // Glow card slots per wave
-      for (let w = 1; w <= 3; w++) {
-        const waveStart = (w - 1) * WAVE_GAP;
-        setTimeout(() => {
-          // Remove all wave-active
-          document.querySelectorAll('.arena-card-slot').forEach(el => el.classList.remove('wave-active'));
-          const slot = document.getElementById(`card-slot-${w-1}`);
-          if (slot) slot.classList.add('wave-active');
-        }, waveStart);
+      if (data.guild_scores || data.guild_power) {
+        state.guildScores = data.guild_scores || data.guild_power;
+        updateScoreboard();
       }
-      // Clear glow after all waves
-      setTimeout(() => {
-        document.querySelectorAll('.arena-card-slot').forEach(el => el.classList.remove('wave-active'));
-      }, 3 * WAVE_GAP + 1000);
 
-      data.events.forEach(ev => {
-        const waveOffset = ((ev.wave || 1) - 1) * WAVE_GAP;
-        const spdOffset = (maxSpd - (ev.spd || 0)) * SPD_FACTOR;
-        const totalDelay = waveOffset + spdOffset;
-        setTimeout(() => processArenaEvent(ev), totalDelay);
-      });
+      // Set next snapshot timer
+      if (data.next_snapshot_at) {
+        state.cycleEndTime = data.next_snapshot_at;
+      } else {
+        state.cycleEndTime = Date.now() + 15 * 60 * 1000;
+      }
+      updateCountdownDisplay();
+
+      // Refresh deployment data
+      if (state.currentZoneId) {
+        loadZoneNines(state.currentZoneId);
+        checkDeployment(state.currentZoneId);
+      }
     });
 
-    // Legacy fallback for old event format
+    // ── KO EVENT — Nine knocked out of zone
+    socket.on('arena:ko', (data) => {
+      const nineId = resolveId(data.nine_id || data.target);
+      const sprite = state.nines.get(nineId);
+      if (sprite) {
+        animateKO(sprite);
+        showFloatingText(sprite.container.x, sprite.container.y, 'KO!', 0xff4466, 20);
+        addFeedEvent(`💀 ${data.name || 'A Nine'} was knocked out!`, 'ko');
+      }
+    });
+
+    // ── RESPAWN — Nine returns after KO cooldown
+    socket.on('arena:respawn', (data) => {
+      const nineId = resolveId(data.nine_id);
+      const sprite = state.nines.get(nineId);
+      if (sprite) {
+        sprite.container.alpha = 1;
+        sprite.spriteGroup.scale.set(1, 1);
+        sprite.spriteGroup.rotation = 0;
+        updateNineHP(nineId, data.hp || data.max_hp, data.max_hp);
+        showFloatingText(sprite.container.x, sprite.container.y, 'REVIVED', 0x44ffaa, 14);
+        spawnParticles(sprite.container.x, sprite.container.y, 0x44ffaa, 12, 'heal');
+        addFeedEvent(`💚 ${data.name || 'A Nine'} respawned!`, 'system');
+      }
+    });
+
+    // ── COMBAT STATUS — periodic full state sync (replaces cycle_start)
+    socket.on('arena:combat_status', (data) => {
+      state.isFighting = data.active || false;
+      if (data.nine_count != null) {
+        addFeedEvent(`${data.nine_count} Nines fighting on this zone`, 'system');
+      }
+      if (data.guild_power) {
+        state.guildScores = data.guild_power;
+        updateScoreboard();
+      }
+      if (data.next_snapshot_at) {
+        state.cycleEndTime = data.next_snapshot_at;
+        updateCountdownDisplay();
+      }
+    });
+
+    // ── Legacy event handlers (still useful for direct events)
     socket.on('arena:event', (ev) => processArenaEvent(ev));
     socket.on('arena:events', (data) => {
-      if (data.events) data.events.forEach((ev, i) => setTimeout(() => processArenaEvent(ev), i * 2800));
+      if (data.events) data.events.forEach((ev, i) => setTimeout(() => processArenaEvent(ev), i * 300));
     });
 
-    // ── ROUND END — show round results
+    // ── Legacy round/cycle handlers (backward compat if V6 engine is still running)
+    socket.on('arena:cycle_start', (data) => {
+      state.isFighting = true;
+      addFeedEvent('⚔️ Combat active!', 'system');
+      loadZoneNines(state.currentZoneId);
+    });
+    socket.on('arena:round_start', (data) => {
+      state.isFighting = true;
+      setRoundPositions();
+    });
+    socket.on('arena:round_events', (data) => {
+      if (data.events) data.events.forEach((ev, i) => setTimeout(() => processArenaEvent(ev), i * 300));
+    });
+
+    // ── ROUND END (legacy V6 compat — V2 doesn't use rounds)
     socket.on('arena:round_end', (data) => {
-      console.log('🎮 ROUND END:', data.round_number, 'of', data.total_rounds);
-      state.currentRound = data.round_number || state.currentRound;
-
-      const roundLabel = `ROUND ${data.round_number}/${data.total_rounds}`;
-      addFeedEvent(`🏆 ${roundLabel} complete`, 'system');
-      showRoundBanner(`${roundLabel} OVER`, 'Fighters regroup...');
-
-      // Nerm comments on the round
-      nermRoundComment('round_end', data);
-
       // Sync HP from server
       if (data.nines) {
         for (const nine of data.nines) {
@@ -2521,20 +2555,14 @@
           updateNineHP(nineId, nine.current_hp || nine.hp, nine.max_hp || nine.maxHp);
         }
       }
-
       if (data.guild_scores) {
         state.guildScores = data.guild_scores;
         updateScoreboard();
       }
     });
 
-    // ── HEAL PHASE — between rounds, survivors heal 25%
+    // ── HEAL PHASE (legacy V6 compat — V2 handles heal via effect events)
     socket.on('arena:heal_phase', (data) => {
-      console.log('🎮 HEAL PHASE: after round', data.round_just_ended, '→ next round', data.next_round);
-      addFeedEvent(`💚 Between-round heal — 25% HP restored`, 'system');
-      showRoundBanner('HEALING', '+25% HP');
-
-      // Animate heal on all alive Nines
       if (data.heals) {
         data.heals.forEach((h, i) => {
           setTimeout(() => {
@@ -2548,62 +2576,39 @@
           }, i * 200);
         });
       }
-
-      // Also sync full HP state
-      if (data.nines) {
-        setTimeout(() => {
-          for (const nine of data.nines) {
-            const nineId = resolveNineId(nine);
-            updateNineHP(nineId, nine.current_hp || nine.hp, nine.max_hp || nine.maxHp);
-          }
-        }, 1500);
-      }
     });
 
-    // ── CYCLE END — final results, 30s countdown to next
+    // ── CYCLE END (legacy V6 compat — V2 uses arena:snapshot)
     socket.on('arena:cycle_end', (data) => {
-      console.log('🎮 CYCLE END:', data);
       const winner = data.winner_guild || 'No winner';
-      const cycleNum = data.cycle_number || data.cycle || '?';
-      state.currentCycle = cycleNum;
-      state.isFighting = false;
-      state.currentRound = 0;
+      showRoundBanner('ZONE SCORED', `${winner} controls zone`);
+      addFeedEvent(`📸 Zone scored — ${winner} controls zone`, 'system');
+      nermRoundComment('cycle_end', data);
 
-      // Use server-provided buffer time (30s), not the old 5-min interval
       if (data.next_cycle_at) {
         state.cycleEndTime = data.next_cycle_at;
-      } else if (data.buffer_ms) {
-        state.cycleEndTime = Date.now() + data.buffer_ms;
+      } else if (data.next_snapshot_at) {
+        state.cycleEndTime = data.next_snapshot_at;
       } else {
-        state.cycleEndTime = Date.now() + 30000; // 30s fallback
+        state.cycleEndTime = Date.now() + 15 * 60 * 1000;
       }
 
-      // CRITICAL: Restart the countdown interval if it stopped
       if (!state.countdownInterval) {
         state.countdownInterval = setInterval(updateCountdownDisplay, 250);
       }
       updateCountdownDisplay();
 
-      showRoundBanner('CYCLE COMPLETE', `${winner} controls zone`);
-      addFeedEvent(`🏁 Cycle ${cycleNum} complete — ${winner} controls zone`, 'system');
-
-      // Nerm comments on the cycle result
-      nermRoundComment('cycle_end', data);
-
-      // Sync final HP state
       if (data.nines) {
         for (const nine of data.nines) {
           const nineId = resolveNineId(nine);
           updateNineHP(nineId, nine.current_hp || nine.hp, nine.max_hp || nine.maxHp);
         }
       }
-
       if (data.guild_scores) {
         state.guildScores = data.guild_scores;
         updateScoreboard();
       }
 
-      // Re-sync timing and refresh deployment data
       fetchCycleTiming();
       if (state.currentZoneId) {
         loadZoneNines(state.currentZoneId);
@@ -2654,10 +2659,189 @@
   }
 
   // ═══════════════════════════════════════════════════════════════
-  // V6 EVENT PROCESSOR — dispatches animations based on card_type
+  // V2 EVENT PROCESSOR — handles continuous combat + legacy events
+  // V2 types: attack, dot_damage, effect_*, ko, reflected_damage
+  // Legacy V6 types: cast, effect_tick, dodge, ward_pop, anchor_save
   // ═══════════════════════════════════════════════════════════════
   function processArenaEvent(ev) {
     switch (ev.type) {
+
+      // ── V2: ATTACK — source attacks target with V2 damage formula
+      case 'attack': {
+        const fromId = resolveId(ev.source || ev.from);
+        const toId = resolveId(ev.target || ev.to);
+        const attacker = state.nines.get(fromId);
+        const target = state.nines.get(toId);
+        const dmg = ev.damage || 0;
+
+        animateProjectile(fromId, toId, ev.from_house || attacker?.house, () => {
+          if (target) {
+            const sz = ev.isCrit ? 22 : 16;
+            showFloatingText(target.container.x, target.container.y, `-${dmg}`, ev.isCrit ? 0xffd700 : 0xff4466, sz);
+            if (ev.isCrit) {
+              showFloatingText(target.container.x, target.container.y - 30, 'CRIT!', 0xffd700, 20);
+              spawnParticles(target.container.x, target.container.y, 0xffd700, 16, 'lightning');
+              screenFlash(0xffd700, 0.25);
+              setTimeout(() => spawnFireworkExplosion(target.container.x + (Math.random()-0.5)*20, target.container.y + (Math.random()-0.5)*15, 0xffd700), 150);
+            }
+            spawnParticles(target.container.x, target.container.y, getHouseColor(ev.from_house || attacker?.house), 12, 'fire');
+            shakeSprite(target);
+            if (target.spriteGroup) {
+              target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff4444; });
+              setTimeout(() => { if (target.spriteGroup) target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 450);
+            }
+          }
+          if (ev.targetHp != null) updateNineHP(toId, ev.targetHp, ev.targetMaxHp || target?.maxHp);
+          else if (ev.new_hp != null) updateNineHP(toId, ev.new_hp, target?.maxHp);
+        });
+
+        const feedText = `⚔️ ${ev.sourceName || ev.from_name || getNineName(fromId)} → ${ev.targetName || ev.to_name || getNineName(toId)} -${dmg}${ev.isCrit ? ' CRIT!' : ''}`;
+        addFeedEvent(feedText, 'attack');
+        break;
+      }
+
+      // ── V2: DOT DAMAGE — poison/burn tick damage
+      case 'dot_damage': {
+        const tId = resolveId(ev.target);
+        const sprite = state.nines.get(tId);
+        const effect = ev.effect || 'POISON';
+        if (sprite && ev.damage) {
+          showFloatingText(sprite.container.x, sprite.container.y, `-${ev.damage}`, getEffectColor(effect), 10);
+          spawnParticles(sprite.container.x, sprite.container.y, getEffectColor(effect), 6, getEffectParticleType(effect));
+        }
+        if (ev.targetHp != null) updateNineHP(tId, ev.targetHp, sprite?.maxHp);
+        addFeedEvent(`${effect === 'BURN' ? '🔥' : '☠️'} ${effect} ticks ${getNineName(tId)} for ${ev.damage}`, 'effect');
+        break;
+      }
+
+      // ── V2: REFLECTED DAMAGE
+      case 'reflected_damage': {
+        const tId = resolveId(ev.target);
+        const sprite = state.nines.get(tId);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y, `-${ev.damage} REFLECT`, 0x5599ff, 11);
+          spawnParticles(sprite.container.x, sprite.container.y, 0x5599ff, 8, 'shield');
+          shakeSprite(sprite);
+        }
+        break;
+      }
+
+      // ── V2: KO — Nine knocked out
+      case 'ko': {
+        const koId = resolveId(ev.target || ev.nine_id);
+        addFeedEvent(`💀 ${ev.targetName || getNineName(koId)} was KO'd!`, 'ko');
+        const sprite = state.nines.get(koId);
+        if (sprite) {
+          animateKO(sprite);
+          showFloatingText(sprite.container.x, (sprite.container.y || 0) - 30, 'K.O.', 0xff2222, 18);
+          spawnParticles(sprite.container.x, sprite.container.y, 0xff4466, 20, 'explosion');
+          spawnParticles(sprite.container.x, sprite.container.y, 0xffffff, 8, 'lightning');
+          screenFlash(0xff2222, 0.25);
+        }
+        break;
+      }
+
+      // ── V2: EFFECT APPLIED (effect_burn, effect_heal, effect_silence, etc.)
+      case 'effect_burn':
+      case 'effect_poison':
+      case 'effect_corrode':
+      case 'effect_hex':
+      case 'effect_slow':
+      case 'effect_weaken':
+      case 'effect_silence': {
+        const tId = resolveId(ev.target);
+        const sprite = state.nines.get(tId);
+        const effectName = ev.type.replace('effect_', '').toUpperCase();
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y - 20, effectName, getEffectColor(effectName), 10);
+          spawnParticles(sprite.container.x, sprite.container.y, getEffectColor(effectName), 8, getEffectParticleType(effectName));
+        }
+        addFeedEvent(`${effectName} applied to ${getNineName(tId)}`, 'effect');
+        break;
+      }
+
+      case 'effect_heal':
+      case 'effect_bless':
+      case 'effect_inspire': {
+        const tId = resolveId(ev.target);
+        const sprite = state.nines.get(tId);
+        if (sprite) {
+          if (ev.value) showFloatingText(sprite.container.x, sprite.container.y, `+${ev.value}`, 0x44ffaa, 12);
+          spawnParticles(sprite.container.x, sprite.container.y, 0x44ffaa, 10, 'heal');
+          if (ev.target_hp != null) updateNineHP(tId, ev.target_hp, sprite.maxHp);
+        }
+        break;
+      }
+
+      case 'effect_ward':
+      case 'effect_anchor':
+      case 'effect_barrier':
+      case 'effect_reflect':
+      case 'effect_taunt': {
+        const tId = resolveId(ev.target || ev.source);
+        const sprite = state.nines.get(tId);
+        const effectName = ev.type.replace('effect_', '').toUpperCase();
+        if (sprite) {
+          animateShieldPop(sprite);
+          showFloatingText(sprite.container.x, sprite.container.y - 20, effectName, 0xD4A64B, 10);
+          spawnParticles(sprite.container.x, sprite.container.y, 0xD4A64B, 10, 'shield');
+        }
+        break;
+      }
+
+      case 'effect_haste':
+      case 'effect_stealth':
+      case 'effect_surge':
+      case 'effect_cleanse': {
+        const tId = resolveId(ev.target || ev.source);
+        const sprite = state.nines.get(tId);
+        const effectName = ev.type.replace('effect_', '').toUpperCase();
+        if (sprite) {
+          animateAuraBurst(sprite, effectName);
+          showFloatingText(sprite.container.x, sprite.container.y - 20, effectName, 0x90E0EF, 10);
+        }
+        break;
+      }
+
+      case 'effect_chain': {
+        // Chain hit on second target
+        const tId = resolveId(ev.target);
+        const sprite = state.nines.get(tId);
+        if (sprite && ev.damage) {
+          showFloatingText(sprite.container.x, sprite.container.y, `-${ev.damage} CHAIN`, 0x5599ff, 11);
+          spawnParticles(sprite.container.x, sprite.container.y, 0x5599ff, 10, 'lightning');
+          shakeSprite(sprite);
+        }
+        break;
+      }
+
+      case 'effect_resurrect': {
+        const tId = resolveId(ev.target);
+        const sprite = state.nines.get(tId);
+        if (sprite) {
+          sprite.container.alpha = 1;
+          sprite.spriteGroup.scale.set(1, 1);
+          sprite.spriteGroup.rotation = 0;
+          if (ev.value) updateNineHP(tId, ev.value, sprite.maxHp);
+          showFloatingText(sprite.container.x, sprite.container.y, 'RESURRECT!', 0xffd700, 16);
+          spawnParticles(sprite.container.x, sprite.container.y, 0xffd700, 15, 'heal');
+          screenFlash(0xffd700, 0.15);
+        }
+        addFeedEvent(`✨ ${getNineName(tId)} was RESURRECTED!`, 'effect');
+        break;
+      }
+
+      case 'effect_drain': {
+        const fromId = resolveId(ev.source);
+        const sprite = state.nines.get(fromId);
+        if (sprite && ev.value) {
+          showFloatingText(sprite.container.x, sprite.container.y, `+${ev.value} DRAIN`, 0xff3366, 10);
+          spawnParticles(sprite.container.x, sprite.container.y, 0xff3366, 6, 'default');
+        }
+        break;
+      }
+
+      // ── LEGACY V6 EVENTS (backward compat) ──
 
       case 'cast': {
         const fromId = resolveId(ev.from);
@@ -2665,63 +2849,26 @@
         const attacker = state.nines.get(fromId);
         const target = state.nines.get(toId);
 
-        // If this is an effect-only cast (no damage), show effect animation
         if (ev.effect && !ev.damage) {
           processEffectCast(ev, fromId, toId, attacker, target);
           return;
         }
 
-        // Damage cast — animate based on card_type
-        const cardType = (ev.card_type || 'attack').toLowerCase();
+        animateProjectile(fromId, toId, ev.from_house, () => {
+          if (target) {
+            const sz = ev.crit ? 22 : 16;
+            showFloatingText(target.container.x, target.container.y, `-${ev.damage}`, ev.crit ? 0xffd700 : 0xff4466, sz);
+            if (ev.crit) {
+              showFloatingText(target.container.x, target.container.y - 30, 'CRIT!', 0xffd700, 20);
+              spawnParticles(target.container.x, target.container.y, 0xffd700, 16, 'lightning');
+            }
+            spawnParticles(target.container.x, target.container.y, getHouseColor(ev.from_house), 12, 'fire');
+            shakeSprite(target);
+          }
+          if (ev.new_hp != null) updateNineHP(toId, ev.new_hp, target?.maxHp);
+        });
 
-        if (cardType === 'attack' || !ev.effect) {
-          // ATTACK: missile from standing position → firework impact
-          // No lunge — lunge only for melee weapons (future)
-          animateProjectile(fromId, toId, ev.from_house, () => {
-            if (target) {
-              const sz = ev.crit ? 22 : 16;
-              showFloatingText(target.container.x, target.container.y, `-${ev.damage}`, ev.crit ? 0xffd700 : 0xff4466, sz);
-              if (ev.crit) {
-                showFloatingText(target.container.x, target.container.y - 30, 'CRIT!', 0xffd700, 20);
-                spawnParticles(target.container.x, target.container.y, 0xffd700, 16, 'lightning');
-                screenFlash(0xffd700, 0.25);
-                // Extra firework on crit
-                setTimeout(() => spawnFireworkExplosion(target.container.x + (Math.random()-0.5)*20, target.container.y + (Math.random()-0.5)*15, 0xffd700), 150);
-              }
-              spawnParticles(target.container.x, target.container.y, getHouseColor(ev.from_house), 12, 'fire');
-              shakeSprite(target);
-              if (target.spriteGroup) {
-                target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff4444; });
-                setTimeout(() => { if (target.spriteGroup) target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 450);
-              }
-            }
-            if (ev.new_hp != null) updateNineHP(toId, ev.new_hp, target?.maxHp);
-          });
-        } else if (cardType === 'manipulation') {
-          // MANIPULATION: hex bolt / dark projectile with firework
-          animateProjectile(fromId, toId, 'nighthollow', () => {
-            if (target) {
-              showFloatingText(target.container.x, target.container.y, `-${ev.damage}`, 0xbb88ff, 14);
-              spawnParticles(target.container.x, target.container.y, 0xbb88ff, 12, 'default');
-              shakeSprite(target);
-            }
-            if (ev.new_hp != null) updateNineHP(toId, ev.new_hp, target?.maxHp);
-          });
-        } else {
-          // Support/Defend/Utility with damage (rare) — generic bolt
-          animateProjectile(fromId, toId, ev.from_house, () => {
-            if (target) {
-              showFloatingText(target.container.x, target.container.y, `-${ev.damage}`, 0xff4466, 12);
-              spawnParticles(target.container.x, target.container.y, 0xff5555, 6, 'fire');
-              shakeSprite(target);
-            }
-            if (ev.new_hp != null) updateNineHP(toId, ev.new_hp, target?.maxHp);
-          });
-        }
-
-        // Feed
-        const feedText = `⚔️ ${ev.from_name||getNineName(fromId)} → ${ev.to_name||getNineName(toId)} -${ev.damage}${ev.crit ? ' CRIT!' : ''}${ev.effect ? ' '+ev.effect : ''}`;
-        addFeedEvent(feedText, 'attack');
+        addFeedEvent(`⚔️ ${ev.from_name||getNineName(fromId)} → ${ev.to_name||getNineName(toId)} -${ev.damage}${ev.crit ? ' CRIT!' : ''}`, 'attack');
         break;
       }
 
@@ -2737,7 +2884,7 @@
       }
 
       case 'dodge': {
-        const dId = resolveId(ev.nine_id);
+        const dId = resolveId(ev.nine_id || ev.target);
         const sprite = state.nines.get(dId);
         if (sprite) {
           showFloatingText(sprite.container.x, sprite.container.y, 'DODGE!', 0x90E0EF, 12);
@@ -2749,7 +2896,7 @@
       }
 
       case 'ward_pop': {
-        const wId = resolveId(ev.nine_id);
+        const wId = resolveId(ev.nine_id || ev.target);
         const sprite = state.nines.get(wId);
         if (sprite) {
           showFloatingText(sprite.container.x, sprite.container.y, 'BLOCKED!', 0xD4A64B, 12);
@@ -2759,7 +2906,7 @@
       }
 
       case 'anchor_save': {
-        const aId = resolveId(ev.nine_id);
+        const aId = resolveId(ev.nine_id || ev.target);
         const sprite = state.nines.get(aId);
         if (sprite) {
           showFloatingText(sprite.container.x, sprite.container.y - 20, '⚓ ANCHOR!', 0xffd700, 14);
@@ -2769,48 +2916,18 @@
         break;
       }
 
-      case 'ko': {
-        const koId = resolveId(ev.nine_id);
-        addFeedEvent(`💀 ${getNineName(koId)} was KO'd!`, 'ko');
-        animateKO(koId);
-        const sprite = state.nines.get(koId);
-        if (sprite) {
-          showFloatingText(sprite.container.x, (sprite.container.y || 0) - 30, 'K.O.', 0xff2222, 18);
-          spawnParticles(sprite.container.x, sprite.container.y, 0xff4466, 20, 'explosion');
-          spawnParticles(sprite.container.x, sprite.container.y, 0xffffff, 8, 'lightning');
-          screenFlash(0xff2222, 0.25);
-        }
-        break;
-      }
-
-      // Legacy attack format
-      case 'attack': {
-        const fromId = resolveId(ev.from);
-        const toId = resolveId(ev.to);
-        const target = state.nines.get(toId);
-        animateProjectile(fromId, toId, ev.from_house, () => {
-          if (target) {
-            showFloatingText(target.container.x, target.container.y, `-${ev.damage}`, 0xff4466, 12);
-            spawnParticles(target.container.x, target.container.y, 0xff5555, 6, 'fire');
-            shakeSprite(target);
-          }
-        });
-        addFeedEvent(`⚔️ ${ev.from_name||'???'} → ${ev.to_name||'???'} -${ev.damage}`, 'attack');
-        break;
-      }
-
       case 'damage': {
-        const tId = resolveId(ev.target_id);
+        const tId = resolveId(ev.target_id || ev.target);
         updateNineHP(tId, ev.new_hp, state.nines.get(tId)?.maxHp);
         updateYourNinePanel(tId);
         break;
       }
 
       case 'heal': {
-        const hId = resolveId(ev.nine_id);
+        const hId = resolveId(ev.nine_id || ev.target);
         const sprite = state.nines.get(hId);
         if (sprite) {
-          showFloatingText(sprite.container.x, sprite.container.y, `+${ev.amount}`, 0x44ffaa, 12);
+          showFloatingText(sprite.container.x, sprite.container.y, `+${ev.amount || ev.value}`, 0x44ffaa, 12);
           spawnParticles(sprite.container.x, sprite.container.y, 0x44ffaa, 10, 'heal');
         }
         updateNineHP(hId, ev.new_hp, state.nines.get(hId)?.maxHp);
@@ -2818,8 +2935,22 @@
       }
 
       case 'effect': {
-        // Legacy effect event
         processEffectCast(ev, resolveId(ev.target_id || ev.nine_id), null, null, state.nines.get(resolveId(ev.target_id || ev.nine_id)));
+        break;
+      }
+
+      // Catch-all for unknown V2 effect types
+      default: {
+        if (ev.type && ev.type.startsWith('effect_')) {
+          const tId = resolveId(ev.target || ev.source);
+          const sprite = state.nines.get(tId);
+          const effectName = ev.type.replace('effect_', '').toUpperCase();
+          if (sprite) {
+            showFloatingText(sprite.container.x, sprite.container.y - 20, effectName, 0xD4A64B, 9);
+            const pCfg = getEffectParticles(effectName);
+            spawnParticles(sprite.container.x, sprite.container.y, pCfg.color, pCfg.count, pCfg.type);
+          }
+        }
         break;
       }
     }
@@ -3349,7 +3480,9 @@
 
   function updateRoundBadge(round, totalRounds) {
     const badge = document.getElementById('arena-round-badge');
-    if (totalRounds) {
+    if (state.isFighting) {
+      badge.textContent = 'LIVE';
+    } else if (totalRounds) {
       badge.textContent = `ROUND ${round || 1}/${totalRounds}`;
     } else {
       badge.textContent = `ROUND ${round || 1}`;
@@ -3378,68 +3511,50 @@
   }
 
   // ═══════════════════════════════════════════
-  // NERM ROUND COMMENTARY — fires after every round/cycle
+  // NERM COMBAT COMMENTARY — fires after snapshots and events
   // ═══════════════════════════════════════════
-  const NERM_ROUND_COMMENTS = {
-    // After round 1
-    round_early: [
-      "First blood drawn... the real pain hasn't started yet.",
-      "Round one down. Some of these Nines are looking shaky already.",
-      "Just the warm-up. Don't get comfortable.",
-      "Interesting openers... let's see who adjusts.",
-      "Round one goes fast. Round three goes forever.",
-      "A few bold plays in there. Let's see if they hold up.",
+  const NERM_COMMENTS = {
+    // Combat observations (shown periodically during live combat)
+    combat_active: [
+      "The battlefield is alive. Every tick counts.",
+      "Combat never stops in Nethara. Neither should your strategy.",
+      "Watch the HP bars. The tide can turn fast.",
+      "Spells flying, effects stacking. This is what it's about.",
+      "All three cards working at once. That's V2 combat, baby.",
+      "The strong survive. The smart thrive.",
     ],
-    // After round 2 (middle)
-    round_mid: [
-      "Halfway there. The weak builds are starting to show.",
-      "This is where card choice really matters.",
-      "Some real damage being traded now. Who's got the HP to survive?",
-      "Round two always separates the builders from the guessers.",
-      "Getting spicy now. Watch the HP bars.",
-      "The healers are earning their keep this cycle.",
-    ],
-    // After final round
-    round_final: [
-      "And that's the last round! What a cycle.",
-      "Final round complete. The dust settles...",
-      "That's a wrap. Time to lick your wounds.",
-      "Every card spent, every point counted.",
-      "The battlefield falls silent... for now.",
-      "Last round hit different. Some Nines barely standing.",
-    ],
-    // Cycle end — winner dominant (>60% control)
-    cycle_dominant: [
+    // Snapshot — winner dominant (>60% control)
+    snapshot_dominant: [
       "Complete domination. Nothing else to say.",
       "That wasn't even close. Total control.",
       "One guild ran this zone like they owned the place.",
       "Absolute authority. The losing side needs a new strategy.",
     ],
-    // Cycle end — close fight
-    cycle_close: [
+    // Snapshot — close fight
+    snapshot_close: [
       "That was TIGHT. Could've gone either way.",
       "Razor thin margins. This zone is still very much alive.",
-      "One more round and the result might've flipped. Brutal.",
+      "A few more seconds and the result might've flipped. Brutal.",
       "Can't blink in this zone. Every point mattered.",
     ],
-    // Cycle end — generic
-    cycle_generic: [
-      "Another cycle in the books. Who's deploying next?",
+    // Snapshot — generic
+    snapshot_generic: [
+      "Another snapshot in the books. Who's deploying next?",
       "Zone control shifts again. The map never sleeps.",
-      "Cycle complete. 30 seconds to catch your breath.",
-      "Results are in. New cycle incoming — adapt or fall behind.",
+      "Snapshot scored. Combat continues — adapt or fall behind.",
+      "Results are in. Time to adjust your strategy.",
     ],
     // When player's Nine survived
     player_survived: [
-      "Your Nine made it through. Not everyone can say that.",
-      "Still standing! Solid build choice.",
-      "Your cards held up. Well played.",
+      "Your Nine is still standing. Not everyone can say that.",
+      "Still in the fight! Solid build choice.",
+      "Your cards are holding up. Well played.",
     ],
     // When player's Nine got knocked out
     player_knocked: [
-      "Rough round for your Nine. Might want to rethink those cards.",
-      "Ouch. Your Nine took a beating. Time to strategize.",
-      "Down but not out — there's always next cycle.",
+      "Ouch. Your Nine got knocked out. Time to rethink those cards.",
+      "Your Nine took a beating. Maybe swap your build?",
+      "Down but not out — you'll respawn soon.",
     ],
   };
 
@@ -3448,40 +3563,30 @@
   }
 
   /**
-   * Generate a Nerm comment based on round context
-   * @param {'round_end'|'cycle_end'} event 
-   * @param {object} data - round/cycle data from server
+   * Generate a Nerm comment based on combat context
+   * @param {'round_end'|'cycle_end'|'combat'} event 
+   * @param {object} data - snapshot/combat data from server
    */
   function nermRoundComment(event, data) {
     let comment = '';
 
-    if (event === 'round_end') {
-      const round = data.round_number || 1;
-      const total = data.total_rounds || 3;
-
-      if (round >= total) {
-        comment = pickRandom(NERM_ROUND_COMMENTS.round_final);
-      } else if (round <= 1) {
-        comment = pickRandom(NERM_ROUND_COMMENTS.round_early);
-      } else {
-        comment = pickRandom(NERM_ROUND_COMMENTS.round_mid);
-      }
+    if (event === 'round_end' || event === 'combat') {
+      // V2: Generic combat observation
+      comment = pickRandom(NERM_COMMENTS.combat_active);
 
       // Check if player's Nine survived or got knocked out
-      if (state.playerId && data.nines) {
+      if (state.playerId && data && data.nines) {
         const playerNine = data.nines.find(n =>
           (n.player_id || n.id || n.nine_id) === state.playerId
         );
         if (playerNine) {
           const hp = playerNine.current_hp || playerNine.hp || 0;
           if (hp <= 0) {
-            // 50% chance to comment on player knockout
             if (Math.random() < 0.5) {
-              comment = pickRandom(NERM_ROUND_COMMENTS.player_knocked);
+              comment = pickRandom(NERM_COMMENTS.player_knocked);
             }
-          } else if (round >= total && Math.random() < 0.4) {
-            // 40% chance to praise survival at end
-            comment = pickRandom(NERM_ROUND_COMMENTS.player_survived);
+          } else if (Math.random() < 0.3) {
+            comment = pickRandom(NERM_COMMENTS.player_survived);
           }
         }
       }
@@ -3489,7 +3594,7 @@
 
     if (event === 'cycle_end') {
       // Check if it was a dominant or close result
-      const scores = data.guild_scores || state.guildScores || {};
+      const scores = data.guild_scores || data.guild_power || state.guildScores || {};
       const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
       if (sorted.length >= 2) {
         const topScore = sorted[0][1] || 0;
@@ -3498,19 +3603,19 @@
         const topPct = (topScore / total) * 100;
 
         if (topPct > 60) {
-          comment = pickRandom(NERM_ROUND_COMMENTS.cycle_dominant);
+          comment = pickRandom(NERM_COMMENTS.snapshot_dominant);
         } else if (topScore - secondScore <= topScore * 0.15) {
-          comment = pickRandom(NERM_ROUND_COMMENTS.cycle_close);
+          comment = pickRandom(NERM_COMMENTS.snapshot_close);
         } else {
-          comment = pickRandom(NERM_ROUND_COMMENTS.cycle_generic);
+          comment = pickRandom(NERM_COMMENTS.snapshot_generic);
         }
       } else {
-        comment = pickRandom(NERM_ROUND_COMMENTS.cycle_generic);
+        comment = pickRandom(NERM_COMMENTS.snapshot_generic);
       }
     }
 
     if (comment) {
-      // Slight delay so it appears after the round banner
+      // Slight delay so it appears after the banner
       setTimeout(() => showNermBubble(comment), 1200);
     }
   }
@@ -3573,8 +3678,22 @@
     updateCountdownDisplay();
   }
 
-  /** Fetch actual next cycle timestamp from server */
+  /** Fetch next snapshot/cycle timestamp from server */
   async function fetchCycleTiming() {
+    // Try V2 snapshot endpoint first
+    try {
+      const res = await fetch('/api/combat/next-snapshot');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.next_snapshot_at) {
+          state.cycleEndTime = data.next_snapshot_at;
+          console.log('⏱️ V2 snapshot timing:', new Date(state.cycleEndTime).toLocaleTimeString());
+          return;
+        }
+      }
+    } catch (e) { /* V2 endpoint may not exist yet */ }
+
+    // Fall back to legacy cycle endpoint
     try {
       const res = await fetch('/api/combat/next-cycle');
       if (res.ok) {
@@ -3582,20 +3701,17 @@
         if (data.next_cycle_at) {
           state.cycleEndTime = data.next_cycle_at;
         } else if (data.cycle_interval_ms) {
-          // Server running but doesn't have exact time — estimate
           state.cycleEndTime = Date.now() + data.cycle_interval_ms;
         }
         if (data.cycle_number) state.currentCycle = data.cycle_number;
-        console.log('⏱️ Synced cycle timing from server:', new Date(state.cycleEndTime).toLocaleTimeString());
+        console.log('⏱️ Legacy cycle timing:', new Date(state.cycleEndTime).toLocaleTimeString());
         return;
       }
-    } catch (e) {
-      // Endpoint may not exist yet
-    }
+    } catch (e) { /* endpoint may not exist yet */ }
 
-    // Fallback: if no server timing, don't show a fake countdown
+    // No server timing available
     if (!state.cycleEndTime) {
-      state.cycleEndTime = null; // will show "Waiting..." instead of wrong timer
+      state.cycleEndTime = null;
     }
   }
 
@@ -3614,15 +3730,15 @@
 
     if (state.isFighting) {
       labelEl.textContent = 'COMBAT ACTIVE';
-      timeEl.textContent = `ROUND ${state.currentRound}/${state.totalRounds}`;
+      timeEl.textContent = 'LIVE';
       timeEl.className = 'countdown-time fighting';
-      subEl.textContent = `Cycle ${state.currentCycle}`;
+      subEl.textContent = 'Continuous combat — all cards active';
       return;
     }
 
     // No timing data yet
     if (!state.cycleEndTime) {
-      labelEl.textContent = 'NEXT CYCLE';
+      labelEl.textContent = 'NEXT SNAPSHOT';
       timeEl.textContent = 'WAITING';
       timeEl.className = 'countdown-time';
       subEl.textContent = 'Syncing with server...';
@@ -3636,38 +3752,33 @@
     const seconds = totalSeconds % 60;
     const timeStr = minutes > 0 ? `${minutes}:${seconds.toString().padStart(2, '0')}` : `0:${seconds.toString().padStart(2, '0')}`;
 
-    // Timer expired — combat should start any moment
+    // Timer expired
     if (totalSeconds <= 0) {
-      labelEl.textContent = '⚔️ COMBAT';
-      timeEl.textContent = 'IMMINENT';
+      labelEl.textContent = '📸 SCORING';
+      timeEl.textContent = 'NOW';
       timeEl.className = 'countdown-time fighting';
-      subEl.textContent = 'Waiting for server...';
+      subEl.textContent = 'Zone control scoring...';
       return;
     }
 
-    // Short buffer (≤30s) = regrouping phase
-    if (totalSeconds <= 30 && state.currentCycle > 0) {
-      labelEl.textContent = 'REGROUPING';
+    // Under 60s = urgent
+    if (totalSeconds <= 60) {
+      labelEl.textContent = 'SNAPSHOT IN';
       timeEl.textContent = timeStr;
       timeEl.className = 'countdown-time urgent';
-      subEl.textContent = `Next combat in ${totalSeconds}s`;
+      subEl.textContent = 'Zone control scored soon!';
       return;
     }
 
-    labelEl.textContent = 'NEXT CYCLE IN';
+    labelEl.textContent = 'NEXT SNAPSHOT';
     timeEl.textContent = timeStr;
-    subEl.textContent = state.currentCycle ? `After cycle ${state.currentCycle}` : 'Awaiting combat...';
-
-    if (totalSeconds <= 60) {
-      timeEl.className = 'countdown-time urgent';
-    } else {
-      timeEl.className = 'countdown-time';
-    }
+    timeEl.className = 'countdown-time';
+    subEl.textContent = 'Zone control scored every 15 min';
 
     // Auto-update cycle timer text in top bar
     const timerEl = document.getElementById('arena-cycle-timer');
     if (timerEl) {
-      timerEl.textContent = `Cycle ${state.currentCycle || '?'} · ${timeStr}`;
+      timerEl.textContent = `Snapshot in ${timeStr}`;
     }
   }
 
@@ -3697,7 +3808,7 @@
 
       if (!card) {
         slotEl.className = 'arena-card-slot empty';
-        slotEl.innerHTML = `<span class="slot-wave-label">WAVE ${i+1}</span><span class="slot-empty-text">EMPTY</span>`;
+        slotEl.innerHTML = `<span class="slot-wave-label">CARD ${i+1}</span><span class="slot-empty-text">EMPTY</span>`;
         slotEl.onclick = null;
         continue;
       }
@@ -3734,7 +3845,7 @@
       slotEl.style.background = `linear-gradient(135deg, rgba(26,21,40,0.92), ${hColor}08)`;
       slotEl.style.cursor = 'pointer';
       slotEl.innerHTML = `
-        <span class="slot-wave-label" style="color:${hColor}">WAVE ${i+1}</span>
+        <span class="slot-wave-label" style="color:${hColor}">CARD ${i+1}</span>
         ${artThumb}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
           <div class="slot-type" style="color:${typeColor}">${(card.spell_type || card.type || '???').toUpperCase()}</div>
@@ -3787,7 +3898,7 @@
 
     popup.innerHTML = `
       <div class="popup-inner">
-        <div class="popup-wave-label">WAVE ${(waveIndex || 0) + 1}</div>
+        <div class="popup-wave-label">CARD ${(waveIndex || 0) + 1}</div>
         ${cardHTML}
         <button class="popup-close">CLOSE</button>
       </div>
@@ -4168,7 +4279,7 @@
 
     // Update wave labels on selected cards
     document.querySelectorAll('#deploy-card-grid .deploy-card-slot.selected .selected-badge').forEach((badge, i) => {
-      badge.textContent = '⚔️ WAVE ' + (i + 1);
+      badge.textContent = '⚔️ CARD ' + (i + 1);
     });
 
     // Update button state
