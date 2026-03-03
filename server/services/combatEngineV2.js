@@ -1299,4 +1299,5 @@ module.exports = {
   getCycleIntervalMs,   // legacy compat
   reloadZone,
   getZoneStatus,
+  forceSnapshot: processSnapshot,
 };
