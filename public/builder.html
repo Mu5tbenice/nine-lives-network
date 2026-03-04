@@ -150,10 +150,10 @@
       <div id="builderCardPreview" style="flex-shrink:0"></div>
       <div style="max-width:220px;text-align:left">
         <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:var(--red);font-weight:700;margin-bottom:3px">TYPE</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">Attack, Defend, Support, or Manipulation — determines what your card does in battle</div></div>
-        <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:#e85a6a;font-weight:700;margin-bottom:3px">STATS</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">ATK adds damage, HP adds durability. Cards boost your Nine's base stats during combat</div></div>
-        <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:var(--purple);font-weight:700;margin-bottom:3px">EFFECTS</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">Special abilities like BURN, WARD, or WEAKEN that trigger during combat cycles</div></div>
+        <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:#e85a6a;font-weight:700;margin-bottom:3px">STATS</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">ATK adds damage, HP adds durability, SPD controls attack speed. Cards add directly to your Nine's stats</div></div>
+        <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:var(--purple);font-weight:700;margin-bottom:3px">EFFECTS</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">Special abilities like BURN, WARD, or WEAKEN that trigger in real-time during continuous combat</div></div>
         <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:#00D4FF;font-weight:700;margin-bottom:3px">MANA COST</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">How much mana to play. You regenerate 1 mana per hour, max 10</div></div>
-        <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:var(--faint);font-weight:700;margin-bottom:3px">CHARGES</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">Zone battles use 1 charge per attack. When empty, the card returns for recharging</div></div>
+        <div class="anno-row"><div style="font-family:var(--font-data);font-size:6px;color:var(--faint);font-weight:700;margin-bottom:3px">SHARPNESS</div><div style="font-family:var(--font-mono);font-size:9px;color:var(--body);line-height:1.5">Cards lose 1% sharpness per 15-min snapshot. At 0%, effects stop firing. Sharpen cards to restore them</div></div>
       </div>
     </div>
     <div style="margin-top:16px;padding:10px 16px;border-radius:8px;background:rgba(212,166,75,0.06);border:1px solid var(--border);text-align:center;width:100%">
@@ -207,21 +207,21 @@
 /*  DATA                                 */
 /* ══════════════════════════════════════ */
 var IMG = '/assets/nine/';
-var SM = {atk:{l:'ATK',c:'#e85a6a',m:15},hp:{l:'HP',c:'#6acd8a',m:30},spd:{l:'SPD',c:'#6ac8d8',m:15},def:{l:'DEF',c:'#b088e8',m:15},luck:{l:'LUCK',c:'#D4A64B',m:15}};
+var SM = {atk:{l:'ATK',c:'#e85a6a',m:150},hp:{l:'HP',c:'#6acd8a',m:800},spd:{l:'SPD',c:'#6ac8d8',m:100},def:{l:'DEF',c:'#b088e8',m:100},luck:{l:'LUCK',c:'#D4A64B',m:80}};
 var SK = ['atk','hp','spd','def','luck'];
 var RC = {none:'#6B5E50',common:'#888',uncommon:'#6acd8a',rare:'#5599ff',epic:'#b088e8',legendary:'#D4A64B'};
 
-/* ═══ HOUSE BASE STATS (from V4 Game Design) ═══ */
+/* ═══ HOUSE BASE STATS (Combat V2 — March 2026) ═══ */
 var HOUSE_BASE_STATS = {
-  smoulders:   {atk:6, hp:12, spd:5, def:0, luck:0, icon:'🔥', color:'#E03C31', role:'GLASS CANNON'},
-  darktide:    {atk:4, hp:16, spd:4, def:0, luck:0, icon:'🌊', color:'#00B4D8', role:'THIEF'},
-  stonebark:   {atk:2, hp:24, spd:2, def:0, luck:0, icon:'🌿', color:'#5CB338', role:'WALL'},
-  ashenvale:   {atk:3, hp:14, spd:8, def:0, luck:0, icon:'💨', color:'#90E0EF', role:'ROGUE'},
-  stormrage:   {atk:7, hp:10, spd:6, def:0, luck:0, icon:'⚡', color:'#FFC800', role:'GLASS CANNON'},
-  nighthollow: {atk:4, hp:13, spd:7, def:0, luck:0, icon:'🌙', color:'#7B2D8E', role:'DISRUPTOR'},
-  dawnbringer: {atk:3, hp:18, spd:3, def:0, luck:0, icon:'☀️', color:'#FF8C00', role:'HEALER'},
-  manastorm:   {atk:5, hp:14, spd:5, def:0, luck:0, icon:'🔮', color:'#5B8FE0', role:'CONTROLLER'},
-  plaguemire:  {atk:3, hp:15, spd:4, def:0, luck:0, icon:'☠️', color:'#E84393', role:'DOT SPECIALIST'}
+  smoulders:   {atk:35, hp:350, spd:25, def:10, luck:10, icon:'🔥', color:'#E03C31', role:'GLASS CANNON'},
+  darktide:    {atk:25, hp:450, spd:20, def:20, luck:10, icon:'🌊', color:'#00B4D8', role:'THIEF'},
+  stonebark:   {atk:12, hp:700, spd:10, def:40, luck:5,  icon:'🌿', color:'#5CB338', role:'WALL'},
+  ashenvale:   {atk:20, hp:380, spd:38, def:12, luck:15, icon:'💨', color:'#90E0EF', role:'ROGUE'},
+  stormrage:   {atk:40, hp:280, spd:30, def:5,  luck:15, icon:'⚡', color:'#FFC800', role:'GLASS CANNON'},
+  nighthollow: {atk:25, hp:360, spd:30, def:12, luck:25, icon:'🌙', color:'#7B2D8E', role:'DISRUPTOR'},
+  dawnbringer: {atk:15, hp:620, spd:15, def:30, luck:5,  icon:'☀️', color:'#FF8C00', role:'HEALER'},
+  manastorm:   {atk:30, hp:380, spd:25, def:15, luck:10, icon:'🔮', color:'#5B8FE0', role:'CONTROLLER'},
+  plaguemire:  {atk:20, hp:450, spd:20, def:25, luck:10, icon:'☠️', color:'#E84393', role:'DOT SPECIALIST'}
 };
 var HOUSE_ID_MAP = {1:'smoulders',2:'darktide',3:'stonebark',4:'ashenvale',5:'stormrage',6:'nighthollow',7:'dawnbringer',8:'manastorm',9:'plaguemire'};
 
@@ -351,7 +351,7 @@ var PACK_V4 = [
   {name:'Cyclone Strike',house:'ashenvale',spell_type:'attack',rarity:'uncommon',mana_cost:2,base_atk:6,base_hp:1,base_spd:2,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'HASTE',desc:'+3 SPD for 10s'},{tag:'BURN +3',desc:'3 extra damage per attack'}],flavor_text:'Wind doesn\'t warn. It arrives.',image_url:'',current_charges:8,max_charges:8}
 ];
 var GM = [
-  {i:'⚔️',n:'Zone Battles',t:'15min cycles',d:'Deploy your Nine to zones on the map. Every 15 minutes, all Nines fight. Your guild controls zones by having the most surviving HP.',c:'#e85a6a'},
+  {i:'⚔️',n:'Zone Battles',t:'Always active',d:'Deploy your Nine to zones on the map. Combat is continuous — your Nine fights at its own pace based on SPD. Every 15 minutes, a snapshot scores zone control by total surviving guild HP.',c:'#e85a6a'},
   {i:'🗡️',n:'Quick Duels',t:'Free · 30 sec',d:'1v1 card battles. Both players reveal a card — higher ATK wins. Best of 3. No mana cost, no card charges used.',c:'#D4A64B'},
   {i:'🏔️',n:'The Gauntlet',t:'1 mana · solo',d:'Fight AI opponents that get harder each floor. Daily reset — how far can you get? Great for learning card combos.',c:'#6ac8d8'},
   {i:'👹',n:'Weekly Boss',t:'Mon–Fri',d:'A massive boss appears Monday. Your whole guild attacks together. Phases get harder at 50% and 25% HP.',c:'#b088e8'}
@@ -362,7 +362,7 @@ var HOUSE_PREVIEW_CARDS = {
   darktide:{name:'Riptide',house:'darktide',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'DRAIN 3%',desc:'Steal 3% HP from target'}],flavor_text:'The current remembers what the shore forgets.',image_url:'',current_charges:12,max_charges:12},
   stonebark:{name:'Root Strike',house:'stonebark',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'BURN +2',desc:'2 extra damage per attack'}],flavor_text:'The roots remember what the storm forgets.',image_url:'',current_charges:12,max_charges:12},
   ashenvale:{name:'Gust Blade',house:'ashenvale',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:1,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'HASTE',desc:'+3 SPD for 10s'}],flavor_text:'Wind doesn\'t ask permission.',image_url:'',current_charges:12,max_charges:12},
-  stormrage:{name:'Spark',house:'stormrage',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'CRIT',desc:'25% chance to deal double ATK'}],flavor_text:'One spark is all it takes.',image_url:'',current_charges:12,max_charges:12},
+  stormrage:{name:'Spark',house:'stormrage',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:5,base_hp:1,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'EXECUTE',desc:'Bonus damage to enemies below 30% HP'}],flavor_text:'One spark is all it takes.',image_url:'',current_charges:12,max_charges:12},
   nighthollow:{name:'Shadow Bolt',house:'nighthollow',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'WEAKEN',desc:'Target deals 50% damage for 10s'}],flavor_text:'You won\'t see it coming. That\'s the point.',image_url:'',current_charges:12,max_charges:12},
   dawnbringer:{name:'Radiant Strike',house:'dawnbringer',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'BURN +2',desc:'2 extra damage per attack'}],flavor_text:'Light reveals. Light destroys.',image_url:'',current_charges:12,max_charges:12},
   manastorm:{name:'Arcane Siphon',house:'manastorm',spell_type:'attack',rarity:'rare',mana_cost:1,base_atk:4,base_hp:2,base_spd:0,base_def:0,base_luck:0,base_effect:'',bonus_effects:[{tag:'DRAIN 3%',desc:'Steal 3% HP from target'}],flavor_text:'Power flows to those who take it.',image_url:'',current_charges:12,max_charges:12},
