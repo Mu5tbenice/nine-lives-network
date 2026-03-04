@@ -273,17 +273,21 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo){
   var streak=player.streak||0;
   var rc=Array.isArray(casts)?casts.slice(0,5):[];
 
-  // Nine stats = house base + equipment bonuses from localStorage
-  var eqBonuses={atk:0,hp:0,spd:0,def:0,luck:0};
-  try{
-    var eqStr=localStorage.getItem('9lv_equipment');
-    if(eqStr){var eqData=JSON.parse(eqStr);eqBonuses=eqData.bonuses||eqBonuses;}
-  }catch(e){}
-  var nAtk=(house.atk||0)+eqBonuses.atk;
-  var nHp=(house.hp||0)+eqBonuses.hp;
-  var nSpd=(house.spd||0)+eqBonuses.spd;
-  var nDef=eqBonuses.def;
-  var nLuck=eqBonuses.luck;
+  // Nine stats from API (single source of truth: house + items + cards)
+  var nAtk=house.atk||0, nHp=house.hp||0, nSpd=house.spd||0, nDef=house.def||0, nLuck=house.luck||0;
+  try {
+    var statsRes = await fetch('/api/stats/' + pid);
+    if (statsRes.ok) {
+      var statsData = await statsRes.json();
+      if (statsData.success && statsData.stats) {
+        nAtk  = statsData.stats.atk  || 0;
+        nHp   = statsData.stats.hp   || 0;
+        nSpd  = statsData.stats.spd  || 0;
+        nDef  = statsData.stats.def  || 0;
+        nLuck = statsData.stats.luck || 0;
+      }
+    }
+  } catch(e) { console.warn('Stats API fallback to house base:', e); }
   var nAtkSpd=calcAtkSpeed(nSpd);
 
   // Level / XP
