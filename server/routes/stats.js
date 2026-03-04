@@ -131,30 +131,43 @@ router.post('/preview', async (req, res) => {
       }
     }
 
-    // Add equipped items
-    const { data: equippedItems } = await supabase
-      .from('player_items')
-      .select('items(name, slot, bonus_atk, bonus_hp, bonus_spd, bonus_def, bonus_luck)')
+    // Add equipped items (read from player_nines.equipped_* columns)
+    const { data: nine } = await supabase
+      .from('player_nines')
+      .select('equipped_fur, equipped_expression, equipped_headwear, equipped_outfit, equipped_weapon, equipped_familiar, equipped_trinket_1, equipped_trinket_2')
       .eq('player_id', player_id)
-      .eq('is_equipped', true);
+      .single();
 
     const itemBreakdown = [];
-    if (equippedItems) {
-      equippedItems.forEach(pi => {
-        const item = pi.items;
-        if (!item) return;
-        totals.atk += item.bonus_atk || 0;
-        totals.hp += item.bonus_hp || 0;
-        totals.spd += item.bonus_spd || 0;
-        totals.def += item.bonus_def || 0;
-        totals.luck += item.bonus_luck || 0;
-        itemBreakdown.push({
-          name: item.name, slot: item.slot,
-          atk: item.bonus_atk || 0, hp: item.bonus_hp || 0,
-          spd: item.bonus_spd || 0, def: item.bonus_def || 0,
-          luck: item.bonus_luck || 0,
-        });
-      });
+    if (nine) {
+      const slugs = [
+        nine.equipped_fur, nine.equipped_expression, nine.equipped_headwear,
+        nine.equipped_outfit, nine.equipped_weapon, nine.equipped_familiar,
+        nine.equipped_trinket_1, nine.equipped_trinket_2
+      ].filter(Boolean).filter(s => s !== 'none');
+
+      if (slugs.length > 0) {
+        const { data: items } = await supabase
+          .from('items')
+          .select('name, slug, slot, bonus_atk, bonus_hp, bonus_spd, bonus_def, bonus_luck')
+          .in('slug', slugs);
+
+        if (items) {
+          items.forEach(item => {
+            totals.atk += item.bonus_atk || 0;
+            totals.hp += item.bonus_hp || 0;
+            totals.spd += item.bonus_spd || 0;
+            totals.def += item.bonus_def || 0;
+            totals.luck += item.bonus_luck || 0;
+            itemBreakdown.push({
+              name: item.name, slot: item.slot,
+              atk: item.bonus_atk || 0, hp: item.bonus_hp || 0,
+              spd: item.bonus_spd || 0, def: item.bonus_def || 0,
+              luck: item.bonus_luck || 0,
+            });
+          });
+        }
+      }
     }
 
     // Calculate combat values

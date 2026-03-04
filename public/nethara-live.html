@@ -4411,6 +4411,28 @@
         return;
       }
 
+      // Normalize card data — packs/collection nests stats under .spell
+      cards = cards.map(c => {
+        const s = c.spell || {};
+        return {
+          ...c,
+          name: c.name || c.spell_name || s.name || '???',
+          house: c.house || c.spell_house || s.house || 'universal',
+          spell_type: c.spell_type || s.spell_type || 'attack',
+          rarity: c.rarity || s.rarity || 'common',
+          base_atk: c.base_atk ?? s.base_atk ?? 0,
+          base_hp: c.base_hp ?? s.base_hp ?? 0,
+          base_spd: c.base_spd ?? s.base_spd ?? 0,
+          base_def: c.base_def ?? s.base_def ?? 0,
+          base_luck: c.base_luck ?? s.base_luck ?? 0,
+          bonus_effects: c.bonus_effects || c.spell_effects || s.bonus_effects || [],
+          flavor_text: c.flavor_text || s.flavor_text || '',
+          image_url: c.image_url || s.image_url || '',
+          sharpness: c.sharpness ?? c.current_sharpness ?? 100,
+          player_card_id: c.player_card_id || c.id,
+        };
+      });
+
       state.playerCards = cards;
       renderCardGrid(cards, deployedCardIds);
 

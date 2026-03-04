@@ -26,12 +26,12 @@ const ZONE_POINTS = {
 
 // ═══════════════════════════════════════════
 // POST /api/zones/deploy
-// Deploy your Nine to a zone (V5: FREE — no mana cost)
-// Body: { player_id, zone_id }
+// Deploy your Nine to a zone (V2: FREE — no mana cost)
+// Body: { player_id, zone_id, card_ids?: [id1, id2, id3] }
 // ═══════════════════════════════════════════
 router.post('/deploy', async (req, res) => {
   try {
-    const { player_id, zone_id } = req.body;
+    const { player_id, zone_id, card_ids } = req.body;
 
     if (!player_id || !zone_id) {
       return res.status(400).json({ error: 'player_id and zone_id required' });
@@ -71,14 +71,20 @@ router.post('/deploy', async (req, res) => {
       });
     }
 
-    // V5: Deploy is FREE — no mana cost
-
     // Get player's guild tag
     const { data: player } = await supabase
       .from('players')
       .select('guild_tag, twitter_handle')
       .eq('id', player_id)
       .single();
+
+    // Get house HP from houses table (V2 source of truth)
+    const { data: house } = await supabase
+      .from('houses')
+      .select('hp')
+      .eq('id', nine.house_id)
+      .single();
+    const deployHp = house?.hp || nine.base_hp || 100;
 
     // Nine heals to full on deploy
     await healNine(nine.id);
@@ -91,8 +97,8 @@ router.post('/deploy', async (req, res) => {
         nine_id: nine.id,
         zone_id: zone_id,
         guild_tag: player?.guild_tag || ('@' + (player?.twitter_handle || 'lone_wolf')),
-        current_hp: nine.base_hp,
-        max_hp: nine.base_hp,
+        current_hp: deployHp,
+        max_hp: deployHp,
         is_active: true,
         is_mercenary: !(player?.guild_tag),
       })
@@ -102,6 +108,26 @@ router.post('/deploy', async (req, res) => {
     if (deployErr) {
       console.error('Deploy error:', deployErr);
       return res.status(500).json({ error: 'Failed to deploy' });
+    }
+
+    // Auto-equip cards if provided by deploy modal
+    let equippedCount = 0;
+    if (Array.isArray(card_ids) && card_ids.length > 0 && deployment) {
+      for (let i = 0; i < Math.min(card_ids.length, MAX_CARDS_PER_ZONE); i++) {
+        try {
+          await supabaseAdmin
+            .from('zone_card_slots')
+            .insert({
+              deployment_id: deployment.id,
+              card_id: card_ids[i],
+              slot_number: i + 1,
+              is_active: true,
+            });
+          equippedCount++;
+        } catch (e) {
+          console.error(`Failed to equip card ${card_ids[i]} in slot ${i + 1}:`, e.message);
+        }
+      }
     }
 
     // Award deploy points (+5)
@@ -116,7 +142,7 @@ router.post('/deploy', async (req, res) => {
           house: nine.house_key || 'smoulders',
           guild: player?.guild_tag || 'Lone Wolf',
           guild_id: player?.guild_tag,
-          stats: { atk: nine.base_atk, hp: nine.base_hp, spd: nine.base_spd, def: nine.base_def || 0, luck: nine.base_luck || 0 },
+          stats: { atk: nine.base_atk, hp: deployHp, spd: nine.base_spd, def: nine.base_def || 0, luck: nine.base_luck || 0 },
           equipped_images: nine.equipped_images || {},
         });
       }
