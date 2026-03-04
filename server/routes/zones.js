@@ -405,7 +405,7 @@ router.get('/:zoneId/deployments', async (req, res) => {
     // Filter card_slots to only active ones
     const cleaned = (deployments || []).map(d => ({
       ...d,
-      card_slots: (d.card_slots || []).filter(s => s.is_active),
+      card_slots: (Array.isArray(d.card_slots) ? d.card_slots : []).filter(s => s.is_active),
     }));
 
     // Calculate guild power totals
@@ -456,7 +456,7 @@ router.get('/my-deployments/:playerId', async (req, res) => {
     // Filter to active card slots only
     const cleaned = (deployments || []).map(d => ({
       ...d,
-      card_slots: (d.card_slots || []).filter(s => s.is_active),
+      card_slots: (Array.isArray(d.card_slots) ? d.card_slots : []).filter(s => s.is_active),
     }));
 
     res.json({
