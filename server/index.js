@@ -118,13 +118,6 @@ try {
 }
 
 try {
-  const statsRoutes = require('./routes/stats');
-  app.use('/api/stats', statsRoutes);
-} catch(e) {
-  console.error("❌ Failed to load stats routes:", e.message);
-}
-
-try {
   const mapRoutes = require("./routes/map");
   app.use("/api/map", mapRoutes);
   console.log("✅ Map routes loaded");
@@ -190,6 +183,7 @@ try {
   console.error("❌ Failed to load items routes:", e.message);
 }
 
+// Stats — V2 stat calculation API (house + cards + items)
 try {
   const statsRoutes = require("./routes/stats");
   app.use("/api/stats", statsRoutes);
@@ -201,7 +195,7 @@ try {
 // ── COMBAT ENGINE ──
 let combatEngine = null;
 try {
-  combatEngine = require("./services/combatEngineV2");
+  combatEngine = require("./services/combatEngine");
   console.log("✅ Combat engine loaded");
 } catch (e) {
   console.error("❌ Failed to load combat engine:", e.message);
@@ -255,32 +249,6 @@ if (io) {
 }
 
 // ── COMBAT TIMER ROUTE ──
-// ── V2 SNAPSHOT TIMER ROUTE ──
-app.get('/api/combat/next-snapshot', (req, res) => {
-  try {
-    res.json({
-      next_snapshot_at: combatEngine?.getNextSnapshotAt ? combatEngine.getNextSnapshotAt() : (Date.now() + 15 * 60 * 1000),
-      server_time: Date.now(),
-    });
-  } catch (e) {
-    res.json({
-      next_snapshot_at: Date.now() + 15 * 60 * 1000,
-      server_time: Date.now(),
-    });
-  }
-});
-
-// ── V2 ZONE STATUS ROUTE ──
-app.get('/api/combat/zone-status/:zoneId', (req, res) => {
-  try {
-    const zoneId = parseInt(req.params.zoneId);
-    const status = combatEngine?.getZoneStatus ? combatEngine.getZoneStatus(zoneId) : { active: false };
-    res.json(status);   
-  } catch (e) {
-    res.json({ active: false, error: e.message });
-  }
-});
-
 app.get('/api/combat/next-cycle', (req, res) => {
   try {
     res.json({
@@ -310,13 +278,6 @@ app.get("/api/health", (req, res) => {
 // Redirect old world.html to map.html
 app.get("/world.html", (req, res) => res.redirect("/map.html"));
 
-try {
-  const { startNermBot } = require("./services/nerm-telegram");
-  startNermBot();
-  console.log("✅ Nerm Telegram bot loaded");
-} catch (e) {
-  console.error("❌ Failed to load Nerm Telegram bot:", e.message);
-}
 // Start scheduler for automated tasks
 try {
   const scheduler = require("./services/scheduler");

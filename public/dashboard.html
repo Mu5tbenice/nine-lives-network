@@ -217,13 +217,14 @@ async function loadDashboard(){
   var pid=getPlayerId();
   if(!pid){document.getElementById('loadingState').style.display='none';document.getElementById('errorState').style.display='block';return;}
   try{
-    var[pR,cR,zR,sR,dR,snR]=await Promise.all([
+    var[pR,cR,zR,sR,dR,snR,stR]=await Promise.all([
       fetch('/api/players/'+pid),
       fetch('/api/players/'+pid+'/casts'),
       fetch('/api/zones'),
       fetch('/api/leaderboards/schools'),
       fetch('/api/zones/my-deployments/'+pid),
-      fetch('/api/combat/next-cycle')
+      fetch('/api/combat/next-cycle'),
+      fetch('/api/stats/'+pid)
     ]);
     var player=pR.ok?await pR.json():null;
     var casts=cR.ok?await cR.json():[];
@@ -231,12 +232,13 @@ async function loadDashboard(){
     var schools=sR.ok?await sR.json():[];
     var myDeploys=dR.ok?await dR.json():{deployments:[]};
     var snapshotInfo=snR.ok?await snR.json():{};
+    var nineStats=stR.ok?await stR.json():null;
     if(!player||player.error){document.getElementById('loadingState').style.display='none';document.getElementById('errorState').style.display='block';return;}
 
     var quests=[];
     // Quests endpoint not built yet — skip silently
 
-    render(player,casts||[],zones||[],schools||[],quests,myDeploys.deployments||[],snapshotInfo);
+    render(player,casts||[],zones||[],schools||[],quests,myDeploys.deployments||[],snapshotInfo,nineStats);
   }catch(err){
     console.error('Dashboard load error:',err);
     document.getElementById('loadingState').style.display='none';
@@ -263,7 +265,7 @@ function sectionLabel(icon,text,fadeClass){
 }
 
 /* ═══ RENDER ═══ */
-async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo){
+async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,nineStats){
   // Save player data to localStorage for Nine preview + other pages
   try{localStorage.setItem('9lv_player',JSON.stringify(player));}catch(e){}
 
@@ -273,22 +275,16 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo){
   var streak=player.streak||0;
   var rc=Array.isArray(casts)?casts.slice(0,5):[];
 
-  // Nine stats from API (single source of truth: house + items + cards)
-  var nAtk=house.atk||0, nHp=house.hp||0, nSpd=house.spd||0, nDef=house.def||0, nLuck=house.luck||0;
-  try {
-    var statsRes = await fetch('/api/stats/' + pid);
-    if (statsRes.ok) {
-      var statsData = await statsRes.json();
-      if (statsData.success && statsData.stats) {
-        nAtk  = statsData.stats.atk  || 0;
-        nHp   = statsData.stats.hp   || 0;
-        nSpd  = statsData.stats.spd  || 0;
-        nDef  = statsData.stats.def  || 0;
-        nLuck = statsData.stats.luck || 0;
-      }
-    }
-  } catch(e) { console.warn('Stats API fallback to house base:', e); }
-  var nAtkSpd=calcAtkSpeed(nSpd);
+  // Nine stats — from /api/stats API (house + cards + items, server-calculated)
+  // Fallback to house-only if API didn't return
+  var st=nineStats&&nineStats.success?nineStats.stats:null;
+  var nAtk=st?st.atk:(house.atk||0);
+  var nHp=st?st.hp:(house.hp||0);
+  var nSpd=st?st.spd:(house.spd||0);
+  var nDef=st?st.def:(house.def||0);
+  var nLuck=st?st.luck:(house.luck||0);
+  var nAtkSpd=st?st.attackInterval:calcAtkSpeed(nSpd);
+  if(typeof nAtkSpd==='number')nAtkSpd=nAtkSpd.toFixed(1);
 
   // Level / XP
   var pXp=player.xp||player.total_xp||0;

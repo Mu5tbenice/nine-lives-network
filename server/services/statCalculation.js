@@ -5,11 +5,6 @@
 //
 // FORMULA: total = house + card1 + card2 + card3 + all equipped items
 // No multipliers. No percentages. Just addition.
-//
-// UPDATED March 2026 — Fixed to match real DB schema:
-//   houses table: base_atk, base_hp, base_spd, base_def, base_luck
-//   player_cards table (not player_spells)
-//   Items via player_nines.equipped_* slugs (not player_items.is_equipped)
 // ═══════════════════════════════════════════════════════
 
 const supabase = require('../config/supabase');
@@ -73,58 +68,50 @@ function applySharpness(baseStat, sharpness) {
  * Calculate total stats for a Nine on a specific zone
  * Adds: house base + 3 zone cards (with sharpness) + all equipped items
  *
- * @param {number} playerId - Player ID
+ * @param {string} playerId - Player UUID
  * @param {number|null} zoneId - Zone ID (null = base stats + items only, no cards)
  * @returns {object} { atk, hp, spd, def, luck, breakdown, attackInterval, cards, items }
  */
 async function calculateNineStats(playerId, zoneId) {
 
-  // ── 1. Get the player's Nine ──
-  const { data: nine, error: nineErr } = await supabase
-    .from('player_nines')
-    .select(`
-      id, house_id, name,
-      equipped_fur, equipped_expression, equipped_headwear,
-      equipped_outfit, equipped_weapon, equipped_familiar,
-      equipped_trinket_1, equipped_trinket_2
-    `)
-    .eq('player_id', playerId)
+  // ── 1. Get the player's Nine and house ──
+  const { data: player, error: playerErr } = await supabase
+    .from('players')
+    .select('id, school_id')
+    .eq('id', playerId)
     .single();
 
-  if (nineErr || !nine) {
-    throw new Error('Nine not found for player ' + playerId);
+  if (playerErr || !player) {
+    throw new Error('Player not found');
   }
 
-  // ── 2. Get house base stats (ALWAYS from houses table) ──
   const { data: house, error: houseErr } = await supabase
     .from('houses')
-    .select('id, name, slug, base_atk, base_hp, base_spd, base_def, base_luck, role')
-    .eq('id', nine.house_id)
+    .select('id, name, slug, atk, hp, spd, def, luck, role')
+    .eq('id', player.school_id)
     .single();
 
   if (houseErr || !house) {
-    throw new Error('House not found for house_id ' + nine.house_id);
+    throw new Error('House not found for player');
   }
 
   // Start with house base stats
-  const houseStats = {
-    atk:  house.base_atk  || 0,
-    hp:   house.base_hp   || 0,
-    spd:  house.base_spd  || 0,
-    def:  house.base_def  || 0,
-    luck: house.base_luck || 0,
+  const totals = {
+    atk: house.atk || 0,
+    hp: house.hp || 0,
+    spd: house.spd || 0,
+    def: house.def || 0,
+    luck: house.luck || 0,
   };
-
-  const totals = { ...houseStats };
 
   // Track breakdown for UI display
   const breakdown = {
-    house: { ...houseStats },
+    house: { atk: house.atk, hp: house.hp, spd: house.spd, def: house.def, luck: house.luck },
     cards: [],
     items: [],
   };
 
-  // ── 3. Get zone cards (if zoneId provided) ──
+  // ── 2. Get zone cards (if zoneId provided) ──
   let cardDetails = [];
 
   if (zoneId) {
@@ -150,10 +137,10 @@ async function calculateNineStats(playerId, zoneId) {
         const cardIds = slots.map(s => s.card_id).filter(Boolean);
 
         if (cardIds.length > 0) {
-          // Get the actual card instances from player_cards → spells
+          // Get the actual card instances from player_spells (inventory)
           const { data: cards } = await supabase
-            .from('player_cards')
-            .select('id, spell_id, sharpness, spells:spell_id(id, name, house, spell_type, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)')
+            .from('player_spells')
+            .select('id, spell_id, sharpness, spells(id, name, house, spell_type, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects, stat_pattern)')
             .in('id', cardIds);
 
           if (cards) {
@@ -167,17 +154,17 @@ async function calculateNineStats(playerId, zoneId) {
 
               // Apply sharpness to each stat, then add
               const cardStats = {
-                atk:  applySharpness(spell.base_atk  || 0, sharp),
-                hp:   applySharpness(spell.base_hp   || 0, sharp),
-                spd:  applySharpness(spell.base_spd  || 0, sharp),
-                def:  applySharpness(spell.base_def  || 0, sharp),
+                atk: applySharpness(spell.base_atk || 0, sharp),
+                hp: applySharpness(spell.base_hp || 0, sharp),
+                spd: applySharpness(spell.base_spd || 0, sharp),
+                def: applySharpness(spell.base_def || 0, sharp),
                 luck: applySharpness(spell.base_luck || 0, sharp),
               };
 
-              totals.atk  += cardStats.atk;
-              totals.hp   += cardStats.hp;
-              totals.spd  += cardStats.spd;
-              totals.def  += cardStats.def;
+              totals.atk += cardStats.atk;
+              totals.hp += cardStats.hp;
+              totals.spd += cardStats.spd;
+              totals.def += cardStats.def;
               totals.luck += cardStats.luck;
 
               breakdown.cards.push({
@@ -193,64 +180,56 @@ async function calculateNineStats(playerId, zoneId) {
     }
   }
 
-  // ── 4. Get equipped items via player_nines.equipped_* slugs ──
-  const slugs = [
-    nine.equipped_fur, nine.equipped_expression, nine.equipped_headwear,
-    nine.equipped_outfit, nine.equipped_weapon, nine.equipped_familiar,
-    nine.equipped_trinket_1, nine.equipped_trinket_2,
-  ].filter(Boolean);
+  // ── 3. Get all equipped items ──
+  const { data: equippedItems } = await supabase
+    .from('player_items')
+    .select('id, item_id, items(id, name, slot, rarity, bonus_atk, bonus_hp, bonus_spd, bonus_def, bonus_luck)')
+    .eq('player_id', playerId)
+    .eq('is_equipped', true);
 
-  let equippedItems = [];
+  if (equippedItems) {
+    equippedItems.forEach(pi => {
+      const item = pi.items;
+      if (!item) return;
 
-  if (slugs.length > 0) {
-    const { data: items } = await supabase
-      .from('items')
-      .select('id, name, slug, slot, rarity, bonus_atk, bonus_hp, bonus_spd, bonus_def, bonus_luck')
-      .in('slug', slugs);
+      const itemStats = {
+        atk: item.bonus_atk || 0,
+        hp: item.bonus_hp || 0,
+        spd: item.bonus_spd || 0,
+        def: item.bonus_def || 0,
+        luck: item.bonus_luck || 0,
+      };
 
-    if (items) {
-      equippedItems = items;
+      totals.atk += itemStats.atk;
+      totals.hp += itemStats.hp;
+      totals.spd += itemStats.spd;
+      totals.def += itemStats.def;
+      totals.luck += itemStats.luck;
 
-      items.forEach(item => {
-        const itemStats = {
-          atk:  item.bonus_atk  || 0,
-          hp:   item.bonus_hp   || 0,
-          spd:  item.bonus_spd  || 0,
-          def:  item.bonus_def  || 0,
-          luck: item.bonus_luck || 0,
-        };
-
-        totals.atk  += itemStats.atk;
-        totals.hp   += itemStats.hp;
-        totals.spd  += itemStats.spd;
-        totals.def  += itemStats.def;
-        totals.luck += itemStats.luck;
-
-        breakdown.items.push({
-          id: item.id,
-          name: item.name,
-          slot: item.slot,
-          rarity: item.rarity,
-          ...itemStats,
-        });
+      breakdown.items.push({
+        id: pi.id,
+        name: item.name,
+        slot: item.slot,
+        rarity: item.rarity,
+        ...itemStats,
       });
-    }
+    });
   }
 
-  // ── 5. Calculate derived combat values ──
+  // ── 4. Calculate derived combat values ──
   const attackInterval = calculateAttackInterval(totals.spd);
 
   return {
     // Final totals
-    atk:  totals.atk,
-    hp:   totals.hp,
-    spd:  totals.spd,
-    def:  totals.def,
+    atk: totals.atk,
+    hp: totals.hp,
+    spd: totals.spd,
+    def: totals.def,
     luck: totals.luck,
 
     // Combat values
-    attackInterval: Math.round(attackInterval * 100) / 100,
-    critChance: Math.min(100, totals.luck),
+    attackInterval: Math.round(attackInterval * 100) / 100, // 2 decimal places
+    critChance: Math.min(100, totals.luck), // Cap at 100%
 
     // Breakdown for UI
     breakdown,
@@ -258,7 +237,7 @@ async function calculateNineStats(playerId, zoneId) {
     // Raw data for combat engine
     house: { id: house.id, name: house.name, slug: house.slug },
     cards: cardDetails,
-    items: equippedItems,
+    items: equippedItems || [],
   };
 }
 
@@ -266,7 +245,7 @@ async function calculateNineStats(playerId, zoneId) {
 /**
  * Quick version: calculate stats without zone cards (for profile display)
  * Just house + items
- * @param {number} playerId
+ * @param {string} playerId
  * @returns {object} same shape as calculateNineStats
  */
 async function calculateBaseStats(playerId) {
