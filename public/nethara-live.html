@@ -584,6 +584,92 @@
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 
+    /* ═══ CONTROLLING GUILD BANNER ═══ */
+    .arena-control-banner {
+      position: absolute; top: 50px; left: 50%; transform: translateX(-50%); z-index: 18;
+      display: none; align-items: center; gap: 8px;
+      padding: 5px 16px; border-radius: 20px;
+      background: rgba(26,21,40,0.85); border: 1px solid var(--border);
+      backdrop-filter: blur(6px); pointer-events: none;
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--muted);
+      letter-spacing: 0.5px; white-space: nowrap;
+    }
+    .arena-control-banner.visible { display: flex; }
+    .arena-control-banner .ctrl-crown { font-size: 12px; }
+    .arena-control-banner .ctrl-guild { color: var(--gold); font-weight: 700; }
+
+    /* ═══ KO COOLDOWN ALERT ═══ */
+    .arena-ko-alert {
+      display: none; position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%); z-index: 30;
+      padding: 10px 20px; border-radius: 10px;
+      background: rgba(255,68,102,0.12); border: 1px solid rgba(255,68,102,0.3);
+      backdrop-filter: blur(6px); pointer-events: none;
+      font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--red);
+      text-align: center; animation: koPulse 2s infinite;
+    }
+    .arena-ko-alert.visible { display: block; }
+    .arena-ko-alert .ko-timer { font-size: 14px; color: #ff6688; margin-top: 4px; }
+    @keyframes koPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+
+    /* ═══ ZONE CHAT ═══ */
+    .arena-chat {
+      position: absolute; bottom: 80px; left: 16px; z-index: 22;
+      width: 280px; max-height: 220px;
+      background: rgba(26,21,40,0.92); border: 1px solid var(--border);
+      border-radius: 12px; backdrop-filter: blur(8px);
+      display: flex; flex-direction: column; pointer-events: auto;
+      overflow: hidden; transition: bottom 0.3s ease;
+    }
+    /* When deployed, push chat above card slots + your nine panel */
+    .arena-chat.deployed { bottom: 300px; }
+    .chat-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 12px; border-bottom: 1px solid var(--border);
+    }
+    .chat-title { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--gold); letter-spacing: 1px; }
+    .chat-spectators { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--faint); }
+    .chat-messages {
+      flex: 1; overflow-y: auto; padding: 8px 10px; max-height: 160px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .chat-msg {
+      font-family: 'Crimson Text', serif; font-size: 14px; color: var(--body);
+      line-height: 1.3; word-break: break-word;
+    }
+    .chat-msg .chat-name { font-family: 'Press Start 2P', monospace; font-size: 6px; margin-right: 6px; font-weight: 700; }
+    .chat-msg .chat-system { color: var(--faint); font-style: italic; font-size: 12px; }
+    .chat-input-row {
+      display: flex; gap: 6px; padding: 6px 10px; border-top: 1px solid var(--border);
+    }
+    .chat-input {
+      flex: 1; background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+      border-radius: 6px; padding: 6px 10px; color: var(--bright);
+      font-family: 'Crimson Text', serif; font-size: 14px; outline: none;
+    }
+    .chat-input::placeholder { color: var(--faint); }
+    .chat-input:focus { border-color: var(--gold); }
+    .chat-send {
+      background: var(--gold); color: #1a1528; border: none; border-radius: 6px;
+      padding: 6px 10px; cursor: pointer; font-family: 'Press Start 2P', monospace; font-size: 6px;
+      transition: opacity 0.15s;
+    }
+    .chat-send:hover { opacity: 0.8; }
+
+    /* ═══ COMBAT STATS PANEL ═══ */
+    .arena-combat-stats {
+      position: absolute; top: 64px; left: 16px; z-index: 20;
+      background: rgba(26,21,40,0.88); border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px 14px; min-width: 180px;
+      backdrop-filter: blur(8px); pointer-events: auto;
+    }
+    .combat-stats-title { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint); letter-spacing: 1px; margin-bottom: 6px; }
+    .combat-stat-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 3px 0; font-family: 'Press Start 2P', monospace; font-size: 8px;
+    }
+    .combat-stat-label { color: var(--muted); }
+    .combat-stat-value { font-weight: 700; }
+
     /* ════════════════════════════════════════
        MOBILE ARENA LAYOUT — bottom tray design
        On small screens, panels dock to bottom
@@ -599,6 +685,23 @@
 
       /* Scoreboard — hide on mobile, info is in feed */
       .arena-scoreboard { display: none; }
+
+      /* Combat stats — hide on mobile */
+      .arena-combat-stats { display: none; }
+
+      /* Chat — full width on mobile */
+      .arena-chat {
+        position: absolute; bottom: 54px; left: 0; right: 0; width: auto;
+        border-radius: 0; border-left: none; border-right: none;
+        max-height: 160px;
+      }
+      .arena-chat.deployed { bottom: 190px; max-height: 120px; }
+
+      /* Control banner — smaller */
+      .arena-control-banner { font-size: 6px; padding: 4px 12px; top: 44px; }
+
+      /* KO alert — adjust */
+      .arena-ko-alert { bottom: 56px; font-size: 7px; padding: 8px 14px; }
 
       /* Nerm — full width banner under top bar */
       .nerm-bubble-container {
@@ -688,6 +791,9 @@
       .your-nine-stat { font-size: 9px; }
       .arena-feed { max-height: 80px; }
       .feed-event { font-size: 8px; }
+      .arena-chat { width: 320px; max-height: 280px; }
+      .arena-combat-stats { min-width: 200px; }
+      .combat-stat-row { font-size: 9px; }
     }
 
     /* Nav overrides — Packs gold pill */
@@ -801,6 +907,30 @@
     <div id="scoreboard-rows"></div>
   </div>
 
+  <!-- Controlling Guild Banner — center under top bar -->
+  <div class="arena-control-banner" id="arena-control-banner">
+    <span class="ctrl-crown">👑</span>
+    <span id="ctrl-guild-name" class="ctrl-guild">---</span>
+    <span>CONTROLS THIS ZONE</span>
+  </div>
+
+  <!-- Left side: Combat Stats (your performance) -->
+  <div class="arena-combat-stats" id="arena-combat-stats" style="display:none;">
+    <div class="combat-stats-title">YOUR COMBAT</div>
+    <div class="combat-stat-row"><span class="combat-stat-label">DMG Dealt</span><span class="combat-stat-value" id="cs-dmg" style="color:#e85a6a">0</span></div>
+    <div class="combat-stat-row"><span class="combat-stat-label">KOs</span><span class="combat-stat-value" id="cs-kos" style="color:#ff4466">0</span></div>
+    <div class="combat-stat-row"><span class="combat-stat-label">Hits Taken</span><span class="combat-stat-value" id="cs-taken" style="color:#6ac8d8">0</span></div>
+    <div class="combat-stat-row"><span class="combat-stat-label">Effects</span><span class="combat-stat-value" id="cs-effects" style="color:#D4A64B">0</span></div>
+    <div class="combat-stat-row"><span class="combat-stat-label">Crits</span><span class="combat-stat-value" id="cs-crits" style="color:#FFC800">0</span></div>
+  </div>
+
+  <!-- KO Cooldown Alert -->
+  <div class="arena-ko-alert" id="arena-ko-alert">
+    <div>💀 YOUR NINE WAS KNOCKED OUT</div>
+    <div class="ko-timer" id="ko-timer">Respawning in <span id="ko-countdown">60</span>s</div>
+    <div style="font-size:6px;color:var(--muted);margin-top:4px;">You can deploy to another zone while waiting</div>
+  </div>
+
   <!-- Bottom-left: Your Build cards -->
   <div class="arena-card-slots" id="arena-card-slots" style="display:none;">
     <div class="build-header">
@@ -839,8 +969,23 @@
     <button class="btn-join-battle" id="btn-join-battle">⚔️ JOIN BATTLE</button>
   </div>
 
-  <!-- Left: Nerm -->
-  <div class="nerm-bubble-container">
+  <!-- Left: Zone Chat (includes Nerm commentary) -->
+  <div class="arena-chat" id="arena-chat" style="display:none;">
+    <div class="chat-header">
+      <span class="chat-title">💬 ZONE CHAT</span>
+      <span class="chat-spectators" id="chat-spectators">👁 -- watching</span>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-msg"><span class="chat-system">Welcome to the arena. Type to chat.</span></div>
+    </div>
+    <div class="chat-input-row" id="chat-input-row" style="display:none;">
+      <input class="chat-input" id="chat-input" type="text" placeholder="Say something..." maxlength="120" autocomplete="off">
+      <button class="chat-send" id="chat-send">SEND</button>
+    </div>
+  </div>
+
+  <!-- Nerm bubble (still used for floating commentary, moves to chat when chat is open) -->
+  <div class="nerm-bubble-container" id="nerm-container">
     <div class="nerm-bubble" id="nerm-bubble">
       <div class="nerm-label">🐱 NERM</div>
       <div id="nerm-text"></div>
@@ -948,6 +1093,14 @@
     snapshotCount: 0,         // how many snapshots scored this session
     // Equipped cards for this zone
     equippedCards: [],
+    // V2 additions
+    playerItems: [],          // equipped items (raw stat bonuses)
+    combatStats: { dmg: 0, kos: 0, taken: 0, effects: 0, crits: 0 },
+    koCooldownEnd: null,      // timestamp when KO cooldown ends
+    koInterval: null,         // interval ref for KO countdown
+    controllingGuild: null,   // guild currently controlling this zone
+    spectatorCount: 0,
+    chatEnabled: false,
   };
 
   // ===== HOUSE DATA =====
@@ -1007,6 +1160,17 @@
     setupTabs();
     await loadZones();
     updatePlayerBar();
+
+    // Auto-open zone if ?zone_id=X is in URL (from dashboard links)
+    const urlParams = new URLSearchParams(window.location.search);
+    const autoZoneId = urlParams.get('zone_id');
+    if (autoZoneId) {
+      const zone = state.zones.find(z => z.id === parseInt(autoZoneId));
+      if (zone) {
+        console.log('🎯 Auto-opening zone from URL:', zone.name);
+        openArena(zone);
+      }
+    }
   }
 
   // ===== TABS =====
@@ -1236,8 +1400,45 @@
   }
 
   function renderGuildTab(container) {
-    container.innerHTML = '<div class="loading-text">Guild view coming soon</div>';
-    // TODO: fetch guild data and render
+    // Build guild zone control data from all zones
+    const guildData = {};
+    for (const z of state.zones) {
+      const hKey = SCHOOL_TO_HOUSE[z.controlling_school_id] || null;
+      if (!hKey) continue;
+      const h = HOUSES[hKey];
+      if (!h) continue;
+      if (!guildData[hKey]) guildData[hKey] = { name: h.name, color: h.color, icon: h.icon, zones: 0, fighters: 0 };
+      guildData[hKey].zones++;
+      guildData[hKey].fighters += (z.arena_nines || z.casters || z.deployment_count || 0);
+    }
+
+    const sorted = Object.values(guildData).sort((a, b) => b.zones - a.zones);
+    const totalZones = state.zones.length || 1;
+
+    if (sorted.length === 0) {
+      container.innerHTML = '<div class="loading-text">No guild territory data yet — deploy to claim zones!</div>';
+      return;
+    }
+
+    container.innerHTML = sorted.map(function(g, i) {
+      const pct = Math.round((g.zones / totalZones) * 100);
+      const medal = i === 0 ? '👑 ' : i === 1 ? '🥈 ' : i === 2 ? '🥉 ' : '';
+      return '<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;border-left:3px solid ' + g.color + ';">'
+        + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+          + '<div style="display:flex;align-items:center;gap:8px;">'
+            + '<span style="font-size:16px;">' + g.icon + '</span>'
+            + '<div>'
+              + '<div style="font-family:\'Cinzel\',serif;font-size:14px;font-weight:700;color:var(--bright)">' + medal + g.name + '</div>'
+              + '<div style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--muted);margin-top:2px">' + g.zones + ' zone' + (g.zones !== 1 ? 's' : '') + ' · ' + g.fighters + ' fighters</div>'
+            + '</div>'
+          + '</div>'
+          + '<div style="font-family:\'Press Start 2P\',monospace;font-size:14px;font-weight:700;color:' + g.color + '">' + pct + '%</div>'
+        + '</div>'
+        + '<div style="height:6px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden;">'
+          + '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,' + g.color + ',' + g.color + '80);border-radius:3px;transition:width 0.5s;"></div>'
+        + '</div>'
+      + '</div>';
+    }).join('');
   }
 
   function updateActiveCount() {
@@ -1290,6 +1491,12 @@
 
     // Check if THIS player is deployed here
     checkDeployment(zone.id);
+
+    // V2: Load player items, reset combat stats, init chat
+    loadPlayerItems();
+    resetCombatStats();
+    clearKOCooldown();
+    // Chat initializes after socket connects (see connectArenaSocket)
   }
 
   /** Fetch deployed Nines from REST API for immediate display */
@@ -1446,6 +1653,15 @@
     state.currentZoneId = null;
     state.currentZone = null;
     state.equippedCards = [];
+
+    // V2 cleanup
+    closeZoneChat();
+    clearKOCooldown();
+    showCombatStatsPanel(false);
+    state.controllingGuild = null;
+    state.playerItems = [];
+    const ctrlBanner = document.getElementById('arena-control-banner');
+    if (ctrlBanner) ctrlBanner.classList.remove('visible');
 
     // Refresh zone data
     loadZones();
@@ -2371,6 +2587,8 @@
     socket.on('connect', () => {
       socket.emit('join_zone', { zoneId });
       addFeedEvent('Connected to arena', 'system');
+      // Initialize zone chat after socket is ready
+      initZoneChat();
     });
 
     // Current state (on first join) — engine sends snapshot with combat positions
@@ -2508,6 +2726,8 @@
         spawnParticles(sprite.container.x, sprite.container.y, 0x44ffaa, 12, 'heal');
         addFeedEvent(`💚 ${data.name || 'A Nine'} respawned!`, 'system');
       }
+      // Clear KO cooldown if it's the player
+      if (nineId === state.playerId) clearKOCooldown();
     });
 
     // ── COMBAT STATUS — periodic full state sync (replaces cycle_start)
@@ -2616,10 +2836,13 @@
       }
     });
 
-    // Nerm commentary
+    // Nerm commentary — show in bubble AND chat
     socket.on('arena:nerm', (data) => {
       const msg = typeof data === 'string' ? data : (data.message || data.text || data.comment || '');
-      if (msg) showNermBubble(msg);
+      if (msg) {
+        showNermBubble(msg);
+        if (state.chatEnabled) addNermToChat(msg);
+      }
     });
 
     socket.on('disconnect', () => {
@@ -2697,6 +2920,13 @@
 
         const feedText = `⚔️ ${ev.sourceName || ev.from_name || getNineName(fromId)} → ${ev.targetName || ev.to_name || getNineName(toId)} -${dmg}${ev.isCrit ? ' CRIT!' : ''}`;
         addFeedEvent(feedText, 'attack');
+
+        // Track personal combat stats
+        if (fromId === state.playerId) {
+          trackCombatStat('dmg', dmg);
+          if (ev.isCrit) trackCombatStat('crits', 1);
+        }
+        if (toId === state.playerId) trackCombatStat('taken', dmg);
         break;
       }
 
@@ -2729,6 +2959,7 @@
       // ── V2: KO — Nine knocked out
       case 'ko': {
         const koId = resolveId(ev.target || ev.nine_id);
+        const killerId = resolveId(ev.source || ev.killer);
         addFeedEvent(`💀 ${ev.targetName || getNineName(koId)} was KO'd!`, 'ko');
         const sprite = state.nines.get(koId);
         if (sprite) {
@@ -2738,6 +2969,10 @@
           spawnParticles(sprite.container.x, sprite.container.y, 0xffffff, 8, 'lightning');
           screenFlash(0xff2222, 0.25);
         }
+        // Track KO stat if player got the kill
+        if (killerId === state.playerId) trackCombatStat('kos', 1);
+        // Start KO cooldown if player was KO'd
+        if (koId === state.playerId) startKOCooldown(ev.cooldown_ms || 60000);
         break;
       }
 
@@ -2757,6 +2992,8 @@
           spawnParticles(sprite.container.x, sprite.container.y, getEffectColor(effectName), 8, getEffectParticleType(effectName));
         }
         addFeedEvent(`${effectName} applied to ${getNineName(tId)}`, 'effect');
+        // Track effects stat if player applied this
+        if (resolveId(ev.source) === state.playerId) trackCombatStat('effects', 1);
         break;
       }
 
@@ -2838,6 +3075,236 @@
           showFloatingText(sprite.container.x, sprite.container.y, `+${ev.value} DRAIN`, 0xff3366, 10);
           spawnParticles(sprite.container.x, sprite.container.y, 0xff3366, 6, 'default');
         }
+        break;
+      }
+
+      // ── V2: DODGE — target sidesteps, brief ghost effect ──
+      case 'effect_dodge': {
+        const dId = resolveId(ev.target || ev.source);
+        const sprite = state.nines.get(dId);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y - 20, 'DODGE!', 0x90E0EF, 14);
+          const origX = sprite.container.x;
+          sprite.container.x += 18;
+          sprite.container.alpha = 0.4;
+          spawnParticles(origX, sprite.container.y, 0x90E0EF, 8, 'default');
+          setTimeout(() => { sprite.container.x = origX; sprite.container.alpha = 1; }, 350);
+        }
+        addFeedEvent(`💨 ${getNineName(resolveId(ev.target || ev.source))} dodged the attack!`, 'effect');
+        break;
+      }
+
+      // ── V2: PHASE — Nine fades out, glowing outline ──
+      case 'effect_phase': {
+        const pId = resolveId(ev.target || ev.source);
+        const sprite = state.nines.get(pId);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y - 20, 'PHASE', 0xbb88ff, 12);
+          sprite.container.alpha = 0.3;
+          spawnParticles(sprite.container.x, sprite.container.y, 0xbb88ff, 12, 'default');
+          // Fade back after duration
+          const dur = ev.duration || 10000;
+          setTimeout(() => { if (sprite.container) sprite.container.alpha = 1; }, dur);
+        }
+        addFeedEvent(`🌀 ${getNineName(pId)} phased out — next attack +50%!`, 'effect');
+        break;
+      }
+
+      // ── V2: SWIFT — quick double-flash on first attack ──
+      case 'effect_swift': {
+        const sId = resolveId(ev.target || ev.source);
+        const sprite = state.nines.get(sId);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y - 20, 'SWIFT!', 0x6ac8d8, 12);
+          spawnParticles(sprite.container.x, sprite.container.y, 0x6ac8d8, 10, 'lightning');
+          // Double flash to show double-trigger
+          if (sprite.spriteGroup) {
+            sprite.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0x6ac8d8; });
+            setTimeout(() => { if (sprite.spriteGroup) sprite.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 200);
+            setTimeout(() => { if (sprite.spriteGroup) sprite.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0x6ac8d8; }); }, 400);
+            setTimeout(() => { if (sprite.spriteGroup) sprite.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 600);
+          }
+        }
+        break;
+      }
+
+      // ── V2: TETHER — beam connects two Nines ──
+      case 'effect_tether': {
+        const fromId = resolveId(ev.source);
+        const toId = resolveId(ev.target);
+        const fromSprite = state.nines.get(fromId);
+        const toSprite = state.nines.get(toId);
+        if (fromSprite && toSprite) {
+          showFloatingText(fromSprite.container.x, fromSprite.container.y - 20, 'TETHER', 0xff6699, 10);
+          showFloatingText(toSprite.container.x, toSprite.container.y - 20, 'LINKED', 0xff6699, 10);
+          animateHealBeam(fromId, toId);
+          spawnParticles(fromSprite.container.x, fromSprite.container.y, 0xff6699, 6, 'default');
+          spawnParticles(toSprite.container.x, toSprite.container.y, 0xff6699, 6, 'default');
+        }
+        if (ev.damage) {
+          // Tether damage share
+          if (toSprite) {
+            showFloatingText(toSprite.container.x, toSprite.container.y, `-${ev.damage} TETHER`, 0xff6699, 10);
+            shakeSprite(toSprite);
+          }
+          if (ev.targetHp != null) updateNineHP(toId, ev.targetHp, toSprite?.maxHp);
+        }
+        break;
+      }
+
+      // ── V2: AMPLIFY — golden glow on buffed ally ──
+      case 'effect_amplify': {
+        const tId = resolveId(ev.target);
+        const sprite = state.nines.get(tId);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y - 20, 'AMPLIFY ×1.5', 0xffd700, 12);
+          spawnParticles(sprite.container.x, sprite.container.y, 0xffd700, 12, 'heal');
+          animateAuraBurst(sprite, 'AMPLIFY');
+        }
+        addFeedEvent(`⚡ ${getNineName(tId)} amplified — next effects at 150%!`, 'effect');
+        break;
+      }
+
+      // ── V2: OVERCHARGE — red double-pulse ──
+      case 'effect_overcharge': {
+        const oId = resolveId(ev.target || ev.source);
+        const sprite = state.nines.get(oId);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y - 20, 'OVERCHARGE!', 0xff4444, 14);
+          spawnParticles(sprite.container.x, sprite.container.y, 0xff4444, 15, 'fire');
+          screenFlash(0xff4444, 0.12);
+          // Double pulse to show double-trigger
+          if (sprite.spriteGroup) {
+            const origScale = sprite.spriteGroup.scale.x;
+            sprite.spriteGroup.scale.set(origScale * 1.3, origScale * 1.3);
+            setTimeout(() => sprite.spriteGroup.scale.set(origScale, origScale), 200);
+            setTimeout(() => sprite.spriteGroup.scale.set(origScale * 1.25, origScale * 1.25), 400);
+            setTimeout(() => sprite.spriteGroup.scale.set(origScale, origScale), 600);
+          }
+        }
+        addFeedEvent(`💥 ${getNineName(oId)} OVERCHARGED — effects trigger twice!`, 'effect');
+        break;
+      }
+
+      // ── V2: MIRROR — shield pop with blue reflect visual ──
+      case 'effect_mirror': {
+        const mId = resolveId(ev.target || ev.source);
+        const sprite = state.nines.get(mId);
+        if (sprite) {
+          animateShieldPop(sprite);
+          showFloatingText(sprite.container.x, sprite.container.y - 20, 'MIRROR', 0x5599ff, 12);
+          spawnParticles(sprite.container.x, sprite.container.y, 0x5599ff, 10, 'shield');
+        }
+        break;
+      }
+
+      // ── V2: PARASITE — purple beam + DOT indicator ──
+      case 'effect_parasite': {
+        const fromId = resolveId(ev.source);
+        const toId = resolveId(ev.target);
+        const fromSprite = state.nines.get(fromId);
+        const toSprite = state.nines.get(toId);
+        if (fromSprite && toSprite) {
+          animateHealBeam(fromId, toId);
+          showFloatingText(toSprite.container.x, toSprite.container.y - 20, 'PARASITE', 0xcc44aa, 12);
+          spawnParticles(toSprite.container.x, toSprite.container.y, 0xcc44aa, 10, 'default');
+        }
+        addFeedEvent(`🦠 ${getNineName(fromId)} parasited ${getNineName(toId)} — DOT + lifesteal!`, 'effect');
+        break;
+      }
+
+      // ── V2: GRAVITY — ground slam, all enemies affected ──
+      case 'effect_gravity': {
+        const gId = resolveId(ev.source);
+        const sprite = state.nines.get(gId);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y - 20, 'GRAVITY', 0x8866cc, 14);
+          spawnParticles(sprite.container.x, sprite.container.y, 0x8866cc, 20, 'explosion');
+          screenFlash(0x8866cc, 0.15);
+          // Shake all enemy sprites briefly
+          state.nines.forEach((n) => {
+            if (n.guild !== sprite.guild && n !== sprite) {
+              shakeSprite(n);
+              showFloatingText(n.container.x, n.container.y, '-SPD', 0x8866cc, 9);
+            }
+          });
+        }
+        addFeedEvent(`🌑 ${getNineName(gId)} pulled all enemies with GRAVITY — SPD down!`, 'effect');
+        break;
+      }
+
+      // ── V2: MARK — target highlighted ──
+      case 'effect_mark': {
+        const tId = resolveId(ev.target);
+        const sprite = state.nines.get(tId);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y - 20, 'MARKED', 0xff8844, 12);
+          spawnParticles(sprite.container.x, sprite.container.y, 0xff8844, 8, 'fire');
+          // Orange tint while marked
+          if (sprite.spriteGroup) {
+            sprite.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff8844; });
+            setTimeout(() => { if (sprite.spriteGroup) sprite.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 5000);
+          }
+        }
+        addFeedEvent(`🎯 ${getNineName(tId)} MARKED — takes +25% damage!`, 'effect');
+        break;
+      }
+
+      // ── V2: EXECUTE — big hit visual on low HP target ──
+      case 'effect_execute': {
+        const tId = resolveId(ev.target);
+        const sprite = state.nines.get(tId);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y - 25, 'EXECUTE!', 0xff2222, 16);
+          spawnParticles(sprite.container.x, sprite.container.y, 0xff2222, 15, 'explosion');
+          screenFlash(0xff2222, 0.15);
+          shakeSprite(sprite);
+        }
+        break;
+      }
+
+      // ── V2: FEAST — heal on enemy KO ──
+      case 'effect_feast': {
+        const fId = resolveId(ev.source);
+        const sprite = state.nines.get(fId);
+        if (sprite && ev.value) {
+          showFloatingText(sprite.container.x, sprite.container.y, `+${ev.value} FEAST`, 0x44ffaa, 12);
+          spawnParticles(sprite.container.x, sprite.container.y, 0x44ffaa, 10, 'heal');
+        }
+        addFeedEvent(`🍖 ${getNineName(fId)} feasted — healed ${ev.value || '?'} HP!`, 'effect');
+        break;
+      }
+
+      // ── V2: SHATTER — AOE explosion on death ──
+      case 'effect_shatter': {
+        const sId = resolveId(ev.source);
+        const sprite = state.nines.get(sId);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y, 'SHATTER!', 0xff6644, 14);
+          spawnParticles(sprite.container.x, sprite.container.y, 0xff6644, 20, 'explosion');
+          screenFlash(0xff6644, 0.2);
+          setTimeout(() => spawnFireworkExplosion(sprite.container.x, sprite.container.y, 0xff6644), 200);
+        }
+        addFeedEvent(`💥 ${getNineName(sId)} SHATTERED — AOE damage to all enemies!`, 'effect');
+        break;
+      }
+
+      // ── V2: INFECT — poison spreads on KO ──
+      case 'effect_infect': {
+        const iId = resolveId(ev.source);
+        const sprite = state.nines.get(iId);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y, 'INFECT!', 0xcc44aa, 14);
+          spawnParticles(sprite.container.x, sprite.container.y, 0xcc44aa, 15, 'default');
+          // Spread particles to nearby enemies
+          state.nines.forEach((n) => {
+            if (n.guild !== sprite.guild && n !== sprite) {
+              spawnParticles(n.container.x, n.container.y, 0xcc44aa, 6, 'default');
+              showFloatingText(n.container.x, n.container.y, 'POISON', 0xcc44aa, 8);
+            }
+          });
+        }
+        addFeedEvent(`🦠 ${getNineName(iId)} died and INFECTED all enemies with poison!`, 'effect');
         break;
       }
 
@@ -3447,7 +3914,18 @@
   function getEffectColor(effect) {
     const colors = {
       BURN: 0xff8833, POISON: 0x88ee44, CORRODE: 0x88aa33,
-      THORNS: 0xff5555, SHATTER: 0xff4466, CHAIN: 0x5599ff,
+      THORNS: 0xff5555, SHATTER: 0xff6644, CHAIN: 0x5599ff,
+      DODGE: 0x90E0EF, PHASE: 0xbb88ff, SWIFT: 0x6ac8d8,
+      TETHER: 0xff6699, AMPLIFY: 0xffd700, OVERCHARGE: 0xff4444,
+      MIRROR: 0x5599ff, PARASITE: 0xcc44aa, GRAVITY: 0x8866cc,
+      MARK: 0xff8844, EXECUTE: 0xff2222, FEAST: 0x44ffaa,
+      INFECT: 0xcc44aa, SURGE: 0xff6633, DRAIN: 0xff3366,
+      HEAL: 0x44ffaa, BLESS: 0x44ffaa, INSPIRE: 0x44ffaa,
+      WARD: 0xD4A64B, ANCHOR: 0xffd700, BARRIER: 0xD4A64B,
+      REFLECT: 0x5599ff, TAUNT: 0xD4A64B, STEALTH: 0x90E0EF,
+      HASTE: 0x6ac8d8, CLEANSE: 0x90E0EF, SILENCE: 0x8866cc,
+      HEX: 0x8866cc, WEAKEN: 0x8866cc, SLOW: 0x8866cc,
+      RESURRECT: 0xffd700,
     };
     return colors[effect] || 0xD4A64B;
   }
@@ -3456,7 +3934,18 @@
   function getEffectParticleType(effect) {
     const types = {
       BURN: 'fire', POISON: 'poison', CORRODE: 'poison',
-      THORNS: 'fire', SHATTER: 'fire', CHAIN: 'lightning',
+      THORNS: 'fire', SHATTER: 'explosion', CHAIN: 'lightning',
+      DODGE: 'default', PHASE: 'default', SWIFT: 'lightning',
+      TETHER: 'default', AMPLIFY: 'heal', OVERCHARGE: 'fire',
+      MIRROR: 'shield', PARASITE: 'default', GRAVITY: 'explosion',
+      MARK: 'fire', EXECUTE: 'explosion', FEAST: 'heal',
+      INFECT: 'default', SURGE: 'fire', DRAIN: 'default',
+      HEAL: 'heal', BLESS: 'heal', INSPIRE: 'heal',
+      WARD: 'shield', ANCHOR: 'shield', BARRIER: 'shield',
+      REFLECT: 'shield', TAUNT: 'shield', STEALTH: 'default',
+      HASTE: 'lightning', CLEANSE: 'default', SILENCE: 'default',
+      HEX: 'default', WEAKEN: 'default', SLOW: 'default',
+      RESURRECT: 'heal',
     };
     return types[effect] || 'default';
   }
@@ -3504,6 +3993,14 @@
   }
 
   function showNermBubble(text) {
+    // If chat is open, Nerm messages go there instead of the floating bubble
+    if (state.chatEnabled) {
+      const container = document.getElementById('nerm-container');
+      if (container) container.style.display = 'none';
+      return;
+    }
+    const container = document.getElementById('nerm-container');
+    if (container) container.style.display = '';
     const bubble = document.getElementById('nerm-bubble');
     document.getElementById('nerm-text').textContent = text;
     bubble.classList.add('visible');
@@ -3644,6 +4141,9 @@
         </div>
       </div>`;
     }).join('');
+
+    // Also update controlling guild banner
+    updateControllingGuild();
   }
 
   /** Recompute guild scores from all loaded nines */
@@ -3959,6 +4459,9 @@
         state.isDeployed = true;
         document.getElementById('deploy-cta').style.display = 'none';
         document.getElementById('your-nine-panel').style.display = 'block';
+        // Push chat up when deployed
+        const chatEl = document.getElementById('arena-chat');
+        if (chatEl) chatEl.classList.add('deployed');
 
         // Try to load equipped cards from multiple sources
         let cards = null;
@@ -4008,6 +4511,7 @@
 
         // Update Your Nine stats (retry if sprite not loaded yet)
         updateYourNineStats();
+        showCombatStatsPanel(true);
         if (!state.nines.has(state.playerId)) {
           setTimeout(updateYourNineStats, 1500);
           setTimeout(updateYourNineStats, 4000);
@@ -4016,15 +4520,21 @@
         state.isDeployed = false;
         document.getElementById('deploy-cta').style.display = 'block';
         document.getElementById('your-nine-panel').style.display = 'none';
+        showCombatStatsPanel(false);
+        const chatEl2 = document.getElementById('arena-chat');
+        if (chatEl2) chatEl2.classList.remove('deployed');
       }
     } catch(e) {
       console.warn('checkDeployment error:', e);
       document.getElementById('deploy-cta').style.display = 'block';
       document.getElementById('your-nine-panel').style.display = 'none';
+      showCombatStatsPanel(false);
+      const chatEl3 = document.getElementById('arena-chat');
+      if (chatEl3) chatEl3.classList.remove('deployed');
     }
   }
 
-  /** Update Your Nine stats display from sprite + equipped cards */
+  /** Update Your Nine stats display from sprite + equipped cards + items */
   function updateYourNineStats() {
     const sprite = state.nines.get(state.playerId);
     if (!sprite) return;
@@ -4040,11 +4550,29 @@
         cardLuck += c.base_luck || 0;
       });
     }
-    const totalAtk  = (sprite.stats?.atk  || 0) + cardAtk;
-    const totalHp   = (sprite.maxHp        || 0) + cardHp;
-    const totalSpd  = (sprite.stats?.spd   || 0) + cardSpd;
-    const totalDef  = (sprite.stats?.def   || 0) + cardDef;
-    const totalLuck = (sprite.stats?.luck  || 0) + cardLuck;
+
+    // V2: Items add raw stats too
+    let itemAtk = 0, itemHp = 0, itemSpd = 0, itemDef = 0, itemLuck = 0;
+    if (state.playerItems && state.playerItems.length > 0) {
+      state.playerItems.forEach(it => {
+        if (!it) return;
+        itemAtk  += it.atk  || it.stat_atk  || 0;
+        itemHp   += it.hp   || it.stat_hp   || 0;
+        itemSpd  += it.spd  || it.stat_spd  || 0;
+        itemDef  += it.def  || it.stat_def  || 0;
+        itemLuck += it.luck || it.stat_luck || 0;
+      });
+    }
+
+    const totalAtk  = (sprite.stats?.atk  || 0) + cardAtk  + itemAtk;
+    const totalHp   = (sprite.maxHp        || 0) + cardHp   + itemHp;
+    const totalSpd  = (sprite.stats?.spd   || 0) + cardSpd  + itemSpd;
+    const totalDef  = (sprite.stats?.def   || 0) + cardDef  + itemDef;
+    const totalLuck = (sprite.stats?.luck  || 0) + cardLuck + itemLuck;
+
+    // Attack speed formula: max(2.0, 10.5 - SPD × 0.12)
+    const atkInterval = Math.max(2.0, 10.5 - totalSpd * 0.12).toFixed(1);
+    const isMaxSpeed = parseFloat(atkInterval) <= 2.0;
 
     const statsEl = document.getElementById('your-nine-stats');
     if (statsEl) {
@@ -4054,6 +4582,7 @@
         <div class="your-nine-stat" style="color:#6ac8d8">◈ SPD ${totalSpd}</div>
         <div class="your-nine-stat" style="color:#b088e8">⛊ DEF ${totalDef}</div>
         <div class="your-nine-stat" style="color:#D4A64B">★ LUCK ${totalLuck}</div>
+        <div class="your-nine-stat" style="color:var(--cyan);border-top:1px solid var(--border);padding-top:4px;margin-top:2px;width:100%;">⏱ Attacks every ${atkInterval}s${isMaxSpeed ? ' (MAX)' : ''}</div>
       `;
     }
     const fill = document.getElementById('your-hp-fill');
@@ -4417,6 +4946,9 @@
         document.getElementById('deploy-cta').style.display = 'block';
         hideCardSlots();
         addFeedEvent('You withdrew from the battle.', 'system');
+        showCombatStatsPanel(false);
+        const chatEl = document.getElementById('arena-chat');
+        if (chatEl) chatEl.classList.remove('deployed');
 
         // Remove your sprite
         removeNineSprite(state.playerId);
@@ -4435,6 +4967,202 @@
   document.getElementById('btn-confirm-deploy').addEventListener('click', confirmDeploy);
   document.getElementById('btn-cancel-deploy').addEventListener('click', closeDeployModal);
   document.getElementById('btn-close-deploy').addEventListener('click', closeDeployModal);
+
+  // ═══════════════════════════════════════════
+  // COMBAT STATS TRACKER
+  // ═══════════════════════════════════════════
+
+  function resetCombatStats() {
+    state.combatStats = { dmg: 0, kos: 0, taken: 0, effects: 0, crits: 0 };
+    updateCombatStatsUI();
+  }
+
+  function trackCombatStat(type, value) {
+    if (!state.combatStats) state.combatStats = { dmg: 0, kos: 0, taken: 0, effects: 0, crits: 0 };
+    state.combatStats[type] = (state.combatStats[type] || 0) + (value || 1);
+    updateCombatStatsUI();
+  }
+
+  function updateCombatStatsUI() {
+    const s = state.combatStats;
+    const el = (id) => document.getElementById(id);
+    if (el('cs-dmg')) el('cs-dmg').textContent = s.dmg || 0;
+    if (el('cs-kos')) el('cs-kos').textContent = s.kos || 0;
+    if (el('cs-taken')) el('cs-taken').textContent = s.taken || 0;
+    if (el('cs-effects')) el('cs-effects').textContent = s.effects || 0;
+    if (el('cs-crits')) el('cs-crits').textContent = s.crits || 0;
+  }
+
+  // Show combat stats panel only when deployed
+  function showCombatStatsPanel(show) {
+    const el = document.getElementById('arena-combat-stats');
+    if (el) el.style.display = show ? 'block' : 'none';
+  }
+
+  // ═══════════════════════════════════════════
+  // KO COOLDOWN SYSTEM
+  // ═══════════════════════════════════════════
+
+  function startKOCooldown(durationMs) {
+    const dur = durationMs || 60000; // 1 minute default
+    state.koCooldownEnd = Date.now() + dur;
+    const alertEl = document.getElementById('arena-ko-alert');
+    if (alertEl) alertEl.classList.add('visible');
+
+    if (state.koInterval) clearInterval(state.koInterval);
+    state.koInterval = setInterval(() => {
+      const remaining = Math.max(0, state.koCooldownEnd - Date.now());
+      const secs = Math.ceil(remaining / 1000);
+      const countEl = document.getElementById('ko-countdown');
+      if (countEl) countEl.textContent = secs;
+
+      if (remaining <= 0) {
+        clearKOCooldown();
+        addFeedEvent('💚 Your Nine has respawned!', 'system');
+      }
+    }, 250);
+  }
+
+  function clearKOCooldown() {
+    state.koCooldownEnd = null;
+    if (state.koInterval) { clearInterval(state.koInterval); state.koInterval = null; }
+    const alertEl = document.getElementById('arena-ko-alert');
+    if (alertEl) alertEl.classList.remove('visible');
+  }
+
+  // ═══════════════════════════════════════════
+  // CONTROLLING GUILD DISPLAY
+  // ═══════════════════════════════════════════
+
+  function updateControllingGuild() {
+    const banner = document.getElementById('arena-control-banner');
+    const nameEl = document.getElementById('ctrl-guild-name');
+    if (!banner || !nameEl) return;
+
+    // Find guild with most HP
+    const entries = Object.entries(state.guildScores).sort((a, b) => b[1] - a[1]);
+    if (entries.length > 0 && entries[0][1] > 0) {
+      const topGuild = entries[0][0];
+      state.controllingGuild = topGuild;
+      nameEl.textContent = topGuild;
+      banner.classList.add('visible');
+    } else {
+      state.controllingGuild = null;
+      nameEl.textContent = 'UNCLAIMED';
+      banner.classList.add('visible');
+    }
+  }
+
+  // ═══════════════════════════════════════════
+  // ZONE CHAT
+  // ═══════════════════════════════════════════
+
+  function initZoneChat() {
+    const chatPanel = document.getElementById('arena-chat');
+    const inputRow = document.getElementById('chat-input-row');
+    const input = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('chat-send');
+    if (!chatPanel) return;
+
+    chatPanel.style.display = 'flex';
+    state.chatEnabled = true;
+
+    // Show input row only if logged in
+    if (state.playerId && inputRow) inputRow.style.display = 'flex';
+
+    // Send on click
+    if (sendBtn) sendBtn.addEventListener('click', sendChatMessage);
+    // Send on Enter
+    if (input) input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMessage(); }
+    });
+
+    // Listen for chat messages via socket
+    if (state.socket) {
+      state.socket.on('arena:chat', (data) => {
+        addChatMessage(data.name || 'Unknown', data.message || '', data.house || null);
+      });
+      state.socket.on('arena:spectators', (data) => {
+        state.spectatorCount = data.count || 0;
+        const el = document.getElementById('chat-spectators');
+        if (el) el.textContent = `👁 ${state.spectatorCount} watching`;
+      });
+    }
+  }
+
+  function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    if (!input || !input.value.trim() || !state.socket) return;
+
+    const msg = input.value.trim().substring(0, 120);
+    state.socket.emit('arena:chat', {
+      zone_id: state.currentZoneId,
+      player_id: state.playerId,
+      message: msg,
+    });
+
+    // Optimistic local display
+    addChatMessage('You', msg, state.playerHouse ? SCHOOL_TO_HOUSE[state.playerHouse] : null);
+    input.value = '';
+  }
+
+  function addChatMessage(name, message, houseKey) {
+    const container = document.getElementById('chat-messages');
+    if (!container) return;
+
+    const hColor = (houseKey && HOUSES[houseKey]) ? HOUSES[houseKey].color : 'var(--muted)';
+    const msgEl = document.createElement('div');
+    msgEl.className = 'chat-msg';
+    msgEl.innerHTML = `<span class="chat-name" style="color:${hColor}">${escHTML(name)}</span>${escHTML(message)}`;
+    container.appendChild(msgEl);
+
+    // Auto-scroll
+    container.scrollTop = container.scrollHeight;
+
+    // Keep max 50 messages
+    while (container.children.length > 50) container.removeChild(container.firstChild);
+  }
+
+  function addNermToChat(message) {
+    const container = document.getElementById('chat-messages');
+    if (!container) return;
+    const msgEl = document.createElement('div');
+    msgEl.className = 'chat-msg';
+    msgEl.innerHTML = `<span class="chat-name" style="color:var(--gold)">🐱 NERM</span><em style="color:var(--gold);opacity:0.85;">${escHTML(message)}</em>`;
+    container.appendChild(msgEl);
+    container.scrollTop = container.scrollHeight;
+    while (container.children.length > 50) container.removeChild(container.firstChild);
+  }
+
+  function escHTML(str) {
+    const d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+  }
+
+  function closeZoneChat() {
+    const chatPanel = document.getElementById('arena-chat');
+    if (chatPanel) chatPanel.style.display = 'none';
+    state.chatEnabled = false;
+  }
+
+  // ═══════════════════════════════════════════
+  // PLAYER ITEMS LOADER
+  // ═══════════════════════════════════════════
+
+  async function loadPlayerItems() {
+    if (!state.playerId) return;
+    try {
+      const res = await fetch(`/api/players/${state.playerId}/items`);
+      if (res.ok) {
+        const data = await res.json();
+        state.playerItems = data.items || data.equipped_items || [];
+      }
+    } catch(e) {
+      // Items endpoint may not exist yet — graceful fallback
+      state.playerItems = [];
+    }
+  }
 
   // ===== START =====
   init();
