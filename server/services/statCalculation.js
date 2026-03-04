@@ -181,15 +181,32 @@ async function calculateNineStats(playerId, zoneId) {
   }
 
   // ── 3. Get all equipped items ──
-  const { data: equippedItems } = await supabase
-    .from('player_items')
-    .select('id, item_id, items(id, name, slot, rarity, bonus_atk, bonus_hp, bonus_spd, bonus_def, bonus_luck)')
+  // Items are stored as slugs in player_nines.equipped_* columns (set by builder)
+  const { data: nine, error: nineErr } = await supabase
+    .from('player_nines')
+    .select('equipped_fur, equipped_expression, equipped_headwear, equipped_outfit, equipped_weapon, equipped_familiar, equipped_trinket_1, equipped_trinket_2')
     .eq('player_id', playerId)
-    .eq('is_equipped', true);
+    .single();
 
-  if (equippedItems) {
-    equippedItems.forEach(pi => {
-      const item = pi.items;
+  let equippedItems = [];
+  if (nine && !nineErr) {
+    const slugs = [
+      nine.equipped_fur, nine.equipped_expression, nine.equipped_headwear,
+      nine.equipped_outfit, nine.equipped_weapon, nine.equipped_familiar,
+      nine.equipped_trinket_1, nine.equipped_trinket_2
+    ].filter(Boolean).filter(s => s !== 'none');
+
+    if (slugs.length > 0) {
+      const { data: items } = await supabase
+        .from('items')
+        .select('id, name, slug, slot, rarity, bonus_atk, bonus_hp, bonus_spd, bonus_def, bonus_luck')
+        .in('slug', slugs);
+      equippedItems = items || [];
+    }
+  }
+
+  if (equippedItems.length > 0) {
+    equippedItems.forEach(item => {
       if (!item) return;
 
       const itemStats = {
@@ -207,7 +224,7 @@ async function calculateNineStats(playerId, zoneId) {
       totals.luck += itemStats.luck;
 
       breakdown.items.push({
-        id: pi.id,
+        id: item.id,
         name: item.name,
         slot: item.slot,
         rarity: item.rarity,
