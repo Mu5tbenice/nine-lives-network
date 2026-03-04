@@ -74,14 +74,102 @@
     .sb-loading{text-align:center;padding:80px 20px}
     .sb-spinner{width:32px;height:32px;border:3px solid var(--gold-dim);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px}
 
-    /* ─── Zoom overlay ─── */
-    .zoom-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);align-items:center;justify-content:center;flex-direction:column;gap:16px}
+    /* ─── Search bar ─── */
+    .sb-search{display:flex;align-items:center;gap:8px;max-width:1100px;margin:0 auto;padding:0 16px 8px}
+    .sb-search-wrap{position:relative;flex:1;max-width:260px}
+    .sb-search-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:8px;padding:7px 12px 7px 30px;color:var(--text-body);font-family:var(--font-body);font-size:13px;outline:none;transition:border-color 0.2s;box-sizing:border-box}
+    .sb-search-input::placeholder{color:var(--text-faint)}
+    .sb-search-input:focus{border-color:var(--gold-border)}
+    .sb-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text-faint);pointer-events:none}
+
+    /* ─── Needs Sharpening badge ─── */
+    .card-wrap .sharp-alert{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);z-index:20;background:rgba(255,140,0,0.2);border:1px solid rgba(255,140,0,0.4);color:#ffaa44;font-family:var(--font-data);font-size:6px;padding:2px 8px;border-radius:4px;pointer-events:none;white-space:nowrap;letter-spacing:0.5px}
+
+    /* ─── Zoom overlay — enhanced ─── */
+    .zoom-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.88);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px;overflow-y:auto}
     .zoom-overlay.active{display:flex}
-    .zoom-card{position:relative;transform:scale(1.4)}
-    .zoom-close{position:absolute;top:-30px;right:-10px;background:none;border:none;color:var(--text-bright);font-size:20px;cursor:pointer;z-index:10}
-    .zoom-info{text-align:center;max-width:340px}
-    .zoom-info-name{font-family:var(--font-title);font-size:16px;color:var(--gold);margin-bottom:4px}
-    .zoom-info-detail{font-family:var(--font-mono);font-size:10px;color:var(--text-faint)}
+    .zoom-layout{display:flex;gap:28px;align-items:flex-start;max-width:700px;width:100%}
+    .zoom-card-col{flex-shrink:0;position:relative}
+    .zoom-close{position:fixed;top:16px;right:16px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:var(--text-bright);font-size:16px;cursor:pointer;z-index:1010;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:background 0.15s}
+    .zoom-close:hover{background:rgba(255,255,255,0.15)}
+
+    /* ─── Detail Panel (right of zoomed card) ─── */
+    .zoom-detail{flex:1;min-width:240px}
+    .zd-name{font-family:var(--font-title);font-size:22px;font-weight:700;color:var(--text-bright);margin-bottom:2px}
+    .zd-sub{font-family:var(--font-data);font-size:8px;color:var(--text-faint);letter-spacing:1.5px;margin-bottom:14px}
+    .zd-section{margin-bottom:14px}
+    .zd-section-title{font-family:var(--font-data);font-size:7px;color:var(--text-faint);letter-spacing:2px;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:4px}
+    .zd-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px}
+    .zd-stat{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0}
+    .zd-stat-label{font-family:var(--font-data);font-size:9px;color:var(--text-muted)}
+    .zd-stat-val{font-family:var(--font-data);font-size:12px;font-weight:700}
+    .zd-stat-eff{font-family:var(--font-data);font-size:9px;color:var(--text-faint);margin-left:4px}
+
+    /* Sharpness bar in detail */
+    .zd-sharp-bar{height:8px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;margin-top:4px}
+    .zd-sharp-fill{height:100%;border-radius:4px;transition:width 0.5s}
+    .zd-sharp-text{font-family:var(--font-data);font-size:10px;margin-top:4px;display:flex;justify-content:space-between}
+
+    /* Effects list */
+    .zd-effect{padding:6px 10px;background:rgba(255,255,255,0.03);border-radius:6px;margin-bottom:4px;border-left:2px solid var(--gold)}
+    .zd-effect-tag{font-family:var(--font-data);font-size:9px;font-weight:700;color:var(--gold);letter-spacing:0.5px}
+    .zd-effect-desc{font-family:var(--font-body);font-size:12px;color:var(--text-body);margin-top:2px;line-height:1.3}
+    .zd-effect-trigger{font-family:var(--font-data);font-size:7px;color:var(--text-faint);margin-top:1px;letter-spacing:0.5px}
+
+    /* Action buttons */
+    .zd-actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+    .zd-btn{font-family:var(--font-data);font-size:8px;padding:8px 16px;border-radius:8px;border:1px solid var(--border-subtle);background:rgba(255,255,255,0.04);color:var(--text-body);cursor:pointer;transition:all 0.15s;letter-spacing:1px}
+    .zd-btn:hover{border-color:var(--gold-border);color:var(--gold)}
+    .zd-btn--primary{background:var(--gold-dim);border-color:var(--gold-border);color:var(--gold)}
+    .zd-btn--primary:hover{background:rgba(212,166,75,0.2)}
+    .zd-btn:disabled{opacity:0.3;cursor:not-allowed}
+    .zd-deployed-badge{display:inline-block;background:rgba(212,166,75,0.15);border:1px solid rgba(212,166,75,0.3);color:var(--gold);font-family:var(--font-data);font-size:8px;padding:4px 10px;border-radius:6px;letter-spacing:1px}
+
+    /* ─── Sharpening Modal ─── */
+    .sharpen-overlay{display:none;position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,0.92);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:20px}
+    .sharpen-overlay.active{display:flex}
+    .sharpen-modal{background:var(--bg-card,#1a1528);border:1px solid var(--border-subtle);border-radius:16px;padding:24px;max-width:520px;width:100%;max-height:85vh;overflow-y:auto}
+    .sharpen-title{font-family:var(--font-title);font-size:20px;font-weight:700;color:var(--gold);margin-bottom:4px}
+    .sharpen-sub{font-family:var(--font-data);font-size:8px;color:var(--text-faint);letter-spacing:1px;margin-bottom:16px}
+    .sharpen-target{display:flex;gap:12px;align-items:center;padding:12px;background:rgba(255,255,255,0.03);border-radius:10px;margin-bottom:16px}
+    .sharpen-target-name{font-family:var(--font-title);font-size:14px;color:var(--text-bright)}
+    .sharpen-target-sharp{font-family:var(--font-data);font-size:9px;color:var(--text-faint);margin-top:2px}
+
+    .sharpen-options{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+    .sharpen-option{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border-subtle);border-radius:10px;cursor:pointer;transition:all 0.15s;background:rgba(255,255,255,0.02)}
+    .sharpen-option:hover:not(.disabled){border-color:var(--gold-border);background:rgba(212,166,75,0.05)}
+    .sharpen-option.active{border-color:var(--gold);background:var(--gold-dim)}
+    .sharpen-option.disabled{opacity:0.3;cursor:not-allowed}
+    .sharpen-option-icon{font-size:20px;width:32px;text-align:center;flex-shrink:0}
+    .sharpen-option-title{font-family:var(--font-data);font-size:9px;font-weight:700;color:var(--text-bright);letter-spacing:0.5px}
+    .sharpen-option-desc{font-family:var(--font-body);font-size:12px;color:var(--text-muted);margin-top:2px}
+    .sharpen-option-avail{font-family:var(--font-data);font-size:7px;letter-spacing:1px;margin-top:3px}
+    .sharpen-option-avail.has{color:#6acd8a}
+    .sharpen-option-avail.lacks{color:#e85a6a}
+
+    .sharpen-fuel{margin-bottom:16px;display:none}
+    .sharpen-fuel-title{font-family:var(--font-data);font-size:8px;color:var(--text-faint);letter-spacing:1px;margin-bottom:8px}
+    .sharpen-fuel-grid{display:flex;flex-wrap:wrap;gap:6px;max-height:200px;overflow-y:auto;padding:4px}
+    .fuel-card{width:90px;padding:6px 4px;border:1px solid var(--border-subtle);border-radius:8px;cursor:pointer;transition:all 0.15s;background:rgba(255,255,255,0.02);text-align:center}
+    .fuel-card:hover{border-color:var(--gold-border)}
+    .fuel-card.selected{border-color:var(--gold);background:var(--gold-dim)}
+    .fuel-card-name{font-family:var(--font-data);font-size:7px;color:var(--text-body);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .fuel-card-rarity{font-family:var(--font-data);font-size:6px;color:var(--text-faint);margin-top:1px;text-transform:uppercase;letter-spacing:0.5px}
+    .fuel-card-sharp{font-family:var(--font-data);font-size:6px;color:var(--text-faint);margin-top:1px}
+
+    .sharpen-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+    .sharpen-btn{font-family:var(--font-data);font-size:9px;padding:10px 20px;border-radius:8px;border:1px solid var(--border-subtle);background:rgba(255,255,255,0.04);color:var(--text-body);cursor:pointer;transition:all 0.15s;letter-spacing:1px}
+    .sharpen-btn:hover{border-color:var(--gold-border)}
+    .sharpen-btn--confirm{background:linear-gradient(135deg,rgba(212,166,75,0.2),rgba(212,166,75,0.1));border-color:var(--gold-border);color:var(--gold)}
+    .sharpen-btn--confirm:hover{background:rgba(212,166,75,0.25)}
+    .sharpen-btn:disabled{opacity:0.3;cursor:not-allowed}
+
+    @media(max-width:600px){
+      .zoom-layout{flex-direction:column;align-items:center}
+      .zoom-detail{min-width:auto;width:100%;max-width:340px}
+      .sharpen-modal{padding:16px}
+      .sharpen-fuel-grid{max-height:150px}
+    }
 
     /* ─── House filter pills (Codex) ─── */
     .house-pills{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
@@ -175,8 +263,8 @@
   </div>
 </div>
 
-<!-- SORT -->
-<div class="sort-bar">
+<!-- SORT + SEARCH -->
+<div class="sort-bar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
   <select id="sortBy" onchange="render()">
     <option value="rarity">Sort: Rarity</option>
     <option value="atk">Sort: ATK</option>
@@ -189,6 +277,10 @@
     <option value="house">Sort: House</option>
     <option value="type">Sort: Type</option>
   </select>
+  <div class="sb-search-wrap">
+    <span class="sb-search-icon">&#128269;</span>
+    <input class="sb-search-input" id="searchInput" type="text" placeholder="Search cards..." oninput="render()">
+  </div>
 </div>
 
 <!-- CARDS -->
@@ -196,10 +288,31 @@
   <div class="sb-loading"><div class="sb-spinner"></div><div style="font-family:var(--font-data);font-size:9px;color:var(--text-faint)">Loading spellbook...</div></div>
 </div>
 
-<!-- ZOOM OVERLAY -->
+<!-- ZOOM OVERLAY — Enhanced with detail panel -->
 <div class="zoom-overlay" id="zoomOverlay" onclick="closeZoom(event)">
-  <div class="zoom-card" id="zoomCard"><button class="zoom-close" onclick="closeZoom(event)">&#10005;</button></div>
-  <div class="zoom-info" id="zoomInfo"></div>
+  <button class="zoom-close" onclick="closeZoom(event)">&#10005;</button>
+  <div class="zoom-layout" onclick="event.stopPropagation()">
+    <div class="zoom-card-col" id="zoomCard"></div>
+    <div class="zoom-detail" id="zoomDetail"></div>
+  </div>
+</div>
+
+<!-- SHARPENING MODAL -->
+<div class="sharpen-overlay" id="sharpenOverlay" onclick="closeSharpen(event)">
+  <div class="sharpen-modal" id="sharpenModal" onclick="event.stopPropagation()">
+    <div class="sharpen-title">⚒ SHARPEN CARD</div>
+    <div class="sharpen-sub">SACRIFICE CARDS TO RESTORE SHARPNESS</div>
+    <div class="sharpen-target" id="sharpenTarget"></div>
+    <div class="sharpen-options" id="sharpenOptions"></div>
+    <div class="sharpen-fuel" id="sharpenFuel">
+      <div class="sharpen-fuel-title" id="sharpenFuelTitle">SELECT FUEL CARDS</div>
+      <div class="sharpen-fuel-grid" id="sharpenFuelGrid"></div>
+    </div>
+    <div class="sharpen-actions">
+      <button class="sharpen-btn" onclick="closeSharpenModal()">CANCEL</button>
+      <button class="sharpen-btn sharpen-btn--confirm" id="sharpenConfirm" disabled onclick="confirmSharpen()">⚒ SHARPEN</button>
+    </div>
+  </div>
 </div>
 
 <!-- SCRIPTS -->
@@ -215,18 +328,72 @@ if (typeof buildCardV4 === 'function') {
   buildSpellCard = function(s, opts) { return buildCardV4(s, opts); };
 }
 
+/* ═══════════════════════════════════════════════════════
+   V2 EFFECT DESCRIPTIONS — Replaces old "per cycle" language
+   Source: 9LV_EFFECTS_V2_LOCKED.md (March 2 2026)
+   ═══════════════════════════════════════════════════════ */
+var V2_EFFECTS = {
+  BURN:      { trigger: 'On-attack',  desc: 'Extra fire damage per attack' },
+  CHAIN:     { trigger: 'On-attack',  desc: 'Auto-attack hits 2 enemies' },
+  EXECUTE:   { trigger: 'On-attack',  desc: '+50% damage to enemies below 30% HP' },
+  SURGE:     { trigger: 'Passive',    desc: '+50% ATK but +25% damage taken — permanent berserker mode' },
+  PIERCE:    { trigger: 'On-attack',  desc: 'Ignores WARD and BARRIER shields' },
+  HEAL:      { trigger: 'On-attack',  desc: 'Heal lowest HP ally (including self) per attack' },
+  WARD:      { trigger: 'Timed (10s)',desc: 'Block next incoming hit — consumed on trigger' },
+  ANCHOR:    { trigger: 'Timed (10s)',desc: "Can't drop below 1 HP during window" },
+  THORNS:    { trigger: 'Passive',    desc: 'Reflect 15 flat damage to attacker per hit taken' },
+  BARRIER:   { trigger: 'Passive',    desc: 'Absorb total damage. One shield, gone when broken.' },
+  SILENCE:   { trigger: 'Timed (10s)',desc: "Target's card effects don't trigger. Targets highest ATK enemy." },
+  HEX:       { trigger: 'Timed (10s)',desc: '-10 ATK per stack (max 3 stacks = -30 ATK)' },
+  WEAKEN:    { trigger: 'Timed (10s)',desc: 'Target deals half damage' },
+  DRAIN:     { trigger: 'On-attack',  desc: 'Heal self for 5% of damage dealt to target' },
+  FEAST:     { trigger: 'On-KO',      desc: 'When any enemy on zone dies, heal 15% of their max HP' },
+  SLOW:      { trigger: 'Timed (10s)',desc: '-15 SPD to target — nearly halts medium Nines' },
+  TETHER:    { trigger: 'Timed (10s)',desc: 'Link to target, share all damage 50/50' },
+  MARK:      { trigger: 'Timed (10s)',desc: 'Tag highest HP enemy. All sources deal +25% to them.' },
+  HASTE:     { trigger: 'Timed (10s)',desc: '+10 SPD speed boost' },
+  SWIFT:     { trigger: 'Deploy',     desc: 'All card effects trigger at 2x strength for first 10s after deploy' },
+  DODGE:     { trigger: 'Passive',    desc: '100% evasion for 3s after being hit. 10s cooldown.' },
+  PHASE:     { trigger: 'On-attack',  desc: "Untargetable for 3s after attacking. Can't attack while phased." },
+  STEALTH:   { trigger: 'Timed (10s)',desc: "Can't be single-targeted (still takes AOE/CHAIN)" },
+  POISON:    { trigger: 'On-attack',  desc: 'DOT: damage every 3s for 12s. Stacks x3.' },
+  CORRODE:   { trigger: 'Passive aura',desc: 'All enemies lose 1 max HP every 10s while you live. Permanent.' },
+  INFECT:    { trigger: 'On-KO',      desc: 'When this Nine is KO\'d, all enemies get POISON' },
+  AMPLIFY:   { trigger: 'On-attack',  desc: 'Next ally to attack gets +50% effect strength' },
+  INSPIRE:   { trigger: 'Timed (10s)',desc: 'All allies on zone gain +3 ATK and +3 SPD' },
+  BLESS:     { trigger: 'On-attack',  desc: 'Heal the 3 lowest HP allies per attack' },
+  TAUNT:     { trigger: 'Timed (10s)',desc: 'All enemies must attack this Nine' },
+  SHATTER:   { trigger: 'On-KO',      desc: 'On death, deal 10% of your max HP as damage to all enemies' },
+  REFLECT:   { trigger: 'Timed (10s)',desc: 'Next incoming hit bounces back at full damage, consumed on trigger' },
+  CLEANSE:   { trigger: 'On-attack',  desc: 'Clear all debuffs from self (BURN, POISON, HEX, WEAKEN, SLOW, SILENCE, TETHER, MARK)' },
+  OVERCHARGE:{ trigger: 'Passive',    desc: 'All card effects fire twice per attack. -2% sharpness per snapshot.' },
+  MIRROR:    { trigger: 'Timed (10s)',desc: 'Reflects damage back to whoever hit you' },
+  PARASITE:  { trigger: 'On-attack',  desc: 'Attaches to target, draining HP over time' },
+  RESURRECT: { trigger: 'On-KO',      desc: 'Revive once at 50% HP after being KO\'d. One use per deploy.' },
+  GRAVITY:   { trigger: 'Deploy',     desc: 'On deploy: all enemies on zone get -5 SPD for 10s' },
+  CRIT:      { trigger: 'Passive',    desc: '25% chance to deal double damage (legacy — use LUCK stat instead)' },
+  'LEECH FIELD':{ trigger: 'Passive', desc: 'Steal HP from all nearby enemies (legacy — replaced by FEAST)' },
+  SIPHON:    { trigger: 'On-attack',  desc: 'Steal HP from target (legacy — replaced by FEAST)' }
+};
+
 /* ═══ CONSTANTS ═══ */
 var HO = ['smoulders','darktide','stonebark','ashenvale','stormrage','nighthollow','dawnbringer','manastorm','plaguemire','universal'];
 var RARITY_ORDER = { legendary:0, epic:1, rare:2, uncommon:3, common:4 };
+var RARITY_COLORS = { legendary:'#ffd700', epic:'#bb88ff', rare:'#55bbff', uncommon:'#66dd66', common:'#999' };
+var STAT_COLORS = { atk:'#e85a6a', hp:'#6acd8a', spd:'#6ac8d8', def:'#b088e8', luck:'#D4A64B' };
 
 /* ═══ STATE ═══ */
 var playerId = null;
-var playerCards = [];      // raw cards from collection API
-var allSpells = [];        // all 84 spells from spells API
-var spellLookup = {};      // spell_id -> spell data (for stat lookup)
-var discoveredSet = {};    // spell_name -> true (what player has found)
+var playerCards = [];
+var allSpells = [];
+var spellLookup = {};
+var discoveredSet = {};
 var activeTab = 'mycards';
 var activeFilters = { rarity:'all', type:'all', status:'all', house:'all' };
+var zoomCardData = null;    // currently zoomed card data
+var sharpenTarget = null;   // card being sharpened
+var sharpenMethod = null;   // 'dupe', 'house', 'any'
+var sharpenFuelIds = [];    // selected fuel card IDs
 
 /* ─── House pill icons ─── */
 var HOUSE_IMG_MAP = {
@@ -262,7 +429,6 @@ function esc(s) {
 async function loadData() {
   playerId = getPlayerId();
 
-  // Always load all spells (needed for Codex)
   try {
     var sR = await fetch('/api/spells');
     if (sR.ok) {
@@ -285,30 +451,19 @@ async function loadData() {
           image_url: s.image_url || ''
         };
       });
-      // Build lookup
-      allSpells.forEach(function(s) {
-        spellLookup[s.name.toLowerCase()] = s;
-      });
+      allSpells.forEach(function(s) { spellLookup[s.name.toLowerCase()] = s; });
     }
-  } catch(e) {
-    console.error('Spells load error:', e);
-  }
+  } catch(e) { console.error('Spells load error:', e); }
 
-  // Load player collection if logged in
   if (playerId) {
     try {
       var cR = await fetch('/api/packs/collection/' + playerId);
       if (cR.ok) {
         var cd = await cR.json();
         playerCards = (cd.cards || cd || []).map(normalizePlayerCard);
-        // Build discovered set
-        playerCards.forEach(function(c) {
-          discoveredSet[c.name.toLowerCase()] = true;
-        });
+        playerCards.forEach(function(c) { discoveredSet[c.name.toLowerCase()] = true; });
       }
-    } catch(e) {
-      console.error('Collection load error:', e);
-    }
+    } catch(e) { console.error('Collection load error:', e); }
   }
 
   updateProgress();
@@ -326,13 +481,10 @@ function parseEffects(raw) {
   return [];
 }
 
-/* ═══ Normalize player_cards row → card renderer format ═══ */
-/* The collection API returns nested spell data as c.spell = { name, base_atk, ... } */
 function normalizePlayerCard(c) {
-  var sp = c.spell || {};  // nested join data from Supabase
+  var sp = c.spell || {};
   var spellName = (c.spell_name || sp.name || c.name || 'Unknown').toLowerCase();
-  var ref = spellLookup[spellName] || {};  // fallback: cross-reference with spells API
-
+  var ref = spellLookup[spellName] || {};
   var effects = parseEffects(c.spell_effects || sp.bonus_effects || ref.bonus_effects || []);
 
   return {
@@ -367,56 +519,43 @@ function updateProgress() {
   var total = allSpells.length || 84;
   var found = Object.keys(discoveredSet).length;
   var pct = Math.round((found / total) * 100);
-  var wrap = document.getElementById('progressWrap');
-  wrap.style.display = 'block';
+  document.getElementById('progressWrap').style.display = 'block';
   document.getElementById('progressFill').style.width = pct + '%';
   document.getElementById('progressText').textContent = found + ' / ' + total + ' DISCOVERED';
 
-  // Stats banner
   if (playerCards.length > 0) {
     document.getElementById('statsBanner').style.display = 'flex';
     document.getElementById('statTotal').textContent = playerCards.length;
     document.getElementById('statUnique').textContent = found;
-    var rareUp = playerCards.filter(function(c){ return ['rare','epic','legendary'].includes(c.rarity); }).length;
-    var epicUp = playerCards.filter(function(c){ return ['epic','legendary'].includes(c.rarity); }).length;
-    document.getElementById('statRare').textContent = rareUp;
-    document.getElementById('statEpic').textContent = epicUp;
+    document.getElementById('statRare').textContent = playerCards.filter(function(c){ return ['rare','epic','legendary'].includes(c.rarity); }).length;
+    document.getElementById('statEpic').textContent = playerCards.filter(function(c){ return ['epic','legendary'].includes(c.rarity); }).length;
     var sharps = playerCards.map(function(c){ return c.sharpness != null ? c.sharpness : 100; });
-    var avgSharp = Math.round(sharps.reduce(function(a,b){ return a+b; }, 0) / sharps.length);
-    document.getElementById('statSharp').textContent = avgSharp + '%';
+    document.getElementById('statSharp').textContent = Math.round(sharps.reduce(function(a,b){ return a+b; }, 0) / sharps.length) + '%';
   }
-
-  // Build house pills
   buildHousePills();
 }
 
 function buildHousePills() {
   var container = document.getElementById('housePills');
   if (!container) return;
-  var houses = ['smoulders','darktide','stonebark','ashenvale','stormrage','nighthollow','dawnbringer','manastorm','plaguemire','universal'];
   container.innerHTML = '';
-  houses.forEach(function(h) {
+  HO.forEach(function(h) {
     var pill = document.createElement('div');
     pill.className = 'house-pill';
     pill.style.color = HOUSE_COLORS[h];
     pill.title = h.charAt(0).toUpperCase() + h.slice(1);
     if (HOUSE_IMG_MAP[h]) {
       var img = document.createElement('img');
-      img.src = HOUSE_IMG_MAP[h];
-      img.alt = h;
+      img.src = HOUSE_IMG_MAP[h]; img.alt = h;
       pill.appendChild(img);
     } else {
-      pill.textContent = '✦';
-      pill.style.fontSize = '14px';
-      pill.style.color = HOUSE_COLORS[h];
+      pill.textContent = '✦'; pill.style.fontSize = '14px';
     }
     pill.dataset.house = h;
     if (activeFilters.house === h) pill.classList.add('active');
     pill.addEventListener('click', function() {
-      // Toggle
       if (activeFilters.house === h) {
-        activeFilters.house = 'all';
-        pill.classList.remove('active');
+        activeFilters.house = 'all'; pill.classList.remove('active');
         container.parentElement.querySelector('.fbtn').classList.add('active');
       } else {
         activeFilters.house = h;
@@ -428,7 +567,6 @@ function buildHousePills() {
     });
     container.appendChild(pill);
   });
-  // Wire "All" button
   var allBtn = container.parentElement.querySelector('.fbtn');
   allBtn.addEventListener('click', function() {
     activeFilters.house = 'all';
@@ -444,23 +582,14 @@ function switchTab(tab) {
   document.querySelectorAll('.sb-tab').forEach(function(t) {
     t.classList.toggle('active', t.dataset.tab === tab);
   });
-  // Show/hide status filters (only relevant for My Cards)
   var sf = document.getElementById('statusFilters');
   var ss = document.getElementById('statusFilterSep');
-  var hf = document.getElementById('houseFilters');
-  var hs = document.getElementById('houseFilterSep');
   if (tab === 'codex') {
-    sf.style.display = 'none';
-    ss.style.display = 'none';
-    hf.style.display = '';
-    hs.style.display = '';
-    document.getElementById('headerSub').textContent = 'All 84 spells of Nethara — discover them all';
+    sf.style.display = 'none'; ss.style.display = 'none';
+    document.getElementById('headerSub').textContent = 'All 84 spells of Nethara \u2014 discover them all';
     document.getElementById('statsBanner').style.display = 'none';
   } else {
-    sf.style.display = '';
-    ss.style.display = '';
-    hf.style.display = '';
-    hs.style.display = '';
+    sf.style.display = ''; ss.style.display = '';
     document.getElementById('headerSub').textContent = 'Your collection of spells from across Nethara';
     if (playerCards.length > 0) document.getElementById('statsBanner').style.display = 'flex';
   }
@@ -469,11 +598,8 @@ function switchTab(tab) {
 
 /* ═══ RENDER ═══ */
 function render() {
-  if (activeTab === 'mycards') {
-    renderMyCards();
-  } else {
-    renderCodex();
-  }
+  if (activeTab === 'mycards') renderMyCards();
+  else renderCodex();
 }
 
 /* ═══ MY CARDS TAB ═══ */
@@ -487,7 +613,6 @@ function renderMyCards() {
     return;
   }
 
-  // Group duplicates by spell name
   var groups = {};
   playerCards.forEach(function(c) {
     var key = c.name.toLowerCase();
@@ -495,23 +620,13 @@ function renderMyCards() {
     groups[key].push(c);
   });
 
-  // For each group, pick best rarity card as display card
   var stacked = [];
   Object.keys(groups).forEach(function(key) {
     var copies = groups[key];
-    copies.sort(function(a, b) {
-      return (RARITY_ORDER[a.rarity] || 9) - (RARITY_ORDER[b.rarity] || 9);
-    });
-    var best = copies[0]; // best rarity
-    stacked.push({
-      card: best,
-      count: copies.length,
-      totalCharges: copies.reduce(function(sum, c) { return sum + (c.current_charges || 0); }, 0),
-      allCopies: copies
-    });
+    copies.sort(function(a, b) { return (RARITY_ORDER[a.rarity] || 9) - (RARITY_ORDER[b.rarity] || 9); });
+    stacked.push({ card: copies[0], count: copies.length, allCopies: copies });
   });
 
-  // Apply filters
   var items = stacked.slice();
   if (activeFilters.rarity !== 'all') items = items.filter(function(s){ return s.card.rarity === activeFilters.rarity; });
   if (activeFilters.type !== 'all') items = items.filter(function(s){ return s.card.type === activeFilters.type; });
@@ -520,6 +635,10 @@ function renderMyCards() {
   if (activeFilters.status === 'deployed') items = items.filter(function(s){ return !!s.card.deployed_zone; });
   if (activeFilters.status === 'worn') items = items.filter(function(s){ return s.card.sharpness != null && s.card.sharpness > 0 && s.card.sharpness <= 50; });
   if (activeFilters.status === 'degraded') items = items.filter(function(s){ return s.card.sharpness != null && s.card.sharpness === 0; });
+
+  // Search filter
+  var search = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+  if (search) items = items.filter(function(s){ return s.card.name.toLowerCase().includes(search); });
 
   // Sort
   var sortBy = document.getElementById('sortBy').value;
@@ -534,7 +653,6 @@ function renderMyCards() {
   else if (sortBy === 'house') items.sort(function(a,b){ return HO.indexOf(a.card.house) - HO.indexOf(b.card.house); });
   else if (sortBy === 'type') items.sort(function(a,b){ return a.card.type.localeCompare(b.card.type); });
 
-  // Empty states
   if (items.length === 0 && playerCards.length === 0) {
     document.getElementById('content').innerHTML =
       '<div class="sb-empty"><div class="sb-empty-icon">&#128230;</div>'
@@ -551,7 +669,6 @@ function renderMyCards() {
     return;
   }
 
-  // Build cards
   var html = '<div class="sb-grid">';
   items.forEach(function(item, i) {
     var c = item.card;
@@ -559,46 +676,38 @@ function renderMyCards() {
     if (c.sharpness != null && c.sharpness === 0) wrapClass += ' card-wrap--exhausted';
     else if (c.sharpness != null && c.sharpness <= 50) wrapClass += ' card-wrap--worn';
 
-    html += '<div class="' + wrapClass + '">';
+    html += '<div class="' + wrapClass + '" data-card-idx="' + i + '">';
     html += buildCardV4(c, { size: 'mini', delay: Math.min(i * 0.03, 0.5) });
 
-    // Duplicate badge
-    if (item.count > 1) {
-      html += '<div class="dupe-badge">&times;' + item.count + '</div>';
+    if (item.count > 1) html += '<div class="dupe-badge">&times;' + item.count + '</div>';
+    if (c.deployed_zone) html += '<div class="coll-badge-deployed">&#9876; ' + esc(c.deployed_zone) + '</div>';
+    // Needs sharpening alert
+    if (c.sharpness != null && c.sharpness < 50 && c.sharpness > 0 && !c.deployed_zone) {
+      html += '<div class="sharp-alert">\u2692 NEEDS SHARPENING</div>';
+    } else if (c.sharpness != null && c.sharpness === 0) {
+      html += '<div class="sharp-alert" style="color:#e85a6a;border-color:rgba(232,90,106,0.4);background:rgba(232,90,106,0.15)">\u26A0 DULL \u2014 50% POWER</div>';
     }
-
-    // Deployed badge
-    if (c.deployed_zone) {
-      html += '<div class="coll-badge-deployed">&#9876; ' + esc(c.deployed_zone) + '</div>';
-    }
-
     html += '</div>';
   });
   html += '</div>';
   document.getElementById('content').innerHTML = html;
 
+  // Store items for zoom lookup
+  window._renderedItems = items;
   initCardsAndBindClicks('mycards');
 }
 
 /* ═══ CODEX TAB ═══ */
 function renderCodex() {
   var spells = allSpells.slice();
-
-  // Apply filters
   if (activeFilters.type !== 'all') spells = spells.filter(function(s){ return s.spell_type === activeFilters.type; });
   if (activeFilters.house !== 'all') spells = spells.filter(function(s){ return s.house === activeFilters.house; });
-  if (activeFilters.rarity !== 'all') {
-    // In codex, rarity filter only affects discovered cards — undiscovered always show
-    // Actually, filter by discovered cards' rarity doesn't make sense for codex
-    // Let's skip rarity filter in codex mode — all spells show
-  }
 
-  // Sort
+  var search = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+  if (search) spells = spells.filter(function(s){ return s.name.toLowerCase().includes(search); });
+
   var sortBy = document.getElementById('sortBy').value;
-  if (sortBy === 'rarity') {
-    // In codex, sort by tier instead (T0, T1, T2, T3)
-    spells.sort(function(a,b){ return (a.tier||0) - (b.tier||0) || a.name.localeCompare(b.name); });
-  }
+  if (sortBy === 'rarity') spells.sort(function(a,b){ return (a.tier||0) - (b.tier||0) || a.name.localeCompare(b.name); });
   else if (sortBy === 'atk') spells.sort(function(a,b){ return b.base_atk - a.base_atk; });
   else if (sortBy === 'hp') spells.sort(function(a,b){ return b.base_hp - a.base_hp; });
   else if (sortBy === 'spd') spells.sort(function(a,b){ return b.base_spd - a.base_spd; });
@@ -616,12 +725,8 @@ function renderCodex() {
     return;
   }
 
-  // Count owned copies per spell
   var ownedCounts = {};
-  playerCards.forEach(function(c) {
-    var key = c.name.toLowerCase();
-    ownedCounts[key] = (ownedCounts[key] || 0) + 1;
-  });
+  playerCards.forEach(function(c) { ownedCounts[c.name.toLowerCase()] = (ownedCounts[c.name.toLowerCase()] || 0) + 1; });
 
   var html = '<div class="sb-grid">';
   spells.forEach(function(spell, i) {
@@ -630,49 +735,22 @@ function renderCodex() {
     var count = ownedCounts[key] || 0;
 
     if (discovered) {
-      // Show real card (use spell data as base, common rarity for codex display)
       var cardData = {
-        name: spell.name,
-        house: spell.house,
-        spell_type: spell.spell_type,
-        rarity: 'common',
-        mana_cost: spell.mana_cost,
-        base_atk: spell.base_atk,
-        base_hp: spell.base_hp,
-        base_spd: spell.base_spd,
-        base_def: spell.base_def,
-        base_luck: spell.base_luck,
-        base_effect: '',
-        bonus_effects: spell.bonus_effects,
-        flavor_text: spell.flavor_text,
-        image_url: spell.image_url
+        name: spell.name, house: spell.house, spell_type: spell.spell_type, rarity: 'common',
+        mana_cost: spell.mana_cost, base_atk: spell.base_atk, base_hp: spell.base_hp,
+        base_spd: spell.base_spd, base_def: spell.base_def, base_luck: spell.base_luck,
+        base_effect: '', bonus_effects: spell.bonus_effects, flavor_text: spell.flavor_text, image_url: spell.image_url
       };
-
-      html += '<div class="card-wrap">';
+      html += '<div class="card-wrap" data-spell-name="' + esc(key) + '">';
       html += buildCardV4(cardData, { size: 'mini', delay: Math.min(i * 0.02, 0.4) });
-      if (count > 0) {
-        html += '<div class="dupe-badge">&times;' + count + '</div>';
-      }
+      if (count > 0) html += '<div class="dupe-badge">&times;' + count + '</div>';
       html += '</div>';
     } else {
-      // Undiscovered — dark silhouette
       var ghostData = {
-        name: '???',
-        house: spell.house,
-        spell_type: spell.spell_type,
-        rarity: 'common',
-        mana_cost: spell.mana_cost,
-        base_atk: 0,
-        base_hp: 0,
-        base_spd: 0,
-        base_def: 0,
-        base_luck: 0,
-        base_effect: '',
-        bonus_effects: [],
-        flavor_text: '',
-        image_url: ''
+        name: '???', house: spell.house, spell_type: spell.spell_type, rarity: 'common',
+        mana_cost: spell.mana_cost, base_atk: 0, base_hp: 0, base_spd: 0, base_def: 0, base_luck: 0,
+        base_effect: '', bonus_effects: [], flavor_text: '', image_url: ''
       };
-
       html += '<div class="card-wrap card-wrap--undiscovered">';
       html += buildCardV4(ghostData, { size: 'mini', delay: Math.min(i * 0.02, 0.4) });
       html += '<div class="undiscovered-overlay"><div class="undiscovered-q">???</div><div class="undiscovered-text">UNDISCOVERED</div></div>';
@@ -682,52 +760,358 @@ function renderCodex() {
   html += '</div>';
   document.getElementById('content').innerHTML = html;
 
+  window._renderedCodexSpells = spells;
   initCardsAndBindClicks('codex');
 }
 
 /* ═══ INIT CARDS + CLICK HANDLERS ═══ */
 function initCardsAndBindClicks(mode) {
   setTimeout(function() {
-    if (typeof initCards === 'function') {
-      initCards();
-    } else if (typeof initParticles === 'function') {
+    if (typeof initCards === 'function') initCards();
+    else if (typeof initParticles === 'function') {
       document.querySelectorAll('.spell-card canvas.sc-particles').forEach(function(cv) {
         var card = cv.closest('.spell-card');
         if (card) initParticles(cv, card.dataset.particle || 'mote', card.dataset.color || '#D4A64B');
       });
     }
-
-    // Click to zoom (only on discovered cards)
-    document.querySelectorAll('.card-wrap:not(.card-wrap--undiscovered) .spell-card').forEach(function(card, idx) {
-      card.style.cursor = 'pointer';
-      card.addEventListener('click', function() { openZoom(idx); });
+    document.querySelectorAll('.card-wrap:not(.card-wrap--undiscovered)').forEach(function(wrap, idx) {
+      wrap.style.cursor = 'pointer';
+      wrap.addEventListener('click', function() { openZoom(idx, mode); });
     });
   }, 120);
 }
 
-/* ═══ ZOOM ═══ */
-function openZoom(idx) {
-  var cards = document.querySelectorAll('.sb-grid .card-wrap:not(.card-wrap--undiscovered) .spell-card');
-  if (!cards[idx]) return;
-  var clone = cards[idx].cloneNode(true);
+/* ═══════════════════════════════════════════════════════
+   ZOOM — Enhanced with full detail panel
+   ═══════════════════════════════════════════════════════ */
+function openZoom(idx, mode) {
+  var cardData = null;
+  var stackData = null;
+
+  if (mode === 'mycards' && window._renderedItems && window._renderedItems[idx]) {
+    stackData = window._renderedItems[idx];
+    cardData = stackData.card;
+  } else if (mode === 'codex' && window._renderedCodexSpells) {
+    var spell = window._renderedCodexSpells[idx];
+    if (!spell || !discoveredSet[spell.name.toLowerCase()]) return;
+    cardData = spell;
+    cardData.rarity = cardData.rarity || 'common';
+    cardData.sharpness = null;
+  }
+
+  if (!cardData) return;
+  zoomCardData = cardData;
+
+  // Render zoomed card
   var container = document.getElementById('zoomCard');
-  var closeBtn = container.querySelector('.zoom-close');
-  container.innerHTML = '';
-  container.appendChild(closeBtn);
-  container.appendChild(clone);
+  container.innerHTML = buildCardV4(cardData, { size: 'zoom' });
+  setTimeout(function() { if (typeof initCards === 'function') initCards(container); }, 60);
+
+  // Render detail panel
+  var detail = document.getElementById('zoomDetail');
+  var sharp = cardData.sharpness != null ? cardData.sharpness : 100;
+  var sharpMult = 0.5 + sharp / 200;
+  var rColor = RARITY_COLORS[cardData.rarity] || '#999';
+  var houseName = (cardData.house || 'universal').charAt(0).toUpperCase() + (cardData.house || 'universal').slice(1);
+
+  var h = '';
+  h += '<div class="zd-name">' + esc(cardData.name) + '</div>';
+  h += '<div class="zd-sub">' + (cardData.rarity || 'COMMON').toUpperCase() + ' \u00B7 ' + (cardData.spell_type || 'ATTACK').toUpperCase() + ' \u00B7 ' + houseName.toUpperCase() + '</div>';
+
+  // Sharpness section (only for owned cards)
+  if (cardData.sharpness != null) {
+    var sharpColor = sharp > 70 ? '#6acd8a' : sharp > 30 ? '#ffaa44' : '#e85a6a';
+    var effLabel = sharp === 100 ? 'PRISTINE' : sharp >= 75 ? 'SHARP' : sharp >= 50 ? 'WORN' : sharp > 0 ? 'DULL' : 'DEGRADED';
+    h += '<div class="zd-section">';
+    h += '<div class="zd-section-title">SHARPNESS</div>';
+    h += '<div class="zd-sharp-bar"><div class="zd-sharp-fill" style="width:' + sharp + '%;background:' + sharpColor + '"></div></div>';
+    h += '<div class="zd-sharp-text"><span style="color:' + sharpColor + '">' + sharp + '% \u2014 ' + effLabel + '</span><span style="color:var(--text-faint)">' + Math.round(sharpMult * 100) + '% POWER</span></div>';
+    h += '</div>';
+  }
+
+  // Stats section — show base and effective
+  h += '<div class="zd-section">';
+  h += '<div class="zd-section-title">COMBAT STATS' + (cardData.sharpness != null && sharp < 100 ? ' (at ' + sharp + '% sharp)' : '') + '</div>';
+  h += '<div class="zd-stat-grid">';
+  var stats = [
+    { key:'atk', label:'ATK', icon:'⚔', val: cardData.base_atk },
+    { key:'hp',  label:'HP',  icon:'♥', val: cardData.base_hp },
+    { key:'spd', label:'SPD', icon:'◈', val: cardData.base_spd },
+    { key:'def', label:'DEF', icon:'⛊', val: cardData.base_def },
+    { key:'luck',label:'LUCK',icon:'★', val: cardData.base_luck },
+  ];
+  stats.forEach(function(s) {
+    if (s.val > 0) {
+      var eff = cardData.sharpness != null ? Math.round(s.val * sharpMult) : s.val;
+      var effStr = (cardData.sharpness != null && sharp < 100) ? '<span class="zd-stat-eff">(\u2192' + eff + ')</span>' : '';
+      h += '<div class="zd-stat"><span class="zd-stat-label">' + s.icon + ' ' + s.label + '</span><span class="zd-stat-val" style="color:' + STAT_COLORS[s.key] + '">+' + s.val + effStr + '</span></div>';
+    }
+  });
+  h += '</div></div>';
+
+  // Effects section — V2 descriptions
+  var effects = cardData.bonus_effects || cardData.effects || [];
+  if (effects.length > 0) {
+    h += '<div class="zd-section">';
+    h += '<div class="zd-section-title">EFFECTS (V2 COMBAT)</div>';
+    effects.forEach(function(eff) {
+      var tag = '', desc = '', trigger = '';
+      if (typeof eff === 'string') {
+        tag = eff.replace(/[^A-Z ]/gi, '').trim().toUpperCase();
+      } else if (eff.tag) {
+        tag = eff.tag.toUpperCase();
+      } else if (eff.name) {
+        tag = eff.name.toUpperCase();
+      }
+      // Extract effect name without numbers
+      var effectKey = tag.replace(/[\s+\-\d]+/g, '').trim();
+      var v2 = V2_EFFECTS[effectKey];
+      if (v2) {
+        desc = v2.desc;
+        trigger = v2.trigger;
+      } else {
+        desc = eff.desc || eff.description || tag;
+        trigger = eff.trigger || '';
+      }
+      h += '<div class="zd-effect">';
+      h += '<div class="zd-effect-tag">' + esc(tag) + '</div>';
+      h += '<div class="zd-effect-desc">' + esc(desc) + '</div>';
+      if (trigger) h += '<div class="zd-effect-trigger">' + esc(trigger) + '</div>';
+      h += '</div>';
+    });
+    h += '</div>';
+  }
+
+  // Deployed badge
+  if (cardData.deployed_zone) {
+    h += '<div class="zd-deployed-badge">\u2694 DEPLOYED: ' + esc(cardData.deployed_zone) + '</div>';
+  }
+
+  // Action buttons
+  h += '<div class="zd-actions">';
+  if (cardData.sharpness != null && cardData.sharpness < 100 && !cardData.deployed_zone) {
+    h += '<button class="zd-btn zd-btn--primary" onclick="openSharpen()">&#9874; SHARPEN</button>';
+  } else if (cardData.deployed_zone) {
+    h += '<button class="zd-btn" disabled title="Undeploy from zone first">&#9874; SHARPEN (DEPLOYED)</button>';
+  }
+  h += '</div>';
+
+  detail.innerHTML = h;
   document.getElementById('zoomOverlay').classList.add('active');
-  setTimeout(function() {
-    if (typeof initCards === 'function') initCards(container);
-  }, 50);
 }
 
 function closeZoom(e) {
   if (e && e.target !== e.currentTarget && !e.target.classList.contains('zoom-close')) return;
   document.getElementById('zoomOverlay').classList.remove('active');
+  zoomCardData = null;
 }
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') document.getElementById('zoomOverlay').classList.remove('active');
-});
+
+/* ═══════════════════════════════════════════════════════
+   SHARPENING SYSTEM
+   ═══════════════════════════════════════════════════════ */
+function openSharpen() {
+  if (!zoomCardData) return;
+  sharpenTarget = zoomCardData;
+  sharpenMethod = null;
+  sharpenFuelIds = [];
+
+  var targetEl = document.getElementById('sharpenTarget');
+  targetEl.innerHTML = '<div>'
+    + '<div class="sharpen-target-name">' + esc(sharpenTarget.name) + '</div>'
+    + '<div class="sharpen-target-sharp">Current sharpness: ' + (sharpenTarget.sharpness || 0) + '% \u2192 100%</div>'
+    + '</div>';
+
+  // Count available fuel
+  var targetName = sharpenTarget.name.toLowerCase();
+  var targetHouse = sharpenTarget.house;
+  var targetId = sharpenTarget.id;
+
+  var dupes = playerCards.filter(function(c) {
+    return c.name.toLowerCase() === targetName && c.id !== targetId && !c.deployed_zone;
+  });
+  var sameHouse = playerCards.filter(function(c) {
+    return c.house === targetHouse && c.id !== targetId && !c.deployed_zone;
+  });
+  var anyCards = playerCards.filter(function(c) {
+    return c.id !== targetId && !c.deployed_zone;
+  });
+
+  var optsHtml = '';
+
+  // Option 1: Exact duplicate
+  var hasDupe = dupes.length >= 1;
+  optsHtml += '<div class="sharpen-option ' + (hasDupe ? '' : 'disabled') + '" data-method="dupe" onclick="selectSharpenMethod(\'dupe\')">'
+    + '<div class="sharpen-option-icon">\uD83C\uDFAF</div><div>'
+    + '<div class="sharpen-option-title">EXACT DUPLICATE</div>'
+    + '<div class="sharpen-option-desc">Sacrifice 1 copy of ' + esc(sharpenTarget.name) + '</div>'
+    + '<div class="sharpen-option-avail ' + (hasDupe ? 'has' : 'lacks') + '">'
+    + (hasDupe ? '\u2713 ' + dupes.length + ' AVAILABLE' : '\u2717 NEED 1 COPY') + '</div>'
+    + '</div></div>';
+
+  // Option 2: Same house
+  var hasHouse = sameHouse.length >= 3;
+  optsHtml += '<div class="sharpen-option ' + (hasHouse ? '' : 'disabled') + '" data-method="house" onclick="selectSharpenMethod(\'house\')">'
+    + '<div class="sharpen-option-icon">\uD83C\uDFE0</div><div>'
+    + '<div class="sharpen-option-title">3 SAME-HOUSE CARDS</div>'
+    + '<div class="sharpen-option-desc">Sacrifice 3 ' + esc(targetHouse.charAt(0).toUpperCase() + targetHouse.slice(1)) + ' cards</div>'
+    + '<div class="sharpen-option-avail ' + (hasHouse ? 'has' : 'lacks') + '">'
+    + (hasHouse ? '\u2713 ' + sameHouse.length + ' AVAILABLE' : '\u2717 NEED 3, HAVE ' + sameHouse.length) + '</div>'
+    + '</div></div>';
+
+  // Option 3: Any 5 cards
+  var hasAny = anyCards.length >= 5;
+  optsHtml += '<div class="sharpen-option ' + (hasAny ? '' : 'disabled') + '" data-method="any" onclick="selectSharpenMethod(\'any\')">'
+    + '<div class="sharpen-option-icon">\uD83C\uDCCF</div><div>'
+    + '<div class="sharpen-option-title">5 ANY CARDS</div>'
+    + '<div class="sharpen-option-desc">Sacrifice 5 cards from your collection</div>'
+    + '<div class="sharpen-option-avail ' + (hasAny ? 'has' : 'lacks') + '">'
+    + (hasAny ? '\u2713 ' + anyCards.length + ' AVAILABLE' : '\u2717 NEED 5, HAVE ' + anyCards.length) + '</div>'
+    + '</div></div>';
+
+  document.getElementById('sharpenOptions').innerHTML = optsHtml;
+  document.getElementById('sharpenFuel').style.display = 'none';
+  document.getElementById('sharpenConfirm').disabled = true;
+  document.getElementById('sharpenOverlay').classList.add('active');
+}
+
+function selectSharpenMethod(method) {
+  sharpenMethod = method;
+  sharpenFuelIds = [];
+
+  // Highlight selected option
+  document.querySelectorAll('.sharpen-option').forEach(function(el) {
+    el.classList.toggle('active', el.dataset.method === method);
+  });
+
+  if (method === 'dupe') {
+    // Auto-select first available dupe
+    var dupes = playerCards.filter(function(c) {
+      return c.name.toLowerCase() === sharpenTarget.name.toLowerCase() && c.id !== sharpenTarget.id && !c.deployed_zone;
+    });
+    if (dupes.length > 0) {
+      sharpenFuelIds = [dupes[0].id];
+      document.getElementById('sharpenFuel').style.display = 'none';
+      document.getElementById('sharpenConfirm').disabled = false;
+      document.getElementById('sharpenConfirm').textContent = '\u2692 SHARPEN (sacrifice 1 ' + esc(sharpenTarget.name) + ')';
+    }
+    return;
+  }
+
+  // Show fuel picker for house/any
+  var needed = method === 'house' ? 3 : 5;
+  var pool = [];
+  if (method === 'house') {
+    pool = playerCards.filter(function(c) {
+      return c.house === sharpenTarget.house && c.id !== sharpenTarget.id && !c.deployed_zone;
+    });
+  } else {
+    pool = playerCards.filter(function(c) {
+      return c.id !== sharpenTarget.id && !c.deployed_zone;
+    });
+  }
+
+  // Sort fuel: lowest rarity first, then lowest sharpness (sacrifice your worst)
+  pool.sort(function(a, b) {
+    var ra = RARITY_ORDER[a.rarity] || 9, rb = RARITY_ORDER[b.rarity] || 9;
+    if (ra !== rb) return rb - ra; // common first
+    return (a.sharpness || 0) - (b.sharpness || 0);
+  });
+
+  var fuelHtml = '';
+  pool.forEach(function(c) {
+    fuelHtml += '<div class="fuel-card" data-fuel-id="' + c.id + '" onclick="toggleFuel(' + c.id + ',' + needed + ')">'
+      + '<div class="fuel-card-name">' + esc(c.name) + '</div>'
+      + '<div class="fuel-card-rarity" style="color:' + (RARITY_COLORS[c.rarity] || '#999') + '">' + (c.rarity || 'common') + '</div>'
+      + '<div class="fuel-card-sharp">' + (c.sharpness != null ? c.sharpness + '%' : '100%') + ' sharp</div>'
+      + '</div>';
+  });
+
+  document.getElementById('sharpenFuelTitle').textContent = 'SELECT ' + needed + ' FUEL CARDS (will be destroyed)';
+  document.getElementById('sharpenFuelGrid').innerHTML = fuelHtml;
+  document.getElementById('sharpenFuel').style.display = 'block';
+  document.getElementById('sharpenConfirm').disabled = true;
+  document.getElementById('sharpenConfirm').textContent = '\u2692 SELECT ' + needed + ' CARDS';
+}
+
+function toggleFuel(cardId, needed) {
+  var idx = sharpenFuelIds.indexOf(cardId);
+  if (idx >= 0) {
+    sharpenFuelIds.splice(idx, 1);
+  } else if (sharpenFuelIds.length < needed) {
+    sharpenFuelIds.push(cardId);
+  }
+  // Update visual
+  document.querySelectorAll('.fuel-card').forEach(function(el) {
+    el.classList.toggle('selected', sharpenFuelIds.indexOf(parseInt(el.dataset.fuelId)) >= 0);
+  });
+  // Update confirm button
+  var ready = sharpenFuelIds.length === needed;
+  document.getElementById('sharpenConfirm').disabled = !ready;
+  document.getElementById('sharpenConfirm').textContent = ready
+    ? '\u2692 SHARPEN (sacrifice ' + needed + ' cards)'
+    : '\u2692 SELECT ' + (needed - sharpenFuelIds.length) + ' MORE';
+}
+
+async function confirmSharpen() {
+  if (!sharpenTarget || !sharpenMethod || sharpenFuelIds.length === 0) return;
+
+  var btn = document.getElementById('sharpenConfirm');
+  btn.disabled = true;
+  btn.textContent = 'SHARPENING...';
+
+  try {
+    var res = await fetch('/api/cards/sharpen', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        player_id: playerId,
+        card_id: sharpenTarget.id,
+        method: sharpenMethod,
+        fuel_card_ids: sharpenFuelIds
+      })
+    });
+
+    var data = await res.json();
+    if (data.success) {
+      // Update local state
+      sharpenTarget.sharpness = 100;
+      // Remove fuel cards from local array
+      playerCards = playerCards.filter(function(c) { return sharpenFuelIds.indexOf(c.id) < 0; });
+      closeSharpenModal();
+      closeZoom({ target: document.getElementById('zoomOverlay') });
+      updateProgress();
+      render();
+      // Show success feedback
+      showToast('\u2692 ' + sharpenTarget.name + ' restored to 100% sharpness!');
+    } else {
+      btn.textContent = '\u2717 ' + (data.error || 'FAILED');
+      setTimeout(function() { btn.disabled = false; btn.textContent = '\u2692 SHARPEN'; }, 2000);
+    }
+  } catch(e) {
+    btn.textContent = '\u2717 ERROR';
+    setTimeout(function() { btn.disabled = false; btn.textContent = '\u2692 SHARPEN'; }, 2000);
+  }
+}
+
+function closeSharpenModal() {
+  document.getElementById('sharpenOverlay').classList.remove('active');
+  sharpenTarget = null;
+  sharpenMethod = null;
+  sharpenFuelIds = [];
+}
+
+function closeSharpen(e) {
+  if (e.target === e.currentTarget) closeSharpenModal();
+}
+
+function showToast(msg) {
+  var toast = document.createElement('div');
+  toast.textContent = msg;
+  toast.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:2000;background:var(--gold-dim,rgba(212,166,75,0.2));border:1px solid var(--gold-border,rgba(212,166,75,0.3));color:var(--gold,#D4A64B);font-family:var(--font-data);font-size:10px;padding:10px 20px;border-radius:10px;letter-spacing:1px;animation:fadeIn 0.3s ease';
+  document.body.appendChild(toast);
+  setTimeout(function() { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.5s'; }, 2500);
+  setTimeout(function() { toast.remove(); }, 3000);
+}
 
 /* ═══ FILTER CLICKS ═══ */
 document.getElementById('filters').addEventListener('click', function(e) {
@@ -738,6 +1122,13 @@ document.getElementById('filters').addEventListener('click', function(e) {
   btn.classList.add('active');
   activeFilters[btn.dataset.filter] = btn.dataset.val;
   render();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    if (document.getElementById('sharpenOverlay').classList.contains('active')) closeSharpenModal();
+    else document.getElementById('zoomOverlay').classList.remove('active');
+  }
 });
 
 /* ═══ INIT ═══ */
