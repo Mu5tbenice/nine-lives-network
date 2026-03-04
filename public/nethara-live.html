@@ -4219,49 +4219,74 @@
         document.getElementById('deploy-cta').style.display = 'none';
         document.getElementById('your-nine-panel').style.display = 'block';
 
-        // Try to load equipped cards from multiple sources
-        let cards = null;
-        if (deployed.cards && deployed.cards.length > 0) {
-          cards = deployed.cards;
-        } else if (deployed.card_ids && deployed.card_ids.length > 0) {
-          // Try by-ids endpoint first
-          try {
-            const cardRes = await fetch('/api/spells/by-ids', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ ids: deployed.card_ids }),
+        // Load equipped cards via the loadout endpoint (returns full card + spell data)
+        let cards = [];
+        try {
+          const loadoutRes = await fetch(`/api/zones/${zoneId}/my-loadout/${state.playerId}`);
+          if (loadoutRes.ok) {
+            const loadoutData = await loadoutRes.json();
+            cards = (loadoutData.loadout || []).map(slot => {
+              const c = slot.card || {};
+              const s = c.spell || {};
+              return {
+                id: c.id,
+                name: s.name || '???',
+                house: s.house || 'universal',
+                spell_type: s.spell_type || 'attack',
+                rarity: s.rarity || 'common',
+                base_atk: s.base_atk || 0,
+                base_hp: s.base_hp || 0,
+                base_spd: s.base_spd || 0,
+                base_def: s.base_def || 0,
+                base_luck: s.base_luck || 0,
+                bonus_effects: s.bonus_effects || [],
+                image_url: s.image_url || '',
+                sharpness: c.sharpness ?? 100,
+                slot_number: slot.slot_number,
+              };
             });
-            if (cardRes.ok) {
-              const cardData = await cardRes.json();
-              cards = cardData.cards || cardData.spells || [];
-            }
-          } catch(e) { console.warn('by-ids failed:', e); }
+          }
+        } catch(e) { console.warn('Loadout fetch failed:', e); }
 
-          // Fallback: fetch player's full collection and match by ID
-          if (!cards || cards.length === 0) {
+        // Fallback: extract card_ids from card_slots if loadout endpoint failed
+        if (cards.length === 0 && deployed.card_slots && deployed.card_slots.length > 0) {
+          const slotIds = deployed.card_slots.map(s => s.card_id).filter(Boolean);
+          if (slotIds.length > 0) {
+            // Try fetching from player collection and matching
             try {
-              const collRes = await fetch(`/api/player-cards/${state.playerId}`);
+              const collRes = await fetch(`/api/packs/collection/${state.playerId}`);
               if (collRes.ok) {
                 const collData = await collRes.json();
-                const allCards = collData.cards || collData.player_cards || [];
-                cards = deployed.card_ids.map(id => allCards.find(c => (c.player_card_id || c.id) == id)).filter(Boolean);
+                const allCards = collData.cards || [];
+                cards = slotIds.map(id => {
+                  const c = allCards.find(card => card.id == id);
+                  if (!c) return null;
+                  const s = c.spell || {};
+                  return {
+                    id: c.id,
+                    name: c.name || c.spell_name || s.name || '???',
+                    house: c.house || c.spell_house || s.house || 'universal',
+                    spell_type: c.spell_type || s.spell_type || 'attack',
+                    rarity: c.rarity || s.rarity || 'common',
+                    base_atk: c.base_atk ?? s.base_atk ?? 0,
+                    base_hp: c.base_hp ?? s.base_hp ?? 0,
+                    base_spd: c.base_spd ?? s.base_spd ?? 0,
+                    base_def: c.base_def ?? s.base_def ?? 0,
+                    base_luck: c.base_luck ?? s.base_luck ?? 0,
+                    bonus_effects: c.bonus_effects || c.spell_effects || s.bonus_effects || [],
+                    image_url: c.image_url || s.image_url || '',
+                    sharpness: c.sharpness ?? 100,
+                  };
+                }).filter(Boolean);
               }
-            } catch(e) { console.warn('collection fetch failed:', e); }
-          }
-
-          // Last resort: make stub cards from IDs
-          if (!cards || cards.length === 0) {
-            cards = deployed.card_ids.map((id, i) => ({
-              id, name: `Card #${id}`, spell_type: 'attack', rarity: 'common',
-              house: 'universal', base_atk: 0, base_hp: 0,
-            }));
+            } catch(e) { console.warn('Collection fallback failed:', e); }
           }
         }
 
-        if (cards && cards.length > 0) {
+        if (cards.length > 0) {
+          state.equippedCards = cards;
           renderCardSlots(cards);
         } else {
-          // Show empty build panel with swap button
           renderCardSlots([]);
         }
 
