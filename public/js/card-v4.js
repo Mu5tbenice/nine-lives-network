@@ -41,19 +41,19 @@ var RARITY_CONFIG = {
   legendary: { label: "Legendary", cls: "sc-rarity--legendary", foil: 1.0,  pMult: 1.5 },
 };
 
-// ── PILL COLOR MAP ──
+// ── PILL COLOR MAP (V2 effects) ──
 var PILL_MAP = {
-  'BURN':'orange','SCALD':'orange','CHAIN':'orange','CRIT':'yellow','SURGE':'orange',
+  'BURN':'orange','CHAIN':'orange','EXECUTE':'yellow','SURGE':'orange',
   'PIERCE':'red','HEAL':'green','WARD':'gold','ANCHOR':'brown','THORNS':'green',
-  'DRAIN':'purple','SIPHON':'dark','WEAKEN':'pink','HEX':'purple','SILENCE':'dark',
+  'DRAIN':'purple','FEAST':'dark','WEAKEN':'pink','HEX':'purple','SILENCE':'dark',
   'HASTE':'green','SWIFT':'green','DODGE':'green',
   'POISON':'toxic','CORRODE':'toxic','INFECT':'toxic',
   'AMPLIFY':'gold','INSPIRE':'orange','BLESS':'white',
   'SHATTER':'red','TETHER':'purple','REFLECT':'cyan','PHASE':'ice',
   'MARK':'red','CLEANSE':'green','OVERCHARGE':'orange','SLOW':'blue',
-  'TAUNT':'brown','STEALTH':'dark','BARRIER':'gold','STUN':'yellow',
-  'FEAR':'purple','DOOM':'dark','LEECH':'purple',
-  'EXECUTE':'red','FEAST':'purple','MIRROR':'cyan','PARASITE':'toxic','RESURRECT':'gold','GRAVITY':'blue',
+  'TAUNT':'brown','STEALTH':'dark','BARRIER':'gold',
+  'LEECH_AURA':'toxic','PARASITE':'purple','RESURRECT':'gold',
+  'GRAVITY':'brown','MIRROR':'cyan',
   'SPREAD':'red','STRIP':'red','ERUPTION':'red','PULL':'blue',
   'CLOAK':'dark','SWAP':'pink','CONVERT':'cyan','PERSIST':'gold',
   'REACH':'white','SWEEP':'gray','FIZZLE':'yellow','NIGHT':'dark',
@@ -73,61 +73,47 @@ function _pillColor(tag) {
   return 'gray';
 }
 
-// ── EFFECT TOOLTIPS (V2 Combat — 9LV_EFFECTS_V2_LOCKED.md, March 2 2026) ──
-// Trigger types: On-attack, Timed (10s), Passive, On-KO, Deploy
+// ── EFFECT TOOLTIPS (Combat V2 + Effects V2) ──
 var EFFECT_TIPS = {
-  // Attack Effects
-  BURN:       'On-attack: Extra fire damage per attack (+3 to +8 by rarity)',
-  CHAIN:      'On-attack: Auto-attack hits 2 enemies instead of 1',
-  EXECUTE:    'On-attack: +50% damage to enemies below 30% HP',
-  SURGE:      'Passive: +50% ATK but take +25% more damage \u2014 permanent berserker mode',
-  PIERCE:     'On-attack: Ignores WARD and BARRIER shields',
-  // Defense Effects
-  HEAL:       'On-attack: Heal lowest HP ally (including self) per attack (+10 to +25 by rarity)',
-  WARD:       'Timed (10s): Block next incoming hit \u2014 consumed on trigger',
-  ANCHOR:     'Timed (10s): Can\u2019t drop below 1 HP during window',
-  THORNS:     'Passive: Reflect 15 flat damage to attacker per hit taken',
-  BARRIER:    'Passive: Absorb total damage (30\u201350 by rarity). One shield, gone when broken.',
-  // Control Effects
-  SILENCE:    'Timed (10s): Target\u2019s card effects don\u2019t trigger. Targets highest ATK enemy.',
-  HEX:        'Timed (10s): -10 ATK per stack, max 3 stacks (-30 ATK)',
-  WEAKEN:     'Timed (10s): Target deals half damage',
-  DRAIN:      'On-attack: Heal self for 5% of damage dealt to target',
-  FEAST:      'On-KO: When any enemy on zone dies, heal 15% of their max HP',
-  SLOW:       'Timed (10s): -15 SPD to target \u2014 nearly halts medium Nines',
-  TETHER:     'Timed (10s): Link to target, share all damage 50/50',
-  MARK:       'Timed (10s): Tag highest HP enemy. All sources deal +25% to them.',
-  // Tempo Effects
-  HASTE:      'Timed (10s): +10 SPD speed boost',
-  SWIFT:      'Deploy: All card effects trigger at 2x strength for first 10s',
-  DODGE:      'Passive: 100% evasion for 3s after being hit. 10s cooldown.',
-  PHASE:      'On-attack: Untargetable for 3s after attacking. Can\u2019t attack while phased.',
-  STEALTH:    'Timed (10s): Can\u2019t be single-targeted (still takes AOE/CHAIN)',
-  // Attrition Effects
-  POISON:     'On-attack: DOT ticking every 3s for 12s. Stacks x3.',
-  CORRODE:    'Passive aura: All enemies lose 1 max HP every 10s. Permanent.',
-  INFECT:     'On-KO: When this Nine is KO\u2019d, all enemies get POISON',
-  // Team Effects
-  AMPLIFY:    'On-attack: Next ally to attack gets +50% effect strength',
-  INSPIRE:    'Timed (10s): All allies on zone gain +3 ATK and +3 SPD',
-  BLESS:      'On-attack: Heal the 3 lowest HP allies per attack (+5 HP each)',
-  TAUNT:      'Timed (10s): All enemies must attack this Nine',
-  SHATTER:    'On-KO: Deal 10% of your max HP as damage to all enemies',
-  REFLECT:    'Timed (10s): Next hit bounces back at full damage, consumed on trigger',
-  // Utility Effects
-  CLEANSE:    'On-attack: Clear all debuffs (BURN, POISON, HEX, WEAKEN, SLOW, SILENCE, TETHER, MARK)',
-  OVERCHARGE: 'Passive: All effects fire twice per attack. -2% sharpness per snapshot.',
-  MIRROR:     'Timed (10s): Reflects damage back to whoever hit you',
-  PARASITE:   'On-attack: Attaches to target, draining HP over time',
-  RESURRECT:  'On-KO: Revive once at 50% HP after being KO\u2019d. One use per deploy.',
-  GRAVITY:    'Deploy: All enemies on zone get -5 SPD for 10s',
-  // Legacy (may still appear on older cards)
-  CRIT:       'Legacy: 25% chance double damage \u2014 replaced by LUCK stat',
-  SIPHON:     'Legacy: Steal HP from target \u2014 replaced by FEAST',
-  LEECH:      'Legacy: Steal HP from enemies \u2014 replaced by FEAST',
-  STUN:       'Target cannot attack or use effects (removed in V2)',
-  FEAR:       'Target loses ATK (removed in V2)',
-  DOOM:       'Target takes immediate damage (removed in V2)',
+  BURN:    'Extra fire damage per attack (+3 to +8 by rarity)',
+  CHAIN:   'Attack hits 2 targets instead of 1',
+  EXECUTE: '+50% damage to enemies below 30% HP',
+  SURGE:   '+50% ATK permanently, but take +25% damage',
+  PIERCE:  'Ignores WARD and BARRIER shields',
+  HEAL:    'Heal lowest HP ally per attack (+10 to +25 by rarity)',
+  WARD:    'Block the next incoming hit (10s duration)',
+  ANCHOR:  'Can\u2019t drop below 1 HP (10s duration)',
+  THORNS:  'Reflect 15 damage to attacker per hit taken',
+  BARRIER: 'Absorb 30-50 total damage (one shield, doesn\u2019t regenerate)',
+  DRAIN:   'Heal self for 5% of damage dealt',
+  FEAST:   'When any enemy is KO\u2019d, heal 15% of their max HP',
+  WEAKEN:  'Target deals 50% damage (10s duration)',
+  HEX:     '-10 ATK per stack, stacks x3 (10s duration)',
+  SILENCE: 'Target card effects don\u2019t trigger (10s duration)',
+  HASTE:   '+10 SPD (10s duration)',
+  SWIFT:   'All card effects trigger at 2x for first 10s after deploy',
+  DODGE:   '3s invulnerability after taking a hit (10s cooldown)',
+  POISON:  'DOT ticking every 3s for 12s, stacks x3',
+  CORRODE: 'All enemies lose 1 max HP every 10s while you\u2019re alive',
+  INFECT:  'On KO, all enemies get POISON',
+  LEECH_AURA: 'Steal small HP from all enemies each tick',
+  AMPLIFY: 'Next ally to attack gets +50% effect strength',
+  INSPIRE: 'All allies gain +3 ATK and +3 SPD (10s duration)',
+  BLESS:   'Heal 3 lowest HP allies per attack (+5 HP each)',
+  SHATTER: 'On death, deal 10% of max HP to all enemies',
+  TETHER:  'Link to target, share all damage 50/50 (10s duration)',
+  REFLECT: 'Next hit bounces back at full damage (10s duration)',
+  PHASE:   'After attacking, untargetable for 3s (can\u2019t attack while phased)',
+  MARK:    'Highest HP enemy takes +25% damage from all sources (10s)',
+  CLEANSE: 'Remove all debuffs from self',
+  OVERCHARGE: 'All card effects fire twice per attack (costs 2% sharpness/snapshot)',
+  SLOW:    '-15 SPD (10s duration)',
+  TAUNT:   'All enemies must attack this Nine (10s duration)',
+  STEALTH: 'Can\u2019t be single-targeted (still takes AOE/CHAIN, 10s)',
+  PARASITE: 'Attach to target, heal 3 HP every time they attack',
+  RESURRECT: 'On KO, revive at 30% HP (5-min cooldown)',
+  GRAVITY: 'On deploy, all enemies hit you once (incoming damage -50%)',
+  MIRROR:  'When hit by an effect, copy it back to attacker (10s cooldown)',
 };
 
 // ── PARTICLE TYPE PER HOUSE ──
