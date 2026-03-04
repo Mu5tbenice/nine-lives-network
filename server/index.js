@@ -118,6 +118,13 @@ try {
 }
 
 try {
+  const statsRoutes = require('./routes/stats');
+  app.use('/api/stats', statsRoutes);
+} catch(e) {
+  console.error("❌ Failed to load stats routes:", e.message);
+}
+
+try {
   const mapRoutes = require("./routes/map");
   app.use("/api/map", mapRoutes);
   console.log("✅ Map routes loaded");
