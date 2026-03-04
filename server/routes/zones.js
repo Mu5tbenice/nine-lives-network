@@ -119,7 +119,7 @@ router.post('/deploy', async (req, res) => {
             .from('zone_card_slots')
             .insert({
               deployment_id: deployment.id,
-              card_id: card_ids[i],
+              card_id: parseInt(card_ids[i]),
               slot_number: i + 1,
               is_active: true,
             });
@@ -128,6 +128,7 @@ router.post('/deploy', async (req, res) => {
           console.error(`Failed to equip card ${card_ids[i]} in slot ${i + 1}:`, e.message);
         }
       }
+      console.log(`Auto-equipped ${equippedCount}/${card_ids.length} cards on deployment ${deployment.id}`);
     }
 
     // Award deploy points (+5)

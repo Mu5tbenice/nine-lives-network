@@ -4183,7 +4183,7 @@
     try {
       const res = await fetch(`/api/zones/my-deployments/${state.playerId}`);
       const data = await res.json();
-      const deployment = (data.deployments || []).find(d => d.zone_id === zoneId);
+      const deployment = (data.deployments || []).find(d => d.zone_id == zoneId);
       if (deployment && deployment.cards) {
         renderCardSlots(deployment.cards);
       } else if (deployment && deployment.card_ids) {
@@ -4212,7 +4212,7 @@
     try {
       const res = await fetch(`/api/zones/my-deployments/${state.playerId}`);
       const data = await res.json();
-      const deployed = (data.deployments || []).find(d => d.zone_id === zoneId);
+      const deployed = (data.deployments || []).find(d => d.zone_id == zoneId);
 
       if (deployed) {
         state.isDeployed = true;
@@ -4389,7 +4389,7 @@
         if (depRes.ok) {
           const depData = await depRes.json();
           for (const dep of (depData.deployments || [])) {
-            if (dep.zone_id !== state.currentZoneId && dep.card_ids) {
+            if (dep.zone_id != state.currentZoneId && dep.card_ids) {
               deployedCardIds.push(...dep.card_ids);
             }
           }
@@ -4689,7 +4689,13 @@
         state._guildAngles = {};
         state._guildCounts = {};
         await loadZoneNines(state.currentZoneId);
-        checkDeployment(state.currentZoneId);
+        // Re-check deployment to load cards from API — but don't let it hide the panel we just showed
+        try {
+          await checkDeployment(state.currentZoneId);
+        } catch(e) {
+          console.warn('Post-deploy checkDeployment failed (non-critical):', e);
+          // Panel is already visible from above, keep it that way
+        }
       } else {
         alert(data.error || 'Deploy failed');
         btn.textContent = '⚔️ DEPLOY TO BATTLE';
