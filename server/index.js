@@ -249,6 +249,28 @@ if (io) {
       }
     });
 
+    socket.on('chat:send', (data) => {
+      const zoneId = data.zoneId;
+      const message = (data.message || '').trim().substring(0, 120);
+      const handle = (data.handle || 'Anonymous').substring(0, 30);
+      const guildTag = (data.guildTag || '').substring(0, 16);
+      if (!zoneId || !message) return;
+      arenaNamespace.to(`zone_${zoneId}`).emit('chat:message', {
+        handle,
+        guildTag,
+        message,
+        ts: Date.now()
+      });
+    });
+    
+    socket.on('chat:send', (data) => {
+      const zoneId = data.zoneId;
+      const message = (data.message || '').trim().substring(0, 120);
+      const handle = (data.handle || 'Anon').substring(0, 30);
+      const guildTag = (data.guildTag || '').substring(0, 16);
+      if (!zoneId || !message) return;
+      arenaNamespace.to(`zone_${zoneId}`).emit('chat:message', { handle, guildTag, message, ts: Date.now() });
+    });
     socket.on('disconnect', () => {
       console.log('⚔️ Arena client disconnected:', socket.id);
     });
