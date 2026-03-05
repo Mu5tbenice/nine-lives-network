@@ -268,7 +268,7 @@ app.get('/api/combat/next-cycle', (req, res) => {
 // ── START COMBAT ENGINE ──
 if (combatEngine && combatEngine.startCombatEngine) {
   combatEngine.startCombatEngine();
-  console.log("⚔️ Combat engine started — V6 wave combat, 30s buffer");
+  console.log("⚔️ Combat engine started — V2 continuous combat");
 }
 // Health check
 app.get("/api/health", (req, res) => {
