@@ -199,22 +199,6 @@ try {
   console.error("❌ Failed to load quests routes:", e.message);
 }
 
-try {
-  const chronicleRoutes = require("./routes/chronicle");
-  app.use("/api/chronicle", chronicleRoutes);
-  console.log("✅ Chronicle routes loaded");
-} catch (e) {
-  console.error("❌ Failed to load chronicle routes:", e.message);
-}
-
-try {
-  const questsRoutes = require("./routes/quests");
-  app.use("/api/quests", questsRoutes);
-  console.log("✅ Quests routes loaded");
-} catch (e) {
-  console.error("❌ Failed to load quests routes:", e.message);
-}
-
 // Stats — V2 stat calculation API (house + cards + items)
 try {
   const statsRoutes = require("./routes/stats");

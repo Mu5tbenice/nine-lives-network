@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const supabase = require("../supabaseClient");
+const supabase = require('../config/supabase');
 
 router.get("/daily/:playerId", async (req, res) => {
   const { playerId } = req.params;
