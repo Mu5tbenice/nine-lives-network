@@ -28,7 +28,8 @@ router.get('/:id', async (req, res) => {
         duel_losses,
         created_at,
         last_cast_at,
-        is_active
+        is_active,
+        streak
       `)
       .eq('id', id)
       .single();
