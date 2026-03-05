@@ -221,107 +221,160 @@
       background-repeat: no-repeat; background-color: var(--bg);
       transition: background-image 0.8s ease;
     }
-    /* Darken overlay so UI is readable over bright biome art */
     #arena-canvas::before {
       content: ''; position: absolute; inset: 0; z-index: 0;
-      background: radial-gradient(ellipse at center, rgba(26,21,40,0.2) 0%, rgba(26,21,40,0.6) 60%, rgba(14,10,24,0.92) 100%);
+      background: radial-gradient(ellipse at center, rgba(26,21,40,0.15) 0%, rgba(26,21,40,0.5) 50%, rgba(14,10,24,0.92) 100%);
       pointer-events: none;
     }
     #arena-canvas canvas { position: relative; z-index: 1; }
 
-    /* Arena overlays */
-    .arena-overlay { position: absolute; pointer-events: none; z-index: 10; }
-    .arena-overlay.interactive { pointer-events: auto; }
-
+    /* ── Top bar — slim, one row ── */
     .arena-top-bar {
       position: absolute; top: 0; left: 0; right: 0; z-index: 20;
-      padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;
-      background: linear-gradient(180deg, rgba(26,21,40,0.92) 0%, rgba(26,21,40,0.4) 70%, transparent 100%);
+      padding: 8px 14px; display: flex; justify-content: space-between; align-items: center;
+      background: linear-gradient(180deg, rgba(14,10,24,0.92) 0%, rgba(14,10,24,0.5) 80%, transparent 100%);
       pointer-events: auto;
     }
-    .arena-zone-name { font-family: 'Cinzel', serif; font-size: 18px; font-weight: 700; color: var(--bright); }
-    .arena-zone-region { font-family: 'Press Start 2P', monospace; font-size: 8px; margin-top: 3px; }
-    .arena-round-badge {
-      font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--gold);
-      background: rgba(212,166,75,0.12); padding: 6px 14px; border-radius: 8px;
-      border: 1px solid rgba(212,166,75,0.25);
+    .arena-zone-name { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; color: var(--bright); }
+    .arena-back-btn {
+      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+      border-radius: 6px; padding: 5px 10px; cursor: pointer;
+      font-size: 16px; color: var(--muted); line-height: 1;
+      transition: color 0.2s, background 0.2s;
     }
-    .arena-cycle-timer {
-      font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--faint); margin-top: 4px; text-align: right;
-    }
+    .arena-back-btn:hover { color: var(--bright); background: rgba(255,255,255,0.1); }
 
-    /* Guild scoreboard — top-right under topbar */
+    /* LIVE pill */
+    .arena-live-pill {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--green);
+      background: rgba(0,255,136,0.1); padding: 4px 10px; border-radius: 20px;
+      border: 1px solid rgba(0,255,136,0.25); letter-spacing: 1px;
+      animation: livePulse 2s infinite;
+    }
+    @keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+    /* Compact timer */
+    .arena-timer-compact {
+      display: flex; align-items: center; gap: 5px;
+      font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--cyan);
+    }
+    .timer-icon { font-size: 10px; opacity: 0.6; }
+    .countdown-time { font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--cyan); }
+    .countdown-time.urgent { color: var(--red); animation: countdownPulse 1s infinite; }
+    .countdown-time.fighting { color: var(--gold); }
+    @keyframes countdownPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+    /* ── Guild scoreboard ── */
     .arena-scoreboard {
-      position: absolute; top: 64px; right: 16px; z-index: 20;
-      background: rgba(26,21,40,0.88); border: 1px solid var(--border);
-      border-radius: 12px; padding: 12px 16px; min-width: 200px;
+      position: absolute; top: 44px; right: 10px; z-index: 20;
+      background: rgba(14,10,24,0.85); border: 1px solid var(--border);
+      border-radius: 10px; padding: 8px 12px; min-width: 160px;
       backdrop-filter: blur(8px);
     }
-    .arena-sb-title { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--faint); letter-spacing: 1px; margin-bottom: 8px; }
-    .arena-sb-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-    .arena-sb-guild { font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--body); flex: 1; }
-    .arena-sb-wins { font-family: 'Press Start 2P', monospace; font-size: 11px; font-weight: 700; }
+    .arena-sb-title { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint); letter-spacing: 1px; margin-bottom: 6px; }
+    .arena-sb-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .arena-sb-guild { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--body); flex: 1; }
+    .arena-sb-wins { font-family: 'Press Start 2P', monospace; font-size: 10px; font-weight: 700; }
 
-    /* Nerm chat bubble — top-left under zone name */
+    /* ── Nerm ── */
     .nerm-bubble-container {
-      position: absolute; top: 64px; left: 16px; z-index: 20;
-      max-width: 280px; pointer-events: none;
+      position: absolute; top: 44px; left: 10px; z-index: 20;
+      max-width: 240px; pointer-events: none;
     }
     .nerm-bubble {
-      background: rgba(26,21,40,0.92); border: 1px solid var(--gold);
-      border-radius: 0 14px 14px 14px; padding: 10px 14px;
-      font-family: 'Crimson Text', serif; font-size: 15px; color: var(--bright);
+      background: rgba(14,10,24,0.9); border: 1px solid var(--gold);
+      border-radius: 0 12px 12px 12px; padding: 8px 12px;
+      font-family: 'Crimson Text', serif; font-size: 14px; color: var(--bright);
       font-style: italic; opacity: 0; transition: opacity 0.4s;
-      box-shadow: 0 0 24px rgba(212,166,75,0.12);
-      backdrop-filter: blur(8px);
+      box-shadow: 0 0 20px rgba(212,166,75,0.1); backdrop-filter: blur(8px);
     }
     .nerm-bubble.visible { opacity: 1; }
-    .nerm-label {
-      font-family: 'Press Start 2P', monospace; font-size: 7px;
-      color: var(--gold); margin-bottom: 4px; letter-spacing: 1px;
+    .nerm-label { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--gold); margin-bottom: 3px; letter-spacing: 1px; }
+
+    /* ── Bottom tray — unified build + stats ── */
+    .arena-bottom-tray {
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 25;
+      background: linear-gradient(0deg, rgba(14,10,24,0.96) 0%, rgba(14,10,24,0.92) 70%, rgba(14,10,24,0.6) 90%, transparent 100%);
+      padding: 12px 14px 10px; pointer-events: auto;
+      display: flex; gap: 12px; align-items: flex-end;
+    }
+    .tray-section-label {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--gold);
+      letter-spacing: 1px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
     }
 
-    /* Live feed ticker — bottom strip */
-    .arena-feed {
-      position: absolute; bottom: 0; left: 0; right: 0; z-index: 15;
-      background: linear-gradient(0deg, rgba(26,21,40,0.95) 0%, rgba(26,21,40,0.7) 60%, transparent 100%);
-      padding: 28px 20px 10px; pointer-events: none; max-height: 72px; overflow: hidden;
+    /* Build section */
+    .tray-build { flex: 1; min-width: 0; }
+    .build-swap-btn {
+      font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint);
+      background: none; border: 1px solid var(--border); padding: 2px 6px;
+      border-radius: 3px; cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s;
     }
-    .feed-event {
-      display: flex; gap: 8px; align-items: flex-start;
-      padding: 3px 8px; margin-bottom: 3px;
-      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--body);
-      opacity: 0; animation: feedIn 0.3s forwards;
-    }
-    .feed-event .feed-name { font-weight: 700; }
-    .feed-event .feed-dmg { color: var(--red); }
-    .feed-event .feed-heal { color: var(--green); }
-    .feed-event .feed-effect { color: var(--gold); }
-    .feed-event .feed-time { color: var(--faint); margin-left: auto; flex-shrink: 0; }
+    .build-swap-btn:hover { color: var(--gold); border-color: var(--gold); }
+    .build-cards { display: flex; gap: 6px; }
 
-    /* Your Nine panel — bottom-right above feed */
-    .arena-your-nine {
-      position: absolute; bottom: 80px; right: 16px; z-index: 20;
-      background: rgba(26,21,40,0.92); border: 1px solid var(--border);
-      border-radius: 12px; padding: 12px 16px; min-width: 200px;
-      pointer-events: auto; backdrop-filter: blur(8px);
+    /* ── Card slots — compact horizontal design ── */
+    .arena-card-slot {
+      flex: 1; min-width: 0; background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+      border-radius: 8px; padding: 6px 8px; position: relative;
+      transition: border-color 0.2s; cursor: pointer;
     }
-    .your-nine-title { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--gold); letter-spacing: 1px; margin-bottom: 6px; }
-    .your-nine-hp { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-    .your-nine-hp-bar { flex: 1; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
-    .your-nine-hp-fill { height: 100%; background: linear-gradient(90deg, var(--green), #66eebb); border-radius: 4px; transition: width 0.4s ease, background 0.4s ease; }
-    .your-nine-hp-text { font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--green); }
-    .your-nine-stats { display: flex; gap: 8px; flex-wrap: wrap; }
-    .your-nine-stat { font-family: 'Press Start 2P', monospace; font-size: 8px; }
+    .arena-card-slot:hover { border-color: rgba(212,166,75,0.3); }
+    .arena-card-slot .slot-type {
+      font-family: 'Press Start 2P', monospace; font-size: 5px; font-weight: 700;
+      letter-spacing: 0.5px; margin-bottom: 2px;
+    }
+    .arena-card-slot .slot-name {
+      font-family: 'Cinzel', serif; font-size: 10px; font-weight: 700; color: var(--bright);
+      line-height: 1.2; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .arena-card-slot .slot-effects {
+      display: flex; gap: 3px; flex-wrap: wrap;
+    }
+    .arena-card-slot .slot-effect-pill {
+      font-family: 'Press Start 2P', monospace; font-size: 5px;
+      padding: 1px 4px; border-radius: 3px; white-space: nowrap;
+    }
+    .arena-card-slot .slot-sharpness {
+      margin-top: 3px; height: 2px; background: rgba(255,255,255,0.06); border-radius: 1px; overflow: hidden;
+    }
+    .arena-card-slot .slot-sharpness-fill { height: 100%; border-radius: 1px; transition: width 0.3s; }
+    .arena-card-slot.empty {
+      border-style: dashed; opacity: 0.3;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 52px;
+    }
+    .arena-card-slot.empty .slot-empty-text {
+      font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--faint);
+    }
+    .slot-wave-label { display: none; }
 
-    /* Deploy / Join Battle CTA — center bottom above feed */
+    /* Stats section */
+    .tray-stats {
+      width: 200px; flex-shrink: 0;
+    }
+    .your-nine-hp { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+    .your-nine-hp-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+    .your-nine-hp-fill { height: 100%; background: linear-gradient(90deg, var(--green), #66eebb); border-radius: 3px; transition: width 0.4s ease; }
+    .your-nine-hp-text { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--green); white-space: nowrap; }
+    .your-nine-stats { display: flex; gap: 6px; flex-wrap: wrap; }
+    .your-nine-stat { font-family: 'Press Start 2P', monospace; font-size: 7px; }
+    .btn-withdraw {
+      margin-top: 6px; font-family: 'Press Start 2P', monospace; font-size: 6px;
+      padding: 5px 10px; background: rgba(255,68,102,0.08); border: 1px solid rgba(255,68,102,0.2);
+      color: var(--red); border-radius: 6px; cursor: pointer; transition: background 0.2s;
+      width: 100%;
+    }
+    .btn-withdraw:hover { background: rgba(255,68,102,0.15); }
+
+    /* ── Deploy CTA ── */
     .arena-deploy-cta {
-      position: absolute; bottom: 86px; left: 50%; transform: translateX(-50%); z-index: 25;
+      position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 25;
       pointer-events: auto;
     }
     .btn-join-battle {
-      font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700;
-      padding: 16px 36px; border: none; border-radius: 12px; cursor: pointer;
+      font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700;
+      padding: 14px 32px; border: none; border-radius: 10px; cursor: pointer;
       background: linear-gradient(135deg, var(--gold), #b8872e);
       color: #fff; letter-spacing: 2px;
       box-shadow: 0 4px 24px rgba(212,166,75,0.3);
@@ -329,22 +382,22 @@
     }
     .btn-join-battle:hover { transform: translateY(-2px); box-shadow: 0 6px 30px rgba(212,166,75,0.4); }
 
-    /* Back button — inside top bar */
-    .arena-back-btn {
-      background: rgba(255,255,255,0.06); border: 1px solid var(--border);
-      border-radius: 8px; padding: 8px 12px; cursor: pointer;
-      font-family: 'Cinzel', serif; font-size: 18px; color: var(--muted);
-      transition: color 0.2s, background 0.2s; line-height: 1;
+    /* ── Live feed — above bottom tray ── */
+    .arena-feed {
+      position: absolute; bottom: 130px; left: 0; right: 0; z-index: 15;
+      padding: 4px 14px; pointer-events: none; max-height: 52px; overflow: hidden;
     }
-    .arena-back-btn:hover { color: var(--bright); background: rgba(255,255,255,0.1); }
-
-    .btn-withdraw {
-      margin-top: 8px; font-family: 'Press Start 2P', monospace; font-size: 8px;
-      padding: 8px 14px; background: rgba(255,68,102,0.1); border: 1px solid rgba(255,68,102,0.3);
-      color: var(--red); border-radius: 8px; cursor: pointer; transition: background 0.2s;
-      width: 100%;
+    .feed-event {
+      display: flex; gap: 6px; align-items: flex-start;
+      padding: 2px 6px; margin-bottom: 2px;
+      font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--body);
+      opacity: 0; animation: feedIn 0.3s forwards;
     }
-    .btn-withdraw:hover { background: rgba(255,68,102,0.2); }
+    .feed-event .feed-name { font-weight: 700; }
+    .feed-event .feed-dmg { color: var(--red); }
+    .feed-event .feed-heal { color: var(--green); }
+    .feed-event .feed-effect { color: var(--gold); }
+    .feed-event .feed-time { color: var(--faint); margin-left: auto; flex-shrink: 0; }
 
     /* Round banner */
     .round-banner {
@@ -458,105 +511,8 @@
       100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
     }
 
-    /* Countdown timer */
-    .arena-countdown {
-      position: absolute; top: 56px; left: 50%; transform: translateX(-50%); z-index: 30;
-      text-align: center; pointer-events: none;
-      background: rgba(26,21,40,0.8); border: 1px solid var(--border);
-      border-radius: 10px; padding: 8px 20px; backdrop-filter: blur(6px);
-    }
-    .countdown-label {
-      font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--faint);
-      letter-spacing: 2px; margin-bottom: 3px;
-    }
-    .countdown-time {
-      font-family: 'Press Start 2P', monospace; font-size: 20px; color: var(--cyan);
-      text-shadow: 0 0 20px rgba(0,212,255,0.4), 0 2px 4px rgba(0,0,0,0.8);
-      letter-spacing: 3px;
-    }
-    .countdown-time.urgent { color: var(--red); text-shadow: 0 0 20px rgba(255,68,102,0.5); animation: countdownPulse 1s infinite; }
-    .countdown-time.fighting { color: var(--gold); text-shadow: 0 0 20px rgba(212,166,75,0.5); }
-    .countdown-sub {
-      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--muted);
-      margin-top: 4px;
-    }
-    @keyframes countdownPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
-
-    /* Equipped card slots — bottom-left above feed */
-    .arena-card-slots {
-      position: absolute; bottom: 80px; left: 16px; z-index: 22;
-      pointer-events: auto;
-      background: rgba(26,21,40,0.92); border: 1px solid var(--border);
-      border-radius: 12px; padding: 10px 12px 12px; backdrop-filter: blur(8px);
-    }
-    .build-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 8px; padding: 0 2px;
-    }
-    .build-title {
-      font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700;
-      color: var(--gold); letter-spacing: 1px;
-    }
-    .build-sub {
-      font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--faint);
-    }
-    .build-cards { display: flex; gap: 8px; }
-    .arena-card-slot {
-      width: 120px; background: rgba(255,255,255,0.03); border: 1.5px solid var(--border);
-      border-radius: 10px; padding: 8px 10px; position: relative; overflow: hidden;
-      transition: border-color 0.2s, transform 0.15s;
-    }
-    .arena-card-slot:hover { border-color: rgba(212,166,75,0.3); transform: translateY(-1px); }
-    .slot-wave-label {
-      display: block; font-family: 'Press Start 2P', monospace; font-size: 6px;
-      color: var(--faint); letter-spacing: 0.5px; margin-bottom: 4px; opacity: 0.6;
-    }
-    .arena-card-slot .slot-number {
-      position: absolute; top: 4px; right: 6px;
-      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint); opacity: 0.5;
-    }
-    .arena-card-slot .slot-type {
-      font-family: 'Press Start 2P', monospace; font-size: 6px; font-weight: 700;
-      margin-bottom: 2px; letter-spacing: 0.5px;
-    }
-    .arena-card-slot .slot-name {
-      font-family: 'Cinzel', serif; font-size: 11px; font-weight: 700; color: var(--bright);
-      line-height: 1.2; margin-bottom: 4px;
-    }
-    .arena-card-slot .slot-effects {
-      font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--gold);
-      line-height: 1.5;
-    }
-    .arena-card-slot .slot-sharpness {
-      margin-top: 4px; height: 3px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden;
-    }
-    .arena-card-slot .slot-sharpness-fill {
-      height: 100%; border-radius: 2px; transition: width 0.3s;
-    }
-    .arena-card-slot.empty {
-      border-style: dashed; opacity: 0.4;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      min-height: 80px;
-    }
-    .arena-card-slot.empty .slot-empty-text {
-      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint);
-    }
-    .arena-card-slot.wave-active {
-      border-color: var(--gold) !important; background: rgba(212,166,75,0.08);
-      box-shadow: 0 0 12px rgba(212,166,75,0.3), inset 0 0 8px rgba(212,166,75,0.1);
-      animation: waveGlow 0.6s ease-in-out infinite alternate;
-    }
-    @keyframes waveGlow {
-      from { box-shadow: 0 0 8px rgba(212,166,75,0.2); }
-      to { box-shadow: 0 0 16px rgba(212,166,75,0.5), inset 0 0 10px rgba(212,166,75,0.15); }
-    }
-    .arena-card-slot.active-effect {
-      animation: cardGlow 2s infinite;
-    }
-    @keyframes cardGlow {
-      0%,100% { box-shadow: none; }
-      50% { box-shadow: 0 0 8px rgba(212,166,75,0.2); }
-    }
+    /* (old countdown/card-slots CSS removed — now in top bar and bottom tray) */
+    /* (old card-slot overrides removed — now in bottom tray section) */
 
     /* Card popup overlay */
     .arena-card-popup {
@@ -590,104 +546,47 @@
        instead of floating as tiny overlays
        ════════════════════════════════════════ */
     @media (max-width: 640px) {
-      /* Top bar — more compact */
-      .arena-top-bar { padding: 8px 12px; }
-      .arena-zone-name { font-size: 14px; }
-      .arena-zone-region { font-size: 7px; }
-      .arena-round-badge { font-size: 8px; padding: 4px 10px; }
-      .arena-cycle-timer { font-size: 7px; }
+      .arena-top-bar { padding: 6px 10px; }
+      .arena-zone-name { font-size: 12px; }
+      .arena-live-pill { font-size: 6px; padding: 3px 7px; }
+      .arena-timer-compact { font-size: 7px; }
+      .countdown-time { font-size: 7px; }
 
-      /* Scoreboard — hide on mobile, info is in feed */
       .arena-scoreboard { display: none; }
 
-      /* Nerm — full width banner under top bar */
       .nerm-bubble-container {
-        top: auto; bottom: 0; left: 0; right: 0;
-        max-width: 100%; padding: 0 12px;
-        z-index: 30;
+        top: auto; bottom: 140px; left: 0; right: 0;
+        max-width: 100%; padding: 0 10px; z-index: 30;
       }
-      .nerm-bubble {
-        border-radius: 12px 12px 0 0;
-        font-size: 13px; padding: 8px 14px;
-        text-align: center;
-        border-bottom: none;
-      }
+      .nerm-bubble { border-radius: 10px; font-size: 12px; padding: 6px 10px; text-align: center; border-bottom: none; }
 
-      /* Countdown — smaller, higher */
-      .arena-countdown { padding: 6px 14px; }
-      .countdown-label { font-size: 5px; }
-      .countdown-time { font-size: 16px; letter-spacing: 2px; }
-      .countdown-sub { font-size: 6px; }
+      .arena-bottom-tray {
+        flex-direction: column; gap: 8px; padding: 8px 10px;
+      }
+      .tray-stats { width: 100%; }
+      .build-cards { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .arena-card-slot { min-width: 100px; }
+      .arena-card-slot .slot-name { font-size: 9px; }
 
-      /* Build panel — full width tray at bottom */
-      .arena-card-slots {
-        position: absolute; bottom: 120px; left: 0; right: 0;
-        border-radius: 14px 14px 0 0; padding: 8px 12px 10px;
-        border-left: none; border-right: none; border-bottom: none;
-        max-width: 100%;
-      }
-      .build-cards {
-        overflow-x: auto; -webkit-overflow-scrolling: touch;
-        scroll-snap-type: x mandatory; padding-bottom: 2px;
-      }
-      .arena-card-slot {
-        width: 110px; min-width: 110px; flex-shrink: 0;
-        scroll-snap-align: start;
-      }
-      .arena-card-slot .slot-name { font-size: 10px; }
-      .arena-card-slot .slot-effects { font-size: 6px; }
-      .arena-card-slot.empty { min-height: 70px; }
-
-      /* Your Nine panel — full width bar just above feed */
-      .arena-your-nine {
-        position: absolute; bottom: 52px; left: 0; right: 0;
-        border-radius: 0; padding: 8px 16px;
-        min-width: auto; border-left: none; border-right: none; border-bottom: none;
-      }
-      .your-nine-title { font-size: 7px; }
-      .your-nine-hp-bar { height: 8px; }
-      .your-nine-hp-text { font-size: 9px; }
-      .your-nine-stat { font-size: 7px; }
-
-      /* Deploy CTA — wider on mobile */
-      .arena-deploy-cta { bottom: 70px; }
+      .arena-deploy-cta { bottom: 16px; }
       .btn-join-battle { font-size: 13px; padding: 12px 28px; }
 
-      /* Feed — compact */
-      .arena-feed {
-        max-height: 52px; padding: 18px 12px 6px;
-      }
-      .feed-event { font-size: 6px; gap: 4px; padding: 2px 4px; }
+      .arena-feed { bottom: 155px; max-height: 42px; padding: 4px 10px; }
+      .feed-event { font-size: 5px; }
 
-      /* Round banner — smaller */
-      .round-banner-text { font-size: 22px; letter-spacing: 3px; }
-      .round-banner-sub { font-size: 8px; }
-
-      /* Deploy modal — tighter on mobile */
-      .deploy-inner { padding: 16px 12px; margin: 12px auto; }
+      .deploy-inner { padding: 14px 10px; margin: 10px auto; }
       .deploy-title { font-size: 16px; }
       .deploy-card-grid { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 6px; max-height: 350px; }
-      .deploy-card-slot .spell-card { transform: scale(0.9); transform-origin: top center; }
       .btn-deploy { font-size: 14px; padding: 14px; }
     }
 
-    /* Large desktop — even bigger panels */
     @media (min-width: 1200px) {
-      .arena-scoreboard { min-width: 240px; padding: 14px 18px; }
-      .arena-sb-guild { font-size: 10px; }
-      .arena-sb-wins { font-size: 12px; }
-      .nerm-bubble-container { max-width: 320px; }
-      .nerm-bubble { font-size: 16px; padding: 12px 16px; }
-      .nerm-label { font-size: 8px; }
-      .arena-card-slot { width: 140px; }
-      .arena-card-slot .slot-name { font-size: 12px; }
-      .arena-card-slot .slot-effects { font-size: 7px; }
-      .arena-your-nine { min-width: 240px; }
-      .your-nine-hp-bar { height: 10px; }
-      .your-nine-hp-text { font-size: 10px; }
-      .your-nine-stat { font-size: 9px; }
-      .arena-feed { max-height: 80px; }
-      .feed-event { font-size: 8px; }
+      .arena-scoreboard { min-width: 200px; }
+      .arena-card-slot .slot-name { font-size: 11px; }
+      .tray-stats { width: 220px; }
+      .your-nine-stat { font-size: 8px; }
+      .arena-feed { max-height: 60px; }
+      .feed-event { font-size: 7px; }
     }
 
     /* Nav overrides — Packs gold pill */
@@ -773,27 +672,25 @@
 <div id="arena-view">
   <div id="arena-canvas"></div>
 
-  <!-- Top bar: Back | Zone info | Round/Timer -->
+  <!-- Top bar: Back | Zone name | LIVE pill + timer -->
   <div class="arena-top-bar">
     <div style="display:flex;align-items:center;gap:10px;">
       <button class="arena-back-btn interactive" id="btn-back">←</button>
-      <div>
-        <div class="arena-zone-name" id="arena-zone-name">--</div>
-        <div class="arena-zone-region" id="arena-zone-region">--</div>
+      <div class="arena-zone-name" id="arena-zone-name">--</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="arena-timer-compact" id="arena-countdown">
+        <span class="timer-icon">⏱</span>
+        <span class="countdown-time" id="countdown-time">--:--</span>
       </div>
-    </div>
-    <div style="text-align:right;">
-      <div class="arena-round-badge" id="arena-round-badge">LIVE</div>
-      <div class="arena-cycle-timer" id="arena-cycle-timer">Continuous combat</div>
+      <div class="arena-live-pill" id="arena-round-badge">LIVE</div>
     </div>
   </div>
-
-  <!-- Center: Countdown timer -->
-  <div class="arena-countdown" id="arena-countdown">
-    <div class="countdown-label" id="countdown-label">NEXT SNAPSHOT</div>
-    <div class="countdown-time" id="countdown-time">--:--</div>
-    <div class="countdown-sub" id="countdown-sub">Zone scored every 15 min</div>
-  </div>
+  <!-- hidden elements for backwards compat -->
+  <div id="arena-zone-region" style="display:none">--</div>
+  <div id="arena-cycle-timer" style="display:none"></div>
+  <div id="countdown-label" style="display:none"></div>
+  <div id="countdown-sub" style="display:none"></div>
 
   <!-- Right side: Scoreboard -->
   <div class="arena-scoreboard" id="arena-scoreboard">
@@ -801,37 +698,27 @@
     <div id="scoreboard-rows"></div>
   </div>
 
-  <!-- Bottom-left: Your Build cards -->
-  <div class="arena-card-slots" id="arena-card-slots" style="display:none;">
-    <div class="build-header">
-      <span class="build-title">YOUR BUILD</span>
-      <button class="build-swap-btn" id="btn-swap-build" style="font-family:'Press Start 2P',monospace;font-size:6px;color:var(--gold);background:none;border:1px solid var(--gold)30;padding:3px 8px;border-radius:4px;cursor:pointer;letter-spacing:0.5px;transition:all 0.15s;" onmouseover="this.style.borderColor='var(--gold)';this.style.background='rgba(212,166,75,0.08)'" onmouseout="this.style.borderColor='rgba(212,166,75,0.19)';this.style.background='none'">SWAP CARDS</button>
-    </div>
-    <div class="build-cards">
-      <div class="arena-card-slot empty" id="card-slot-0">
-        <span class="slot-wave-label">CARD 1</span>
-        <span class="slot-empty-text">SLOT 1</span>
-      </div>
-      <div class="arena-card-slot empty" id="card-slot-1">
-        <span class="slot-wave-label">CARD 2</span>
-        <span class="slot-empty-text">SLOT 2</span>
-      </div>
-      <div class="arena-card-slot empty" id="card-slot-2">
-        <span class="slot-wave-label">CARD 3</span>
-        <span class="slot-empty-text">SLOT 3</span>
+  <!-- Bottom tray: Build + Stats unified panel -->
+  <div class="arena-bottom-tray" id="arena-bottom-tray" style="display:none;">
+    <!-- Your Build cards -->
+    <div class="tray-build" id="arena-card-slots">
+      <div class="tray-section-label">YOUR BUILD <button class="build-swap-btn" id="btn-swap-build">SWAP</button></div>
+      <div class="build-cards">
+        <div class="arena-card-slot empty" id="card-slot-0"><span class="slot-empty-text">1</span></div>
+        <div class="arena-card-slot empty" id="card-slot-1"><span class="slot-empty-text">2</span></div>
+        <div class="arena-card-slot empty" id="card-slot-2"><span class="slot-empty-text">3</span></div>
       </div>
     </div>
-  </div>
-
-  <!-- Bottom-right: Your Nine stats (when deployed) -->
-  <div class="arena-your-nine" id="your-nine-panel" style="display:none;">
-    <div class="your-nine-title">YOUR NINE</div>
-    <div class="your-nine-hp">
-      <div class="your-nine-hp-bar"><div class="your-nine-hp-fill" id="your-hp-fill" style="width:100%"></div></div>
-      <div class="your-nine-hp-text" id="your-hp-text">--/--</div>
+    <!-- Your Nine stats -->
+    <div class="tray-stats" id="your-nine-panel">
+      <div class="tray-section-label">YOUR NINE</div>
+      <div class="your-nine-hp">
+        <div class="your-nine-hp-bar"><div class="your-nine-hp-fill" id="your-hp-fill" style="width:100%"></div></div>
+        <div class="your-nine-hp-text" id="your-hp-text">--/--</div>
+      </div>
+      <div class="your-nine-stats" id="your-nine-stats"></div>
+      <button class="btn-withdraw" id="btn-withdraw">WITHDRAW</button>
     </div>
-    <div class="your-nine-stats" id="your-nine-stats"></div>
-    <button class="btn-withdraw" id="btn-withdraw">WITHDRAW</button>
   </div>
 
   <!-- Center-bottom: Deploy CTA (when NOT deployed) -->
@@ -4050,7 +3937,6 @@
     if (!slotsContainer) return;
 
     state.equippedCards = cards || [];
-    slotsContainer.style.display = 'block';
 
     // Swap build button handler
     const swapBtn = document.getElementById('btn-swap-build');
@@ -4067,7 +3953,7 @@
 
       if (!card) {
         slotEl.className = 'arena-card-slot empty';
-        slotEl.innerHTML = `<span class="slot-wave-label">CARD ${i+1}</span><span class="slot-empty-text">EMPTY</span>`;
+        slotEl.innerHTML = `<span class="slot-empty-text">${i+1}</span>`;
         slotEl.onclick = null;
         continue;
       }
@@ -4077,17 +3963,6 @@
       const typeColor = TYPE_COLORS[card.spell_type || card.type || 'attack'] || '#888';
       const sharpness = card.sharpness ?? card.current_sharpness ?? 100;
       const sharpColor = sharpness > 60 ? 'var(--cyan)' : sharpness > 30 ? 'var(--gold)' : 'var(--red)';
-      const rarityColors = { common: '#999', uncommon: '#66dd66', rare: '#55bbff', epic: '#bb88ff', legendary: '#ffd700' };
-      const rColor = rarityColors[(card.rarity || 'common').toLowerCase()] || '#999';
-
-      // Card art thumbnail
-      const imgName = card.image_url || card.spell_image || '';
-      const imgSrc = imgName ? '/assets/images/spells/' + imgName : '';
-      const artThumb = imgSrc
-        ? `<div style="width:100%;height:40px;border-radius:6px;overflow:hidden;margin-bottom:4px;background:linear-gradient(135deg,${hColor}20,transparent);">
-            <img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover;opacity:0.85;" onerror="this.parentElement.style.display='none'">
-           </div>`
-        : '';
 
       const effects = [];
       try {
@@ -4099,25 +3974,29 @@
       } catch(e) {}
       if (card.base_effect) effects.push(card.base_effect);
 
+      // Effect pills HTML
+      const effectPills = effects.filter(Boolean).slice(0, 3).map(e => {
+        const tag = e.split(' ')[0].toUpperCase();
+        const eColor = EFFECT_COLORS[tag] || '#D4A64B';
+        return `<span class="slot-effect-pill" style="color:${eColor};background:${eColor}15;border:1px solid ${eColor}30">${e}</span>`;
+      }).join('');
+
       slotEl.className = 'arena-card-slot';
-      slotEl.style.borderColor = hColor + '50';
-      slotEl.style.background = `linear-gradient(135deg, rgba(26,21,40,0.92), ${hColor}08)`;
+      slotEl.style.borderColor = hColor + '40';
+      slotEl.style.background = `linear-gradient(135deg, ${hColor}08, transparent)`;
       slotEl.style.cursor = 'pointer';
       slotEl.innerHTML = `
-        <span class="slot-wave-label" style="color:${hColor}">CARD ${i+1}</span>
-        ${artThumb}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-          <div class="slot-type" style="color:${typeColor}">${(card.spell_type || card.type || '???').toUpperCase()}</div>
-          <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:${rColor};border:1px solid ${rColor}30;padding:1px 4px;border-radius:3px">${(card.rarity || 'C')[0].toUpperCase()}</span>
+          <div class="slot-type" style="color:${typeColor}">${(card.spell_type || '???').toUpperCase()}</div>
+          <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:${hColor};opacity:0.6">${(houseKey).toUpperCase().slice(0,4)}</span>
         </div>
         <div class="slot-name">${card.name || '???'}</div>
-        ${effects.filter(Boolean).length ? `<div class="slot-effects">${effects.filter(Boolean).slice(0, 2).join(' · ')}</div>` : ''}
+        ${effectPills ? `<div class="slot-effects">${effectPills}</div>` : ''}
         <div class="slot-sharpness">
           <div class="slot-sharpness-fill" style="width:${sharpness}%;background:${sharpColor}"></div>
         </div>
       `;
 
-      // Click to show full V4 card popup
       const cardRef = card;
       const waveRef = i;
       slotEl.onclick = () => showCardPopup(cardRef, waveRef);
@@ -4205,7 +4084,7 @@
   async function checkDeployment(zoneId) {
     if (!state.playerId) {
       document.getElementById('deploy-cta').style.display = 'block';
-      document.getElementById('your-nine-panel').style.display = 'none';
+      document.getElementById('arena-bottom-tray').style.display = 'none';
       return;
     }
 
@@ -4217,7 +4096,7 @@
       if (deployed) {
         state.isDeployed = true;
         document.getElementById('deploy-cta').style.display = 'none';
-        document.getElementById('your-nine-panel').style.display = 'block';
+        document.getElementById('arena-bottom-tray').style.display = 'flex';
 
         // Load equipped cards via the loadout endpoint (returns full card + spell data)
         let cards = [];
@@ -4299,12 +4178,12 @@
       } else {
         state.isDeployed = false;
         document.getElementById('deploy-cta').style.display = 'block';
-        document.getElementById('your-nine-panel').style.display = 'none';
+        document.getElementById('arena-bottom-tray').style.display = 'none';
       }
     } catch(e) {
       console.warn('checkDeployment error:', e);
       document.getElementById('deploy-cta').style.display = 'block';
-      document.getElementById('your-nine-panel').style.display = 'none';
+      document.getElementById('arena-bottom-tray').style.display = 'none';
     }
   }
 
@@ -4670,7 +4549,7 @@
 
         state.isDeployed = true;
         document.getElementById('deploy-cta').style.display = 'none';
-        document.getElementById('your-nine-panel').style.display = 'block';
+        document.getElementById('arena-bottom-tray').style.display = 'flex';
         addFeedEvent(data.message || 'You have entered the battle!', 'join');
 
         // Show equipped cards
@@ -4725,7 +4604,7 @@
       const data = await res.json();
       if (data.success) {
         state.isDeployed = false;
-        document.getElementById('your-nine-panel').style.display = 'none';
+        document.getElementById('arena-bottom-tray').style.display = 'none';
         document.getElementById('deploy-cta').style.display = 'block';
         hideCardSlots();
         addFeedEvent('You withdrew from the battle.', 'system');
