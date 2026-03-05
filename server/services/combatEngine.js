@@ -886,17 +886,8 @@ async function runSnapshot() {
 }
 
 // ─── MAIN TICK LOOP ────────────────────────────────────
-let _tickCount = 0;
 async function mainTick() {
   if (!running) return;
-  _tickCount++;
-
-  // Log every 30s (15 ticks) to confirm engine is alive
-  if (_tickCount % 15 === 1) {
-    const activeZoneCount = Object.keys(zones).length;
-    const totalNines = Object.values(zones).reduce((sum, z) => sum + (z?.nines?.size || 0), 0);
-    console.log(`⚔️ Tick #${_tickCount} — ${activeZoneCount} zones, ${totalNines} nines`);
-  }
 
   try {
     // Get active zone IDs
@@ -988,8 +979,6 @@ module.exports = {
   stopCombatEngine,
   getNextCycleAt,
   getCycleIntervalMs,
-  // Compat: scheduler calls this — V2 ticks internally, so this is a no-op
-  runCombatCycle: async function() { return { message: 'V2 engine ticks internally' }; },
   // Expose for testing
   _zones: zones,
 };
