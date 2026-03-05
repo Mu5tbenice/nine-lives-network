@@ -2568,6 +2568,14 @@
   // Legacy V6 types: cast, effect_tick, dodge, ward_pop, anchor_save
   // ═══════════════════════════════════════════════════════════════
   function processArenaEvent(ev) {
+    // Map V2 engine event types to frontend handler types
+    if (ev.type === 'effect_applied' && ev.effect) {
+      ev.type = 'effect_' + ev.effect.toLowerCase().replace(/\s+/g, '_');
+    }
+    if (ev.type === 'heal') {
+      ev.type = 'effect_' + (ev.effect || 'heal').toLowerCase();
+    }
+
     switch (ev.type) {
 
       // ── V2: ATTACK — source attacks target with V2 damage formula
@@ -3081,6 +3089,17 @@
 
       case 'effect': {
         processEffectCast(ev, resolveId(ev.target_id || ev.nine_id), null, null, state.nines.get(resolveId(ev.target_id || ev.nine_id)));
+        break;
+      }
+
+      case 'dodge': {
+        const tId = resolveId(ev.target);
+        const sprite = state.nines.get(tId);
+        if (sprite) {
+          showFloatingText(sprite.container.x, sprite.container.y, 'DODGE!', 0x90E0EF, 14);
+          spawnParticles(sprite.container.x, sprite.container.y, 0x90E0EF, 8, 'default');
+        }
+        addFeedEvent(`💨 ${ev.targetName || getNineName(tId)} dodged!`, 'effect');
         break;
       }
 
