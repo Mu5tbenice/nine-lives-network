@@ -2387,6 +2387,16 @@
         showFloatingText(sprite.container.x, sprite.container.y, 'KO!', 0xff4466, 20);
         addFeedEvent(`💀 ${data.name || 'A Nine'} was knocked out!`, 'ko');
       }
+      // If YOUR Nine got KO'd, show rejoin UI after cooldown
+      if (nineId == state.playerId) {
+        state.isDeployed = false;
+        document.getElementById('arena-bottom-tray').style.display = 'none';
+        addFeedEvent('⏳ You were KO\'d! Rejoin in 60 seconds...', 'system');
+        setTimeout(() => {
+          document.getElementById('deploy-cta').style.display = 'block';
+          addFeedEvent('✅ Cooldown expired — rejoin the battle!', 'system');
+        }, 60000);
+      }
     });
 
     // ── RESPAWN — Nine returns after KO cooldown
@@ -2631,6 +2641,17 @@
           spawnParticles(sprite.container.x, sprite.container.y, 0xff4466, 20, 'explosion');
           spawnParticles(sprite.container.x, sprite.container.y, 0xffffff, 8, 'lightning');
           screenFlash(0xff2222, 0.25);
+        }
+        // If YOUR Nine got KO'd, show rejoin UI after cooldown
+        if (koId == state.playerId) {
+          state.isDeployed = false;
+          document.getElementById('arena-bottom-tray').style.display = 'none';
+          addFeedEvent('⏳ You were KO\'d! You can rejoin in 60 seconds...', 'system');
+          // Show rejoin button after 60s cooldown
+          setTimeout(() => {
+            document.getElementById('deploy-cta').style.display = 'block';
+            addFeedEvent('✅ Cooldown expired — you can rejoin the battle!', 'system');
+          }, 60000);
         }
         break;
       }
