@@ -986,7 +986,7 @@
       });
     }
 
-    if (state.currentTab === 'regions') {
+    if (state.currentTab === 'regions') { state.currentTab = 'hot';
       renderRegionsTab(container);
       return;
     }
@@ -1199,83 +1199,6 @@
 
   // ===== ARENA VIEW =====
   // ── ZONE DETAIL EXPAND — shows preview before entering arena ──
-  let _detailPanel = null;
-  function openZoneDetail(zone, card) {
-    // Remove existing panel
-    if (_detailPanel) { _detailPanel.remove(); _detailPanel = null; }
-
-    const hKey = zone.house || zone.region_house
-      || SCHOOL_TO_HOUSE[zone.controlling_school_id]
-      || SCHOOL_TO_HOUSE[zone.school_id] || null;
-    const h = (hKey && HOUSES[hKey]) || { color: '#D4A64B', name: 'Unclaimed', icon: '⚔️' };
-    const biomeImg = getBiomeUrl(zone);
-    const guilds = zone.guilds || zone.guild_presence || [];
-    const casters = zone.arena_nines || zone.casters || zone.deployment_count || 0;
-    const effects = zone.active_effects || zone.effects || [];
-
-    let guildsHTML = guilds.slice(0, 4).map(function(g) {
-      const gColor = g.color || '#888';
-      const pct = g.pct || g.control || 0;
-      return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
-        + '<div style="width:8px;height:8px;border-radius:50%;background:' + gColor + ';flex-shrink:0;"></div>'
-        + '<div style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:' + gColor + ';flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (g.name || g.guild_name || '???') + '</div>'
-        + '<div style="width:80px;height:5px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden;"><div style="width:' + pct + '%;height:100%;background:' + gColor + ';border-radius:3px;"></div></div>'
-        + '<div style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:' + gColor + ';width:28px;text-align:right;">' + pct + '%</div>'
-        + '</div>';
-    }).join('');
-
-    if (!guildsHTML) {
-      guildsHTML = '<div style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--faint);">⚔️ Unclaimed — deploy to capture!</div>';
-    }
-
-    let effectsHTML = effects.slice(0, 5).map(function(e) {
-      const eName = typeof e === 'string' ? e : (e.name || e);
-      const eColor = EFFECT_COLORS[eName] || '#888';
-      return '<span style="font-family:\'Press Start 2P\',monospace;font-size:6px;padding:3px 7px;border-radius:4px;background:' + eColor + '15;color:' + eColor + ';border:1px solid ' + eColor + '30;">' + eName + '</span>';
-    }).join('');
-
-    const panel = document.createElement('div');
-    panel.id = 'zone-detail-panel';
-    panel.style.cssText = 'position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:16px;animation:fadeIn 0.2s ease;';
-    panel.innerHTML = ''
-      + '<div style="max-width:480px;width:100%;border-radius:16px;overflow:hidden;border:1px solid ' + h.color + '30;background:linear-gradient(180deg,#2a2040 0%,#1a1528 100%);max-height:85vh;overflow-y:auto;">'
-
-      // Biome image header
-      + '<div style="height:180px;background-image:url(\'' + biomeImg + '\');background-size:cover;background-position:center;position:relative;">'
-      + '<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(18,14,30,1) 0%,rgba(18,14,30,0.3) 60%,transparent 100%);"></div>'
-      + '<button onclick="document.getElementById(\'zone-detail-panel\').remove()" style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;font-size:16px;cursor:pointer;padding:4px 10px;line-height:1;">✕</button>'
-      + '<div style="position:absolute;bottom:12px;left:16px;">'
-      + '<div style="font-family:\'Cinzel\',serif;font-size:20px;font-weight:700;color:#fff;letter-spacing:2px;text-shadow:0 2px 8px rgba(0,0,0,0.8);">' + zone.name + '</div>'
-      + '<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">'
-      + '<span style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:' + h.color + ';">' + h.icon + ' ' + h.name + '</span>'
-      + '<span style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--green);">⚔️ ' + casters + ' NINES FIGHTING</span>'
-      + '</div>'
-      + '</div>'
-      + '</div>'
-
-      // Body
-      + '<div style="padding:16px;">'
-
-      // Guild control
-      + '<div style="margin-bottom:14px;">'
-      + '<div style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--faint);letter-spacing:1px;margin-bottom:8px;">GUILD CONTROL</div>'
-      + guildsHTML
-      + '</div>'
-
-      // Active effects
-      + (effectsHTML ? '<div style="margin-bottom:14px;"><div style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--faint);letter-spacing:1px;margin-bottom:6px;">ACTIVE EFFECTS</div><div style="display:flex;flex-wrap:wrap;gap:4px;">' + effectsHTML + '</div></div>' : '')
-
-      // Enter arena button
-      + '<button onclick="document.getElementById(\'zone-detail-panel\').remove();openArena(state.zones.find(function(z){return z.id===' + zone.id + '}))" style="width:100%;padding:16px;border-radius:10px;border:none;cursor:pointer;font-family:\'Cinzel\',serif;font-size:14px;font-weight:700;letter-spacing:3px;background:linear-gradient(135deg,' + h.color + ',#8a6d2f);color:#0a0810;box-shadow:0 4px 0 #5a4520,0 6px 20px ' + h.color + '30;transition:all 0.15s;" onmouseenter="this.style.transform=\'translateY(-2px)\'" onmouseleave="this.style.transform=\'none\'">⚔️ ENTER ARENA</button>'
-      + '</div>'
-      + '</div>';
-
-    // Close on backdrop click
-    panel.addEventListener('click', function(e) { if (e.target === panel) panel.remove(); });
-    document.body.appendChild(panel);
-    _detailPanel = panel;
-  }
-  let _detailPanel = null;
   function openZoneDetail(zone) {
     if (_detailPanel) { _detailPanel.remove(); _detailPanel = null; }
     const hKey = zone.house || zone.region_house
