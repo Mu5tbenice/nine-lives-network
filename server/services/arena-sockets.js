@@ -61,24 +61,50 @@ function setupArenaSockets(io, supabase) {
       console.error('⚠️ No supabase client for arena');
       return null;
     }
-
     try {
+      // Load deployments with nine stats
       const { data: deployments, error } = await db
         .from('zone_deployments')
         .select(`*, player:player_id(twitter_handle, school_id, guild_tag, profile_image), nine:nine_id(name, base_atk, base_hp, base_spd, base_def, base_luck, house_id)`)
         .eq('zone_id', zoneId)
         .eq('is_active', true);
-
       if (error || !deployments) {
         console.error('Arena DB error:', error);
         return null;
       }
 
-      const arena = manager.getArena(zoneId);
+      // Load card slots for all deployments in one query
+      const deploymentIds = deployments.map(d => d.id);
+      const { data: cardSlots } = await db
+        .from('zone_card_slots')
+        .select(`id, deployment_id, slot_number, sharpness, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)`)
+        .in('deployment_id', deploymentIds)
+        .eq('is_active', true);
 
+      // Index card slots by deployment_id
+      const cardsByDeployment = {};
+      for (const slot of (cardSlots || [])) {
+        if (!cardsByDeployment[slot.deployment_id]) cardsByDeployment[slot.deployment_id] = [];
+        const spell = slot.spell || {};
+        cardsByDeployment[slot.deployment_id].push({
+          name: spell.name || 'Unknown Card',
+          spell_type: spell.spell_type || 'attack',
+          rarity: spell.rarity || 'common',
+          atk: spell.base_atk || 0,
+          hp: spell.base_hp || 0,
+          spd: spell.base_spd || 0,
+          def: spell.base_def || 0,
+          luck: spell.base_luck || 0,
+          bonus_effects: spell.bonus_effects || [],
+          sharpness: slot.sharpness || 100,
+        });
+      }
+
+      const arena = manager.getArena(zoneId);
       for (const d of deployments) {
         const nine = d.nine || {};
         const player = d.player || {};
+        const cards = cardsByDeployment[d.id] || [];
         arena.addNine({
           id: d.player_id,
           name: nine.name || player.twitter_handle || 'Unknown',
@@ -86,9 +112,10 @@ function setupArenaSockets(io, supabase) {
           guild_id: d.guild_tag || null,
           guild_name: d.guild_tag || 'Lone Wolf',
           items: {},
-          cards: [],
+          cards,
           isFirstDeploy: false,
         });
+        console.log(`⚔️ Loaded ${cards.length} cards for ${nine.name || player.twitter_handle}`);
       }
 
       // Patch emit for Nerm commentary
@@ -101,7 +128,13 @@ function setupArenaSockets(io, supabase) {
         }
       };
 
-      console.log(`⚔️ Zone ${zoneId}: ${arena.nines.size} nines loaded`);
+      // Start the arena if not already running
+      if (!arena.isRunning && arena.nines.size >= 1) {
+        arena.start();
+        console.log(`⚔️ Zone ${zoneId}: Arena started with ${arena.nines.size} nines`);
+      } else {
+        console.log(`⚔️ Zone ${zoneId}: ${arena.nines.size} nines loaded (already running)`);
+      }
       return arena;
     } catch (err) {
       console.error('Arena load error:', err);
