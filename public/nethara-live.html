@@ -511,6 +511,39 @@
       100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
     }
 
+    /* ── Arena Chat ── */
+    #arena-chat {
+      position: absolute; bottom: 200px; right: 10px; z-index: 25;
+      width: 260px; display: flex; flex-direction: column;
+      background: rgba(10,8,20,0.82); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; overflow: hidden; backdrop-filter: blur(10px);
+    }
+    #arena-chat-log {
+      flex: 1; max-height: 180px; overflow-y: auto; padding: 8px 10px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    #arena-chat-log::-webkit-scrollbar { width: 2px; }
+    #arena-chat-log::-webkit-scrollbar-thumb { background: rgba(212,166,75,0.2); }
+    .chat-msg { font-family: 'Crimson Text', serif; font-size: 13px; line-height: 1.4; word-break: break-word; }
+    .chat-msg .chat-handle { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--gold); margin-right: 4px; }
+    .chat-msg .chat-guild { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--faint); }
+    .chat-input-row { display: flex; border-top: 1px solid rgba(255,255,255,0.06); }
+    #arena-chat-input {
+      flex: 1; background: transparent; border: none; outline: none;
+      font-family: 'Crimson Text', serif; font-size: 13px; color: var(--bright);
+      padding: 7px 10px;
+    }
+    #arena-chat-input::placeholder { color: var(--faint); font-size: 12px; }
+    #arena-chat-send {
+      background: none; border: none; border-left: 1px solid rgba(255,255,255,0.06);
+      color: var(--gold); cursor: pointer; padding: 7px 12px; font-size: 14px;
+      transition: color 0.2s;
+    }
+    #arena-chat-send:hover { color: var(--bright); }
+    @media (max-width: 600px) {
+      #arena-chat { width: calc(100vw - 20px); right: 10px; bottom: 220px; }
+    }
+
     /* (old countdown/card-slots CSS removed — now in top bar and bottom tray) */
     /* (old card-slot overrides removed — now in bottom tray section) */
 
@@ -659,7 +692,6 @@
   <div class="nl-tabs">
     <button class="nl-tab active" data-tab="hot">🔥 Hot Zones</button>
     <button class="nl-tab" data-tab="events">⚡ Events</button>
-    <button class="nl-tab" data-tab="regions">🗺️ Regions</button>
     <button class="nl-tab" data-tab="guild">👥 Guild</button>
   </div>
 
@@ -699,6 +731,14 @@
   </div>
 
   <!-- Bottom tray: Build + Stats unified panel -->
+  <!-- Arena Chat -->
+  <div id="arena-chat" style="display:none;">
+    <div id="arena-chat-log"></div>
+    <div class="chat-input-row">
+      <input id="arena-chat-input" type="text" maxlength="120" placeholder="Say something...">
+      <button id="arena-chat-send">➤</button>
+    </div>
+  </div>
   <div class="arena-bottom-tray" id="arena-bottom-tray" style="display:none;">
     <!-- Your Build cards -->
     <div class="tray-build" id="arena-card-slots">
@@ -946,10 +986,7 @@
       });
     }
 
-    if (state.currentTab === 'regions') {
-      renderRegionsTab(container);
-      return;
-    }
+    if (state.currentTab === 'regions') { state.currentTab = 'hot'; }
     if (state.currentTab === 'guild') {
       renderGuildTab(container);
       return;
@@ -967,7 +1004,7 @@
       card.addEventListener('click', () => {
         const zoneId = parseInt(card.dataset.zoneId);
         const zone = state.zones.find(z => z.id === zoneId);
-        if (zone) openArena(zone);
+        if (zone) openZoneDetail(zone);
       });
     });
   }
@@ -976,6 +1013,22 @@
   // ── BIOME IMAGE MAPPING ──
   // Primary: house-specific biome art. Fallback: Hanwu-Boglands.png
   const BIOME_FALLBACK = '/assets/images/biomes/Hanwu-Boglands.png';
+  const BIOME_FILE_MAP = {
+    'scorched-plains.jpg': 'chaos-rift.png',
+    'scorched-plains.png': 'chaos-rift.png',
+  };
+  const BIOME_LIST = [
+    'Hanwu-Boglands.png','misty-falls.png','ancient-ruins.png',
+    'twilight-grove.png','dragons-rest.jpg','skycastle.png',
+    'chaos-rift.png','crystal-creek.png','abysal-edge.png'
+  ];
+  function getBiomeUrl(zone) {
+    let f = zone.image_url || '';
+    if (!f) return BIOME_LIST[((zone.id||1)-1) % BIOME_LIST.length].replace(/^/,'/assets/images/biomes/');
+    f = BIOME_FILE_MAP[f] || f;
+    if (f.startsWith('/')) return f;
+    return '/assets/images/biomes/' + f;
+  }
   const BIOME_IMAGES = {
     smoulders:   '/assets/images/biomes/smoulders.png',
     darktide:    '/assets/images/biomes/darktide.png',
@@ -1016,7 +1069,7 @@
     const contested = zone.contested || (guilds.length > 1 && guilds[0] && guilds[1] && guilds[0].pct - guilds[1].pct < 15);
 
     // Biome banner — use zone.image_url from database first
-    const biomeImg = zone.image_url || BIOME_IMAGES[houseKey] || BIOME_FALLBACK;
+    const biomeImg = getBiomeUrl(zone);
     const crestImg = HOUSE_CREST_IMAGES[houseKey] || '';
     const crestHTML = crestImg
       ? '<div class="zone-card-house-crest"><img src="' + crestImg + '" alt="' + h.name + '"></div>'
@@ -1052,14 +1105,10 @@
         + '<div class="guild-pct" style="color:' + gColor + '">' + (g.pct || g.control || 0) + '%</div>'
         + '</div>';
     }).join('');
-
-    if (guilds.length === 0) {
-      if (zone.controlling_school_id && SCHOOL_TO_HOUSE[zone.controlling_school_id]) {
-        const controlHouse = HOUSES[SCHOOL_TO_HOUSE[zone.controlling_school_id]];
-        if (controlHouse) {
-          guildsHTML = '<div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:' + controlHouse.color + ';opacity:0.7;padding:2px 0;">'
-            + controlHouse.icon + ' Held by ' + controlHouse.name + '</div>';
-        }
+    if (!guildsHTML) {
+      const ctrlGuild = zone.controlling_guild_tag || zone.controlling_guild || null;
+      if (ctrlGuild) {
+        guildsHTML = '<div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:var(--gold);padding:2px 0;">🏰 Held by ' + ctrlGuild + '</div>';
       } else {
         guildsHTML = '<div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:var(--faint);padding:2px 0;">⚔️ Unclaimed — deploy to capture!</div>';
       }
@@ -1080,15 +1129,10 @@
       badgeHTML = '<span class="zone-badge held">HELD</span>';
     }
 
-    let narrativeHTML = '';
-    if (zone.narrative_title) {
-      narrativeHTML = '<div style="padding:4px 14px;font-family:\'Crimson Text\',serif;font-size:11px;color:var(--gold);font-style:italic;border-bottom:1px solid var(--border);opacity:0.8;">"' + zone.narrative_title + '"</div>';
-    }
-
     return '<div class="zone-card" data-zone-id="' + zone.id + '">'
       + imgBanner
       + bannerHTML
-      + narrativeHTML
+
       + '<div class="zone-card-body">'
         + (guilds.length > 0 ? '<div style="margin-bottom:6px">' + guildsHTML + '</div>' : guildsHTML)
         + '<div style="display:flex;justify-content:space-between;align-items:center;">'
@@ -1142,7 +1186,75 @@
   }
 
   // ===== ARENA VIEW =====
+  // ── ZONE DETAIL EXPAND — shows preview before entering arena ──
+  let _detailPanel = null;
+  function openZoneDetail(zone) {
+    if (_detailPanel) { _detailPanel.remove(); _detailPanel = null; }
+    const hKey = zone.house || zone.region_house
+      || SCHOOL_TO_HOUSE[zone.controlling_school_id]
+      || SCHOOL_TO_HOUSE[zone.school_id] || null;
+    const h = (hKey && HOUSES[hKey]) || { color: '#D4A64B', name: 'Unclaimed', icon: '⚔️' };
+    const biomeImg = getBiomeUrl(zone);
+    const guilds = zone.guilds || zone.guild_presence || [];
+    const casters = zone.arena_nines || zone.casters || zone.deployment_count || 0;
+    const effects = zone.active_effects || zone.effects || [];
+
+    const guildsHTML = guilds.length > 0
+      ? guilds.slice(0,4).map(function(g){
+          const gc = g.color||'#888', pct = g.pct||g.control||0;
+          return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">'
+            +'<div style="width:8px;height:8px;border-radius:50%;background:'+gc+';flex-shrink:0;"></div>'
+            +'<div style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:'+gc+';flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(g.name||g.guild_name||'???')+'</div>'
+            +'<div style="width:90px;height:5px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden;"><div style="width:'+pct+'%;height:100%;background:'+gc+';border-radius:3px;"></div></div>'
+            +'<div style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:'+gc+';width:28px;text-align:right;">'+pct+'%</div>'
+            +'</div>';
+        }).join('')
+      : '<div style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--faint);">⚔️ Unclaimed — deploy to capture!</div>';
+
+    const effectsHTML = effects.slice(0,5).map(function(e){
+      const en = typeof e==='string'?e:(e.name||e);
+      const ec = EFFECT_COLORS[en]||'#888';
+      return '<span style="font-family:\'Press Start 2P\',monospace;font-size:6px;padding:3px 7px;border-radius:4px;background:'+ec+'15;color:'+ec+';border:1px solid '+ec+'30;">'+en+'</span>';
+    }).join('');
+
+    const panel = document.createElement('div');
+    panel.id = 'zone-detail-panel';
+    panel.style.cssText = 'position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;';
+    panel.innerHTML = ''
+      +'<div style="max-width:480px;width:100%;border-radius:16px;overflow:hidden;border:1px solid '+h.color+'40;background:linear-gradient(180deg,#2a2040 0%,#1a1528 100%);max-height:88vh;overflow-y:auto;">'
+      // Hero image
+      +'<div style="height:200px;background-image:url(\''+biomeImg+'\');background-size:cover;background-position:center;position:relative;">'
+      +'<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(14,10,24,1) 0%,rgba(14,10,24,0.2) 70%,transparent 100%);"></div>'
+      +'<button onclick="document.getElementById(\'zone-detail-panel\').remove()" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.6);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:16px;cursor:pointer;padding:5px 12px;line-height:1;z-index:2;">✕</button>'
+      +'<div style="position:absolute;bottom:14px;left:16px;z-index:2;">'
+      +'<div style="font-family:\'Cinzel\',serif;font-size:22px;font-weight:700;color:#fff;letter-spacing:2px;text-shadow:0 2px 12px rgba(0,0,0,0.9);">'+zone.name+'</div>'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-top:5px;">'
+      +'<span style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:'+h.color+';">'+h.icon+' '+h.name+'</span>'
+      +'<span style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--green);">⚔️ '+casters+' NINES</span>'
+      +'</div></div></div>'
+      // Body
+      +'<div style="padding:18px;">'
+      +'<div style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--faint);letter-spacing:1px;margin-bottom:10px;">GUILD CONTROL</div>'
+      +guildsHTML
+      +(effectsHTML?'<div style="margin-top:14px;"><div style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--faint);letter-spacing:1px;margin-bottom:8px;">ACTIVE EFFECTS</div><div style="display:flex;flex-wrap:wrap;gap:4px;">'+effectsHTML+'</div></div>':'')
+      +'<button data-enter-zone-id="'+zone.id+'" style="width:100%;margin-top:18px;padding:16px;border-radius:10px;border:none;cursor:pointer;font-family:\'Cinzel\',serif;font-size:14px;font-weight:700;letter-spacing:3px;background:linear-gradient(135deg,'+h.color+',#8a6d2f);color:#0a0810;box-shadow:0 4px 0 #5a4520,0 6px 20px '+h.color+'30;transition:transform 0.15s;" onmouseenter="this.style.transform=\'translateY(-2px)\'" onmouseleave="this.style.transform=\'none\'">⚔️ ENTER ARENA</button>'
+      +'</div></div>';
+
+    panel.addEventListener('click', function(e){ if(e.target===panel) panel.remove(); });
+    // Wire Enter Arena button inside IIFE scope
+    panel.querySelector('[data-enter-zone-id]').addEventListener('click', function() {
+      const zid = parseInt(this.getAttribute('data-enter-zone-id'));
+      const z = state.zones.find(function(x){ return x.id === zid; });
+      panel.remove();
+      _detailPanel = null;
+      if (z) openArena(z);
+    });
+    document.body.appendChild(panel);
+    _detailPanel = panel;
+  }
+
   function openArena(zone) {
+    window.__9lv_openArena = openArena; // keep global ref updated
     state.currentZone = zone;
     state.currentZoneId = zone.id;
     state.feedEvents = [];
@@ -1156,6 +1268,7 @@
     // Update UI
     document.getElementById('zone-list-view').style.display = 'none';
     document.getElementById('arena-view').style.display = 'block';
+    document.getElementById('arena-chat').style.display = 'flex';
     document.getElementById('arena-zone-name').textContent = zone.name;
     const h = HOUSES[zone.house || zone.region_house || SCHOOL_TO_HOUSE[zone.controlling_school_id] || SCHOOL_TO_HOUSE[zone.school_id]] || { color: '#888', icon: '❓' };
     document.getElementById('arena-zone-region').style.color = h.color;
@@ -1262,25 +1375,26 @@
   function getSpawnPosition(guildTag, playerId) {
     if (!state._guildAngles) state._guildAngles = {};
     if (!state._guildCounts) state._guildCounts = {};
-
     const tag = guildTag || String(playerId);
     if (!state._guildAngles[tag]) {
       const idx = Object.keys(state._guildAngles).length;
-      state._guildAngles[tag] = (idx / 8) * Math.PI * 2 - Math.PI / 2;
+      // Spread guilds left/right on the platform
+      state._guildAngles[tag] = idx % 2 === 0 ? Math.PI * 1.15 : Math.PI * 1.85;
       state._guildCounts[tag] = 0;
     }
     state._guildCounts[tag]++;
-
-    const cx = (state.arenaApp ? state.arenaApp.screen.width : window.innerWidth) / 2;
-    const cy = (state.arenaApp ? state.arenaApp.screen.height : window.innerHeight) / 2;
+    const sw = state.arenaApp ? state.arenaApp.screen.width : window.innerWidth;
+    const sh = state.arenaApp ? state.arenaApp.screen.height : window.innerHeight;
+    const cx = sw / 2;
+    // Platform sits at cy + sh*0.18 — spawn sprites just above it
+    const platformY = (sh / 2) + sh * 0.18;
+    const pW = Math.min(sw * 0.72, 520);
     const angle = state._guildAngles[tag];
-    const radius = Math.min(ARENA_HALF_W, ARENA_HALF_H) * 0.55;
-    const spread = Math.min(state._guildCounts[tag] * 18, 60);
-
+    const radius = pW * 0.32;
+    const spread = Math.min(state._guildCounts[tag] * 22, 80);
     const x = cx + Math.cos(angle) * radius + (Math.random() - 0.5) * spread;
-    const y = cy + Math.sin(angle) * radius * 0.6 + (Math.random() - 0.5) * spread;
-
-    return clampToDiamond(x, y, cx, cy, 0.82);
+    const y = platformY - 40 + (Math.random() - 0.5) * 20;
+    return { x, y };
   }
 
   /** Convert engine position (centered at 400,300) to screen position */
@@ -1295,6 +1409,8 @@
 
   function closeArena() {
     document.getElementById('arena-view').style.display = 'none';
+    document.getElementById('arena-chat').style.display = 'none';
+    document.getElementById('arena-chat-log').innerHTML = '';
     document.getElementById('zone-list-view').style.display = 'block';
 
     // Close deploy modal if open
@@ -1439,14 +1555,7 @@
   }
 
   function setBiomeBackground(container) {
-    const zoneImg = state.currentZone?.image_url;
-    const hKey = state.currentZone?.house
-      || state.currentZone?.region_house
-      || SCHOOL_TO_HOUSE[state.currentZone?.controlling_school_id]
-      || SCHOOL_TO_HOUSE[state.currentZone?.school_id]
-      || null;
-
-    const imgUrl = zoneImg || (hKey && BIOME_IMAGES[hKey]) || BIOME_FALLBACK;
+    const imgUrl = getBiomeUrl(state.currentZone || {});
 
     const img = new Image();
     img.onload = () => {
@@ -1460,159 +1569,104 @@
   }
 
   function drawArenaGround(app) {
-    // Remove old ground layers
-    const existing = app.stage.getChildByName('ground');
-    if (existing) app.stage.removeChild(existing);
-    const existingEnv = app.stage.getChildByName('environment');
-    if (existingEnv) app.stage.removeChild(existingEnv);
-    const existingFog = app.stage.getChildByName('fog');
-    if (existingFog) app.stage.removeChild(existingFog);
+    ['ground','environment','fog'].forEach(function(n){
+      const e = app.stage.getChildByName(n); if(e) app.stage.removeChild(e);
+    });
 
     const cx = app.screen.width / 2;
     const cy = app.screen.height / 2;
-
-    // Resolve house for theming
     const hKey = state.currentZone?.house
       || state.currentZone?.region_house
       || SCHOOL_TO_HOUSE[state.currentZone?.controlling_school_id]
-      || SCHOOL_TO_HOUSE[state.currentZone?.school_id]
-      || null;
-    const h = (hKey && HOUSES[hKey]) || { color: '#666' };
-    const hColor = parseInt(h.color.replace('#', ''), 16);
+      || SCHOOL_TO_HOUSE[state.currentZone?.school_id] || null;
 
-    // ── HOUSE THEME PALETTES ──
     const themes = {
-      smoulders:   { accent: 0xff4422, fog: 0xff3300, ambientType: 'embers' },
-      darktide:    { accent: 0x00B4D8, fog: 0x003366, ambientType: 'bubbles' },
-      stonebark:   { accent: 0x5CB338, fog: 0x1a3300, ambientType: 'leaves' },
-      ashenvale:   { accent: 0x90E0EF, fog: 0x88ccee, ambientType: 'wind' },
-      stormrage:   { accent: 0xFFC800, fog: 0xffaa00, ambientType: 'sparks' },
-      nighthollow: { accent: 0x7B2D8E, fog: 0x6633aa, ambientType: 'wisps' },
-      dawnbringer: { accent: 0xFF8C00, fog: 0xff6600, ambientType: 'rays' },
-      manastorm:   { accent: 0x5B8FE0, fog: 0x3366cc, ambientType: 'crystals' },
-      plaguemire:  { accent: 0xE84393, fog: 0xcc2266, ambientType: 'miasma' },
+      smoulders:   { accent: 0xe85a6a, glow: 0xff4422, particle: 0xff6644 },
+      darktide:    { accent: 0x6ac8d8, glow: 0x00B4D8, particle: 0x00d4ff },
+      stonebark:   { accent: 0x6acd8a, glow: 0x5CB338, particle: 0x88ee44 },
+      ashenvale:   { accent: 0xb0c4de, glow: 0x90E0EF, particle: 0xaaddff },
+      stormrage:   { accent: 0xFFC800, glow: 0xffaa00, particle: 0xffee00 },
+      nighthollow: { accent: 0xb088e8, glow: 0x7B2D8E, particle: 0xcc88ff },
+      dawnbringer: { accent: 0xffb347, glow: 0xFF8C00, particle: 0xffdd88 },
+      manastorm:   { accent: 0x5B8FE0, glow: 0x3366cc, particle: 0x88aaff },
+      plaguemire:  { accent: 0xE84393, glow: 0xcc2266, particle: 0xff66aa },
     };
-    const theme = themes[hKey] || themes.nighthollow;
+    const t = themes[hKey] || themes.nighthollow;
 
-    // ══════ GROUND OVERLAY — subtle iso grid over biome image ══════
     const ground = new PIXI.Graphics();
     ground.name = 'ground';
-    ground.zIndex = -10;
 
-    // Subtle isometric diamond tiles — very low alpha
-    const tileW = 48;
-    const tileH = 24;
-    const gridCols = 18;
-    const gridRows = 14;
+    const pW = Math.min(app.screen.width * 0.72, 520);
+    const pH = pW * 0.28;
+    const pY = cy + app.screen.height * 0.18;
 
-    for (let row = -gridRows; row <= gridRows; row++) {
-      for (let col = -gridCols; col <= gridCols; col++) {
-        const isoX = cx + (col - row) * (tileW / 2);
-        const isoY = cy + (col + row) * (tileH / 2);
-        if (isoX < -tileW || isoX > app.screen.width + tileW) continue;
-        if (isoY < -tileH || isoY > app.screen.height + tileH) continue;
-
-        const dist = Math.sqrt((isoX - cx) ** 2 + ((isoY - cy) * 1.8) ** 2);
-        const maxDist = Math.min(app.screen.width, app.screen.height) * 0.55;
-        if (dist > maxDist) continue;
-
-        const fade = Math.max(0, 1 - dist / maxDist);
-
-        // Very subtle tile edges only — no fill, just grid lines
-        if (fade > 0.2) {
-          ground.lineStyle(0.5, theme.accent, 0.06 * fade);
-          ground.moveTo(isoX, isoY - tileH / 2);
-          ground.lineTo(isoX + tileW / 2, isoY);
-          ground.lineTo(isoX, isoY + tileH / 2);
-          ground.lineTo(isoX - tileW / 2, isoY);
-          ground.closePath();
-          ground.lineStyle(0);
-        }
-      }
+    for (let i = 5; i >= 1; i--) {
+      ground.beginFill(t.glow, 0.015 * i);
+      ground.drawEllipse(cx, pY, pW * 0.5 + i * 8, pH * 0.5 + i * 4);
+      ground.endFill();
     }
 
-    // Arena boundary diamond — glowing border
-    const arenaW = 320;
-    const arenaH = 180;
-    ground.lineStyle(2, theme.accent, 0.3);
-    ground.moveTo(cx, cy - arenaH);
-    ground.lineTo(cx + arenaW, cy);
-    ground.lineTo(cx, cy + arenaH);
-    ground.lineTo(cx - arenaW, cy);
-    ground.closePath();
+    ground.beginFill(0x0a0814, 0.85);
+    ground.drawEllipse(cx, pY, pW * 0.5, pH * 0.5);
+    ground.endFill();
+
+    ground.lineStyle(1, t.accent, 0.12);
+    ground.drawEllipse(cx, pY, pW * 0.5, pH * 0.5);
+    ground.lineStyle(1, t.accent, 0.07);
+    ground.drawEllipse(cx, pY, pW * 0.38, pH * 0.38);
+    ground.lineStyle(1, t.accent, 0.04);
+    ground.drawEllipse(cx, pY, pW * 0.22, pH * 0.22);
     ground.lineStyle(0);
 
-    // Inner ring
-    ground.lineStyle(1, theme.accent, 0.1);
-    ground.moveTo(cx, cy - arenaH * 0.7);
-    ground.lineTo(cx + arenaW * 0.7, cy);
-    ground.lineTo(cx, cy + arenaH * 0.7);
-    ground.lineTo(cx - arenaW * 0.7, cy);
-    ground.closePath();
+    ground.beginFill(t.accent, 0.06);
+    ground.drawEllipse(cx, pY - pH * 0.08, pW * 0.48, pH * 0.18);
+    ground.endFill();
 
-    app.stage.addChildAt(ground, 0);
+    ground.beginFill(0x000000, 0.4);
+    ground.drawEllipse(cx, pY + pH * 0.52, pW * 0.46, pH * 0.18);
+    ground.endFill();
 
-    // ══════ ENVIRONMENT LAYER — pillars and runes ══════
+    app.stage.addChild(ground);
+
     const env = new PIXI.Container();
     env.name = 'environment';
-    env.zIndex = -5;
+    const particles = [];
+    const COUNT = 22;
 
-    // Corner pillars
-    const pillarPositions = [
-      { x: cx, y: cy - arenaH - 10 },
-      { x: cx + arenaW + 10, y: cy },
-      { x: cx, y: cy + arenaH + 10 },
-      { x: cx - arenaW - 10, y: cy },
-    ];
+    for (let i = 0; i < COUNT; i++) {
+      const g = new PIXI.Graphics();
+      const size = 1.5 + Math.random() * 2.5;
+      g.beginFill(t.particle, 0.6 + Math.random() * 0.4);
+      g.drawCircle(0, 0, size);
+      g.endFill();
+      const angle = Math.random() * Math.PI * 2;
+      const radius = pW * (0.15 + Math.random() * 0.45);
+      g.x = cx + Math.cos(angle) * radius;
+      g.y = pY + Math.sin(angle) * radius * 0.35;
+      g.alpha = 0.3 + Math.random() * 0.5;
+      particles.push({
+        sprite: g, life: Math.random(),
+        speed: 0.003 + Math.random() * 0.005,
+        originX: cx, originY: pY, radius, angle,
+        drift: (Math.random() - 0.5) * 0.008
+      });
+      env.addChild(g);
+    }
 
-    pillarPositions.forEach((pos) => {
-      const pillar = new PIXI.Graphics();
-      pillar.beginFill(theme.accent, 0.15);
-      pillar.moveTo(pos.x, pos.y - 16);
-      pillar.lineTo(pos.x + 10, pos.y - 10);
-      pillar.lineTo(pos.x, pos.y - 4);
-      pillar.lineTo(pos.x - 10, pos.y - 10);
-      pillar.closePath();
-      pillar.endFill();
-      pillar.beginFill(theme.accent, 0.10);
-      pillar.drawRect(pos.x - 3, pos.y - 28, 6, 16);
-      pillar.endFill();
-      pillar.beginFill(theme.accent, 0.4);
-      pillar.moveTo(pos.x, pos.y - 36);
-      pillar.lineTo(pos.x + 4, pos.y - 28);
-      pillar.lineTo(pos.x - 4, pos.y - 28);
-      pillar.closePath();
-      pillar.endFill();
-      env.addChild(pillar);
-    });
-
-    // Rune circles
-    const runePositions = [
-      { x: cx + arenaW * 0.5, y: cy - arenaH * 0.5 },
-      { x: cx + arenaW * 0.5, y: cy + arenaH * 0.5 },
-      { x: cx - arenaW * 0.5, y: cy + arenaH * 0.5 },
-      { x: cx - arenaW * 0.5, y: cy - arenaH * 0.5 },
-    ];
-
-    runePositions.forEach(pos => {
-      const rune = new PIXI.Graphics();
-      rune.lineStyle(1, theme.accent, 0.2);
-      rune.drawCircle(pos.x, pos.y, 8);
-      rune.lineStyle(0.5, theme.accent, 0.1);
-      rune.drawCircle(pos.x, pos.y, 12);
-      rune.beginFill(theme.accent, 0.25);
-      rune.drawCircle(pos.x, pos.y, 2);
-      rune.endFill();
-      env.addChild(rune);
+    app.ticker.add(function() {
+      particles.forEach(function(p) {
+        p.life += p.speed;
+        p.angle += p.drift;
+        const r = p.radius * (0.85 + Math.sin(p.life * 2) * 0.15);
+        p.sprite.x = p.originX + Math.cos(p.angle) * r;
+        p.sprite.y = p.originY + Math.sin(p.life * 1.5) * pH * 0.4 - p.life * 18;
+        p.sprite.alpha = Math.max(0, 0.6 * (1 - (p.life % 1)));
+        if (p.life > 1) { p.life = 0; p.angle = Math.random() * Math.PI * 2; }
+      });
     });
 
     app.stage.addChild(env);
-
-    // ══════ AMBIENT PARTICLES ══════
-    startAmbientParticles(app, theme);
   }
-
-  /** Ambient floating particles based on house theme */
   function startAmbientParticles(app, theme) {
     // Remove old ambient ticker if any
     if (state._ambientTicker) {
@@ -2399,6 +2453,10 @@
       }
     });
 
+    socket.on('chat:message', function(data) {
+      document.dispatchEvent(new CustomEvent('arena:chat:message', { detail: data }));
+    });
+
     // ── RESPAWN — Nine returns after KO cooldown
     socket.on('arena:respawn', (data) => {
       const nineId = resolveId(data.nine_id);
@@ -2586,9 +2644,15 @@
         const target = state.nines.get(toId);
         const dmg = ev.damage || 0;
 
+        const cardType = (ev.card_type || 'attack').toLowerCase();
+        const cardName = ev.card_name || '';
         animateProjectile(fromId, toId, ev.from_house || attacker?.house, () => {
           if (target) {
             const sz = ev.isCrit ? 22 : 16;
+            // Show card name above hit
+            if (cardName && cardName !== 'Auto Attack') {
+              showFloatingText(target.container.x, target.container.y - 40, cardName.toUpperCase(), 0xD4A64B, 8);
+            }
             showFloatingText(target.container.x, target.container.y, `-${dmg}`, ev.isCrit ? 0xffd700 : 0xff4466, sz);
             if (ev.isCrit) {
               showFloatingText(target.container.x, target.container.y - 30, 'CRIT!', 0xffd700, 20);
@@ -2596,7 +2660,17 @@
               screenFlash(0xffd700, 0.25);
               setTimeout(() => spawnFireworkExplosion(target.container.x + (Math.random()-0.5)*20, target.container.y + (Math.random()-0.5)*15, 0xffd700), 150);
             }
-            spawnParticles(target.container.x, target.container.y, getHouseColor(ev.from_house || attacker?.house), 12, 'fire');
+            // Card-type specific hit effects
+            if (cardType === 'defend') {
+              spawnParticles(target.container.x, target.container.y, 0xD4A64B, 14, 'shield');
+            } else if (cardType === 'support') {
+              spawnParticles(target.container.x, target.container.y, 0x44ffaa, 14, 'heal');
+            } else if (cardType === 'manipulation') {
+              spawnParticles(target.container.x, target.container.y, 0xbb88ff, 14, 'default');
+              spawnParticles(target.container.x, target.container.y, 0x5599ff, 6, 'lightning');
+            } else {
+              spawnParticles(target.container.x, target.container.y, getHouseColor(ev.from_house || attacker?.house), 12, 'fire');
+            }
             shakeSprite(target);
             if (target.spriteGroup) {
               target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff4444; });
@@ -3088,7 +3162,56 @@
       }
 
       case 'effect': {
-        processEffectCast(ev, resolveId(ev.target_id || ev.nine_id), null, null, state.nines.get(resolveId(ev.target_id || ev.nine_id)));
+        const eff = ev.effect_type || '';
+        const nId = resolveId(ev.nine_id || ev.target_id || ev.from || ev.source);
+        const tId = resolveId(ev.target_id || ev.to || ev.nine_id);
+        const sprite = state.nines.get(nId) || state.nines.get(tId);
+        const pCfg = getEffectParticles(eff);
+
+        if (eff === 'BURN_APPLY') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, '🔥 BURN', 0xff8833, 9); spawnParticles(sprite.container.x, sprite.container.y, 0xff8833, 12, 'fire'); }
+          addFeedEvent(`🔥 ${getNineName(tId)} is BURNING!`, 'effect');
+        } else if (eff === 'POISON_APPLY') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, '☠️ POISON', 0x88ee44, 9); spawnParticles(sprite.container.x, sprite.container.y, 0x88ee44, 10, 'poison'); }
+          addFeedEvent(`☠️ ${getNineName(tId)} is POISONED!`, 'effect');
+        } else if (eff === 'CHAIN') {
+          const from = state.nines.get(resolveId(ev.from)); const to = state.nines.get(resolveId(ev.to));
+          if (from && to) { showFloatingText(to.container.x, to.container.y, `-${ev.damage} CHAIN`, 0x5599ff, 11); spawnParticles(to.container.x, to.container.y, 0x5599ff, 8, 'lightning'); }
+          addFeedEvent(`⚡ CHAIN hits ${getNineName(resolveId(ev.to))} for ${ev.damage}`, 'effect');
+        } else if (eff === 'DRAIN') {
+          const from = state.nines.get(resolveId(ev.from)); const to = state.nines.get(resolveId(ev.to));
+          if (from) { showFloatingText(from.container.x, from.container.y, `+${ev.amount} DRAIN`, 0xff3366, 10); }
+          if (to) { spawnParticles(to.container.x, to.container.y, 0xff3366, 8, 'default'); }
+        } else if (eff === 'WARD' || eff === 'BARRIER' || eff === 'ANCHOR' || eff === 'REFLECT') {
+          if (sprite) { animateShieldPop(sprite); showFloatingText(sprite.container.x, sprite.container.y - 20, eff, 0xD4A64B, 10); spawnParticles(sprite.container.x, sprite.container.y, 0xD4A64B, 10, 'shield'); }
+          addFeedEvent(`🛡️ ${getNineName(nId)} activates ${eff}!`, 'effect');
+        } else if (eff === 'BARRIER_BREAK') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, 'BARRIER BROKEN!', 0xff4466, 11); screenFlash(0xff4466, 0.15); spawnParticles(sprite.container.x, sprite.container.y, 0x5599ff, 16, 'explosion'); }
+        } else if (eff === 'THORNS') {
+          const tgt = state.nines.get(resolveId(ev.target_id));
+          if (tgt) { showFloatingText(tgt.container.x, tgt.container.y, `-${ev.amount} THORNS`, 0xff5555, 10); spawnParticles(tgt.container.x, tgt.container.y, 0xff5555, 6, 'fire'); }
+        } else if (eff === 'STEALTH') {
+          if (sprite) { sprite.container.alpha = 0.35; showFloatingText(sprite.container.x, sprite.container.y - 20, 'STEALTH', 0x90E0EF, 9); }
+        } else if (eff === 'HASTE' || eff === 'SURGE' || eff === 'SWIFT') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, eff, 0xffd700, 10); spawnParticles(sprite.container.x, sprite.container.y, 0xffd700, 8, 'fire'); }
+        } else if (eff === 'OVERCHARGE') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, '⚡ OVERCHARGE', 0xffc800, 10); spawnParticles(sprite.container.x, sprite.container.y, 0xffc800, 12, 'lightning'); screenFlash(0xffc800, 0.2); }
+        } else if (eff === 'PHASE') {
+          if (sprite) { sprite.container.alpha = 0.5; showFloatingText(sprite.container.x, sprite.container.y - 20, 'PHASE', 0xb088e8, 10); spawnParticles(sprite.container.x, sprite.container.y, 0xb088e8, 8, 'default'); }
+        } else if (eff === 'CLEANSE') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, '✨ CLEANSE', 0x44ffcc, 10); spawnParticles(sprite.container.x, sprite.container.y, 0x44ffcc, 10, 'heal'); }
+        } else if (eff === 'TAUNT') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, '😤 TAUNT', 0xff6644, 10); }
+        } else if (eff === 'ANCHOR_SAVE') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, 'ANCHOR SAVES!', 0xD4A64B, 12); spawnParticles(sprite.container.x, sprite.container.y, 0xD4A64B, 14, 'shield'); screenFlash(0xD4A64B, 0.2); }
+        } else if (eff === 'TETHER_SHARE') {
+          const src = state.nines.get(resolveId(ev.source_id));
+          if (src) { showFloatingText(src.container.x, src.container.y, `TETHER -${ev.amount}`, 0xb088e8, 9); }
+        } else if (sprite) {
+          // Generic fallback for any other effect
+          showFloatingText(sprite.container.x, sprite.container.y - 20, eff, 0xD4A64B, 9);
+          spawnParticles(sprite.container.x, sprite.container.y, pCfg.color, pCfg.count, pCfg.type);
+        }
         break;
       }
 
@@ -4658,6 +4781,41 @@
       alert('Withdraw failed');
     }
   }
+
+  // ── ARENA CHAT ──
+  (function(){
+    const log = document.getElementById('arena-chat-log');
+    const input = document.getElementById('arena-chat-input');
+    const sendBtn = document.getElementById('arena-chat-send');
+
+    function appendMsg(data) {
+      const div = document.createElement('div');
+      div.className = 'chat-msg';
+      const gTag = data.guildTag ? ' <span class="chat-guild">['+data.guildTag+']</span>' : '';
+      div.innerHTML = '<span class="chat-handle">@'+data.handle+'</span>'+gTag+' <span style="color:var(--body);">'+data.message.replace(/</g,'&lt;')+'</span>';
+      log.appendChild(div);
+      if(log.children.length > 30) log.removeChild(log.firstChild);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function sendMsg() {
+      const msg = input.value.trim();
+      if(!msg || !state.socket || !state.currentZoneId) return;
+      const pid = state.playerId || localStorage.getItem('player_id');
+      const handle = state.playerHandle || localStorage.getItem('9lv_handle') || 'Anon';
+      const guildTag = state.playerGuildTag || '';
+      state.socket.emit('chat:send', { zoneId: state.currentZoneId, message: msg, handle, guildTag });
+      input.value = '';
+    }
+
+    sendBtn.addEventListener('click', sendMsg);
+    input.addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(); });
+
+    // Listen for messages from server
+    document.addEventListener('arena:chat:message', function(e){
+      appendMsg(e.detail);
+    });
+  })();
 
   // ===== EVENT LISTENERS =====
   document.getElementById('btn-back').addEventListener('click', closeArena);

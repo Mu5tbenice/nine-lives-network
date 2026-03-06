@@ -16,7 +16,7 @@ const EFFECT_VALUES = {
   // Attack
   BURN:     { damage_per_cycle: 2 },
   CHAIN:    { targets: 2 },
-  CRIT:     { chance: 0.25, multiplier: 2 },
+  CRIT:     { chance: 0.25, multiplier: 2 }, /** Execute an attack from attacker to target */
   SURGE:    { atk_bonus: 0.5, extra_sharpness_cost: 1 },
   PIERCE:   { ignores: ['WARD', 'BARRIER'] },
 
@@ -626,6 +626,13 @@ class Arena {
     const events = [];
     let atk = attacker.total_atk;
 
+    // Pick a card for this attack (round-robin through loadout)
+    attacker._cardIndex = ((attacker._cardIndex || 0) + 1) % Math.max(attacker.cards.length, 1);
+    const activeCard = attacker.cards[attacker._cardIndex] || null;
+    const cardName = activeCard?.name || 'Auto Attack';
+    const cardType = activeCard?.spell_type || 'attack';
+    const cardEffects = activeCard?.bonus_effects || [];
+
     // PHASE bonus from last round
     if (attacker.phase_bonus_next) {
       atk = Math.round(atk * 1.5);
@@ -669,6 +676,9 @@ class Arena {
       crit: isCrit,
       from_pos: attacker.position,
       to_pos: target.position,
+      card_name: cardName,
+      card_type: cardType,
+      card_effects: cardEffects,
     });
     events.push(...damageEvents);
 
