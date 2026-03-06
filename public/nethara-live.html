@@ -1132,6 +1132,7 @@
     return '<div class="zone-card" data-zone-id="' + zone.id + '">'
       + imgBanner
       + bannerHTML
+
       + '<div class="zone-card-body">'
         + (guilds.length > 0 ? '<div style="margin-bottom:6px">' + guildsHTML + '</div>' : guildsHTML)
         + '<div style="display:flex;justify-content:space-between;align-items:center;">'
@@ -1236,15 +1237,24 @@
       +'<div style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--faint);letter-spacing:1px;margin-bottom:10px;">GUILD CONTROL</div>'
       +guildsHTML
       +(effectsHTML?'<div style="margin-top:14px;"><div style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--faint);letter-spacing:1px;margin-bottom:8px;">ACTIVE EFFECTS</div><div style="display:flex;flex-wrap:wrap;gap:4px;">'+effectsHTML+'</div></div>':'')
-      +'<button onclick="var z=state.zones.find(function(x){return x.id==='+zone.id+'});document.getElementById(\'zone-detail-panel\').remove();if(z)openArena(z);" style="width:100%;margin-top:18px;padding:16px;border-radius:10px;border:none;cursor:pointer;font-family:\'Cinzel\',serif;font-size:14px;font-weight:700;letter-spacing:3px;background:linear-gradient(135deg,'+h.color+',#8a6d2f);color:#0a0810;box-shadow:0 4px 0 #5a4520,0 6px 20px '+h.color+'30;transition:transform 0.15s;" onmouseenter="this.style.transform=\'translateY(-2px)\'" onmouseleave="this.style.transform=\'none\'">⚔️ ENTER ARENA</button>'
+      +'<button data-enter-zone-id="'+zone.id+'" style="width:100%;margin-top:18px;padding:16px;border-radius:10px;border:none;cursor:pointer;font-family:\'Cinzel\',serif;font-size:14px;font-weight:700;letter-spacing:3px;background:linear-gradient(135deg,'+h.color+',#8a6d2f);color:#0a0810;box-shadow:0 4px 0 #5a4520,0 6px 20px '+h.color+'30;transition:transform 0.15s;" onmouseenter="this.style.transform=\'translateY(-2px)\'" onmouseleave="this.style.transform=\'none\'">⚔️ ENTER ARENA</button>'
       +'</div></div>';
 
     panel.addEventListener('click', function(e){ if(e.target===panel) panel.remove(); });
+    // Wire Enter Arena button inside IIFE scope
+    panel.querySelector('[data-enter-zone-id]').addEventListener('click', function() {
+      const zid = parseInt(this.getAttribute('data-enter-zone-id'));
+      const z = state.zones.find(function(x){ return x.id === zid; });
+      panel.remove();
+      _detailPanel = null;
+      if (z) openArena(z);
+    });
     document.body.appendChild(panel);
     _detailPanel = panel;
   }
 
   function openArena(zone) {
+    window.__9lv_openArena = openArena; // keep global ref updated
     state.currentZone = zone;
     state.currentZoneId = zone.id;
     state.feedEvents = [];
