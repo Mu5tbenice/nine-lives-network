@@ -219,23 +219,107 @@ try {
 
 // ── ARENA SOCKET NAMESPACE ──
 if (io) {
+  const supabase = require('./config/supabase');
+  const { ArenaManager } = require('./services/arena-engine');
+  const arenaManager = new ArenaManager(io);
   const arenaNamespace = io.of('/arena');
+
+  const HOUSE_MAP = {
+    1: 'smoulders', 2: 'darktide', 3: 'stonebark', 4: 'ashenvale',
+    5: 'stormrage', 6: 'nighthollow', 7: 'dawnbringer', 8: 'manastorm', 9: 'plaguemire',
+  };
+
+  async function loadArena(zoneId) {
+    try {
+      const { data: deployments, error } = await supabase
+        .from('zone_deployments')
+        .select(`*, player:player_id(twitter_handle, guild_tag, profile_image), nine:nine_id(name, base_atk, base_hp, base_spd, base_def, base_luck, house_id)`)
+        .eq('zone_id', zoneId)
+        .eq('is_active', true);
+      if (error || !deployments || deployments.length === 0) return null;
+
+      const deploymentIds = deployments.map(d => d.id);
+      const { data: cardSlots } = await supabase
+        .from('zone_card_slots')
+        .select(`id, deployment_id, slot_number, sharpness, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)`)
+        .in('deployment_id', deploymentIds)
+        .eq('is_active', true);
+
+      const cardsByDeployment = {};
+      for (const slot of (cardSlots || [])) {
+        if (!cardsByDeployment[slot.deployment_id]) cardsByDeployment[slot.deployment_id] = [];
+        const spell = slot.spell || {};
+        cardsByDeployment[slot.deployment_id].push({
+          name: spell.name || 'Unknown Card',
+          spell_type: spell.spell_type || 'attack',
+          rarity: spell.rarity || 'common',
+          atk: spell.base_atk || 0,
+          hp: spell.base_hp || 0,
+          spd: spell.base_spd || 0,
+          def: spell.base_def || 0,
+          luck: spell.base_luck || 0,
+          bonus_effects: spell.bonus_effects || [],
+          sharpness: slot.sharpness || 100,
+        });
+      }
+
+      const arena = arenaManager.getArena(zoneId);
+      for (const d of deployments) {
+        const nine = d.nine || {};
+        const player = d.player || {};
+        const cards = cardsByDeployment[d.id] || [];
+        arena.addNine({
+          id: d.player_id,
+          name: nine.name || player.twitter_handle || 'Unknown',
+          house: HOUSE_MAP[nine.house_id] || 'smoulders',
+          guild_id: d.guild_tag || null,
+          guild_name: d.guild_tag || 'Lone Wolf',
+          items: {},
+          cards,
+        });
+        console.log(`⚔️ Loaded ${cards.length} cards for ${nine.name || player.twitter_handle}`);
+      }
+
+      if (!arena.isRunning && arena.nines.size >= 1) {
+        arena.start();
+        console.log(`⚔️ Zone ${zoneId}: Arena started with ${arena.nines.size} nines`);
+      }
+      return arena;
+    } catch (err) {
+      console.error('Arena load error:', err);
+      return null;
+    }
+  }
 
   arenaNamespace.on('connection', (socket) => {
     console.log('⚔️ Arena client connected:', socket.id);
 
-    socket.on('join_zone', (data) => {
-      const zoneId = data.zoneId || data.zone_id;
+    socket.on('join_zone', async (data) => {
+      const zoneId = parseInt(data.zoneId || data.zone_id);
       if (!zoneId) return;
 
-      const room = `zone_${zoneId}`;
-      socket.join(room);
-      console.log(`⚔️ ${socket.id} joined ${room}`);
+      for (const room of socket.rooms) {
+        if (room.startsWith('zone_')) socket.leave(room);
+      }
+      socket.join(`zone_${zoneId}`);
+      console.log(`⚔️ ${socket.id} joined zone_${zoneId}`);
 
-      // Send initial state with countdown timing
+      // Reload arena if not running
+      let arena = arenaManager.arenas.get(zoneId);
+      if (!arena || !arena.isRunning) {
+        if (arena && !arena.isRunning) {
+          arena.stop();
+          arenaManager.arenas.delete(zoneId);
+        }
+        arena = await loadArena(zoneId);
+      }
+
       socket.emit('arena:state', {
-        active: true,
-        cycle: combatEngine ? (combatEngine._zoneCycles?.[zoneId] || 0) : 0,
+        active: arena?.isRunning || false,
+        nines: arena?.nines.size || 0,
+        round: arena?.round || 1,
+        cycle: arena?.cycle || 1,
+        snapshot: arena?.getNinesSnapshot() || [],
         next_cycle_at: combatEngine?.getNextCycleAt ? combatEngine.getNextCycleAt() : (Date.now() + 5 * 60 * 1000),
         cycle_interval_ms: combatEngine?.getCycleIntervalMs ? combatEngine.getCycleIntervalMs() : (5 * 60 * 1000),
       });
@@ -243,26 +327,9 @@ if (io) {
 
     socket.on('leave_zone', (data) => {
       const zoneId = data.zoneId || data.zone_id;
-      if (zoneId) {
-        socket.leave(`zone_${zoneId}`);
-        console.log(`⚔️ ${socket.id} left zone_${zoneId}`);
-      }
+      if (zoneId) socket.leave(`zone_${zoneId}`);
     });
 
-    socket.on('chat:send', (data) => {
-      const zoneId = data.zoneId;
-      const message = (data.message || '').trim().substring(0, 120);
-      const handle = (data.handle || 'Anonymous').substring(0, 30);
-      const guildTag = (data.guildTag || '').substring(0, 16);
-      if (!zoneId || !message) return;
-      arenaNamespace.to(`zone_${zoneId}`).emit('chat:message', {
-        handle,
-        guildTag,
-        message,
-        ts: Date.now()
-      });
-    });
-    
     socket.on('chat:send', (data) => {
       const zoneId = data.zoneId;
       const message = (data.message || '').trim().substring(0, 120);
@@ -271,12 +338,12 @@ if (io) {
       if (!zoneId || !message) return;
       arenaNamespace.to(`zone_${zoneId}`).emit('chat:message', { handle, guildTag, message, ts: Date.now() });
     });
+
     socket.on('disconnect', () => {
       console.log('⚔️ Arena client disconnected:', socket.id);
     });
   });
 
-  // Set up global broadcast function so combat engine can send events
   global.__arenaSocket = {
     _broadcastToZone: function(zoneId, event, data) {
       arenaNamespace.to(`zone_${zoneId}`).emit(event, data);
