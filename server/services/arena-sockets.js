@@ -29,9 +29,13 @@ function setupArenaSockets(io, supabase) {
       }
       socket.join(`zone_${zoneId}`);
 
-      // Load arena if not running
+      // Load arena — reload if stale/not running so cards get loaded fresh
       let arena = arenaManager.arenas.get(zoneId);
-      if (!arena) {
+      if (!arena || !arena.isRunning) {
+        if (arena && !arena.isRunning) {
+          arena.stop();
+          arenaManager.arenas.delete(zoneId);
+        }
         arena = await loadArena(zoneId, arenaManager, supabase, nerm);
       }
 
