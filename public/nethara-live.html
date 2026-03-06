@@ -1375,25 +1375,26 @@
   function getSpawnPosition(guildTag, playerId) {
     if (!state._guildAngles) state._guildAngles = {};
     if (!state._guildCounts) state._guildCounts = {};
-
     const tag = guildTag || String(playerId);
     if (!state._guildAngles[tag]) {
       const idx = Object.keys(state._guildAngles).length;
-      state._guildAngles[tag] = (idx / 8) * Math.PI * 2 - Math.PI / 2;
+      // Spread guilds left/right on the platform
+      state._guildAngles[tag] = idx % 2 === 0 ? Math.PI * 1.15 : Math.PI * 1.85;
       state._guildCounts[tag] = 0;
     }
     state._guildCounts[tag]++;
-
-    const cx = (state.arenaApp ? state.arenaApp.screen.width : window.innerWidth) / 2;
-    const cy = (state.arenaApp ? state.arenaApp.screen.height : window.innerHeight) / 2;
+    const sw = state.arenaApp ? state.arenaApp.screen.width : window.innerWidth;
+    const sh = state.arenaApp ? state.arenaApp.screen.height : window.innerHeight;
+    const cx = sw / 2;
+    // Platform sits at cy + sh*0.18 — spawn sprites just above it
+    const platformY = (sh / 2) + sh * 0.18;
+    const pW = Math.min(sw * 0.72, 520);
     const angle = state._guildAngles[tag];
-    const radius = Math.min(ARENA_HALF_W, ARENA_HALF_H) * 0.55;
-    const spread = Math.min(state._guildCounts[tag] * 18, 60);
-
+    const radius = pW * 0.32;
+    const spread = Math.min(state._guildCounts[tag] * 22, 80);
     const x = cx + Math.cos(angle) * radius + (Math.random() - 0.5) * spread;
-    const y = cy + Math.sin(angle) * radius * 0.6 + (Math.random() - 0.5) * spread;
-
-    return clampToDiamond(x, y, cx, cy, 0.82);
+    const y = platformY - 40 + (Math.random() - 0.5) * 20;
+    return { x, y };
   }
 
   /** Convert engine position (centered at 400,300) to screen position */
@@ -2643,9 +2644,15 @@
         const target = state.nines.get(toId);
         const dmg = ev.damage || 0;
 
+        const cardType = (ev.card_type || 'attack').toLowerCase();
+        const cardName = ev.card_name || '';
         animateProjectile(fromId, toId, ev.from_house || attacker?.house, () => {
           if (target) {
             const sz = ev.isCrit ? 22 : 16;
+            // Show card name above hit
+            if (cardName && cardName !== 'Auto Attack') {
+              showFloatingText(target.container.x, target.container.y - 40, cardName.toUpperCase(), 0xD4A64B, 8);
+            }
             showFloatingText(target.container.x, target.container.y, `-${dmg}`, ev.isCrit ? 0xffd700 : 0xff4466, sz);
             if (ev.isCrit) {
               showFloatingText(target.container.x, target.container.y - 30, 'CRIT!', 0xffd700, 20);
@@ -2653,7 +2660,17 @@
               screenFlash(0xffd700, 0.25);
               setTimeout(() => spawnFireworkExplosion(target.container.x + (Math.random()-0.5)*20, target.container.y + (Math.random()-0.5)*15, 0xffd700), 150);
             }
-            spawnParticles(target.container.x, target.container.y, getHouseColor(ev.from_house || attacker?.house), 12, 'fire');
+            // Card-type specific hit effects
+            if (cardType === 'defend') {
+              spawnParticles(target.container.x, target.container.y, 0xD4A64B, 14, 'shield');
+            } else if (cardType === 'support') {
+              spawnParticles(target.container.x, target.container.y, 0x44ffaa, 14, 'heal');
+            } else if (cardType === 'manipulation') {
+              spawnParticles(target.container.x, target.container.y, 0xbb88ff, 14, 'default');
+              spawnParticles(target.container.x, target.container.y, 0x5599ff, 6, 'lightning');
+            } else {
+              spawnParticles(target.container.x, target.container.y, getHouseColor(ev.from_house || attacker?.house), 12, 'fire');
+            }
             shakeSprite(target);
             if (target.spriteGroup) {
               target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff4444; });
@@ -3145,7 +3162,56 @@
       }
 
       case 'effect': {
-        processEffectCast(ev, resolveId(ev.target_id || ev.nine_id), null, null, state.nines.get(resolveId(ev.target_id || ev.nine_id)));
+        const eff = ev.effect_type || '';
+        const nId = resolveId(ev.nine_id || ev.target_id || ev.from || ev.source);
+        const tId = resolveId(ev.target_id || ev.to || ev.nine_id);
+        const sprite = state.nines.get(nId) || state.nines.get(tId);
+        const pCfg = getEffectParticles(eff);
+
+        if (eff === 'BURN_APPLY') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, '🔥 BURN', 0xff8833, 9); spawnParticles(sprite.container.x, sprite.container.y, 0xff8833, 12, 'fire'); }
+          addFeedEvent(`🔥 ${getNineName(tId)} is BURNING!`, 'effect');
+        } else if (eff === 'POISON_APPLY') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, '☠️ POISON', 0x88ee44, 9); spawnParticles(sprite.container.x, sprite.container.y, 0x88ee44, 10, 'poison'); }
+          addFeedEvent(`☠️ ${getNineName(tId)} is POISONED!`, 'effect');
+        } else if (eff === 'CHAIN') {
+          const from = state.nines.get(resolveId(ev.from)); const to = state.nines.get(resolveId(ev.to));
+          if (from && to) { showFloatingText(to.container.x, to.container.y, `-${ev.damage} CHAIN`, 0x5599ff, 11); spawnParticles(to.container.x, to.container.y, 0x5599ff, 8, 'lightning'); }
+          addFeedEvent(`⚡ CHAIN hits ${getNineName(resolveId(ev.to))} for ${ev.damage}`, 'effect');
+        } else if (eff === 'DRAIN') {
+          const from = state.nines.get(resolveId(ev.from)); const to = state.nines.get(resolveId(ev.to));
+          if (from) { showFloatingText(from.container.x, from.container.y, `+${ev.amount} DRAIN`, 0xff3366, 10); }
+          if (to) { spawnParticles(to.container.x, to.container.y, 0xff3366, 8, 'default'); }
+        } else if (eff === 'WARD' || eff === 'BARRIER' || eff === 'ANCHOR' || eff === 'REFLECT') {
+          if (sprite) { animateShieldPop(sprite); showFloatingText(sprite.container.x, sprite.container.y - 20, eff, 0xD4A64B, 10); spawnParticles(sprite.container.x, sprite.container.y, 0xD4A64B, 10, 'shield'); }
+          addFeedEvent(`🛡️ ${getNineName(nId)} activates ${eff}!`, 'effect');
+        } else if (eff === 'BARRIER_BREAK') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, 'BARRIER BROKEN!', 0xff4466, 11); screenFlash(0xff4466, 0.15); spawnParticles(sprite.container.x, sprite.container.y, 0x5599ff, 16, 'explosion'); }
+        } else if (eff === 'THORNS') {
+          const tgt = state.nines.get(resolveId(ev.target_id));
+          if (tgt) { showFloatingText(tgt.container.x, tgt.container.y, `-${ev.amount} THORNS`, 0xff5555, 10); spawnParticles(tgt.container.x, tgt.container.y, 0xff5555, 6, 'fire'); }
+        } else if (eff === 'STEALTH') {
+          if (sprite) { sprite.container.alpha = 0.35; showFloatingText(sprite.container.x, sprite.container.y - 20, 'STEALTH', 0x90E0EF, 9); }
+        } else if (eff === 'HASTE' || eff === 'SURGE' || eff === 'SWIFT') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, eff, 0xffd700, 10); spawnParticles(sprite.container.x, sprite.container.y, 0xffd700, 8, 'fire'); }
+        } else if (eff === 'OVERCHARGE') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, '⚡ OVERCHARGE', 0xffc800, 10); spawnParticles(sprite.container.x, sprite.container.y, 0xffc800, 12, 'lightning'); screenFlash(0xffc800, 0.2); }
+        } else if (eff === 'PHASE') {
+          if (sprite) { sprite.container.alpha = 0.5; showFloatingText(sprite.container.x, sprite.container.y - 20, 'PHASE', 0xb088e8, 10); spawnParticles(sprite.container.x, sprite.container.y, 0xb088e8, 8, 'default'); }
+        } else if (eff === 'CLEANSE') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, '✨ CLEANSE', 0x44ffcc, 10); spawnParticles(sprite.container.x, sprite.container.y, 0x44ffcc, 10, 'heal'); }
+        } else if (eff === 'TAUNT') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, '😤 TAUNT', 0xff6644, 10); }
+        } else if (eff === 'ANCHOR_SAVE') {
+          if (sprite) { showFloatingText(sprite.container.x, sprite.container.y - 20, 'ANCHOR SAVES!', 0xD4A64B, 12); spawnParticles(sprite.container.x, sprite.container.y, 0xD4A64B, 14, 'shield'); screenFlash(0xD4A64B, 0.2); }
+        } else if (eff === 'TETHER_SHARE') {
+          const src = state.nines.get(resolveId(ev.source_id));
+          if (src) { showFloatingText(src.container.x, src.container.y, `TETHER -${ev.amount}`, 0xb088e8, 9); }
+        } else if (sprite) {
+          // Generic fallback for any other effect
+          showFloatingText(sprite.container.x, sprite.container.y - 20, eff, 0xD4A64B, 9);
+          spawnParticles(sprite.container.x, sprite.container.y, pCfg.color, pCfg.count, pCfg.type);
+        }
         break;
       }
 
