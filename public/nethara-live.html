@@ -543,7 +543,7 @@
     @media (max-width: 600px) {
       #arena-chat { width: calc(100vw - 20px); right: 10px; bottom: 220px; }
     }
-    
+
     /* (old countdown/card-slots CSS removed — now in top bar and bottom tray) */
     /* (old card-slot overrides removed — now in bottom tray section) */
 
@@ -986,10 +986,7 @@
       });
     }
 
-    if (state.currentTab === 'regions') { state.currentTab = 'hot';
-      renderRegionsTab(container);
-      return;
-    }
+    if (state.currentTab === 'regions') { state.currentTab = 'hot'; }
     if (state.currentTab === 'guild') {
       renderGuildTab(container);
       return;
@@ -1135,7 +1132,6 @@
     return '<div class="zone-card" data-zone-id="' + zone.id + '">'
       + imgBanner
       + bannerHTML
-      + narrativeHTML
       + '<div class="zone-card-body">'
         + (guilds.length > 0 ? '<div style="margin-bottom:6px">' + guildsHTML + '</div>' : guildsHTML)
         + '<div style="display:flex;justify-content:space-between;align-items:center;">'
@@ -1247,7 +1243,7 @@
     document.body.appendChild(panel);
     _detailPanel = panel;
   }
-  
+
   function openArena(zone) {
     state.currentZone = zone;
     state.currentZoneId = zone.id;
@@ -4744,7 +4740,7 @@
       appendMsg(e.detail);
     });
   })();
-  
+
   // ===== EVENT LISTENERS =====
   document.getElementById('btn-back').addEventListener('click', closeArena);
   document.getElementById('btn-join-battle').addEventListener('click', openDeployModal);
