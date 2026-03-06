@@ -1108,14 +1108,14 @@
         + '<div class="guild-pct" style="color:' + gColor + '">' + (g.pct || g.control || 0) + '%</div>'
         + '</div>';
     }).join('');
-      if (!guildsHTML) {
-        const ctrlGuild = zone.controlling_guild_tag || zone.controlling_guild || null;
-        if (ctrlGuild) {
-          guildsHTML = '<div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:var(--gold);padding:2px 0;">🏰 Held by ' + ctrlGuild + '</div>';
-        } else {
-          guildsHTML = '<div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:var(--faint);padding:2px 0;">⚔️ Unclaimed — deploy to capture!</div>';
-        }
+    if (!guildsHTML) {
+      const ctrlGuild = zone.controlling_guild_tag || zone.controlling_guild || null;
+      if (ctrlGuild) {
+        guildsHTML = '<div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:var(--gold);padding:2px 0;">🏰 Held by ' + ctrlGuild + '</div>';
+      } else {
+        guildsHTML = '<div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:var(--faint);padding:2px 0;">⚔️ Unclaimed — deploy to capture!</div>';
       }
+    }
 
     let effectsHTML = effects.map(function(e) {
       const eName = typeof e === 'string' ? e : (e.name || e);
