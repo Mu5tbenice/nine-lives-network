@@ -58,8 +58,25 @@ function setupArenaSockets(io, supabase) {
       if (data && data.zoneId) socket.leave(`zone_${data.zoneId}`);
     });
 
-    socket.on('disconnect', () => {});
+    socket.on('chat:send', (data) => {
+      const zoneId = data.zoneId;
+      const message = (data.message || '').trim().substring(0, 120);
+      const handle = (data.handle || 'Anon').substring(0, 30);
+      const guildTag = (data.guildTag || '').substring(0, 16);
+      if (!zoneId || !message) return;
+      arenaIO.to(`zone_${zoneId}`).emit('chat:message', { handle, guildTag, message, ts: Date.now() });
+    });
+
+    socket.on('disconnect', () => {
+      console.log(`⚔️ Arena client disconnected: ${socket.id}`);
+    });
   });
+
+  // Expose broadcast API globally so deploy route can push events mid-combat
+  arenaIO._broadcastToZone = function(zoneId, event, data) {
+    arenaIO.to(`zone_${zoneId}`).emit(event, data);
+  };
+  global.__arenaSocket = arenaIO;
 
   async function loadArena(zoneId, manager, db, nermEngine) {
     if (!db) {
