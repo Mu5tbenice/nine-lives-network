@@ -239,17 +239,30 @@ if (io) {
       if (error || !deployments || deployments.length === 0) return null;
 
       const deploymentIds = deployments.map(d => d.id);
+
+      // Step 1: Get card slots (card_id = player_cards.id)
       const { data: cardSlots } = await supabase
         .from('zone_card_slots')
-        .select(`id, deployment_id, slot_number, is_active, player_card:card_id(sharpness, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects))`)
+        .select(`id, deployment_id, slot_number, card_id`)
         .in('deployment_id', deploymentIds)
         .eq('is_active', true);
+
+      // Step 2: Get player_cards with spell data
+      const cardIds = (cardSlots || []).map(s => s.card_id).filter(Boolean);
+      const { data: playerCards } = cardIds.length > 0 ? await supabase
+        .from('player_cards')
+        .select(`id, sharpness, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)`)
+        .in('id', cardIds) : { data: [] };
+
+      // Index player cards by id
+      const playerCardMap = {};
+      for (const pc of (playerCards || [])) playerCardMap[pc.id] = pc;
 
       const cardsByDeployment = {};
       for (const slot of (cardSlots || [])) {
         if (!cardsByDeployment[slot.deployment_id]) cardsByDeployment[slot.deployment_id] = [];
-        const spell = slot.player_card?.spell || {};
-        const sharpness = slot.player_card?.sharpness ?? 100;
+        const pc = playerCardMap[slot.card_id] || {};
+        const spell = pc.spell || {};
         cardsByDeployment[slot.deployment_id].push({
           name: spell.name || 'Unknown Card',
           spell_type: spell.spell_type || 'attack',
@@ -260,7 +273,7 @@ if (io) {
           def: spell.base_def || 0,
           luck: spell.base_luck || 0,
           bonus_effects: spell.bonus_effects || [],
-          sharpness,
+          sharpness: pc.sharpness ?? 100,
         });
       }
 
