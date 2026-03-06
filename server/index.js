@@ -241,14 +241,15 @@ if (io) {
       const deploymentIds = deployments.map(d => d.id);
       const { data: cardSlots } = await supabase
         .from('zone_card_slots')
-        .select(`id, deployment_id, slot_number, sharpness, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)`)
+        .select(`id, deployment_id, slot_number, is_active, player_card:card_id(sharpness, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects))`)
         .in('deployment_id', deploymentIds)
         .eq('is_active', true);
 
       const cardsByDeployment = {};
       for (const slot of (cardSlots || [])) {
         if (!cardsByDeployment[slot.deployment_id]) cardsByDeployment[slot.deployment_id] = [];
-        const spell = slot.spell || {};
+        const spell = slot.player_card?.spell || {};
+        const sharpness = slot.player_card?.sharpness ?? 100;
         cardsByDeployment[slot.deployment_id].push({
           name: spell.name || 'Unknown Card',
           spell_type: spell.spell_type || 'attack',
@@ -259,7 +260,7 @@ if (io) {
           def: spell.base_def || 0,
           luck: spell.base_luck || 0,
           bonus_effects: spell.bonus_effects || [],
-          sharpness: slot.sharpness || 100,
+          sharpness,
         });
       }
 
