@@ -1109,13 +1109,13 @@
         + '</div>';
     }).join('');
 
-    if (guilds.length === 0) {
-      if (zone.controlling_school_id && SCHOOL_TO_HOUSE[zone.controlling_school_id]) {
-        const controlHouse = HOUSES[SCHOOL_TO_HOUSE[zone.controlling_school_id]];
-        if (controlHouse) {
-          guildsHTML = '<div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:' + controlHouse.color + ';opacity:0.7;padding:2px 0;">'
-            + controlHouse.icon + ' Held by ' + controlHouse.name + '</div>';
-        }
+
+
+
+
+
+
+
       } else {
         guildsHTML = '<div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:var(--faint);padding:2px 0;">⚔️ Unclaimed — deploy to capture!</div>';
       }
@@ -1137,8 +1137,6 @@
     }
 
     let narrativeHTML = '';
-    if (zone.narrative_title) {
-      narrativeHTML = '<div style="padding:4px 14px;font-family:\'Crimson Text\',serif;font-size:11px;color:var(--gold);font-style:italic;border-bottom:1px solid var(--border);opacity:0.8;">"' + zone.narrative_title + '"</div>';
     }
 
     return '<div class="zone-card" data-zone-id="' + zone.id + '">'
@@ -1199,6 +1197,7 @@
 
   // ===== ARENA VIEW =====
   // ── ZONE DETAIL EXPAND — shows preview before entering arena ──
+  let _detailPanel = null;
   function openZoneDetail(zone) {
     if (_detailPanel) { _detailPanel.remove(); _detailPanel = null; }
     const hKey = zone.house || zone.region_house
