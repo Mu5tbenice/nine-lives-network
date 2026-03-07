@@ -120,17 +120,18 @@ router.post('/deploy', async (req, res) => {
           equipped_images: nine.equipped_images || {},
         });
       }
-      // Add nine directly to running arena engine with their cards
+      // Add nine to arena after short delay so auto-equip card inserts complete first
       if (global.__addNineToArena) {
         const HOUSE_MAP = { 1:'smoulders',2:'darktide',3:'stonebark',4:'ashenvale',5:'stormrage',6:'nighthollow',7:'dawnbringer',8:'manastorm',9:'plaguemire' };
-        await global.__addNineToArena(zone_id, deployment.id, {
+        const nineData = {
           id: player_id,
           name: nine.name || player?.twitter_handle || 'Unknown',
           house: nine.house_key || HOUSE_MAP[nine.house_id] || 'smoulders',
           guild_id: player?.guild_tag || null,
           guild_name: player?.guild_tag || 'Lone Wolf',
           items: {},
-        });
+        };
+        setTimeout(() => global.__addNineToArena(zone_id, deployment.id, nineData), 2000);
       }
     } catch (e) { console.error('Arena update error after deploy:', e.message); }
 
