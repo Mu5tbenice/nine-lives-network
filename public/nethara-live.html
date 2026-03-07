@@ -2713,6 +2713,64 @@
         break;
       }
 
+
+      // ── SPELL CAST — card cast with effects, visually distinct from auto-attack
+      case 'spell_cast': {
+        const fromId = resolveId(ev.source);
+        const toId = resolveId(ev.target);
+        const caster = state.nines.get(fromId);
+        const target = state.nines.get(toId);
+        const dmg = ev.damage || 0;
+        const cardName = ev.card_name || 'Spell';
+        const house = ev.from_house || caster?.house;
+        const effects = ev.effects || [];
+
+        // Show cast banner floating up from caster
+        if (caster) {
+          showFloatingText(caster.container.x, caster.container.y - 50, `✨ ${cardName}`, 0xD4A64B, 11);
+          if (caster.spriteGroup) {
+            caster.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffaa; });
+            setTimeout(() => { if (caster.spriteGroup) caster.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 400);
+          }
+        }
+
+        // Spell projectile — bigger, slower than auto-attack
+        setTimeout(() => {
+          animateSpellProjectile(fromId, toId, house, effects, () => {
+            if (target) {
+              const mainEffect = effects[0] || '';
+              if (mainEffect === 'BURN') fireworkBURN(target.container.x, target.container.y);
+              else if (mainEffect === 'POISON') fireworkPOISON(target.container.x, target.container.y);
+              else if (mainEffect === 'SILENCE') fireworkSILENCE(target.container.x, target.container.y);
+              else if (mainEffect === 'WEAKEN' || mainEffect === 'HEX') fireworkWEAKEN(target.container.x, target.container.y);
+              else if (mainEffect === 'HEAL' || mainEffect === 'BLESS' || mainEffect === 'INSPIRE') fireworkHEAL(target.container.x, target.container.y);
+              else {
+                spawnFireworkExplosion(target.container.x, target.container.y, getHouseColor(house));
+                setTimeout(() => spawnFireworkExplosion(target.container.x + (Math.random()-0.5)*25, target.container.y + (Math.random()-0.5)*25, 0xffffff), 120);
+              }
+              if (dmg > 0) showFloatingText(target.container.x, target.container.y, `-${dmg}`, 0xff4466, 22);
+              shakeSprite(target);
+              if (target.spriteGroup) {
+                target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff2222; });
+                setTimeout(() => { if (target.spriteGroup) target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 500);
+              }
+            } else if (caster && (effects.includes('HEAL') || effects.includes('BLESS') || effects.includes('WARD') || effects.includes('ANCHOR'))) {
+              fireworkHEAL(caster.container.x, caster.container.y);
+            }
+            if (ev.targetHp != null) { updateNineHP(toId, ev.targetHp, ev.targetMaxHp || target?.maxHp); updateHpStrip(); }
+          });
+        }, 200);
+
+        // Feed — spells get distinct styling vs auto-attacks
+        const from = ev.sourceName || getNineName(fromId);
+        const to = ev.targetName || getNineName(toId);
+        const effectPills = effects.slice(0, 2).map(e => `<span class="feed-effect">${getEffectEmoji(e)} ${e}</span>`).join(' ');
+        const dmgPart = dmg > 0 ? ` <span class="feed-dmg">-${dmg}</span>` : '';
+        const targetPart = to ? ` → <span class="feed-name">${to}</span>` : '';
+        addFeedEvent(`✨ <span class="feed-name">${from}</span> casts <span style="color:var(--gold);font-weight:700">${cardName}</span>${targetPart}${dmgPart} ${effectPills}`, 'effect');
+        break;
+      }
+
       // ── V2: DOT DAMAGE — poison/burn tick damage
       case 'dot_damage': {
         const tId = resolveId(ev.target);
@@ -3316,6 +3374,101 @@
   // ═══════════════════════════════════════════════════════════════
 
   /** Projectile bolt from attacker to target — house-colored energy ball */
+  /** Maps effect name to a display emoji */
+  function getEffectEmoji(effect) {
+    const map = {
+      BURN:'🔥', POISON:'☠️', CHAIN:'⚡', SILENCE:'🤫', HEAL:'💚', BLESS:'✨',
+      WEAKEN:'💀', HEX:'🔮', CRIT:'⭐', DODGE:'💨', WARD:'🛡️', ANCHOR:'⚓',
+      INSPIRE:'💫', DRAIN:'🩸', HASTE:'🌀', STEALTH:'🌑', CLEANSE:'💎',
+      MARK:'🎯', TAUNT:'😤', PIERCE:'🏹', AMPLIFY:'📢', SURGE:'⚡',
+      BARRIER:'🔷', SIPHON:'🌊', THORNS:'🌿', SLOW:'🐌', CORRODE:'🧪',
+    };
+    return map[effect] || '✨';
+  }
+
+  /**
+   * Spell projectile — bigger, slower, more dramatic than auto-attack.
+   * Orb grows during flight, leaves a trail, explodes on impact.
+   */
+  function animateSpellProjectile(fromId, toId, house, effects, onHit) {
+    const attacker = state.nines.get(fromId);
+    const target = toId ? state.nines.get(toId) : null;
+
+    // If no target (self-cast: HEAL, WARD etc) just fire onHit immediately
+    if (!target || !state.arenaApp) { if (onHit) onHit(); return; }
+
+    const startX = attacker?.container.x || 0;
+    const startY = (attacker?.container.y || 0) - 10;
+    const endX = target.container.x;
+    const endY = target.container.y - 5;
+
+    // Pick orb color by primary effect
+    const mainEffect = effects[0] || '';
+    const effectColors = {
+      BURN: 0xff6600, POISON: 0x44ff44, CHAIN: 0xffff00, SILENCE: 0xcc44ff,
+      HEAL: 0x44ffaa, BLESS: 0xffeeaa, WEAKEN: 0xaa44ff, HEX: 0x8822cc,
+      DRAIN: 0xff2244, WARD: 0xD4A64B, ANCHOR: 0x8888ff, INSPIRE: 0xffd700,
+    };
+    const color = effectColors[mainEffect] || getHouseColor(house);
+
+    // ── Large glowing orb ──
+    const orb = new PIXI.Graphics();
+    orb.beginFill(color, 0.9);
+    orb.drawCircle(0, 0, 10); // bigger than auto-attack
+    orb.endFill();
+    orb.beginFill(0xffffff, 0.5);
+    orb.drawCircle(-3, -3, 4);
+    orb.endFill();
+    orb.x = startX;
+    orb.y = startY;
+    orb.zIndex = 100;
+    state.arenaApp.stage.addChild(orb);
+
+    // ── Trail particles ──
+    const trail = [];
+    const FLIGHT_FRAMES = 50; // slower than auto-attack (was 35)
+    let frame = 0;
+
+    const ticker = () => {
+      frame++;
+      const t = frame / FLIGHT_FRAMES;
+      const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t; // ease in-out
+
+      orb.x = startX + (endX - startX) * ease;
+      orb.y = startY + (endY - startY) * ease;
+      orb.scale.set(1 + t * 0.5); // orb grows during flight
+
+      // Leave trail particle every 3 frames
+      if (frame % 3 === 0) {
+        const tp = new PIXI.Graphics();
+        tp.beginFill(color, 0.6);
+        tp.drawCircle(0, 0, 5 - frame/12);
+        tp.endFill();
+        tp.x = orb.x;
+        tp.y = orb.y;
+        tp.zIndex = 99;
+        state.arenaApp.stage.addChild(tp);
+        trail.push({ gfx: tp, life: 0 });
+      }
+
+      // Fade trail
+      for (const tp of trail) {
+        tp.life++;
+        tp.gfx.alpha = Math.max(0, 0.6 - tp.life * 0.08);
+        tp.gfx.scale.set(Math.max(0.1, 1 - tp.life * 0.1));
+      }
+
+      if (frame >= FLIGHT_FRAMES) {
+        state.arenaApp.ticker.remove(ticker);
+        state.arenaApp.stage.removeChild(orb);
+        for (const tp of trail) state.arenaApp.stage.removeChild(tp.gfx);
+        if (onHit) onHit();
+      }
+    };
+
+    state.arenaApp.ticker.add(ticker);
+  }
+
   function animateProjectile(fromId, toId, house, onHit) {
     const attacker = state.nines.get(fromId);
     const target = state.nines.get(toId);
