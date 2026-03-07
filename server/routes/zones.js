@@ -107,7 +107,7 @@ router.post('/deploy', async (req, res) => {
     // Award deploy points (+5)
     await addPoints(player_id, ZONE_POINTS.DEPLOY, 'zone_deploy', `Deployed to zone ${zone_id}`);
 
-    // Notify arena socket viewers
+    // Notify arena socket viewers + add to running arena engine
     try {
       if (global.__arenaSocket) {
         global.__arenaSocket._broadcastToZone(zone_id, 'arena:nine_joined', {
@@ -120,12 +120,19 @@ router.post('/deploy', async (req, res) => {
           equipped_images: nine.equipped_images || {},
         });
       }
-      // Reload arena engine so new nine joins combat with cards loaded
-      if (global.__reloadArenaZone) {
-        await global.__reloadArenaZone(zone_id);
-        console.log(`⚔️ Arena reloaded for zone ${zone_id} after deploy`);
+      // Add nine directly to running arena engine with their cards
+      if (global.__addNineToArena) {
+        const HOUSE_MAP = { 1:'smoulders',2:'darktide',3:'stonebark',4:'ashenvale',5:'stormrage',6:'nighthollow',7:'dawnbringer',8:'manastorm',9:'plaguemire' };
+        await global.__addNineToArena(zone_id, deployment.id, {
+          id: player_id,
+          name: nine.name || player?.twitter_handle || 'Unknown',
+          house: nine.house_key || HOUSE_MAP[nine.house_id] || 'smoulders',
+          guild_id: player?.guild_tag || null,
+          guild_name: player?.guild_tag || 'Lone Wolf',
+          items: {},
+        });
       }
-    } catch (e) { console.error('Arena reload error after deploy:', e.message); }
+    } catch (e) { console.error('Arena update error after deploy:', e.message); }
 
     res.json({
       success: true,
@@ -182,13 +189,13 @@ router.post('/withdraw', async (req, res) => {
       .update({ is_active: false, updated_at: new Date().toISOString() })
       .eq('id', deployment.id);
 
-    // Notify arena socket viewers
+    // Notify arena socket viewers + remove from running arena engine
     try {
       if (global.__arenaSocket) {
         global.__arenaSocket._broadcastToZone(zone_id, 'arena:nine_left', { nine_id: player_id });
       }
-      if (global.__reloadArenaZone) {
-        await global.__reloadArenaZone(zone_id);
+      if (global.__removeNineFromArena) {
+        global.__removeNineFromArena(zone_id, player_id);
       }
     } catch (e) { /* non-critical */ }
 

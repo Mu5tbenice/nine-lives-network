@@ -229,58 +229,53 @@ if (io) {
     5: 'stormrage', 6: 'nighthollow', 7: 'dawnbringer', 8: 'manastorm', 9: 'plaguemire',
   };
 
+  // Fetch cards for a single deployment (two-step: zone_card_slots → player_cards → spells)
+  async function loadCardsForDeployment(deploymentId) {
+    const { data: cardSlots } = await supabase
+      .from('zone_card_slots')
+      .select(`card_id`)
+      .eq('deployment_id', deploymentId)
+      .eq('is_active', true);
+
+    const cardIds = (cardSlots || []).map(s => s.card_id).filter(Boolean);
+    if (cardIds.length === 0) return [];
+
+    const { data: playerCards } = await supabase
+      .from('player_cards')
+      .select(`id, sharpness, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)`)
+      .in('id', cardIds);
+
+    return (playerCards || []).map(pc => {
+      const spell = pc.spell || {};
+      return {
+        name: spell.name || 'Unknown Card',
+        spell_type: spell.spell_type || 'attack',
+        rarity: spell.rarity || 'common',
+        atk: spell.base_atk || 0,
+        hp: spell.base_hp || 0,
+        spd: spell.base_spd || 0,
+        def: spell.base_def || 0,
+        luck: spell.base_luck || 0,
+        bonus_effects: spell.bonus_effects || [],
+        sharpness: pc.sharpness ?? 100,
+      };
+    });
+  }
+
   async function loadArena(zoneId) {
     try {
       const { data: deployments, error } = await supabase
         .from('zone_deployments')
-        .select(`*, player:player_id(twitter_handle, guild_tag, profile_image), nine:nine_id(name, base_atk, base_hp, base_spd, base_def, base_luck, house_id)`)
+        .select(`id, player_id, guild_tag, player:player_id(twitter_handle, guild_tag, profile_image), nine:nine_id(name, base_atk, base_hp, base_spd, base_def, base_luck, house_id)`)
         .eq('zone_id', zoneId)
         .eq('is_active', true);
       if (error || !deployments || deployments.length === 0) return null;
-
-      const deploymentIds = deployments.map(d => d.id);
-
-      // Step 1: Get card slots (card_id references player_cards.id)
-      const { data: cardSlots } = await supabase
-        .from('zone_card_slots')
-        .select(`id, deployment_id, slot_number, card_id`)
-        .in('deployment_id', deploymentIds)
-        .eq('is_active', true);
-
-      // Step 2: Get player_cards with spell data
-      const cardIds = (cardSlots || []).map(s => s.card_id).filter(Boolean);
-      const { data: playerCards } = cardIds.length > 0 ? await supabase
-        .from('player_cards')
-        .select(`id, sharpness, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)`)
-        .in('id', cardIds) : { data: [] };
-
-      const playerCardMap = {};
-      for (const pc of (playerCards || [])) playerCardMap[pc.id] = pc;
-
-      const cardsByDeployment = {};
-      for (const slot of (cardSlots || [])) {
-        if (!cardsByDeployment[slot.deployment_id]) cardsByDeployment[slot.deployment_id] = [];
-        const pc = playerCardMap[slot.card_id] || {};
-        const spell = pc.spell || {};
-        cardsByDeployment[slot.deployment_id].push({
-          name: spell.name || 'Unknown Card',
-          spell_type: spell.spell_type || 'attack',
-          rarity: spell.rarity || 'common',
-          atk: spell.base_atk || 0,
-          hp: spell.base_hp || 0,
-          spd: spell.base_spd || 0,
-          def: spell.base_def || 0,
-          luck: spell.base_luck || 0,
-          bonus_effects: spell.bonus_effects || [],
-          sharpness: pc.sharpness ?? 100,
-        });
-      }
 
       const arena = arenaManager.getArena(zoneId);
       for (const d of deployments) {
         const nine = d.nine || {};
         const player = d.player || {};
-        const cards = cardsByDeployment[d.id] || [];
+        const cards = await loadCardsForDeployment(d.id);
         arena.addNine({
           id: d.player_id,
           name: nine.name || player.twitter_handle || 'Unknown',
@@ -304,6 +299,36 @@ if (io) {
     }
   }
 
+  // Called by deploy route — adds one nine to running arena without full restart
+  global.__addNineToArena = async function(zoneId, deploymentId, nineData) {
+    try {
+      let arena = arenaManager.arenas.get(zoneId);
+      if (!arena) {
+        await loadArena(zoneId);
+        return;
+      }
+      // Don't re-add if already in arena
+      if (arena.nines.has(nineData.id)) return;
+      const cards = await loadCardsForDeployment(deploymentId);
+      arena.addNine({ ...nineData, cards });
+      console.log(`⚔️ Zone ${zoneId}: Added ${nineData.name} with ${cards.length} cards`);
+      if (!arena.isRunning && arena.nines.size >= 1) {
+        arena.start();
+        console.log(`⚔️ Zone ${zoneId}: Arena started with ${arena.nines.size} nines`);
+      }
+    } catch (e) {
+      console.error('addNineToArena error:', e.message);
+    }
+  };
+
+  // Called by undeploy route
+  global.__removeNineFromArena = function(zoneId, playerId) {
+    try {
+      const arena = arenaManager.arenas.get(zoneId);
+      if (arena) arena.removeNine(playerId, 'withdraw');
+    } catch (e) { /* non-critical */ }
+  };
+
   arenaNamespace.on('connection', (socket) => {
     console.log('⚔️ Arena client connected:', socket.id);
 
@@ -317,7 +342,7 @@ if (io) {
       socket.join(`zone_${zoneId}`);
       console.log(`⚔️ ${socket.id} joined zone_${zoneId}`);
 
-      // Reload arena if not running
+      // Load arena if not already running
       let arena = arenaManager.arenas.get(zoneId);
       if (!arena || !arena.isRunning) {
         if (arena && !arena.isRunning) {
@@ -363,21 +388,9 @@ if (io) {
     }
   };
 
-  // Expose arenaManager so deploy route can add/remove nines from running arenas
-  global.__arenaManager = arenaManager;
-
-  // Reload a zone's arena from DB — called after deploy/undeploy
-  global.__reloadArenaZone = async function(zoneId) {
-    const existing = arenaManager.arenas.get(zoneId);
-    if (existing) {
-      existing.stop();
-      arenaManager.arenas.delete(zoneId);
-    }
-    await loadArena(zoneId);
-  };
-
   console.log("✅ Arena socket namespace ready");
 }
+
 
 // ── COMBAT TIMER ROUTE ──
 app.get('/api/combat/next-cycle', (req, res) => {
