@@ -293,7 +293,7 @@
 
     /* ── Bottom tray — unified build + stats ── */
     .arena-bottom-tray {
-      position: absolute; bottom: 0; left: 0; right: 0; z-index: 25;
+      position: absolute; bottom: 190px; left: 0; right: 0; z-index: 25;
       background: linear-gradient(0deg, rgba(14,10,24,0.96) 0%, rgba(14,10,24,0.92) 70%, rgba(14,10,24,0.6) 90%, transparent 100%);
       padding: 12px 14px 10px; pointer-events: auto;
       display: flex; gap: 12px; align-items: flex-end;
@@ -369,7 +369,7 @@
 
     /* ── Deploy CTA ── */
     .arena-deploy-cta {
-      position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 25;
+      position: absolute; bottom: 200px; left: 50%; transform: translateX(-50%); z-index: 25;
       pointer-events: auto;
     }
     .btn-join-battle {
@@ -383,21 +383,62 @@
     .btn-join-battle:hover { transform: translateY(-2px); box-shadow: 0 6px 30px rgba(212,166,75,0.4); }
 
     /* ── Live feed — above bottom tray ── */
+    /* ── ARENA FEED PANEL — visible, readable, bottom of screen ── */
     .arena-feed {
-      position: absolute; bottom: 130px; left: 0; right: 0; z-index: 15;
-      padding: 4px 14px; pointer-events: none; max-height: 52px; overflow: hidden;
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 15;
+      padding: 8px 12px 12px;
+      background: linear-gradient(180deg, transparent 0%, rgba(10,8,18,0.92) 25%);
+      max-height: 180px; overflow: hidden;
+      pointer-events: none;
+      display: flex; flex-direction: column; justify-content: flex-end; gap: 3px;
     }
     .feed-event {
-      display: flex; gap: 6px; align-items: flex-start;
-      padding: 2px 6px; margin-bottom: 2px;
-      font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--body);
-      opacity: 0; animation: feedIn 0.3s forwards;
+      display: flex; gap: 8px; align-items: center;
+      padding: 4px 8px; border-radius: 6px;
+      font-family: 'Crimson Text', serif; font-size: 14px; color: var(--body);
+      background: rgba(255,255,255,0.03);
+      opacity: 0; animation: feedIn 0.25s forwards;
+      transition: opacity 0.5s;
     }
-    .feed-event .feed-name { font-weight: 700; }
-    .feed-event .feed-dmg { color: var(--red); }
-    .feed-event .feed-heal { color: var(--green); }
+    .feed-event.feed-type-attack { border-left: 2px solid var(--red); }
+    .feed-event.feed-type-effect { border-left: 2px solid var(--gold); }
+    .feed-event.feed-type-ko     { border-left: 2px solid #ff2222; background: rgba(255,34,34,0.08); }
+    .feed-event.feed-type-heal   { border-left: 2px solid var(--green); }
+    .feed-event.feed-type-system { border-left: 2px solid var(--faint); }
+    .feed-event .feed-name { font-weight: 700; color: var(--bright); }
+    .feed-event .feed-dmg  { color: var(--red); font-weight: 700; }
+    .feed-event .feed-heal { color: var(--green); font-weight: 700; }
     .feed-event .feed-effect { color: var(--gold); }
-    .feed-event .feed-time { color: var(--faint); margin-left: auto; flex-shrink: 0; }
+    .feed-event .feed-crit { color: #ffd700; font-weight: 700; }
+    .feed-event .feed-time { color: var(--faint); margin-left: auto; flex-shrink: 0; font-size: 11px; }
+
+    /* HP status strip above feed */
+    .arena-hp-strip {
+      position: absolute; bottom: 180px; left: 0; right: 0; z-index: 14;
+      padding: 6px 12px; display: flex; gap: 8px; align-items: center;
+      background: linear-gradient(180deg, transparent, rgba(10,8,18,0.7));
+      pointer-events: none; flex-wrap: wrap;
+    }
+    .hp-strip-fighter {
+      display: flex; align-items: center; gap: 6px; flex: 1; min-width: 140px;
+    }
+    .hp-strip-name {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--bright);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px;
+    }
+    .hp-strip-bar {
+      flex: 1; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;
+    }
+    .hp-strip-fill {
+      height: 100%; border-radius: 4px; transition: width 0.4s;
+    }
+    .hp-strip-text {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--muted);
+      white-space: nowrap;
+    }
+    /* Active effects icons on fighters */
+    .hp-strip-effects { display: flex; gap: 2px; }
+    .hp-strip-effect-icon { font-size: 10px; }
 
     /* Round banner */
     .round-banner {
@@ -773,6 +814,9 @@
       <div id="nerm-text"></div>
     </div>
   </div>
+
+  <!-- HP status strip: all fighters, above feed -->
+  <div class="arena-hp-strip" id="arena-hp-strip"></div>
 
   <!-- Bottom: Live feed -->
   <div class="arena-feed" id="arena-feed"></div>
@@ -2326,17 +2370,16 @@
       if (data.snapshot) {
         for (const nine of data.snapshot) {
           if (state.nines.has(nine.id)) {
-            // Already loaded from REST — just update HP
             updateNineHP(nine.id, nine.current_hp, nine.max_hp);
           } else {
-            // New from engine — add with mapped position
             nine.position = engineToScreen(nine.position);
             addNineSprite(nine);
           }
         }
+        updateHpStrip();
       }
       if (data.round) updateRoundBadge(data.round, data.cycle);
-      if (data.active) addFeedEvent('Combat is active!', 'system');
+      if (data.active) addFeedEvent('⚔️ Combat is active!', 'system');
 
       // Sync countdown timing from server
       if (data.next_cycle_at) {
@@ -2643,46 +2686,30 @@
         const attacker = state.nines.get(fromId);
         const target = state.nines.get(toId);
         const dmg = ev.damage || 0;
-
-        const cardType = (ev.card_type || 'attack').toLowerCase();
         const cardName = ev.card_name || '';
+
         animateProjectile(fromId, toId, ev.from_house || attacker?.house, () => {
           if (target) {
-            const sz = ev.isCrit ? 22 : 16;
-            // Show card name above hit
-            if (cardName && cardName !== 'Auto Attack') {
-              showFloatingText(target.container.x, target.container.y - 40, cardName.toUpperCase(), 0xD4A64B, 8);
-            }
-            showFloatingText(target.container.x, target.container.y, `-${dmg}`, ev.isCrit ? 0xffd700 : 0xff4466, sz);
             if (ev.isCrit) {
-              showFloatingText(target.container.x, target.container.y - 30, 'CRIT!', 0xffd700, 20);
-              spawnParticles(target.container.x, target.container.y, 0xffd700, 16, 'lightning');
-              screenFlash(0xffd700, 0.25);
-              setTimeout(() => spawnFireworkExplosion(target.container.x + (Math.random()-0.5)*20, target.container.y + (Math.random()-0.5)*15, 0xffd700), 150);
-            }
-            // Card-type specific hit effects
-            if (cardType === 'defend') {
-              spawnParticles(target.container.x, target.container.y, 0xD4A64B, 14, 'shield');
-            } else if (cardType === 'support') {
-              spawnParticles(target.container.x, target.container.y, 0x44ffaa, 14, 'heal');
-            } else if (cardType === 'manipulation') {
-              spawnParticles(target.container.x, target.container.y, 0xbb88ff, 14, 'default');
-              spawnParticles(target.container.x, target.container.y, 0x5599ff, 6, 'lightning');
+              fireworkCRIT(target.container.x, target.container.y);
             } else {
-              spawnParticles(target.container.x, target.container.y, getHouseColor(ev.from_house || attacker?.house), 12, 'fire');
+              spawnFireworkExplosion(target.container.x, target.container.y, getHouseColor(ev.from_house || attacker?.house));
+              showFloatingText(target.container.x, target.container.y, `-${dmg}`, 0xff4466, 18);
             }
             shakeSprite(target);
             if (target.spriteGroup) {
-              target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff4444; });
-              setTimeout(() => { if (target.spriteGroup) target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 450);
+              target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff3333; });
+              setTimeout(() => { if (target.spriteGroup) target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 300);
             }
           }
-          if (ev.targetHp != null) updateNineHP(toId, ev.targetHp, ev.targetMaxHp || target?.maxHp);
-          else if (ev.new_hp != null) updateNineHP(toId, ev.new_hp, target?.maxHp);
+          if (ev.targetHp != null) { updateNineHP(toId, ev.targetHp, ev.targetMaxHp || target?.maxHp); updateHpStrip(); }
         });
 
-        const feedText = `⚔️ ${ev.sourceName || ev.from_name || getNineName(fromId)} → ${ev.targetName || ev.to_name || getNineName(toId)} -${dmg}${ev.isCrit ? ' CRIT!' : ''}`;
-        addFeedEvent(feedText, 'attack');
+        const from = ev.sourceName || getNineName(fromId);
+        const to = ev.targetName || getNineName(toId);
+        const cardPart = cardName ? ` <span style="color:var(--gold)">[${cardName}]</span>` : '';
+        const critPart = ev.isCrit ? ' <span class="feed-crit">★ CRIT!</span>' : '';
+        addFeedEvent(`⚔️ <span class="feed-name">${from}</span> → <span class="feed-name">${to}</span>${cardPart} <span class="feed-dmg">-${dmg}</span>${critPart}`, 'attack');
         break;
       }
 
@@ -2692,11 +2719,12 @@
         const sprite = state.nines.get(tId);
         const effect = ev.effect || 'POISON';
         if (sprite && ev.damage) {
-          showFloatingText(sprite.container.x, sprite.container.y, `-${ev.damage}`, getEffectColor(effect), 10);
-          spawnParticles(sprite.container.x, sprite.container.y, getEffectColor(effect), 6, getEffectParticleType(effect));
+          if (effect === 'BURN') fireworkBURN(sprite.container.x, sprite.container.y);
+          else fireworkPOISON(sprite.container.x, sprite.container.y);
+          showFloatingText(sprite.container.x, sprite.container.y, `-${ev.damage}`, getEffectColor(effect), 13);
         }
-        if (ev.targetHp != null) updateNineHP(tId, ev.targetHp, sprite?.maxHp);
-        addFeedEvent(`${effect === 'BURN' ? '🔥' : '☠️'} ${effect} ticks ${getNineName(tId)} for ${ev.damage}`, 'effect');
+        if (ev.targetHp != null) { updateNineHP(tId, ev.targetHp, sprite?.maxHp); updateHpStrip(); }
+        addFeedEvent(`${effect === 'BURN' ? '🔥' : '☠️'} <span class="feed-effect">${effect}</span> ticks <span class="feed-name">${getNineName(tId)}</span> for <span class="feed-dmg">-${ev.damage}</span>`, 'effect');
         break;
       }
 
@@ -2738,107 +2766,91 @@
         break;
       }
 
-      // ── V2: EFFECT APPLIED (effect_burn, effect_heal, effect_silence, etc.)
-      case 'effect_burn':
-      case 'effect_poison':
-      case 'effect_corrode':
-      case 'effect_hex':
-      case 'effect_slow':
-      case 'effect_weaken':
-      case 'effect_silence': {
-        const tId = resolveId(ev.target);
-        const sprite = state.nines.get(tId);
-        const effectName = ev.type.replace('effect_', '').toUpperCase();
-        if (sprite) {
-          showFloatingText(sprite.container.x, sprite.container.y - 20, effectName, getEffectColor(effectName), 10);
-          spawnParticles(sprite.container.x, sprite.container.y, getEffectColor(effectName), 8, getEffectParticleType(effectName));
-        }
-        addFeedEvent(`${effectName} applied to ${getNineName(tId)}`, 'effect');
+      // ── V2: EFFECT APPLIED — each effect gets its own firework ──
+      case 'effect_burn': {
+        const tId = resolveId(ev.target); const sprite = state.nines.get(tId);
+        if (sprite) fireworkBURN(sprite.container.x, sprite.container.y);
+        addFeedEvent(`🔥 <span class="feed-name">${getNineName(tId)}</span> is <span class="feed-effect">BURNING</span>`, 'effect');
         break;
       }
-
+      case 'effect_poison': {
+        const tId = resolveId(ev.target); const sprite = state.nines.get(tId);
+        if (sprite) fireworkPOISON(sprite.container.x, sprite.container.y);
+        addFeedEvent(`☠️ <span class="feed-name">${getNineName(tId)}</span> is <span class="feed-effect">POISONED</span>`, 'effect');
+        break;
+      }
+      case 'effect_silence': {
+        const tId = resolveId(ev.target); const sprite = state.nines.get(tId);
+        if (sprite) fireworkSILENCE(sprite.container.x, sprite.container.y);
+        addFeedEvent(`🔇 <span class="feed-name">${getNineName(tId)}</span> is <span class="feed-effect">SILENCED</span>`, 'effect');
+        break;
+      }
+      case 'effect_weaken': {
+        const tId = resolveId(ev.target); const sprite = state.nines.get(tId);
+        if (sprite) fireworkWEAKEN(sprite.container.x, sprite.container.y);
+        addFeedEvent(`⬇ <span class="feed-name">${getNineName(tId)}</span> is <span class="feed-effect">WEAKENED</span>`, 'effect');
+        break;
+      }
+      case 'effect_hex':
+      case 'effect_slow':
+      case 'effect_corrode': {
+        const tId = resolveId(ev.target); const sprite = state.nines.get(tId);
+        const eName = ev.type.replace('effect_','').toUpperCase();
+        if (sprite) { spawnFireworkExplosion(sprite.container.x, sprite.container.y, getEffectColor(eName)); showFloatingText(sprite.container.x, sprite.container.y-25, eName, getEffectColor(eName), 11); }
+        addFeedEvent(`🔮 <span class="feed-name">${getNineName(tId)}</span>: <span class="feed-effect">${eName}</span>`, 'effect');
+        break;
+      }
       case 'effect_heal':
       case 'effect_bless':
       case 'effect_inspire': {
-        const tId = resolveId(ev.target);
-        const sprite = state.nines.get(tId);
-        if (sprite) {
-          if (ev.value) showFloatingText(sprite.container.x, sprite.container.y, `+${ev.value}`, 0x44ffaa, 12);
-          spawnParticles(sprite.container.x, sprite.container.y, 0x44ffaa, 10, 'heal');
-          if (ev.target_hp != null) updateNineHP(tId, ev.target_hp, sprite.maxHp);
-        }
+        const tId = resolveId(ev.target); const sprite = state.nines.get(tId);
+        if (sprite) { fireworkHEAL(sprite.container.x, sprite.container.y); if (ev.value) showFloatingText(sprite.container.x, sprite.container.y, `+${ev.value}`, 0x44ffaa, 14); if (ev.target_hp != null) { updateNineHP(tId, ev.target_hp, sprite.maxHp); updateHpStrip(); } }
+        addFeedEvent(`✚ <span class="feed-name">${getNineName(tId)}</span> <span class="feed-heal">+${ev.value||''} ${ev.type.replace('effect_','').toUpperCase()}</span>`, 'heal');
         break;
       }
-
       case 'effect_ward':
       case 'effect_anchor':
       case 'effect_barrier':
-      case 'effect_reflect':
       case 'effect_taunt': {
-        const tId = resolveId(ev.target || ev.source);
-        const sprite = state.nines.get(tId);
-        const effectName = ev.type.replace('effect_', '').toUpperCase();
-        if (sprite) {
-          animateShieldPop(sprite);
-          showFloatingText(sprite.container.x, sprite.container.y - 20, effectName, 0xD4A64B, 10);
-          spawnParticles(sprite.container.x, sprite.container.y, 0xD4A64B, 10, 'shield');
-        }
+        const tId = resolveId(ev.target || ev.source); const sprite = state.nines.get(tId);
+        const eName = ev.type.replace('effect_','').toUpperCase();
+        if (sprite) { animateShieldPop(sprite); spawnFireworkExplosion(sprite.container.x, sprite.container.y, 0xD4A64B); showFloatingText(sprite.container.x, sprite.container.y-25, `🛡 ${eName}`, 0xD4A64B, 11); }
+        addFeedEvent(`🛡 <span class="feed-name">${getNineName(tId)}</span>: <span class="feed-effect">${eName}</span>`, 'effect');
         break;
       }
-
       case 'effect_haste':
-      case 'effect_stealth':
       case 'effect_surge':
-      case 'effect_cleanse': {
-        const tId = resolveId(ev.target || ev.source);
-        const sprite = state.nines.get(tId);
-        const effectName = ev.type.replace('effect_', '').toUpperCase();
-        if (sprite) {
-          animateAuraBurst(sprite, effectName);
-          showFloatingText(sprite.container.x, sprite.container.y - 20, effectName, 0x90E0EF, 10);
-        }
+      case 'effect_cleanse':
+      case 'effect_stealth': {
+        const tId = resolveId(ev.target || ev.source); const sprite = state.nines.get(tId);
+        const eName = ev.type.replace('effect_','').toUpperCase();
+        if (sprite) { animateAuraBurst(sprite, eName); spawnFireworkExplosion(sprite.container.x, sprite.container.y, 0x90E0EF); showFloatingText(sprite.container.x, sprite.container.y-25, `⚡ ${eName}`, 0x90E0EF, 11); }
+        addFeedEvent(`⚡ <span class="feed-name">${getNineName(tId)}</span>: <span class="feed-effect">${eName}</span>`, 'effect');
         break;
       }
-
       case 'effect_chain': {
-        // Chain hit on second target
-        const tId = resolveId(ev.target);
-        const sprite = state.nines.get(tId);
-        if (sprite && ev.damage) {
-          showFloatingText(sprite.container.x, sprite.container.y, `-${ev.damage} CHAIN`, 0x5599ff, 11);
-          spawnParticles(sprite.container.x, sprite.container.y, 0x5599ff, 10, 'lightning');
-          shakeSprite(sprite);
-        }
+        const fromId = resolveId(ev.source); const toId = resolveId(ev.target);
+        const from = state.nines.get(fromId); const to = state.nines.get(toId);
+        if (from && to) fireworkCHAIN(from.container.x, from.container.y, to.container.x, to.container.y);
+        else if (to) { spawnFireworkExplosion(to.container.x, to.container.y, 0x5599ff); showFloatingText(to.container.x, to.container.y, `-${ev.damage} CHAIN`, 0x5599ff, 13); }
+        if (to) shakeSprite(to);
+        if (ev.targetHp != null) { updateNineHP(toId, ev.targetHp, to?.maxHp); updateHpStrip(); }
+        addFeedEvent(`⚡ <span class="feed-effect">CHAIN</span> → <span class="feed-name">${getNineName(toId)}</span> <span class="feed-dmg">-${ev.damage||''}</span>`, 'effect');
         break;
       }
-
       case 'effect_resurrect': {
-        const tId = resolveId(ev.target);
-        const sprite = state.nines.get(tId);
-        if (sprite) {
-          sprite.container.alpha = 1;
-          sprite.spriteGroup.scale.set(1, 1);
-          sprite.spriteGroup.rotation = 0;
-          if (ev.value) updateNineHP(tId, ev.value, sprite.maxHp);
-          showFloatingText(sprite.container.x, sprite.container.y, 'RESURRECT!', 0xffd700, 16);
-          spawnParticles(sprite.container.x, sprite.container.y, 0xffd700, 15, 'heal');
-          screenFlash(0xffd700, 0.15);
-        }
-        addFeedEvent(`✨ ${getNineName(tId)} was RESURRECTED!`, 'effect');
+        const tId = resolveId(ev.target); const sprite = state.nines.get(tId);
+        if (sprite) { sprite.container.alpha=1; sprite.spriteGroup.scale.set(1,1); sprite.spriteGroup.rotation=0; if(ev.value) updateNineHP(tId,ev.value,sprite.maxHp); spawnFireworkExplosion(sprite.container.x,sprite.container.y,0xffd700); showFloatingText(sprite.container.x,sprite.container.y,'✨ RESURRECT!',0xffd700,16); screenFlash(0xffd700,0.15); updateHpStrip(); }
+        addFeedEvent(`✨ <span class="feed-name">${getNineName(tId)}</span> was <span class="feed-effect">RESURRECTED!</span>`, 'effect');
         break;
       }
-
       case 'effect_drain': {
-        const fromId = resolveId(ev.source);
-        const sprite = state.nines.get(fromId);
-        if (sprite && ev.value) {
-          showFloatingText(sprite.container.x, sprite.container.y, `+${ev.value} DRAIN`, 0xff3366, 10);
-          spawnParticles(sprite.container.x, sprite.container.y, 0xff3366, 6, 'default');
-        }
+        const fromId = resolveId(ev.source); const sprite = state.nines.get(fromId);
+        if (sprite && ev.value) { showFloatingText(sprite.container.x, sprite.container.y, `+${ev.value} DRAIN`, 0xff3366, 12); spawnParticles(sprite.container.x, sprite.container.y, 0xff3366, 8, 'default'); updateHpStrip(); }
         break;
       }
 
-      // ── V2: DODGE — target sidesteps, brief ghost effect ──
+      // ── V2: DODGE ──
       case 'effect_dodge': {
         const dId = resolveId(ev.target || ev.source);
         const sprite = state.nines.get(dId);
@@ -3366,7 +3378,7 @@
       attacker.spriteGroup.scale.x = (endX < startX) ? -Math.abs(attacker.spriteGroup.scale.x) : Math.abs(attacker.spriteGroup.scale.x);
     }
 
-    // ── PHASE 2: MISSILE FLIGHT (delayed 450ms for charge) ──
+    // ── PHASE 2: MISSILE FLIGHT (delayed 120ms for charge) ──
     setTimeout(() => {
       // Create elongated missile container
       const missile = new PIXI.Container();
@@ -3414,7 +3426,7 @@
       const trail = [];
       let frame = 0;
       let prevX = startX, prevY = startY;
-      const totalFrames = 90; // 1.5 SECONDS of flight
+      const totalFrames = 35; // 0.6s flight — snappy
       // NO ARC — straight line missile
 
       const ticker = () => {
@@ -3509,7 +3521,7 @@
         }
       };
       state.arenaApp.ticker.add(ticker);
-    }, 450); // charge delay
+    }, 120); // charge delay
 
     attacker.isAnimating = false;
   }
@@ -3720,6 +3732,116 @@
     }
   }
 
+  /** ═══ PER-EFFECT FIREWORK EXPLOSIONS ═══ */
+
+  function fireworkBURN(x, y) {
+    if (!state.arenaApp) return;
+    // Orange/red starburst with lingering ember drops
+    spawnFireworkExplosion(x, y, 0xff6622);
+    // Extra ember particles that fall slowly
+    for (let i = 0; i < 14; i++) {
+      const p = new PIXI.Graphics();
+      p.beginFill(i % 2 === 0 ? 0xff4400 : 0xffaa22, 0.9);
+      p.drawRect(-2, -2, 4, 4);
+      p.endFill();
+      p.x = x + (Math.random()-0.5)*30; p.y = y + (Math.random()-0.5)*20;
+      p.zIndex = 99;
+      state.arenaApp.stage.addChild(p);
+      const vx = (Math.random()-0.5)*2, vy = -2-Math.random()*2;
+      let f = 0; const life = 80 + Math.random()*40;
+      const t = () => { f++; p.x+=vx; p.y+=vy; p.vy+=0.06; p.alpha=Math.max(0,1-f/life); p.scale.set(Math.max(0.1,1-f/life*0.5)); if(f>=life){state.arenaApp.ticker.remove(t);state.arenaApp.stage.removeChild(p);} };
+      state.arenaApp.ticker.add(t);
+    }
+    // Fire text flash
+    showFloatingText(x, y-30, '🔥 BURN', 0xff6622, 11);
+  }
+
+  function fireworkPOISON(x, y) {
+    if (!state.arenaApp) return;
+    spawnFireworkExplosion(x, y, 0x66dd44);
+    showFloatingText(x, y-30, '☠ POISON', 0x66dd44, 11);
+  }
+
+  function fireworkCHAIN(x1, y1, x2, y2) {
+    if (!state.arenaApp) return;
+    // Draw a jagged lightning bolt from x1,y1 to x2,y2
+    const bolt = new PIXI.Graphics();
+    bolt.lineStyle(3, 0x5599ff, 0.9);
+    bolt.moveTo(x1, y1);
+    const segs = 6;
+    for (let i = 1; i <= segs; i++) {
+      const t = i / segs;
+      const mx = x1 + (x2-x1)*t + (Math.random()-0.5)*30;
+      const my = y1 + (y2-y1)*t + (Math.random()-0.5)*30;
+      bolt.lineTo(mx, my);
+    }
+    bolt.lineTo(x2, y2);
+    // White core
+    bolt.lineStyle(1, 0xffffff, 0.7);
+    bolt.moveTo(x1, y1); bolt.lineTo(x2, y2);
+    bolt.zIndex = 100;
+    state.arenaApp.stage.addChild(bolt);
+    let bf = 0;
+    const bt = () => { bf++; bolt.alpha = Math.max(0, 1-bf/20); if(bf>=20){state.arenaApp.ticker.remove(bt);state.arenaApp.stage.removeChild(bolt);} };
+    state.arenaApp.ticker.add(bt);
+    spawnFireworkExplosion(x2, y2, 0x5599ff);
+    showFloatingText(x2, y2-25, '⚡ CHAIN', 0x5599ff, 11);
+  }
+
+  function fireworkSILENCE(x, y) {
+    if (!state.arenaApp) return;
+    spawnFireworkExplosion(x, y, 0xbb88ff);
+    showFloatingText(x, y-30, '🔇 SILENCED', 0xbb88ff, 10);
+  }
+
+  function fireworkHEAL(x, y) {
+    if (!state.arenaApp) return;
+    spawnFireworkExplosion(x, y, 0x44ffaa);
+    showFloatingText(x, y-30, '✚ HEAL', 0x44ffaa, 12);
+  }
+
+  function fireworkCRIT(x, y) {
+    if (!state.arenaApp) return;
+    spawnFireworkExplosion(x, y, 0xffd700);
+    setTimeout(() => spawnFireworkExplosion(x+(Math.random()-0.5)*25, y+(Math.random()-0.5)*20, 0xffffff), 80);
+    setTimeout(() => spawnFireworkExplosion(x+(Math.random()-0.5)*25, y+(Math.random()-0.5)*20, 0xffd700), 160);
+    showFloatingText(x, y-40, '★ CRIT!', 0xffd700, 20);
+    screenFlash(0xffd700, 0.15);
+  }
+
+  function fireworkWEAKEN(x, y) {
+    if (!state.arenaApp) return;
+    spawnFireworkExplosion(x, y, 0xcc6666);
+    showFloatingText(x, y-30, '⬇ WEAKENED', 0xcc6666, 10);
+  }
+
+  function fireworkDODGE(x, y) {
+    if (!state.arenaApp) return;
+    showFloatingText(x, y-20, 'DODGE!', 0x90E0EF, 13);
+    spawnParticles(x, y, 0x90E0EF, 10, 'lightning');
+  }
+
+  /** ═══ HP STRIP UPDATER ═══ */
+  function updateHpStrip() {
+    const strip = document.getElementById('arena-hp-strip');
+    if (!strip) return;
+    strip.innerHTML = '';
+    const HOUSE_COLORS = { smoulders:'#E03C31',darktide:'#00B4D8',stonebark:'#5CB338',ashenvale:'#90E0EF',stormrage:'#FFC800',nighthollow:'#7B2D8E',dawnbringer:'#FF8C00',manastorm:'#5B8FE0',plaguemire:'#E84393' };
+    for (const [id, nine] of state.nines) {
+      if (!nine.alive) continue;
+      const hpPct = Math.max(0, Math.min(100, (nine.hp/nine.maxHp)*100 || 100));
+      const col = HOUSE_COLORS[nine.house] || '#D4A64B';
+      const hpColor = hpPct > 50 ? col : hpPct > 25 ? '#FFC800' : '#ff4466';
+      const el = document.createElement('div');
+      el.className = 'hp-strip-fighter';
+      el.innerHTML = `
+        <div class="hp-strip-name" style="color:${col}">${nine.name||'?'}</div>
+        <div class="hp-strip-bar"><div class="hp-strip-fill" id="hpfill-${id}" style="width:${hpPct}%;background:${hpColor}"></div></div>
+        <div class="hp-strip-text">${nine.hp||'?'}/${nine.maxHp||'?'}</div>`;
+      strip.appendChild(el);
+    }
+  }
+
   /** Get house color as hex number for PixiJS */
   function getHouseColor(houseKey) {
     const colors = {
@@ -3798,18 +3920,17 @@
     }
   }
 
-  function addFeedEvent(text, type) {
+  function addFeedEvent(html, type) {
     const feed = document.getElementById('arena-feed');
+    if (!feed) return;
     const div = document.createElement('div');
-    div.className = 'feed-event';
-    const colorClass = type === 'ko' ? 'feed-dmg' : type === 'effect' ? 'feed-effect' : type === 'heal' ? 'feed-heal' : '';
-    div.innerHTML = `<span class="${colorClass}">${text}</span>`;
+    div.className = `feed-event feed-type-${type || 'system'}`;
+    div.innerHTML = html;
     feed.appendChild(div);
-
-    // Keep only last 8 events
-    while (feed.children.length > 8) {
-      feed.removeChild(feed.firstChild);
-    }
+    // Keep only last 6 events visible
+    while (feed.children.length > 6) feed.removeChild(feed.firstChild);
+    // Scroll to bottom
+    feed.scrollTop = feed.scrollHeight;
   }
 
   function showNermBubble(text) {

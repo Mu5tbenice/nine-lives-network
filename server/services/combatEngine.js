@@ -35,7 +35,7 @@ let nextSnapshotAt = null;
 
 // ─── COMBAT FORMULAS (from V2 doc) ────────────────────
 function attackInterval(spd) {
-  return Math.max(2.0, 10.5 - spd * 0.12);
+  return Math.max(1.5, 4.0 - spd * 0.05);
 }
 
 function calcDamage(atk, def) {
