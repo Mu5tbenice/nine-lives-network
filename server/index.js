@@ -240,7 +240,7 @@ if (io) {
 
       const deploymentIds = deployments.map(d => d.id);
 
-      // Step 1: Get card slots (card_id = player_cards.id)
+      // Step 1: Get card slots (card_id references player_cards.id)
       const { data: cardSlots } = await supabase
         .from('zone_card_slots')
         .select(`id, deployment_id, slot_number, card_id`)
@@ -254,7 +254,6 @@ if (io) {
         .select(`id, sharpness, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)`)
         .in('id', cardIds) : { data: [] };
 
-      // Index player cards by id
       const playerCardMap = {};
       for (const pc of (playerCards || [])) playerCardMap[pc.id] = pc;
 
@@ -362,6 +361,19 @@ if (io) {
     _broadcastToZone: function(zoneId, event, data) {
       arenaNamespace.to(`zone_${zoneId}`).emit(event, data);
     }
+  };
+
+  // Expose arenaManager so deploy route can add/remove nines from running arenas
+  global.__arenaManager = arenaManager;
+
+  // Reload a zone's arena from DB — called after deploy/undeploy
+  global.__reloadArenaZone = async function(zoneId) {
+    const existing = arenaManager.arenas.get(zoneId);
+    if (existing) {
+      existing.stop();
+      arenaManager.arenas.delete(zoneId);
+    }
+    await loadArena(zoneId);
   };
 
   console.log("✅ Arena socket namespace ready");
