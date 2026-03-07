@@ -26,12 +26,12 @@ const ZONE_POINTS = {
 
 // ═══════════════════════════════════════════
 // POST /api/zones/deploy
-// Deploy your Nine to a zone (V5: FREE — no mana cost)
-// Body: { player_id, zone_id }
+// Deploy your Nine to a zone (V2: FREE — no mana cost)
+// Body: { player_id, zone_id, card_ids?: [id1, id2, id3] }
 // ═══════════════════════════════════════════
 router.post('/deploy', async (req, res) => {
   try {
-    const { player_id, zone_id } = req.body;
+    const { player_id, zone_id, card_ids } = req.body;
 
     if (!player_id || !zone_id) {
       return res.status(400).json({ error: 'player_id and zone_id required' });
@@ -71,14 +71,20 @@ router.post('/deploy', async (req, res) => {
       });
     }
 
-    // V5: Deploy is FREE — no mana cost
-
     // Get player's guild tag
     const { data: player } = await supabase
       .from('players')
       .select('guild_tag, twitter_handle')
       .eq('id', player_id)
       .single();
+
+    // Get house HP from houses table (V2 source of truth)
+    const { data: house } = await supabase
+      .from('houses')
+      .select('hp')
+      .eq('id', nine.house_id)
+      .single();
+    const deployHp = house?.hp || nine.base_hp || 100;
 
     // Nine heals to full on deploy
     await healNine(nine.id);
@@ -91,8 +97,8 @@ router.post('/deploy', async (req, res) => {
         nine_id: nine.id,
         zone_id: zone_id,
         guild_tag: player?.guild_tag || ('@' + (player?.twitter_handle || 'lone_wolf')),
-        current_hp: nine.base_hp,
-        max_hp: nine.base_hp,
+        current_hp: deployHp,
+        max_hp: deployHp,
         is_active: true,
         is_mercenary: !(player?.guild_tag),
       })
@@ -104,10 +110,30 @@ router.post('/deploy', async (req, res) => {
       return res.status(500).json({ error: 'Failed to deploy' });
     }
 
+    // Auto-equip cards if provided by deploy modal
+    let equippedCount = 0;
+    if (Array.isArray(card_ids) && card_ids.length > 0 && deployment) {
+      for (let i = 0; i < Math.min(card_ids.length, MAX_CARDS_PER_ZONE); i++) {
+        try {
+          await supabaseAdmin
+            .from('zone_card_slots')
+            .insert({
+              deployment_id: deployment.id,
+              card_id: card_ids[i],
+              slot_number: i + 1,
+              is_active: true,
+            });
+          equippedCount++;
+        } catch (e) {
+          console.error(`Failed to equip card ${card_ids[i]} in slot ${i + 1}:`, e.message);
+        }
+      }
+    }
+
     // Award deploy points (+5)
     await addPoints(player_id, ZONE_POINTS.DEPLOY, 'zone_deploy', `Deployed to zone ${zone_id}`);
 
-    // Notify arena socket viewers + add to running arena engine
+    // Notify arena socket viewers
     try {
       if (global.__arenaSocket) {
         global.__arenaSocket._broadcastToZone(zone_id, 'arena:nine_joined', {
@@ -116,24 +142,11 @@ router.post('/deploy', async (req, res) => {
           house: nine.house_key || 'smoulders',
           guild: player?.guild_tag || 'Lone Wolf',
           guild_id: player?.guild_tag,
-          stats: { atk: nine.base_atk, hp: nine.base_hp, spd: nine.base_spd, def: nine.base_def || 0, luck: nine.base_luck || 0 },
+          stats: { atk: nine.base_atk, hp: deployHp, spd: nine.base_spd, def: nine.base_def || 0, luck: nine.base_luck || 0 },
           equipped_images: nine.equipped_images || {},
         });
       }
-      // Add nine to arena after short delay so auto-equip card inserts complete first
-      if (global.__addNineToArena) {
-        const HOUSE_MAP = { 1:'smoulders',2:'darktide',3:'stonebark',4:'ashenvale',5:'stormrage',6:'nighthollow',7:'dawnbringer',8:'manastorm',9:'plaguemire' };
-        const nineData = {
-          id: player_id,
-          name: nine.name || player?.twitter_handle || 'Unknown',
-          house: nine.house_key || HOUSE_MAP[nine.house_id] || 'smoulders',
-          guild_id: player?.guild_tag || null,
-          guild_name: player?.guild_tag || 'Lone Wolf',
-          items: {},
-        };
-        setTimeout(() => global.__addNineToArena(zone_id, deployment.id, nineData), 2000);
-      }
-    } catch (e) { console.error('Arena update error after deploy:', e.message); }
+    } catch (e) { /* socket broadcast is non-critical */ }
 
     res.json({
       success: true,
@@ -190,13 +203,10 @@ router.post('/withdraw', async (req, res) => {
       .update({ is_active: false, updated_at: new Date().toISOString() })
       .eq('id', deployment.id);
 
-    // Notify arena socket viewers + remove from running arena engine
+    // Notify arena socket viewers
     try {
       if (global.__arenaSocket) {
         global.__arenaSocket._broadcastToZone(zone_id, 'arena:nine_left', { nine_id: player_id });
-      }
-      if (global.__removeNineFromArena) {
-        global.__removeNineFromArena(zone_id, player_id);
       }
     } catch (e) { /* non-critical */ }
 
