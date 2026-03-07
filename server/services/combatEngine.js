@@ -318,8 +318,6 @@ async function loadZoneState(zoneId) {
       .eq('deployment_id', dep.id)
       .eq('is_active', true);
 
-    console.log(`[CARDS] dep ${dep.id} player ${dep.player_id}: slots=${JSON.stringify(slots)}, err=${slotErr?.message}`);
-
     if (slots && slots.length > 0) {
       const cardIds = slots.map(s => s.card_id).filter(Boolean);
       if (cardIds.length > 0) {
@@ -328,9 +326,6 @@ async function loadZoneState(zoneId) {
           .select('id, sharpness, rarity, spell:spell_id(name, spell_type, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)')
           .in('id', cardIds);
 
-        console.log(`[CARDS] playerCards=${JSON.stringify(playerCards?.map(c=>c.spell?.name))}, err=${cardErr?.message}`);
-
-        if (playerCards) {
           cards = playerCards.map(pc => {
             const spell = pc.spell || {};
             const sharp = pc.sharpness != null ? pc.sharpness : 100;
@@ -510,7 +505,6 @@ function resolveSpellCast(attacker, zone) {
     if (attacker.isSilenced) return;
     if (attacker.phasedUntil > Date.now()) return;
     if (!attacker.cards || attacker.cards.length === 0) {
-      console.log(`[SPELL] ${attacker.name} has no cards, skipping spell cast`);
       return;
     }
 
@@ -518,9 +512,7 @@ function resolveSpellCast(attacker, zone) {
     const card = attacker.cards[attacker.cardIndex % attacker.cards.length];
     attacker.cardIndex = (attacker.cardIndex + 1) % attacker.cards.length;
 
-    if (!card) { console.log(`[SPELL] ${attacker.name} card at index is null`); return; }
 
-    console.log(`[SPELL] ${attacker.name} casts ${card.name} (atk:${card.atk}, effects:${JSON.stringify(card.bonus_effects)})`);
 
   const target = zone.pickTarget(attacker);
   const anchorActive = target && target.hasEffect('ANCHOR');
