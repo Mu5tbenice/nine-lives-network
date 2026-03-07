@@ -325,10 +325,29 @@ async function loadZoneState(zoneId) {
       if (cardIds.length > 0) {
         const { data: playerCards, error: cardErr } = await supabase
           .from('player_cards')
-          .select('id, sharpness, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)')
+          .select('id, sharpness, rarity, spell:spell_id(name, spell_type, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)')
           .in('id', cardIds);
 
         console.log(`[CARDS] playerCards=${JSON.stringify(playerCards?.map(c=>c.spell?.name))}, err=${cardErr?.message}`);
+
+        if (playerCards) {
+          cards = playerCards.map(pc => {
+            const spell = pc.spell || {};
+            const sharp = pc.sharpness != null ? pc.sharpness : 100;
+            return {
+              id: pc.id,
+              name: spell.name,
+              rarity: pc.rarity || 'common',  // rarity is on player_cards, not spells
+              spell_type: spell.spell_type,
+              bonus_effects: spell.bonus_effects || [],
+              atk: applySharpness(spell.base_atk || 0, sharp),
+              hp: applySharpness(spell.base_hp || 0, sharp),
+              spd: applySharpness(spell.base_spd || 0, sharp),
+              def: applySharpness(spell.base_def || 0, sharp),
+              luck: applySharpness(spell.base_luck || 0, sharp),
+            };
+          });
+        }
 
         if (playerCards) {
           cards = playerCards.map(pc => {
