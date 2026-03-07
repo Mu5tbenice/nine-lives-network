@@ -34,9 +34,18 @@ let tickHandle = null;
 let nextSnapshotAt = null;
 
 // ─── COMBAT FORMULAS (from V2 doc) ────────────────────
-function attackInterval(spd) {
+// Auto-attack: fast, weak, no effects
+function autoAttackInterval(spd) {
   return Math.max(1.5, 4.0 - spd * 0.05);
 }
+
+// Spell cast: slower, triggers card effects, blocked by SILENCE
+function spellCastInterval(spd) {
+  return Math.max(3.0, 8.0 - spd * 0.08);
+}
+
+// Keep old name as alias for any remaining references
+function attackInterval(spd) { return autoAttackInterval(spd); }
 
 function calcDamage(atk, def) {
   if (atk + def <= 0) return 1;
@@ -82,8 +91,10 @@ class CombatNine {
 
     // Combat state
     this.alive = true;
-    this.attackTimer = 0;  // seconds until next attack
-    this.attackIntervalBase = attackInterval(this.spd);
+    this.attackTimer = 0;        // seconds until next auto-attack
+    this.spellTimer = 1.0;       // seconds until next spell cast (stagger start)
+    this.cardIndex = 0;          // which card casts next (round-robin)
+    this.attackIntervalBase = autoAttackInterval(this.spd);
 
     // Effects
     this.effects = [];     // active timed effects [{name, expiresAt, value, sourceId}]
@@ -159,7 +170,11 @@ class CombatNine {
   }
 
   getAttackInterval() {
-    return attackInterval(this.getEffectiveSpd());
+    return autoAttackInterval(this.getEffectiveSpd());
+  }
+
+  getSpellInterval() {
+    return spellCastInterval(this.getEffectiveSpd());
   }
 
   isTargetable() {
@@ -393,8 +408,259 @@ async function loadZoneState(zoneId) {
   return zone.nines.size > 0 ? zone : null;
 }
 
-// ─── RESOLVE ATTACK ────────────────────────────────────
-function resolveAttack(attacker, zone) {
+// ─── RESOLVE AUTO-ATTACK (no card effects, always fires) ───
+function resolveAutoAttack(attacker, zone) {
+  if (!attacker.alive) return;
+  if (attacker.phasedUntil > Date.now()) return;
+
+  const target = zone.pickTarget(attacker);
+  if (!target) return;
+
+  const atk = attacker.getEffectiveAtk();
+  let damage = calcDamage(atk, target.def);
+
+  // WEAKEN debuff
+  if (attacker.hasEffect('WEAKEN')) damage = Math.floor(damage / 2);
+  // MARK on target
+  if (target.hasEffect('MARK')) damage = Math.floor(damage * 1.25);
+
+  // Crit check
+  const isCrit = rollCrit(attacker.luck);
+  if (isCrit) damage *= 2;
+
+  // DODGE check
+  const now = Date.now();
+  if (target.dodgeActiveUntil > now) {
+    zone.emit({ type: 'dodge', target: target.playerId, targetName: target.name });
+    return;
+  }
+
+  // WARD blocks (unless PIERCE)
+  if (target.hasEffect('WARD') && !attacker.cardEffects.some(e => e.name === 'PIERCE')) {
+    target.effects = target.effects.filter(e => e.name !== 'WARD');
+    zone.emit({ type: 'effect_applied', effect: 'WARD', target: target.playerId, targetName: target.name, message: 'blocked!' });
+    damage = 0;
+  }
+
+  // BARRIER absorb
+  if (target.barrier > 0 && !attacker.cardEffects.some(e => e.name === 'PIERCE')) {
+    const absorbed = Math.min(damage, target.barrier);
+    target.barrier -= absorbed;
+    damage -= absorbed;
+    if (absorbed > 0) zone.emit({ type: 'effect_applied', effect: 'BARRIER', target: target.playerId, targetName: target.name, value: absorbed });
+  }
+
+  const anchorActive = target.hasEffect('ANCHOR');
+  if (damage > 0) {
+    if (anchorActive && target.hp - damage < 1) damage = Math.max(0, target.hp - 1);
+    target.hp = Math.max(anchorActive ? 1 : 0, target.hp - damage);
+  }
+
+  zone.emit({
+    type: 'attack', is_auto: true,
+    source: attacker.playerId, sourceName: attacker.name, from_house: attacker.house,
+    target: target.playerId, targetName: target.name,
+    damage, isCrit,
+    targetHp: target.hp, targetMaxHp: target.maxHp,
+  });
+
+  // THORNS reflect
+  if (target.thornsValue && target.alive && damage > 0) {
+    const thornsDmg = target.thornsValue;
+    attacker.hp = Math.max(0, attacker.hp - thornsDmg);
+    zone.emit({ type: 'reflected_damage', source: target.playerId, target: attacker.playerId, damage: thornsDmg, effect: 'THORNS', targetHp: attacker.hp, targetMaxHp: attacker.maxHp });
+  }
+
+  // PHASE: go untargetable after attacking
+  if (attacker.cardEffects.some(e => e.name === 'PHASE')) {
+    attacker.phasedUntil = Date.now() + 3000;
+  }
+
+  checkKO(target, attacker, zone);
+  if (attacker.hp <= 0) checkKO(attacker, target, zone);
+}
+
+// ─── RESOLVE SPELL CAST (round-robin cards, triggers effects) ───
+function resolveSpellCast(attacker, zone) {
+  if (!attacker.alive) return;
+  if (attacker.isSilenced) return; // SILENCE blocks all spell casts
+  if (attacker.phasedUntil > Date.now()) return;
+  if (!attacker.cards || attacker.cards.length === 0) return;
+
+  // Pick next card in rotation
+  const card = attacker.cards[attacker.cardIndex % attacker.cards.length];
+  attacker.cardIndex = (attacker.cardIndex + 1) % attacker.cards.length;
+
+  if (!card) return;
+
+  const target = zone.pickTarget(attacker);
+  const anchorActive = target && target.hasEffect('ANCHOR');
+
+  // Spell damage uses this card's ATK stat contribution
+  let spellDamage = 0;
+  if (card.atk > 0 && target) {
+    spellDamage = calcDamage(card.atk, target.def || 0);
+    if (attacker.hasEffect('WEAKEN')) spellDamage = Math.floor(spellDamage / 2);
+    if (target.hasEffect('MARK')) spellDamage = Math.floor(spellDamage * 1.25);
+    const isCrit = rollCrit(attacker.luck);
+    if (isCrit) spellDamage *= 2;
+
+    // WARD check on spell too
+    if (target.hasEffect('WARD') && !attacker.cardEffects.some(e => e.name === 'PIERCE')) {
+      target.effects = target.effects.filter(e => e.name !== 'WARD');
+      spellDamage = 0;
+    }
+    if (anchorActive && target.hp - spellDamage < 1) spellDamage = Math.max(0, target.hp - 1);
+    if (spellDamage > 0) target.hp = Math.max(anchorActive ? 1 : 0, target.hp - spellDamage);
+  }
+
+  // Broadcast spell cast event
+  zone.emit({
+    type: 'spell_cast',
+    source: attacker.playerId, sourceName: attacker.name, from_house: attacker.house,
+    target: target?.playerId || null, targetName: target?.name || null,
+    card_name: card.name || 'Spell',
+    card_type: card.spell_type || 'attack',
+    card_rarity: card.rarity || 'common',
+    damage: spellDamage,
+    effects: (card.bonus_effects || []).map(e => typeof e === 'string' ? e : e.tag),
+    targetHp: target?.hp, targetMaxHp: target?.maxHp,
+  });
+
+  // Trigger card effects
+  const effectDurationMs = (EFFECT_DURATION[(card.rarity || 'common').toLowerCase()] || DEFAULT_EFFECT_DURATION) * 1000;
+  const cardEffects = attacker.cardEffects.filter(e => {
+    // Only trigger effects from THIS card in this cast
+    const cardBonusEffects = (card.bonus_effects || []).map(e => typeof e === 'string' ? e.split(' ')[0] : (e.tag || '').split(' ')[0]);
+    return cardBonusEffects.includes(e.name);
+  });
+
+  for (const eff of cardEffects) {
+    switch (eff.name) {
+      case 'BURN': {
+        if (!target) break;
+        const burnDmg = eff.value || 5;
+        target.hp = Math.max(anchorActive ? 1 : 0, target.hp - burnDmg);
+        zone.emit({ type: 'dot_damage', target: target.playerId, targetName: target.name, damage: burnDmg, effect: 'BURN', targetHp: target.hp });
+        break;
+      }
+      case 'CHAIN': {
+        if (!target) break;
+        const others = zone.getAliveEnemies(attacker.guildTag).filter(e => e.playerId !== target.playerId && e.isTargetable());
+        if (others.length > 0) {
+          const chainTarget = others[Math.floor(Math.random() * others.length)];
+          const chainDmg = Math.floor(spellDamage * 0.5);
+          chainTarget.hp = Math.max(0, chainTarget.hp - chainDmg);
+          zone.emit({ type: 'effect_applied', effect: 'CHAIN', source: attacker.playerId, sourceName: attacker.name, target: chainTarget.playerId, targetName: chainTarget.name, damage: chainDmg, from_house: attacker.house, targetHp: chainTarget.hp, targetMaxHp: chainTarget.maxHp });
+        }
+        break;
+      }
+      case 'HEAL': {
+        const healTarget = zone.pickLowestHpAlly(attacker.guildTag, attacker.playerId);
+        if (healTarget && healTarget.hp < healTarget.maxHp) {
+          const healAmt = eff.value || 15;
+          healTarget.hp = Math.min(healTarget.maxHp, healTarget.hp + healAmt);
+          zone.emit({ type: 'heal', target: healTarget.playerId, targetName: healTarget.name, amount: healAmt, effect: 'HEAL', targetHp: healTarget.hp, targetMaxHp: healTarget.maxHp });
+        }
+        break;
+      }
+      case 'BLESS': {
+        const allies = [...zone.nines.values()].filter(n => n.alive && n.guildTag === attacker.guildTag).sort((a, b) => (a.hp/a.maxHp) - (b.hp/b.maxHp)).slice(0, 3);
+        const blessAmt = eff.value || 5;
+        for (const ally of allies) {
+          ally.hp = Math.min(ally.maxHp, ally.hp + blessAmt);
+          zone.emit({ type: 'heal', target: ally.playerId, targetName: ally.name, amount: blessAmt, effect: 'BLESS' });
+        }
+        break;
+      }
+      case 'POISON': {
+        if (!target) break;
+        target.addTimedEffect('POISON', eff.value || 3, 12000, attacker.playerId);
+        zone.emit({ type: 'effect_applied', effect: 'POISON', target: target.playerId, targetName: target.name, value: eff.value || 3, source: attacker.playerId });
+        break;
+      }
+      case 'SILENCE': {
+        const silTarget = zone.pickHighestAtkEnemy(attacker.guildTag);
+        if (silTarget) {
+          silTarget.addTimedEffect('SILENCE', 0, effectDurationMs, attacker.playerId);
+          zone.emit({ type: 'effect_applied', effect: 'SILENCE', target: silTarget.playerId, targetName: silTarget.name, source: attacker.playerId });
+        }
+        break;
+      }
+      case 'HEX': {
+        if (!target) break;
+        target.addTimedEffect('HEX', 10, effectDurationMs, attacker.playerId);
+        zone.emit({ type: 'effect_applied', effect: 'HEX', target: target.playerId, targetName: target.name });
+        break;
+      }
+      case 'WEAKEN': {
+        if (!target) break;
+        target.addTimedEffect('WEAKEN', 0, effectDurationMs, attacker.playerId);
+        zone.emit({ type: 'effect_applied', effect: 'WEAKEN', target: target.playerId, targetName: target.name });
+        break;
+      }
+      case 'SLOW': {
+        if (!target) break;
+        target.addTimedEffect('SLOW', 15, effectDurationMs, attacker.playerId);
+        zone.emit({ type: 'effect_applied', effect: 'SLOW', target: target.playerId, targetName: target.name });
+        break;
+      }
+      case 'HASTE': {
+        attacker.addTimedEffect('HASTE', 10, effectDurationMs, attacker.playerId);
+        zone.emit({ type: 'effect_applied', effect: 'HASTE', target: attacker.playerId, targetName: attacker.name });
+        break;
+      }
+      case 'MARK': {
+        const markTarget = zone.pickHighestHpEnemy(attacker.guildTag);
+        if (markTarget) {
+          markTarget.addTimedEffect('MARK', 0, effectDurationMs, attacker.playerId);
+          zone.emit({ type: 'effect_applied', effect: 'MARK', target: markTarget.playerId, targetName: markTarget.name });
+        }
+        break;
+      }
+      case 'INSPIRE': {
+        const allies = zone.getAliveAllies(attacker.guildTag, attacker.playerId);
+        for (const ally of allies) ally.addTimedEffect('INSPIRE', 0, effectDurationMs, attacker.playerId);
+        if (allies.length > 0) zone.emit({ type: 'effect_applied', effect: 'INSPIRE', target: attacker.playerId, targetName: attacker.name, message: `+3 ATK/SPD to ${allies.length} allies` });
+        break;
+      }
+      case 'WARD': {
+        if (!attacker.hasEffect('WARD')) attacker.addTimedEffect('WARD', 0, effectDurationMs, attacker.playerId);
+        zone.emit({ type: 'effect_applied', effect: 'WARD', target: attacker.playerId, targetName: attacker.name });
+        break;
+      }
+      case 'ANCHOR': {
+        if (!attacker.hasEffect('ANCHOR')) attacker.addTimedEffect('ANCHOR', 0, effectDurationMs, attacker.playerId);
+        zone.emit({ type: 'effect_applied', effect: 'ANCHOR', target: attacker.playerId, targetName: attacker.name });
+        break;
+      }
+      case 'STEALTH': {
+        if (!attacker.hasEffect('STEALTH')) attacker.addTimedEffect('STEALTH', 0, effectDurationMs, attacker.playerId);
+        zone.emit({ type: 'effect_applied', effect: 'STEALTH', target: attacker.playerId, targetName: attacker.name });
+        break;
+      }
+      case 'CLEANSE': {
+        const debuffs = ['BURN', 'POISON', 'HEX', 'WEAKEN', 'SLOW', 'SILENCE', 'TETHER', 'MARK'];
+        const before = attacker.effects.length;
+        attacker.effects = attacker.effects.filter(e => !debuffs.includes(e.name));
+        if (attacker.effects.length < before) zone.emit({ type: 'effect_applied', effect: 'CLEANSE', target: attacker.playerId, targetName: attacker.name });
+        break;
+      }
+      case 'DRAIN': {
+        if (spellDamage > 0) {
+          const healAmt = Math.max(1, Math.floor(spellDamage * 0.05));
+          attacker.hp = Math.min(attacker.maxHp, attacker.hp + healAmt);
+          zone.emit({ type: 'heal', target: attacker.playerId, targetName: attacker.name, amount: healAmt, effect: 'DRAIN' });
+        }
+        break;
+      }
+      default: break;
+    }
+  }
+
+  if (target) checkKO(target, attacker, zone);
+  if (attacker.hp <= 0) checkKO(attacker, target, zone);
+}
   if (!attacker.alive || attacker.isSilenced) return;
   if (attacker.phasedUntil > Date.now()) return;
 
@@ -759,17 +1025,26 @@ function tickZone(zone) {
     if (nine.alive) nine.tickEffects(now);
   }
 
-  // Check each Nine's attack timer
+  // Tick auto-attack timers
   for (const nine of zone.nines.values()) {
     if (!nine.alive) continue;
-    if (nine.phasedUntil > now) continue; // phased: can't attack
+    if (nine.phasedUntil > now) continue;
 
     nine.attackTimer -= TICK_MS / 1000;
     if (nine.attackTimer <= 0) {
-      // Attack!
-      resolveAttack(nine, zone);
-      // Reset timer based on current effective SPD
+      resolveAutoAttack(nine, zone);
       nine.attackTimer = nine.getAttackInterval();
+    }
+  }
+
+  // Tick spell cast timers (independent of auto-attack)
+  for (const nine of zone.nines.values()) {
+    if (!nine.alive) continue;
+
+    nine.spellTimer -= TICK_MS / 1000;
+    if (nine.spellTimer <= 0) {
+      resolveSpellCast(nine, zone);
+      nine.spellTimer = nine.getSpellInterval();
     }
   }
 
@@ -917,6 +1192,8 @@ async function mainTick() {
                 newNine.hp = existingNine.hp;
                 newNine.effects = existingNine.effects;
                 newNine.attackTimer = existingNine.attackTimer;
+                newNine.spellTimer = existingNine.spellTimer;
+                newNine.cardIndex = existingNine.cardIndex;
                 newNine.barrier = existingNine.barrier;
                 newNine.alive = existingNine.alive;
               }
