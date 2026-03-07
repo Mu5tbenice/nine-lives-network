@@ -979,6 +979,6 @@ module.exports = {
   stopCombatEngine,
   getNextCycleAt,
   getCycleIntervalMs,
-  // Expose for testing
+  runCombatCycle: mainTick,  // alias for scheduler compatibility
   _zones: zones,
 };

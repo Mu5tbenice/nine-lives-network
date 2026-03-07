@@ -218,116 +218,11 @@ try {
 }
 
 // ── ARENA SOCKET NAMESPACE ──
+// Combat is handled entirely by combatEngine.js tick loop.
+// This section only manages socket rooms and chat.
 if (io) {
   const supabase = require('./config/supabase');
-  const { ArenaManager } = require('./services/arena-engine');
-  const arenaManager = new ArenaManager(io);
   const arenaNamespace = io.of('/arena');
-
-  const HOUSE_MAP = {
-    1: 'smoulders', 2: 'darktide', 3: 'stonebark', 4: 'ashenvale',
-    5: 'stormrage', 6: 'nighthollow', 7: 'dawnbringer', 8: 'manastorm', 9: 'plaguemire',
-  };
-
-  // Fetch cards for a single deployment (two-step: zone_card_slots → player_cards → spells)
-  async function loadCardsForDeployment(deploymentId) {
-    const { data: cardSlots } = await supabase
-      .from('zone_card_slots')
-      .select(`card_id`)
-      .eq('deployment_id', deploymentId)
-      .eq('is_active', true);
-
-    const cardIds = (cardSlots || []).map(s => s.card_id).filter(Boolean);
-    if (cardIds.length === 0) return [];
-
-    const { data: playerCards } = await supabase
-      .from('player_cards')
-      .select(`id, sharpness, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)`)
-      .in('id', cardIds);
-
-    return (playerCards || []).map(pc => {
-      const spell = pc.spell || {};
-      return {
-        name: spell.name || 'Unknown Card',
-        spell_type: spell.spell_type || 'attack',
-        rarity: spell.rarity || 'common',
-        atk: spell.base_atk || 0,
-        hp: spell.base_hp || 0,
-        spd: spell.base_spd || 0,
-        def: spell.base_def || 0,
-        luck: spell.base_luck || 0,
-        bonus_effects: spell.bonus_effects || [],
-        sharpness: pc.sharpness ?? 100,
-      };
-    });
-  }
-
-  async function loadArena(zoneId) {
-    try {
-      const { data: deployments, error } = await supabase
-        .from('zone_deployments')
-        .select(`id, player_id, guild_tag, player:player_id(twitter_handle, guild_tag, profile_image), nine:nine_id(name, base_atk, base_hp, base_spd, base_def, base_luck, house_id)`)
-        .eq('zone_id', zoneId)
-        .eq('is_active', true);
-      if (error || !deployments || deployments.length === 0) return null;
-
-      const arena = arenaManager.getArena(zoneId);
-      for (const d of deployments) {
-        const nine = d.nine || {};
-        const player = d.player || {};
-        const cards = await loadCardsForDeployment(d.id);
-        arena.addNine({
-          id: d.player_id,
-          name: nine.name || player.twitter_handle || 'Unknown',
-          house: HOUSE_MAP[nine.house_id] || 'smoulders',
-          guild_id: d.guild_tag || null,
-          guild_name: d.guild_tag || 'Lone Wolf',
-          items: {},
-          cards,
-        });
-        console.log(`⚔️ Loaded ${cards.length} cards for ${nine.name || player.twitter_handle}`);
-      }
-
-      if (!arena.isRunning && arena.nines.size >= 1) {
-        arena.start();
-        console.log(`⚔️ Zone ${zoneId}: Arena started with ${arena.nines.size} nines`);
-      }
-      return arena;
-    } catch (err) {
-      console.error('Arena load error:', err);
-      return null;
-    }
-  }
-
-  // Called by deploy route — adds one nine to running arena without full restart
-  global.__addNineToArena = async function(zoneId, deploymentId, nineData) {
-    try {
-      let arena = arenaManager.arenas.get(zoneId);
-      if (!arena) {
-        await loadArena(zoneId);
-        return;
-      }
-      // Don't re-add if already in arena
-      if (arena.nines.has(nineData.id)) return;
-      const cards = await loadCardsForDeployment(deploymentId);
-      arena.addNine({ ...nineData, cards });
-      console.log(`⚔️ Zone ${zoneId}: Added ${nineData.name} with ${cards.length} cards`);
-      if (!arena.isRunning && arena.nines.size >= 1) {
-        arena.start();
-        console.log(`⚔️ Zone ${zoneId}: Arena started with ${arena.nines.size} nines`);
-      }
-    } catch (e) {
-      console.error('addNineToArena error:', e.message);
-    }
-  };
-
-  // Called by undeploy route
-  global.__removeNineFromArena = function(zoneId, playerId) {
-    try {
-      const arena = arenaManager.arenas.get(zoneId);
-      if (arena) arena.removeNine(playerId, 'withdraw');
-    } catch (e) { /* non-critical */ }
-  };
 
   arenaNamespace.on('connection', (socket) => {
     console.log('⚔️ Arena client connected:', socket.id);
@@ -336,31 +231,43 @@ if (io) {
       const zoneId = parseInt(data.zoneId || data.zone_id);
       if (!zoneId) return;
 
+      // Leave previous zone rooms
       for (const room of socket.rooms) {
         if (room.startsWith('zone_')) socket.leave(room);
       }
       socket.join(`zone_${zoneId}`);
       console.log(`⚔️ ${socket.id} joined zone_${zoneId}`);
 
-      // Load arena if not already running
-      let arena = arenaManager.arenas.get(zoneId);
-      if (!arena || !arena.isRunning) {
-        if (arena && !arena.isRunning) {
-          arena.stop();
-          arenaManager.arenas.delete(zoneId);
-        }
-        arena = await loadArena(zoneId);
-      }
+      // Send initial state snapshot from DB
+      try {
+        const { data: deployments } = await supabase
+          .from('zone_deployments')
+          .select(`player_id, current_hp, max_hp, guild_tag, nine:nine_id(name, house_id, base_hp), player:player_id(twitter_handle, profile_image)`)
+          .eq('zone_id', zoneId)
+          .eq('is_active', true);
 
-      socket.emit('arena:state', {
-        active: arena?.isRunning || false,
-        nines: arena?.nines.size || 0,
-        round: arena?.round || 1,
-        cycle: arena?.cycle || 1,
-        snapshot: arena?.getNinesSnapshot() || [],
-        next_cycle_at: combatEngine?.getNextCycleAt ? combatEngine.getNextCycleAt() : (Date.now() + 5 * 60 * 1000),
-        cycle_interval_ms: combatEngine?.getCycleIntervalMs ? combatEngine.getCycleIntervalMs() : (5 * 60 * 1000),
-      });
+        const HOUSE_MAP = { 1:'smoulders',2:'darktide',3:'stonebark',4:'ashenvale',5:'stormrage',6:'nighthollow',7:'dawnbringer',8:'manastorm',9:'plaguemire' };
+        const snapshot = (deployments || []).map(d => ({
+          id: d.player_id,
+          name: d.nine?.name || d.player?.twitter_handle || 'Unknown',
+          house: HOUSE_MAP[d.nine?.house_id] || 'smoulders',
+          guild_name: d.guild_tag || 'Lone Wolf',
+          guild_id: d.guild_tag,
+          current_hp: d.current_hp || d.nine?.base_hp || 10,
+          max_hp: d.max_hp || d.nine?.base_hp || 10,
+          alive: (d.current_hp || 1) > 0,
+          profile_image: d.player?.profile_image || null,
+        }));
+
+        socket.emit('arena:state', {
+          active: snapshot.length > 0,
+          snapshot,
+          next_cycle_at: combatEngine?.getNextCycleAt ? combatEngine.getNextCycleAt() : (Date.now() + 15 * 60 * 1000),
+          cycle_interval_ms: combatEngine?.getCycleIntervalMs ? combatEngine.getCycleIntervalMs() : (15 * 60 * 1000),
+        });
+      } catch (e) {
+        socket.emit('arena:state', { active: false, snapshot: [] });
+      }
     });
 
     socket.on('leave_zone', (data) => {
@@ -382,6 +289,7 @@ if (io) {
     });
   });
 
+  // Global broadcast helper used by combatEngine and zones route
   global.__arenaSocket = {
     _broadcastToZone: function(zoneId, event, data) {
       arenaNamespace.to(`zone_${zoneId}`).emit(event, data);
@@ -390,7 +298,6 @@ if (io) {
 
   console.log("✅ Arena socket namespace ready");
 }
-
 
 // ── COMBAT TIMER ROUTE ──
 app.get('/api/combat/next-cycle', (req, res) => {
