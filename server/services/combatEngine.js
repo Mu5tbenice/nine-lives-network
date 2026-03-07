@@ -482,16 +482,22 @@ function resolveAutoAttack(attacker, zone) {
 
 // ─── RESOLVE SPELL CAST (round-robin cards, triggers effects) ───
 function resolveSpellCast(attacker, zone) {
-  if (!attacker.alive) return;
-  if (attacker.isSilenced) return; // SILENCE blocks all spell casts
-  if (attacker.phasedUntil > Date.now()) return;
-  if (!attacker.cards || attacker.cards.length === 0) return;
+  try {
+    if (!attacker.alive) return;
+    if (attacker.isSilenced) return;
+    if (attacker.phasedUntil > Date.now()) return;
+    if (!attacker.cards || attacker.cards.length === 0) {
+      console.log(`[SPELL] ${attacker.name} has no cards, skipping spell cast`);
+      return;
+    }
 
-  // Pick next card in rotation
-  const card = attacker.cards[attacker.cardIndex % attacker.cards.length];
-  attacker.cardIndex = (attacker.cardIndex + 1) % attacker.cards.length;
+    // Pick next card in rotation
+    const card = attacker.cards[attacker.cardIndex % attacker.cards.length];
+    attacker.cardIndex = (attacker.cardIndex + 1) % attacker.cards.length;
 
-  if (!card) return;
+    if (!card) { console.log(`[SPELL] ${attacker.name} card at index is null`); return; }
+
+    console.log(`[SPELL] ${attacker.name} casts ${card.name} (atk:${card.atk}, effects:${JSON.stringify(card.bonus_effects)})`);
 
   const target = zone.pickTarget(attacker);
   const anchorActive = target && target.hasEffect('ANCHOR');
@@ -660,6 +666,10 @@ function resolveSpellCast(attacker, zone) {
 
   if (target) checkKO(target, attacker, zone);
   if (attacker.hp <= 0) checkKO(attacker, target, zone);
+
+  } catch(err) {
+    console.error(`[SPELL ERROR] ${attacker?.name}:`, err.message, err.stack);
+  }
 }
 // ─── POISON TICK (independent of attacks) ──────────────
 function tickPoisons(zone) {
