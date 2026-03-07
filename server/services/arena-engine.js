@@ -633,6 +633,11 @@ class Arena {
     const cardType = activeCard?.spell_type || 'attack';
     const cardEffects = activeCard?.bonus_effects || [];
 
+    // Helper: check if active card has a given effect tag
+    const cardHas = (tag) => cardEffects.some(e => e.tag && e.tag.split(' ')[0] === tag);
+    // Also check persistent runtime effects (WARD, BARRIER etc applied at round start)
+    const hasEffect = (tag) => cardHas(tag) || this.nineHasEffect(attacker, tag);
+
     // PHASE bonus from last round
     if (attacker.phase_bonus_next) {
       atk = Math.round(atk * 1.5);
@@ -640,7 +645,7 @@ class Arena {
     }
 
     // SURGE bonus (+50% ATK)
-    if (this.nineHasEffect(attacker, 'SURGE') && !attacker.is_silenced) {
+    if (hasEffect('SURGE') && !attacker.is_silenced) {
       atk = Math.round(atk * (1 + EFFECT_VALUES.SURGE.atk_bonus));
     }
 
@@ -652,7 +657,7 @@ class Arena {
     // CRIT check
     const critChance = EFFECT_VALUES.CRIT.chance + (attacker.total_luck * 0.01);
     let isCrit = false;
-    if (this.nineHasEffect(attacker, 'CRIT') && !attacker.is_silenced && roll(critChance)) {
+    if (hasEffect('CRIT') && !attacker.is_silenced && roll(critChance)) {
       atk = Math.round(atk * EFFECT_VALUES.CRIT.multiplier);
       isCrit = true;
     }
@@ -664,7 +669,7 @@ class Arena {
     }
 
     // Check PIERCE
-    const isPierce = this.nineHasEffect(attacker, 'PIERCE') && !attacker.is_silenced;
+    const isPierce = hasEffect('PIERCE') && !attacker.is_silenced;
 
     // Deal damage
     const damageEvents = target.takeDamage(atk, attacker, { isPierce });
@@ -683,7 +688,7 @@ class Arena {
     events.push(...damageEvents);
 
     // CHAIN — hit a second target
-    if (this.nineHasEffect(attacker, 'CHAIN') && !attacker.is_silenced) {
+    if (hasEffect('CHAIN') && !attacker.is_silenced) {
       const aliveEnemies = [...this.nines.values()].filter(n =>
         n.alive && n.id !== attacker.id && n.id !== target.id && !attacker.isAlly(n)
       );
@@ -704,42 +709,46 @@ class Arena {
       }
     }
 
-    // BURN — apply on hit
-    if (this.nineHasEffect(attacker, 'BURN') && !attacker.is_silenced) {
-      this.applyStackingEffect(target, 'BURN', EFFECT_VALUES.BURN.damage_per_cycle);
-      events.push({ type: 'effect', effect_type: 'BURN_APPLY', target_id: target.id, stacks: target.effects.BURN?.stacks || 1 });
-    }
+    // ON-HIT CARD EFFECTS — check active card's effects directly
+    if (!attacker.is_silenced && cardEffects.length > 0) {
+      const hasEffect = (tag) => cardEffects.some(e => e.tag && e.tag.split(' ')[0] === tag);
 
-    // POISON — apply on hit
-    if (this.nineHasEffect(attacker, 'POISON') && !attacker.is_silenced) {
-      this.applyStackingEffect(target, 'POISON', EFFECT_VALUES.POISON.damage_per_cycle);
-      events.push({ type: 'effect', effect_type: 'POISON_APPLY', target_id: target.id, stacks: target.effects.POISON?.stacks || 1 });
-    }
-
-    // DRAIN — steal HP
-    if (this.nineHasEffect(attacker, 'DRAIN') && !attacker.is_silenced) {
-      const drainAmount = randInt(EFFECT_VALUES.DRAIN.min, EFFECT_VALUES.DRAIN.max);
-      target.current_hp = Math.max(0, target.current_hp - drainAmount);
-      const healEvents = attacker.heal(drainAmount);
-      events.push({ type: 'effect', effect_type: 'DRAIN', from: attacker.id, to: target.id, amount: drainAmount });
-      events.push(...healEvents);
-    }
-
-    // SIPHON — steal 1 HP from ALL enemies
-    if (this.nineHasEffect(attacker, 'SIPHON') && !attacker.is_silenced) {
-      let totalSiphoned = 0;
-      for (const enemy of [...this.nines.values()].filter(n => n.alive && n.id !== attacker.id && !attacker.isAlly(n))) {
-        enemy.current_hp = Math.max(0, enemy.current_hp - EFFECT_VALUES.SIPHON.hp_per_enemy);
-        totalSiphoned += EFFECT_VALUES.SIPHON.hp_per_enemy;
+      // BURN — apply on hit
+      if (hasEffect('BURN')) {
+        this.applyStackingEffect(target, 'BURN', EFFECT_VALUES.BURN.damage_per_cycle);
+        events.push({ type: 'effect', effect_type: 'BURN_APPLY', target_id: target.id, stacks: target.effects.BURN?.stacks || 1 });
       }
-      attacker.heal(totalSiphoned);
-      events.push({ type: 'effect', effect_type: 'SIPHON', nine_id: attacker.id, total: totalSiphoned });
-    }
 
-    // OVERCHARGE — trigger card effect twice
-    if (this.nineHasEffect(attacker, 'OVERCHARGE') && !attacker.is_silenced) {
-      // TODO: re-trigger the primary effect a second time
-      events.push({ type: 'effect', effect_type: 'OVERCHARGE', nine_id: attacker.id });
+      // POISON — apply on hit
+      if (hasEffect('POISON')) {
+        this.applyStackingEffect(target, 'POISON', EFFECT_VALUES.POISON.damage_per_cycle);
+        events.push({ type: 'effect', effect_type: 'POISON_APPLY', target_id: target.id, stacks: target.effects.POISON?.stacks || 1 });
+      }
+
+      // DRAIN — steal HP
+      if (hasEffect('DRAIN')) {
+        const drainAmount = randInt(EFFECT_VALUES.DRAIN.min, EFFECT_VALUES.DRAIN.max);
+        target.current_hp = Math.max(0, target.current_hp - drainAmount);
+        const healEvents = attacker.heal(drainAmount);
+        events.push({ type: 'effect', effect_type: 'DRAIN', from: attacker.id, to: target.id, amount: drainAmount });
+        events.push(...healEvents);
+      }
+
+      // SIPHON — steal HP from all enemies
+      if (hasEffect('SIPHON')) {
+        let totalSiphoned = 0;
+        for (const enemy of [...this.nines.values()].filter(n => n.alive && n.id !== attacker.id && !attacker.isAlly(n))) {
+          enemy.current_hp = Math.max(0, enemy.current_hp - EFFECT_VALUES.SIPHON.hp_per_enemy);
+          totalSiphoned += EFFECT_VALUES.SIPHON.hp_per_enemy;
+        }
+        attacker.heal(totalSiphoned);
+        events.push({ type: 'effect', effect_type: 'SIPHON', nine_id: attacker.id, total: totalSiphoned });
+      }
+
+      // OVERCHARGE — visual trigger
+      if (hasEffect('OVERCHARGE')) {
+        events.push({ type: 'effect', effect_type: 'OVERCHARGE', nine_id: attacker.id });
+      }
     }
 
     return events;
