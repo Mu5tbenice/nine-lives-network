@@ -312,19 +312,23 @@ async function loadZoneState(zoneId) {
 
     // Get equipped cards for this deployment
     let cards = [];
-    const { data: slots } = await supabase
+    const { data: slots, error: slotErr } = await supabase
       .from('zone_card_slots')
       .select('card_id, slot_number')
       .eq('deployment_id', dep.id)
       .eq('is_active', true);
 
+    console.log(`[CARDS] dep ${dep.id} player ${dep.player_id}: slots=${JSON.stringify(slots)}, err=${slotErr?.message}`);
+
     if (slots && slots.length > 0) {
       const cardIds = slots.map(s => s.card_id).filter(Boolean);
       if (cardIds.length > 0) {
-        const { data: playerCards } = await supabase
+        const { data: playerCards, error: cardErr } = await supabase
           .from('player_cards')
           .select('id, sharpness, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)')
           .in('id', cardIds);
+
+        console.log(`[CARDS] playerCards=${JSON.stringify(playerCards?.map(c=>c.spell?.name))}, err=${cardErr?.message}`);
 
         if (playerCards) {
           cards = playerCards.map(pc => {
