@@ -1881,7 +1881,7 @@
       const tex = PIXI.Texture.from(url);
       const sprite = new PIXI.Sprite(tex);
       sprite.name = 'arena-platform';
-      sprite.zIndex = 1; // above biome CSS bg (z0), below sprites (z10+)
+      sprite.zIndex = 1; // above biome CSS bg, BELOW Nine sprites (z10+)
 
       const doFit = () => fitArenaPlatform(sprite, tex, app);
 
@@ -2218,6 +2218,7 @@
     container.addChild(hpFill);
 
     app.stage.addChild(container);
+    container.zIndex = 10; // always above arena-platform (zIndex 1)
 
     // Initial facing: left-side sprites face right, right-side sprites face left
     const cx = app.screen.width / 2;
