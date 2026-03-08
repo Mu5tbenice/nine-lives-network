@@ -326,28 +326,10 @@ async function loadZoneState(zoneId) {
     if (slots && slots.length > 0) {
       const cardIds = slots.map(s => s.card_id).filter(Boolean);
       if (cardIds.length > 0) {
-        const { data: playerCards, error: cardErr } = await supabase
+        const { data: playerCards } = await supabase
           .from('player_cards')
           .select('id, sharpness, rarity, spell:spell_id(name, spell_type, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)')
           .in('id', cardIds);
-
-          cards = playerCards.map(pc => {
-            const spell = pc.spell || {};
-            const sharp = pc.sharpness != null ? pc.sharpness : 100;
-            return {
-              id: pc.id,
-              name: spell.name,
-              rarity: pc.rarity || 'common',  // rarity is on player_cards, not spells
-              spell_type: spell.spell_type,
-              bonus_effects: spell.bonus_effects || [],
-              atk: applySharpness(spell.base_atk || 0, sharp),
-              hp: applySharpness(spell.base_hp || 0, sharp),
-              spd: applySharpness(spell.base_spd || 0, sharp),
-              def: applySharpness(spell.base_def || 0, sharp),
-              luck: applySharpness(spell.base_luck || 0, sharp),
-            };
-          });
-        }
 
         if (playerCards) {
           cards = playerCards.map(pc => {
@@ -356,7 +338,8 @@ async function loadZoneState(zoneId) {
             return {
               id: pc.id,
               name: spell.name,
-              rarity: spell.rarity || 'common',
+              rarity: pc.rarity || 'common',
+              spell_type: spell.spell_type,
               bonus_effects: spell.bonus_effects || [],
               atk: applySharpness(spell.base_atk || 0, sharp),
               hp: applySharpness(spell.base_hp || 0, sharp),
@@ -368,8 +351,6 @@ async function loadZoneState(zoneId) {
         }
       }
     }
-
-    // Get equipped items
     let itemStats = { atk: 0, hp: 0, spd: 0, def: 0, luck: 0 };
     const slugFields = ['equipped_fur','equipped_expression','equipped_headwear','equipped_outfit','equipped_weapon','equipped_familiar','equipped_trinket_1','equipped_trinket_2'];
     const { data: nineData } = await supabase
