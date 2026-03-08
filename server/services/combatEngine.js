@@ -117,6 +117,11 @@ class CombatNine {
     // KO tracking
     this.koUntil = 0;     // timestamp when zone cooldown expires
 
+    // Contribution tracking (per-deployment stats)
+    this.damageDealt = 0;
+    this.healingDone = 0;
+    this.koCount = 0;
+
     // Parse card effects
     this._parseCardEffects();
   }
@@ -472,6 +477,7 @@ function resolveAutoAttack(attacker, zone) {
   if (damage > 0) {
     if (anchorActive && target.hp - damage < 1) damage = Math.max(0, target.hp - 1);
     target.hp = Math.max(anchorActive ? 1 : 0, target.hp - damage);
+    if (damage > 0) attacker.damageDealt = (attacker.damageDealt || 0) + damage;
   }
 
   zone.emit({
@@ -532,7 +538,10 @@ function resolveSpellCast(attacker, zone) {
       spellDamage = 0;
     }
     if (anchorActive && target.hp - spellDamage < 1) spellDamage = Math.max(0, target.hp - 1);
-    if (spellDamage > 0) target.hp = Math.max(anchorActive ? 1 : 0, target.hp - spellDamage);
+    if (spellDamage > 0) {
+      target.hp = Math.max(anchorActive ? 1 : 0, target.hp - spellDamage);
+      attacker.damageDealt = (attacker.damageDealt || 0) + spellDamage;
+    }
   }
 
   // Broadcast spell cast event
@@ -735,6 +744,9 @@ function checkKO(nine, killer, zone) {
   if (nine.hp > 0 || !nine.alive) return;
   nine.alive = false;
 
+  // Track KO on killer
+  if (killer) killer.koCount = (killer.koCount || 0) + 1;
+
   zone.emit({
     type: 'ko',
     target: nine.playerId, targetName: nine.name,
@@ -845,6 +857,13 @@ function tickZone(zone) {
       events: zone.tickEvents,
       state: [...zone.nines.values()].filter(n => n.alive).map(n => ({
         id: n.playerId, hp: n.hp, maxHp: n.maxHp, isAlive: n.alive,
+        guildTag: n.guildTag, house: n.house,
+        // Spell timer progress 0-1 (1 = ready to cast)
+        spellReady: Math.max(0, Math.min(1, 1 - (n.spellTimer / n.getSpellInterval()))),
+        // Contribution stats
+        damageDealt: n.damageDealt || 0,
+        healingDone: n.healingDone || 0,
+        koCount: n.koCount || 0,
       })),
     });
   }
