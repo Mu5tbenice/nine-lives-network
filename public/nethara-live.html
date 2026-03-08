@@ -1548,7 +1548,10 @@
     const cy = (state.arenaApp ? state.arenaApp.screen.height : window.innerHeight) / 2;
     const scaleX = cx / 400;
     const scaleY = cy / 300;
-    return clampToDiamond(pos.x * scaleX, pos.y * scaleY, cx, cy, 0.85);
+    const raw = { x: pos.x * scaleX, y: pos.y * scaleY };
+    const poly = getActiveCanvasPoly();
+    if (poly) return clampToPolygon(raw.x, raw.y, poly);
+    return clampToDiamond(raw.x, raw.y, cx, cy, 0.85);
   }
 
   function closeArena() {
@@ -1683,78 +1686,231 @@
   }
 
   /** Set biome background image based on current zone's house */
-  /** Assign each Nine a single position for this round — they walk there and hold */
+  // ══════════════════════════════════════════════════════
+  // ARENA PLATFORM IMAGE + POLYGON WALK ZONE
+  // Each zone has its own arena_image_url and arena_polygon
+  // stored in the zones table (added via Supabase).
+  //
+  // arena_image_url: public URL to platform image (PIXI sprite)
+  // arena_polygon:   jsonb object { "points": [{x,y}...] } — 0-1 fractions of image size
+  //                  the platform image — defines the walk zone.
+  //
+  // If a zone has no arena_image_url, sprites walk on the
+  // existing ground ellipse (fallback).
+  // ══════════════════════════════════════════════════════
+
+  // Scale platform image to fit fully within the canvas (contain by height),
+  // centered. The image is designed with visible surroundings — don't crop it.
+  // On mobile where the image may be wider than screen, we allow touch panning.
+  function fitArenaPlatform(sprite, tex, app) {
+    const sw = app.screen.width;
+    const sh = app.screen.height;
+    // Fit by height so the full image is always visible vertically
+    const scale = sh / tex.height;
+    sprite.scale.set(scale);
+    const scaledW = tex.width * scale;
+    // Center horizontally — on wide screens shows full image with space on sides
+    sprite.x = (sw - scaledW) / 2;
+    sprite.y = 0;
+    // Store pan limits for mobile drag
+    sprite._minX = Math.min(0, sw - scaledW); // can't pan past right edge
+    sprite._maxX = Math.max(0, sw - scaledW); // can't pan past left edge
+    // Reset pan if image fits within screen
+    if (scaledW <= sw) sprite.x = (sw - scaledW) / 2;
+  }
+
+  // ── MOBILE PAN (touch drag left/right on the canvas) ──
+  (function setupArenaPan() {
+    let touchStartX = 0;
+    let spriteStartX = 0;
+    let isPanning = false;
+
+    const canvas = document.getElementById('arena-canvas');
+    if (!canvas) return;
+
+    canvas.addEventListener('touchstart', (e) => {
+      const app = state.arenaApp;
+      const sprite = app?.stage?.getChildByName('arena-platform');
+      if (!sprite || sprite._minX === sprite._maxX) return; // image fits, no pan needed
+      touchStartX = e.touches[0].clientX;
+      spriteStartX = sprite.x;
+      isPanning = true;
+    }, { passive: true });
+
+    canvas.addEventListener('touchmove', (e) => {
+      if (!isPanning) return;
+      const app = state.arenaApp;
+      const sprite = app?.stage?.getChildByName('arena-platform');
+      if (!sprite) return;
+      const dx = e.touches[0].clientX - touchStartX;
+      const newX = Math.max(sprite._minX, Math.min(sprite._maxX, spriteStartX + dx));
+      sprite.x = newX;
+      // Also shift all sprites by same amount so they stay over the platform
+      state.nines.forEach(nine => {
+        if (nine._basePlatformX === undefined) nine._basePlatformX = nine.container.x;
+      });
+    }, { passive: true });
+
+    canvas.addEventListener('touchend', () => { isPanning = false; });
+  })();
+
+  // Convert a polygon point [{x,y} fractions] to canvas pixels
+  function polyPointToCanvas(p, sprite, tex) {
+    return {
+      x: sprite.x + p.x * tex.width * sprite.scale.x,
+      y: sprite.y + p.y * tex.height * sprite.scale.y,
+    };
+  }
+
+  // Point-in-polygon test (ray casting)
+  function isInsidePolygon(px, py, canvasPoly) {
+    let inside = false;
+    for (let i = 0, j = canvasPoly.length - 1; i < canvasPoly.length; j = i++) {
+      const xi = canvasPoly[i].x, yi = canvasPoly[i].y;
+      const xj = canvasPoly[j].x, yj = canvasPoly[j].y;
+      const intersect = ((yi > py) !== (yj > py)) &&
+        (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  // Clamp a point into the polygon by moving toward its centroid
+  function clampToPolygon(px, py, canvasPoly) {
+    if (isInsidePolygon(px, py, canvasPoly)) return { x: px, y: py };
+    const cx = canvasPoly.reduce((s, p) => s + p.x, 0) / canvasPoly.length;
+    const cy = canvasPoly.reduce((s, p) => s + p.y, 0) / canvasPoly.length;
+    // Step toward centroid until inside
+    for (let t = 0.05; t <= 1; t += 0.05) {
+      const tx = px + (cx - px) * t;
+      const ty = py + (cy - py) * t;
+      if (isInsidePolygon(tx, ty, canvasPoly)) return { x: tx, y: ty };
+    }
+    return { x: cx, y: cy };
+  }
+
+  // Get the bounding box of the walk polygon (for random point generation)
+  function polyBounds(canvasPoly) {
+    const xs = canvasPoly.map(p => p.x);
+    const ys = canvasPoly.map(p => p.y);
+    return {
+      minX: Math.min(...xs), maxX: Math.max(...xs),
+      minY: Math.min(...ys), maxY: Math.max(...ys),
+    };
+  }
+
+  // Random point inside polygon using rejection sampling
+  function randomInsidePolygon(canvasPoly, tries = 40) {
+    const b = polyBounds(canvasPoly);
+    for (let i = 0; i < tries; i++) {
+      const x = b.minX + Math.random() * (b.maxX - b.minX);
+      const y = b.minY + Math.random() * (b.maxY - b.minY);
+      if (isInsidePolygon(x, y, canvasPoly)) return { x, y };
+    }
+    // Fallback: centroid
+    return {
+      x: canvasPoly.reduce((s, p) => s + p.x, 0) / canvasPoly.length,
+      y: canvasPoly.reduce((s, p) => s + p.y, 0) / canvasPoly.length,
+    };
+  }
+
+  // Get the active canvas-space polygon for the current zone
+  function getActiveCanvasPoly() {
+    const app = state.arenaApp;
+    const zone = state.currentZone;
+    if (!app || !zone) return null;
+
+    const raw = zone.arena_polygon; // { points: [{x,y}...] } stored in Supabase jsonb
+    const poly = raw?.points || (Array.isArray(raw) ? raw : null);
+    const sprite = app.stage.getChildByName('arena-platform');
+
+    if (poly && poly.length >= 3 && sprite && sprite.texture) {
+      const tex = sprite.texture;
+      return poly.map(p => polyPointToCanvas(p, sprite, tex));
+    }
+
+    // Fallback: diamond polygon from ARENA_HALF_W/H constants
+    const cx = app.screen.width / 2;
+    const cy = app.screen.height / 2;
+    return [
+      { x: cx,                  y: cy - ARENA_HALF_H },
+      { x: cx + ARENA_HALF_W,   y: cy },
+      { x: cx,                  y: cy + ARENA_HALF_H },
+      { x: cx - ARENA_HALF_W,   y: cy },
+    ];
+  }
+
+  /** Assign each Nine a random position inside the walk polygon */
   function setRoundPositions() {
     const app = state.arenaApp;
     if (!app) return;
-    const cx = app.screen.width / 2;
-    // When platform image loaded, walk zone is at ~42% canvas height (stone platform center)
-    const cy = ARENA_PLATFORM_URL
-      ? app.screen.height * 0.42
-      : app.screen.height / 2;
+    const poly = getActiveCanvasPoly();
+    if (!poly) return;
 
     state.nines.forEach((nine) => {
-      let x, y, tries = 0;
-      do {
-        x = cx + (Math.random() - 0.5) * ARENA_HALF_W * 1.6;
-        y = cy + (Math.random() - 0.5) * ARENA_HALF_H * 1.6;
-        tries++;
-      } while (!isInsideDiamond(x, y, cx, cy) && tries < 30);
-      nine.roundTarget = clampToDiamond(x, y, cx, cy, 0.82);
+      const pos = randomInsidePolygon(poly);
+      nine.roundTarget = pos;
     });
-    console.log('🎯 Round positions assigned (diamond-clamped)');
+    console.log('🎯 Round positions assigned (polygon-based)');
   }
-
-  // ── ARENA PLATFORM IMAGE ──
-  // After uploading to Supabase storage, paste the public URL here:
-  const ARENA_PLATFORM_URL = ''; // ← paste URL e.g. https://xxx.supabase.co/storage/v1/object/public/assets/arena-platform.png
 
   function setBiomeBackground(container) {
     const imgUrl = getBiomeUrl(state.currentZone || {});
     const img = new Image();
     img.onload = () => {
       container.style.backgroundImage = `url('${imgUrl}')`;
-      console.log(`🏔️ Biome: ${state.currentZone?.name || 'unknown'} → ${imgUrl}`);
     };
     img.onerror = () => {
       container.style.backgroundImage = `url('${BIOME_FALLBACK}')`;
     };
     img.src = imgUrl;
-    // Load arena platform image as PIXI sprite if URL is set
-    if (ARENA_PLATFORM_URL && state.arenaApp) loadArenaPlatformSprite(state.arenaApp);
+
+    // Load arena platform sprite from zone data
+    const arenaUrl = state.currentZone?.arena_image_url;
+    if (arenaUrl && state.arenaApp) {
+      loadArenaPlatformSprite(state.arenaApp, arenaUrl);
+    }
   }
 
-  function loadArenaPlatformSprite(app) {
-    const old = app.stage.getChildByName('arena-platform');
-    if (old) app.stage.removeChild(old);
+  function loadArenaPlatformSprite(app, url) {
+    // Remove old platform sprite
+    const oldSprite = app.stage.getChildByName('arena-platform');
+    if (oldSprite) app.stage.removeChild(oldSprite);
+
     try {
-      const tex = PIXI.Texture.from(ARENA_PLATFORM_URL);
+      const tex = PIXI.Texture.from(url);
       const sprite = new PIXI.Sprite(tex);
       sprite.name = 'arena-platform';
-      sprite.zIndex = 0;
-      function fitSprite() {
-        const sw = app.screen.width;
-        const sh = app.screen.height;
-        const scale = sw / tex.width; // fill canvas width
-        sprite.scale.set(scale);
-        sprite.x = 0;
-        // Align stone platform (at ~44% of image height) to 42% of canvas height
-        sprite.y = 0.42 * sh - 0.44 * tex.height * scale;
-      }
+      sprite.zIndex = 1; // above biome CSS bg (z0), below sprites (z10+)
+
+      const doFit = () => fitArenaPlatform(sprite, tex, app);
+
       tex.baseTexture.on('loaded', () => {
-        fitSprite();
+        doFit();
         app.stage.addChildAt(sprite, 0);
         app.stage.sortChildren();
-        console.log('🏟️ Arena platform loaded');
+        // Reassign positions now that polygon is renderable
+        setRoundPositions();
+        console.log('🏟️ Arena platform loaded:', url);
       });
-      app.renderer.on('resize', fitSprite);
-    } catch(e) { console.warn('Arena platform load failed:', e); }
+
+      // Refit on resize
+      app.renderer.on('resize', () => {
+        if (sprite.parent) doFit();
+      });
+    } catch(e) {
+      console.warn('Arena platform load failed:', e);
+    }
   }
 
   function drawArenaGround(app) {
     ['ground','environment','fog'].forEach(function(n){
       const e = app.stage.getChildByName(n); if(e) app.stage.removeChild(e);
     });
+
+    // If this zone has a platform image, skip the ground ellipse —
+    // the polygon defines the walk zone and the image IS the floor.
+    if (state.currentZone?.arena_image_url) return;
 
     const cx = app.screen.width / 2;
     const cy = app.screen.height / 2;
