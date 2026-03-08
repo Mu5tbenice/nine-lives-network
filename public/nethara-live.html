@@ -284,26 +284,58 @@
     .nerm-label { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--gold); margin-bottom: 3px; letter-spacing: 1px; }
 
     /* ── Bottom tray — unified build + stats ── */
+    /* ══════════════════════════════════════════════
+       UNIFIED BOTTOM TRAY
+       Column: YOUR NINE header → tab bar → content
+    ══════════════════════════════════════════════ */
     .arena-bottom-tray {
-      position: absolute; bottom: 60px; left: 0; right: 270px; z-index: 25;
-      background: linear-gradient(0deg, rgba(14,10,24,0.96) 0%, rgba(14,10,24,0.92) 70%, rgba(14,10,24,0.5) 100%);
-      padding: 10px 14px 8px; pointer-events: auto;
-      display: flex; gap: 12px; align-items: flex-end;
-    }
-    .tray-section-label {
-      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--gold);
-      letter-spacing: 1px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+      position: absolute; bottom: 0; left: 0; right: 270px; z-index: 25;
+      display: flex; flex-direction: column;
+      background: rgba(10,8,20,0.97);
+      border-top: 1px solid rgba(255,255,255,0.09);
+      backdrop-filter: blur(10px);
+      max-height: 220px;
     }
 
-    /* Build section */
-    .tray-build { flex: 1; min-width: 0; }
-    .build-swap-btn {
-      font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint);
-      background: none; border: 1px solid var(--border); padding: 2px 6px;
-      border-radius: 3px; cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s;
+    /* YOUR NINE — fixed header strip */
+    .tray-nine-header {
+      padding: 8px 14px 6px; flex-shrink: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
     }
-    .build-swap-btn:hover { color: var(--gold); border-color: var(--gold); }
-    .build-cards { display: flex; gap: 6px; }
+    .tray-nine-top {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 5px;
+    }
+
+    /* Tab bar */
+    #arena-tray-tabs {
+      display: flex; flex-shrink: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .tray-tab {
+      flex: 1; background: none; border: none;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      color: var(--faint); font-family: 'Press Start 2P', monospace; font-size: 6px;
+      padding: 8px 4px; cursor: pointer; transition: color 0.2s, background 0.2s;
+      letter-spacing: 0.5px;
+    }
+    .tray-tab:last-child { border-right: none; }
+    .tray-tab.active { color: var(--gold); background: rgba(212,166,75,0.08); }
+    .tray-tab:hover:not(.active) { color: var(--bright); }
+
+    /* Content area */
+    #arena-tray-body {
+      flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0;
+    }
+    .tray-pane {
+      display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;
+    }
+    .tray-pane.active { display: flex; }
+
+    /* BUILD pane */
+    .build-pane-header {
+      padding: 5px 12px 4px; flex-shrink: 0;
+      display: flex; align-items: center; gap: 8px;
+    }
 
     /* ── Card slots — compact horizontal design ── */
     .arena-card-slot {
@@ -339,17 +371,22 @@
     .arena-card-slot.empty .slot-empty-text {
       font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--faint);
     }
-    .slot-wave-label { display: none; }
-
-    /* Stats section */
-    .tray-stats {
-      width: 200px; flex-shrink: 0;
+    .tray-section-label {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--gold);
+      letter-spacing: 1px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
     }
-    .your-nine-hp { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+    .build-swap-btn {
+      font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint);
+      background: none; border: 1px solid var(--border); padding: 3px 8px;
+      border-radius: 3px; cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s;
+    }
+    .build-swap-btn:hover { color: var(--gold); border-color: var(--gold); }
+    .build-cards { display: flex; gap: 6px; padding: 4px 12px 8px; flex: 1; overflow-x: auto; }
+    .your-nine-hp { display: flex; align-items: center; gap: 6px; }
     .your-nine-hp-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
     .your-nine-hp-fill { height: 100%; background: linear-gradient(90deg, var(--green), #66eebb); border-radius: 3px; transition: width 0.4s ease; }
     .your-nine-hp-text { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--green); white-space: nowrap; }
-    .your-nine-stats { display: flex; gap: 6px; flex-wrap: wrap; }
+    .your-nine-stats { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
     .your-nine-stat { font-family: 'Press Start 2P', monospace; font-size: 7px; }
     .btn-withdraw {
       margin-top: 6px; font-family: 'Press Start 2P', monospace; font-size: 6px;
@@ -570,25 +607,11 @@
     .sidebar-guild-bar { width: 100%; height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; }
     .sidebar-guild-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
 
-    #arena-panel-tabs {
-      display: flex; border-bottom: 1px solid rgba(255,255,255,0.07); flex-shrink: 0;
-    }
-    .panel-tab {
-      flex: 1; background: none; border: none; border-right: 1px solid rgba(255,255,255,0.07);
-      color: var(--faint); font-family: 'Press Start 2P', monospace; font-size: 8px;
-      padding: 7px 4px; cursor: pointer; transition: color 0.2s, background 0.2s;
-    }
-    .panel-tab:last-child { border-right: none; }
-    .panel-tab.active { color: var(--gold); background: rgba(212,166,75,0.08); }
-    .panel-tab:hover:not(.active) { color: var(--bright); }
-    #sidebar-collapse-btn { flex: 0 0 28px; font-size: 9px; }
-    #sidebar-tab-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
-    .panel-content { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
-    .panel-content.active { display: flex; }
+    /* sidebar just shows guilds now — tabs moved to bottom tray */
 
     #arena-chat-log {
-      flex: 1; overflow-y: auto; padding: 8px 10px;
-      display: flex; flex-direction: column; gap: 4px;
+      flex: 1; overflow-y: auto; padding: 6px 12px;
+      display: flex; flex-direction: column; gap: 3px;
     }
     #arena-chat-log::-webkit-scrollbar { width: 2px; }
     #arena-chat-log::-webkit-scrollbar-thumb { background: rgba(212,166,75,0.2); }
@@ -615,30 +638,6 @@
     .log-entry.log-ko { color: var(--red); }
     .log-entry.log-spell { color: var(--gold); }
     .log-entry.log-heal { color: var(--green); }
-
-    /* ═══════════════════════════════════════════
-       MOBILE BOTTOM PANEL
-    ═══════════════════════════════════════════ */
-    #arena-mobile-panel {
-      display: none;
-      position: absolute; top: 44px; left: 0; right: 0; z-index: 35;
-      background: rgba(10,8,20,0.96); border-bottom: 1px solid rgba(255,255,255,0.09);
-      flex-direction: column;
-    }
-    #arena-mobile-tabs { display: flex; flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
-    .mobile-tab {
-      flex: 1; background: none; border: none; border-right: 1px solid rgba(255,255,255,0.07);
-      color: var(--faint); font-family: 'Press Start 2P', monospace; font-size: 6px;
-      padding: 9px 4px; cursor: pointer; transition: color 0.2s;
-    }
-    .mobile-tab.active { color: var(--gold); background: rgba(212,166,75,0.08); }
-    .mobile-tab-toggle { flex: 0 0 36px; border-right: none; font-size: 9px; color: var(--faint); }
-    #arena-mobile-body { overflow: hidden; }
-    .mobile-panel-content { display: none; flex-direction: column; }
-    .mobile-panel-content.active { display: flex; }
-    #arena-chat-log-mobile { max-height: 130px; overflow-y: auto; padding: 6px 10px; display: flex; flex-direction: column; gap: 3px; }
-    #battle-log-full-mobile, #contribution-list-mobile { max-height: 140px; overflow-y: auto; padding: 6px 10px; display: flex; flex-direction: column; gap: 3px; }
-    /* share chat-msg, log-entry, contrib-row styles from desktop */
 
     /* ── Guild control pill ── */
     #guild-control-pill {
@@ -692,56 +691,33 @@
       .arena-live-pill { font-size: 6px; padding: 3px 7px; }
       .arena-timer-compact { font-size: 7px; }
       .countdown-time { font-size: 7px; }
-
       .arena-scoreboard { display: none; }
-
       .nerm-bubble-container {
-        top: auto; bottom: 140px; left: 0; right: 0;
+        top: auto; bottom: 225px; left: 0; right: 0;
         max-width: 100%; padding: 0 10px; z-index: 30;
       }
       .nerm-bubble { border-radius: 10px; font-size: 12px; padding: 6px 10px; text-align: center; border-bottom: none; }
 
-      .arena-bottom-tray {
-        flex-direction: column; gap: 8px; padding: 8px 10px;
-      }
-      .tray-stats { width: 100%; }
-      .build-cards { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      .arena-card-slot { min-width: 100px; }
-      .arena-card-slot .slot-name { font-size: 9px; }
-
-      .arena-deploy-cta { bottom: 16px; }
-      .btn-join-battle { font-size: 13px; padding: 12px 28px; }
-
+      /* On mobile: tray is full width (no sidebar) */
+      .arena-bottom-tray { right: 0; }
+      #arena-sidebar { display: none !important; }
       .arena-feed { display: none; }
       .arena-hp-strip { display: none; }
 
-      /* Mobile: tray sits at the very bottom */
-      .arena-bottom-tray {
-        bottom: 0;
-        flex-direction: column; gap: 6px; padding: 8px 10px;
-        background: linear-gradient(0deg, rgba(14,10,24,0.97) 0%, rgba(14,10,24,0.8) 100%);
-      }
-      .tray-stats { width: 100%; }
-      .build-cards { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      .arena-card-slot { min-width: 100px; }
-      .arena-card-slot .slot-name { font-size: 9px; }
-
-      .arena-deploy-cta { bottom: 0; left: 0; transform: none; width: 100%; text-align: center; padding: 10px; }
+      .arena-deploy-cta { bottom: 0; right: 0; left: 0; transform: none; text-align: center; padding: 12px; }
       .btn-join-battle { font-size: 13px; padding: 12px 28px; }
-      #arena-sidebar { display: none !important; }
 
       .deploy-inner { padding: 14px 10px; margin: 10px auto; }
       .deploy-title { font-size: 16px; }
       .deploy-card-grid { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 6px; max-height: 350px; }
       .btn-deploy { font-size: 14px; padding: 14px; }
+      .arena-card-slot { min-width: 100px; }
+      .tray-tab { font-size: 5px; padding: 8px 2px; }
     }
 
     @media (min-width: 1200px) {
       .arena-card-slot .slot-name { font-size: 11px; }
-      .tray-stats { width: 220px; }
       .your-nine-stat { font-size: 8px; }
-      .arena-feed { max-height: 60px; }
-      .feed-event { font-size: 7px; }
     }
 
     /* Nav overrides — Packs gold pill */
@@ -855,58 +831,6 @@
       <div class="sidebar-section-label">COMPETING GUILDS</div>
       <div id="sidebar-guild-rows"></div>
     </div>
-
-    <!-- Divider + tab panel -->
-    <div id="arena-panel-tabs">
-      <button class="panel-tab active" data-tab="chat">💬</button>
-      <button class="panel-tab" data-tab="stats">📊</button>
-      <button class="panel-tab" data-tab="log">📜</button>
-      <button class="panel-tab" id="sidebar-collapse-btn" title="Collapse">▲</button>
-    </div>
-
-    <div id="sidebar-tab-body">
-      <!-- CHAT -->
-      <div id="arena-chat" class="panel-content active">
-        <div id="arena-chat-log"></div>
-        <div class="chat-input-row">
-          <input id="arena-chat-input" type="text" maxlength="120" placeholder="Say something...">
-          <button id="arena-chat-send">➤</button>
-        </div>
-      </div>
-      <!-- CONTRIBUTION STATS -->
-      <div id="arena-stats-panel" class="panel-content">
-        <div id="contribution-list"></div>
-      </div>
-      <!-- FULL BATTLE LOG -->
-      <div id="arena-log-panel" class="panel-content">
-        <div id="battle-log-full"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── MOBILE BOTTOM PANEL: Chat/Stats/Log ── mobile only -->
-  <div id="arena-mobile-panel">
-    <div id="arena-mobile-tabs">
-      <button class="mobile-tab active" data-tab="chat">💬 CHAT</button>
-      <button class="mobile-tab" data-tab="stats">📊 STATS</button>
-      <button class="mobile-tab" data-tab="log">📜 LOG</button>
-      <button id="mobile-panel-toggle" class="mobile-tab-toggle">▼</button>
-    </div>
-    <div id="arena-mobile-body" style="display:none;">
-      <div id="arena-chat-mobile" class="mobile-panel-content active">
-        <div id="arena-chat-log-mobile"></div>
-        <div class="chat-input-row">
-          <input id="arena-chat-input-mobile" type="text" maxlength="120" placeholder="Say something...">
-          <button id="arena-chat-send-mobile">➤</button>
-        </div>
-      </div>
-      <div id="arena-stats-mobile" class="mobile-panel-content">
-        <div id="contribution-list-mobile"></div>
-      </div>
-      <div id="arena-log-mobile" class="mobile-panel-content">
-        <div id="battle-log-full-mobile"></div>
-      </div>
-    </div>
   </div>
 
   <!-- ── HIDDEN: old scoreboard kept for JS compat ── -->
@@ -914,27 +838,68 @@
     <div id="scoreboard-rows"></div>
   </div>
 
-
-  <!-- Bottom tray: Build + Stats unified panel -->
+  <!-- ═══════════════════════════════════════════════════
+       UNIFIED BOTTOM PANEL — YOUR NINE + tabbed content
+       Tabs: BUILD | CHAT | STATS | LOG
+       Same on desktop and mobile.
+  ════════════════════════════════════════════════════ -->
   <div class="arena-bottom-tray" id="arena-bottom-tray" style="display:none;">
-    <!-- YOUR NINE — above build on mobile, beside on desktop -->
-    <div class="tray-stats" id="your-nine-panel">
-      <div class="tray-section-label">YOUR NINE</div>
-      <div class="your-nine-hp">
-        <div class="your-nine-hp-bar"><div class="your-nine-hp-fill" id="your-hp-fill" style="width:100%"></div></div>
-        <div class="your-nine-hp-text" id="your-hp-text">--/--</div>
+
+    <!-- YOUR NINE — always visible at top -->
+    <div class="tray-nine-header" id="your-nine-panel">
+      <div class="tray-nine-top">
+        <span class="tray-section-label" style="margin-bottom:0; flex-shrink:0;">YOUR NINE</span>
+        <div class="your-nine-hp">
+          <div class="your-nine-hp-bar"><div class="your-nine-hp-fill" id="your-hp-fill" style="width:100%"></div></div>
+          <div class="your-nine-hp-text" id="your-hp-text">--/--</div>
+        </div>
+        <button class="btn-withdraw" id="btn-withdraw" style="width:auto; padding:4px 10px; margin-top:0; flex-shrink:0;">WITHDRAW</button>
       </div>
       <div class="your-nine-stats" id="your-nine-stats"></div>
-      <button class="btn-withdraw" id="btn-withdraw">WITHDRAW</button>
     </div>
-    <!-- YOUR BUILD — below nine on mobile, right of nine on desktop -->
-    <div class="tray-build" id="arena-card-slots">
-      <div class="tray-section-label">YOUR BUILD <button class="build-swap-btn" id="btn-swap-build">SWAP</button></div>
-      <div class="build-cards">
-        <div class="arena-card-slot empty" id="card-slot-0"><span class="slot-empty-text">1</span></div>
-        <div class="arena-card-slot empty" id="card-slot-1"><span class="slot-empty-text">2</span></div>
-        <div class="arena-card-slot empty" id="card-slot-2"><span class="slot-empty-text">3</span></div>
+
+    <!-- Tab bar: BUILD | CHAT | STATS | LOG -->
+    <div id="arena-tray-tabs">
+      <button class="tray-tab active" data-tab="build">🗡️ BUILD</button>
+      <button class="tray-tab" data-tab="chat">💬 CHAT</button>
+      <button class="tray-tab" data-tab="stats">📊 STATS</button>
+      <button class="tray-tab" data-tab="log">📜 LOG</button>
+    </div>
+
+    <!-- Content pane — switches on tab click -->
+    <div id="arena-tray-body">
+
+      <!-- BUILD pane -->
+      <div class="tray-pane active" id="tray-pane-build">
+        <div class="build-pane-header">
+          <button class="build-swap-btn" id="btn-swap-build">⇄ SWAP CARDS</button>
+        </div>
+        <div class="build-cards" id="arena-card-slots">
+          <div class="arena-card-slot empty" id="card-slot-0"><span class="slot-empty-text">1</span></div>
+          <div class="arena-card-slot empty" id="card-slot-1"><span class="slot-empty-text">2</span></div>
+          <div class="arena-card-slot empty" id="card-slot-2"><span class="slot-empty-text">3</span></div>
+        </div>
       </div>
+
+      <!-- CHAT pane -->
+      <div class="tray-pane" id="tray-pane-chat">
+        <div id="arena-chat-log"></div>
+        <div class="chat-input-row">
+          <input id="arena-chat-input" type="text" maxlength="120" placeholder="Say something...">
+          <button id="arena-chat-send">➤</button>
+        </div>
+      </div>
+
+      <!-- STATS pane -->
+      <div class="tray-pane" id="tray-pane-stats">
+        <div id="contribution-list"></div>
+      </div>
+
+      <!-- LOG pane -->
+      <div class="tray-pane" id="tray-pane-log">
+        <div id="battle-log-full"></div>
+      </div>
+
     </div>
   </div>
 
@@ -1447,13 +1412,7 @@
     // Update UI
     document.getElementById('zone-list-view').style.display = 'none';
     document.getElementById('arena-view').style.display = 'block';
-    // Show correct panel based on screen width
-    const isMobile = window.innerWidth <= 768;
-    if (isMobile) {
-      document.getElementById('arena-mobile-panel').style.display = 'flex';
-    } else {
-      document.getElementById('arena-sidebar').style.display = 'flex';
-    }
+    document.getElementById('arena-sidebar').style.display = window.innerWidth > 640 ? 'flex' : 'none';
     document.getElementById('arena-zone-name').textContent = zone.name;
     const h = HOUSES[zone.house || zone.region_house || SCHOOL_TO_HOUSE[zone.controlling_school_id] || SCHOOL_TO_HOUSE[zone.school_id]] || { color: '#888', icon: '❓' };
     document.getElementById('arena-zone-region').style.color = h.color;
@@ -1595,7 +1554,7 @@
   function closeArena() {
     document.getElementById('arena-view').style.display = 'none';
     document.getElementById('arena-sidebar').style.display = 'none';
-    document.getElementById('arena-mobile-panel').style.display = 'none';
+    document.getElementById('arena-sidebar').style.display = 'none';
     document.getElementById('arena-chat-log').innerHTML = '';
     document.getElementById('zone-list-view').style.display = 'block';
 
@@ -1729,7 +1688,10 @@
     const app = state.arenaApp;
     if (!app) return;
     const cx = app.screen.width / 2;
-    const cy = app.screen.height / 2;
+    // When platform image loaded, walk zone is at ~42% canvas height (stone platform center)
+    const cy = ARENA_PLATFORM_URL
+      ? app.screen.height * 0.42
+      : app.screen.height / 2;
 
     state.nines.forEach((nine) => {
       let x, y, tries = 0;
@@ -1743,9 +1705,12 @@
     console.log('🎯 Round positions assigned (diamond-clamped)');
   }
 
+  // ── ARENA PLATFORM IMAGE ──
+  // After uploading to Supabase storage, paste the public URL here:
+  const ARENA_PLATFORM_URL = ''; // ← paste URL e.g. https://xxx.supabase.co/storage/v1/object/public/assets/arena-platform.png
+
   function setBiomeBackground(container) {
     const imgUrl = getBiomeUrl(state.currentZone || {});
-
     const img = new Image();
     img.onload = () => {
       container.style.backgroundImage = `url('${imgUrl}')`;
@@ -1755,6 +1720,35 @@
       container.style.backgroundImage = `url('${BIOME_FALLBACK}')`;
     };
     img.src = imgUrl;
+    // Load arena platform image as PIXI sprite if URL is set
+    if (ARENA_PLATFORM_URL && state.arenaApp) loadArenaPlatformSprite(state.arenaApp);
+  }
+
+  function loadArenaPlatformSprite(app) {
+    const old = app.stage.getChildByName('arena-platform');
+    if (old) app.stage.removeChild(old);
+    try {
+      const tex = PIXI.Texture.from(ARENA_PLATFORM_URL);
+      const sprite = new PIXI.Sprite(tex);
+      sprite.name = 'arena-platform';
+      sprite.zIndex = 0;
+      function fitSprite() {
+        const sw = app.screen.width;
+        const sh = app.screen.height;
+        const scale = sw / tex.width; // fill canvas width
+        sprite.scale.set(scale);
+        sprite.x = 0;
+        // Align stone platform (at ~44% of image height) to 42% of canvas height
+        sprite.y = 0.42 * sh - 0.44 * tex.height * scale;
+      }
+      tex.baseTexture.on('loaded', () => {
+        fitSprite();
+        app.stage.addChildAt(sprite, 0);
+        app.stage.sortChildren();
+        console.log('🏟️ Arena platform loaded');
+      });
+      app.renderer.on('resize', fitSprite);
+    } catch(e) { console.warn('Arena platform load failed:', e); }
   }
 
   function drawArenaGround(app) {
@@ -5237,65 +5231,19 @@
     }
   }
 
-  // ── SIDEBAR TAB SWITCHING (desktop) ──
-  document.querySelectorAll('.panel-tab').forEach(btn => {
-    if (btn.id === 'sidebar-collapse-btn') return;
+  // ══════════════════════════════════════════════
+  // UNIFIED TRAY TAB SWITCHING
+  // ══════════════════════════════════════════════
+  document.querySelectorAll('.tray-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.tab;
-      document.querySelectorAll('.panel-tab').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.panel-content').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tray-tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tray-pane').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
-      const panels = { chat: 'arena-chat', stats: 'arena-stats-panel', log: 'arena-log-panel' };
-      const el = document.getElementById(panels[tab]);
-      if (el) el.classList.add('active');
+      const pane = document.getElementById('tray-pane-' + tab);
+      if (pane) pane.classList.add('active');
     });
   });
-
-  // ── SIDEBAR COLLAPSE ──
-  (function() {
-    const colBtn = document.getElementById('sidebar-collapse-btn');
-    const body = document.getElementById('sidebar-tab-body');
-    if (!colBtn || !body) return;
-    let collapsed = false;
-    colBtn.addEventListener('click', () => {
-      collapsed = !collapsed;
-      body.style.display = collapsed ? 'none' : '';
-      colBtn.textContent = collapsed ? '▼' : '▲';
-    });
-  })();
-
-  // ── MOBILE TAB SWITCHING ──
-  document.querySelectorAll('.mobile-tab').forEach(btn => {
-    if (btn.id === 'mobile-panel-toggle') return;
-    btn.addEventListener('click', () => {
-      const tab = btn.dataset.tab;
-      document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.mobile-panel-content').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      // Open body if closed
-      const body = document.getElementById('arena-mobile-body');
-      if (body) body.style.display = 'block';
-      const mobileToggle = document.getElementById('mobile-panel-toggle');
-      if (mobileToggle) mobileToggle.textContent = '▼';
-      const panelMap = { chat: 'arena-chat-mobile', stats: 'arena-stats-mobile', log: 'arena-log-mobile' };
-      const el = document.getElementById(panelMap[tab]);
-      if (el) el.classList.add('active');
-    });
-  });
-
-  // ── MOBILE PANEL TOGGLE ──
-  (function() {
-    const toggle = document.getElementById('mobile-panel-toggle');
-    const body = document.getElementById('arena-mobile-body');
-    if (!toggle || !body) return;
-    let open = false;
-    toggle.addEventListener('click', () => {
-      open = !open;
-      body.style.maxHeight = open ? '220px' : '0';
-      body.style.display = open ? 'block' : 'none';
-      toggle.textContent = open ? '▲' : '▼'; // ▲ = collapse up, ▼ = expand down
-    });
-  })();
 
   // ── GUILD SIDEBAR PANEL ──
   const GUILD_COLORS_LIST = ['#e85a6a','#6acd8a','#6ac8d8','#D4A64B','#b088e8','#FF8C00','#5B8FE0'];
@@ -5438,8 +5386,6 @@
       </div>`).join('');
     const d = document.getElementById('contribution-list');
     if (d) d.innerHTML = html;
-    const dm = document.getElementById('contribution-list-mobile');
-    if (dm) dm.innerHTML = html;
   }
 
   // ── FULL BATTLE LOG ──
@@ -5455,51 +5401,39 @@
       el.scrollTop = el.scrollHeight;
     }
     appendTo('battle-log-full');
-    appendTo('battle-log-full-mobile');
   }
 
   // ── ARENA CHAT ──
 
   // ── ARENA CHAT ──
-
   (function(){
     const log = document.getElementById('arena-chat-log');
-    const logMobile = document.getElementById('arena-chat-log-mobile');
     const input = document.getElementById('arena-chat-input');
     const sendBtn = document.getElementById('arena-chat-send');
-    const inputMobile = document.getElementById('arena-chat-input-mobile');
-    const sendBtnMobile = document.getElementById('arena-chat-send-mobile');
 
     function appendMsg(data) {
+      if (!log) return;
       const gTag = data.guildTag ? ' <span class="chat-guild">['+data.guildTag+']</span>' : '';
       const html = '<span class="chat-handle">@'+data.handle+'</span>'+gTag+' <span style="color:var(--body);">'+data.message.replace(/</g,'&lt;')+'</span>';
-      [log, logMobile].forEach(el => {
-        if (!el) return;
-        const div = document.createElement('div');
-        div.className = 'chat-msg';
-        div.innerHTML = html;
-        el.appendChild(div);
-        if (el.children.length > 30) el.removeChild(el.firstChild);
-        el.scrollTop = el.scrollHeight;
-      });
+      const div = document.createElement('div');
+      div.className = 'chat-msg';
+      div.innerHTML = html;
+      log.appendChild(div);
+      if (log.children.length > 30) log.removeChild(log.firstChild);
+      log.scrollTop = log.scrollHeight;
     }
 
-    function sendMsg(inputEl) {
-      const msg = (inputEl || input).value.trim();
+    function sendMsg() {
+      const msg = input.value.trim();
       if (!msg || !state.socket || !state.currentZoneId) return;
       const handle = state.playerHandle || localStorage.getItem('9lv_handle') || 'Anon';
       const guildTag = state.playerGuildTag || '';
       state.socket.emit('chat:send', { zoneId: state.currentZoneId, message: msg, handle, guildTag });
-      (inputEl || input).value = '';
-      if (inputEl === inputMobile && input) input.value = '';
-      else if (inputMobile) inputMobile.value = '';
+      input.value = '';
     }
 
-    sendBtn.addEventListener('click', () => sendMsg(input));
-    input.addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(input); });
-    if (sendBtnMobile) sendBtnMobile.addEventListener('click', () => sendMsg(inputMobile));
-    if (inputMobile) inputMobile.addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(inputMobile); });
-
+    if (sendBtn) sendBtn.addEventListener('click', sendMsg);
+    if (input) input.addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(); });
     document.addEventListener('arena:chat:message', function(e){ appendMsg(e.detail); });
   })();
 
