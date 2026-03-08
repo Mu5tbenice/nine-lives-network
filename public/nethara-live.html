@@ -285,7 +285,7 @@
 
     /* ── Bottom tray — unified build + stats ── */
     .arena-bottom-tray {
-      position: absolute; bottom: 140px; left: 0; right: 0; z-index: 25;
+      position: absolute; bottom: 60px; left: 0; right: 0; z-index: 25;
       background: linear-gradient(0deg, rgba(14,10,24,0.96) 0%, rgba(14,10,24,0.92) 70%, rgba(14,10,24,0.5) 100%);
       padding: 10px 14px 8px; pointer-events: auto;
       display: flex; gap: 12px; align-items: flex-end;
@@ -361,7 +361,7 @@
 
     /* ── Deploy CTA ── */
     .arena-deploy-cta {
-      position: absolute; bottom: 145px; left: 50%; transform: translateX(-50%); z-index: 25;
+      position: absolute; bottom: 65px; left: 50%; transform: translateX(-50%); z-index: 25;
       pointer-events: auto;
     }
     .btn-join-battle {
@@ -377,12 +377,11 @@
     /* ── Live feed — above bottom tray ── */
     /* ── ARENA FEED PANEL — visible, readable, bottom of screen ── */
     .arena-feed {
-      position: absolute; bottom: 0; left: 0; right: 0; z-index: 15;
-      padding: 6px 12px 10px;
-      background: linear-gradient(180deg, transparent 0%, rgba(10,8,18,0.92) 30%);
-      max-height: 100px; overflow: hidden;
+      position: absolute; bottom: 4px; left: 0; right: 260px; z-index: 15;
+      padding: 4px 12px;
+      max-height: 56px; overflow: hidden;
       pointer-events: none;
-      display: flex; flex-direction: column; justify-content: flex-end; gap: 3px;
+      display: flex; flex-direction: column; justify-content: flex-end; gap: 2px;
     }
     .feed-event {
       display: flex; gap: 8px; align-items: center;
@@ -406,9 +405,9 @@
 
     /* HP status strip above feed */
     .arena-hp-strip {
-      position: absolute; bottom: 100px; left: 0; right: 0; z-index: 14;
-      padding: 4px 12px; display: flex; gap: 8px; align-items: center;
-      background: linear-gradient(180deg, transparent, rgba(10,8,18,0.6));
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 14;
+      padding: 4px 12px 6px; display: flex; gap: 8px; align-items: center;
+      background: linear-gradient(180deg, transparent, rgba(10,8,18,0.7));
       pointer-events: none; flex-wrap: wrap;
     }
     .hp-strip-fighter {
@@ -551,10 +550,10 @@
     #arena-sidebar {
       display: none;
       position: absolute; top: 54px; right: 10px; z-index: 25;
-      width: 220px; flex-direction: column;
+      width: 240px; flex-direction: column;
       background: rgba(10,8,20,0.90); border: 1px solid rgba(255,255,255,0.09);
       border-radius: 12px; overflow: hidden; backdrop-filter: blur(12px);
-      max-height: calc(100% - 70px);
+      height: calc(100% - 64px); /* fills screen, not just content height */
     }
     #sidebar-guilds { padding: 10px 10px 6px; flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
     .sidebar-section-label {
@@ -627,11 +626,11 @@
     ═══════════════════════════════════════════ */
     #arena-mobile-panel {
       display: none;
-      position: absolute; bottom: 0; left: 0; right: 0; z-index: 30;
-      background: rgba(10,8,20,0.96); border-top: 1px solid rgba(255,255,255,0.09);
+      position: absolute; bottom: 0; left: 0; right: 0; z-index: 35;
+      background: rgba(10,8,20,0.97); border-top: 1px solid rgba(255,255,255,0.09);
       flex-direction: column;
     }
-    #arena-mobile-tabs { display: flex; flex-shrink: 0; }
+    #arena-mobile-tabs { display: flex; flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
     .mobile-tab {
       flex: 1; background: none; border: none; border-right: 1px solid rgba(255,255,255,0.07);
       color: var(--faint); font-family: 'Press Start 2P', monospace; font-size: 6px;
@@ -718,17 +717,23 @@
       .arena-deploy-cta { bottom: 16px; }
       .btn-join-battle { font-size: 13px; padding: 12px 28px; }
 
-      .arena-feed { bottom: 0; max-height: 60px; padding: 4px 10px; }
-      .feed-event { font-size: 12px; }
-      /* On mobile: feed at bottom, hp strip above, tray above that, mobile panel above tray */
-      .arena-hp-strip { bottom: 60px; }
+      .arena-feed { display: none; } /* feed is in the log tab on mobile */
+      .arena-hp-strip { display: none; } /* hp shown in Your Nine panel */
+
+      /* Mobile stack from bottom: tab-bar(35px) → tray → canvas */
       .arena-bottom-tray {
-        bottom: 250px; /* above mobile panel */
+        bottom: 36px; /* sit directly above the tab bar — closes the gap */
         flex-direction: column; gap: 6px; padding: 8px 10px;
-        background: linear-gradient(0deg, rgba(14,10,24,0.97) 0%, rgba(14,10,24,0.7) 100%);
+        background: linear-gradient(0deg, rgba(14,10,24,0.97) 0%, rgba(14,10,24,0.8) 100%);
       }
       .tray-stats { width: 100%; }
-      #arena-sidebar { display: none !important; } /* never show sidebar on mobile */
+      .build-cards { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      .arena-card-slot { min-width: 100px; }
+      .arena-card-slot .slot-name { font-size: 9px; }
+
+      .arena-deploy-cta { bottom: 36px; }
+      .btn-join-battle { font-size: 13px; padding: 12px 28px; }
+      #arena-sidebar { display: none !important; }
 
       .deploy-inner { padding: 14px 10px; margin: 10px auto; }
       .deploy-title { font-size: 16px; }
@@ -5287,10 +5292,14 @@
   (function() {
     const toggle = document.getElementById('mobile-panel-toggle');
     const body = document.getElementById('arena-mobile-body');
-    if (!toggle || !body) return;
+    const panel = document.getElementById('arena-mobile-panel');
+    if (!toggle || !body || !panel) return;
     let open = false;
+    // Panel body height when open — enough to cover tray area
+    const OPEN_HEIGHT = '220px';
     toggle.addEventListener('click', () => {
       open = !open;
+      body.style.maxHeight = open ? OPEN_HEIGHT : '0';
       body.style.display = open ? 'block' : 'none';
       toggle.textContent = open ? '▼' : '▲';
     });
