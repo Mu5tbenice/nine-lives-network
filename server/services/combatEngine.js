@@ -938,6 +938,12 @@ async function runSnapshot() {
   nextSnapshotAt = Date.now() + SNAPSHOT_INTERVAL_MS;
 }
 
+// ─── FORCE RELOAD REGISTRY ────────────────────────────
+// When a Nine deploys/withdraws, the zones.js route calls
+// global.__combatEngine.forceReload(zoneId) so the engine
+// picks them up on the next tick instead of waiting 30s.
+const pendingReloads = new Set();
+
 // ─── MAIN TICK LOOP ────────────────────────────────────
 async function mainTick() {
   if (!running) return;
@@ -956,9 +962,11 @@ async function mainTick() {
 
     const zoneIds = [...new Set(activeZones.map(d => d.zone_id))];
 
-    // Load/refresh zone state periodically (every ~30s = 15 ticks)
+    // Load/refresh zone state — forced immediately on deploy/withdraw, otherwise ~30s random
     for (const zoneId of zoneIds) {
-      if (!zones[zoneId] || Math.random() < 0.067) {
+      const shouldReload = pendingReloads.has(zoneId) || !zones[zoneId] || Math.random() < 0.067;
+      pendingReloads.delete(zoneId);
+      if (shouldReload) {
         const zoneState = await loadZoneState(zoneId);
         if (zoneState) {
           // Preserve existing combat state if zone already loaded
@@ -1029,11 +1037,19 @@ function getNextCycleAt() { return nextSnapshotAt || (Date.now() + SNAPSHOT_INTE
 function getCycleIntervalMs() { return SNAPSHOT_INTERVAL_MS; }
 
 // ─── EXPORTS ───────────────────────────────────────────
+function forceReload(zoneId) {
+  if (zoneId) pendingReloads.add(parseInt(zoneId));
+}
+
 module.exports = {
   startCombatEngine,
   stopCombatEngine,
   getNextCycleAt,
   getCycleIntervalMs,
-  runCombatCycle: mainTick,  // alias for scheduler compatibility
+  runCombatCycle: mainTick,
+  forceReload,
   _zones: zones,
 };
+
+// Make forceReload available globally so routes can call it without circular imports
+global.__combatEngine = { forceReload };

@@ -5328,8 +5328,9 @@
         state.nines.clear();
         if (state.arenaApp) {
           const toRemove = [];
+          const keep = new Set(['ground', 'environment', 'fog', 'arena-platform']);
           state.arenaApp.stage.children.forEach(child => {
-            if (child.name !== 'ground' && child.name !== 'environment' && child.name !== 'fog') toRemove.push(child);
+            if (!keep.has(child.name)) toRemove.push(child);
           });
           toRemove.forEach(c => state.arenaApp.stage.removeChild(c));
         }
