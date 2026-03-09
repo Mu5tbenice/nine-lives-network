@@ -148,6 +148,9 @@ router.post('/deploy', async (req, res) => {
       }
     } catch (e) { /* socket broadcast is non-critical */ }
 
+    // Tell combat engine to reload this zone on next tick (picks up new Nine immediately)
+    if (global.__combatEngine) global.__combatEngine.forceReload(zone_id);
+
     res.json({
       success: true,
       deployment,
@@ -209,6 +212,9 @@ router.post('/withdraw', async (req, res) => {
         global.__arenaSocket._broadcastToZone(zone_id, 'arena:nine_left', { nine_id: player_id });
       }
     } catch (e) { /* non-critical */ }
+
+    // Tell combat engine to reload this zone (removes withdrawn Nine immediately)
+    if (global.__combatEngine) global.__combatEngine.forceReload(zone_id);
 
     res.json({
       success: true,

@@ -7,7 +7,7 @@
     { href: '/boss.html', label: 'Boss' },
     { href: '/leaderboards.html', label: 'Ranks' },
     { href: '/packs.html', label: 'Packs' },
-    { href: '/collection.html', label: 'Spellbook' },
+    { href: '/spellbook.html', label: 'Spellbook' },
     { href: '/how-to-play.html', label: 'Help' }
   ];
   var currentPath = window.location.pathname.split('?')[0].split('#')[0];

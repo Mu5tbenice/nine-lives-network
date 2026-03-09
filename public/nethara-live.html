@@ -265,13 +265,8 @@
     @keyframes countdownPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
 
     /* ── Guild scoreboard ── */
-    .arena-scoreboard {
-      display: none; /* replaced by guild dominance pills in top bar + stats tab */
-    }
-    .arena-sb-title { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint); letter-spacing: 1px; margin-bottom: 6px; }
-    .arena-sb-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-    .arena-sb-guild { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--body); flex: 1; }
-    .arena-sb-wins { font-family: 'Press Start 2P', monospace; font-size: 10px; font-weight: 700; }
+    .arena-scoreboard { display: none; } /* replaced by sidebar */
+    .arena-sb-title, .arena-sb-row, .arena-sb-guild, .arena-sb-wins { display: none; }
 
     /* ── Nerm ── */
     .nerm-bubble-container {
@@ -289,26 +284,58 @@
     .nerm-label { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--gold); margin-bottom: 3px; letter-spacing: 1px; }
 
     /* ── Bottom tray — unified build + stats ── */
+    /* ══════════════════════════════════════════════
+       UNIFIED BOTTOM TRAY
+       Column: YOUR NINE header → tab bar → content
+    ══════════════════════════════════════════════ */
     .arena-bottom-tray {
-      position: absolute; bottom: 140px; left: 0; right: 0; z-index: 25;
-      background: linear-gradient(0deg, rgba(14,10,24,0.96) 0%, rgba(14,10,24,0.92) 70%, rgba(14,10,24,0.5) 100%);
-      padding: 10px 14px 8px; pointer-events: auto;
-      display: flex; gap: 12px; align-items: flex-end;
-    }
-    .tray-section-label {
-      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--gold);
-      letter-spacing: 1px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+      position: absolute; bottom: 0; left: 0; right: 270px; z-index: 25;
+      display: flex; flex-direction: column;
+      background: rgba(10,8,20,0.97);
+      border-top: 1px solid rgba(255,255,255,0.09);
+      backdrop-filter: blur(10px);
+      max-height: 220px;
     }
 
-    /* Build section */
-    .tray-build { flex: 1; min-width: 0; }
-    .build-swap-btn {
-      font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint);
-      background: none; border: 1px solid var(--border); padding: 2px 6px;
-      border-radius: 3px; cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s;
+    /* YOUR NINE — fixed header strip */
+    .tray-nine-header {
+      padding: 8px 14px 6px; flex-shrink: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
     }
-    .build-swap-btn:hover { color: var(--gold); border-color: var(--gold); }
-    .build-cards { display: flex; gap: 6px; }
+    .tray-nine-top {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 5px;
+    }
+
+    /* Tab bar */
+    #arena-tray-tabs {
+      display: flex; flex-shrink: 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .tray-tab {
+      flex: 1; background: none; border: none;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      color: var(--faint); font-family: 'Press Start 2P', monospace; font-size: 6px;
+      padding: 8px 4px; cursor: pointer; transition: color 0.2s, background 0.2s;
+      letter-spacing: 0.5px;
+    }
+    .tray-tab:last-child { border-right: none; }
+    .tray-tab.active { color: var(--gold); background: rgba(212,166,75,0.08); }
+    .tray-tab:hover:not(.active) { color: var(--bright); }
+
+    /* Content area */
+    #arena-tray-body {
+      flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0;
+    }
+    .tray-pane {
+      display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;
+    }
+    .tray-pane.active { display: flex; }
+
+    /* BUILD pane */
+    .build-pane-header {
+      padding: 5px 12px 4px; flex-shrink: 0;
+      display: flex; align-items: center; gap: 8px;
+    }
 
     /* ── Card slots — compact horizontal design ── */
     .arena-card-slot {
@@ -344,17 +371,22 @@
     .arena-card-slot.empty .slot-empty-text {
       font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--faint);
     }
-    .slot-wave-label { display: none; }
-
-    /* Stats section */
-    .tray-stats {
-      width: 200px; flex-shrink: 0;
+    .tray-section-label {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--gold);
+      letter-spacing: 1px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
     }
-    .your-nine-hp { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+    .build-swap-btn {
+      font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint);
+      background: none; border: 1px solid var(--border); padding: 3px 8px;
+      border-radius: 3px; cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s;
+    }
+    .build-swap-btn:hover { color: var(--gold); border-color: var(--gold); }
+    .build-cards { display: flex; gap: 6px; padding: 4px 12px 8px; flex: 1; overflow-x: auto; }
+    .your-nine-hp { display: flex; align-items: center; gap: 6px; }
     .your-nine-hp-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
     .your-nine-hp-fill { height: 100%; background: linear-gradient(90deg, var(--green), #66eebb); border-radius: 3px; transition: width 0.4s ease; }
     .your-nine-hp-text { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--green); white-space: nowrap; }
-    .your-nine-stats { display: flex; gap: 6px; flex-wrap: wrap; }
+    .your-nine-stats { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
     .your-nine-stat { font-family: 'Press Start 2P', monospace; font-size: 7px; }
     .btn-withdraw {
       margin-top: 6px; font-family: 'Press Start 2P', monospace; font-size: 6px;
@@ -366,7 +398,7 @@
 
     /* ── Deploy CTA ── */
     .arena-deploy-cta {
-      position: absolute; bottom: 145px; left: 50%; transform: translateX(-50%); z-index: 25;
+      position: absolute; bottom: 65px; left: 50%; transform: translateX(-50%); z-index: 25;
       pointer-events: auto;
     }
     .btn-join-battle {
@@ -381,14 +413,7 @@
 
     /* ── Live feed — above bottom tray ── */
     /* ── ARENA FEED PANEL — visible, readable, bottom of screen ── */
-    .arena-feed {
-      position: absolute; bottom: 0; left: 0; right: 0; z-index: 15;
-      padding: 6px 12px 10px;
-      background: linear-gradient(180deg, transparent 0%, rgba(10,8,18,0.92) 30%);
-      max-height: 100px; overflow: hidden;
-      pointer-events: none;
-      display: flex; flex-direction: column; justify-content: flex-end; gap: 3px;
-    }
+    .arena-feed { display: none; } /* key events go into sidebar Log tab */
     .feed-event {
       display: flex; gap: 8px; align-items: center;
       padding: 4px 8px; border-radius: 6px;
@@ -411,9 +436,9 @@
 
     /* HP status strip above feed */
     .arena-hp-strip {
-      position: absolute; bottom: 100px; left: 0; right: 0; z-index: 14;
-      padding: 4px 12px; display: flex; gap: 8px; align-items: center;
-      background: linear-gradient(180deg, transparent, rgba(10,8,18,0.6));
+      position: absolute; bottom: 0; left: 0; right: 270px; z-index: 14;
+      padding: 4px 12px 6px; display: flex; gap: 8px; align-items: center;
+      background: linear-gradient(180deg, transparent, rgba(10,8,18,0.7));
       pointer-events: none; flex-wrap: wrap;
     }
     .hp-strip-fighter {
@@ -550,37 +575,43 @@
     }
 
     /* ── Arena Chat ── */
-    /* ── RIGHT PANEL (Chat / Stats / Log) ── */
-    #arena-right-panel {
+    /* ═══════════════════════════════════════════
+       RIGHT SIDEBAR — desktop only
+    ═══════════════════════════════════════════ */
+    #arena-sidebar {
+      display: none;
       position: absolute; top: 54px; right: 10px; z-index: 25;
-      width: 240px; display: flex; flex-direction: column;
-      background: rgba(10,8,20,0.88); border: 1px solid rgba(255,255,255,0.08);
+      width: 250px;
+      flex-direction: column;
+      background: rgba(10,8,20,0.92); border: 1px solid rgba(255,255,255,0.09);
       border-radius: 12px; overflow: hidden; backdrop-filter: blur(12px);
-      max-height: calc(100% - 280px);
+      bottom: 10px; /* anchor to bottom so height fills naturally */
     }
-    #arena-panel-tabs {
-      display: flex; border-bottom: 1px solid rgba(255,255,255,0.07);
+    #sidebar-guilds { padding: 10px 10px 6px; flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .sidebar-section-label {
+      font-family: 'Press Start 2P', monospace; font-size: 6px;
+      color: var(--faint); letter-spacing: 1px; margin-bottom: 7px;
     }
-    .panel-tab {
-      flex: 1; background: none; border: none; border-right: 1px solid rgba(255,255,255,0.07);
-      color: var(--faint); font-family: 'Press Start 2P', monospace; font-size: 6px;
-      padding: 7px 4px; cursor: pointer; transition: color 0.2s, background 0.2s;
-      letter-spacing: 0.5px;
+    .sidebar-guild-row {
+      display: flex; flex-direction: column; gap: 3px;
+      padding: 6px 8px; border-radius: 8px; margin-bottom: 4px;
+      background: rgba(255,255,255,0.03); cursor: default;
+      transition: background 0.2s; border: 1px solid transparent;
     }
-    .panel-tab:last-child { border-right: none; }
-    .panel-tab.active { color: var(--gold); background: rgba(212,166,75,0.08); }
-    .panel-tab:hover { color: var(--bright); }
-    .panel-content { display: none; flex-direction: column; min-height: 0; }
-    .panel-content.active { display: flex; }
-    .panel-title {
-      font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--faint);
-      letter-spacing: 1px; padding: 6px 10px 4px;
-    }
+    .sidebar-guild-row:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); }
+    .sidebar-guild-top { display: flex; align-items: center; gap: 7px; }
+    .sidebar-guild-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .sidebar-guild-name { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--bright); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sidebar-guild-hp { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--green); }
+    .sidebar-guild-nines { font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint); }
+    .sidebar-guild-bar { width: 100%; height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; }
+    .sidebar-guild-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
 
-    /* Chat inside panel */
+    /* sidebar just shows guilds now — tabs moved to bottom tray */
+
     #arena-chat-log {
-      flex: 1; max-height: 220px; overflow-y: auto; padding: 8px 10px;
-      display: flex; flex-direction: column; gap: 4px;
+      flex: 1; overflow-y: auto; padding: 6px 12px;
+      display: flex; flex-direction: column; gap: 3px;
     }
     #arena-chat-log::-webkit-scrollbar { width: 2px; }
     #arena-chat-log::-webkit-scrollbar-thumb { background: rgba(212,166,75,0.2); }
@@ -590,70 +621,37 @@
     .chat-input-row { display: flex; border-top: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
     #arena-chat-input {
       flex: 1; background: transparent; border: none; outline: none;
-      font-family: 'Crimson Text', serif; font-size: 13px; color: var(--bright);
-      padding: 7px 10px;
+      font-family: 'Crimson Text', serif; font-size: 13px; color: var(--bright); padding: 7px 10px;
     }
     #arena-chat-input::placeholder { color: var(--faint); font-size: 12px; }
     #arena-chat-send {
       background: none; border: none; border-left: 1px solid rgba(255,255,255,0.06);
-      color: var(--gold); cursor: pointer; padding: 7px 12px; font-size: 14px;
-      transition: color 0.2s;
+      color: var(--gold); cursor: pointer; padding: 7px 12px; font-size: 14px; transition: color 0.2s;
     }
     #arena-chat-send:hover { color: var(--bright); }
-
-    /* Contribution stats panel */
-    #contribution-list {
-      flex: 1; overflow-y: auto; padding: 6px 10px; max-height: 260px;
-      display: flex; flex-direction: column; gap: 5px;
-    }
-    .contrib-row {
-      display: flex; align-items: center; gap: 6px;
-      padding: 4px 6px; border-radius: 6px;
-      background: rgba(255,255,255,0.03);
-    }
-    .contrib-name { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--bright); flex: 1; }
+    #contribution-list { flex: 1; overflow-y: auto; padding: 6px 10px; display: flex; flex-direction: column; gap: 5px; }
+    .contrib-row { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 6px; background: rgba(255,255,255,0.03); }
+    .contrib-name { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--bright); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .contrib-stat { font-family: 'Press Start 2P', monospace; font-size: 6px; white-space: nowrap; }
-
-    /* Full battle log panel */
-    #battle-log-full {
-      flex: 1; overflow-y: auto; padding: 6px 10px; max-height: 270px;
-      display: flex; flex-direction: column; gap: 2px;
-    }
-    .log-entry {
-      font-family: 'Crimson Text', serif; font-size: 12px; color: var(--muted);
-      line-height: 1.4; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 2px;
-    }
+    #battle-log-full { flex: 1; overflow-y: auto; padding: 6px 10px; display: flex; flex-direction: column; gap: 2px; }
+    .log-entry { font-family: 'Crimson Text', serif; font-size: 12px; color: var(--muted); line-height: 1.4; padding-bottom: 2px; border-bottom: 1px solid rgba(255,255,255,0.03); }
     .log-entry.log-ko { color: var(--red); }
     .log-entry.log-spell { color: var(--gold); }
     .log-entry.log-heal { color: var(--green); }
 
-    /* ── Guild dominance pills ── */
-    .guild-dom-pill {
+    /* ── Guild control pill ── */
+    #guild-control-pill {
       font-family: 'Press Start 2P', monospace; font-size: 6px;
-      padding: 3px 7px; border-radius: 10px; white-space: nowrap;
-      border: 1px solid; letter-spacing: 0.5px;
+      padding: 3px 8px; border-radius: 10px; white-space: nowrap;
+      border: 1px solid; letter-spacing: 0.5px; display: none;
     }
 
-    /* ── Card cooldown overlay on card slots ── */
-    .slot-cooldown {
-      position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
-      background: rgba(255,255,255,0.06); border-radius: 0 0 8px 8px; overflow: hidden;
-    }
-    .slot-cooldown-fill {
-      height: 100%; background: var(--gold);
-      transition: width 0.4s linear; border-radius: 0 0 8px 8px;
-    }
-    .slot-casting-flash {
-      animation: castFlash 0.4s ease-out;
-    }
-    @keyframes castFlash {
-      0% { background: rgba(212,166,75,0.4); }
-      100% { background: transparent; }
-    }
+    /* ── Card cooldown bars ── */
+    .slot-cooldown { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: rgba(255,255,255,0.06); border-radius: 0 0 8px 8px; overflow: hidden; }
+    .slot-cooldown-fill { height: 100%; background: var(--gold); transition: width 0.4s linear; border-radius: 0 0 8px 8px; }
+    .slot-casting-flash { animation: castFlash 0.4s ease-out; }
+    @keyframes castFlash { 0% { background: rgba(212,166,75,0.4); } 100% { background: transparent; } }
 
-    /* end right panel css */
-
-    /* (old countdown/card-slots CSS removed — now in top bar and bottom tray) */
     /* (old card-slot overrides removed — now in bottom tray section) */
 
     /* Card popup overlay */
@@ -693,44 +691,33 @@
       .arena-live-pill { font-size: 6px; padding: 3px 7px; }
       .arena-timer-compact { font-size: 7px; }
       .countdown-time { font-size: 7px; }
-
       .arena-scoreboard { display: none; }
-
       .nerm-bubble-container {
-        top: auto; bottom: 140px; left: 0; right: 0;
+        top: auto; bottom: 225px; left: 0; right: 0;
         max-width: 100%; padding: 0 10px; z-index: 30;
       }
       .nerm-bubble { border-radius: 10px; font-size: 12px; padding: 6px 10px; text-align: center; border-bottom: none; }
 
-      .arena-bottom-tray {
-        flex-direction: column; gap: 8px; padding: 8px 10px;
-      }
-      .tray-stats { width: 100%; }
-      .build-cards { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-      .arena-card-slot { min-width: 100px; }
-      .arena-card-slot .slot-name { font-size: 9px; }
+      /* On mobile: tray is full width (no sidebar) */
+      .arena-bottom-tray { right: 0; }
+      #arena-sidebar { display: none !important; }
+      .arena-feed { display: none; }
+      .arena-hp-strip { display: none; }
 
-      .arena-deploy-cta { bottom: 16px; }
+      .arena-deploy-cta { bottom: 0; right: 0; left: 0; transform: none; text-align: center; padding: 12px; }
       .btn-join-battle { font-size: 13px; padding: 12px 28px; }
-
-      .arena-feed { bottom: 0; max-height: 60px; padding: 4px 10px; }
-      .feed-event { font-size: 12px; }
-      .arena-hp-strip { bottom: 60px; }
-      .arena-bottom-tray { bottom: 100px; flex-direction: column; gap: 8px; padding: 8px 10px; }
-      #arena-right-panel { width: calc(100vw - 20px); top: auto; bottom: 260px; right: 10px; max-height: 160px; }
 
       .deploy-inner { padding: 14px 10px; margin: 10px auto; }
       .deploy-title { font-size: 16px; }
       .deploy-card-grid { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 6px; max-height: 350px; }
       .btn-deploy { font-size: 14px; padding: 14px; }
+      .arena-card-slot { min-width: 100px; }
+      .tray-tab { font-size: 5px; padding: 8px 2px; }
     }
 
     @media (min-width: 1200px) {
       .arena-card-slot .slot-name { font-size: 11px; }
-      .tray-stats { width: 220px; }
       .your-nine-stat { font-size: 8px; }
-      .arena-feed { max-height: 60px; }
-      .feed-event { font-size: 7px; }
     }
 
     /* Nav overrides — Packs gold pill */
@@ -748,38 +735,7 @@
 <body>
 
 <!-- ====== SITE NAV BAR ====== -->
-<nav class="top-nav">
-  <div class="top-nav-content">
-    <a href="/" class="nav-logo">NINE LIVES NETWORK</a>
-    <ul class="nav-links" id="nav-links">
-      <li><a href="/dashboard.html">Dashboard</a></li>
-      <li><a href="/nethara-live.html" class="active">Nethara</a></li>
-      <li><a href="/duels.html">Duels</a></li>
-      <li><a href="/wilds.html">The Wilds</a></li>
-      <li><a href="/boss.html">Boss</a></li>
-      <li><a href="/leaderboards.html">Ranks</a></li>
-      <li><a href="/packs.html" class="nav-packs-btn">Packs</a></li>
-      <li><a href="/spellbook.html">Spellbook</a></li>
-      <li><a href="/help.html">Help</a></li>
-      <li><a href="#" class="logout-btn" id="nav-logout">Logout</a></li>
-    </ul>
-    <button class="hamburger" id="hamburger" aria-label="Menu">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-</nav>
-<div class="mobile-menu" id="mobile-menu">
-  <a href="/dashboard.html"><span class="menu-icon">📊</span> Dashboard</a>
-  <a href="/nethara-live.html" class="active"><span class="menu-icon">⚔️</span> Nethara</a>
-  <a href="/duels.html"><span class="menu-icon">🎴</span> Duels</a>
-  <a href="/wilds.html"><span class="menu-icon">🌿</span> The Wilds</a>
-  <a href="/boss.html"><span class="menu-icon">👹</span> Boss</a>
-  <a href="/leaderboards.html"><span class="menu-icon">🏆</span> Ranks</a>
-  <a href="/packs.html"><span class="menu-icon">🎁</span> Packs</a>
-  <a href="/spellbook.html"><span class="menu-icon">📖</span> Spellbook</a>
-  <a href="/help.html"><span class="menu-icon">❓</span> Help</a>
-  <a href="#" class="logout-btn" id="mobile-logout"><span class="menu-icon">🚪</span> Logout</a>
-</div>
+<script src="/js/nav.js"></script>
 
 <!-- ====== ZONE LIST VIEW ====== -->
 <div id="zone-list-view">
@@ -820,7 +776,7 @@
     <div style="display:flex;align-items:center;gap:10px;">
       <button class="arena-back-btn interactive" id="btn-back">←</button>
       <div class="arena-zone-name" id="arena-zone-name">--</div>
-      <div id="guild-dominance" style="display:flex;gap:4px;align-items:center;"></div>
+      <div id="guild-control-pill"></div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
       <div class="arena-timer-compact" id="arena-countdown">
@@ -836,58 +792,83 @@
   <div id="countdown-label" style="display:none"></div>
   <div id="countdown-sub" style="display:none"></div>
 
-  <!-- Right side: Scoreboard -->
-  <div class="arena-scoreboard" id="arena-scoreboard">
-    <div class="arena-sb-title">GUILD SCORES</div>
+  <!-- ── RIGHT SIDEBAR: Guilds + Chat/Stats/Log ── desktop only -->
+  <div id="arena-sidebar">
+
+    <!-- Guild section: who's fighting, hover to highlight -->
+    <div id="sidebar-guilds">
+      <div class="sidebar-section-label">COMPETING GUILDS</div>
+      <div id="sidebar-guild-rows"></div>
+    </div>
+  </div>
+
+  <!-- ── HIDDEN: old scoreboard kept for JS compat ── -->
+  <div id="arena-scoreboard" style="display:none;">
     <div id="scoreboard-rows"></div>
   </div>
 
-
-  <!-- ── RIGHT PANEL TABS: Chat / Stats / Log ── -->
-  <div id="arena-right-panel">
-    <div id="arena-panel-tabs">
-      <button class="panel-tab active" data-tab="chat">💬 CHAT</button>
-      <button class="panel-tab" data-tab="stats">📊 STATS</button>
-      <button class="panel-tab" data-tab="log">📜 LOG</button>
-    </div>
-    <!-- CHAT -->
-    <div id="arena-chat" class="panel-content active">
-      <div id="arena-chat-log"></div>
-      <div class="chat-input-row">
-        <input id="arena-chat-input" type="text" maxlength="120" placeholder="Say something...">
-        <button id="arena-chat-send">➤</button>
-      </div>
-    </div>
-    <!-- CONTRIBUTION STATS -->
-    <div id="arena-stats-panel" class="panel-content">
-      <div class="panel-title">BATTLE STATS</div>
-      <div id="contribution-list"></div>
-    </div>
-    <!-- FULL BATTLE LOG -->
-    <div id="arena-log-panel" class="panel-content">
-      <div class="panel-title">BATTLE LOG</div>
-      <div id="battle-log-full"></div>
-    </div>
-  </div>
-
-  <!-- Bottom tray: Build + Stats unified panel -->
+  <!-- ═══════════════════════════════════════════════════
+       UNIFIED BOTTOM PANEL — YOUR NINE + tabbed content
+       Tabs: BUILD | CHAT | STATS | LOG
+       Same on desktop and mobile.
+  ════════════════════════════════════════════════════ -->
   <div class="arena-bottom-tray" id="arena-bottom-tray" style="display:none;">
-    <div class="tray-build" id="arena-card-slots">
-      <div class="tray-section-label">YOUR BUILD <button class="build-swap-btn" id="btn-swap-build">SWAP</button></div>
-      <div class="build-cards">
-        <div class="arena-card-slot empty" id="card-slot-0"><span class="slot-empty-text">1</span></div>
-        <div class="arena-card-slot empty" id="card-slot-1"><span class="slot-empty-text">2</span></div>
-        <div class="arena-card-slot empty" id="card-slot-2"><span class="slot-empty-text">3</span></div>
-      </div>
-    </div>
-    <div class="tray-stats" id="your-nine-panel">
-      <div class="tray-section-label">YOUR NINE</div>
-      <div class="your-nine-hp">
-        <div class="your-nine-hp-bar"><div class="your-nine-hp-fill" id="your-hp-fill" style="width:100%"></div></div>
-        <div class="your-nine-hp-text" id="your-hp-text">--/--</div>
+
+    <!-- YOUR NINE — always visible at top -->
+    <div class="tray-nine-header" id="your-nine-panel">
+      <div class="tray-nine-top">
+        <span class="tray-section-label" style="margin-bottom:0; flex-shrink:0;">YOUR NINE</span>
+        <div class="your-nine-hp">
+          <div class="your-nine-hp-bar"><div class="your-nine-hp-fill" id="your-hp-fill" style="width:100%"></div></div>
+          <div class="your-nine-hp-text" id="your-hp-text">--/--</div>
+        </div>
+        <button class="btn-withdraw" id="btn-withdraw" style="width:auto; padding:4px 10px; margin-top:0; flex-shrink:0;">WITHDRAW</button>
       </div>
       <div class="your-nine-stats" id="your-nine-stats"></div>
-      <button class="btn-withdraw" id="btn-withdraw">WITHDRAW</button>
+    </div>
+
+    <!-- Tab bar: BUILD | CHAT | STATS | LOG -->
+    <div id="arena-tray-tabs">
+      <button class="tray-tab active" data-tab="build">🗡️ BUILD</button>
+      <button class="tray-tab" data-tab="chat">💬 CHAT</button>
+      <button class="tray-tab" data-tab="stats">📊 STATS</button>
+      <button class="tray-tab" data-tab="log">📜 LOG</button>
+    </div>
+
+    <!-- Content pane — switches on tab click -->
+    <div id="arena-tray-body">
+
+      <!-- BUILD pane -->
+      <div class="tray-pane active" id="tray-pane-build">
+        <div class="build-pane-header">
+          <button class="build-swap-btn" id="btn-swap-build">⇄ SWAP CARDS</button>
+        </div>
+        <div class="build-cards" id="arena-card-slots">
+          <div class="arena-card-slot empty" id="card-slot-0"><span class="slot-empty-text">1</span></div>
+          <div class="arena-card-slot empty" id="card-slot-1"><span class="slot-empty-text">2</span></div>
+          <div class="arena-card-slot empty" id="card-slot-2"><span class="slot-empty-text">3</span></div>
+        </div>
+      </div>
+
+      <!-- CHAT pane -->
+      <div class="tray-pane" id="tray-pane-chat">
+        <div id="arena-chat-log"></div>
+        <div class="chat-input-row">
+          <input id="arena-chat-input" type="text" maxlength="120" placeholder="Say something...">
+          <button id="arena-chat-send">➤</button>
+        </div>
+      </div>
+
+      <!-- STATS pane -->
+      <div class="tray-pane" id="tray-pane-stats">
+        <div id="contribution-list"></div>
+      </div>
+
+      <!-- LOG pane -->
+      <div class="tray-pane" id="tray-pane-log">
+        <div id="battle-log-full"></div>
+      </div>
+
     </div>
   </div>
 
@@ -1400,7 +1381,7 @@
     // Update UI
     document.getElementById('zone-list-view').style.display = 'none';
     document.getElementById('arena-view').style.display = 'block';
-    document.getElementById('arena-right-panel').style.display = 'flex';
+    document.getElementById('arena-sidebar').style.display = window.innerWidth > 640 ? 'flex' : 'none';
     document.getElementById('arena-zone-name').textContent = zone.name;
     const h = HOUSES[zone.house || zone.region_house || SCHOOL_TO_HOUSE[zone.controlling_school_id] || SCHOOL_TO_HOUSE[zone.school_id]] || { color: '#888', icon: '❓' };
     document.getElementById('arena-zone-region').style.color = h.color;
@@ -1536,12 +1517,16 @@
     const cy = (state.arenaApp ? state.arenaApp.screen.height : window.innerHeight) / 2;
     const scaleX = cx / 400;
     const scaleY = cy / 300;
-    return clampToDiamond(pos.x * scaleX, pos.y * scaleY, cx, cy, 0.85);
+    const raw = { x: pos.x * scaleX, y: pos.y * scaleY };
+    const poly = getActiveCanvasPoly();
+    if (poly) return clampToPolygon(raw.x, raw.y, poly);
+    return clampToDiamond(raw.x, raw.y, cx, cy, 0.85);
   }
 
   function closeArena() {
     document.getElementById('arena-view').style.display = 'none';
-    document.getElementById('arena-right-panel').style.display = 'none';
+    document.getElementById('arena-sidebar').style.display = 'none';
+    document.getElementById('arena-sidebar').style.display = 'none';
     document.getElementById('arena-chat-log').innerHTML = '';
     document.getElementById('zone-list-view').style.display = 'block';
 
@@ -1670,43 +1655,231 @@
   }
 
   /** Set biome background image based on current zone's house */
-  /** Assign each Nine a single position for this round — they walk there and hold */
+  // ══════════════════════════════════════════════════════
+  // ARENA PLATFORM IMAGE + POLYGON WALK ZONE
+  // Each zone has its own arena_image_url and arena_polygon
+  // stored in the zones table (added via Supabase).
+  //
+  // arena_image_url: public URL to platform image (PIXI sprite)
+  // arena_polygon:   jsonb object { "points": [{x,y}...] } — 0-1 fractions of image size
+  //                  the platform image — defines the walk zone.
+  //
+  // If a zone has no arena_image_url, sprites walk on the
+  // existing ground ellipse (fallback).
+  // ══════════════════════════════════════════════════════
+
+  // Scale platform image to fit fully within the canvas (contain by height),
+  // centered. The image is designed with visible surroundings — don't crop it.
+  // On mobile where the image may be wider than screen, we allow touch panning.
+  function fitArenaPlatform(sprite, tex, app) {
+    const sw = app.screen.width;
+    const sh = app.screen.height;
+    // Fit by height so the full image is always visible vertically
+    const scale = sh / tex.height;
+    sprite.scale.set(scale);
+    const scaledW = tex.width * scale;
+    // Center horizontally — on wide screens shows full image with space on sides
+    sprite.x = (sw - scaledW) / 2;
+    sprite.y = 0;
+    // Store pan limits for mobile drag
+    sprite._minX = Math.min(0, sw - scaledW); // can't pan past right edge
+    sprite._maxX = Math.max(0, sw - scaledW); // can't pan past left edge
+    // Reset pan if image fits within screen
+    if (scaledW <= sw) sprite.x = (sw - scaledW) / 2;
+  }
+
+  // ── MOBILE PAN (touch drag left/right on the canvas) ──
+  (function setupArenaPan() {
+    let touchStartX = 0;
+    let spriteStartX = 0;
+    let isPanning = false;
+
+    const canvas = document.getElementById('arena-canvas');
+    if (!canvas) return;
+
+    canvas.addEventListener('touchstart', (e) => {
+      const app = state.arenaApp;
+      const sprite = app?.stage?.getChildByName('arena-platform');
+      if (!sprite || sprite._minX === sprite._maxX) return; // image fits, no pan needed
+      touchStartX = e.touches[0].clientX;
+      spriteStartX = sprite.x;
+      isPanning = true;
+    }, { passive: true });
+
+    canvas.addEventListener('touchmove', (e) => {
+      if (!isPanning) return;
+      const app = state.arenaApp;
+      const sprite = app?.stage?.getChildByName('arena-platform');
+      if (!sprite) return;
+      const dx = e.touches[0].clientX - touchStartX;
+      const newX = Math.max(sprite._minX, Math.min(sprite._maxX, spriteStartX + dx));
+      sprite.x = newX;
+      // Also shift all sprites by same amount so they stay over the platform
+      state.nines.forEach(nine => {
+        if (nine._basePlatformX === undefined) nine._basePlatformX = nine.container.x;
+      });
+    }, { passive: true });
+
+    canvas.addEventListener('touchend', () => { isPanning = false; });
+  })();
+
+  // Convert a polygon point [{x,y} fractions] to canvas pixels
+  function polyPointToCanvas(p, sprite, tex) {
+    return {
+      x: sprite.x + p.x * tex.width * sprite.scale.x,
+      y: sprite.y + p.y * tex.height * sprite.scale.y,
+    };
+  }
+
+  // Point-in-polygon test (ray casting)
+  function isInsidePolygon(px, py, canvasPoly) {
+    let inside = false;
+    for (let i = 0, j = canvasPoly.length - 1; i < canvasPoly.length; j = i++) {
+      const xi = canvasPoly[i].x, yi = canvasPoly[i].y;
+      const xj = canvasPoly[j].x, yj = canvasPoly[j].y;
+      const intersect = ((yi > py) !== (yj > py)) &&
+        (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  // Clamp a point into the polygon by moving toward its centroid
+  function clampToPolygon(px, py, canvasPoly) {
+    if (isInsidePolygon(px, py, canvasPoly)) return { x: px, y: py };
+    const cx = canvasPoly.reduce((s, p) => s + p.x, 0) / canvasPoly.length;
+    const cy = canvasPoly.reduce((s, p) => s + p.y, 0) / canvasPoly.length;
+    // Step toward centroid until inside
+    for (let t = 0.05; t <= 1; t += 0.05) {
+      const tx = px + (cx - px) * t;
+      const ty = py + (cy - py) * t;
+      if (isInsidePolygon(tx, ty, canvasPoly)) return { x: tx, y: ty };
+    }
+    return { x: cx, y: cy };
+  }
+
+  // Get the bounding box of the walk polygon (for random point generation)
+  function polyBounds(canvasPoly) {
+    const xs = canvasPoly.map(p => p.x);
+    const ys = canvasPoly.map(p => p.y);
+    return {
+      minX: Math.min(...xs), maxX: Math.max(...xs),
+      minY: Math.min(...ys), maxY: Math.max(...ys),
+    };
+  }
+
+  // Random point inside polygon using rejection sampling
+  function randomInsidePolygon(canvasPoly, tries = 40) {
+    const b = polyBounds(canvasPoly);
+    for (let i = 0; i < tries; i++) {
+      const x = b.minX + Math.random() * (b.maxX - b.minX);
+      const y = b.minY + Math.random() * (b.maxY - b.minY);
+      if (isInsidePolygon(x, y, canvasPoly)) return { x, y };
+    }
+    // Fallback: centroid
+    return {
+      x: canvasPoly.reduce((s, p) => s + p.x, 0) / canvasPoly.length,
+      y: canvasPoly.reduce((s, p) => s + p.y, 0) / canvasPoly.length,
+    };
+  }
+
+  // Get the active canvas-space polygon for the current zone
+  function getActiveCanvasPoly() {
+    const app = state.arenaApp;
+    const zone = state.currentZone;
+    if (!app || !zone) return null;
+
+    const raw = zone.arena_polygon; // { points: [{x,y}...] } stored in Supabase jsonb
+    const poly = raw?.points || (Array.isArray(raw) ? raw : null);
+    const sprite = app.stage.getChildByName('arena-platform');
+
+    if (poly && poly.length >= 3 && sprite && sprite.texture) {
+      const tex = sprite.texture;
+      return poly.map(p => polyPointToCanvas(p, sprite, tex));
+    }
+
+    // Fallback: diamond polygon from ARENA_HALF_W/H constants
+    const cx = app.screen.width / 2;
+    const cy = app.screen.height / 2;
+    return [
+      { x: cx,                  y: cy - ARENA_HALF_H },
+      { x: cx + ARENA_HALF_W,   y: cy },
+      { x: cx,                  y: cy + ARENA_HALF_H },
+      { x: cx - ARENA_HALF_W,   y: cy },
+    ];
+  }
+
+  /** Assign each Nine a random position inside the walk polygon */
   function setRoundPositions() {
     const app = state.arenaApp;
     if (!app) return;
-    const cx = app.screen.width / 2;
-    const cy = app.screen.height / 2;
+    const poly = getActiveCanvasPoly();
+    if (!poly) return;
 
     state.nines.forEach((nine) => {
-      let x, y, tries = 0;
-      do {
-        x = cx + (Math.random() - 0.5) * ARENA_HALF_W * 1.6;
-        y = cy + (Math.random() - 0.5) * ARENA_HALF_H * 1.6;
-        tries++;
-      } while (!isInsideDiamond(x, y, cx, cy) && tries < 30);
-      nine.roundTarget = clampToDiamond(x, y, cx, cy, 0.82);
+      const pos = randomInsidePolygon(poly);
+      nine.roundTarget = pos;
     });
-    console.log('🎯 Round positions assigned (diamond-clamped)');
+    console.log('🎯 Round positions assigned (polygon-based)');
   }
 
   function setBiomeBackground(container) {
     const imgUrl = getBiomeUrl(state.currentZone || {});
-
     const img = new Image();
     img.onload = () => {
       container.style.backgroundImage = `url('${imgUrl}')`;
-      console.log(`🏔️ Biome: ${state.currentZone?.name || 'unknown'} → ${imgUrl}`);
     };
     img.onerror = () => {
       container.style.backgroundImage = `url('${BIOME_FALLBACK}')`;
     };
     img.src = imgUrl;
+
+    // Load arena platform sprite from zone data
+    const arenaUrl = state.currentZone?.arena_image_url;
+    if (arenaUrl && state.arenaApp) {
+      loadArenaPlatformSprite(state.arenaApp, arenaUrl);
+    }
+  }
+
+  function loadArenaPlatformSprite(app, url) {
+    // Remove old platform sprite
+    const oldSprite = app.stage.getChildByName('arena-platform');
+    if (oldSprite) app.stage.removeChild(oldSprite);
+
+    try {
+      const tex = PIXI.Texture.from(url);
+      const sprite = new PIXI.Sprite(tex);
+      sprite.name = 'arena-platform';
+      sprite.zIndex = 1; // above biome CSS bg, BELOW Nine sprites (z10+)
+
+      const doFit = () => fitArenaPlatform(sprite, tex, app);
+
+      tex.baseTexture.on('loaded', () => {
+        doFit();
+        app.stage.addChildAt(sprite, 0);
+        app.stage.sortChildren();
+        // Reassign positions now that polygon is renderable
+        setRoundPositions();
+        console.log('🏟️ Arena platform loaded:', url);
+      });
+
+      // Refit on resize
+      app.renderer.on('resize', () => {
+        if (sprite.parent) doFit();
+      });
+    } catch(e) {
+      console.warn('Arena platform load failed:', e);
+    }
   }
 
   function drawArenaGround(app) {
     ['ground','environment','fog'].forEach(function(n){
       const e = app.stage.getChildByName(n); if(e) app.stage.removeChild(e);
     });
+
+    // If this zone has a platform image, skip the ground ellipse —
+    // the polygon defines the walk zone and the image IS the floor.
+    if (state.currentZone?.arena_image_url) return;
 
     const cx = app.screen.width / 2;
     const cy = app.screen.height / 2;
@@ -2014,6 +2187,7 @@
     container.addChild(hpFill);
 
     app.stage.addChild(container);
+    container.zIndex = 10; // always above arena-platform (zIndex 1)
 
     // Initial facing: left-side sprites face right, right-side sprites face left
     const cx = app.screen.width / 2;
@@ -2024,9 +2198,12 @@
       hp: nine.current_hp || nine.max_hp || 100,
       maxHp: nine.max_hp || 100,
       stats: nine.stats || {},
+      name: nine.name || '???',
+      guild: nine.guild_id || nine.guild_name || '???',
+      house: nine.house || 'universal',
       homeX: nine.position.x, homeY: nine.position.y,
       targetX: nine.position.x, targetY: nine.position.y,
-      bobPhase: Math.random() * Math.PI * 2, // random start so they don't all bob in sync
+      bobPhase: Math.random() * Math.PI * 2,
       isAnimating: false,
     });
 
@@ -4356,6 +4533,7 @@
       state.guildScores[tag] = (state.guildScores[tag] || 0) + (sprite.hp || 0);
     });
     updateScoreboard();
+    renderGuildSidebar();
   }
 
   function updateYourNinePanel(nineId) {
@@ -5120,8 +5298,9 @@
         state.nines.clear();
         if (state.arenaApp) {
           const toRemove = [];
+          const keep = new Set(['ground', 'environment', 'fog', 'arena-platform']);
           state.arenaApp.stage.children.forEach(child => {
-            if (child.name !== 'ground' && child.name !== 'environment' && child.name !== 'fog') toRemove.push(child);
+            if (!keep.has(child.name)) toRemove.push(child);
           });
           toRemove.forEach(c => state.arenaApp.stage.removeChild(c));
         }
@@ -5179,62 +5358,123 @@
     }
   }
 
-  // ── PANEL TAB SWITCHING ──
-  document.querySelectorAll('.panel-tab').forEach(btn => {
+  // ══════════════════════════════════════════════
+  // UNIFIED TRAY TAB SWITCHING
+  // ══════════════════════════════════════════════
+  document.querySelectorAll('.tray-tab').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.tab;
-      document.querySelectorAll('.panel-tab').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.panel-content').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.tray-tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tray-pane').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
-      const panels = { chat: 'arena-chat', stats: 'arena-stats-panel', log: 'arena-log-panel' };
-      const el = document.getElementById(panels[tab]);
-      if (el) el.classList.add('active');
+      const pane = document.getElementById('tray-pane-' + tab);
+      if (pane) pane.classList.add('active');
     });
   });
 
-  // ── GUILD DOMINANCE ──
+  // ── GUILD SIDEBAR PANEL ──
+  const GUILD_COLORS_LIST = ['#e85a6a','#6acd8a','#6ac8d8','#D4A64B','#b088e8','#FF8C00','#5B8FE0'];
+
+  function renderGuildSidebar() {
+    const container = document.getElementById('sidebar-guild-rows');
+    if (!container) return;
+
+    // Build guild data from live nines
+    const guilds = {};
+    state.nines.forEach((sprite, id) => {
+      const tag = sprite.guild || '???';
+      if (!guilds[tag]) guilds[tag] = { hp: 0, maxHp: 0, nines: [] };
+      guilds[tag].hp += sprite.hp || 0;
+      guilds[tag].maxHp += sprite.maxHp || 0;
+      guilds[tag].nines.push(id);
+    });
+
+    const entries = Object.entries(guilds).sort((a, b) => b[1].hp - a[1].hp);
+    const totalHp = entries.reduce((s, [, g]) => s + g.hp, 0) || 1;
+    const isLeader = entries[0]?.[0];
+
+    // Update controlling guild pill in top bar
+    updateControlPill(isLeader, guilds[isLeader]);
+
+    container.innerHTML = '';
+    entries.forEach(([tag, data], i) => {
+      const color = GUILD_COLORS_LIST[i % GUILD_COLORS_LIST.length];
+      const pct = Math.round((data.hp / (data.maxHp || 1)) * 100);
+      const row = document.createElement('div');
+      row.className = 'sidebar-guild-row';
+      row.innerHTML = `
+        <div class="sidebar-guild-top">
+          <div class="sidebar-guild-dot" style="background:${color}"></div>
+          <div class="sidebar-guild-name">${tag === isLeader ? '👑 ' : ''}${tag}</div>
+          <div class="sidebar-guild-hp">${data.hp} HP</div>
+        </div>
+        <div class="sidebar-guild-bar">
+          <div class="sidebar-guild-bar-fill" style="width:${pct}%;background:${color}"></div>
+        </div>
+        <div class="sidebar-guild-nines">${data.nines.length} Nine${data.nines.length !== 1 ? 's' : ''} fighting</div>
+      `;
+      // Hover: highlight this guild's sprites, dim others
+      row.addEventListener('mouseenter', () => highlightGuild(tag));
+      row.addEventListener('mouseleave', () => resetGuildHighlight());
+      container.appendChild(row);
+    });
+  }
+
+  function highlightGuild(guildTag) {
+    state.nines.forEach((sprite) => {
+      if (sprite.guild === guildTag) {
+        sprite.container.alpha = 1;
+        if (sprite.glow) { sprite.glow.alpha = 0.35; }
+        if (sprite.ring) { sprite.ring.alpha = 1.2; }
+      } else {
+        sprite.container.alpha = 0.25;
+      }
+    });
+  }
+
+  function resetGuildHighlight() {
+    state.nines.forEach((sprite) => {
+      sprite.container.alpha = sprite.isAlive === false ? 0.15 : 1;
+      if (sprite.glow) sprite.glow.alpha = 0.06;
+      if (sprite.ring) sprite.ring.alpha = 1;
+    });
+  }
+
+  // ── CONTROLLING GUILD PILL ──
+  function updateControlPill(leader, data) {
+    const pill = document.getElementById('guild-control-pill');
+    if (!pill) return;
+    if (!leader || leader === '???') { pill.style.display = 'none'; return; }
+    const color = GUILD_COLORS_LIST[0]; // leader always gets index 0
+    pill.style.display = 'inline-block';
+    pill.style.color = color;
+    pill.style.borderColor = color + '60';
+    pill.style.background = color + '18';
+    pill.textContent = '👑 ' + leader;
+  }
+
+  // Call renderGuildSidebar when guild data updates (replaces updateGuildDominance)
   function updateGuildDominance(nineStates) {
-    const el = document.getElementById('guild-dominance');
-    if (!el) return;
-    // Tally total HP per guild from current state
-    const guildHp = {};
-    for (const n of nineStates) {
-      if (!n.guildTag) continue;
-      guildHp[n.guildTag] = (guildHp[n.guildTag] || 0) + (n.hp || 0);
-    }
-    const guilds = Object.entries(guildHp).sort((a, b) => b[1] - a[1]);
-    const total = guilds.reduce((s, [,v]) => s + v, 0) || 1;
-    const GUILD_COLORS = ['#e85a6a','#6acd8a','#6ac8d8','#D4A64B','#b088e8'];
-    el.innerHTML = guilds.map(([tag, hp], i) => {
-      const pct = Math.round((hp / total) * 100);
-      const col = GUILD_COLORS[i % GUILD_COLORS.length];
-      return `<div class="guild-dom-pill" style="color:${col};border-color:${col}40;background:${col}15">${tag} ${pct}%</div>`;
-    }).join('');
+    renderGuildSidebar();
   }
 
   // ── CARD COOLDOWN BARS ──
-  // Inject cooldown bar into each card slot on render
   function injectCooldownBars() {
     for (let i = 0; i < 3; i++) {
       const slot = document.getElementById(`card-slot-${i}`);
       if (!slot || slot.querySelector('.slot-cooldown')) continue;
       const bar = document.createElement('div');
       bar.className = 'slot-cooldown';
-      bar.innerHTML = `<div class="slot-cooldown-fill" id="cooldown-fill-${i}" style="width:100%"></div>`;
+      bar.innerHTML = `<div class="slot-cooldown-fill" id="cooldown-fill-${i}" style="width:0%"></div>`;
       slot.style.position = 'relative';
       slot.appendChild(bar);
     }
   }
 
   function updateCardCooldowns(spellReady) {
-    // spellReady 0-1, cycles through cards round-robin
-    // We can only estimate which card is "active" — fill all bars proportionally
-    // The current casting card fill drains; next card fills
-    // Simple approach: show a single charging bar on the "next" card slot
     for (let i = 0; i < 3; i++) {
       const fill = document.getElementById(`cooldown-fill-${i}`);
       if (!fill) continue;
-      // Which card is casting — track via state.cardCooldownIndex
       if (state.cardCooldownIndex === i) {
         fill.style.width = `${Math.round(spellReady * 100)}%`;
         fill.style.background = spellReady > 0.9 ? '#D4A64B' : '#6ac8d8';
@@ -5243,18 +5483,17 @@
   }
 
   // ── CONTRIBUTION PANEL ──
-  // Store contribution data keyed by player id
   if (!state.contributions) state.contributions = new Map();
 
   function updateContributions(nineStates) {
     for (const n of nineStates) {
       const id = n.id;
       if (!id) continue;
-      const existing = state.contributions.get(id) || { name: '', guildTag: '', damage: 0, heals: 0, kos: 0 };
+      const existing = state.contributions.get(id) || { name: '', damage: 0, heals: 0, kos: 0 };
       const sprite = state.nines.get(id);
       state.contributions.set(id, {
-        name: sprite?.name || existing.name || id,
-        guildTag: n.guildTag || existing.guildTag,
+        name: sprite?.name || existing.name || String(id).slice(0,8),
+        guild: sprite?.guild || n.guildTag || '',
         damage: Math.max(existing.damage, n.damageDealt || 0),
         heals: Math.max(existing.heals, n.healingDone || 0),
         kos: Math.max(existing.kos, n.koCount || 0),
@@ -5264,65 +5503,65 @@
   }
 
   function renderContributions() {
-    const el = document.getElementById('contribution-list');
-    if (!el) return;
-    const sorted = [...state.contributions.values()].sort((a, b) => b.damage - a.damage);
-    el.innerHTML = sorted.map(c => `
-      <div class="contrib-row">
+    const html = [...state.contributions.values()]
+      .sort((a, b) => b.damage - a.damage)
+      .map(c => `<div class="contrib-row">
         <div class="contrib-name">${c.name}</div>
         <span class="contrib-stat" style="color:#e85a6a">⚔️${c.damage}</span>
         <span class="contrib-stat" style="color:#6acd8a">💚${c.heals}</span>
         <span class="contrib-stat" style="color:#D4A64B">💀${c.kos}</span>
       </div>`).join('');
+    const d = document.getElementById('contribution-list');
+    if (d) d.innerHTML = html;
   }
 
   // ── FULL BATTLE LOG ──
   function addBattleLog(text, type) {
-    const el = document.getElementById('battle-log-full');
-    if (!el) return;
-    const div = document.createElement('div');
-    div.className = `log-entry log-${type || 'default'}`;
-    div.innerHTML = text;
-    el.appendChild(div);
-    // Keep last 100 entries
-    while (el.children.length > 100) el.removeChild(el.firstChild);
-    el.scrollTop = el.scrollHeight;
+    function appendTo(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const div = document.createElement('div');
+      div.className = `log-entry log-${type || 'default'}`;
+      div.textContent = text;
+      el.appendChild(div);
+      while (el.children.length > 100) el.removeChild(el.firstChild);
+      el.scrollTop = el.scrollHeight;
+    }
+    appendTo('battle-log-full');
   }
 
   // ── ARENA CHAT ──
 
+  // ── ARENA CHAT ──
   (function(){
     const log = document.getElementById('arena-chat-log');
     const input = document.getElementById('arena-chat-input');
     const sendBtn = document.getElementById('arena-chat-send');
 
     function appendMsg(data) {
+      if (!log) return;
+      const gTag = data.guildTag ? ' <span class="chat-guild">['+data.guildTag+']</span>' : '';
+      const html = '<span class="chat-handle">@'+data.handle+'</span>'+gTag+' <span style="color:var(--body);">'+data.message.replace(/</g,'&lt;')+'</span>';
       const div = document.createElement('div');
       div.className = 'chat-msg';
-      const gTag = data.guildTag ? ' <span class="chat-guild">['+data.guildTag+']</span>' : '';
-      div.innerHTML = '<span class="chat-handle">@'+data.handle+'</span>'+gTag+' <span style="color:var(--body);">'+data.message.replace(/</g,'&lt;')+'</span>';
+      div.innerHTML = html;
       log.appendChild(div);
-      if(log.children.length > 30) log.removeChild(log.firstChild);
+      if (log.children.length > 30) log.removeChild(log.firstChild);
       log.scrollTop = log.scrollHeight;
     }
 
     function sendMsg() {
       const msg = input.value.trim();
-      if(!msg || !state.socket || !state.currentZoneId) return;
-      const pid = state.playerId || localStorage.getItem('player_id');
+      if (!msg || !state.socket || !state.currentZoneId) return;
       const handle = state.playerHandle || localStorage.getItem('9lv_handle') || 'Anon';
       const guildTag = state.playerGuildTag || '';
       state.socket.emit('chat:send', { zoneId: state.currentZoneId, message: msg, handle, guildTag });
       input.value = '';
     }
 
-    sendBtn.addEventListener('click', sendMsg);
-    input.addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(); });
-
-    // Listen for messages from server
-    document.addEventListener('arena:chat:message', function(e){
-      appendMsg(e.detail);
-    });
+    if (sendBtn) sendBtn.addEventListener('click', sendMsg);
+    if (input) input.addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(); });
+    document.addEventListener('arena:chat:message', function(e){ appendMsg(e.detail); });
   })();
 
   // ===== EVENT LISTENERS =====
