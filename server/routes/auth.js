@@ -202,7 +202,35 @@ router.get('/twitter/callback', async (req, res) => {
     console.log('Existing player check:', existingPlayer ? 'Found' : 'Not found');
 
     if (existingPlayer) {
-      // User already registered - redirect to dashboard
+      // Calculate login streak
+      const now = new Date();
+      const lastLogin = existingPlayer.last_login ? new Date(existingPlayer.last_login) : null;
+      let newStreak = existingPlayer.streak || 0;
+
+      if (!lastLogin) {
+        // First ever login
+        newStreak = 1;
+      } else {
+        const daysSince = Math.floor((now - lastLogin) / (1000 * 60 * 60 * 24));
+        if (daysSince === 0) {
+          // Already logged in today — don't change streak
+          newStreak = existingPlayer.streak || 1;
+        } else if (daysSince === 1) {
+          // Logged in yesterday — increment streak
+          newStreak = (existingPlayer.streak || 0) + 1;
+        } else {
+          // Missed a day — reset
+          newStreak = 1;
+        }
+      }
+
+      // Update last_login and streak
+      await supabase
+        .from('players')
+        .update({ last_login: now.toISOString(), streak: newStreak })
+        .eq('id', existingPlayer.id);
+
+      console.log(`Streak updated: ${newStreak} days for player ${existingPlayer.id}`);
       console.log('Redirecting to dashboard with player_id:', existingPlayer.id);
       return res.redirect(`/dashboard.html?player_id=${existingPlayer.id}`);
     }
