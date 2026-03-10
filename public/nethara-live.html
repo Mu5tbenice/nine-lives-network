@@ -1072,10 +1072,20 @@
   // ===== LOAD ZONES =====
   async function loadZones() {
     try {
-      const res = await fetch('/api/zones');
-      if (!res.ok) throw new Error('Failed to load zones');
-      const data = await res.json();
-      state.zones = data.zones || data || [];
+      // Load zones and deployment counts in parallel
+      const [zonesRes, countsRes] = await Promise.all([
+        fetch('/api/zones'),
+        fetch('/api/zones/counts')
+      ]);
+      if (!zonesRes.ok) throw new Error('Failed to load zones');
+      const data = await zonesRes.json();
+      const counts = countsRes.ok ? await countsRes.json() : {};
+
+      // Merge nines count into each zone object
+      state.zones = (data.zones || data || []).map(z => ({
+        ...z,
+        arena_nines: counts[z.id] || 0
+      }));
 
       renderZoneList();
       updateActiveCount();
@@ -1173,87 +1183,37 @@
   };
 
   function buildZoneCard(zone) {
-    const houseKey = zone.house
-      || zone.region_house
-      || SCHOOL_TO_HOUSE[zone.controlling_school_id]
-      || SCHOOL_TO_HOUSE[zone.school_id]
-      || null;
-    const h = (houseKey && HOUSES[houseKey]) || { color: '#666', name: 'Unclaimed', icon: '⚔️' };
-
-    const regionName = zone.region || zone.region_name || zone.description || '';
-    const guilds = zone.guilds || zone.guild_presence || [];
+    const biomeImg = getBiomeUrl(zone);
     const casters = zone.arena_nines || zone.casters || zone.deployment_count || 0;
     const effects = zone.active_effects || zone.effects || [];
     const isObjective = zone.daily_objective || zone.is_current_objective || false;
-    const contested = zone.contested || (guilds.length > 1 && guilds[0] && guilds[1] && guilds[0].pct - guilds[1].pct < 15);
+    const ctrlGuild = zone.controlling_guild || zone.controlling_guild_tag || null;
 
-    // Biome banner — use zone.image_url from database first
-    const biomeImg = getBiomeUrl(zone);
-    // Fighter count — always visible, green badge
-    const fighterBadge = '<div class="zone-card-fighter-count">⚔️ ' + (casters > 0 ? casters : '0') + '</div>';
+    // Image banner with fighter count (always shown) and gold zone name
+    const fighterBadge = '<div class="zone-card-fighter-count">\u2694\uFE0F ' + casters + '</div>';
+    const imgBanner = '<div class="zone-card-img-wrap">'      + '<img src="' + biomeImg + '" alt="' + zone.name + '" loading="lazy" onerror="this.style.display=\'none\'">'      + fighterBadge      + '<div class="zone-card-overlay-name">' + zone.name + '</div>'      + '</div>';
 
-    const imgBanner = '<div class="zone-card-img-wrap">'
-      + '<img src="' + biomeImg + '" alt="' + zone.name + '" loading="lazy" onerror="this.style.display=\'none\'">'
-      + fighterBadge
-      + '<div class="zone-card-overlay-name">' + zone.name + '</div>'
-      + '</div>';
+    // Objective banner
+    let bannerHTML = isObjective
+      ? '<div class="zone-objective-banner">\u2B50 DAILY OBJECTIVE \u2014 \u00D71.5 POINTS</div>'
+      : '';
 
-    let bannerHTML = '';
-    if (isObjective) {
-      bannerHTML += '<div class="zone-objective-banner">⭐ DAILY OBJECTIVE — ×1.5 POINTS</div>';
-    }
-    if (zone.event) {
-      bannerHTML += '<div class="zone-event-banner" style="background:linear-gradient(90deg,' + h.color + '20,transparent);">'
-        + '<span style="color:' + h.color + '">' + (zone.event.icon || '⚡') + ' ' + ((zone.event.type || zone.event.name || '').toUpperCase()) + '</span>'
-        + '<span style="color:var(--gold)">' + (zone.event.time || zone.event.duration || '') + '</span>'
-        + '</div>';
+    // Card body: show controlling guild (snapshot winner) or "unclaimed"
+    let bodyHTML = '';
+    if (ctrlGuild) {
+      bodyHTML = '<span class="zone-guild-leader-pill" style="color:var(--gold);background:rgba(212,166,75,0.12);border-color:rgba(212,166,75,0.35);">'        + '<span style="width:6px;height:6px;border-radius:50%;background:var(--gold);display:inline-block;flex-shrink:0;"></span>'        + '\uD83C\uDFF0 ' + ctrlGuild        + '</span>';
+    } else {
+      bodyHTML = '<span style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--faint);">Unclaimed \u2014 deploy to capture!</span>';
     }
 
-    let guildsHTML = guilds.slice(0, 3).map(function(g) {
-      const gColor = g.color || '#888';
-      return '<div class="guild-bar-row">'
-        + '<div class="guild-dot" style="background:' + gColor + '"></div>'
-        + '<div class="guild-name">' + (g.name || g.guild_name || '???') + '</div>'
-        + '<div class="guild-track"><div class="guild-fill" style="width:' + (g.pct || g.control || 0) + '%;background:linear-gradient(90deg,' + gColor + '90,' + gColor + '40)"></div></div>'
-        + '<div class="guild-pct" style="color:' + gColor + '">' + (g.pct || g.control || 0) + '%</div>'
-        + '</div>';
-    }).join('');
-    if (!guildsHTML) {
-      const ctrlGuild = zone.controlling_guild_tag || zone.controlling_guild || null;
-      if (ctrlGuild) {
-        guildsHTML = '<div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:var(--gold);padding:2px 0;">🏰 Held by ' + ctrlGuild + '</div>';
-      } else {
-        guildsHTML = '<div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:var(--faint);padding:2px 0;">⚔️ Unclaimed — deploy to capture!</div>';
-      }
-    }
-
-    let effectsHTML = effects.map(function(e) {
+    // Effects pills (max 3)
+    const effectsHTML = effects.slice(0, 3).map(function(e) {
       const eName = typeof e === 'string' ? e : (e.name || e);
       const eColor = EFFECT_COLORS[eName] || '#888';
       return '<span class="effect-pill" style="background:' + eColor + '15;color:' + eColor + ';border:1px solid ' + eColor + '30">' + eName + '</span>';
     }).join('');
 
-    let badgeHTML = '';
-    if (contested) {
-      badgeHTML = '<span class="zone-badge contested">CONTESTED</span>';
-    } else if (zone.held_days || zone.streak) {
-      badgeHTML = '<span class="zone-badge held">HELD ' + (zone.held_days || zone.streak) + 'd</span>';
-    } else if (zone.controlling_school_id) {
-      badgeHTML = '<span class="zone-badge held">HELD</span>';
-    }
-
-    return '<div class="zone-card" data-zone-id="' + zone.id + '">'
-      + imgBanner
-      + bannerHTML
-
-      + '<div class="zone-card-body">'
-        + (guilds.length > 0 ? '<div style="margin-bottom:6px">' + guildsHTML + '</div>' : guildsHTML)
-        + '<div style="display:flex;justify-content:space-between;align-items:center;">'
-          + '<div class="effect-pills">' + effectsHTML + '</div>'
-          + '<div>' + badgeHTML + '</div>'
-        + '</div>'
-      + '</div>'
-    + '</div>';
+    return '<div class="zone-card" data-zone-id="' + zone.id + '">'      + imgBanner      + bannerHTML      + '<div class="zone-card-body">'        + bodyHTML        + (effectsHTML ? '<div class="effect-pills" style="margin-top:4px;">' + effectsHTML + '</div>' : '')      + '</div>'    + '</div>';
   }
 
   function renderRegionsTab(container) {

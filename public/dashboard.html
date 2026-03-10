@@ -230,19 +230,21 @@ async function loadDashboard(){
   var pid=getPlayerId();
   if(!pid){document.getElementById('loadingState').style.display='none';document.getElementById('errorState').style.display='block';return;}
   try{
-    var[pR,cR,zR,sR,dR,snR,stR]=await Promise.all([
+    var[pR,cR,zR,sR,dR,snR,stR,zcR]=await Promise.all([
       fetch('/api/players/'+pid),
       fetch('/api/zones/my-deployments/'+pid+'?limit=5'),
       fetch('/api/zones'),
       fetch('/api/leaderboards/schools'),
       fetch('/api/zones/my-deployments/'+pid),
       fetch('/api/combat/next-cycle'),
-      fetch('/api/stats/'+pid)
+      fetch('/api/stats/'+pid),
+      fetch('/api/zones/counts')
     ]);
     var player=pR.ok?await pR.json():null;
     var castsRaw=cR&&cR.ok?await cR.json():[];
     var casts=Array.isArray(castsRaw)?castsRaw:(castsRaw.deployments||[]);
-    var zones=zR.ok?await zR.json():[];
+    var zoneCounts=zcR&&zcR.ok?await zcR.json():{};
+    var zones=(zR.ok?await zR.json():[]).map(function(z){return Object.assign({},z,{arena_nines:zoneCounts[z.id]||0});});
     var schools=sR.ok?await sR.json():[];
     var myDeploys=dR.ok?await dR.json():{deployments:[]};
     var snapshotInfo=snR.ok?await snR.json():{};
@@ -395,60 +397,55 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,n
   // ── ACTIVE ZONES — sorted by most active Nines ──
   var az=(Array.isArray(zones)?zones:[])
     .filter(function(z){return z.is_active!==false&&z.zone_type!=='home';})
-    .sort(function(a,b){ return (b.active_casters||b.arena_nines||0)-(a.active_casters||a.arena_nines||0); })
+    .sort(function(a,b){return (b.arena_nines||0)-(a.arena_nines||0);})
     .slice(0,4);
   var zH='';
   az.forEach(function(z){
     var img=getZoneImg(z);
-    var casters=z.active_casters||z.arena_nines||z.deployment_count||0;
+    var casters=z.arena_nines||0;
     var isObj=z.is_current_objective||z.daily_objective;
-    var guilds=z.guilds||z.guild_presence||[];
-    var topGuild=guilds[0]||null;
-    var topColor=topGuild?(topGuild.color||'var(--gold)'):'var(--text-faint)';
-    var topName=topGuild?(topGuild.name||topGuild.guild_tag||'Unknown'):(z.controlling_guild_tag||null);
-    var topPct=topGuild?(topGuild.pct||topGuild.control||0):0;
-    var contested=guilds.length>1&&topGuild&&guilds[1]&&(topGuild.pct||0)-(guilds[1].pct||0)<15;
+    var ctrlGuild=z.controlling_guild||z.controlling_guild_tag||null;
 
-    zH+='<a href="/nethara-live.html?zone_id='+z.id+'" style="display:block;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:transform 0.2s,border-color 0.2s;text-decoration:none;background:rgba(255,255,255,0.02);" onmouseenter="this.style.borderColor=\'rgba(212,166,75,0.3)\';this.style.transform=\'translateY(-2px)\'" onmouseleave="this.style.borderColor=\'rgba(255,255,255,0.06)\';this.style.transform=\'none\'">';
+    zH+='<a href="/nethara-live.html?zone_id='+z.id+'" style="display:block;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:transform 0.2s,border-color 0.2s;text-decoration:none;background:var(--bg-card);" onmouseenter="this.style.borderColor=\'rgba(212,166,75,0.3)\';this.style.transform=\'translateY(-2px)\'" onmouseleave="this.style.borderColor=\'rgba(255,255,255,0.06)\';this.style.transform=\'none\'">';
 
-    if(img){
-      zH+='<div style="height:110px;background-image:url(\'' +img+ '\');background-size:cover;background-position:center;position:relative;">'
-        +'<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(14,10,24,0.98) 0%,rgba(14,10,24,0.2) 60%,transparent 100%);"></div>';
+    // Image section
+    zH+='<div style="height:120px;background-image:url(\''+img+'\');background-size:cover;background-position:center;position:relative;">'
+      +'<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(14,10,24,0.98) 0%,rgba(14,10,24,0.2) 60%,transparent 100%);"></div>';
 
-      if(isObj){
-        zH+='<div style="position:absolute;top:6px;left:6px;padding:3px 8px;border-radius:5px;background:rgba(212,166,75,0.2);border:1px solid rgba(212,166,75,0.4);">'
-          +'<span style="font-family:var(--font-data);font-size:5px;color:var(--gold);">⭐ OBJECTIVE</span>'
-          +'</div>';
-      }
-
-      zH+='<div style="position:absolute;top:6px;right:6px;padding:3px 8px;border-radius:5px;background:rgba(10,8,18,0.85);border:1px solid rgba(68,204,136,0.25);">'
-        +'<span style="font-family:var(--font-data);font-size:6px;color:#44cc88;">⚔️ '+casters+'</span>'
+    // Objective badge top-left
+    if(isObj){
+      zH+='<div style="position:absolute;top:6px;left:6px;padding:3px 8px;border-radius:5px;background:rgba(212,166,75,0.2);border:1px solid rgba(212,166,75,0.4);">'
+        +'<span style="font-family:var(--font-data);font-size:5px;color:var(--gold);">⭐ OBJECTIVE</span>'
         +'</div>';
-
-      zH+='<div style="position:absolute;bottom:8px;left:10px;right:10px;z-index:2;">'
-        +'<div style="font-family:var(--font-title);font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;text-shadow:0 1px 8px rgba(0,0,0,0.95);">'+esc(z.name)+'</div>'
-        +'</div>'
-        +'</div>';
-    }else{
-      zH+='<div style="height:110px;background:rgba(255,255,255,0.02);display:flex;align-items:flex-end;padding:8px 10px;"><div style="font-family:var(--font-title);font-size:12px;color:var(--gold);">'+esc(z.name)+'</div></div>';
     }
 
+    // Active Nines badge top-right — always shown, green
+    zH+='<div style="position:absolute;top:6px;right:6px;padding:3px 8px;border-radius:5px;background:rgba(10,8,18,0.85);border:1px solid rgba(68,204,136,0.25);">'
+      +'<span style="font-family:var(--font-data);font-size:6px;color:#44cc88;">⚔️ '+casters+'</span>'
+      +'</div>';
+
+    // Zone name bottom in gold
+    zH+='<div style="position:absolute;bottom:8px;left:10px;right:10px;z-index:2;">'
+      +'<div style="font-family:var(--font-title);font-size:13px;font-weight:700;color:var(--gold);letter-spacing:1px;text-shadow:0 1px 8px rgba(0,0,0,0.95);">'+esc(z.name)+'</div>'
+      +'</div>'
+      +'</div>';
+
+    // Card body: controlling guild pill
     zH+='<div style="padding:8px 10px;">';
-    if(topName){
-      zH+='<div style="display:flex;align-items:center;justify-content:space-between;">'
-        +'<div style="display:flex;align-items:center;gap:5px;overflow:hidden;">'
-        +'<span style="width:6px;height:6px;border-radius:50%;background:'+topColor+';flex-shrink:0;display:inline-block;"></span>'
-        +'<span style="font-family:var(--font-data);font-size:6px;color:'+topColor+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+esc(topName)+(topPct?' · '+topPct+'%':'')+'</span>'
-        +'</div>'
-        +(contested?'<span style="font-family:var(--font-data);font-size:5px;color:var(--red);padding:2px 6px;border-radius:3px;background:rgba(255,68,102,0.1);border:1px solid rgba(255,68,102,0.2);">HOT</span>':'')
+    if(ctrlGuild){
+      zH+='<div style="display:flex;align-items:center;gap:5px;">'
+        +'<span style="width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;display:inline-block;"></span>'
+        +'<span style="font-family:var(--font-data);font-size:6px;color:var(--gold);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🏰 '+esc(ctrlGuild)+'</span>'
         +'</div>';
     }else{
       zH+='<span style="font-family:var(--font-data);font-size:6px;color:var(--text-faint);">Unclaimed — deploy to capture!</span>';
     }
-    zH+=(isObj?'<div style="font-family:var(--font-data);font-size:5px;color:var(--gold);margin-top:4px;">×1.5 points this zone</div>':'');
+    zH+=(isObj?'<div style="font-family:var(--font-data);font-size:5px;color:var(--gold);margin-top:3px;">×1.5 points this zone</div>':'');
     zH+='</div>';
+
     zH+='</a>';
   });
+
 
 
   /* ═══════════════════════════════════
