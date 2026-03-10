@@ -19,6 +19,9 @@ let bossEngine = null;
 let twitterBot = null;
 let nermBot = null;
 let dropTicketEngine = null;
+let chronicleEngine = null;
+let nermTwitter = null;
+let nermTelegram = null;
 
 try { territoryControl = require('./territoryControl'); } catch (e) { console.log('⚠️ territoryControl not loaded'); }
 try { activityDecay = require('./activityDecay'); } catch (e) { console.log('⚠️ activityDecay not loaded'); }
@@ -32,6 +35,9 @@ try { nineSystem = require('./nineSystem'); } catch (e) { console.log('⚠️ ni
 try { twitterBot = require('./twitterBot'); } catch (e) { console.log('⚠️ twitterBot not loaded'); }
 try { nermBot = require('./nermBot'); } catch (e) { console.log('⚠️ nermBot not loaded'); }
 try { dropTicketEngine = require('./dropTicketEngine'); } catch (e) { console.log('⚠️ dropTicketEngine not loaded'); }
+try { chronicleEngine = require('./chronicleEngine'); } catch (e) { console.log('⚠️ chronicleEngine not loaded'); }
+try { nermTwitter = require('./nermTwitter'); } catch (e) { console.log('⚠️ nermTwitter not loaded'); }
+try { nermTelegram = require('./nermTelegram'); } catch (e) { console.log('⚠️ nermTelegram not loaded'); }
 
 let jobsInitialized = false;
 const jobLog = {};
@@ -47,6 +53,13 @@ function initializeScheduledJobs() {
   }
 
   console.log('🕐 Initializing scheduled jobs...');
+
+  // ════════════════════════════════
+  // START BOTS (once on load)
+  // ════════════════════════════════
+  try { if (nermTelegram) nermTelegram.startNermTelegramBot(); } catch (e) { console.log('⚠️ Nerm Telegram start failed:', e.message); }
+  try { if (nermTwitter) nermTwitter.startNermTwitterBot(); } catch (e) { console.log('⚠️ Nerm Twitter start failed:', e.message); }
+
 
   // ════════════════════════════════
   // MIDNIGHT BANKING — 00:00 UTC
@@ -181,7 +194,12 @@ function initializeScheduledJobs() {
     logJob('chronicle_act1');
     try {
       if (territoryControl) await territoryControl.setRandomObjective();
-      if (narrativeEngine) await narrativeEngine.postAct1();
+      if (chronicleEngine) {
+        const { postTweetAsBot } = require('./nermTwitter');
+        await chronicleEngine.fireAct(1, postTweetAsBot);
+      } else if (narrativeEngine) {
+        await narrativeEngine.postAct1(); // fallback
+      }
     } catch (e) { console.error('❌ Chronicle Act 1:', e.message); }
   });
 
@@ -190,7 +208,12 @@ function initializeScheduledJobs() {
     console.log(`[${ts()}] 📜 Chronicle Act 2: The March`);
     logJob('chronicle_act2');
     try {
-      if (narrativeEngine) await narrativeEngine.postAct2();
+      if (chronicleEngine) {
+        const { postTweetAsBot } = require('./nermTwitter');
+        await chronicleEngine.fireAct(2, postTweetAsBot);
+      } else if (narrativeEngine) {
+        await narrativeEngine.postAct2(); // fallback
+      }
     } catch (e) { console.error('❌ Chronicle Act 2:', e.message); }
   });
 
@@ -199,7 +222,12 @@ function initializeScheduledJobs() {
     console.log(`[${ts()}] 📜 Chronicle Act 3: The Storm`);
     logJob('chronicle_act3');
     try {
-      if (narrativeEngine) await narrativeEngine.postAct3();
+      if (chronicleEngine) {
+        const { postTweetAsBot } = require('./nermTwitter');
+        await chronicleEngine.fireAct(3, postTweetAsBot);
+      } else if (narrativeEngine) {
+        await narrativeEngine.postAct3(); // fallback
+      }
     } catch (e) { console.error('❌ Chronicle Act 3:', e.message); }
   });
 
@@ -208,14 +236,21 @@ function initializeScheduledJobs() {
     console.log(`[${ts()}] 📜 Chronicle Act 4: The Reckoning`);
     logJob('chronicle_act4');
     try {
-      if (narrativeEngine) await narrativeEngine.postAct4();
+      if (chronicleEngine) {
+        const { postTweetAsBot } = require('./nermTwitter');
+        await chronicleEngine.fireAct(4, postTweetAsBot);
+      } else if (narrativeEngine) {
+        await narrativeEngine.postAct4(); // fallback
+      }
     } catch (e) { console.error('❌ Chronicle Act 4:', e.message); }
   });
 
   // Reply scraping — every 10 min during story hours (8AM-9PM UTC)
   cron.schedule('*/10 8-21 * * *', async () => {
     try {
-      if (narrativeEngine) await narrativeEngine.periodicScrape();
+      // Nerm scans Chronicle replies and mentions, awards points
+      if (nermTwitter) await nermTwitter.runNermTwitterCycle();
+      else if (narrativeEngine) await narrativeEngine.periodicScrape(); // fallback
       logJob('chronicle_scrape');
     } catch (e) { console.error('❌ Chronicle scrape:', e.message); }
   });
@@ -235,23 +270,28 @@ function initializeScheduledJobs() {
       console.log(`[${ts()}] ⚡ Processed ${casts.length} casts`);
       logJob('cast_processing');
 
-      if (nermBot) {
-        const noticed = casts.filter(c => c.nermNoticed);
-        for (const cast of noticed) {
+      // Nerm reacts to noticed spell casts — uses nermBrain for AI voice
+      const noticed = casts.filter(c => c.nermNoticed);
+      for (const cast of noticed) {
+        try {
+          if (!cast.tweet_id) continue;
+          let response = null;
+          const prompt = 'You noticed @' + cast.player + ' from ' + cast.schoolName +
+            ' cast "' + cast.spell + '" for ' + cast.points +
+            ' points. React. Under 200 chars. Deadpan. One sentence.';
+          // Try nermBrain first (AI), fall back to old nermBot
           try {
-            if (!cast.tweet_id) continue;
-            const response = await nermBot.generateCustomResponse(
-              'You noticed @' + cast.player + ' from ' + cast.schoolName +
-              ' cast "' + cast.spell + '" for ' + cast.points +
-              ' points. React. Under 200 chars. Deadpan. One sentence.'
-            );
-            if (response) {
-              await nermBot.replyAsNerm(response, cast.tweet_id);
-              console.log('🐱 Nerm replied to @' + cast.player);
-            }
-            await new Promise(r => setTimeout(r, 2000));
-          } catch (e) { console.error('Nerm reply error:', e.message); }
-        }
+            const { askNerm } = require('./nermBrain');
+            response = await askNerm(prompt, 'twitter', { twitterHandle: cast.player });
+          } catch (_) {
+            if (nermBot) response = await nermBot.generateCustomResponse(prompt);
+          }
+          if (response) {
+            if (nermBot) await nermBot.replyAsNerm(response, cast.tweet_id);
+            console.log('🐱 Nerm replied to @' + cast.player);
+          }
+          await new Promise(r => setTimeout(r, 2000));
+        } catch (e) { console.error('Nerm reply error:', e.message); }
       }
     } catch (e) { console.error('❌ Cast processing:', e.message); }
   });
@@ -306,14 +346,15 @@ function initializeScheduledJobs() {
   console.log('🎫 Tickets:   Midnight auto-roll (earned from Chronicle + login)');
   console.log('');
   console.log('📜 Chronicle:');
-  console.log('   08:05 — Act 1: The Call (pre-written hook)');
+  console.log('   08:05 — Act 1: The Call (AI-generated with real zone data)');
   console.log('   12:05 — Act 2: The March (AI + player names)');
   console.log('   16:05 — Act 3: The Storm (AI + escalation)');
   console.log('   20:05 — Act 4: The Reckoning (AI + wildcard ending)');
   console.log('   */10  — Reply scraping + quality scoring (8AM-9PM)');
   console.log('');
   console.log('🗺️  Territory: */2 casts | */5 control | */5 snapshots');
-  console.log('🐱 Nerm:      Reply guy (reacts to noticed casts)');
+  console.log('🐱 Nerm:      Twitter reply-guy (30min scan) + Telegram bot (long-poll)');
+  console.log('   Brain:    Claude haiku — game-aware, deadpan, in-character');
   console.log('');
 }
 
