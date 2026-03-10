@@ -184,28 +184,11 @@ try {
 }
 
 try {
-  const chronicleRoutes = require("./routes/chronicle");
-  app.use("/api/chronicle", chronicleRoutes);
-  console.log("✅ Chronicle routes loaded");
+  const questRoutes = require("./routes/quests");
+  app.use("/api/quests", questRoutes);
+  console.log("✅ Quest routes loaded");
 } catch (e) {
-  console.error("❌ Failed to load chronicle routes:", e.message);
-}
-
-try {
-  const questsRoutes = require("./routes/quests");
-  app.use("/api/quests", questsRoutes);
-  console.log("✅ Quests routes loaded");
-} catch (e) {
-  console.error("❌ Failed to load quests routes:", e.message);
-}
-
-// Stats — V2 stat calculation API (house + cards + items)
-try {
-  const statsRoutes = require("./routes/stats");
-  app.use("/api/stats", statsRoutes);
-  console.log("✅ Stats routes loaded");
-} catch (e) {
-  console.error("❌ Failed to load stats routes:", e.message);
+  console.error("❌ Failed to load quest routes:", e.message);
 }
 
 // ── COMBAT ENGINE ──
@@ -218,70 +201,35 @@ try {
 }
 
 // ── ARENA SOCKET NAMESPACE ──
-// Combat is handled entirely by combatEngine.js tick loop.
-// This section only manages socket rooms and chat.
 if (io) {
-  const supabase = require('./config/supabase');
   const arenaNamespace = io.of('/arena');
 
   arenaNamespace.on('connection', (socket) => {
     console.log('⚔️ Arena client connected:', socket.id);
 
-    socket.on('join_zone', async (data) => {
-      const zoneId = parseInt(data.zoneId || data.zone_id);
+    socket.on('join_zone', (data) => {
+      const zoneId = data.zoneId || data.zone_id;
       if (!zoneId) return;
 
-      // Leave previous zone rooms
-      for (const room of socket.rooms) {
-        if (room.startsWith('zone_')) socket.leave(room);
-      }
-      socket.join(`zone_${zoneId}`);
-      console.log(`⚔️ ${socket.id} joined zone_${zoneId}`);
+      const room = `zone_${zoneId}`;
+      socket.join(room);
+      console.log(`⚔️ ${socket.id} joined ${room}`);
 
-      // Send initial state snapshot from DB
-      try {
-        const { data: deployments } = await supabase
-          .from('zone_deployments')
-          .select(`player_id, current_hp, max_hp, guild_tag, nine:nine_id(name, house_id, base_hp), player:player_id(twitter_handle, profile_image)`)
-          .eq('zone_id', zoneId)
-          .eq('is_active', true);
-
-        const HOUSE_MAP = { 1:'smoulders',2:'darktide',3:'stonebark',4:'ashenvale',5:'stormrage',6:'nighthollow',7:'dawnbringer',8:'manastorm',9:'plaguemire' };
-        const snapshot = (deployments || []).map(d => ({
-          id: d.player_id,
-          name: d.nine?.name || d.player?.twitter_handle || 'Unknown',
-          house: HOUSE_MAP[d.nine?.house_id] || 'smoulders',
-          guild_name: d.guild_tag || 'Lone Wolf',
-          guild_id: d.guild_tag,
-          current_hp: d.current_hp || d.nine?.base_hp || 10,
-          max_hp: d.max_hp || d.nine?.base_hp || 10,
-          alive: (d.current_hp || 1) > 0,
-          profile_image: d.player?.profile_image || null,
-        }));
-
-        socket.emit('arena:state', {
-          active: snapshot.length > 0,
-          snapshot,
-          next_cycle_at: combatEngine?.getNextCycleAt ? combatEngine.getNextCycleAt() : (Date.now() + 15 * 60 * 1000),
-          cycle_interval_ms: combatEngine?.getCycleIntervalMs ? combatEngine.getCycleIntervalMs() : (15 * 60 * 1000),
-        });
-      } catch (e) {
-        socket.emit('arena:state', { active: false, snapshot: [] });
-      }
+      // Send initial state with countdown timing
+      socket.emit('arena:state', {
+        active: true,
+        cycle: combatEngine ? (combatEngine._zoneCycles?.[zoneId] || 0) : 0,
+        next_cycle_at: combatEngine?.getNextCycleAt ? combatEngine.getNextCycleAt() : (Date.now() + 5 * 60 * 1000),
+        cycle_interval_ms: combatEngine?.getCycleIntervalMs ? combatEngine.getCycleIntervalMs() : (5 * 60 * 1000),
+      });
     });
 
     socket.on('leave_zone', (data) => {
       const zoneId = data.zoneId || data.zone_id;
-      if (zoneId) socket.leave(`zone_${zoneId}`);
-    });
-
-    socket.on('chat:send', (data) => {
-      const zoneId = data.zoneId;
-      const message = (data.message || '').trim().substring(0, 120);
-      const handle = (data.handle || 'Anon').substring(0, 30);
-      const guildTag = (data.guildTag || '').substring(0, 16);
-      if (!zoneId || !message) return;
-      arenaNamespace.to(`zone_${zoneId}`).emit('chat:message', { handle, guildTag, message, ts: Date.now() });
+      if (zoneId) {
+        socket.leave(`zone_${zoneId}`);
+        console.log(`⚔️ ${socket.id} left zone_${zoneId}`);
+      }
     });
 
     socket.on('disconnect', () => {
@@ -289,7 +237,7 @@ if (io) {
     });
   });
 
-  // Global broadcast helper used by combatEngine and zones route
+  // Set up global broadcast function so combat engine can send events
   global.__arenaSocket = {
     _broadcastToZone: function(zoneId, event, data) {
       arenaNamespace.to(`zone_${zoneId}`).emit(event, data);
@@ -319,11 +267,66 @@ app.get('/api/combat/next-cycle', (req, res) => {
 // ── START COMBAT ENGINE ──
 if (combatEngine && combatEngine.startCombatEngine) {
   combatEngine.startCombatEngine();
-  console.log("⚔️ Combat engine started — V2 continuous combat");
+  console.log("⚔️ Combat engine started — V6 wave combat, 30s buffer");
 }
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// ── STREAK PING ──
+// Called by dashboard on load. Updates login streak.
+// streak=0→1 first visit, +=1 if last login was yesterday, reset to 1 if gap >1 day
+app.post("/api/players/:id/streak-ping", async (req, res) => {
+  const supabase = require("./config/supabase");
+  const { createClient } = require("@supabase/supabase-js");
+  const supabaseAdmin = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+  try {
+    const playerId = parseInt(req.params.id);
+    const { data: player, error } = await supabaseAdmin
+      .from("players")
+      .select("streak, last_login")
+      .eq("id", playerId)
+      .single();
+
+    if (error || !player) return res.status(404).json({ error: "Player not found" });
+
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10); // "2026-03-10"
+    const lastLogin = player.last_login ? new Date(player.last_login) : null;
+    const lastLoginStr = lastLogin ? lastLogin.toISOString().slice(0, 10) : null;
+
+    // Already pinged today — return current streak, no update
+    if (lastLoginStr === todayStr) {
+      return res.json({ streak: player.streak, updated: false });
+    }
+
+    let newStreak;
+    if (!lastLoginStr) {
+      // First ever login
+      newStreak = 1;
+    } else {
+      const daysDiff = Math.round((now - lastLogin) / (1000 * 60 * 60 * 24));
+      if (daysDiff === 1) {
+        newStreak = (player.streak || 0) + 1; // consecutive day
+      } else {
+        newStreak = 1; // gap > 1 day, reset
+      }
+    }
+
+    await supabaseAdmin
+      .from("players")
+      .update({ streak: newStreak, last_login: now.toISOString() })
+      .eq("id", playerId);
+
+    res.json({ streak: newStreak, updated: true });
+  } catch (err) {
+    console.error("Streak ping error:", err.message);
+    res.status(500).json({ error: "Failed to update streak" });
+  }
 });
 
 // Redirect old world.html to map.html
