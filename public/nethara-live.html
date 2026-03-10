@@ -911,7 +911,7 @@
     <div class="deploy-title">⚔️ Deploy to <span id="deploy-zone-name"></span></div>
 
     <div class="deploy-stats-preview">
-      <div style="font-family:'Press Start 2P',monospace; font-size:7px; color:var(--faint); letter-spacing:1px; margin-bottom:8px;">CARD STATS BONUS</div>
+      <div style="font-family:\'Press Start 2P\',monospace; font-size:7px; color:var(--faint); letter-spacing:1px; margin-bottom:8px;">CARD STATS BONUS</div>
       <div class="deploy-stat-row" id="deploy-stats-row">
         <div class="deploy-stat"><span style="color:#e85a6a">ATK</span> <span id="deploy-atk">--</span></div>
         <div class="deploy-stat"><span style="color:#6acd8a">HP</span> <span id="deploy-hp">--</span></div>
@@ -1306,7 +1306,7 @@
     const hKey = zone.house || zone.region_house
       || SCHOOL_TO_HOUSE[zone.controlling_school_id]
       || SCHOOL_TO_HOUSE[zone.school_id] || null;
-    const h = (hKey && HOUSES[hKey]) || { color: '#D4A64B', name: 'Unknown Region', icon: '⚔️' };
+    const h = (hKey && HOUSES[hKey]) || { color: '#D4A64B', name: 'Unknown Region', icon: '\u2694\uFE0F' };
     const biomeImg = getBiomeUrl(zone);
     const guilds = zone.guilds || zone.guild_presence || [];
     const casters = zone.arena_nines || zone.casters || zone.deployment_count || 0;
@@ -1314,92 +1314,83 @@
     const description = zone.description || zone.lore || '';
     const isObjective = zone.daily_objective || zone.is_current_objective || false;
 
-    // Leading guild
     const topGuild = guilds[0] || null;
     const topGuildColor = topGuild ? (topGuild.color || '#D4A64B') : '#D4A64B';
-    const topGuildName = topGuild ? (topGuild.name || topGuild.guild_tag || 'Unknown') : null;
     const contested = guilds.length > 1 && topGuild && guilds[1] && (topGuild.pct || 0) - (guilds[1].pct || 0) < 15;
 
-    // Guild control bars
     const guildsHTML = guilds.length > 0
       ? guilds.slice(0, 4).map(function(g) {
           const gc = g.color || '#888', pct = g.pct || g.control || 0;
           const gName = g.name || g.guild_name || g.guild_tag || '???';
-          return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">'
-            + '<div style="width:8px;height:8px;border-radius:50%;background:' + gc + ';flex-shrink:0;"></div>'
-            + '<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:' + gc + ';flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + gName + '</div>'
-            + '<div style="width:100px;height:6px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden;"><div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,' + gc + ',' + gc + '80);border-radius:3px;transition:width 0.6s;"></div></div>'
-            + '<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:' + gc + ';width:30px;text-align:right;font-weight:700;">' + pct + '%</div>'
-            + '</div>';
+          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:${gc};flex-shrink:0;"></div>
+            <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:${gc};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${gName}</div>
+            <div style="width:100px;height:6px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden;"><div style="width:${pct}%;height:100%;background:${gc};border-radius:3px;"></div></div>
+            <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:${gc};width:30px;text-align:right;font-weight:700;">${pct}%</div>
+          </div>`;
         }).join('')
       : (zone.controlling_guild_tag
-          ? '<div style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--gold);">🏰 Controlled by ' + zone.controlling_guild_tag + '</div>'
-          : '<div style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--faint);">No guild has claimed this zone yet.</div>');
+          ? `<div style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--gold);">\uD83C\uDFF0 Controlled by ${zone.controlling_guild_tag}</div>`
+          : `<div style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--faint);">No guild has claimed this zone yet.</div>`);
 
-    // Effects with colors
     const effectsHTML = effects.slice(0, 6).map(function(e) {
       const en = typeof e === 'string' ? e : (e.name || e);
       const ec = EFFECT_COLORS[en] || '#888';
-      return '<span style="font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 8px;border-radius:4px;background:' + ec + '15;color:' + ec + ';border:1px solid ' + ec + '30;">' + en + '</span>';
+      return `<span style="font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 8px;border-radius:4px;background:${ec}15;color:${ec};border:1px solid ${ec}30;">${en}</span>`;
     }).join('');
 
     const panel = document.createElement('div');
     panel.id = 'zone-detail-panel';
     panel.style.cssText = 'position:fixed;inset:0;z-index:200;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;';
 
-    panel.innerHTML = ''
-      + '<div style="max-width:480px;width:100%;border-radius:16px;overflow:hidden;border:1px solid ' + (topGuildColor) + '30;background:linear-gradient(180deg,#1e1830 0%,#12101e 100%);max-height:90vh;overflow-y:auto;">'
+    panel.innerHTML = `
+      <div style="max-width:480px;width:100%;border-radius:16px;overflow:hidden;border:1px solid ${topGuildColor}30;background:linear-gradient(180deg,#1e1830 0%,#12101e 100%);max-height:90vh;overflow-y:auto;">
 
-      // ── Hero Image ──
-      + '<div style="height:200px;background-image:url('' + biomeImg + '');background-size:cover;background-position:center;position:relative;">'
-      + '<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(14,10,24,1) 0%,rgba(14,10,24,0.15) 70%,transparent 100%);"></div>'
-      + '<button onclick="document.getElementById('zone-detail-panel').remove()" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:16px;cursor:pointer;padding:5px 12px;line-height:1;z-index:2;">✕</button>'
-      + (isObjective ? '<div style="position:absolute;top:12px;left:12px;background:rgba(212,166,75,0.2);border:1px solid rgba(212,166,75,0.4);border-radius:6px;padding:4px 10px;font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);z-index:2;">⭐ DAILY OBJECTIVE · ×1.5 POINTS</div>' : '')
-      + '<div style="position:absolute;bottom:14px;left:16px;right:16px;z-index:2;">'
-      + '<div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);letter-spacing:2px;text-shadow:0 2px 12px rgba(0,0,0,0.95);">' + zone.name + '</div>'
-      + (zone.region || zone.region_name ? '<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:' + h.color + ';margin-top:4px;">' + h.icon + ' ' + (zone.region || zone.region_name) + '</div>' : '')
-      + '</div>'
-      + '</div>'
+        <div style="height:200px;background-image:url('${biomeImg}');background-size:cover;background-position:center;position:relative;">
+          <div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(14,10,24,1) 0%,rgba(14,10,24,0.15) 70%,transparent 100%);"></div>
+          <button id="zone-detail-close" style="position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:16px;cursor:pointer;padding:5px 12px;line-height:1;z-index:2;">&#x2715;</button>
+          ${isObjective ? `<div style="position:absolute;top:12px;left:12px;background:rgba(212,166,75,0.2);border:1px solid rgba(212,166,75,0.4);border-radius:6px;padding:4px 10px;font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);z-index:2;">&#x2B50; DAILY OBJECTIVE &middot; &times;1.5 POINTS</div>` : ''}
+          <div style="position:absolute;bottom:14px;left:16px;right:16px;z-index:2;">
+            <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);letter-spacing:2px;text-shadow:0 2px 12px rgba(0,0,0,0.95);">${zone.name}</div>
+            ${zone.region || zone.region_name ? `<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:${h.color};margin-top:4px;">${h.icon} ${zone.region || zone.region_name}</div>` : ''}
+          </div>
+        </div>
 
-      // ── Body ──
-      + '<div style="padding:18px;">'
+        <div style="padding:18px;">
 
-      // ── Dopamine: Active Nines Count ──
-      + '<div class="nines-fighting-badge" style="display:flex;align-items:center;justify-content:center;gap:12px;padding:14px;border-radius:12px;background:rgba(68,204,136,0.06);border:1px solid rgba(68,204,136,0.15);margin-bottom:16px;">'
-      + '<div style="width:10px;height:10px;border-radius:50%;background:#44cc88;box-shadow:0 0 10px #44cc88;"></div>'
-      + '<div style="text-align:center;">'
-      + '<div style="font-family:'Press Start 2P',monospace;font-size:18px;color:#44cc88;line-height:1;">' + casters + '</div>'
-      + '<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(68,204,136,0.6);margin-top:4px;letter-spacing:1px;">NINES FIGHTING</div>'
-      + '</div>'
-      + (contested ? '<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--red);padding:4px 8px;border-radius:4px;background:rgba(255,68,102,0.1);border:1px solid rgba(255,68,102,0.2);">CONTESTED</div>' : '')
-      + '</div>'
+          <div class="nines-fighting-badge" style="display:flex;align-items:center;justify-content:center;gap:12px;padding:14px;border-radius:12px;background:rgba(68,204,136,0.06);border:1px solid rgba(68,204,136,0.15);margin-bottom:16px;">
+            <div style="width:10px;height:10px;border-radius:50%;background:#44cc88;box-shadow:0 0 10px #44cc88;"></div>
+            <div style="text-align:center;">
+              <div style="font-family:'Press Start 2P',monospace;font-size:18px;color:#44cc88;line-height:1;">${casters}</div>
+              <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(68,204,136,0.6);margin-top:4px;letter-spacing:1px;">NINES FIGHTING</div>
+            </div>
+            ${contested ? `<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--red);padding:4px 8px;border-radius:4px;background:rgba(255,68,102,0.1);border:1px solid rgba(255,68,102,0.2);">CONTESTED</div>` : ''}
+          </div>
 
-      // ── Description ──
-      + (description ? '<div style="font-family:'Crimson Text',serif;font-size:14px;color:rgba(255,255,255,0.5);font-style:italic;line-height:1.6;margin-bottom:16px;padding:0 2px;">' + description + '</div>' : '')
+          ${description ? `<div style="font-family:'Crimson Text',serif;font-size:14px;color:rgba(255,255,255,0.5);font-style:italic;line-height:1.6;margin-bottom:16px;">${description}</div>` : ''}
 
-      // ── Guild Control ──
-      + '<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:10px;">GUILD CONTROL</div>'
-      + guildsHTML
+          <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:10px;">GUILD CONTROL</div>
+          ${guildsHTML}
 
-      // ── Active Effects ──
-      + (effectsHTML ? '<div style="margin-top:14px;"><div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:8px;">ACTIVE EFFECTS</div><div style="display:flex;flex-wrap:wrap;gap:5px;">' + effectsHTML + '</div></div>' : '')
+          ${effectsHTML ? `<div style="margin-top:14px;"><div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:8px;">ACTIVE EFFECTS</div><div style="display:flex;flex-wrap:wrap;gap:5px;">${effectsHTML}</div></div>` : ''}
 
-      // ── CTA ──
-      + '<div style="margin-top:20px;text-align:center;font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,0.35);font-style:italic;margin-bottom:8px;">'
-      + (casters > 0 ? 'Join ' + casters + ' Nines already in the fight.' : 'Be the first to claim this zone.')
-      + '</div>'
-      + '<button data-enter-zone-id="' + zone.id + '" style="width:100%;padding:16px;border-radius:10px;border:none;cursor:pointer;font-family:'Cinzel',serif;font-size:14px;font-weight:700;letter-spacing:3px;background:linear-gradient(135deg,#D4A64B,#8a6d2f);color:#0a0810;box-shadow:0 4px 0 #5a4520,0 6px 20px rgba(212,166,75,0.25);transition:transform 0.15s;" onmouseenter="this.style.transform='translateY(-2px)'" onmouseleave="this.style.transform='none'">⚔️ ENTER ARENA</button>'
+          <div style="margin-top:20px;text-align:center;font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,0.35);font-style:italic;margin-bottom:8px;">
+            ${casters > 0 ? `Join ${casters} Nines already in the fight.` : 'Be the first to claim this zone.'}
+          </div>
+          <button id="zone-detail-enter" data-enter-zone-id="${zone.id}" style="width:100%;padding:16px;border-radius:10px;border:none;cursor:pointer;font-family:'Cinzel',serif;font-size:14px;font-weight:700;letter-spacing:3px;background:linear-gradient(135deg,#D4A64B,#8a6d2f);color:#0a0810;box-shadow:0 4px 0 #5a4520,0 6px 20px rgba(212,166,75,0.25);transition:transform 0.15s;">&#x2694;&#xFE0F; ENTER ARENA</button>
 
-      + '</div></div>';
+        </div>
+      </div>`;
 
-    panel.addEventListener('click', function(e) { if (e.target === panel) panel.remove(); });
-    panel.querySelector('[data-enter-zone-id]').addEventListener('click', function() {
+    panel.querySelector('#zone-detail-close').addEventListener('click', function() { panel.remove(); });
+    panel.querySelector('#zone-detail-enter').addEventListener('click', function() {
       const zid = parseInt(this.getAttribute('data-enter-zone-id'));
       const z = state.zones.find(function(x) { return x.id === zid; });
       panel.remove();
       _detailPanel = null;
       if (z) openArena(z);
     });
+    panel.addEventListener('click', function(e) { if (e.target === panel) panel.remove(); });
     document.body.appendChild(panel);
     _detailPanel = panel;
   }
@@ -4555,9 +4546,9 @@
       return `<div class="arena-sb-row">
         <div class="arena-sb-guild">${isLeader ? '👑 ' : ''}${guild}</div>
         <div style="display:flex;gap:8px;align-items:center;">
-          <span style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--green)">${hp} HP</span>
-          <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold)">${wins}W</span>
-          ${kos > 0 ? `<span style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--red)">${kos}KO</span>` : ''}
+          <span style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:var(--green)">${hp} HP</span>
+          <span style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--gold)">${wins}W</span>
+          ${kos > 0 ? `<span style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--red)">${kos}KO</span>` : ''}
         </div>
       </div>`;
     }).join('');
@@ -4760,7 +4751,7 @@
       slotEl.innerHTML = `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
           <div class="slot-type" style="color:${typeColor}">${(card.spell_type || '???').toUpperCase()}</div>
-          <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:${hColor};opacity:0.6">${(houseKey).toUpperCase().slice(0,4)}</span>
+          <span style="font-family:\'Press Start 2P\',monospace;font-size:5px;color:${hColor};opacity:0.6">${(houseKey).toUpperCase().slice(0,4)}</span>
         </div>
         <div class="slot-name">${card.name || '???'}</div>
         ${effectPills ? `<div class="slot-effects">${effectPills}</div>` : ''}
@@ -4800,8 +4791,8 @@
       const hColor = HOUSES[card.house]?.color || '#888';
       cardHTML = `<div style="width:240px;height:380px;background:linear-gradient(180deg,#12101a,#0c0a14);border:2px solid ${hColor}40;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px;">
         <div style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--bright);text-align:center;">${card.name || 'Unknown Card'}</div>
-        <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:${hColor}">${(card.spell_type || 'ATTACK').toUpperCase()}</div>
-        <div style="display:flex;gap:12px;margin-top:8px;font-family:'Press Start 2P',monospace;font-size:8px;">
+        <div style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:${hColor}">${(card.spell_type || 'ATTACK').toUpperCase()}</div>
+        <div style="display:flex;gap:12px;margin-top:8px;font-family:\'Press Start 2P\',monospace;font-size:8px;">
           ${card.base_atk ? `<span style="color:#e85a6a">ATK ${card.base_atk}</span>` : ''}
           ${card.base_hp ? `<span style="color:#6acd8a">HP ${card.base_hp}</span>` : ''}
           ${card.base_spd ? `<span style="color:#6ac8d8">SPD ${card.base_spd}</span>` : ''}
@@ -5180,11 +5171,11 @@
           ${imgEl}
           <div style="padding:8px 10px;">
             <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-              <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${typeColor}">${(card.spell_type || 'ATTACK').toUpperCase()}</span>
-              <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:${rColor};border:1px solid ${rColor}30;padding:1px 4px;border-radius:3px">${(card.rarity || 'C')[0].toUpperCase()}</span>
+              <span style="font-family:\'Press Start 2P\',monospace;font-size:6px;color:${typeColor}">${(card.spell_type || 'ATTACK').toUpperCase()}</span>
+              <span style="font-family:\'Press Start 2P\',monospace;font-size:5px;color:${rColor};border:1px solid ${rColor}30;padding:1px 4px;border-radius:3px">${(card.rarity || 'C')[0].toUpperCase()}</span>
             </div>
             <div style="font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:var(--bright);margin-bottom:4px;">${card.name || '???'}</div>
-            <div style="display:flex;gap:4px;flex-wrap:wrap;font-family:'Press Start 2P',monospace;font-size:5px;">
+            <div style="display:flex;gap:4px;flex-wrap:wrap;font-family:\'Press Start 2P\',monospace;font-size:5px;">
               ${card.base_atk ? `<span style="color:#e85a6a">ATK ${card.base_atk}</span>` : ''}
               ${card.base_hp ? `<span style="color:#6acd8a">HP ${card.base_hp}</span>` : ''}
               ${card.base_spd ? `<span style="color:#6ac8d8">SPD ${card.base_spd}</span>` : ''}

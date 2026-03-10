@@ -253,7 +253,7 @@ async function loadDashboard(){
     var questData=qR&&qR.ok?await qR.json():{quests:[]};
     var quests=questData.quests||[];
 
-    render(player,casts||[],zones||[],schools||[],quests,myDeploys.deployments||[],snapshotInfo,nineStats);
+    render(player,casts||[],zones||[],schools||[],quests,myDeploys.deployments||[],snapshotInfo,nineStats,questData);
   }catch(err){
     console.error('Dashboard load error:',err);
     document.getElementById('loadingState').style.display='none';
@@ -280,7 +280,7 @@ function sectionLabel(icon,text,fadeClass){
 }
 
 /* ═══ RENDER ═══ */
-async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,nineStats){
+async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,nineStats,questData){
   // Save player data to localStorage for Nine preview + other pages
   try{localStorage.setItem('9lv_player',JSON.stringify(player));}catch(e){}
 
