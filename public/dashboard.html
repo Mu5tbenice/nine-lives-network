@@ -443,19 +443,6 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,n
     zH+='</a>';
   });
 
-  // ── ACTIVITY ──
-  var aH='';
-  if(rc.length>0){
-    rc.forEach(function(c){
-      aH+='<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid rgba(212,166,75,0.04);">'
-        +'<span style="font-size:12px;">⚔️</span>'
-        +'<span style="flex:1;font-family:var(--font-body);font-size:12px;color:rgba(255,255,255,0.5);">'+esc(c.spell_name||c.zone_name||'Spell Cast')+'</span>'
-        +'<span style="font-family:var(--font-data);font-size:6px;color:var(--gold);">+'+(c.points_earned||0)+'</span>'
-        +'<span style="font-family:var(--font-data);font-size:5px;color:var(--text-faint);">'+(c.created_at?timeAgo(c.created_at):'')+'</span>'
-        +'</div>';
-    });
-  }else{
-    aH='<p style="text-align:center;color:var(--text-faint);font-style:italic;padding:16px 0;font-size:13px;">No activity yet. Join today\'s story!</p>';
   }
 
   /* ═══════════════════════════════════
@@ -599,12 +586,6 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,n
     ══════════════════════════════════ */
     +sectionLabel('📍','ACTIVE ZONES','fade-up fade-up-3')
     +'<div class="fade-up fade-up-3" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">'+zH+'</div>'
-
-    /* ══════════════════════════════════
-       6. RECENT ACTIVITY
-    ══════════════════════════════════ */
-    +sectionLabel('⚡','RECENT ACTIVITY','fade-up fade-up-4')
-    +'<div class="fade-up fade-up-4" style="border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);overflow:hidden;">'+aH+'</div>';
 
   document.getElementById('loadingState').style.display='none';
   c.style.display='block';
