@@ -4918,7 +4918,10 @@
         if (cards.length > 0) {
           state.equippedCards = cards;
           renderCardSlots(cards);
-        } else {
+        } else if (state.equippedCards.length === 0) {
+          // Only wipe the slots if we have nothing from a recent deploy — avoids
+          // the race condition where the loadout API hasn't caught up yet but the
+          // player just selected their cards in the deploy modal.
           renderCardSlots([]);
         }
 
@@ -5309,6 +5312,10 @@
         const equippedCards = state.selectedCards.map(c => c.card);
         renderCardSlots(equippedCards);
 
+        // Update deployed zone tracking so the badge shows on zone list immediately
+        state.deployedZoneIds.add(state.currentZoneId);
+        updatePlayerBar();
+
         // Reload zone nines to include yourself
         state.nines.clear();
         if (state.arenaApp) {
@@ -5362,6 +5369,10 @@
         document.getElementById('deploy-cta').style.display = 'block';
         hideCardSlots();
         addFeedEvent('You withdrew from the battle.', 'system');
+
+        // Keep deployed zone tracking in sync
+        state.deployedZoneIds.delete(state.currentZoneId);
+        updatePlayerBar();
 
         // Remove your sprite
         removeNineSprite(state.playerId);
