@@ -878,6 +878,13 @@
       <div id="sidebar-guild-rows"></div>
     </div>
 
+    <!-- Damage chart — compact sparklines per guild -->
+    <div id="sidebar-chart-section" style="padding:8px 10px 6px;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0;">
+      <div class="sidebar-section-label" style="margin-bottom:6px;">DAMAGE CHART</div>
+      <canvas id="sidebar-dmg-chart" width="228" height="64" style="width:100%;height:64px;border-radius:6px;background:rgba(255,255,255,0.03);display:block;"></canvas>
+      <div id="sidebar-chart-legend" style="display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:4px;"></div>
+    </div>
+
     <!-- Chat always visible in sidebar — no deployment required -->
     <div id="sidebar-chat" style="flex:1;display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,0.07);min-height:0;">
       <div class="sidebar-section-label" style="flex-shrink:0;">ZONE CHAT</div>
@@ -963,6 +970,29 @@
   <!-- Center-bottom: Deploy CTA (when NOT deployed) -->
   <div class="arena-deploy-cta" id="deploy-cta" style="display:none;">
     <button class="btn-join-battle" id="btn-join-battle">⚔️ JOIN BATTLE</button>
+    <!-- Mobile chat toggle — visible on small screens when sidebar hidden -->
+    <div id="mobile-chat-btn" onclick="toggleMobileChat()"
+      style="display:none;margin-top:12px;cursor:pointer;background:rgba(10,8,20,0.85);
+      border:1px solid rgba(212,166,75,0.3);border-radius:24px;padding:8px 18px;
+      font-family:'Press Start 2P',monospace;font-size:9px;color:var(--gold);
+      text-align:center;">💬 ZONE CHAT</div>
+  </div>
+
+  <!-- Mobile: floating chat panel (shown below deploy button on mobile) -->
+  <div id="mobile-chat-panel" style="display:none;position:absolute;bottom:0;left:0;right:0;
+    height:220px;background:rgba(10,8,20,0.96);border-top:1px solid rgba(212,166,75,0.25);
+    flex-direction:column;z-index:40;">
+    <div style="display:flex;align-items:center;padding:6px 10px;border-bottom:1px solid rgba(255,255,255,0.07);flex-shrink:0;">
+      <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);flex:1;">ZONE CHAT</span>
+      <button onclick="toggleMobileChat()" style="background:none;border:none;color:var(--faint);cursor:pointer;font-size:16px;">✕</button>
+    </div>
+    <div id="mobile-chat-log" style="flex:1;overflow-y:auto;padding:6px 10px;font-family:'Crimson Text',serif;font-size:12px;line-height:1.4;"></div>
+    <div style="display:flex;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
+      <input id="mobile-chat-input" type="text" maxlength="120" placeholder="Say something..."
+        style="flex:1;background:none;border:none;outline:none;color:var(--bright);
+        font-family:'Crimson Text',serif;font-size:12px;padding:8px 10px;">
+      <button id="mobile-chat-send" style="background:none;border:none;color:var(--gold);cursor:pointer;padding:8px 12px;font-size:13px;">➤</button>
+    </div>
   </div>
 
   <div class="nerm-bubble-container" id="nerm-bubble-container">
@@ -1099,6 +1129,9 @@
     snapshotCount: 0,         // how many snapshots scored this session
     // Equipped cards for this zone
     equippedCards: [],
+    // Sidebar chart data: { [guildTag]: [dmg_per_snapshot, ...] }
+    chartData: {},
+    chartTick: 0,
   };
 
   // ===== HOUSE DATA =====
@@ -1752,7 +1785,13 @@
     // Update UI
     document.getElementById('zone-list-view').style.display = 'none';
     document.getElementById('arena-view').style.display = 'block';
-    document.getElementById('arena-sidebar').style.display = window.innerWidth > 640 ? 'flex' : 'none';
+    const isMobile = window.innerWidth <= 640;
+    document.getElementById('arena-sidebar').style.display = isMobile ? 'none' : 'flex';
+    const mobileBtn = document.getElementById('mobile-chat-btn');
+    if (mobileBtn) mobileBtn.style.display = isMobile ? 'block' : 'none';
+    state.chartData = {};
+    state.chartTick = 0;
+    renderSidebarChart();
     document.getElementById('arena-zone-name').textContent = zone.name;
     const h = HOUSES[zone.house || zone.region_house || SCHOOL_TO_HOUSE[zone.controlling_school_id] || SCHOOL_TO_HOUSE[zone.school_id]] || { color: '#888', icon: '❓' };
     document.getElementById('arena-zone-region').style.color = h.color;
@@ -1932,6 +1971,10 @@
     document.getElementById('arena-chat-log').innerHTML = '';
     const sLog = document.getElementById('sidebar-chat-log');
     if (sLog) sLog.innerHTML = '';
+    const mLog = document.getElementById('mobile-chat-log');
+    if (mLog) mLog.innerHTML = '';
+    const mPanel = document.getElementById('mobile-chat-panel');
+    if (mPanel) mPanel.style.display = 'none';
     document.getElementById('zone-list-view').style.display = 'block';
 
     // Close deploy modal if open
@@ -3131,6 +3174,9 @@
       data.events.forEach((ev, i) => {
         setTimeout(() => processArenaEvent(ev), i * 300);
       });
+      // Record chart data every 5 ticks (~10s) to track damage momentum
+      state.chartTick = (state.chartTick || 0) + 1;
+      if (state.chartTick % 5 === 0) recordChartTick();
 
       // Sync HP state + contribution/cooldown data
       if (data.state) {
@@ -3139,7 +3185,13 @@
           if (state.nines.has(nineId)) {
             updateNineHP(nineId, nine.hp, nine.maxHp);
             const sprite = state.nines.get(nineId);
-            if (sprite) sprite.container.alpha = nine.isAlive ? 1 : 0.15;
+            if (sprite) {
+              // Respect local isAlive=false flag — don't let tick revive a sprite mid-animation
+              const serverAlive = nine.isAlive !== false;
+              const localAlive = sprite.isAlive !== false;
+              sprite.container.alpha = (serverAlive && localAlive) ? 1 : 0.15;
+              if (!serverAlive) sprite.isAlive = false; // sync server state down
+            }
           }
         }
         // Update guild dominance in top bar
@@ -3189,9 +3241,13 @@
       const nineId = resolveId(data.nine_id || data.target);
       const sprite = state.nines.get(nineId);
       if (sprite) {
+        // Mark dead immediately so tick syncs don't revive it visually
+        sprite.isAlive = false;
+        sprite.hp = 0;
         animateKO(sprite);
         showFloatingText(sprite.container.x, sprite.container.y, 'KO!', 0xff4466, 20);
         addFeedEvent(`💀 ${data.name || 'A Nine'} was knocked out!`, 'ko');
+        renderGuildSidebar(); // refresh guild HP totals
       }
       // If YOUR Nine got KO'd, show KO overlay with countdown
       if (nineId == state.playerId) {
@@ -3209,6 +3265,7 @@
       const nineId = resolveId(data.nine_id);
       const sprite = state.nines.get(nineId);
       if (sprite) {
+        sprite.isAlive = true; // restore life flag
         sprite.container.alpha = 1;
         sprite.spriteGroup.scale.set(1, 1);
         sprite.spriteGroup.rotation = 0;
@@ -3216,6 +3273,7 @@
         showFloatingText(sprite.container.x, sprite.container.y, 'REVIVED', 0x44ffaa, 14);
         spawnParticles(sprite.container.x, sprite.container.y, 0x44ffaa, 12, 'heal');
         addFeedEvent(`💚 ${data.name || 'A Nine'} respawned!`, 'system');
+        renderGuildSidebar();
       }
     });
 
@@ -3529,11 +3587,15 @@
         addFeedEvent(`💀 ${ev.targetName || getNineName(koId)} was KO'd!`, 'ko');
         const sprite = state.nines.get(koId);
         if (sprite) {
+          // Mark dead immediately — prevents tick from restoring alpha before animation
+          sprite.isAlive = false;
+          sprite.hp = 0;
           animateKO(sprite);
           showFloatingText(sprite.container.x, (sprite.container.y || 0) - 30, 'K.O.', 0xff2222, 18);
           spawnParticles(sprite.container.x, sprite.container.y, 0xff4466, 20, 'explosion');
           spawnParticles(sprite.container.x, sprite.container.y, 0xffffff, 8, 'lightning');
           screenFlash(0xff2222, 0.25);
+          renderGuildSidebar(); // refresh guild HP totals
         }
         // If YOUR Nine got KO'd, show KO overlay
         if (koId == state.playerId) {
@@ -5420,9 +5482,10 @@
       document.getElementById('arena-bottom-tray').style.display = 'none';
       return;
     }
-    // If we just deployed within the last 3s and already have cards rendered,
-    // skip the full check to avoid a race where the loadout API hasn't committed yet.
-    if (state._deployedAt && (Date.now() - state._deployedAt) < 3000 && state.equippedCards.length > 0) {
+    // If we just deployed within the last 15s and already have cards rendered,
+    // skip the server check entirely — equip-card calls may still be committing.
+    // The localStorage cache already has the correct cards.
+    if (state._deployedAt && (Date.now() - state._deployedAt) < 15000 && state.equippedCards.length > 0) {
       return;
     }
 
@@ -5442,33 +5505,29 @@
           const loadoutRes = await fetch(`/api/zones/${zoneId}/my-loadout/${state.playerId}`);
           if (loadoutRes.ok) {
             const loadoutData = await loadoutRes.json();
+            // New flat format from server (no nested card.spell objects)
             cards = (loadoutData.loadout || []).map(slot => {
-              const c = slot.card || {};
-              const s = c.spell || {};
-              // Skip slots where the card join failed (RLS or missing data)
-              if (!c.id && !slot.card_id) return null;
-              if (!s.name && !c.name && !c.spell_name) return null; // card data unavailable
-              // Normalize: try spell sub-object first, then flat card fields, then slot-level
+              if (!slot.name && !slot.card_id) return null;
               return {
-                id: c.id || slot.card_id,
-                player_card_id: c.id || c.player_card_id || slot.card_id,
-                name: s.name || c.name || c.spell_name || slot.name || '???',
-                house: s.house || c.house || c.spell_house || 'universal',
-                spell_type: s.spell_type || c.spell_type || c.type || 'attack',
-                rarity: s.rarity || c.rarity || 'common',
-                base_atk: s.base_atk ?? c.base_atk ?? 0,
-                base_hp: s.base_hp ?? c.base_hp ?? 0,
-                base_spd: s.base_spd ?? c.base_spd ?? 0,
-                base_def: s.base_def ?? c.base_def ?? 0,
-                base_luck: s.base_luck ?? c.base_luck ?? 0,
-                bonus_effects: s.bonus_effects || c.bonus_effects || c.spell_effects || [],
-                base_effect: s.base_effect || c.base_effect || '',
-                flavor_text: s.flavor_text || c.flavor_text || '',
-                image_url: s.image_url || c.image_url || '',
-                sharpness: c.sharpness ?? c.current_sharpness ?? 100,
+                id: slot.player_card_id || slot.card_id,
+                player_card_id: slot.player_card_id || slot.card_id,
+                name: slot.name || '???',
+                house: slot.house || 'universal',
+                spell_type: slot.spell_type || 'attack',
+                rarity: slot.rarity || 'common',
+                base_atk: slot.base_atk ?? 0,
+                base_hp: slot.base_hp ?? 0,
+                base_spd: slot.base_spd ?? 0,
+                base_def: slot.base_def ?? 0,
+                base_luck: slot.base_luck ?? 0,
+                bonus_effects: slot.bonus_effects || [],
+                base_effect: slot.base_effect || '',
+                flavor_text: slot.flavor_text || '',
+                image_url: slot.image_url || '',
+                sharpness: slot.sharpness ?? 100,
                 slot_number: slot.slot_number,
               };
-            }).filter(Boolean); // remove null (slots with missing card data)
+            }).filter(Boolean);
           }
         } catch(e) { console.warn('Loadout fetch failed:', e); }
 
@@ -5965,28 +6024,13 @@
         if (buildTab) buildTab.classList.add('active');
         if (buildPane) buildPane.classList.add('active');
 
-        // Reload zone nines to include yourself
-        state.nines.clear();
-        if (state.arenaApp) {
-          const toRemove = [];
-          const keep = new Set(['ground', 'environment', 'fog', 'arena-platform']);
-          state.arenaApp.stage.children.forEach(child => {
-            if (!keep.has(child.name)) toRemove.push(child);
-          });
-          toRemove.forEach(c => state.arenaApp.stage.removeChild(c));
-        }
-        state._guildAngles = {};
-        state._guildCounts = {};
-        await loadZoneNines(state.currentZoneId);
-        // Delay checkDeployment by 800ms so DB commits from equip-card calls are visible
-        // (equips are already awaited above, but the force-reload may add latency)
-        setTimeout(async () => {
-          try {
-            await checkDeployment(state.currentZoneId);
-          } catch(e) {
-            console.warn('Post-deploy checkDeployment failed (non-critical):', e);
-          }
-        }, 800);
+        // Don't wipe the stage — the socket broadcasts arena:nine_joined for us
+        // which addNineSprite handles. Just ping the combat engine so it picks up
+        // our newly-equipped cards on the next tick.
+        // loadZoneNines already ran at arena open; only ping force-reload here.
+        // Post-deploy: no need to call checkDeployment — cards are already rendered
+        // and the 15s guard will protect them from being overwritten.
+        // The combat engine force-reload was already fired above.
       } else {
         alert(data.error || 'Deploy failed');
         btn.textContent = '⚔️ DEPLOY TO BATTLE';
@@ -6052,6 +6096,94 @@
 
   // ── GUILD SIDEBAR PANEL ──
   const GUILD_COLORS_LIST = ['#e85a6a','#6acd8a','#6ac8d8','#D4A64B','#b088e8','#FF8C00','#5B8FE0'];
+
+  // ── SIDEBAR DAMAGE CHART ──
+  // Accumulates per-guild damage totals per combat tick window
+  // Shows sparklines so you can see momentum shifts at a glance
+
+  const MAX_CHART_POINTS = 20; // keep last 20 snapshots (~40s at 2s ticks)
+
+  function recordChartTick() {
+    // Called every N combat events — pull current damage from combatMetrics
+    const guildDmg = {};
+    state.combatMetrics.forEach((m) => {
+      const tag = m.guild || '???';
+      guildDmg[tag] = (guildDmg[tag] || 0) + (m.damage || 0);
+    });
+    for (const [tag, dmg] of Object.entries(guildDmg)) {
+      if (!state.chartData[tag]) state.chartData[tag] = [];
+      state.chartData[tag].push(dmg);
+      if (state.chartData[tag].length > MAX_CHART_POINTS) state.chartData[tag].shift();
+    }
+    renderSidebarChart();
+  }
+
+  function renderSidebarChart() {
+    const canvas = document.getElementById('sidebar-dmg-chart');
+    const legend = document.getElementById('sidebar-chart-legend');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    const entries = Object.entries(state.chartData);
+    if (entries.length === 0) {
+      // Empty state
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.font = '9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('Waiting for combat data...', W/2, H/2 + 3);
+      return;
+    }
+
+    // Find global max for Y scaling
+    let globalMax = 0;
+    entries.forEach(([, pts]) => { pts.forEach(v => { if (v > globalMax) globalMax = v; }); });
+    if (globalMax === 0) globalMax = 1;
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      const y = H - (i / 4) * H;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    }
+
+    // Draw sparkline per guild
+    const numPts = MAX_CHART_POINTS;
+    entries.forEach(([tag, pts], gi) => {
+      const color = GUILD_COLORS_LIST[gi % GUILD_COLORS_LIST.length];
+      if (pts.length < 2) return;
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      pts.forEach((v, i) => {
+        const x = (i / (numPts - 1)) * W;
+        const y = H - (v / globalMax) * (H - 6) - 2;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      // Dot at latest value
+      const lastX = ((pts.length - 1) / (numPts - 1)) * W;
+      const lastY = H - (pts[pts.length-1] / globalMax) * (H - 6) - 2;
+      ctx.beginPath();
+      ctx.fillStyle = color;
+      ctx.arc(lastX, lastY, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Legend
+    if (legend) {
+      legend.innerHTML = entries.map(([tag, pts], gi) => {
+        const color = GUILD_COLORS_LIST[gi % GUILD_COLORS_LIST.length];
+        const latest = pts[pts.length - 1] || 0;
+        return `<span style="font-family:'Press Start 2P',monospace;font-size:5px;color:${color};">`
+          + `<span style="display:inline-block;width:8px;height:2px;background:${color};vertical-align:middle;margin-right:3px;"></span>`
+          + `${tag} ${latest}</span>`;
+      }).join('');
+    }
+  }
 
   function renderGuildSidebar() {
     const container = document.getElementById('sidebar-guild-rows');
@@ -6305,43 +6437,60 @@
   }
 
   // ── ARENA CHAT — shared between tray + sidebar ──
-  (function(){
-    const trayLog = document.getElementById('arena-chat-log');
-    const trayInput = document.getElementById('arena-chat-input');
-    const traySend = document.getElementById('arena-chat-send');
-    const sideLog = document.getElementById('sidebar-chat-log');
-    const sideInput = document.getElementById('sidebar-chat-input');
-    const sideSend = document.getElementById('sidebar-chat-send');
+  // Direct wiring (not IIFE) so references are always fresh at call time
 
-    function appendMsg(data) {
-      const gTag = data.guildTag ? ' <span class="chat-guild">['+data.guildTag+']</span>' : '';
-      const html = '<span class="chat-handle">@'+data.handle+'</span>'+gTag+' <span style="color:var(--body);">'+data.message.replace(/</g,'&lt;')+'</span>';
-      [trayLog, sideLog].forEach(function(log) {
-        if (!log) return;
-        const div = document.createElement('div');
-        div.className = 'chat-msg';
-        div.innerHTML = html;
-        log.appendChild(div);
-        if (log.children.length > 40) log.removeChild(log.firstChild);
-        log.scrollTop = log.scrollHeight;
-      });
+  function arenaAppendChatMsg(data) {
+    const gTag = data.guildTag ? ' <span class="chat-guild">['+data.guildTag+']</span>' : '';
+    const safeMsg = (data.message || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const html = '<span class="chat-handle">@'+data.handle+'</span>'+gTag
+      +' <span style="color:var(--body);">'+safeMsg+'</span>';
+    // Push to all chat panes (tray, sidebar, mobile)
+    ['arena-chat-log', 'sidebar-chat-log', 'mobile-chat-log'].forEach(function(id) {
+      const log = document.getElementById(id);
+      if (!log) return;
+      const div = document.createElement('div');
+      div.className = 'chat-msg';
+      div.innerHTML = html;
+      log.appendChild(div);
+      if (log.children.length > 50) log.removeChild(log.firstChild);
+      log.scrollTop = log.scrollHeight;
+    });
+  }
+
+  function toggleMobileChat() {
+    const panel = document.getElementById('mobile-chat-panel');
+    if (!panel) return;
+    const isOpen = panel.style.display === 'flex';
+    panel.style.display = isOpen ? 'none' : 'flex';
+    if (!isOpen) {
+      const input = document.getElementById('mobile-chat-input');
+      if (input) input.focus();
     }
+  }
 
-    function sendMsg(inputEl) {
-      const msg = (inputEl && inputEl.value.trim()) || '';
-      if (!msg || !state.socket || !state.currentZoneId) return;
-      const handle = state.playerHandle || localStorage.getItem('9lv_handle') || 'Anon';
-      const guildTag = state.playerGuildTag || '';
-      state.socket.emit('chat:send', { zoneId: state.currentZoneId, message: msg, handle, guildTag });
-      if (inputEl) inputEl.value = '';
-    }
+  function arenaSendChat(inputId) {
+    const inputEl = document.getElementById(inputId);
+    const msg = inputEl ? inputEl.value.trim() : '';
+    if (!msg) return;
+    if (!state.socket) { console.warn('[chat] socket not connected'); return; }
+    if (!state.currentZoneId) { console.warn('[chat] no zone open'); return; }
+    const handle = state.playerHandle || state.playerHandle || localStorage.getItem('9lv_handle') || 'Anon';
+    const guildTag = state.playerGuildTag || '';
+    state.socket.emit('chat:send', { zoneId: state.currentZoneId, message: msg, handle, guildTag });
+    if (inputEl) inputEl.value = '';
+  }
 
-    if (traySend) traySend.addEventListener('click', function() { sendMsg(trayInput); });
-    if (trayInput) trayInput.addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(trayInput); });
-    if (sideSend) sideSend.addEventListener('click', function() { sendMsg(sideInput); });
-    if (sideInput) sideInput.addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(sideInput); });
-    document.addEventListener('arena:chat:message', function(e){ appendMsg(e.detail); });
-  })();
+  // Wire tray chat
+  document.getElementById('arena-chat-send').addEventListener('click', function() { arenaSendChat('arena-chat-input'); });
+  document.getElementById('arena-chat-input').addEventListener('keydown', function(e){ if(e.key==='Enter') arenaSendChat('arena-chat-input'); });
+  // Wire sidebar chat
+  document.getElementById('sidebar-chat-send').addEventListener('click', function() { arenaSendChat('sidebar-chat-input'); });
+  document.getElementById('sidebar-chat-input').addEventListener('keydown', function(e){ if(e.key==='Enter') arenaSendChat('sidebar-chat-input'); });
+  // Wire mobile chat
+  document.getElementById('mobile-chat-send').addEventListener('click', function() { arenaSendChat('mobile-chat-input'); });
+  document.getElementById('mobile-chat-input').addEventListener('keydown', function(e){ if(e.key==='Enter') arenaSendChat('mobile-chat-input'); });
+  // Listen for incoming chat messages and append to all panes
+  document.addEventListener('arena:chat:message', function(e){ arenaAppendChatMsg(e.detail); });
 
   // ===== EVENT LISTENERS =====
   document.getElementById('btn-back').addEventListener('click', closeArena);

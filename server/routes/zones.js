@@ -411,7 +411,7 @@ router.get('/my-deployments/:playerId', async (req, res) => {
   try {
     const playerId = parseInt(req.params.playerId);
 
-    const { data: deployments, error } = await supabase
+    const { data: deployments, error } = await supabaseAdmin
       .from('zone_deployments')
       .select(`
         *,
@@ -446,14 +446,15 @@ router.get('/my-deployments/:playerId', async (req, res) => {
 // ═══════════════════════════════════════════
 // GET /api/zones/:zoneId/my-loadout/:playerId
 // Get this player's 3-card loadout on a specific zone
+// Uses 3 explicit queries instead of nested joins (avoids FK/RLS silent failures)
 // ═══════════════════════════════════════════
 router.get('/:zoneId/my-loadout/:playerId', async (req, res) => {
   try {
     const zoneId = parseInt(req.params.zoneId);
     const playerId = parseInt(req.params.playerId);
 
-    // Find deployment — use admin client to bypass RLS
-    const { data: deployment } = await supabaseAdmin
+    // Step 1: Find active deployment
+    const { data: deployment, error: depErr } = await supabaseAdmin
       .from('zone_deployments')
       .select('id')
       .eq('player_id', playerId)
@@ -461,27 +462,80 @@ router.get('/:zoneId/my-loadout/:playerId', async (req, res) => {
       .eq('is_active', true)
       .single();
 
-    if (!deployment) {
+    if (depErr || !deployment) {
       return res.json({ loadout: [], slots_used: 0, slots_max: MAX_CARDS_PER_ZONE });
     }
 
-    // Get active card slots with card details — use admin client to bypass RLS
-    const { data: slots } = await supabaseAdmin
+    // Step 2: Get card slot rows (just IDs + slot numbers, no joins)
+    const { data: slots, error: slotErr } = await supabaseAdmin
       .from('zone_card_slots')
-      .select(`
-        id, card_id, slot_number,
-        card:card_id(
-          id, player_id, sharpness,
-          spell:spell_id(name, spell_type, house, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects, image_url)
-        )
-      `)
+      .select('id, card_id, slot_number')
       .eq('deployment_id', deployment.id)
       .eq('is_active', true)
       .order('slot_number');
 
+    if (slotErr || !slots || slots.length === 0) {
+      return res.json({ loadout: [], slots_used: 0, slots_max: MAX_CARDS_PER_ZONE });
+    }
+
+    // Step 3: Get player_cards for those card_ids (explicit query, no joins yet)
+    const cardIds = slots.map(s => s.card_id).filter(Boolean);
+    const { data: playerCards, error: cardErr } = await supabaseAdmin
+      .from('player_cards')
+      .select('id, spell_id, sharpness, player_id')
+      .in('id', cardIds);
+
+    if (cardErr) {
+      console.error('player_cards fetch error:', cardErr);
+      return res.json({ loadout: [], slots_used: 0, slots_max: MAX_CARDS_PER_ZONE });
+    }
+
+    // Step 4: Get spell data for those spell_ids
+    const spellIds = (playerCards || []).map(c => c.spell_id).filter(Boolean);
+    let spells = [];
+    if (spellIds.length > 0) {
+      const { data: spellData } = await supabaseAdmin
+        .from('spells')
+        .select('id, name, spell_type, house, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects, image_url, base_effect, flavor_text')
+        .in('id', spellIds);
+      spells = spellData || [];
+    }
+
+    // Step 5: Assemble the loadout
+    const cardMap = {};
+    (playerCards || []).forEach(c => { cardMap[c.id] = c; });
+    const spellMap = {};
+    spells.forEach(s => { spellMap[s.id] = s; });
+
+    const loadout = slots.map(slot => {
+      const card = cardMap[slot.card_id] || {};
+      const spell = spellMap[card.spell_id] || {};
+      return {
+        id: slot.id,
+        card_id: slot.card_id,
+        slot_number: slot.slot_number,
+        // Flat card fields for easy frontend consumption — no nested objects needed
+        player_card_id: card.id,
+        sharpness: card.sharpness ?? 100,
+        name: spell.name || null,
+        spell_type: spell.spell_type || 'attack',
+        house: spell.house || 'universal',
+        rarity: spell.rarity || 'common',
+        base_atk: spell.base_atk ?? 0,
+        base_hp: spell.base_hp ?? 0,
+        base_spd: spell.base_spd ?? 0,
+        base_def: spell.base_def ?? 0,
+        base_luck: spell.base_luck ?? 0,
+        bonus_effects: spell.bonus_effects || [],
+        base_effect: spell.base_effect || '',
+        flavor_text: spell.flavor_text || '',
+        image_url: spell.image_url || '',
+      };
+    }).filter(slot => slot.name); // only include slots where we have card name data
+
     res.json({
-      loadout: slots || [],
-      slots_used: (slots || []).length,
+      loadout,
+      slots_used: loadout.length,
       slots_max: MAX_CARDS_PER_ZONE,
     });
 
