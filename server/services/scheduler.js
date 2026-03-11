@@ -37,7 +37,7 @@ try { nermBot = require('./nermBot'); } catch (e) { console.log('⚠️ nermBot 
 try { dropTicketEngine = require('./dropTicketEngine'); } catch (e) { console.log('⚠️ dropTicketEngine not loaded'); }
 try { chronicleEngine = require('./chronicleEngine'); } catch (e) { console.log('⚠️ chronicleEngine not loaded'); }
 try { nermTwitter = require('./nermTwitter'); } catch (e) { console.log('⚠️ nermTwitter not loaded'); }
-try { nermTelegram = require('./nermTelegram'); } catch (e) { console.log('⚠️ nermTelegram not loaded'); }
+try { nermTelegram = require('./nerm-telegram'); } catch (e) { console.log('⚠️ nermTelegram not loaded'); }
 
 let jobsInitialized = false;
 const jobLog = {};
@@ -57,7 +57,7 @@ function initializeScheduledJobs() {
   // ════════════════════════════════
   // START BOTS (once on load)
   // ════════════════════════════════
-  try { if (nermTelegram) nermTelegram.startNermTelegramBot(); } catch (e) { console.log('⚠️ Nerm Telegram start failed:', e.message); }
+  try { if (nermTelegram) nermTelegram.startNermBot(); } catch (e) { console.log('⚠️ Nerm Telegram start failed:', e.message); }
   try { if (nermTwitter) nermTwitter.startNermTwitterBot(); } catch (e) { console.log('⚠️ Nerm Twitter start failed:', e.message); }
 
 
