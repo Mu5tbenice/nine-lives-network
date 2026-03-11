@@ -284,10 +284,10 @@
 
     /* ── Nerm ── */
     .nerm-bubble-container {
-      position: absolute; bottom: 240px; left: 10px; z-index: 40;
+      position: absolute; bottom: 230px; left: 10px; z-index: 55;
       display: flex; align-items: flex-end; gap: 8px;
       pointer-events: none; opacity: 0;
-      transition: opacity 0.35s ease;
+      transition: opacity 0.4s ease;
       max-width: 300px;
     }
     .nerm-bubble-container.visible { opacity: 1; }
@@ -295,7 +295,7 @@
       width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
       border: 2px solid var(--gold);
       box-shadow: 0 0 12px rgba(212,166,75,0.45), 0 0 4px rgba(212,166,75,0.2);
-      background: #1a1528 url('/assets/images/Mustbenice_Base_model.png') center/cover no-repeat;
+      background: #1a1528;
       overflow: hidden; align-self: flex-end;
     }
     .nerm-pfp-fallback { font-size: 24px; line-height: 44px; text-align: center; display: block; }
@@ -501,27 +501,38 @@
     .hp-strip-effect-icon { font-size: 10px; }
 
     /* Round banner */
-    /* ── KO Overlay ── */
+    /* ── KO Widget (non-blocking corner) ── */
     #ko-overlay {
-      display: none; position: absolute; inset: 0; z-index: 60;
-      background: rgba(0,0,0,0.88); backdrop-filter: blur(6px);
-      flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; gap: 12px;
+      display: none; position: absolute;
+      top: 60px; left: 50%; transform: translateX(-50%);
+      z-index: 65; pointer-events: auto;
+      animation: koWidgetDrop 0.4s cubic-bezier(0.34,1.2,0.64,1);
     }
-    #ko-overlay.visible { display: flex; }
-    .ko-skull { font-size: 64px; line-height: 1; animation: koSkullPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
-    @keyframes koSkullPop { from { transform: scale(0) rotate(-15deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
-    .ko-title { font-family: 'Cinzel', serif; font-size: 32px; font-weight: 700; color: var(--red); letter-spacing: 4px; text-shadow: 0 0 30px rgba(232,90,106,0.6); }
-    .ko-sub { font-family: 'Crimson Text', serif; font-size: 16px; color: var(--muted); font-style: italic; }
-    .ko-ring { width: 90px; height: 90px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.08); position: relative; margin: 8px 0; }
+    #ko-overlay.visible { display: block; }
+    @keyframes koWidgetDrop { from { transform: translateX(-50%) translateY(-20px); opacity:0; } to { transform: translateX(-50%) translateY(0); opacity:1; } }
+    .ko-widget {
+      background: rgba(10,6,18,0.96); border: 1px solid rgba(232,90,106,0.45);
+      border-radius: 14px; padding: 14px 18px 14px 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.7), 0 0 0 1px rgba(232,90,106,0.15);
+      backdrop-filter: blur(12px); display: flex; align-items: center; gap: 12px;
+      min-width: 280px; max-width: 360px;
+    }
+    .ko-skull { font-size: 32px; line-height: 1; flex-shrink: 0;
+      animation: koSkullPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes koSkullPop { from { transform: scale(0) rotate(-15deg); opacity:0; } to { transform: scale(1) rotate(0); opacity:1; } }
+    .ko-widget-body { flex: 1; min-width: 0; }
+    .ko-title { font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; color: var(--red); letter-spacing: 2px; line-height: 1.1; }
+    .ko-sub { font-family: 'Crimson Text', serif; font-size: 12px; color: var(--muted); font-style: italic; margin-top: 2px; }
+    .ko-hint { font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint); letter-spacing: 1px; margin-top: 6px; line-height: 1.7; }
+    .ko-ring { width: 54px; height: 54px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.08); position: relative; flex-shrink: 0; }
     .ko-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-    .ko-ring circle { fill: none; stroke: var(--gold); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
-    .ko-ring-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Press Start 2P', monospace; font-size: 18px; color: var(--gold); }
-    .ko-hint { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint); letter-spacing: 1px; }
-    #ko-rejoin-btn { display: none; padding: 14px 32px; border-radius: 10px; border: none; cursor: pointer; font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; letter-spacing: 3px; background: linear-gradient(135deg,#D4A64B,#8a6d2f); color: #0a0810; box-shadow: 0 4px 0 #5a4520, 0 6px 20px rgba(212,166,75,0.3); animation: koBtnPop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
-    @keyframes koBtnPop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    #ko-rejoin-btn:hover { transform: translateY(-2px); }
-    #ko-rejoin-btn:active { transform: translateY(0); }
+    .ko-ring circle { fill: none; stroke: #e85a6a; stroke-width: 2.5; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+    .ko-ring-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Press Start 2P', monospace; font-size: 12px; color: #e85a6a; }
+    #ko-rejoin-btn { display: block; margin-top: 8px; width: 100%; padding: 8px; border-radius: 8px; border: none; cursor: pointer; font-family: 'Cinzel', serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; background: linear-gradient(135deg,#D4A64B,#8a6d2f); color: #0a0810; box-shadow: 0 2px 0 #5a4520; animation: koBtnPop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes koBtnPop { from { transform: scale(0.6); opacity:0; } to { transform: scale(1); opacity:1; } }
+    #ko-rejoin-btn:hover { filter: brightness(1.1); }
+    #ko-rejoin-btn:disabled { opacity: 0.4; cursor: not-allowed; filter: none; }
+    #ko-expired-msg { display: none; margin-top: 6px; font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--red); letter-spacing: 1px; text-align: center; }
 
     .round-banner {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -753,7 +764,7 @@
       .countdown-time { font-size: 7px; }
       .arena-scoreboard { display: none; }
       .nerm-bubble-container {
-        bottom: 260px; left: 8px; right: auto; max-width: calc(100% - 16px); z-index: 40;
+        bottom: 250px; left: 8px; right: auto; max-width: calc(100% - 16px); z-index: 55;
       }
       .nerm-bubble { min-width: 0; max-width: 200px; font-size: 12px; padding: 7px 10px; }
       .nerm-pfp { width: 36px; height: 36px; }
@@ -938,7 +949,10 @@
   </div>
 
   <div class="nerm-bubble-container" id="nerm-bubble-container">
-    <div class="nerm-pfp"><span class="nerm-pfp-fallback">🐱</span></div>
+    <div class="nerm-pfp" id="nerm-pfp-el">
+      <img src="/assets/images/Mustbenice_Base_model.png" alt="" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;" onerror="this.style.display='none';document.getElementById('nerm-pfp-el').style.background='#1a1528';document.querySelector('.nerm-pfp-fallback').style.display='block';">
+      <span class="nerm-pfp-fallback" style="display:none">🐱</span>
+    </div>
     <div class="nerm-bubble" id="nerm-bubble">
       <div class="nerm-label">NERM</div>
       <div id="nerm-text"></div>
@@ -951,17 +965,22 @@
   <!-- Bottom: Live feed -->
   <div class="arena-feed" id="arena-feed"></div>
 
-  <!-- KO overlay — fullscreen, shown when player gets knocked out -->
+  <!-- KO widget — non-blocking, shown when player gets knocked out -->
   <div id="ko-overlay">
-    <div class="ko-skull">💀</div>
-    <div class="ko-title">K.O.</div>
-    <div class="ko-sub">Your Nine was knocked out of the fight.</div>
-    <div class="ko-ring">
-      <svg viewBox="0 0 90 90"><circle cx="45" cy="45" r="40" stroke-dasharray="251.2" stroke-dashoffset="0" id="ko-ring-circle"/></svg>
-      <div class="ko-ring-num" id="ko-countdown-num">60</div>
+    <div class="ko-widget">
+      <div class="ko-skull">💀</div>
+      <div class="ko-widget-body">
+        <div class="ko-title">K.O.</div>
+        <div class="ko-sub">Your Nine was knocked out.</div>
+        <div class="ko-hint">REJOIN WINDOW CLOSING • WATCH THE FIGHT<br>CHAT AND STATS STILL ACTIVE</div>
+        <button id="ko-rejoin-btn" onclick="dismissKOAndRejoin()">⚔️ REJOIN BATTLE</button>
+        <div id="ko-expired-msg">WINDOW CLOSED — TOO SLOW</div>
+      </div>
+      <div class="ko-ring">
+        <svg viewBox="0 0 54 54"><circle cx="27" cy="27" r="23" stroke-dasharray="144.5" stroke-dashoffset="0" id="ko-ring-circle"/></svg>
+        <div class="ko-ring-num" id="ko-countdown-num">60</div>
+      </div>
     </div>
-    <div class="ko-hint">COOLDOWN — YOU CAN REDEPLOY ON THIS ZONE AFTER THE TIMER</div>
-    <button id="ko-rejoin-btn" onclick="dismissKOAndRejoin()">⚔️ REJOIN BATTLE</button>
   </div>
 
   <!-- Round banner (animated overlay) -->
@@ -1420,18 +1439,44 @@
 
           ${effectsHTML ? `<div style="margin-top:14px;"><div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:8px;">ACTIVE EFFECTS</div><div style="display:flex;flex-wrap:wrap;gap:5px;">${effectsHTML}</div></div>` : ''}
 
-          <!-- Combat stats widget — populated after fetch -->
+          <!-- Zone intel — tabbed: LIVE / SESSION / HISTORY -->
           <div id="zone-detail-combat-stats" style="margin-top:16px;border-radius:10px;border:1px solid rgba(106,200,216,0.15);background:rgba(0,0,0,0.3);overflow:hidden;">
-            <div style="padding:8px 14px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:8px;">
-              <div style="width:7px;height:7px;border-radius:50%;background:#6ac8d8;box-shadow:0 0 8px #6ac8d8;animation:pulse 2s infinite;flex-shrink:0;"></div>
-              <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(106,200,216,0.8);letter-spacing:1px;">LIVE ZONE ACTIVITY</span>
+
+            <!-- Tab bar -->
+            <div style="display:flex;border-bottom:1px solid rgba(255,255,255,0.07);">
+              <button class="zd-tab active" data-tab="live" style="flex:1;padding:9px 4px;background:rgba(106,200,216,0.08);border:none;border-right:1px solid rgba(255,255,255,0.06);cursor:pointer;font-family:'Press Start 2P',monospace;font-size:6px;color:#6ac8d8;letter-spacing:0.5px;">
+                <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#6ac8d8;box-shadow:0 0 6px #6ac8d8;margin-right:5px;vertical-align:middle;animation:pulse 2s infinite;"></span>LIVE
+              </button>
+              <button class="zd-tab" data-tab="session" style="flex:1;padding:9px 4px;background:none;border:none;border-right:1px solid rgba(255,255,255,0.06);cursor:pointer;font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,0.25);letter-spacing:0.5px;">SESSION</button>
+              <button class="zd-tab" data-tab="history" style="flex:1;padding:9px 4px;background:none;border:none;cursor:pointer;font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,0.25);letter-spacing:0.5px;">HISTORY</button>
             </div>
-            <div id="zone-detail-stats-body" style="font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,0.35);font-style:italic;text-align:center;">
-              <div style="padding:16px;display:flex;align-items:center;justify-content:center;gap:8px;">
-                <div style="width:6px;height:6px;border-radius:50%;background:#6ac8d8;animation:pulse 1.2s infinite;"></div>
-                <span style="font-size:12px;">Loading...</span>
+
+            <!-- LIVE tab -->
+            <div id="zd-tab-live" class="zd-tab-panel">
+              <div id="zone-detail-stats-body" style="font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,0.35);font-style:italic;text-align:center;">
+                <div style="padding:16px;display:flex;align-items:center;justify-content:center;gap:8px;">
+                  <div style="width:6px;height:6px;border-radius:50%;background:#6ac8d8;animation:pulse 1.2s infinite;"></div>
+                  <span style="font-size:12px;">Loading...</span>
+                </div>
               </div>
             </div>
+
+            <!-- SESSION tab -->
+            <div id="zd-tab-session" class="zd-tab-panel" style="display:none;">
+              <div id="zone-detail-session-body" style="padding:12px;">
+                <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,0.2);text-align:center;padding:8px;">LOADING SESSION DATA...</div>
+              </div>
+            </div>
+
+            <!-- HISTORY tab -->
+            <div id="zd-tab-history" class="zd-tab-panel" style="display:none;">
+              <div style="padding:16px;text-align:center;">
+                <div style="font-size:24px;margin-bottom:8px;">📜</div>
+                <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,0.2);letter-spacing:1px;line-height:2;">HISTORICAL DATA</div>
+                <div style="font-family:'Crimson Text',serif;font-size:12px;color:rgba(255,255,255,0.18);font-style:italic;margin-top:6px;">24h zone control charts coming in a future update.</div>
+              </div>
+            </div>
+
           </div>
 
           <div style="margin-top:16px;text-align:center;font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,0.35);font-style:italic;margin-bottom:8px;">
@@ -1451,8 +1496,107 @@
       if (z) openArena(z);
     });
     panel.addEventListener('click', function(e) { if (e.target === panel) panel.remove(); });
+
+    // Zone detail tab switching
+    panel.querySelectorAll('.zd-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        const target = this.dataset.tab;
+        // Update tab styles
+        panel.querySelectorAll('.zd-tab').forEach(function(t) {
+          const isActive = t.dataset.tab === target;
+          t.style.background = isActive ? 'rgba(106,200,216,0.08)' : 'none';
+          t.style.color = isActive ? '#6ac8d8' : 'rgba(255,255,255,0.25)';
+          if (isActive) t.classList.add('active'); else t.classList.remove('active');
+        });
+        // Show correct panel
+        ['live','session','history'].forEach(function(name) {
+          const el = document.getElementById('zd-tab-' + name);
+          if (el) el.style.display = name === target ? 'block' : 'none';
+        });
+        // Load session data on first open
+        if (target === 'session') renderZoneDetailSession(zone.id);
+      });
+    });
+
     document.body.appendChild(panel);
     _detailPanel = panel;
+
+    // SESSION tab — pulls from state.combatMetrics accumulated during current arena session
+    function renderZoneDetailSession(zid) {
+      const body = document.getElementById('zone-detail-session-body');
+      if (!body) return;
+
+      // combatMetrics: Map<playerId, {name, guild, damage, heals, kos, topCard}>
+      const metrics = state.combatMetrics;
+      if (!metrics || metrics.size === 0) {
+        body.innerHTML = `<div style="padding:20px;text-align:center;">
+          <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,0.18);letter-spacing:1px;line-height:2.2;">NO SESSION DATA YET</div>
+          <div style="font-family:'Crimson Text',serif;font-size:12px;color:rgba(255,255,255,0.15);font-style:italic;margin-top:6px;">Enter the arena to start tracking session combat stats.</div>
+        </div>`;
+        return;
+      }
+
+      const entries = [...metrics.entries()]
+        .map(([pid, m]) => ({ pid, ...m }))
+        .sort((a,b) => (b.damage||0) - (a.damage||0));
+      const maxDmg = entries[0]?.damage || 1;
+
+      // Guild totals
+      const guildTotals = {};
+      entries.forEach(e => {
+        const g = e.guild || '???';
+        if (!guildTotals[g]) guildTotals[g] = { dmg: 0, count: 0 };
+        guildTotals[g].dmg += e.damage || 0;
+        guildTotals[g].count++;
+      });
+      const guildRows = Object.entries(guildTotals).sort((a,b)=>b[1].dmg-a[1].dmg);
+      const gMaxDmg = guildRows[0]?.[1].dmg || 1;
+      const GCOLS = ['#D4A64B','#6ac8d8','#e85a6a','#6acd8a','#b088e8'];
+
+      body.innerHTML = `
+        <div style="padding:10px 14px 6px;font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.2);letter-spacing:1px;">THIS SESSION · ${entries.length} FIGHTERS</div>
+
+        <!-- Guild bars -->
+        <div style="padding:0 14px 10px;border-bottom:1px solid rgba(255,255,255,0.05);">
+          ${guildRows.map(([g,v],i) => {
+            const pct = Math.round((v.dmg/gMaxDmg)*100);
+            const gc = GCOLS[i % GCOLS.length];
+            return `<div style="margin-bottom:6px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${gc};">[${g}] ${v.count} fighter${v.count!==1?'s':''}</span>
+                <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,0.3);">${v.dmg.toLocaleString()} dmg</span>
+              </div>
+              <div style="height:5px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden;">
+                <div style="width:${pct}%;height:100%;background:${gc};border-radius:3px;"></div>
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+
+        <!-- Fighter leaderboard -->
+        <div style="padding:8px 14px 12px;">
+          ${entries.slice(0,8).map((e,i) => {
+            const pct = Math.round(((e.damage||0)/maxDmg)*100);
+            const medals = ['🥇','🥈','🥉'];
+            const rank = i < 3 ? medals[i] : `<span style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.2);">#${i+1}</span>`;
+            return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+              <div style="width:18px;text-align:center;flex-shrink:0;">${rank}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
+                  <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:var(--bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;">${e.name||'???'}</span>
+                  <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.25);">${(e.kos||0)} KO</span>
+                </div>
+                <div style="height:4px;border-radius:2px;background:rgba(255,255,255,0.06);overflow:hidden;">
+                  <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#e85a6a,#b04455);border-radius:2px;"></div>
+                </div>
+                ${e.topCard ? `<div style="font-family:'Crimson Text',serif;font-size:10px;color:rgba(255,255,255,0.2);font-style:italic;margin-top:1px;">via ${e.topCard}</div>` : ''}
+              </div>
+              <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:#e85a6a;flex-shrink:0;">${(e.damage||0).toLocaleString()}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      `;
+    }
 
     // Fetch live combat stats and render visual zone overview
     (async function() {
@@ -1566,7 +1710,7 @@
         statsBody.innerHTML = html;
 
       } catch (err) {
-        if (statsBody) statsBody.innerHTML = '<div style="padding:16px;text-align:center;font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,0.2);font-style:italic;">Stats unavailable right now.</div>';
+        if (statsBody) statsBody.innerHTML = '<div style="padding:16px;text-align:center;font-family:\'Crimson Text\',serif;font-size:13px;color:rgba(255,255,255,0.2);font-style:italic;">Stats unavailable right now.</div>';
       }
     })();
   }
@@ -1610,6 +1754,18 @@
 
     // Check if THIS player is deployed here
     checkDeployment(zone.id).then(() => checkKOState());
+
+    // Nerm entry comment — fire 3 seconds after opening arena
+    setTimeout(() => {
+      showNermBubble(pickRandom(NERM_COMMENTS.arena_enter));
+    }, 3000);
+
+    // Nerm periodic commentary — every 60-90s during live combat
+    if (state._nermInterval) clearInterval(state._nermInterval);
+    state._nermInterval = setInterval(() => {
+      if (!state.isFighting && state.nines.size === 0) return; // silent if no action
+      showNermBubble(pickRandom(NERM_COMMENTS.combat_active));
+    }, 75000 + Math.random() * 30000);
   }
 
   /** Fetch deployed Nines from REST API for immediate display */
@@ -1747,6 +1903,7 @@
 
   function closeArena() {
     dismissKOOverlay(); // clear any active KO state when leaving arena
+    if (state._nermInterval) { clearInterval(state._nermInterval); state._nermInterval = null; }
     document.getElementById('arena-view').style.display = 'none';
     document.getElementById('arena-sidebar').style.display = 'none';
     document.getElementById('arena-sidebar').style.display = 'none';
@@ -4641,20 +4798,22 @@
     const numEl = document.getElementById('ko-countdown-num');
     const circle = document.getElementById('ko-ring-circle');
     const rejoinBtn = document.getElementById('ko-rejoin-btn');
+    const expiredMsg = document.getElementById('ko-expired-msg');
     if (!overlay) return;
 
-    rejoinBtn.style.display = 'none';
+    // Show widget but DON'T hide tray — player can still chat + watch stats
+    if (rejoinBtn) { rejoinBtn.style.display = 'block'; rejoinBtn.disabled = false; }
+    if (expiredMsg) expiredMsg.style.display = 'none';
     overlay.classList.add('visible');
-    document.getElementById('arena-bottom-tray').style.display = 'none';
     document.getElementById('deploy-cta').style.display = 'none';
 
-    const circumference = 251.2; // 2π × 40
+    const circumference = 144.5; // 2π × 23
     let secondsLeft = 60;
 
     if (_koCountdownTimer) clearInterval(_koCountdownTimer);
     _koCountdownTimer = setInterval(() => {
       secondsLeft--;
-      if (numEl) numEl.textContent = secondsLeft;
+      if (numEl) numEl.textContent = Math.max(0, secondsLeft);
       if (circle) {
         const progress = secondsLeft / 60;
         circle.style.strokeDashoffset = circumference * (1 - progress);
@@ -4662,9 +4821,16 @@
       if (secondsLeft <= 0) {
         clearInterval(_koCountdownTimer);
         _koCountdownTimer = null;
-        if (numEl) numEl.textContent = '✓';
-        if (rejoinBtn) rejoinBtn.style.display = 'block';
-        addFeedEvent('✅ Cooldown expired — you can rejoin the battle!', 'system');
+        // Window closed — disable rejoin and show expired message
+        if (rejoinBtn) { rejoinBtn.disabled = true; }
+        if (expiredMsg) expiredMsg.style.display = 'block';
+        if (numEl) numEl.textContent = '✗';
+        addFeedEvent('⏰ Rejoin window closed — returning to zone list in 5s...', 'system');
+        // Give 5 seconds to see the message then close arena
+        setTimeout(() => {
+          dismissKOOverlay();
+          closeArena();
+        }, 5000);
       }
     }, 1000);
   }
@@ -4679,42 +4845,44 @@
 
   function dismissKOAndRejoin() {
     dismissKOOverlay();
-    // Show join button
     document.getElementById('deploy-cta').style.display = 'block';
+    document.getElementById('arena-bottom-tray').style.display = 'none';
   }
 
   // Check on page load if player was mid-KO cooldown when they refreshed
   function checkKOState() {
     const until = parseInt(sessionStorage.getItem('9lv_ko_until') || '0');
     const koZone = parseInt(sessionStorage.getItem('9lv_ko_zone') || '0');
-    if (!until || Date.now() >= until) return false;
+    if (!until || Date.now() >= until) return false; // window already closed or expired
     if (koZone && koZone !== state.currentZoneId) return false;
     const remaining = Math.ceil((until - Date.now()) / 1000);
-    // Re-enter the KO overlay with remaining time
     const overlay = document.getElementById('ko-overlay');
     const numEl = document.getElementById('ko-countdown-num');
     const circle = document.getElementById('ko-ring-circle');
     const rejoinBtn = document.getElementById('ko-rejoin-btn');
+    const expiredMsg = document.getElementById('ko-expired-msg');
     if (!overlay) return false;
-    rejoinBtn.style.display = 'none';
+    if (rejoinBtn) { rejoinBtn.style.display = 'block'; rejoinBtn.disabled = false; }
+    if (expiredMsg) expiredMsg.style.display = 'none';
     overlay.classList.add('visible');
-    document.getElementById('arena-bottom-tray').style.display = 'none';
     document.getElementById('deploy-cta').style.display = 'none';
-    const circumference = 251.2;
+    const circumference = 144.5;
     let secondsLeft = remaining;
     if (numEl) numEl.textContent = secondsLeft;
     if (circle) circle.style.strokeDashoffset = circumference * (1 - secondsLeft / 60);
     if (_koCountdownTimer) clearInterval(_koCountdownTimer);
     _koCountdownTimer = setInterval(() => {
       secondsLeft--;
-      if (numEl) numEl.textContent = secondsLeft;
+      if (numEl) numEl.textContent = Math.max(0, secondsLeft);
       if (circle) circle.style.strokeDashoffset = circumference * (1 - secondsLeft / 60);
       if (secondsLeft <= 0) {
         clearInterval(_koCountdownTimer);
         _koCountdownTimer = null;
-        if (numEl) numEl.textContent = '✓';
-        if (rejoinBtn) rejoinBtn.style.display = 'block';
-        addFeedEvent('✅ Cooldown expired — you can rejoin the battle!', 'system');
+        if (rejoinBtn) rejoinBtn.disabled = true;
+        if (expiredMsg) expiredMsg.style.display = 'block';
+        if (numEl) numEl.textContent = '✗';
+        addFeedEvent('⏰ Rejoin window closed — returning to zone list in 5s...', 'system');
+        setTimeout(() => { dismissKOOverlay(); closeArena(); }, 5000);
       }
     }, 1000);
     return true;
@@ -4767,6 +4935,14 @@
   // NERM COMBAT COMMENTARY — fires after snapshots and events
   // ═══════════════════════════════════════════
   const NERM_COMMENTS = {
+    // Entry — fired when player first opens the arena
+    arena_enter: [
+      "Another one wanders in. Let's see if they last.",
+      "Nethara does not care about your feelings. Only your stats.",
+      "I've been watching this zone. It's ugly. You'll fit right in.",
+      "Combat is continuous. Meaning there's no good time to arrive.",
+      "Welcome. I'd say good luck but I don't believe in luck.",
+    ],
     // Combat observations (shown periodically during live combat)
     combat_active: [
       "The battlefield is alive. Every tick counts.",
@@ -5224,20 +5400,24 @@
             cards = (loadoutData.loadout || []).map(slot => {
               const c = slot.card || {};
               const s = c.spell || {};
+              // Normalize: try spell sub-object first, then flat card fields, then slot-level
               return {
-                id: c.id,
-                name: s.name || '???',
-                house: s.house || 'universal',
-                spell_type: s.spell_type || 'attack',
-                rarity: s.rarity || 'common',
-                base_atk: s.base_atk || 0,
-                base_hp: s.base_hp || 0,
-                base_spd: s.base_spd || 0,
-                base_def: s.base_def || 0,
-                base_luck: s.base_luck || 0,
-                bonus_effects: s.bonus_effects || [],
-                image_url: s.image_url || '',
-                sharpness: c.sharpness ?? 100,
+                id: c.id || slot.card_id,
+                player_card_id: c.id || c.player_card_id || slot.card_id,
+                name: s.name || c.name || c.spell_name || slot.name || '???',
+                house: s.house || c.house || c.spell_house || 'universal',
+                spell_type: s.spell_type || c.spell_type || c.type || 'attack',
+                rarity: s.rarity || c.rarity || 'common',
+                base_atk: s.base_atk ?? c.base_atk ?? 0,
+                base_hp: s.base_hp ?? c.base_hp ?? 0,
+                base_spd: s.base_spd ?? c.base_spd ?? 0,
+                base_def: s.base_def ?? c.base_def ?? 0,
+                base_luck: s.base_luck ?? c.base_luck ?? 0,
+                bonus_effects: s.bonus_effects || c.bonus_effects || c.spell_effects || [],
+                base_effect: s.base_effect || c.base_effect || '',
+                flavor_text: s.flavor_text || c.flavor_text || '',
+                image_url: s.image_url || c.image_url || '',
+                sharpness: c.sharpness ?? c.current_sharpness ?? 100,
                 slot_number: slot.slot_number,
               };
             });
@@ -5282,11 +5462,30 @@
         if (cards.length > 0) {
           state.equippedCards = cards;
           renderCardSlots(cards);
-        } else if (state.equippedCards.length === 0) {
-          // Only wipe the slots if we have nothing from a recent deploy — avoids
-          // the race condition where the loadout API hasn't caught up yet but the
-          // player just selected their cards in the deploy modal.
-          renderCardSlots([]);
+          // Update localStorage so our persistent cache is fresh
+          try { localStorage.setItem('9lv_equipped_' + zoneId + '_' + state.playerId, JSON.stringify(cards)); } catch(e) {}
+        } else {
+          // No cards from server — try localStorage fallback before giving up
+          if (state.equippedCards.length === 0) {
+            try {
+              const cached = localStorage.getItem('9lv_equipped_' + zoneId + '_' + state.playerId);
+              if (cached) {
+                const cachedCards = JSON.parse(cached);
+                if (Array.isArray(cachedCards) && cachedCards.length > 0) {
+                  console.log('[checkDeployment] Using localStorage card fallback:', cachedCards.length, 'cards');
+                  state.equippedCards = cachedCards;
+                  renderCardSlots(cachedCards);
+                } else {
+                  renderCardSlots([]);
+                }
+              } else {
+                renderCardSlots([]);
+              }
+            } catch(e) {
+              renderCardSlots([]);
+            }
+          }
+          // If equippedCards is already populated (e.g. just deployed), leave them alone
         }
 
         // Update Your Nine stats (retry if sprite not loaded yet)
@@ -5672,9 +5871,12 @@
         document.getElementById('arena-bottom-tray').style.display = 'flex';
         addFeedEvent(data.message || 'You have entered the battle!', 'join');
 
-        // Show equipped cards
+        // Show equipped cards immediately + persist to localStorage so refresh/race can't wipe them
         const equippedCards = state.selectedCards.map(c => c.card);
         renderCardSlots(equippedCards);
+        try {
+          localStorage.setItem('9lv_equipped_' + state.currentZoneId + '_' + state.playerId, JSON.stringify(equippedCards));
+        } catch(e) {}
 
         // Update deployed zone tracking so the badge shows on zone list immediately
         state.deployedZoneIds.add(state.currentZoneId);
@@ -5774,6 +5976,7 @@
         // Keep deployed zone tracking in sync
         state.deployedZoneIds.delete(state.currentZoneId);
         updatePlayerBar();
+        try { localStorage.removeItem('9lv_equipped_' + state.currentZoneId + '_' + state.playerId); } catch(e) {}
 
         // Remove your sprite
         removeNineSprite(state.playerId);
