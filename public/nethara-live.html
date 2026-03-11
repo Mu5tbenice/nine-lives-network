@@ -284,7 +284,7 @@
 
     /* ── Nerm ── */
     .nerm-bubble-container {
-      position: absolute; bottom: 230px; left: 10px; z-index: 25;
+      position: absolute; bottom: 240px; left: 10px; z-index: 40;
       display: flex; align-items: flex-end; gap: 8px;
       pointer-events: none; opacity: 0;
       transition: opacity 0.35s ease;
@@ -501,6 +501,28 @@
     .hp-strip-effect-icon { font-size: 10px; }
 
     /* Round banner */
+    /* ── KO Overlay ── */
+    #ko-overlay {
+      display: none; position: absolute; inset: 0; z-index: 60;
+      background: rgba(0,0,0,0.88); backdrop-filter: blur(6px);
+      flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; gap: 12px;
+    }
+    #ko-overlay.visible { display: flex; }
+    .ko-skull { font-size: 64px; line-height: 1; animation: koSkullPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes koSkullPop { from { transform: scale(0) rotate(-15deg); opacity: 0; } to { transform: scale(1) rotate(0); opacity: 1; } }
+    .ko-title { font-family: 'Cinzel', serif; font-size: 32px; font-weight: 700; color: var(--red); letter-spacing: 4px; text-shadow: 0 0 30px rgba(232,90,106,0.6); }
+    .ko-sub { font-family: 'Crimson Text', serif; font-size: 16px; color: var(--muted); font-style: italic; }
+    .ko-ring { width: 90px; height: 90px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.08); position: relative; margin: 8px 0; }
+    .ko-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+    .ko-ring circle { fill: none; stroke: var(--gold); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+    .ko-ring-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Press Start 2P', monospace; font-size: 18px; color: var(--gold); }
+    .ko-hint { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint); letter-spacing: 1px; }
+    #ko-rejoin-btn { display: none; padding: 14px 32px; border-radius: 10px; border: none; cursor: pointer; font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; letter-spacing: 3px; background: linear-gradient(135deg,#D4A64B,#8a6d2f); color: #0a0810; box-shadow: 0 4px 0 #5a4520, 0 6px 20px rgba(212,166,75,0.3); animation: koBtnPop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+    @keyframes koBtnPop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    #ko-rejoin-btn:hover { transform: translateY(-2px); }
+    #ko-rejoin-btn:active { transform: translateY(0); }
+
     .round-banner {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
       z-index: 50; pointer-events: none; text-align: center;
@@ -731,7 +753,7 @@
       .countdown-time { font-size: 7px; }
       .arena-scoreboard { display: none; }
       .nerm-bubble-container {
-        bottom: 240px; left: 8px; right: auto; max-width: calc(100% - 16px);
+        bottom: 260px; left: 8px; right: auto; max-width: calc(100% - 16px); z-index: 40;
       }
       .nerm-bubble { min-width: 0; max-width: 200px; font-size: 12px; padding: 7px 10px; }
       .nerm-pfp { width: 36px; height: 36px; }
@@ -928,6 +950,19 @@
 
   <!-- Bottom: Live feed -->
   <div class="arena-feed" id="arena-feed"></div>
+
+  <!-- KO overlay — fullscreen, shown when player gets knocked out -->
+  <div id="ko-overlay">
+    <div class="ko-skull">💀</div>
+    <div class="ko-title">K.O.</div>
+    <div class="ko-sub">Your Nine was knocked out of the fight.</div>
+    <div class="ko-ring">
+      <svg viewBox="0 0 90 90"><circle cx="45" cy="45" r="40" stroke-dasharray="251.2" stroke-dashoffset="0" id="ko-ring-circle"/></svg>
+      <div class="ko-ring-num" id="ko-countdown-num">60</div>
+    </div>
+    <div class="ko-hint">COOLDOWN — YOU CAN REDEPLOY ON THIS ZONE AFTER THE TIMER</div>
+    <button id="ko-rejoin-btn" onclick="dismissKOAndRejoin()">⚔️ REJOIN BATTLE</button>
+  </div>
 
   <!-- Round banner (animated overlay) -->
   <div class="round-banner" id="round-banner" style="display:none;">
@@ -1386,9 +1421,17 @@
           ${effectsHTML ? `<div style="margin-top:14px;"><div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:8px;">ACTIVE EFFECTS</div><div style="display:flex;flex-wrap:wrap;gap:5px;">${effectsHTML}</div></div>` : ''}
 
           <!-- Combat stats widget — populated after fetch -->
-          <div id="zone-detail-combat-stats" style="margin-top:16px;border-radius:10px;border:1px solid rgba(255,255,255,0.07);background:rgba(0,0,0,0.25);overflow:hidden;">
-            <div style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06);font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,0.3);letter-spacing:1px;">⚔️ LIVE COMBAT</div>
-            <div id="zone-detail-stats-body" style="padding:10px 12px;font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,0.35);font-style:italic;text-align:center;">Loading...</div>
+          <div id="zone-detail-combat-stats" style="margin-top:16px;border-radius:10px;border:1px solid rgba(106,200,216,0.15);background:rgba(0,0,0,0.3);overflow:hidden;">
+            <div style="padding:8px 14px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:8px;">
+              <div style="width:7px;height:7px;border-radius:50%;background:#6ac8d8;box-shadow:0 0 8px #6ac8d8;animation:pulse 2s infinite;flex-shrink:0;"></div>
+              <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(106,200,216,0.8);letter-spacing:1px;">LIVE ZONE ACTIVITY</span>
+            </div>
+            <div id="zone-detail-stats-body" style="font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,0.35);font-style:italic;text-align:center;">
+              <div style="padding:16px;display:flex;align-items:center;justify-content:center;gap:8px;">
+                <div style="width:6px;height:6px;border-radius:50%;background:#6ac8d8;animation:pulse 1.2s infinite;"></div>
+                <span style="font-size:12px;">Loading...</span>
+              </div>
+            </div>
           </div>
 
           <div style="margin-top:16px;text-align:center;font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,0.35);font-style:italic;margin-bottom:8px;">
@@ -1411,7 +1454,7 @@
     document.body.appendChild(panel);
     _detailPanel = panel;
 
-    // Fetch live combat stats for this zone
+    // Fetch live combat stats and render visual zone overview
     (async function() {
       const statsBody = document.getElementById('zone-detail-stats-body');
       if (!statsBody) return;
@@ -1420,43 +1463,110 @@
         if (!res.ok) throw new Error('no data');
         const data = await res.json();
         const fighters = data.fighters || [];
+
         if (fighters.length === 0) {
-          statsBody.innerHTML = '<span style="color:rgba(255,255,255,0.25)">No active fighters yet.</span>';
+          statsBody.innerHTML = `<div style="padding:20px;text-align:center;">
+            <div style="font-size:28px;margin-bottom:8px;opacity:0.3">⚔️</div>
+            <div style="font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,0.25);font-style:italic">No active fighters yet.</div>
+            <div style="font-family:'Crimson Text',serif;font-size:12px;color:rgba(255,255,255,0.15);margin-top:4px;">Be the first to claim this zone.</div>
+          </div>`;
           return;
         }
-        // Sort by damage for top 3
-        const sorted = [...fighters].sort((a, b) => (b.damage || 0) - (a.damage || 0)).slice(0, 3);
-        const maxDmg = sorted[0].damage || 1;
-        // Guild totals
-        const gTotals = {};
-        fighters.forEach(f => { if (f.guild) gTotals[f.guild] = (gTotals[f.guild] || 0) + (f.damage || 0); });
-        const topGuilds = Object.entries(gTotals).sort((a,b) => b[1]-a[1]).slice(0, 3);
-        const gHtml = topGuilds.map(([g, v]) =>
-          `<span style="font-family:'Press Start 2P',monospace;font-size:6px;padding:3px 7px;border-radius:4px;background:rgba(212,166,75,0.1);color:var(--gold);border:1px solid rgba(212,166,75,0.2)">[${g}] ${v.toLocaleString()}</span>`
-        ).join('');
-        const rowsHtml = sorted.map((f, i) => {
-          const pct = Math.round(((f.damage || 0) / maxDmg) * 100);
-          const medal = ['🥇','🥈','🥉'][i] || '';
-          return `<div style="margin-bottom:8px;">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
-              <span style="font-size:11px;width:14px;text-align:center">${medal}</span>
-              <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:#e0ddf8;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span>
-              <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:#e85a6a">${(f.damage||0).toLocaleString()}</span>
-              ${f.kos ? `<span style="font-family:'Press Start 2P',monospace;font-size:6px;color:#D4A64B">💀${f.kos}</span>` : ''}
+
+        // Sort by damage
+        const sorted = [...fighters].sort((a, b) => (b.damage || 0) - (a.damage || 0));
+        const maxDmg = sorted[0]?.damage || 1;
+
+        // Guild aggregates
+        const guildMap = {};
+        fighters.forEach(f => {
+          if (!f.guild) return;
+          if (!guildMap[f.guild]) guildMap[f.guild] = { dmg: 0, heals: 0, kos: 0, count: 0 };
+          guildMap[f.guild].dmg   += f.damage || 0;
+          guildMap[f.guild].heals += f.heals  || 0;
+          guildMap[f.guild].kos   += f.kos    || 0;
+          guildMap[f.guild].count++;
+        });
+        const guildEntries = Object.entries(guildMap).sort((a,b) => b[1].dmg - a[1].dmg);
+        const guildMaxDmg = guildEntries[0]?.[1].dmg || 1;
+        const GCOLS = ['#D4A64B','#6ac8d8','#e85a6a','#6acd8a','#b088e8'];
+
+        // Alive vs KO counts
+        const aliveCount = fighters.filter(f => f.alive !== false).length;
+        const koCount = fighters.filter(f => f.alive === false).length;
+
+        const html = `
+          <!-- Fighter count strip -->
+          <div style="display:flex;gap:8px;padding:10px 14px 6px;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <div style="flex:1;text-align:center;">
+              <div style="font-family:'Press Start 2P',monospace;font-size:14px;color:#6acd8a;line-height:1;">${aliveCount}</div>
+              <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(106,205,138,0.5);margin-top:4px;">ALIVE</div>
             </div>
-            <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden">
-              <div style="width:${pct}%;height:100%;background:#e85a6a;border-radius:2px;transition:width 0.4s"></div>
+            <div style="width:1px;background:rgba(255,255,255,0.06);flex-shrink:0;"></div>
+            <div style="flex:1;text-align:center;">
+              <div style="font-family:'Press Start 2P',monospace;font-size:14px;color:#e85a6a;line-height:1;">${koCount}</div>
+              <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(232,90,106,0.5);margin-top:4px;">KO'd</div>
             </div>
+            <div style="width:1px;background:rgba(255,255,255,0.06);flex-shrink:0;"></div>
+            <div style="flex:1;text-align:center;">
+              <div style="font-family:'Press Start 2P',monospace;font-size:14px;color:#D4A64B;line-height:1;">${guildEntries.length}</div>
+              <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(212,166,75,0.5);margin-top:4px;">GUILDS</div>
+            </div>
+          </div>
+
+          <!-- Guild damage bars -->
+          ${guildEntries.length > 0 ? `
+          <div style="padding:10px 14px 6px;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.2);letter-spacing:1px;margin-bottom:8px;">GUILD DAMAGE OUTPUT</div>
+            ${guildEntries.map(([g, v], i) => {
+              const gc = GCOLS[i % GCOLS.length];
+              const pct = Math.round((v.dmg / guildMaxDmg) * 100);
+              return `<div style="margin-bottom:7px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+                  <div style="display:flex;align-items:center;gap:5px;">
+                    <div style="width:6px;height:6px;border-radius:50%;background:${gc};flex-shrink:0;"></div>
+                    <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${gc};">[${g}]</span>
+                    <span style="font-family:'Crimson Text',serif;font-size:11px;color:rgba(255,255,255,0.35);">${v.count} fighter${v.count !== 1 ? 's' : ''}</span>
+                  </div>
+                  <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${gc};">${v.dmg.toLocaleString()}</span>
+                </div>
+                <div style="height:5px;border-radius:3px;background:rgba(255,255,255,0.05);overflow:hidden;">
+                  <div style="width:${pct}%;height:100%;background:${gc};border-radius:3px;transition:width 0.6s ease;"></div>
+                </div>
+              </div>`;
+            }).join('')}
+          </div>` : ''}
+
+          <!-- Top fighters leaderboard -->
+          <div style="padding:10px 14px;">
+            <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.2);letter-spacing:1px;margin-bottom:8px;">TOP FIGHTERS</div>
+            ${sorted.slice(0, 5).map((f, i) => {
+              const pct = Math.round(((f.damage || 0) / maxDmg) * 100);
+              const medal = ['🥇','🥈','🥉'][i] || `<span style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.2)">#${i+1}</span>`;
+              const isAlive = f.alive !== false;
+              return `<div style="margin-bottom:9px;">
+                <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+                  <span style="font-size:${i < 3 ? 12 : 8}px;width:16px;text-align:center;flex-shrink:0;">${medal}</span>
+                  <span style="font-family:'Cinzel',serif;font-size:11px;color:${isAlive ? '#e0ddf8' : 'rgba(255,255,255,0.35)'};flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.name}</span>
+                  ${f.guild ? `<span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.3)">[${f.guild}]</span>` : ''}
+                  <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:#e85a6a;flex-shrink:0;">${(f.damage||0).toLocaleString()}</span>
+                  ${f.kos ? `<span style="font-family:'Press Start 2P',monospace;font-size:6px;color:#D4A64B;flex-shrink:0;">💀${f.kos}</span>` : ''}
+                  ${!isAlive ? `<span style="font-size:9px;opacity:0.4">💀</span>` : ''}
+                </div>
+                <div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.05);overflow:hidden;margin-left:22px;">
+                  <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,#e85a6a,#b044556);border-radius:2px;transition:width 0.5s ease;"></div>
+                </div>
+              </div>`;
+            }).join('')}
           </div>`;
-        }).join('');
+
         statsBody.style.fontStyle = 'normal';
         statsBody.style.textAlign = 'left';
         statsBody.style.padding = '0';
-        statsBody.innerHTML = `
-          ${gHtml ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">${gHtml}</div>` : ''}
-          ${rowsHtml}`;
+        statsBody.innerHTML = html;
+
       } catch (err) {
-        if (statsBody) statsBody.innerHTML = '<span style="color:rgba(255,255,255,0.2)">Stats unavailable right now.</span>';
+        if (statsBody) statsBody.innerHTML = '<div style="padding:16px;text-align:center;font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,0.2);font-style:italic;">Stats unavailable right now.</div>';
       }
     })();
   }
@@ -1499,7 +1609,7 @@
     loadZoneNines(zone.id);
 
     // Check if THIS player is deployed here
-    checkDeployment(zone.id);
+    checkDeployment(zone.id).then(() => checkKOState());
   }
 
   /** Fetch deployed Nines from REST API for immediate display */
@@ -1636,6 +1746,7 @@
   }
 
   function closeArena() {
+    dismissKOOverlay(); // clear any active KO state when leaving arena
     document.getElementById('arena-view').style.display = 'none';
     document.getElementById('arena-sidebar').style.display = 'none';
     document.getElementById('arena-sidebar').style.display = 'none';
@@ -1970,11 +2081,12 @@
 
       const doFit = () => fitArenaPlatform(sprite, tex, app);
 
-      tex.baseTexture.on('loaded', () => {
+      const onPlatformReady = () => {
         doFit();
-        app.stage.addChildAt(sprite, 0);
+        // Only add if not already in stage
+        if (!sprite.parent) app.stage.addChildAt(sprite, 0);
         app.stage.sortChildren();
-        // Now that polygon coords are accurate, move any misplaced Nines into bounds
+        // Push any misplaced Nines back inside the polygon
         const poly = getActiveCanvasPoly();
         if (poly) {
           state.nines.forEach(nine => {
@@ -1986,8 +2098,16 @@
           });
         }
         setRoundPositions();
-        console.log('🏟️ Arena platform loaded:', url);
-      });
+        console.log('🏟️ Arena platform ready:', url);
+      };
+
+      if (tex.baseTexture.valid) {
+        // Already cached and loaded — fire immediately
+        onPlatformReady();
+      } else {
+        tex.baseTexture.on('loaded', onPlatformReady);
+        tex.baseTexture.on('error', () => console.warn('Arena platform texture error:', url));
+      }
 
       // Refit on resize
       app.renderer.on('resize', () => {
@@ -2892,15 +3012,10 @@
         showFloatingText(sprite.container.x, sprite.container.y, 'KO!', 0xff4466, 20);
         addFeedEvent(`💀 ${data.name || 'A Nine'} was knocked out!`, 'ko');
       }
-      // If YOUR Nine got KO'd, show rejoin UI after cooldown
+      // If YOUR Nine got KO'd, show KO overlay with countdown
       if (nineId == state.playerId) {
         state.isDeployed = false;
-        document.getElementById('arena-bottom-tray').style.display = 'none';
-        addFeedEvent('⏳ You were KO\'d! Rejoin in 60 seconds...', 'system');
-        setTimeout(() => {
-          document.getElementById('deploy-cta').style.display = 'block';
-          addFeedEvent('✅ Cooldown expired — rejoin the battle!', 'system');
-        }, 60000);
+        showKOOverlay(data.killer_name || null);
       }
     });
 
@@ -3239,16 +3354,10 @@
           spawnParticles(sprite.container.x, sprite.container.y, 0xffffff, 8, 'lightning');
           screenFlash(0xff2222, 0.25);
         }
-        // If YOUR Nine got KO'd, show rejoin UI after cooldown
+        // If YOUR Nine got KO'd, show KO overlay
         if (koId == state.playerId) {
           state.isDeployed = false;
-          document.getElementById('arena-bottom-tray').style.display = 'none';
-          addFeedEvent('⏳ You were KO\'d! You can rejoin in 60 seconds...', 'system');
-          // Show rejoin button after 60s cooldown
-          setTimeout(() => {
-            document.getElementById('deploy-cta').style.display = 'block';
-            addFeedEvent('✅ Cooldown expired — you can rejoin the battle!', 'system');
-          }, 60000);
+          showKOOverlay(ev.sourceName || null);
         }
         break;
       }
@@ -4518,6 +4627,99 @@
     feed.scrollTop = feed.scrollHeight;
   }
 
+  // ── KO OVERLAY ──
+  const KO_COOLDOWN_MS = 60000;
+  let _koCountdownTimer = null;
+
+  function showKOOverlay(killerName) {
+    // Persist ko_until in sessionStorage so refresh can't bypass it
+    const until = Date.now() + KO_COOLDOWN_MS;
+    sessionStorage.setItem('9lv_ko_until', String(until));
+    sessionStorage.setItem('9lv_ko_zone', String(state.currentZoneId));
+
+    const overlay = document.getElementById('ko-overlay');
+    const numEl = document.getElementById('ko-countdown-num');
+    const circle = document.getElementById('ko-ring-circle');
+    const rejoinBtn = document.getElementById('ko-rejoin-btn');
+    if (!overlay) return;
+
+    rejoinBtn.style.display = 'none';
+    overlay.classList.add('visible');
+    document.getElementById('arena-bottom-tray').style.display = 'none';
+    document.getElementById('deploy-cta').style.display = 'none';
+
+    const circumference = 251.2; // 2π × 40
+    let secondsLeft = 60;
+
+    if (_koCountdownTimer) clearInterval(_koCountdownTimer);
+    _koCountdownTimer = setInterval(() => {
+      secondsLeft--;
+      if (numEl) numEl.textContent = secondsLeft;
+      if (circle) {
+        const progress = secondsLeft / 60;
+        circle.style.strokeDashoffset = circumference * (1 - progress);
+      }
+      if (secondsLeft <= 0) {
+        clearInterval(_koCountdownTimer);
+        _koCountdownTimer = null;
+        if (numEl) numEl.textContent = '✓';
+        if (rejoinBtn) rejoinBtn.style.display = 'block';
+        addFeedEvent('✅ Cooldown expired — you can rejoin the battle!', 'system');
+      }
+    }, 1000);
+  }
+
+  function dismissKOOverlay() {
+    const overlay = document.getElementById('ko-overlay');
+    if (overlay) overlay.classList.remove('visible');
+    if (_koCountdownTimer) { clearInterval(_koCountdownTimer); _koCountdownTimer = null; }
+    sessionStorage.removeItem('9lv_ko_until');
+    sessionStorage.removeItem('9lv_ko_zone');
+  }
+
+  function dismissKOAndRejoin() {
+    dismissKOOverlay();
+    // Show join button
+    document.getElementById('deploy-cta').style.display = 'block';
+  }
+
+  // Check on page load if player was mid-KO cooldown when they refreshed
+  function checkKOState() {
+    const until = parseInt(sessionStorage.getItem('9lv_ko_until') || '0');
+    const koZone = parseInt(sessionStorage.getItem('9lv_ko_zone') || '0');
+    if (!until || Date.now() >= until) return false;
+    if (koZone && koZone !== state.currentZoneId) return false;
+    const remaining = Math.ceil((until - Date.now()) / 1000);
+    // Re-enter the KO overlay with remaining time
+    const overlay = document.getElementById('ko-overlay');
+    const numEl = document.getElementById('ko-countdown-num');
+    const circle = document.getElementById('ko-ring-circle');
+    const rejoinBtn = document.getElementById('ko-rejoin-btn');
+    if (!overlay) return false;
+    rejoinBtn.style.display = 'none';
+    overlay.classList.add('visible');
+    document.getElementById('arena-bottom-tray').style.display = 'none';
+    document.getElementById('deploy-cta').style.display = 'none';
+    const circumference = 251.2;
+    let secondsLeft = remaining;
+    if (numEl) numEl.textContent = secondsLeft;
+    if (circle) circle.style.strokeDashoffset = circumference * (1 - secondsLeft / 60);
+    if (_koCountdownTimer) clearInterval(_koCountdownTimer);
+    _koCountdownTimer = setInterval(() => {
+      secondsLeft--;
+      if (numEl) numEl.textContent = secondsLeft;
+      if (circle) circle.style.strokeDashoffset = circumference * (1 - secondsLeft / 60);
+      if (secondsLeft <= 0) {
+        clearInterval(_koCountdownTimer);
+        _koCountdownTimer = null;
+        if (numEl) numEl.textContent = '✓';
+        if (rejoinBtn) rejoinBtn.style.display = 'block';
+        addFeedEvent('✅ Cooldown expired — you can rejoin the battle!', 'system');
+      }
+    }, 1000);
+    return true;
+  }
+
   // Nerm typewriter state
   let _nermTypeTimer = null;
   let _nermHideTimer = null;
@@ -4997,6 +5199,11 @@
       document.getElementById('arena-bottom-tray').style.display = 'none';
       return;
     }
+    // If we just deployed within the last 3s and already have cards rendered,
+    // skip the full check to avoid a race where the loadout API hasn't committed yet.
+    if (state._deployedAt && (Date.now() - state._deployedAt) < 3000 && state.equippedCards.length > 0) {
+      return;
+    }
 
     try {
       const res = await fetch(`/api/zones/my-deployments/${state.playerId}`);
@@ -5471,6 +5678,7 @@
 
         // Update deployed zone tracking so the badge shows on zone list immediately
         state.deployedZoneIds.add(state.currentZoneId);
+        state._deployedAt = Date.now(); // guard against checkDeployment race
         updatePlayerBar();
 
         // Equip each selected card into its slot so combat engine can use card effects
@@ -5499,6 +5707,14 @@
           fetch(`/api/zones/${state.currentZoneId}/force-reload`, { method: 'POST' }).catch(() => null);
         }
 
+        // Auto-switch to BUILD tab so player sees their cards immediately
+        document.querySelectorAll('.tray-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tray-pane').forEach(p => p.classList.remove('active'));
+        const buildTab = document.querySelector('.tray-tab[data-tab="build"]');
+        const buildPane = document.getElementById('tray-pane-build');
+        if (buildTab) buildTab.classList.add('active');
+        if (buildPane) buildPane.classList.add('active');
+
         // Reload zone nines to include yourself
         state.nines.clear();
         if (state.arenaApp) {
@@ -5512,13 +5728,15 @@
         state._guildAngles = {};
         state._guildCounts = {};
         await loadZoneNines(state.currentZoneId);
-        // Re-check deployment to load cards from API — but don't let it hide the panel we just showed
-        try {
-          await checkDeployment(state.currentZoneId);
-        } catch(e) {
-          console.warn('Post-deploy checkDeployment failed (non-critical):', e);
-          // Panel is already visible from above, keep it that way
-        }
+        // Delay checkDeployment by 800ms so DB commits from equip-card calls are visible
+        // (equips are already awaited above, but the force-reload may add latency)
+        setTimeout(async () => {
+          try {
+            await checkDeployment(state.currentZoneId);
+          } catch(e) {
+            console.warn('Post-deploy checkDeployment failed (non-critical):', e);
+          }
+        }, 800);
       } else {
         alert(data.error || 'Deploy failed');
         btn.textContent = '⚔️ DEPLOY TO BATTLE';
@@ -5752,6 +5970,7 @@
     const statKey = tab === 'dmg' ? 'damage' : tab === 'heals' ? 'heals' : 'kos';
     const statColor = tab === 'dmg' ? '#e85a6a' : tab === 'heals' ? '#6acd8a' : '#D4A64B';
     const statLabel = tab === 'dmg' ? 'DMG' : tab === 'heals' ? 'HEALS' : 'KOs';
+    const tabIcon = tab === 'dmg' ? '⚔️' : tab === 'heals' ? '💚' : '💀';
 
     const entries = [...state.combatMetrics.values()].filter(m => m[statKey] > 0).sort((a, b) => b[statKey] - a[statKey]);
     const max = entries[0]?.[statKey] || 1;
@@ -5763,36 +5982,57 @@
       guildTotals[m.guild] = (guildTotals[m.guild] || 0) + (m[statKey] || 0);
     }
     const guildEntries = Object.entries(guildTotals).sort((a, b) => b[1] - a[1]);
+    const guildMax = guildEntries[0]?.[1] || 1;
 
-    // Build HTML
+    // ── GUILD BARS (visual) ──
+    const GUILD_BAR_COLORS = ['#D4A64B','#6ac8d8','#e85a6a','#6acd8a','#b088e8'];
+    const guildBarsHtml = guildEntries.length ? `
+      <div style="padding:6px 8px 4px;">
+        <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.25);letter-spacing:1px;margin-bottom:8px;">GUILD ${statLabel}</div>
+        ${guildEntries.map(([g, v], i) => {
+          const gc = GUILD_BAR_COLORS[i % GUILD_BAR_COLORS.length];
+          const pct = Math.round((v / guildMax) * 100);
+          return `<div style="margin-bottom:6px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+              <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${gc}">[${g}]</span>
+              <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${gc}">${v.toLocaleString()}</span>
+            </div>
+            <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.05);overflow:hidden;">
+              <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,${gc},${gc}aa);border-radius:3px;transition:width 0.4s ease;"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="height:1px;background:rgba(255,255,255,0.06);margin:2px 0 4px;"></div>` : '';
+
+    // ── TAB BUTTONS ──
     const tabsHtml = `<div class="meters-tabs">
       <button class="meters-tab${tab==='dmg'?' active':''}" onclick="state._metersTab='dmg';renderCombatMeters()">⚔️ DMG</button>
       <button class="meters-tab${tab==='heals'?' active':''}" onclick="state._metersTab='heals';renderCombatMeters()">💚 HEALS</button>
       <button class="meters-tab${tab==='kos'?' active':''}" onclick="state._metersTab='kos';renderCombatMeters()">💀 KOs</button>
     </div>`;
 
-    const guildHtml = guildEntries.length ? `<div class="meters-guild-bar">
-      ${guildEntries.map(([g, v]) => `<div class="meters-guild-chip" style="background:${houseBarColor('')}22;color:${houseBarColor('')};border:1px solid ${houseBarColor('')}44">[${g}] ${v.toLocaleString()}</div>`).join('')}
-    </div>` : '';
-
+    // ── PLAYER ROWS with visual bars ──
     const rowsHtml = entries.length ? entries.map((m, i) => {
       const pct = Math.round((m[statKey] / max) * 100);
       const color = houseBarColor(m.house);
+      const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
       const topCard = Object.entries(m.cards || {}).sort((a,b) => b[1]-a[1])[0];
-      const cardTip = topCard ? ` · ${topCard[0]}` : '';
+      const gLabel = m.guild ? `<span style="color:${color};opacity:0.7;font-size:5px">[${m.guild}]</span> ` : '';
       return `<div class="meter-row">
         <div class="meter-row-top">
-          <span class="meter-rank">${i+1}</span>
-          <span class="meter-name" title="${m.guild ? '['+m.guild+'] ' : ''}${m.name}${cardTip}">${m.guild ? '<span style="color:'+color+';opacity:.7">['+m.guild+']</span> ' : ''}${m.name}</span>
-          <span class="meter-value" style="color:${statColor}">${m[statKey].toLocaleString()}</span>
+          <span class="meter-rank" style="${i < 3 ? 'font-size:10px' : ''}">${rank}</span>
+          <span class="meter-name">${gLabel}${m.name}</span>
+          <span class="meter-value" style="color:${statColor}">${tab === 'kos' ? m[statKey] : m[statKey].toLocaleString()}</span>
         </div>
         <div class="meter-bar-track">
-          <div class="meter-bar-fill" style="width:${pct}%;background:${color}"></div>
+          <div class="meter-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${color},${color}88)"></div>
         </div>
+        ${topCard ? `<div style="font-family:'Crimson Text',serif;font-size:10px;color:rgba(255,255,255,0.3);padding-left:20px;margin-top:1px;font-style:italic">top card: ${topCard[0]}</div>` : ''}
       </div>`;
-    }).join('') : `<div style="padding:16px 10px;text-align:center;font-family:'Crimson Text',serif;color:var(--faint);font-size:13px;font-style:italic">No ${statLabel} recorded yet.</div>`;
+    }).join('') : `<div style="padding:20px 10px;text-align:center;font-family:'Crimson Text',serif;color:var(--faint);font-size:13px;font-style:italic">No ${statLabel} recorded yet.</div>`;
 
-    el.innerHTML = tabsHtml + guildHtml + `<div class="meters-rows">${rowsHtml}</div>`;
+    el.innerHTML = guildBarsHtml + tabsHtml + `<div class="meters-rows">${rowsHtml}</div>`;
   }
 
   // ── FULL BATTLE LOG ──
