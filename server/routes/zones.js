@@ -31,7 +31,9 @@ const ZONE_POINTS = {
 // ═══════════════════════════════════════════
 router.post('/deploy', async (req, res) => {
   try {
-    const { player_id, zone_id } = req.body;
+    // Parse as integers — JSON body can send strings, Supabase .eq() is type-strict
+    const player_id = parseInt(req.body.player_id);
+    const zone_id = parseInt(req.body.zone_id);
 
     if (!player_id || !zone_id) {
       return res.status(400).json({ error: 'player_id and zone_id required' });
@@ -44,7 +46,7 @@ router.post('/deploy', async (req, res) => {
     }
 
     // Check if already deployed on this zone
-    const { data: existingDeploy } = await supabase
+    const { data: existingDeploy } = await supabaseAdmin
       .from('zone_deployments')
       .select('id')
       .eq('player_id', player_id)
@@ -57,7 +59,7 @@ router.post('/deploy', async (req, res) => {
     }
 
     // V5: Check zone deployment limit (2 zones at start, 3 at level 10)
-    const { data: currentDeploys } = await supabase
+    const { data: currentDeploys } = await supabaseAdmin
       .from('zone_deployments')
       .select('id')
       .eq('player_id', player_id)
@@ -152,7 +154,7 @@ router.post('/withdraw', async (req, res) => {
     }
 
     // Find active deployment
-    const { data: deployment } = await supabase
+    const { data: deployment } = await supabaseAdmin
       .from('zone_deployments')
       .select('id')
       .eq('player_id', player_id)
@@ -204,7 +206,11 @@ router.post('/withdraw', async (req, res) => {
 // ═══════════════════════════════════════════
 router.post('/equip-card', async (req, res) => {
   try {
-    const { player_id, zone_id, card_id, slot_number } = req.body;
+    // Parse all IDs as integers — JSON body can send strings, Supabase .eq() is type-strict
+    const player_id = parseInt(req.body.player_id);
+    const zone_id = parseInt(req.body.zone_id);
+    const card_id = parseInt(req.body.card_id);
+    const slot_number = req.body.slot_number;
 
     if (!player_id || !zone_id || !card_id) {
       return res.status(400).json({ error: 'player_id, zone_id, and card_id required' });
@@ -215,8 +221,8 @@ router.post('/equip-card', async (req, res) => {
       return res.status(400).json({ error: `slot_number must be 1-${MAX_CARDS_PER_ZONE}` });
     }
 
-    // Find active deployment on this zone
-    const { data: deployment } = await supabase
+    // Find active deployment on this zone — admin client bypasses RLS
+    const { data: deployment, error: depErr } = await supabaseAdmin
       .from('zone_deployments')
       .select('id')
       .eq('player_id', player_id)
@@ -224,39 +230,46 @@ router.post('/equip-card', async (req, res) => {
       .eq('is_active', true)
       .single();
 
-    if (!deployment) {
+    if (depErr || !deployment) {
+      console.error('[equip-card] deployment lookup failed:', depErr, { player_id, zone_id });
       return res.status(400).json({ error: 'Not deployed on this zone — deploy first' });
     }
 
     // Get the card from player's collection — admin client bypasses RLS
-    const { data: card } = await supabaseAdmin
+    const { data: card, error: cardErr } = await supabaseAdmin
       .from('player_cards')
-      .select('*, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)')
+      .select('id, spell_id, sharpness, player_id')
       .eq('id', card_id)
       .eq('player_id', player_id)
       .single();
 
-    if (!card) {
+    if (cardErr || !card) {
+      console.error('[equip-card] card not found:', cardErr, { card_id, player_id });
       return res.status(404).json({ error: 'Card not found in your collection' });
     }
 
-    // V5: Check sharpness instead of exhaustion — 0% sharpness still works (50% power)
-    // Cards can always be equipped, sharpness just affects effectiveness
-
-    // Check card isn't already equipped on ANOTHER zone — admin client
+    // Check card isn't already in an active slot on a DIFFERENT zone
+    // Avoid nested join — get deployment ids for this zone first, then filter
     const { data: existingSlots } = await supabaseAdmin
       .from('zone_card_slots')
-      .select('id, deployment:deployment_id(zone_id)')
+      .select('id, deployment_id')
       .eq('card_id', card_id)
       .eq('is_active', true);
 
-    const otherZoneSlot = (existingSlots || []).find(s =>
-      s.deployment && s.deployment.zone_id !== zone_id
-    );
-    if (otherZoneSlot) {
-      return res.status(400).json({
-        error: 'Card is already equipped on another zone. Unequip it first.',
-      });
+    if (existingSlots && existingSlots.length > 0) {
+      // Get deployment ids that belong to a DIFFERENT zone
+      const slotDeploymentIds = existingSlots.map(s => s.deployment_id).filter(Boolean);
+      if (slotDeploymentIds.length > 0) {
+        const { data: otherDeps } = await supabaseAdmin
+          .from('zone_deployments')
+          .select('id, zone_id')
+          .in('id', slotDeploymentIds)
+          .eq('is_active', true)
+          .neq('zone_id', zone_id);
+        if (otherDeps && otherDeps.length > 0) {
+          return res.status(400).json({ error: 'Card is already equipped on another zone. Unequip it first.' });
+        }
+      }
     }
 
     // Remove any existing card in this specific slot
@@ -319,7 +332,7 @@ router.post('/unequip-card', async (req, res) => {
       return res.status(400).json({ error: 'player_id, zone_id, and slot_number required' });
     }
 
-    const { data: deployment } = await supabase
+    const { data: deployment } = await supabaseAdmin
       .from('zone_deployments')
       .select('id')
       .eq('player_id', player_id)
@@ -359,7 +372,7 @@ router.get('/:zoneId/deployments', async (req, res) => {
   try {
     const zoneId = parseInt(req.params.zoneId);
 
-    const { data: deployments, error } = await supabase
+    const { data: deployments, error } = await supabaseAdmin
       .from('zone_deployments')
       .select(`
         *,
@@ -486,7 +499,7 @@ router.get('/:zoneId/my-loadout/:playerId', async (req, res) => {
       .in('id', cardIds);
 
     if (cardErr) {
-      console.error('player_cards fetch error:', cardErr);
+      console.error('[my-loadout] player_cards fetch error:', cardErr, { cardIds });
       return res.json({ loadout: [], slots_used: 0, slots_max: MAX_CARDS_PER_ZONE });
     }
 

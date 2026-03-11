@@ -232,6 +232,22 @@ if (io) {
       }
     });
 
+    // ── ZONE CHAT ──
+    socket.on('chat:send', (data) => {
+      const zoneId = data.zoneId || data.zone_id;
+      if (!zoneId || !data.message) return;
+      const safeMsg = String(data.message).slice(0, 200).replace(/<[^>]*>/g, '');
+      const handle = String(data.handle || 'Anon').slice(0, 32).replace(/<[^>]*>/g, '');
+      const guildTag = String(data.guildTag || '').slice(0, 16).replace(/<[^>]*>/g, '');
+      arenaNamespace.to(`zone_${zoneId}`).emit('chat:message', {
+        handle,
+        guildTag,
+        message: safeMsg,
+        playerId: data.playerId || null,
+        timestamp: Date.now(),
+      });
+    });
+
     socket.on('disconnect', () => {
       console.log('⚔️ Arena client disconnected:', socket.id);
     });
@@ -295,25 +311,23 @@ app.post("/api/players/:id/streak-ping", async (req, res) => {
     if (error || !player) return res.status(404).json({ error: "Player not found" });
 
     const now = new Date();
-    const todayStr = now.toISOString().slice(0, 10); // "2026-03-10"
+    const todayStr = now.toISOString().slice(0, 10);
     const lastLogin = player.last_login ? new Date(player.last_login) : null;
     const lastLoginStr = lastLogin ? lastLogin.toISOString().slice(0, 10) : null;
 
-    // Already pinged today — return current streak, no update
     if (lastLoginStr === todayStr) {
       return res.json({ streak: player.streak, updated: false });
     }
 
     let newStreak;
     if (!lastLoginStr) {
-      // First ever login
       newStreak = 1;
     } else {
       const daysDiff = Math.round((now - lastLogin) / (1000 * 60 * 60 * 24));
       if (daysDiff === 1) {
-        newStreak = (player.streak || 0) + 1; // consecutive day
+        newStreak = (player.streak || 0) + 1;
       } else {
-        newStreak = 1; // gap > 1 day, reset
+        newStreak = 1;
       }
     }
 

@@ -327,21 +327,21 @@
        Column: YOUR NINE header → tab bar → content
     ══════════════════════════════════════════════ */
     .arena-bottom-tray {
-      position: absolute; bottom: 0; left: 0; right: 270px; z-index: 25;
+      position: absolute; bottom: 0; left: 0; right: 300px; z-index: 25;
       display: flex; flex-direction: column;
-      background: rgba(10,8,20,0.97);
+      background: rgba(8,6,18,0.97);
       border-top: 1px solid rgba(255,255,255,0.09);
-      backdrop-filter: blur(10px);
-      max-height: 220px;
+      backdrop-filter: blur(12px);
+      max-height: 280px;
     }
 
     /* YOUR NINE — fixed header strip */
     .tray-nine-header {
-      padding: 8px 14px 6px; flex-shrink: 0;
+      padding: 12px 16px 10px; flex-shrink: 0;
       border-bottom: 1px solid rgba(255,255,255,0.07);
     }
     .tray-nine-top {
-      display: flex; align-items: center; gap: 10px; margin-bottom: 5px;
+      display: flex; align-items: center; gap: 12px; margin-bottom: 6px;
     }
 
     /* Tab bar */
@@ -353,7 +353,7 @@
       flex: 1; background: none; border: none;
       border-right: 1px solid rgba(255,255,255,0.06);
       color: var(--faint); font-family: 'Press Start 2P', monospace; font-size: 6px;
-      padding: 8px 4px; cursor: pointer; transition: color 0.2s, background 0.2s;
+      padding: 10px 4px; cursor: pointer; transition: color 0.2s, background 0.2s;
       letter-spacing: 0.5px;
     }
     .tray-tab:last-child { border-right: none; }
@@ -371,15 +371,16 @@
 
     /* BUILD pane */
     .build-pane-header {
-      padding: 5px 12px 4px; flex-shrink: 0;
+      padding: 8px 14px 6px; flex-shrink: 0;
       display: flex; align-items: center; gap: 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
     }
 
     /* ── Card slots — compact horizontal design ── */
     .arena-card-slot {
       flex: 1; min-width: 0; background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-      border-radius: 8px; padding: 6px 8px; position: relative;
-      transition: border-color 0.2s; cursor: pointer;
+      border-radius: 10px; padding: 10px 10px; position: relative;
+      transition: border-color 0.2s, background 0.2s; cursor: pointer;
     }
     .arena-card-slot:hover { border-color: rgba(212,166,75,0.3); }
     .arena-card-slot .slot-type {
@@ -387,8 +388,8 @@
       letter-spacing: 0.5px; margin-bottom: 2px;
     }
     .arena-card-slot .slot-name {
-      font-family: 'Cinzel', serif; font-size: 10px; font-weight: 700; color: var(--bright);
-      line-height: 1.2; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; color: var(--bright);
+      line-height: 1.2; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .arena-card-slot .slot-effects {
       display: flex; gap: 3px; flex-wrap: wrap;
@@ -657,52 +658,53 @@
     #arena-sidebar {
       display: none;
       position: absolute; top: 54px; right: 10px; z-index: 25;
-      width: 250px;
+      width: 280px;
       flex-direction: column;
-      background: rgba(10,8,20,0.92); border: 1px solid rgba(255,255,255,0.09);
-      border-radius: 12px; overflow: hidden; backdrop-filter: blur(12px);
-      bottom: 10px; /* anchor to bottom so height fills naturally */
+      background: rgba(8,6,18,0.96); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px; overflow: hidden; backdrop-filter: blur(16px);
+      bottom: 10px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
     }
-    #sidebar-guilds { padding: 10px 10px 6px; flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
     .sidebar-section-label {
       font-family: 'Press Start 2P', monospace; font-size: 6px;
-      color: var(--faint); letter-spacing: 1px; margin-bottom: 7px;
+      color: rgba(212,166,75,0.65); letter-spacing: 2px; margin-bottom: 12px;
+      text-transform: uppercase;
     }
+    /* Guild rows */
     .sidebar-guild-row {
-      display: flex; flex-direction: column; gap: 3px;
-      padding: 6px 8px; border-radius: 8px; margin-bottom: 4px;
-      background: rgba(255,255,255,0.03); cursor: default;
-      transition: background 0.2s; border: 1px solid transparent;
+      display: flex; flex-direction: column; gap: 5px;
+      padding: 10px 12px; border-radius: 10px; margin-bottom: 8px;
+      background: rgba(255,255,255,0.04); cursor: default;
+      transition: background 0.2s; border: 1px solid rgba(255,255,255,0.05);
     }
-    .sidebar-guild-row:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.12); }
-    .sidebar-guild-top { display: flex; align-items: center; gap: 7px; }
-    .sidebar-guild-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .sidebar-guild-row:last-child { margin-bottom: 0; }
+    .sidebar-guild-row:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); }
+    .sidebar-guild-top { display: flex; align-items: center; gap: 9px; }
+    .sidebar-guild-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
     .sidebar-guild-name { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--bright); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sidebar-guild-hp { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--green); }
-    .sidebar-guild-nines { font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint); }
+    .sidebar-guild-nines { font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint); padding-left: 19px; }
     .sidebar-guild-bar { width: 100%; height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; }
-    .sidebar-guild-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+    .sidebar-guild-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
 
-    /* sidebar just shows guilds now — tabs moved to bottom tray */
-
+    /* Chat shared styles */
     #arena-chat-log {
-      flex: 1; overflow-y: auto; padding: 6px 12px;
-      display: flex; flex-direction: column; gap: 3px;
+      flex: 1; overflow-y: auto; padding: 8px 12px;
+      display: flex; flex-direction: column;
     }
     #arena-chat-log::-webkit-scrollbar { width: 2px; }
     #arena-chat-log::-webkit-scrollbar-thumb { background: rgba(212,166,75,0.2); }
-    .chat-msg { font-family: 'Crimson Text', serif; font-size: 13px; line-height: 1.4; word-break: break-word; }
-    .chat-msg .chat-handle { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--gold); margin-right: 4px; }
-    .chat-msg .chat-guild { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--faint); }
+    .chat-handle { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--gold); }
+    .chat-guild { font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint); }
     .chat-input-row { display: flex; border-top: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; }
     #arena-chat-input {
       flex: 1; background: transparent; border: none; outline: none;
-      font-family: 'Crimson Text', serif; font-size: 13px; color: var(--bright); padding: 7px 10px;
+      font-family: 'Crimson Text', serif; font-size: 13px; color: var(--bright); padding: 8px 12px;
     }
     #arena-chat-input::placeholder { color: var(--faint); font-size: 12px; }
     #arena-chat-send {
       background: none; border: none; border-left: 1px solid rgba(255,255,255,0.06);
-      color: var(--gold); cursor: pointer; padding: 7px 12px; font-size: 14px; transition: color 0.2s;
+      color: var(--gold); cursor: pointer; padding: 8px 14px; font-size: 14px; transition: color 0.2s;
     }
     #arena-chat-send:hover { color: var(--bright); }
     #contribution-list { flex: 1; overflow-y: auto; padding: 6px 10px; display: flex; flex-direction: column; gap: 5px; }
@@ -776,7 +778,7 @@
       .nerm-pfp { width: 36px; height: 36px; }
 
       /* On mobile: tray is full width (no sidebar) */
-      .arena-bottom-tray { right: 0; }
+      .arena-bottom-tray { right: 0; max-height: 240px; }
       #arena-sidebar { display: none !important; }
       .arena-feed { display: none; }
       .arena-hp-strip { display: none; }
@@ -872,27 +874,29 @@
   <!-- ── RIGHT SIDEBAR: Guilds + Chat/Stats/Log ── desktop only -->
   <div id="arena-sidebar">
 
-    <!-- Guild section: who's fighting, hover to highlight -->
-    <div id="sidebar-guilds">
+    <!-- COMPETING GUILDS -->
+    <div id="sidebar-guilds" style="padding:16px 16px 12px;flex-shrink:0;">
       <div class="sidebar-section-label">COMPETING GUILDS</div>
       <div id="sidebar-guild-rows"></div>
     </div>
 
-    <!-- Damage chart — compact sparklines per guild -->
-    <div id="sidebar-chart-section" style="padding:8px 10px 6px;border-top:1px solid rgba(255,255,255,0.07);flex-shrink:0;">
-      <div class="sidebar-section-label" style="margin-bottom:6px;">DAMAGE CHART</div>
-      <canvas id="sidebar-dmg-chart" width="228" height="64" style="width:100%;height:64px;border-radius:6px;background:rgba(255,255,255,0.03);display:block;"></canvas>
-      <div id="sidebar-chart-legend" style="display:flex;flex-wrap:wrap;gap:4px 8px;margin-top:4px;"></div>
+    <!-- DAMAGE CHART -->
+    <div id="sidebar-chart-section" style="padding:4px 16px 12px;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
+      <div class="sidebar-section-label" style="margin-bottom:10px;margin-top:12px;">DAMAGE CHART</div>
+      <canvas id="sidebar-dmg-chart" width="238" height="60" style="width:100%;height:60px;border-radius:8px;background:rgba(255,255,255,0.03);display:block;"></canvas>
+      <div id="sidebar-chart-legend" style="display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;"></div>
     </div>
 
-    <!-- Chat always visible in sidebar — no deployment required -->
-    <div id="sidebar-chat" style="flex:1;display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,0.07);min-height:0;">
-      <div class="sidebar-section-label" style="flex-shrink:0;">ZONE CHAT</div>
-      <div id="sidebar-chat-log" style="flex:1;overflow-y:auto;padding:6px 10px;font-family:'Crimson Text',serif;font-size:12px;line-height:1.4;"></div>
-      <div style="display:flex;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
+    <!-- ZONE CHAT — always visible -->
+    <div id="sidebar-chat" style="flex:1;display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,0.06);min-height:0;">
+      <div style="padding:12px 16px 8px;flex-shrink:0;">
+        <div class="sidebar-section-label" style="margin-bottom:0;">ZONE CHAT</div>
+      </div>
+      <div id="sidebar-chat-log" style="flex:1;overflow-y:auto;padding:0 14px 6px;min-height:0;scrollbar-width:thin;scrollbar-color:rgba(212,166,75,0.2) transparent;"></div>
+      <div style="display:flex;align-items:center;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0;margin:0 8px 8px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
         <input id="sidebar-chat-input" type="text" maxlength="120" placeholder="Say something..."
-          style="flex:1;background:none;border:none;outline:none;color:var(--bright);font-family:'Crimson Text',serif;font-size:12px;padding:7px 10px;">
-        <button id="sidebar-chat-send" style="background:none;border:none;color:var(--gold);cursor:pointer;padding:7px 10px;font-size:13px;">➤</button>
+          style="flex:1;background:none;border:none;outline:none;color:var(--bright);font-family:'Crimson Text',serif;font-size:13px;padding:9px 12px;">
+        <button id="sidebar-chat-send" style="background:none;border:none;color:var(--gold);cursor:pointer;padding:9px 14px;font-size:15px;transition:color 0.2s;flex-shrink:0;">➤</button>
       </div>
     </div>
   </div>
@@ -938,7 +942,7 @@
         <div class="build-pane-header">
           <button class="build-swap-btn" id="btn-swap-build">⇄ SWAP CARDS</button>
         </div>
-        <div class="build-cards" id="arena-card-slots">
+        <div class="build-cards" id="arena-card-slots" style="padding:10px 12px;gap:10px;">
           <div class="arena-card-slot empty" id="card-slot-0"><span class="slot-empty-text">1</span></div>
           <div class="arena-card-slot empty" id="card-slot-1"><span class="slot-empty-text">2</span></div>
           <div class="arena-card-slot empty" id="card-slot-2"><span class="slot-empty-text">3</span></div>
@@ -1176,7 +1180,9 @@
         state.playerId = p.id || p.player_id;
         state.playerHouse = p.school_id;
         state.playerLevel = p.level || 1;
-        console.log('🐱 Arena: logged in as player', state.playerId);
+        state.playerHandle = p.twitter_handle || p.handle || '';
+        state.playerGuildTag = p.guild_tag || '';
+        console.log('🐱 Arena: logged in as player', state.playerId, state.playerHandle);
       } catch(e) {
         if (rawId) {
           state.playerId = parseInt(rawId);
@@ -1862,6 +1868,8 @@
         addNineSprite({
           id: d.player_id,
           name: nine.name || player.twitter_handle || 'Unknown',
+          handle: player.twitter_handle || null,
+          profile_image: player.profile_image || null,
           house: houseName,
           guild_id: d.guild_tag,
           guild_name: d.guild_tag || 'Lone Wolf',
@@ -2669,6 +2677,8 @@
       maxHp: nine.max_hp || 100,
       stats: nine.stats || {},
       name: nine.name || '???',
+      handle: nine.handle || nine.twitter_handle || null,
+      profileImage: nine.profile_image || null,
       guild: nine.guild_id || nine.guild_name || '???',
       house: nine.house || 'universal',
       homeX: nine.position.x, homeY: nine.position.y,
@@ -5993,24 +6003,31 @@
         // Equip each selected card into its slot so combat engine can use card effects
         // The deploy endpoint only creates the deployment row — cards must be equipped separately
         if (state.selectedCards.length > 0) {
+          console.log('[equip] Starting equip for cards:', state.selectedCards.map(c => ({slot: c.index, cardId: c.cardId, name: c.card?.name})));
           const equipPromises = state.selectedCards.map((c, i) =>
             fetch('/api/zones/equip-card', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                player_id: state.playerId,
-                zone_id: state.currentZoneId,
-                card_id: c.cardId,
+                player_id: Number(state.playerId),
+                zone_id: Number(state.currentZoneId),
+                card_id: Number(c.cardId),
                 slot_number: i + 1,
               }),
-            }).then(r => r.json()).catch(() => null)
+            }).then(r => r.json()).then(result => {
+              console.log(`[equip] Slot ${i+1} (card ${c.cardId}):`, result);
+              return result;
+            }).catch(err => {
+              console.error(`[equip] Slot ${i+1} fetch error:`, err);
+              return null;
+            })
           );
           const equipResults = await Promise.all(equipPromises);
           const failed = equipResults.filter(r => !r || !r.success);
           if (failed.length > 0) {
-            console.warn(`[deploy] ${failed.length} card(s) failed to equip — effects may not fire`);
+            console.warn(`[deploy] ${failed.length} card(s) failed to equip:`, failed.map(r => r?.error));
           } else {
-            console.log('[deploy] All cards equipped successfully — effects active');
+            console.log('[deploy] ✅ All cards equipped successfully');
           }
           // Signal server to force-reload this zone on next tick (picks up newly equipped cards)
           fetch(`/api/zones/${state.currentZoneId}/force-reload`, { method: 'POST' }).catch(() => null);
@@ -6440,16 +6457,43 @@
   // Direct wiring (not IIFE) so references are always fresh at call time
 
   function arenaAppendChatMsg(data) {
+    // Find this player's Nine sprite for the PFP image
+    let nineImgUrl = '';
+    let nineColor = '#D4A64B'; // fallback gold
+    state.nines.forEach(function(sprite, id) {
+      if (sprite.handle === data.handle || String(id) === String(data.playerId)) {
+        nineImgUrl = sprite.profileImage || '';
+        // Use house color as avatar background
+        const houseColors = {smoulders:'#e85a6a',darktide:'#6ac8d8',stonebark:'#b088e8',
+          ashenvale:'#6acd8a',stormrage:'#D4A64B',nighthollow:'#9966bb',
+          dawnbringer:'#ffcc44',manastorm:'#55aaff',plaguemire:'#88cc44'};
+        nineColor = houseColors[sprite.house] || '#D4A64B';
+      }
+    });
+
+    // Avatar: Nine PFP if available, else colored circle with initial
+    const initial = (data.handle || 'A')[0].toUpperCase();
+    const avatarStyle = 'width:22px;height:22px;border-radius:50%;flex-shrink:0;overflow:hidden;border:1.5px solid '+nineColor+'60;background:'+nineColor+'22;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:'+nineColor+';font-family:monospace;';
+    const avatar = nineImgUrl
+      ? '<div style="'+avatarStyle+'"><img src="'+nineImgUrl+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.textContent=''+initial+''"></div>'
+      : '<div style="'+avatarStyle+'">'+initial+'</div>';
+
     const gTag = data.guildTag ? ' <span class="chat-guild">['+data.guildTag+']</span>' : '';
     const safeMsg = (data.message || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const html = '<span class="chat-handle">@'+data.handle+'</span>'+gTag
-      +' <span style="color:var(--body);">'+safeMsg+'</span>';
-    // Push to all chat panes (tray, sidebar, mobile)
+
+    const html = '<div style="display:flex;gap:7px;align-items:flex-start;margin-bottom:5px;">'
+      + avatar
+      + '<div style="min-width:0;flex:1;">'
+      + '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">'
+      + '<span class="chat-handle">@'+data.handle+'</span>'+gTag
+      + '</div>'
+      + '<div style="color:var(--body);font-family:'Crimson Text',serif;font-size:12px;line-height:1.4;word-break:break-word;">'+safeMsg+'</div>'
+      + '</div></div>';
+
     ['arena-chat-log', 'sidebar-chat-log', 'mobile-chat-log'].forEach(function(id) {
       const log = document.getElementById(id);
       if (!log) return;
       const div = document.createElement('div');
-      div.className = 'chat-msg';
       div.innerHTML = html;
       log.appendChild(div);
       if (log.children.length > 50) log.removeChild(log.firstChild);
@@ -6474,9 +6518,20 @@
     if (!msg) return;
     if (!state.socket) { console.warn('[chat] socket not connected'); return; }
     if (!state.currentZoneId) { console.warn('[chat] no zone open'); return; }
-    const handle = state.playerHandle || state.playerHandle || localStorage.getItem('9lv_handle') || 'Anon';
+    // Derive handle from stored player data
+    let handle = state.playerHandle || '';
+    if (!handle) {
+      try { const p = JSON.parse(localStorage.getItem('9lv_player') || '{}'); handle = p.twitter_handle || p.handle || ''; } catch(e) {}
+    }
+    if (!handle) handle = localStorage.getItem('9lv_handle') || 'Anon';
     const guildTag = state.playerGuildTag || '';
-    state.socket.emit('chat:send', { zoneId: state.currentZoneId, message: msg, handle, guildTag });
+    state.socket.emit('chat:send', {
+      zoneId: state.currentZoneId,
+      message: msg,
+      handle,
+      guildTag,
+      playerId: state.playerId, // so receiver can do avatar lookup
+    });
     if (inputEl) inputEl.value = '';
   }
 
