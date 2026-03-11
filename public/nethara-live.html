@@ -3037,6 +3037,8 @@
           addFeedEvent(`⚔️ <span class="feed-name">${from}</span> → <span class="feed-name">${to}</span> <span class="feed-dmg">-${dmg}</span>${critPart}`, 'attack');
         }
         addBattleLog(logLine, 'default');
+        // Track live damage for combat meters
+        if (dmg > 0) trackCombatStat(fromId, ev.sourceName || getNineName(fromId), attacker?.guild, attacker?.house, 'damage', dmg);
         break;
       }
 
@@ -3104,6 +3106,8 @@
         // Spell casts always go to feed — they're the interesting events
         addFeedEvent(`✨ <span class="feed-name">${from}</span> casts <span style="color:var(--gold);font-weight:700">${cardName}</span>${targetPart}${dmgPart} ${effectPills}`, 'effect');
         addBattleLog(`✨ ${from} casts ${cardName}${to ? ' → '+to : ''}${dmg > 0 ? ' -'+dmg : ''} [${effects.join(', ')}]`, 'spell');
+        if (dmg > 0) trackCombatStat(fromId, from, caster?.guild, caster?.house, 'damage', dmg);
+        if (cardName) trackCardUsed(fromId, cardName);
         break;
       }
 
@@ -3137,6 +3141,9 @@
       // ── V2: KO — Nine knocked out
       case 'ko': {
         const koId = resolveId(ev.target || ev.nine_id);
+        const killerId = resolveId(ev.source || ev.attacker);
+        const killer = state.nines.get(killerId);
+        if (killerId) trackCombatStat(killerId, ev.sourceName || getNineName(killerId), killer?.guild, killer?.house, 'kos', 1);
         addFeedEvent(`💀 ${ev.targetName || getNineName(koId)} was KO'd!`, 'ko');
         const sprite = state.nines.get(koId);
         if (sprite) {
@@ -3200,6 +3207,9 @@
         const tId = resolveId(ev.target); const sprite = state.nines.get(tId);
         if (sprite) { fireworkHEAL(sprite.container.x, sprite.container.y); if (ev.value) showFloatingText(sprite.container.x, sprite.container.y, `+${ev.value}`, 0x44ffaa, 14); if (ev.target_hp != null) { updateNineHP(tId, ev.target_hp, sprite.maxHp); updateHpStrip(); } }
         addFeedEvent(`✚ <span class="feed-name">${getNineName(tId)}</span> <span class="feed-heal">+${ev.value||''} ${ev.type.replace('effect_','').toUpperCase()}</span>`, 'heal');
+        const healerId = resolveId(ev.source || ev.target);
+        const healer = state.nines.get(healerId);
+        if (ev.value > 0) trackCombatStat(healerId, getNineName(healerId), healer?.guild, healer?.house, 'heals', ev.value);
         break;
       }
       case 'effect_ward':
@@ -5569,37 +5579,108 @@
     }
   }
 
-  // ── CONTRIBUTION PANEL ──
-  if (!state.contributions) state.contributions = new Map();
+  // ── COMBAT METERS (WoW-style) ──
+  if (!state.combatMetrics) state.combatMetrics = new Map();
+  if (!state._metersTab) state._metersTab = 'dmg';
 
+  // Called on every tracked combat event — increments live totals
+  function trackCombatStat(id, name, guild, house, stat, amount) {
+    if (!id || !amount) return;
+    const m = state.combatMetrics.get(id) || { name: name || String(id).slice(0,8), guild: guild || '', house: house || '', damage: 0, heals: 0, kos: 0, cards: {} };
+    m.name = name || m.name;
+    m.guild = guild || m.guild;
+    m.house = house || m.house;
+    m[stat] = (m[stat] || 0) + amount;
+    state.combatMetrics.set(id, m);
+    renderCombatMeters();
+  }
+
+  function trackCardUsed(id, cardName) {
+    if (!id || !cardName) return;
+    const m = state.combatMetrics.get(id);
+    if (!m) return;
+    m.cards[cardName] = (m.cards[cardName] || 0) + 1;
+    state.combatMetrics.set(id, m);
+  }
+
+  // Sync from server state snapshots (fills in players not yet seen live)
   function updateContributions(nineStates) {
     for (const n of nineStates) {
       const id = n.id;
       if (!id) continue;
-      const existing = state.contributions.get(id) || { name: '', damage: 0, heals: 0, kos: 0 };
       const sprite = state.nines.get(id);
-      state.contributions.set(id, {
+      const existing = state.combatMetrics.get(id) || { name: '', guild: '', house: '', damage: 0, heals: 0, kos: 0, cards: {} };
+      state.combatMetrics.set(id, {
         name: sprite?.name || existing.name || String(id).slice(0,8),
-        guild: sprite?.guild || n.guildTag || '',
+        guild: sprite?.guild || n.guildTag || existing.guild || '',
+        house: sprite?.house || existing.house || '',
         damage: Math.max(existing.damage, n.damageDealt || 0),
         heals: Math.max(existing.heals, n.healingDone || 0),
         kos: Math.max(existing.kos, n.koCount || 0),
+        cards: existing.cards,
       });
     }
-    renderContributions();
+    renderCombatMeters();
   }
 
-  function renderContributions() {
-    const html = [...state.contributions.values()]
-      .sort((a, b) => b.damage - a.damage)
-      .map(c => `<div class="contrib-row">
-        <div class="contrib-name">${c.name}</div>
-        <span class="contrib-stat" style="color:#e85a6a">⚔️${c.damage}</span>
-        <span class="contrib-stat" style="color:#6acd8a">💚${c.heals}</span>
-        <span class="contrib-stat" style="color:#D4A64B">💀${c.kos}</span>
-      </div>`).join('');
-    const d = document.getElementById('contribution-list');
-    if (d) d.innerHTML = html;
+  // House → bar colour
+  function houseBarColor(house) {
+    const map = {
+      ashenvale: '#6acd8a', smoulders: '#e85a6a', manastorm: '#6ac8d8',
+      nighthollow: '#b088e8', plaguemire: '#a0c060', dawnbringer: '#f0c060',
+      darktide: '#60a0e8', stormrage: '#e8a060', stonebark: '#c0a080',
+    };
+    return map[(house||'').toLowerCase()] || '#D4A64B';
+  }
+
+  function renderCombatMeters() {
+    const el = document.getElementById('contribution-list');
+    if (!el) return;
+    const tab = state._metersTab || 'dmg';
+    const statKey = tab === 'dmg' ? 'damage' : tab === 'heals' ? 'heals' : 'kos';
+    const statColor = tab === 'dmg' ? '#e85a6a' : tab === 'heals' ? '#6acd8a' : '#D4A64B';
+    const statLabel = tab === 'dmg' ? 'DMG' : tab === 'heals' ? 'HEALS' : 'KOs';
+
+    const entries = [...state.combatMetrics.values()].filter(m => m[statKey] > 0).sort((a, b) => b[statKey] - a[statKey]);
+    const max = entries[0]?.[statKey] || 1;
+
+    // Guild totals
+    const guildTotals = {};
+    for (const m of state.combatMetrics.values()) {
+      if (!m.guild) continue;
+      guildTotals[m.guild] = (guildTotals[m.guild] || 0) + (m[statKey] || 0);
+    }
+    const guildEntries = Object.entries(guildTotals).sort((a, b) => b[1] - a[1]);
+
+    // Build HTML
+    const tabsHtml = `<div class="meters-tabs">
+      <button class="meters-tab${tab==='dmg'?' active':''}" onclick="state._metersTab='dmg';renderCombatMeters()">⚔️ DMG</button>
+      <button class="meters-tab${tab==='heals'?' active':''}" onclick="state._metersTab='heals';renderCombatMeters()">💚 HEALS</button>
+      <button class="meters-tab${tab==='kos'?' active':''}" onclick="state._metersTab='kos';renderCombatMeters()">💀 KOs</button>
+    </div>`;
+
+    const guildHtml = guildEntries.length ? `<div class="meters-guild-bar">
+      ${guildEntries.map(([g, v]) => `<div class="meters-guild-chip" style="background:${houseBarColor('')}22;color:${houseBarColor('')};border:1px solid ${houseBarColor('')}44">[${g}] ${v.toLocaleString()}</div>`).join('')}
+    </div>` : '';
+
+    const rowsHtml = entries.length ? entries.map((m, i) => {
+      const pct = Math.round((m[statKey] / max) * 100);
+      const color = houseBarColor(m.house);
+      const topCard = Object.entries(m.cards || {}).sort((a,b) => b[1]-a[1])[0];
+      const cardTip = topCard ? ` · ${topCard[0]}` : '';
+      return `<div class="meter-row">
+        <div class="meter-row-top">
+          <span class="meter-rank">${i+1}</span>
+          <span class="meter-name" title="${m.guild ? '['+m.guild+'] ' : ''}${m.name}${cardTip}">${m.guild ? '<span style="color:'+color+';opacity:.7">['+m.guild+']</span> ' : ''}${m.name}</span>
+          <span class="meter-value" style="color:${statColor}">${m[statKey].toLocaleString()}</span>
+        </div>
+        <div class="meter-bar-track">
+          <div class="meter-bar-fill" style="width:${pct}%;background:${color}"></div>
+        </div>
+      </div>`;
+    }).join('') : `<div style="padding:16px 10px;text-align:center;font-family:'Crimson Text',serif;color:var(--faint);font-size:13px;font-style:italic">No ${statLabel} recorded yet.</div>`;
+
+    el.innerHTML = tabsHtml + guildHtml + `<div class="meters-rows">${rowsHtml}</div>`;
   }
 
   // ── FULL BATTLE LOG ──
