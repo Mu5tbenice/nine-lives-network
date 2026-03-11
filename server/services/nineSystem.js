@@ -1,21 +1,17 @@
 // server/services/nineSystem.js
 // Handles creating and managing player Nines
-//
-// UPDATED March 2026 — Removed hardcoded house stats.
-// Now reads from houses table (single source of truth).
+// V2: reads all stats from houses table (source of truth)
 
 const supabase = require('../config/supabase');
 
 /**
  * Create a Nine for a player based on their house.
- * Called during registration after house selection.
- * Stats come from the houses table — never hardcoded.
+ * Reads stats from houses table — no hardcoded values.
  */
 async function createNine(playerId, houseId, name = null) {
-  // Get house stats from DB (single source of truth)
   const { data: house, error: houseErr } = await supabase
     .from('houses')
-    .select('name, base_atk, base_hp, base_spd, base_def, base_luck')
+    .select('name, atk, hp, spd, def, luck')
     .eq('id', houseId)
     .single();
 
@@ -23,7 +19,6 @@ async function createNine(playerId, houseId, name = null) {
     throw new Error(`Invalid house ID: ${houseId}`);
   }
 
-  // Check if player already has a Nine
   const { data: existing } = await supabase
     .from('player_nines')
     .select('id')
@@ -41,12 +36,12 @@ async function createNine(playerId, houseId, name = null) {
       player_id: playerId,
       house_id: houseId,
       name: name,
-      base_atk:  house.base_atk,
-      base_hp:   house.base_hp,
-      base_spd:  house.base_spd,
-      base_def:  house.base_def,
-      base_luck: house.base_luck,
-      current_hp: house.base_hp,
+      base_atk: house.atk,
+      base_hp: house.hp,
+      base_spd: house.spd,
+      base_def: house.def,
+      base_luck: house.luck,
+      current_hp: house.hp,
       is_ko: false,
     })
     .select()
@@ -57,17 +52,14 @@ async function createNine(playerId, houseId, name = null) {
     throw error;
   }
 
-  console.log(`Created Nine for player ${playerId}: ${house.name} (ATK:${house.base_atk} HP:${house.base_hp} SPD:${house.base_spd})`);
+  console.log(`Created Nine for player ${playerId}: ${house.name} (ATK ${house.atk} / HP ${house.hp} / SPD ${house.spd} / DEF ${house.def} / LUCK ${house.luck})`);
   return data;
 }
 
-/**
- * Get a player's Nine with full stats.
- */
 async function getNine(playerId) {
   const { data, error } = await supabase
     .from('player_nines')
-    .select('*, houses:house_id(name, slug, base_atk, base_hp, base_spd, base_def, base_luck, role)')
+    .select('*, schools:house_id(name, element)')
     .eq('player_id', playerId)
     .single();
 
@@ -75,16 +67,14 @@ async function getNine(playerId) {
     console.error('Error fetching Nine:', error);
     return null;
   }
-
   return data;
 }
 
 /**
- * Heal a Nine to full HP (used on deploy, midnight reset, etc.)
- * Uses house base_hp from houses table as the true max.
+ * Heal a Nine to full HP.
+ * Reads HP from houses table — V2 source of truth.
  */
 async function healNine(nineId) {
-  // Get the Nine's house to find true max HP
   const { data: nine } = await supabase
     .from('player_nines')
     .select('house_id')
@@ -95,15 +85,15 @@ async function healNine(nineId) {
 
   const { data: house } = await supabase
     .from('houses')
-    .select('base_hp')
+    .select('hp')
     .eq('id', nine.house_id)
     .single();
 
-  if (!house) return null;
+  const fullHp = house?.hp || 100;
 
   const { data, error } = await supabase
     .from('player_nines')
-    .update({ current_hp: house.base_hp, is_ko: false })
+    .update({ current_hp: fullHp, base_hp: fullHp, is_ko: false })
     .eq('id', nineId)
     .select()
     .single();
@@ -112,14 +102,9 @@ async function healNine(nineId) {
     console.error('Error healing Nine:', error);
     return null;
   }
-
   return data;
 }
 
-/**
- * Deal damage to a Nine. Returns updated Nine.
- * If HP reaches 0, sets is_ko = true.
- */
 async function damageNine(nineId, amount) {
   const { data: nine } = await supabase
     .from('player_nines')
@@ -143,29 +128,34 @@ async function damageNine(nineId, amount) {
     console.error('Error damaging Nine:', error);
     return null;
   }
-
   return data;
 }
 
 /**
- * Midnight reset: heal all Nines to full HP based on their house base_hp.
+ * Midnight reset: heal all Nines to full HP from houses table.
  */
 async function midnightResetAllNines() {
-  // Join player_nines with houses to get true base_hp for each
   const { data: nines, error: fetchError } = await supabase
     .from('player_nines')
-    .select('id, house_id, houses:house_id(base_hp)');
+    .select('id, house_id');
 
   if (fetchError) {
     console.error('Error fetching nines for reset:', fetchError);
     return;
   }
 
+  const { data: houses } = await supabase
+    .from('houses')
+    .select('id, hp');
+
+  const houseHpMap = {};
+  if (houses) houses.forEach(h => { houseHpMap[h.id] = h.hp; });
+
   for (const nine of nines) {
-    const maxHp = nine.houses?.base_hp || 100;
+    const fullHp = houseHpMap[nine.house_id] || 100;
     await supabase
       .from('player_nines')
-      .update({ current_hp: maxHp, is_ko: false })
+      .update({ current_hp: fullHp, base_hp: fullHp, is_ko: false })
       .eq('id', nine.id);
   }
 
