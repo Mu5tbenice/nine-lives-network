@@ -172,7 +172,15 @@ function doLogout(){localStorage.removeItem('player_id');window.location.href='/
 if(localStorage.getItem('player_id')){var ml=document.getElementById('mobileLogout');if(ml)ml.style.display='';}
 function timeAgo(d){var diff=Date.now()-new Date(d).getTime(),m=Math.floor(diff/60000);if(m<60)return m+'m ago';var h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
-function getZoneImg(z){return(z.image_url?(z.image_url.startsWith('/')?z.image_url:'/assets/images/zones/'+z.image_url):'')||ZONE_IMAGES[z.id]||'';}
+function getZoneImg(z){
+  var BIOME_LIST=['Hanwu-Boglands.png','misty-falls.png','ancient-ruins.png','twilight-grove.png','dragons-rest.jpg','skycastle.png','chaos-rift.png','crystal-creek.png','abysal-edge.png'];
+  var BIOME_MAP={'scorched-plains.jpg':'chaos-rift.png','scorched-plains.png':'chaos-rift.png'};
+  var f=z.image_url||'';
+  if(!f) return '/assets/images/biomes/'+BIOME_LIST[((z.id||1)-1)%BIOME_LIST.length];
+  f=BIOME_MAP[f]||f;
+  if(f.startsWith('/')) return f;
+  return '/assets/images/biomes/'+f;
+}
 
 /* ═══ GUILD TAG SAVE ═══ */
 async function saveGuildTag(){
@@ -224,25 +232,27 @@ async function clearGuildTag(){
       alert(d.error||'Could not claim reward');
     }
   }
-  
+
 /* ═══ LOAD ═══ */
 async function loadDashboard(){
   var pid=getPlayerId();
   if(!pid){document.getElementById('loadingState').style.display='none';document.getElementById('errorState').style.display='block';return;}
   try{
-    var[pR,cR,zR,sR,dR,snR,stR]=await Promise.all([
+    var[pR,cR,zR,sR,dR,snR,stR,zcR]=await Promise.all([
       fetch('/api/players/'+pid),
       fetch('/api/zones/my-deployments/'+pid+'?limit=5'),
       fetch('/api/zones'),
       fetch('/api/leaderboards/schools'),
       fetch('/api/zones/my-deployments/'+pid),
       fetch('/api/combat/next-cycle'),
-      fetch('/api/stats/'+pid)
+      fetch('/api/stats/'+pid),
+      fetch('/api/zones/counts')
     ]);
     var player=pR.ok?await pR.json():null;
     var castsRaw=cR&&cR.ok?await cR.json():[];
     var casts=Array.isArray(castsRaw)?castsRaw:(castsRaw.deployments||[]);
-    var zones=zR.ok?await zR.json():[];
+    var zoneCounts=zcR&&zcR.ok?await zcR.json():{};
+    var zones=(zR.ok?await zR.json():[]).map(function(z){return Object.assign({},z,{arena_nines:zoneCounts[z.id]||0});});
     var schools=sR.ok?await sR.json():[];
     var myDeploys=dR.ok?await dR.json():{deployments:[]};
     var snapshotInfo=snR.ok?await snR.json():{};
@@ -253,7 +263,20 @@ async function loadDashboard(){
     var questData=qR&&qR.ok?await qR.json():{quests:[]};
     var quests=questData.quests||[];
 
-    render(player,casts||[],zones||[],schools||[],quests,myDeploys.deployments||[],snapshotInfo,nineStats);
+    render(player,casts||[],zones||[],schools||[],quests,myDeploys.deployments||[],snapshotInfo,nineStats,questData);
+
+    // Update login streak in background — update display if streak changed
+    fetch('/api/players/'+pid+'/streak-ping',{method:'POST'})
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(d){
+        if(d&&d.updated){
+          // Refresh streak display without full reload
+          var streakNum=document.getElementById('streakNumber');
+          var streakIcon=document.getElementById('streakIcon');
+          if(streakNum) streakNum.textContent=d.streak;
+          if(streakIcon) streakIcon.textContent=d.streak>=7?'💎':'🔥';
+        }
+      }).catch(function(){});
   }catch(err){
     console.error('Dashboard load error:',err);
     document.getElementById('loadingState').style.display='none';
@@ -280,7 +303,7 @@ function sectionLabel(icon,text,fadeClass){
 }
 
 /* ═══ RENDER ═══ */
-async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,nineStats){
+async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,nineStats,questData){
   // Save player data to localStorage for Nine preview + other pages
   try{localStorage.setItem('9lv_player',JSON.stringify(player));}catch(e){}
 
@@ -288,6 +311,7 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,n
   var pid=getPlayerId();
   var pts=player.seasonal_points||0;
   var streak=player.streak||0;
+  console.log('[9LV Debug] player.streak from API:', player.streak, '→ using:', streak);
   var rc=Array.isArray(casts)?casts.slice(0,5):[];
 
   // Nine stats — from /api/stats API (house + cards + items, server-calculated)
@@ -392,58 +416,59 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,n
 
   qH+='</div></div>';
 
-  // ── ACTIVE ZONES ──
-  var az=(Array.isArray(zones)?zones:[]).filter(function(z){return z.is_active!==false&&z.zone_type!=='home';}).slice(0,4);
+  // ── ACTIVE ZONES — sorted by most active Nines ──
+  var az=(Array.isArray(zones)?zones:[])
+    .filter(function(z){return z.is_active!==false&&z.zone_type!=='home';})
+    .sort(function(a,b){return (b.arena_nines||0)-(a.arena_nines||0);})
+    .slice(0,4);
   var zH='';
   az.forEach(function(z){
     var img=getZoneImg(z);
-    var ctrl=z.controlling_school_id&&HOUSES[z.controlling_school_id]?HOUSES[z.controlling_school_id]:null;
-    var ctrlName=ctrl?ctrl.name:'Contested';
-    // Region bonus from house slug
-    var houseSlug=ctrl?ctrl.slug:(z.region_school_id&&HOUSES[z.region_school_id]?HOUSES[z.region_school_id].slug:'');
-    var rb=REGION_BONUSES[houseSlug]||null;
-    var isObj=z.is_current_objective;
+    var casters=z.arena_nines||0;
+    var isObj=z.is_current_objective||z.daily_objective;
+    var ctrlGuild=z.controlling_guild||z.controlling_guild_tag||null;
 
-    zH+='<a href="/nethara-live.html?zone_id='+z.id+'" style="display:block;position:relative;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:transform 0.2s;text-decoration:none;">';
-    if(img){
-      zH+='<div style="height:110px;background-image:url(\''+img+'\');background-size:cover;background-position:center;position:relative;">'
-        +'<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(18,14,30,0.97) 0%,rgba(18,14,30,0.3) 55%);"></div>';
+    zH+='<a href="/nethara-live.html?zone_id='+z.id+'" style="display:block;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:transform 0.2s,border-color 0.2s;text-decoration:none;background:var(--bg-card);" onmouseenter="this.style.borderColor=\'rgba(212,166,75,0.3)\';this.style.transform=\'translateY(-2px)\'" onmouseleave="this.style.borderColor=\'rgba(255,255,255,0.06)\';this.style.transform=\'none\'">';
 
-      // Event badge (top left)
-      if(isObj){
-        zH+='<div style="position:absolute;top:6px;left:6px;right:6px;padding:4px 8px;border-radius:6px;background:rgba(212,166,75,0.2);border:1px solid rgba(212,166,75,0.4);display:flex;align-items:center;gap:4px;">'
-          +'<span style="font-size:10px;">⭐</span>'
-          +'<span style="font-family:var(--font-data);font-size:5px;color:var(--gold);letter-spacing:0.5px;">DAILY OBJECTIVE</span>'
-          +'</div>';
-      }
+    // Image section
+    zH+='<div style="height:120px;background-image:url(\''+img+'\');background-size:cover;background-position:center;position:relative;">'
+      +'<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(14,10,24,0.98) 0%,rgba(14,10,24,0.2) 60%,transparent 100%);"></div>';
 
-      // Region bonus badge (top right)
-      if(rb){
-        var rbTop=isObj?'30px':'6px';
-        zH+='<div style="position:absolute;top:'+rbTop+';right:6px;padding:3px 7px;border-radius:4px;background:'+rb.color+'15;border:1px solid '+rb.color+'30;">'
-          +'<span style="font-family:var(--font-data);font-size:5px;color:'+rb.color+';">'+rb.text+'</span>'
-          +'</div>';
-      }
-
-      // Bottom info
-      zH+='<div style="position:absolute;bottom:0;left:0;right:0;padding:8px 10px;z-index:2;">'
-        +'<div style="font-family:var(--font-title);font-size:12px;font-weight:700;color:var(--text-bright);letter-spacing:1px;text-shadow:0 1px 4px rgba(0,0,0,0.8);">'+esc(z.name)+'</div>'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;">'
-        +'<span style="font-family:var(--font-data);font-size:6px;color:'+(ctrl?ctrl.color:'var(--text-faint)')+';">'+esc(ctrlName)+'</span>'
-        +'<span style="font-family:var(--font-mono);font-size:7px;color:var(--text-faint);">'+(z.active_casters||0)+' active</span>'
-        +'</div>'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:3px;">'
-        +'<span style="font-family:var(--font-data);font-size:5px;color:var(--text-muted);">🏰 '+(z.controlling_guild_tag||ctrlName)+'</span>'
-        +(isObj?'<span style="font-family:var(--font-body);font-size:9px;color:var(--gold);font-style:italic;">×1.5 points</span>':'')
-        +'</div>'
-        +'</div></div>';
-    }else{
-      zH+='<div style="height:110px;background:rgba(255,255,255,0.03);display:flex;align-items:flex-end;padding:8px 10px;"><div style="font-family:var(--font-title);font-size:11px;color:var(--text-bright);">'+esc(z.name)+'</div></div>';
+    // Objective badge top-left
+    if(isObj){
+      zH+='<div style="position:absolute;top:6px;left:6px;padding:3px 8px;border-radius:5px;background:rgba(212,166,75,0.2);border:1px solid rgba(212,166,75,0.4);">'
+        +'<span style="font-family:var(--font-data);font-size:5px;color:var(--gold);">⭐ OBJECTIVE</span>'
+        +'</div>';
     }
+
+    // Active Nines badge top-right — always shown, green
+    zH+='<div style="position:absolute;top:6px;right:6px;padding:3px 8px;border-radius:5px;background:rgba(10,8,18,0.85);border:1px solid rgba(68,204,136,0.25);">'
+      +'<span style="font-family:var(--font-data);font-size:6px;color:#44cc88;">⚔️ '+casters+'</span>'
+      +'</div>';
+
+    // Zone name bottom in gold
+    zH+='<div style="position:absolute;bottom:8px;left:10px;right:10px;z-index:2;">'
+      +'<div style="font-family:var(--font-title);font-size:13px;font-weight:700;color:var(--gold);letter-spacing:1px;text-shadow:0 1px 8px rgba(0,0,0,0.95);">'+esc(z.name)+'</div>'
+      +'</div>'
+      +'</div>';
+
+    // Card body: controlling guild pill
+    zH+='<div style="padding:8px 10px;">';
+    if(ctrlGuild){
+      zH+='<div style="display:flex;align-items:center;gap:5px;">'
+        +'<span style="width:6px;height:6px;border-radius:50%;background:var(--gold);flex-shrink:0;display:inline-block;"></span>'
+        +'<span style="font-family:var(--font-data);font-size:6px;color:var(--gold);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🏰 '+esc(ctrlGuild)+'</span>'
+        +'</div>';
+    }else{
+      zH+='<span style="font-family:var(--font-data);font-size:6px;color:var(--text-faint);">Unclaimed — deploy to capture!</span>';
+    }
+    zH+=(isObj?'<div style="font-family:var(--font-data);font-size:5px;color:var(--gold);margin-top:3px;">×1.5 points this zone</div>':'');
+    zH+='</div>';
+
     zH+='</a>';
   });
 
-  }
+
 
   /* ═══════════════════════════════════
      ASSEMBLE THE DASHBOARD
@@ -561,14 +586,14 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,n
     // Streak
     +'<div style="flex:1;padding:12px 10px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);text-align:center;">'
     +'<div style="font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px;">STREAK</div>'
-    +'<div style="font-size:20px;">'+(streak>=7?'💎':'🔥')+'</div>'
-    +'<div style="font-family:var(--font-data);font-size:12px;color:var(--text-bright);margin-top:2px;">'+streak+'</div>'
+    +'<div id="streakIcon" style="font-size:20px;">'+(streak>=7?'💎':'🔥')+'</div>'
+    +'<div id="streakNumber" style="font-family:var(--font-data);font-size:12px;color:var(--text-bright);margin-top:2px;">'+streak+'</div>'
     +'<div style="display:flex;gap:3px;justify-content:center;margin-top:4px;">'+sH+'</div>'
     +'</div>'
 
     // Packs — dynamic status
     +'<a href="/packs.html" id="packsWidget" style="flex:1;padding:12px 10px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);text-align:center;text-decoration:none;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color 0.2s;">'
-    +'<div style="margin-bottom:4px;"><img src="/assets/images/booster-pack.png" style="width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(212,166,75,0.4));"></div>'
+    +'<div style="margin-bottom:4px;"><img src="/assets/images/booster-pack.png" style="width:44px;height:58px;object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(0 0 8px rgba(212,166,75,0.5));"></div>'
     +'<div style="font-family:var(--font-data);font-size:7px;color:var(--gold);letter-spacing:1px;">PACKS</div>'
     +'<div id="packStatus" style="margin-top:4px;"></div>'
     +'</a>'

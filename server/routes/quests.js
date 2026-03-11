@@ -126,8 +126,10 @@ const QUEST_POOL = [
     icon: '📦',
     points: 20,
     check: async (playerId, todayStart) => {
+      // When a pack is opened, cards are added to player_cards
+      // Check if player received any cards today (pack was opened)
       const { data } = await supabase
-        .from('player_packs')
+        .from('player_cards')
         .select('id')
         .eq('player_id', playerId)
         .gte('created_at', todayStart)
@@ -142,12 +144,13 @@ const QUEST_POOL = [
     icon: '📦',
     points: 30,
     check: async (playerId, todayStart) => {
+      // Each pack gives 5 cards — 2 packs = 10+ cards today
       const { data } = await supabase
-        .from('player_packs')
+        .from('player_cards')
         .select('id')
         .eq('player_id', playerId)
         .gte('created_at', todayStart);
-      return (data || []).length >= 2;
+      return (data || []).length >= 10;
     }
   },
   {
@@ -199,14 +202,23 @@ const QUEST_POOL = [
     icon: '📖',
     points: 25,
     check: async (playerId, todayStart) => {
-      const { data } = await supabase
+      // Get active deployments for this player
+      const { data: deploys } = await supabase
         .from('zone_deployments')
-        .select('card_slot_1, card_slot_2, card_slot_3')
+        .select('id')
         .eq('player_id', playerId)
-        .eq('is_active', true)
-        .limit(5);
-      if (!data) return false;
-      return data.some(d => d.card_slot_1 && d.card_slot_2 && d.card_slot_3);
+        .eq('is_active', true);
+      if (!deploys || deploys.length === 0) return false;
+      // Check if any deployment has 3 active card slots
+      for (const dep of deploys) {
+        const { data: slots } = await supabase
+          .from('zone_card_slots')
+          .select('id')
+          .eq('deployment_id', dep.id)
+          .eq('is_active', true);
+        if ((slots || []).length >= 3) return true;
+      }
+      return false;
     }
   },
   {
@@ -218,13 +230,18 @@ const QUEST_POOL = [
     check: async (playerId, todayStart) => {
       const { data: deploys } = await supabase
         .from('zone_deployments')
-        .select('card_slot_1, card_slot_2, card_slot_3')
+        .select('id')
         .eq('player_id', playerId)
         .eq('is_active', true)
         .limit(5);
       if (!deploys) return false;
-      for (const d of deploys) {
-        const cardIds = [d.card_slot_1, d.card_slot_2, d.card_slot_3].filter(Boolean);
+      for (const dep of deploys) {
+        const { data: slots } = await supabase
+          .from('zone_card_slots')
+          .select('card_id')
+          .eq('deployment_id', dep.id)
+          .eq('is_active', true);
+        const cardIds = (slots || []).map(s => s.card_id).filter(Boolean);
         if (cardIds.length < 2) continue;
         const { data: cards } = await supabase
           .from('spells')
