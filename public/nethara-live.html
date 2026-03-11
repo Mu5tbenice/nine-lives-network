@@ -146,6 +146,14 @@
     /* House crest removed — zones are guild-controlled */
     .zone-card-house-crest { display: none; }
 
+    .zone-card-deployed-badge {
+      position: absolute; top: 8px; left: 8px; z-index: 2;
+      font-family: 'Press Start 2P', monospace; font-size: 7px;
+      color: var(--gold); background: rgba(10,8,18,0.85);
+      padding: 4px 10px; border-radius: 6px;
+      backdrop-filter: blur(4px); border: 1px solid rgba(212,166,75,0.4);
+      letter-spacing: 0.5px;
+    }
     .zone-card-fighter-count {
       position: absolute; top: 8px; right: 8px; z-index: 2;
       font-family: 'Press Start 2P', monospace; font-size: 7px;
@@ -969,6 +977,7 @@
     playerHouse: null,
     playerLevel: 1,
     zones: [],
+    deployedZoneIds: new Set(),
     currentTab: 'hot',
     currentZoneId: null,
     currentZone: null,
@@ -1072,14 +1081,24 @@
   // ===== LOAD ZONES =====
   async function loadZones() {
     try {
-      // Load zones and deployment counts in parallel
-      const [zonesRes, countsRes] = await Promise.all([
+      // Load zones, counts, and player deployments in parallel
+      const fetches = [
         fetch('/api/zones'),
-        fetch('/api/zones/counts')
-      ]);
+        fetch('/api/zones/counts'),
+      ];
+      if (state.playerId) fetches.push(fetch(`/api/zones/my-deployments/${state.playerId}`));
+
+      const [zonesRes, countsRes, myDepRes] = await Promise.all(fetches);
       if (!zonesRes.ok) throw new Error('Failed to load zones');
       const data = await zonesRes.json();
       const counts = countsRes.ok ? await countsRes.json() : {};
+
+      // Store which zone IDs this player is currently deployed to
+      if (myDepRes && myDepRes.ok) {
+        const myDepData = await myDepRes.json();
+        state.deployedZoneIds = new Set((myDepData.deployments || []).map(d => d.zone_id));
+        updatePlayerBar();
+      }
 
       // Merge nines count into each zone object
       state.zones = (data.zones || data || []).map(z => ({
@@ -1191,7 +1210,14 @@
 
     // Image banner with fighter count (always shown) and gold zone name
     const fighterBadge = '<div class="zone-card-fighter-count">\u2694\uFE0F ' + casters + '</div>';
-    const imgBanner = '<div class="zone-card-img-wrap">'      + '<img src="' + biomeImg + '" alt="' + zone.name + '" loading="lazy" onerror="this.style.display=\'none\'">'      + fighterBadge      + '<div class="zone-card-overlay-name">' + zone.name + '</div>'      + '</div>';
+    const isDeployed = state.deployedZoneIds.has(zone.id);
+    const deployedBadge = isDeployed ? '<div class="zone-card-deployed-badge">\u2694\uFE0F DEPLOYED</div>' : '';
+    const imgBanner = '<div class="zone-card-img-wrap">'
+      + '<img src="' + biomeImg + '" alt="' + zone.name + '" loading="lazy" onerror="this.style.display=\'none\'">'
+      + fighterBadge
+      + deployedBadge
+      + '<div class="zone-card-overlay-name">' + zone.name + '</div>'
+      + '</div>';
 
     // Objective banner
     let bannerHTML = isObjective
@@ -1255,7 +1281,7 @@
 
   function updatePlayerBar() {
     document.getElementById('player-level').textContent = state.playerLevel || '--';
-    // TODO: fetch real ticket count and zone count
+    document.getElementById('player-zones').textContent = state.deployedZoneIds.size;
   }
 
   // ===== ARENA VIEW =====
