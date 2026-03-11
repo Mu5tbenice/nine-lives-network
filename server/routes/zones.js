@@ -228,8 +228,8 @@ router.post('/equip-card', async (req, res) => {
       return res.status(400).json({ error: 'Not deployed on this zone — deploy first' });
     }
 
-    // Get the card from player's collection
-    const { data: card } = await supabase
+    // Get the card from player's collection — admin client bypasses RLS
+    const { data: card } = await supabaseAdmin
       .from('player_cards')
       .select('*, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)')
       .eq('id', card_id)
@@ -243,8 +243,8 @@ router.post('/equip-card', async (req, res) => {
     // V5: Check sharpness instead of exhaustion — 0% sharpness still works (50% power)
     // Cards can always be equipped, sharpness just affects effectiveness
 
-    // Check card isn't already equipped on ANOTHER zone
-    const { data: existingSlots } = await supabase
+    // Check card isn't already equipped on ANOTHER zone — admin client
+    const { data: existingSlots } = await supabaseAdmin
       .from('zone_card_slots')
       .select('id, deployment:deployment_id(zone_id)')
       .eq('card_id', card_id)
@@ -355,32 +355,6 @@ router.post('/unequip-card', async (req, res) => {
 // GET /api/zones/:zoneId/deployments
 // List all Nines deployed on a zone with their loadouts
 // ═══════════════════════════════════════════
-// ═══════════════════════════════════════════
-// GET /api/zones/counts
-// Lightweight: returns {zone_id: total_nines} for all zones
-// Must be declared BEFORE /:zoneId routes
-// ═══════════════════════════════════════════
-router.get('/counts', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('zone_deployments')
-      .select('zone_id')
-      .eq('is_active', true);
-
-    if (error) return res.status(500).json({ error: error.message });
-
-    const counts = {};
-    (data || []).forEach(d => {
-      counts[d.zone_id] = (counts[d.zone_id] || 0) + 1;
-    });
-
-    res.json(counts); // e.g. { "10": 2, "15": 1 }
-  } catch (err) {
-    console.error('Zone counts error:', err);
-    res.status(500).json({ error: 'Failed to fetch zone counts' });
-  }
-});
-
 router.get('/:zoneId/deployments', async (req, res) => {
   try {
     const zoneId = parseInt(req.params.zoneId);
@@ -478,8 +452,8 @@ router.get('/:zoneId/my-loadout/:playerId', async (req, res) => {
     const zoneId = parseInt(req.params.zoneId);
     const playerId = parseInt(req.params.playerId);
 
-    // Find deployment
-    const { data: deployment } = await supabase
+    // Find deployment — use admin client to bypass RLS
+    const { data: deployment } = await supabaseAdmin
       .from('zone_deployments')
       .select('id')
       .eq('player_id', playerId)
@@ -491,8 +465,8 @@ router.get('/:zoneId/my-loadout/:playerId', async (req, res) => {
       return res.json({ loadout: [], slots_used: 0, slots_max: MAX_CARDS_PER_ZONE });
     }
 
-    // Get active card slots with card details
-    const { data: slots } = await supabase
+    // Get active card slots with card details — use admin client to bypass RLS
+    const { data: slots } = await supabaseAdmin
       .from('zone_card_slots')
       .select(`
         id, card_id, slot_number,
@@ -518,6 +492,48 @@ router.get('/:zoneId/my-loadout/:playerId', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════
+// ═══════════════════════════════════════════
+// GET /api/zones/counts — Active deployment counts + leading guild per zone
+// Returns: { zone_id: { count: N, top_guild: 'TAG' }, ... }
+// ═══════════════════════════════════════════
+router.get('/counts', async (req, res) => {
+  try {
+    const { data: deployments, error } = await supabaseAdmin
+      .from('zone_deployments')
+      .select('zone_id, guild_tag, current_hp')
+      .eq('is_active', true);
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    const counts = {};
+    (deployments || []).forEach(d => {
+      const zid = d.zone_id;
+      if (!counts[zid]) counts[zid] = { count: 0, guilds: {} };
+      counts[zid].count++;
+      const tag = d.guild_tag || 'unaffiliated';
+      if (!counts[zid].guilds[tag]) counts[zid].guilds[tag] = { hp: 0, fighters: 0 };
+      counts[zid].guilds[tag].hp += d.current_hp || 0;
+      counts[zid].guilds[tag].fighters++;
+    });
+
+    // Determine top guild per zone by total HP
+    const result = {};
+    for (const [zid, data] of Object.entries(counts)) {
+      const sorted = Object.entries(data.guilds).sort((a, b) => b[1].hp - a[1].hp);
+      result[zid] = {
+        count: data.count,
+        top_guild: sorted[0]?.[0] || null,
+        guilds: data.guilds,
+      };
+    }
+
+    res.json(result);
+  } catch (err) {
+    console.error('Zone counts error:', err);
+    res.status(500).json({ error: 'Failed to fetch zone counts' });
+  }
+});
+
 // GET /api/zones — List all active zones
 // ═══════════════════════════════════════════
 router.get('/', async (req, res) => {
@@ -532,32 +548,6 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error('Error fetching zones:', err);
     res.status(500).json({ error: 'Failed to fetch zones' });
-  }
-});
-
-// GET live combat stats for zone detail panel
-router.get('/:zoneId/combat-stats', async (req, res) => {
-  try {
-    const zoneId = parseInt(req.params.zoneId);
-    const stats = global.__combatEngine?.getZoneStats(zoneId);
-    if (!stats) return res.json({ fighters: [] });
-    res.json(stats);
-  } catch (err) {
-    console.error('combat-stats error:', err);
-    res.json({ fighters: [] });
-  }
-});
-
-// POST force-reload — tells combat engine to reload this zone on next tick
-router.post('/:zoneId/force-reload', (req, res) => {
-  try {
-    const zoneId = parseInt(req.params.zoneId);
-    if (global.__combatEngine?.forceReload) {
-      global.__combatEngine.forceReload(zoneId);
-    }
-    res.json({ success: true });
-  } catch (err) {
-    res.json({ success: false });
   }
 });
 

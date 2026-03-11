@@ -284,11 +284,11 @@
 
     /* ── Nerm ── */
     .nerm-bubble-container {
-      position: absolute; bottom: 230px; left: 10px; z-index: 55;
-      display: flex; align-items: flex-end; gap: 8px;
+      position: absolute; top: 60px; left: 50%; transform: translateX(-50%); z-index: 55;
+      display: flex; align-items: center; gap: 8px;
       pointer-events: none; opacity: 0;
       transition: opacity 0.4s ease;
-      max-width: 300px;
+      max-width: 380px; min-width: 260px;
     }
     .nerm-bubble-container.visible { opacity: 1; }
     .nerm-pfp {
@@ -307,12 +307,12 @@
       min-width: 160px; max-width: 230px;
     }
     .nerm-bubble::before {
-      content: ''; position: absolute; left: -7px; bottom: 14px;
+      content: ''; position: absolute; left: -7px; top: 14px;
       border-top: 6px solid transparent; border-bottom: 6px solid transparent;
       border-right: 7px solid var(--gold);
     }
     .nerm-bubble::after {
-      content: ''; position: absolute; left: -5px; bottom: 15px;
+      content: ''; position: absolute; left: -5px; top: 15px;
       border-top: 5px solid transparent; border-bottom: 5px solid transparent;
       border-right: 6px solid rgba(14,10,24,0.95);
     }
@@ -436,8 +436,13 @@
 
     /* ── Deploy CTA ── */
     .arena-deploy-cta {
-      position: absolute; bottom: 65px; left: 50%; transform: translateX(-50%); z-index: 25;
+      position: absolute;
+      /* Center exactly in the available arena space */
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 30;
       pointer-events: auto;
+      text-align: center;
     }
     .btn-join-battle {
       font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700;
@@ -764,7 +769,8 @@
       .countdown-time { font-size: 7px; }
       .arena-scoreboard { display: none; }
       .nerm-bubble-container {
-        bottom: 250px; left: 8px; right: auto; max-width: calc(100% - 16px); z-index: 55;
+        top: 58px; left: 50%; transform: translateX(-50%); bottom: auto; right: auto;
+        max-width: calc(100% - 24px); z-index: 55;
       }
       .nerm-bubble { min-width: 0; max-width: 200px; font-size: 12px; padding: 7px 10px; }
       .nerm-pfp { width: 36px; height: 36px; }
@@ -775,8 +781,8 @@
       .arena-feed { display: none; }
       .arena-hp-strip { display: none; }
 
-      .arena-deploy-cta { bottom: 0; right: 0; left: 0; transform: none; text-align: center; padding: 12px; }
-      .btn-join-battle { font-size: 13px; padding: 12px 28px; }
+      .arena-deploy-cta { top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 0; }
+      .btn-join-battle { font-size: 14px; padding: 16px 36px; }
 
       .deploy-inner { padding: 14px 10px; margin: 10px auto; }
       .deploy-title { font-size: 16px; }
@@ -870,6 +876,17 @@
     <div id="sidebar-guilds">
       <div class="sidebar-section-label">COMPETING GUILDS</div>
       <div id="sidebar-guild-rows"></div>
+    </div>
+
+    <!-- Chat always visible in sidebar — no deployment required -->
+    <div id="sidebar-chat" style="flex:1;display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,0.07);min-height:0;">
+      <div class="sidebar-section-label" style="flex-shrink:0;">ZONE CHAT</div>
+      <div id="sidebar-chat-log" style="flex:1;overflow-y:auto;padding:6px 10px;font-family:'Crimson Text',serif;font-size:12px;line-height:1.4;"></div>
+      <div style="display:flex;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
+        <input id="sidebar-chat-input" type="text" maxlength="120" placeholder="Say something..."
+          style="flex:1;background:none;border:none;outline:none;color:var(--bright);font-family:'Crimson Text',serif;font-size:12px;padding:7px 10px;">
+        <button id="sidebar-chat-send" style="background:none;border:none;color:var(--gold);cursor:pointer;padding:7px 10px;font-size:13px;">➤</button>
+      </div>
     </div>
   </div>
 
@@ -1179,11 +1196,16 @@
         updatePlayerBar();
       }
 
-      // Merge nines count into each zone object
-      state.zones = (data.zones || data || []).map(z => ({
-        ...z,
-        arena_nines: counts[z.id] || 0
-      }));
+      // Merge nines count + controlling guild into each zone object
+      state.zones = (data.zones || data || []).map(z => {
+        const zCount = counts[z.id] || {};
+        return {
+          ...z,
+          arena_nines: zCount.count || 0,
+          controlling_guild: z.controlling_guild || zCount.top_guild || null,
+          controlling_guild_tag: z.controlling_guild_tag || zCount.top_guild || null,
+        };
+      });
 
       renderZoneList();
       updateActiveCount();
@@ -1908,6 +1930,8 @@
     document.getElementById('arena-sidebar').style.display = 'none';
     document.getElementById('arena-sidebar').style.display = 'none';
     document.getElementById('arena-chat-log').innerHTML = '';
+    const sLog = document.getElementById('sidebar-chat-log');
+    if (sLog) sLog.innerHTML = '';
     document.getElementById('zone-list-view').style.display = 'block';
 
     // Close deploy modal if open
@@ -4802,7 +4826,11 @@
     if (!overlay) return;
 
     // Show widget but DON'T hide tray — player can still chat + watch stats
-    if (rejoinBtn) { rejoinBtn.style.display = 'block'; rejoinBtn.disabled = false; }
+    if (rejoinBtn) {
+      rejoinBtn.style.display = 'block';
+      rejoinBtn.disabled = false;
+      rejoinBtn.textContent = '⚔️ REDEPLOY (60s)';
+    }
     if (expiredMsg) expiredMsg.style.display = 'none';
     overlay.classList.add('visible');
     document.getElementById('deploy-cta').style.display = 'none';
@@ -4818,19 +4846,22 @@
         const progress = secondsLeft / 60;
         circle.style.strokeDashoffset = circumference * (1 - progress);
       }
+      // Update button text with countdown
+      if (rejoinBtn && !rejoinBtn.disabled) {
+        rejoinBtn.textContent = secondsLeft > 0 ? `⚔️ REDEPLOY (${secondsLeft}s)` : '⚔️ REDEPLOY NOW';
+      }
       if (secondsLeft <= 0) {
         clearInterval(_koCountdownTimer);
         _koCountdownTimer = null;
         // Window closed — disable rejoin and show expired message
-        if (rejoinBtn) { rejoinBtn.disabled = true; }
+        if (rejoinBtn) { rejoinBtn.disabled = true; rejoinBtn.textContent = '⛔ WINDOW CLOSED'; }
         if (expiredMsg) expiredMsg.style.display = 'block';
         if (numEl) numEl.textContent = '✗';
-        addFeedEvent('⏰ Rejoin window closed — returning to zone list in 5s...', 'system');
-        // Give 5 seconds to see the message then close arena
+        addFeedEvent('⏰ Redeploy window closed. Use the zone list to re-enter.', 'system');
+        // Auto-dismiss widget after 8s (don't kick to menu)
         setTimeout(() => {
           dismissKOOverlay();
-          closeArena();
-        }, 5000);
+        }, 8000);
       }
     }, 1000);
   }
@@ -4862,7 +4893,11 @@
     const rejoinBtn = document.getElementById('ko-rejoin-btn');
     const expiredMsg = document.getElementById('ko-expired-msg');
     if (!overlay) return false;
-    if (rejoinBtn) { rejoinBtn.style.display = 'block'; rejoinBtn.disabled = false; }
+    if (rejoinBtn) {
+      rejoinBtn.style.display = 'block';
+      rejoinBtn.disabled = false;
+      rejoinBtn.textContent = '⚔️ REDEPLOY (60s)';
+    }
     if (expiredMsg) expiredMsg.style.display = 'none';
     overlay.classList.add('visible');
     document.getElementById('deploy-cta').style.display = 'none';
@@ -4875,14 +4910,17 @@
       secondsLeft--;
       if (numEl) numEl.textContent = Math.max(0, secondsLeft);
       if (circle) circle.style.strokeDashoffset = circumference * (1 - secondsLeft / 60);
+      if (rejoinBtn && !rejoinBtn.disabled) {
+        rejoinBtn.textContent = secondsLeft > 0 ? `⚔️ REDEPLOY (${secondsLeft}s)` : '⚔️ REDEPLOY NOW';
+      }
       if (secondsLeft <= 0) {
         clearInterval(_koCountdownTimer);
         _koCountdownTimer = null;
-        if (rejoinBtn) rejoinBtn.disabled = true;
+        if (rejoinBtn) { rejoinBtn.disabled = true; rejoinBtn.textContent = '⛔ WINDOW CLOSED'; }
         if (expiredMsg) expiredMsg.style.display = 'block';
         if (numEl) numEl.textContent = '✗';
-        addFeedEvent('⏰ Rejoin window closed — returning to zone list in 5s...', 'system');
-        setTimeout(() => { dismissKOOverlay(); closeArena(); }, 5000);
+        addFeedEvent('⏰ Redeploy window closed. Use the zone list to re-enter.', 'system');
+        setTimeout(() => { dismissKOOverlay(); }, 8000);
       }
     }, 1000);
     return true;
@@ -4905,7 +4943,7 @@
     container.classList.add('visible');
     textEl.innerHTML = '';
 
-    // Typewriter — add one character every 28ms
+    // Typewriter — add one character every 45ms (slower = more readable)
     let i = 0;
     const cursor = document.createElement('span');
     cursor.className = 'nerm-cursor';
@@ -4918,13 +4956,13 @@
       } else {
         clearInterval(_nermTypeTimer);
         _nermTypeTimer = null;
-        // Remove cursor 1s after typing finishes
-        setTimeout(() => { if (cursor.parentNode) cursor.remove(); }, 1000);
+        // Remove cursor 1.5s after typing finishes
+        setTimeout(() => { if (cursor.parentNode) cursor.remove(); }, 1500);
       }
-    }, 28);
+    }, 45);
 
-    // Auto-hide after text duration (typing time + 4s reading time)
-    const displayMs = text.length * 28 + 4000;
+    // Auto-hide after text duration (typing time + 6s reading time)
+    const displayMs = text.length * 45 + 6000;
     _nermHideTimer = setTimeout(() => {
       container.classList.remove('visible');
       _nermHideTimer = null;
@@ -4937,53 +4975,60 @@
   const NERM_COMMENTS = {
     // Entry — fired when player first opens the arena
     arena_enter: [
-      "Another one wanders in. Let's see if they last.",
-      "Nethara does not care about your feelings. Only your stats.",
-      "I've been watching this zone. It's ugly. You'll fit right in.",
-      "Combat is continuous. Meaning there's no good time to arrive.",
-      "Welcome. I'd say good luck but I don't believe in luck.",
+      "Another contestant. Nerm is deeply unmoved.",
+      "I watched a Nine die here fourteen minutes ago. Just thought you should know.",
+      "Welcome to my eternal punishment. Please enjoy your brief stay.",
+      "Combat has been happening without you. It will continue to happen without you. That's fine.",
+      "You're late. The carnage started without you. It always does.",
+      "Nerm clocks in. Witnesses arrival. Nerm clocks out.",
+      "Zone's been active for hours. You're not the hero of this story.",
     ],
     // Combat observations (shown periodically during live combat)
     combat_active: [
-      "The battlefield is alive. Every tick counts.",
-      "Combat never stops in Nethara. Neither should your strategy.",
-      "Watch the HP bars. The tide can turn fast.",
-      "Spells flying, effects stacking. This is what it's about.",
-      "All three cards working at once. That's V2 combat, baby.",
-      "The strong survive. The smart thrive.",
+      "Cards are swinging. Bars are dropping. This is the game.",
+      "Someone's Nine is about to have a very bad two seconds.",
+      "Nerm has observed approximately ten thousand combats. Still not bored. Almost.",
+      "Three cards per Nine. All active. All trying. Not all winning.",
+      "ATK squared divided by ATK plus DEF. That's the math. You're welcome.",
+      "Someone deployed with zero DEF. Nerm respects the commitment.",
+      "HP bars are basically just disappointment measured in pixels.",
+      "Every tick matters. Most ticks are quietly devastating.",
+      "Somewhere, a Nine is landing a crit. It is not your Nine.",
     ],
     // Snapshot — winner dominant (>60% control)
     snapshot_dominant: [
-      "Complete domination. Nothing else to say.",
-      "That wasn't even close. Total control.",
-      "One guild ran this zone like they owned the place.",
-      "Absolute authority. The losing side needs a new strategy.",
+      "Dominant control. The other guild is handling that however they choose.",
+      "If this were a conversation, it ended three snapshots ago.",
+      "One-sided. The numbers agreed. Nerm agreed with the numbers.",
+      "Absolute control. The losing guild's morale is not Nerm's problem.",
     ],
     // Snapshot — close fight
     snapshot_close: [
-      "That was TIGHT. Could've gone either way.",
-      "Razor thin margins. This zone is still very much alive.",
-      "A few more seconds and the result might've flipped. Brutal.",
-      "Can't blink in this zone. Every point mattered.",
+      "That was disgusting. Nerm means that as a compliment.",
+      "Margin: terrifying. Result: technically a result.",
+      "Two HP separated winner from loser. Nerm finds this funny.",
+      "This zone has no chill. Nerm respects that.",
     ],
     // Snapshot — generic
     snapshot_generic: [
-      "Another snapshot in the books. Who's deploying next?",
-      "Zone control shifts again. The map never sleeps.",
-      "Snapshot scored. Combat continues — adapt or fall behind.",
-      "Results are in. Time to adjust your strategy.",
+      "Snapshot. Numbers. Moving on.",
+      "Zone control scored. Somewhere, a guild is coping.",
+      "The results are in. Nerm is not surprised. Nerm is never surprised.",
+      "Cycle complete. Combat immediately resumes. As it always does.",
     ],
     // When player's Nine survived
     player_survived: [
-      "Your Nine is still standing. Not everyone can say that.",
-      "Still in the fight! Solid build choice.",
-      "Your cards are holding up. Well played.",
+      "Your Nine survived. Don't get emotional about it.",
+      "Still standing. Nerm notes this without enthusiasm.",
+      "Not dead. That is the bar. You cleared the bar.",
+      "Your cards performed adequately. Nerm acknowledges this.",
     ],
     // When player's Nine got knocked out
     player_knocked: [
-      "Ouch. Your Nine got knocked out. Time to rethink those cards.",
-      "Your Nine took a beating. Maybe swap your build?",
-      "Down but not out — you'll respawn soon.",
+      "Your Nine got knocked out. Nerm has no notes. The cards had notes.",
+      "KO'd. The build has spoken. The build is harsh but fair.",
+      "Down. Redeploy. Possibly reconsider your life choices.",
+      "That happened. Time to deploy something with DEF next time, maybe.",
     ],
   };
 
@@ -5400,6 +5445,9 @@
             cards = (loadoutData.loadout || []).map(slot => {
               const c = slot.card || {};
               const s = c.spell || {};
+              // Skip slots where the card join failed (RLS or missing data)
+              if (!c.id && !slot.card_id) return null;
+              if (!s.name && !c.name && !c.spell_name) return null; // card data unavailable
               // Normalize: try spell sub-object first, then flat card fields, then slot-level
               return {
                 id: c.id || slot.card_id,
@@ -5420,7 +5468,7 @@
                 sharpness: c.sharpness ?? c.current_sharpness ?? 100,
                 slot_number: slot.slot_number,
               };
-            });
+            }).filter(Boolean); // remove null (slots with missing card data)
           }
         } catch(e) { console.warn('Loadout fetch failed:', e); }
 
@@ -6009,14 +6057,17 @@
     const container = document.getElementById('sidebar-guild-rows');
     if (!container) return;
 
-    // Build guild data from live nines
+    // Build guild data from live nines — exclude fully KO'd (isAlive=false and hp=0)
     const guilds = {};
     state.nines.forEach((sprite, id) => {
+      // Skip fighters that have been KO'd (hp=0 and marked dead)
+      if (sprite.isAlive === false && (sprite.hp || 0) <= 0) return;
       const tag = sprite.guild || '???';
-      if (!guilds[tag]) guilds[tag] = { hp: 0, maxHp: 0, nines: [] };
+      if (!guilds[tag]) guilds[tag] = { hp: 0, maxHp: 0, nines: [], koCount: 0 };
       guilds[tag].hp += sprite.hp || 0;
       guilds[tag].maxHp += sprite.maxHp || 0;
       guilds[tag].nines.push(id);
+      if (sprite.isAlive === false) guilds[tag].koCount++;
     });
 
     const entries = Object.entries(guilds).sort((a, b) => b[1].hp - a[1].hp);
@@ -6041,7 +6092,7 @@
         <div class="sidebar-guild-bar">
           <div class="sidebar-guild-bar-fill" style="width:${pct}%;background:${color}"></div>
         </div>
-        <div class="sidebar-guild-nines">${data.nines.length} Nine${data.nines.length !== 1 ? 's' : ''} fighting</div>
+        <div class="sidebar-guild-nines">${data.nines.filter(id => { const s=state.nines.get(id); return !s || s.isAlive !== false; }).length} Nine${data.nines.length !== 1 ? 's' : ''} active</div>
       `;
       // Hover: highlight this guild's sprites, dim others
       row.addEventListener('mouseenter', () => highlightGuild(tag));
@@ -6253,37 +6304,42 @@
     appendTo('battle-log-full');
   }
 
-  // ── ARENA CHAT ──
-
-  // ── ARENA CHAT ──
+  // ── ARENA CHAT — shared between tray + sidebar ──
   (function(){
-    const log = document.getElementById('arena-chat-log');
-    const input = document.getElementById('arena-chat-input');
-    const sendBtn = document.getElementById('arena-chat-send');
+    const trayLog = document.getElementById('arena-chat-log');
+    const trayInput = document.getElementById('arena-chat-input');
+    const traySend = document.getElementById('arena-chat-send');
+    const sideLog = document.getElementById('sidebar-chat-log');
+    const sideInput = document.getElementById('sidebar-chat-input');
+    const sideSend = document.getElementById('sidebar-chat-send');
 
     function appendMsg(data) {
-      if (!log) return;
       const gTag = data.guildTag ? ' <span class="chat-guild">['+data.guildTag+']</span>' : '';
       const html = '<span class="chat-handle">@'+data.handle+'</span>'+gTag+' <span style="color:var(--body);">'+data.message.replace(/</g,'&lt;')+'</span>';
-      const div = document.createElement('div');
-      div.className = 'chat-msg';
-      div.innerHTML = html;
-      log.appendChild(div);
-      if (log.children.length > 30) log.removeChild(log.firstChild);
-      log.scrollTop = log.scrollHeight;
+      [trayLog, sideLog].forEach(function(log) {
+        if (!log) return;
+        const div = document.createElement('div');
+        div.className = 'chat-msg';
+        div.innerHTML = html;
+        log.appendChild(div);
+        if (log.children.length > 40) log.removeChild(log.firstChild);
+        log.scrollTop = log.scrollHeight;
+      });
     }
 
-    function sendMsg() {
-      const msg = input.value.trim();
+    function sendMsg(inputEl) {
+      const msg = (inputEl && inputEl.value.trim()) || '';
       if (!msg || !state.socket || !state.currentZoneId) return;
       const handle = state.playerHandle || localStorage.getItem('9lv_handle') || 'Anon';
       const guildTag = state.playerGuildTag || '';
       state.socket.emit('chat:send', { zoneId: state.currentZoneId, message: msg, handle, guildTag });
-      input.value = '';
+      if (inputEl) inputEl.value = '';
     }
 
-    if (sendBtn) sendBtn.addEventListener('click', sendMsg);
-    if (input) input.addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(); });
+    if (traySend) traySend.addEventListener('click', function() { sendMsg(trayInput); });
+    if (trayInput) trayInput.addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(trayInput); });
+    if (sideSend) sideSend.addEventListener('click', function() { sendMsg(sideInput); });
+    if (sideInput) sideInput.addEventListener('keydown', function(e){ if(e.key==='Enter') sendMsg(sideInput); });
     document.addEventListener('arena:chat:message', function(e){ appendMsg(e.detail); });
   })();
 
