@@ -152,10 +152,10 @@
     .pack-card .pack-icon {
     }
     .pack-card .pack-icon img {
-      width: 100%; max-width: 160px; height: auto; border-radius: 8px;
-      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
-      margin-bottom: 12px;
+      width: 100%; max-width: 160px; height: auto;
       filter: drop-shadow(0 0 16px var(--pack-color));
+      mix-blend-mode: multiply;
+      margin-bottom: 12px;
     }
     .pack-card .pack-name {
       font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; margin-bottom: 4px;
@@ -218,12 +218,14 @@
     .buy-pack-card:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
     .buy-pack-card .pack-icon { margin-bottom: 8px; }
     .buy-pack-card .pack-icon img {
-      width: 100%; max-width: 120px; height: auto; border-radius: 8px;
+      width: 100%; max-width: 120px; height: auto;
       filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+      mix-blend-mode: multiply;
     }
     .pack-card .pack-icon img {
-      width: 100%; max-width: 160px; height: auto; border-radius: 8px;
+      width: 100%; max-width: 160px; height: auto;
       filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+      mix-blend-mode: multiply;
     }
     .buy-pack-card .pack-name { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; margin-bottom: 2px; }
     .buy-pack-card .pack-desc { font-family: monospace; font-size: 9px; color: var(--muted); margin-bottom: 14px; }
@@ -374,15 +376,35 @@
     }
 
     .sealed-pack {
-      width: 220px; height: 310px; border-radius: 20px;
+      width: 260px; height: 360px;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
-      cursor: pointer; position: relative; overflow: hidden; transition: transform 0.2s;
+      cursor: pointer; position: relative; transition: transform 0.2s;
+      background: transparent; border: none;
     }
     .sealed-pack:hover { transform: scale(1.04); }
-    .sealed-pack .seal-icon { font-size: 72px; position: relative; z-index: 1; }
+    .sealed-pack .pack-glow {
+      position: absolute;
+      width: 280px; height: 280px;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(40px);
+      opacity: 0.45;
+      z-index: 0;
+      animation: glowPulse 2.5s ease-in-out infinite;
+    }
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50%       { opacity: 0.65; transform: scale(1.08); }
+    }
+    .sealed-pack .seal-pack-img {
+      position: relative; z-index: 1;
+      width: 180px; height: auto;
+      mix-blend-mode: multiply;
+      filter: drop-shadow(0 0 24px var(--seal-color)) drop-shadow(0 8px 20px rgba(0,0,0,0.6));
+    }
     .sealed-pack .seal-label {
       font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700;
-      position: relative; z-index: 1; margin-top: 8px;
+      position: relative; z-index: 1; margin-top: 16px;
     }
     .sealed-pack .seal-sub {
       font-family: monospace; font-size: 10px; color: var(--muted);
@@ -458,25 +480,25 @@
     }
     .card-eye-glow {
       position: absolute;
-      width: 22px; height: 12px;
+      width: 28px; height: 14px;
       border-radius: 50%;
       z-index: 1;
-      top: 53%;
+      top: 47%;
       opacity: 0;
       transition: opacity 0.3s, filter 0.3s;
     }
-    .card-eye-glow.left-eye  { left: 34%; }
+    .card-eye-glow.left-eye  { left: 32%; }
     .card-eye-glow.right-eye { left: 52%; }
 
     /* Show glow on hover */
     .card-flip-slot:hover .card-eye-glow { opacity: 1; }
 
     /* Rarity colours */
-    .card-flip-slot.rarity-common    .card-eye-glow { background: #aaaaaa; filter: blur(5px) brightness(1.5); box-shadow: 0 0 8px 4px #aaaaaa; }
-    .card-flip-slot.rarity-uncommon  .card-eye-glow { background: #5bc45b; filter: blur(5px) brightness(1.5); box-shadow: 0 0 10px 5px #5bc45b; }
-    .card-flip-slot.rarity-rare      .card-eye-glow { background: #4da6ff; filter: blur(5px) brightness(1.5); box-shadow: 0 0 12px 6px #4da6ff; }
-    .card-flip-slot.rarity-epic      .card-eye-glow { background: #bb88ff; filter: blur(6px) brightness(1.6); box-shadow: 0 0 14px 7px #bb88ff; }
-    .card-flip-slot.rarity-legendary .card-eye-glow { background: #ffd700; filter: blur(7px) brightness(2);   box-shadow: 0 0 18px 9px #ffd700; animation: legendaryPulse 1.2s ease-in-out infinite; }
+    .card-flip-slot.rarity-common    .card-eye-glow { background: #bbbbbb; filter: blur(6px) brightness(2);   box-shadow: 0 0 12px 6px #aaaaaa; }
+    .card-flip-slot.rarity-uncommon  .card-eye-glow { background: #5bc45b; filter: blur(6px) brightness(2);   box-shadow: 0 0 14px 7px #5bc45b; }
+    .card-flip-slot.rarity-rare      .card-eye-glow { background: #4da6ff; filter: blur(6px) brightness(2);   box-shadow: 0 0 16px 8px #4da6ff; }
+    .card-flip-slot.rarity-epic      .card-eye-glow { background: #cc99ff; filter: blur(7px) brightness(2.2); box-shadow: 0 0 18px 9px #bb88ff; }
+    .card-flip-slot.rarity-legendary .card-eye-glow { background: #ffe040; filter: blur(8px) brightness(2.5); box-shadow: 0 0 22px 11px #ffd700; animation: legendaryPulse 1.2s ease-in-out infinite; }
 
     /* Hide eyes once flipped */
     .card-flip-slot.flipped .card-eye-glow { opacity: 0 !important; transition: opacity 0.3s; }
@@ -1014,12 +1036,9 @@
 
       content.innerHTML = `
         <div class="ceremony-particles" id="seal-particles"></div>
-        <div class="sealed-pack" id="sealed-pack" style="
-          background: linear-gradient(135deg, ${hexToRgba(meta.color, 0.08)}, #110e1c, ${hexToRgba(meta.color, 0.08)});
-          border: 2px solid ${hexToRgba(meta.color, 0.3)};
-          box-shadow: 0 0 50px ${hexToRgba(meta.color, 0.15)}, 0 0 100px ${hexToRgba(meta.color, 0.05)};
-        ">
-          <img src="/assets/images/booster-pack.png" alt="${meta.name}" style="width:160px;height:auto;filter:drop-shadow(0 0 20px ${meta.color});position:relative;z-index:1;">
+        <div class="sealed-pack" id="sealed-pack" style="--seal-color:${meta.color}">
+          <div class="pack-glow" style="background:${meta.color};"></div>
+          <img class="seal-pack-img" src="/assets/images/booster-pack.png" alt="${meta.name}">
           <div class="seal-label" style="color:${meta.color}">${meta.name}</div>
           <div class="seal-sub">5 Cards Inside</div>
         </div>
@@ -1084,8 +1103,12 @@
       if (breaking) {
         breaking.classList.remove('shake');
         breaking.classList.add('burst');
-        breaking.style.borderColor = burstColor;
-        breaking.style.boxShadow = `0 0 80px ${hexToRgba(burstColor, 0.5)}`;
+        const glowEl = breaking.querySelector('.pack-glow');
+        if (glowEl) {
+          glowEl.style.background = burstColor;
+          glowEl.style.opacity = '0.9';
+          glowEl.style.filter = 'blur(60px)';
+        }
       }
 
       const flash = document.createElement('div');
