@@ -36,12 +36,12 @@ let nextSnapshotAt = null;
 // ─── COMBAT FORMULAS (from V2 doc) ────────────────────
 // Auto-attack: fast, weak, no effects
 function autoAttackInterval(spd) {
-  return Math.max(1.5, 4.0 - spd * 0.05);
+  return Math.max(2.0, 5.5 - spd * 0.05);
 }
 
 // Spell cast: slower, triggers card effects, blocked by SILENCE
 function spellCastInterval(spd) {
-  return Math.max(3.0, 8.0 - spd * 0.08);
+  return Math.max(4.0, 11.0 - spd * 0.08);
 }
 
 // Keep old name as alias for any remaining references
