@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>9LN Arena Polygon Mapper</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Press+Start+2P&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1528;
+    --surface: #12101e;
+    --gold: #D4A64B;
+    --gold-dim: rgba(212,166,75,0.15);
+    --bright: #f0eaff;
+    --muted: rgba(240,234,255,0.55);
+    --faint: rgba(240,234,255,0.25);
+    --red: #e85a6a;
+    --green: #6acd8a;
+    --blue: #6ac8d8;
+    --border: rgba(212,166,75,0.2);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--bright);
+    font-family: 'Crimson Text', serif;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(18,16,30,0.95);
+    backdrop-filter: blur(8px);
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  header h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 14px;
+    color: var(--gold);
+    letter-spacing: 3px;
+    white-space: nowrap;
+  }
+  .header-sep { width: 1px; height: 24px; background: var(--border); flex-shrink: 0; }
+  .pill {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: none;
+    color: var(--gold);
+    border-color: var(--border);
+  }
+  .pill:hover { background: var(--gold-dim); border-color: var(--gold); }
+  .pill.danger { color: var(--red); border-color: rgba(232,90,106,0.3); }
+  .pill.danger:hover { background: rgba(232,90,106,0.1); border-color: var(--red); }
+  .pill.action { color: var(--green); border-color: rgba(106,205,138,0.3); }
+  .pill.action:hover { background: rgba(106,205,138,0.1); border-color: var(--green); }
+  .pill.blue { color: var(--blue); border-color: rgba(106,200,216,0.3); }
+  .pill.blue:hover { background: rgba(106,200,216,0.1); border-color: var(--blue); }
+
+  /* ── MAIN LAYOUT ── */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    overflow-y: auto;
+  }
+  .sidebar-section {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .sidebar-label {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: var(--faint);
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  input[type="text"], input[type="url"], textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+    color: var(--bright);
+    font-family: 'Crimson Text', serif;
+    font-size: 13px;
+    padding: 8px 10px;
+    transition: border-color 0.15s;
+    outline: none;
+  }
+  input[type="text"]:focus, input[type="url"]:focus, textarea:focus {
+    border-color: var(--gold);
+  }
+  textarea {
+    min-height: 80px;
+    resize: vertical;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    line-height: 1.6;
+  }
+
+  /* Point list */
+  #point-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .point-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    transition: background 0.1s;
+  }
+  .point-row:hover { background: rgba(212,166,75,0.06); }
+  .point-num {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: var(--gold);
+    width: 14px;
+    flex-shrink: 0;
+  }
+  .point-coords {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: var(--muted);
+    flex: 1;
+  }
+  .point-del {
+    font-size: 10px;
+    color: var(--red);
+    cursor: pointer;
+    opacity: 0.6;
+    background: none;
+    border: none;
+    padding: 2px 4px;
+    border-radius: 3px;
+    line-height: 1;
+  }
+  .point-del:hover { opacity: 1; background: rgba(232,90,106,0.1); }
+
+  /* Stats strip */
+  .stats-strip {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .stat-item {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    color: var(--faint);
+  }
+  .stat-item span { color: var(--gold); }
+
+  /* Mode toggle */
+  .mode-toggle {
+    display: flex;
+    gap: 6px;
+  }
+  .mode-btn {
+    flex: 1;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    padding: 7px 6px;
+    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: none;
+    color: var(--faint);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .mode-btn.active {
+    background: var(--gold-dim);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+  .mode-btn:hover:not(.active) { color: var(--muted); border-color: rgba(255,255,255,0.2); }
+
+  /* ── CANVAS AREA ── */
+  .canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #0a0810;
+    cursor: crosshair;
+  }
+  #arena-img {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    user-select: none;
+  }
+  #mapper-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+
+  /* ── INSTRUCTIONS OVERLAY ── */
+  #instructions {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+  }
+  #instructions .big { font-family: 'Cinzel', serif; font-size: 22px; color: var(--gold); opacity: 0.4; margin-bottom: 8px; }
+  #instructions .small { font-family: 'Crimson Text', serif; font-size: 14px; color: var(--faint); font-style: italic; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: rgba(18,16,30,0.97);
+    border: 1px solid var(--gold);
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: var(--gold);
+    z-index: 100;
+    transition: transform 0.3s ease;
+    pointer-events: none;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(212,166,75,0.3); border-radius: 2px; }
+
+  .gap-8 { display: flex; flex-direction: column; gap: 8px; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⚔️ ARENA MAPPER</h1>
+  <div class="header-sep"></div>
+  <span style="font-family:'Crimson Text',serif;font-size:13px;color:var(--faint);font-style:italic">Click canvas to place polygon points &nbsp;·&nbsp; Right-click to undo last</span>
+  <div style="flex:1"></div>
+  <button class="pill blue" onclick="loadPresetJSON()">📋 Paste JSON</button>
+  <button class="pill action" onclick="copyJSON()">📦 Copy JSON</button>
+  <button class="pill danger" onclick="clearAll()">✕ Clear</button>
+</header>
+
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <div class="sidebar-section gap-8">
+      <div class="sidebar-label">ARENA IMAGE URL</div>
+      <input type="url" id="img-url" placeholder="https://... or paste Supabase URL" />
+      <button class="pill action" onclick="loadImage()" style="width:100%;text-align:center;padding:9px">LOAD IMAGE</button>
+    </div>
+
+    <div class="sidebar-section gap-8">
+      <div class="sidebar-label">DRAW MODE</div>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="mode-add" onclick="setMode('add')">✚ ADD</button>
+        <button class="mode-btn" id="mode-move" onclick="setMode('move')">↔ MOVE</button>
+        <button class="mode-btn" id="mode-test" onclick="setMode('test')">🧪 TEST</button>
+      </div>
+      <div id="mode-hint" style="font-family:'Crimson Text',serif;font-size:12px;color:var(--faint);font-style:italic">Click canvas to place boundary points</div>
+    </div>
+
+    <div class="sidebar-section gap-8">
+      <div class="sidebar-label">POLYGON POINTS <span style="color:var(--gold)" id="point-count">0</span></div>
+      <div id="point-list"></div>
+      <div id="no-points" style="font-family:'Crimson Text',serif;font-size:12px;color:var(--faint);font-style:italic;padding:4px 0">No points yet. Click the arena to begin.</div>
+    </div>
+
+    <div class="sidebar-section gap-8">
+      <div class="sidebar-label">STATS</div>
+      <div class="stats-strip" id="stats-strip">
+        <div class="stat-item">AREA <span id="stat-area">—</span></div>
+        <div class="stat-item">VALID <span id="stat-valid">—</span></div>
+        <div class="stat-item">CENTROID X <span id="stat-cx">—</span></div>
+        <div class="stat-item">CENTROID Y <span id="stat-cy">—</span></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section gap-8">
+      <div class="sidebar-label">OUTPUT JSON (paste into Supabase arena_polygon)</div>
+      <textarea id="json-output" readonly placeholder='{"points":[{"x":0.1,"y":0.4},...]}' onclick="this.select()"></textarea>
+      <button class="pill action" onclick="copyJSON()" style="width:100%;text-align:center;padding:8px">COPY TO CLIPBOARD</button>
+    </div>
+
+    <div class="sidebar-section gap-8">
+      <div class="sidebar-label">LOAD EXISTING POLYGON</div>
+      <textarea id="json-input" placeholder='{"points":[{"x":0.1,"y":0.4},...]}' style="min-height:60px"></textarea>
+      <button class="pill blue" onclick="loadPresetJSON()" style="width:100%;text-align:center;padding:8px">LOAD POLYGON</button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label" style="margin-bottom:8px">TIPS</div>
+      <div style="font-family:'Crimson Text',serif;font-size:12px;color:var(--faint);font-style:italic;line-height:1.7">
+        • Trace the walkable floor area<br>
+        • ~6-10 points is usually enough<br>
+        • Right-click = undo last point<br>
+        • TEST mode checks if a click is inside<br>
+        • Fractions are 0–1 of the image size<br>
+        • Copy JSON → paste into Supabase<br>&nbsp;&nbsp;zones table arena_polygon column
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CANVAS AREA -->
+  <div class="canvas-wrap" id="canvas-wrap">
+    <img id="arena-img" alt="" style="display:none" />
+    <canvas id="mapper-canvas"></canvas>
+    <div id="instructions">
+      <div class="big">LOAD AN ARENA IMAGE</div>
+      <div class="small">Paste the Supabase storage URL above and click Load Image</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── STATE ──
+  let points = [];       // [{x, y}] in fraction coords (0-1)
+  let mode = 'add';      // 'add' | 'move' | 'test'
+  let dragIdx = -1;
+  let imgLoaded = false;
+  let imgW = 1, imgH = 1; // natural image size
+  let moveStart = null;
+
+  const canvas = document.getElementById('mapper-canvas');
+  const ctx = canvas.getContext('2d');
+  const img = document.getElementById('arena-img');
+  const wrap = document.getElementById('canvas-wrap');
+
+  // ── RESIZE ──
+  function resizeCanvas() {
+    canvas.width = wrap.clientWidth;
+    canvas.height = wrap.clientHeight;
+    draw();
+  }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  // ── COORDINATE HELPERS ──
+  // fraction → canvas pixel
+  function toCanvas(fx, fy) {
+    const { drawX, drawY, drawW, drawH } = getImageDraw();
+    return { x: drawX + fx * drawW, y: drawY + fy * drawH };
+  }
+  // canvas pixel → fraction
+  function toFraction(cx, cy) {
+    const { drawX, drawY, drawW, drawH } = getImageDraw();
+    return {
+      x: Math.max(0, Math.min(1, (cx - drawX) / drawW)),
+      y: Math.max(0, Math.min(1, (cy - drawY) / drawH)),
+    };
+  }
+  // Get image draw rect (object-fit: contain logic)
+  function getImageDraw() {
+    const cw = canvas.width, ch = canvas.height;
+    if (!imgLoaded) return { drawX: 0, drawY: 0, drawW: cw, drawH: ch };
+    const scale = Math.min(cw / imgW, ch / imgH);
+    const drawW = imgW * scale, drawH = imgH * scale;
+    const drawX = (cw - drawW) / 2, drawY = (ch - drawH) / 2;
+    return { drawX, drawY, drawW, drawH };
+  }
+
+  // ── DRAW ──
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (!imgLoaded) return;
+
+    const canvasPts = points.map(p => toCanvas(p.x, p.y));
+
+    // Polygon fill
+    if (canvasPts.length >= 3) {
+      ctx.beginPath();
+      ctx.moveTo(canvasPts[0].x, canvasPts[0].y);
+      canvasPts.slice(1).forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(106,200,216,0.12)';
+      ctx.fill();
+      ctx.strokeStyle = '#6ac8d8';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else if (canvasPts.length === 2) {
+      ctx.beginPath();
+      ctx.moveTo(canvasPts[0].x, canvasPts[0].y);
+      ctx.lineTo(canvasPts[1].x, canvasPts[1].y);
+      ctx.strokeStyle = '#6ac8d8';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Closing line preview (from last point to first)
+    if (canvasPts.length >= 3) {
+      ctx.beginPath();
+      ctx.moveTo(canvasPts[canvasPts.length - 1].x, canvasPts[canvasPts.length - 1].y);
+      ctx.lineTo(canvasPts[0].x, canvasPts[0].y);
+      ctx.strokeStyle = 'rgba(106,200,216,0.3)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 6]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Points
+    canvasPts.forEach((p, i) => {
+      // Outer ring
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+      ctx.fillStyle = i === 0 ? 'rgba(212,166,75,0.3)' : 'rgba(106,200,216,0.2)';
+      ctx.fill();
+      // Inner dot
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = i === 0 ? '#D4A64B' : '#6ac8d8';
+      ctx.fill();
+      // Number label
+      ctx.font = 'bold 10px monospace';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(i + 1, p.x, p.y);
+    });
+
+    // Centroid marker
+    if (canvasPts.length >= 3) {
+      const cx = canvasPts.reduce((s, p) => s + p.x, 0) / canvasPts.length;
+      const cy = canvasPts.reduce((s, p) => s + p.y, 0) / canvasPts.length;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(212,166,75,0.6)';
+      ctx.fill();
+      ctx.font = '9px monospace';
+      ctx.fillStyle = 'rgba(212,166,75,0.7)';
+      ctx.textAlign = 'center';
+      ctx.fillText('⊕', cx, cy - 12);
+    }
+  }
+
+  // ── CANVAS EVENTS ──
+  function getCanvasPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  }
+
+  canvas.addEventListener('click', (e) => {
+    if (!imgLoaded) return;
+    if (e.button !== 0) return;
+    const pos = getCanvasPos(e);
+
+    if (mode === 'add') {
+      const frac = toFraction(pos.x, pos.y);
+      points.push({ x: round4(frac.x), y: round4(frac.y) });
+      updateUI();
+    } else if (mode === 'test') {
+      const inside = isInsidePolygon(pos.x, pos.y, points.map(p => toCanvas(p.x, p.y)));
+      showToast(inside ? '✅ INSIDE polygon' : '❌ OUTSIDE polygon');
+      // Flash
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, 10, 0, Math.PI * 2);
+      ctx.fillStyle = inside ? 'rgba(106,205,138,0.6)' : 'rgba(232,90,106,0.6)';
+      ctx.fill();
+      setTimeout(draw, 500);
+    }
+  });
+
+  canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (mode === 'add' && points.length > 0) {
+      points.pop();
+      updateUI();
+    }
+  });
+
+  // Move mode drag
+  canvas.addEventListener('mousedown', (e) => {
+    if (mode !== 'move') return;
+    const pos = getCanvasPos(e);
+    // Find nearest point within 16px
+    let closest = -1, minDist = 16;
+    points.forEach((p, i) => {
+      const cp = toCanvas(p.x, p.y);
+      const d = Math.hypot(cp.x - pos.x, cp.y - pos.y);
+      if (d < minDist) { minDist = d; closest = i; }
+    });
+    if (closest >= 0) {
+      dragIdx = closest;
+      canvas.style.cursor = 'grabbing';
+    }
+  });
+  canvas.addEventListener('mousemove', (e) => {
+    if (mode !== 'move' || dragIdx < 0) return;
+    const pos = getCanvasPos(e);
+    const frac = toFraction(pos.x, pos.y);
+    points[dragIdx] = { x: round4(frac.x), y: round4(frac.y) };
+    updateUI();
+  });
+  canvas.addEventListener('mouseup', () => {
+    if (dragIdx >= 0) { dragIdx = -1; canvas.style.cursor = mode === 'move' ? 'grab' : 'crosshair'; }
+  });
+
+  // ── IMAGE LOAD ──
+  function loadImage() {
+    const url = document.getElementById('img-url').value.trim();
+    if (!url) { showToast('Enter an image URL first'); return; }
+    img.onload = () => {
+      imgLoaded = true;
+      imgW = img.naturalWidth;
+      imgH = img.naturalHeight;
+      document.getElementById('instructions').style.display = 'none';
+      img.style.display = 'block';
+      draw();
+      showToast('Image loaded — click to place points');
+    };
+    img.onerror = () => showToast('Failed to load image — check URL and CORS');
+    img.crossOrigin = 'anonymous';
+    img.src = url;
+  }
+
+  // ── MODE ──
+  function setMode(m) {
+    mode = m;
+    ['add','move','test'].forEach(id => {
+      document.getElementById('mode-' + id).classList.toggle('active', id === m);
+    });
+    const hints = {
+      add: 'Click canvas to place boundary points. Right-click to undo.',
+      move: 'Drag existing points to adjust. Right-click to delete.',
+      test: 'Click anywhere to test if that point is inside the polygon.',
+    };
+    document.getElementById('mode-hint').textContent = hints[m];
+    canvas.style.cursor = m === 'move' ? 'grab' : 'crosshair';
+  }
+
+  // ── JSON IO ──
+  function updateOutput() {
+    const json = JSON.stringify({ points }, null, 2);
+    document.getElementById('json-output').value = json;
+  }
+
+  function copyJSON() {
+    if (points.length < 3) { showToast('Need at least 3 points'); return; }
+    const json = JSON.stringify({ points });
+    navigator.clipboard.writeText(json).then(() => showToast('JSON copied to clipboard!'));
+  }
+
+  function loadPresetJSON() {
+    const raw = document.getElementById('json-input').value.trim();
+    if (!raw) { showToast('Paste JSON in the LOAD EXISTING POLYGON box'); return; }
+    try {
+      const parsed = JSON.parse(raw);
+      const pts = parsed.points || (Array.isArray(parsed) ? parsed : null);
+      if (!pts || !pts.length) throw new Error('no points');
+      points = pts.map(p => ({ x: round4(p.x), y: round4(p.y) }));
+      updateUI();
+      showToast(`Loaded ${points.length} points`);
+    } catch (err) {
+      showToast('Invalid JSON — check format');
+    }
+  }
+
+  function clearAll() {
+    points = [];
+    updateUI();
+    showToast('Cleared');
+  }
+
+  // ── UPDATE UI ──
+  function updateUI() {
+    document.getElementById('point-count').textContent = points.length;
+    const listEl = document.getElementById('point-list');
+    const noEl = document.getElementById('no-points');
+    noEl.style.display = points.length ? 'none' : 'block';
+    listEl.innerHTML = points.map((p, i) => `
+      <div class="point-row">
+        <span class="point-num">${i+1}</span>
+        <span class="point-coords">${p.x.toFixed(3)}, ${p.y.toFixed(3)}</span>
+        <button class="point-del" onclick="deletePoint(${i})" title="Delete">✕</button>
+      </div>`).join('');
+
+    // Stats
+    if (points.length >= 3) {
+      const area = polygonArea(points);
+      const cx = round4(points.reduce((s,p) => s+p.x, 0) / points.length);
+      const cy = round4(points.reduce((s,p) => s+p.y, 0) / points.length);
+      document.getElementById('stat-area').textContent = area.toFixed(4);
+      document.getElementById('stat-valid').textContent = area > 0 ? '✓ YES' : '✗ NO';
+      document.getElementById('stat-cx').textContent = cx;
+      document.getElementById('stat-cy').textContent = cy;
+    } else {
+      document.getElementById('stat-area').textContent = '—';
+      document.getElementById('stat-valid').textContent = '—';
+      document.getElementById('stat-cx').textContent = '—';
+      document.getElementById('stat-cy').textContent = '—';
+    }
+
+    updateOutput();
+    draw();
+  }
+
+  function deletePoint(i) {
+    points.splice(i, 1);
+    updateUI();
+  }
+
+  // ── MATH HELPERS ──
+  function round4(n) { return Math.round(n * 10000) / 10000; }
+
+  function polygonArea(pts) {
+    let area = 0;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      area += (pts[j].x + pts[i].x) * (pts[j].y - pts[i].y);
+    }
+    return Math.abs(area / 2);
+  }
+
+  function isInsidePolygon(px, py, canvasPoly) {
+    let inside = false;
+    for (let i = 0, j = canvasPoly.length - 1; i < canvasPoly.length; j = i++) {
+      const xi = canvasPoly[i].x, yi = canvasPoly[i].y;
+      const xj = canvasPoly[j].x, yj = canvasPoly[j].y;
+      const intersect = ((yi > py) !== (yj > py)) &&
+        (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    return inside;
+  }
+
+  // ── TOAST ──
+  let toastTimer;
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+  }
+
+  // ── KEYBOARD SHORTCUTS ──
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'z' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); if (points.length) { points.pop(); updateUI(); } }
+    if (e.key === 'c' && (e.ctrlKey || e.metaKey) && !e.shiftKey) { /* let default copy work */ }
+    if (e.key === 'a') setMode('add');
+    if (e.key === 'm') setMode('move');
+    if (e.key === 't') setMode('test');
+    if (e.key === 'Escape') clearAll();
+  });
+
+  // Enter key on URL input
+  document.getElementById('img-url').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') loadImage();
+  });
+</script>
+</body>
+</html>

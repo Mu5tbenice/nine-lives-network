@@ -1579,28 +1579,45 @@
     return { x: cx + dx / dist, y: cy + dy / dist };
   }
 
-  /** Get spawn position — cluster by guild, clamped to arena diamond */
+  /** Get spawn position — uses polygon when loaded, falls back to platform estimate */
   function getSpawnPosition(guildTag, playerId) {
     if (!state._guildAngles) state._guildAngles = {};
     if (!state._guildCounts) state._guildCounts = {};
     const tag = guildTag || String(playerId);
     if (!state._guildAngles[tag]) {
       const idx = Object.keys(state._guildAngles).length;
-      // Spread guilds left/right on the platform
-      state._guildAngles[tag] = idx % 2 === 0 ? Math.PI * 1.15 : Math.PI * 1.85;
+      state._guildAngles[tag] = idx % 2 === 0 ? 0.25 : 0.75; // left/right bias (0-1 fraction)
       state._guildCounts[tag] = 0;
     }
     state._guildCounts[tag]++;
+
+    // Prefer polygon-based spawn when the platform texture is ready
+    const poly = getActiveCanvasPoly();
+    if (poly && poly.length >= 3) {
+      // Bias toward left or right side of poly bounding box for guild clustering
+      const b = polyBounds(poly);
+      const bias = state._guildAngles[tag]; // 0.25 = left quarter, 0.75 = right quarter
+      const biasCx = b.minX + (b.maxX - b.minX) * bias;
+      const biasCy = b.minY + (b.maxY - b.minY) * 0.5;
+      const spread = (b.maxX - b.minX) * 0.2;
+      // Find a valid point within bias zone
+      for (let attempts = 0; attempts < 30; attempts++) {
+        const x = biasCx + (Math.random() - 0.5) * spread;
+        const y = biasCy + (Math.random() - 0.5) * (b.maxY - b.minY) * 0.4;
+        if (isInsidePolygon(x, y, poly)) return { x, y };
+      }
+      // Fallback: any random inside poly
+      return randomInsidePolygon(poly);
+    }
+
+    // Fallback: hardcoded platform estimate (used before image loads)
     const sw = state.arenaApp ? state.arenaApp.screen.width : window.innerWidth;
     const sh = state.arenaApp ? state.arenaApp.screen.height : window.innerHeight;
     const cx = sw / 2;
-    // Platform sits at cy + sh*0.18 — spawn sprites just above it
     const platformY = (sh / 2) + sh * 0.18;
     const pW = Math.min(sw * 0.72, 520);
-    const angle = state._guildAngles[tag];
-    const radius = pW * 0.32;
-    const spread = Math.min(state._guildCounts[tag] * 22, 80);
-    const x = cx + Math.cos(angle) * radius + (Math.random() - 0.5) * spread;
+    const bias = state._guildAngles[tag];
+    const x = (cx - pW * 0.3) + pW * 0.6 * bias + (Math.random() - 0.5) * 40;
     const y = platformY - 40 + (Math.random() - 0.5) * 20;
     return { x, y };
   }
@@ -1808,10 +1825,14 @@
       if (!sprite) return;
       const dx = e.touches[0].clientX - touchStartX;
       const newX = Math.max(sprite._minX, Math.min(sprite._maxX, spriteStartX + dx));
+      const panDelta = newX - sprite.x; // how much we actually moved this frame
       sprite.x = newX;
-      // Also shift all sprites by same amount so they stay over the platform
+      // Shift all Nine containers and their roundTargets by the same delta
+      // so they stay planted on the platform as it slides
       state.nines.forEach(nine => {
-        if (nine._basePlatformX === undefined) nine._basePlatformX = nine.container.x;
+        nine.container.x += panDelta;
+        if (nine.roundTarget) nine.roundTarget.x += panDelta;
+        if (nine.homeX !== undefined) nine.homeX += panDelta;
       });
     }, { passive: true });
 
@@ -1953,7 +1974,17 @@
         doFit();
         app.stage.addChildAt(sprite, 0);
         app.stage.sortChildren();
-        // Reassign positions now that polygon is renderable
+        // Now that polygon coords are accurate, move any misplaced Nines into bounds
+        const poly = getActiveCanvasPoly();
+        if (poly) {
+          state.nines.forEach(nine => {
+            if (!isInsidePolygon(nine.container.x, nine.container.y, poly)) {
+              const pos = randomInsidePolygon(poly);
+              nine.container.x = pos.x;
+              nine.container.y = pos.y;
+            }
+          });
+        }
         setRoundPositions();
         console.log('🏟️ Arena platform loaded:', url);
       });
