@@ -548,6 +548,19 @@ router.get('/:zoneId/combat-stats', async (req, res) => {
   }
 });
 
+// POST force-reload — tells combat engine to reload this zone on next tick
+router.post('/:zoneId/force-reload', (req, res) => {
+  try {
+    const zoneId = parseInt(req.params.zoneId);
+    if (global.__combatEngine?.forceReload) {
+      global.__combatEngine.forceReload(zoneId);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.json({ success: false });
+  }
+});
+
 // ═══════════════════════════════════════════
 // BACKWARD COMPAT: keep old /play-card and /remove-card
 // working but redirect to new equip system

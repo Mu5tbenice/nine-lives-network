@@ -5442,6 +5442,32 @@
         state.deployedZoneIds.add(state.currentZoneId);
         updatePlayerBar();
 
+        // Equip each selected card into its slot so combat engine can use card effects
+        // The deploy endpoint only creates the deployment row — cards must be equipped separately
+        if (state.selectedCards.length > 0) {
+          const equipPromises = state.selectedCards.map((c, i) =>
+            fetch('/api/zones/equip-card', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                player_id: state.playerId,
+                zone_id: state.currentZoneId,
+                card_id: c.cardId,
+                slot_number: i + 1,
+              }),
+            }).then(r => r.json()).catch(() => null)
+          );
+          const equipResults = await Promise.all(equipPromises);
+          const failed = equipResults.filter(r => !r || !r.success);
+          if (failed.length > 0) {
+            console.warn(`[deploy] ${failed.length} card(s) failed to equip — effects may not fire`);
+          } else {
+            console.log('[deploy] All cards equipped successfully — effects active');
+          }
+          // Signal server to force-reload this zone on next tick (picks up newly equipped cards)
+          fetch(`/api/zones/${state.currentZoneId}/force-reload`, { method: 'POST' }).catch(() => null);
+        }
+
         // Reload zone nines to include yourself
         state.nines.clear();
         if (state.arenaApp) {
