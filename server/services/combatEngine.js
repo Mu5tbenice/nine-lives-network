@@ -1052,4 +1052,24 @@ module.exports = {
 };
 
 // Make forceReload available globally so routes can call it without circular imports
-global.__combatEngine = { forceReload };
+global.__combatEngine = {
+  forceReload,
+  getZoneStats(zoneId) {
+    const z = zones[zoneId];
+    if (!z) return null;
+    const fighters = [];
+    for (const [pid, nine] of z.nines) {
+      fighters.push({
+        playerId: pid,
+        name: nine.name,
+        guild: nine.guildTag,
+        house: nine.house,
+        damage: nine.damageDealt || 0,
+        heals: nine.healingDone || 0,
+        kos: nine.koCount || 0,
+        alive: nine.alive,
+      });
+    }
+    return { fighters, fighterCount: fighters.length };
+  }
+};

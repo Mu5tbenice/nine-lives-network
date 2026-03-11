@@ -535,6 +535,19 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET live combat stats for zone detail panel
+router.get('/:zoneId/combat-stats', async (req, res) => {
+  try {
+    const zoneId = parseInt(req.params.zoneId);
+    const stats = global.__combatEngine?.getZoneStats(zoneId);
+    if (!stats) return res.json({ fighters: [] });
+    res.json(stats);
+  } catch (err) {
+    console.error('combat-stats error:', err);
+    res.json({ fighters: [] });
+  }
+});
+
 // ═══════════════════════════════════════════
 // BACKWARD COMPAT: keep old /play-card and /remove-card
 // working but redirect to new equip system
