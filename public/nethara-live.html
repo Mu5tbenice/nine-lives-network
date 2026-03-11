@@ -1385,7 +1385,13 @@
 
           ${effectsHTML ? `<div style="margin-top:14px;"><div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:8px;">ACTIVE EFFECTS</div><div style="display:flex;flex-wrap:wrap;gap:5px;">${effectsHTML}</div></div>` : ''}
 
-          <div style="margin-top:20px;text-align:center;font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,0.35);font-style:italic;margin-bottom:8px;">
+          <!-- Combat stats widget — populated after fetch -->
+          <div id="zone-detail-combat-stats" style="margin-top:16px;border-radius:10px;border:1px solid rgba(255,255,255,0.07);background:rgba(0,0,0,0.25);overflow:hidden;">
+            <div style="padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.06);font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,0.3);letter-spacing:1px;">⚔️ LIVE COMBAT</div>
+            <div id="zone-detail-stats-body" style="padding:10px 12px;font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,0.35);font-style:italic;text-align:center;">Loading...</div>
+          </div>
+
+          <div style="margin-top:16px;text-align:center;font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,0.35);font-style:italic;margin-bottom:8px;">
             ${casters > 0 ? `Join ${casters} Nines already in the fight.` : 'Be the first to claim this zone.'}
           </div>
           <button id="zone-detail-enter" data-enter-zone-id="${zone.id}" style="width:100%;padding:16px;border-radius:10px;border:none;cursor:pointer;font-family:'Cinzel',serif;font-size:14px;font-weight:700;letter-spacing:3px;background:linear-gradient(135deg,#D4A64B,#8a6d2f);color:#0a0810;box-shadow:0 4px 0 #5a4520,0 6px 20px rgba(212,166,75,0.25);transition:transform 0.15s;">&#x2694;&#xFE0F; ENTER ARENA</button>
@@ -1404,6 +1410,55 @@
     panel.addEventListener('click', function(e) { if (e.target === panel) panel.remove(); });
     document.body.appendChild(panel);
     _detailPanel = panel;
+
+    // Fetch live combat stats for this zone
+    (async function() {
+      const statsBody = document.getElementById('zone-detail-stats-body');
+      if (!statsBody) return;
+      try {
+        const res = await fetch(`/api/zones/${zone.id}/combat-stats`);
+        if (!res.ok) throw new Error('no data');
+        const data = await res.json();
+        const fighters = data.fighters || [];
+        if (fighters.length === 0) {
+          statsBody.innerHTML = '<span style="color:rgba(255,255,255,0.25)">No active fighters yet.</span>';
+          return;
+        }
+        // Sort by damage for top 3
+        const sorted = [...fighters].sort((a, b) => (b.damage || 0) - (a.damage || 0)).slice(0, 3);
+        const maxDmg = sorted[0].damage || 1;
+        // Guild totals
+        const gTotals = {};
+        fighters.forEach(f => { if (f.guild) gTotals[f.guild] = (gTotals[f.guild] || 0) + (f.damage || 0); });
+        const topGuilds = Object.entries(gTotals).sort((a,b) => b[1]-a[1]).slice(0, 3);
+        const gHtml = topGuilds.map(([g, v]) =>
+          `<span style="font-family:'Press Start 2P',monospace;font-size:6px;padding:3px 7px;border-radius:4px;background:rgba(212,166,75,0.1);color:var(--gold);border:1px solid rgba(212,166,75,0.2)">[${g}] ${v.toLocaleString()}</span>`
+        ).join('');
+        const rowsHtml = sorted.map((f, i) => {
+          const pct = Math.round(((f.damage || 0) / maxDmg) * 100);
+          const medal = ['🥇','🥈','🥉'][i] || '';
+          return `<div style="margin-bottom:8px;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+              <span style="font-size:11px;width:14px;text-align:center">${medal}</span>
+              <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:#e0ddf8;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}</span>
+              <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:#e85a6a">${(f.damage||0).toLocaleString()}</span>
+              ${f.kos ? `<span style="font-family:'Press Start 2P',monospace;font-size:6px;color:#D4A64B">💀${f.kos}</span>` : ''}
+            </div>
+            <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden">
+              <div style="width:${pct}%;height:100%;background:#e85a6a;border-radius:2px;transition:width 0.4s"></div>
+            </div>
+          </div>`;
+        }).join('');
+        statsBody.style.fontStyle = 'normal';
+        statsBody.style.textAlign = 'left';
+        statsBody.style.padding = '0';
+        statsBody.innerHTML = `
+          ${gHtml ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px">${gHtml}</div>` : ''}
+          ${rowsHtml}`;
+      } catch (err) {
+        if (statsBody) statsBody.innerHTML = '<span style="color:rgba(255,255,255,0.2)">Stats unavailable right now.</span>';
+      }
+    })();
   }
 
     function openArena(zone) {
