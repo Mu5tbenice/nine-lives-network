@@ -284,18 +284,42 @@
 
     /* ── Nerm ── */
     .nerm-bubble-container {
-      position: absolute; top: 44px; left: 10px; z-index: 20;
-      max-width: 240px; pointer-events: none;
+      position: absolute; bottom: 230px; left: 10px; z-index: 25;
+      display: flex; align-items: flex-end; gap: 8px;
+      pointer-events: none; opacity: 0;
+      transition: opacity 0.35s ease;
+      max-width: 300px;
     }
+    .nerm-bubble-container.visible { opacity: 1; }
+    .nerm-pfp {
+      width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+      border: 2px solid var(--gold);
+      box-shadow: 0 0 12px rgba(212,166,75,0.45), 0 0 4px rgba(212,166,75,0.2);
+      background: #1a1528 url('/assets/images/Mustbenice_Base_model.png') center/cover no-repeat;
+      overflow: hidden; align-self: flex-end;
+    }
+    .nerm-pfp-fallback { font-size: 24px; line-height: 44px; text-align: center; display: block; }
     .nerm-bubble {
-      background: rgba(14,10,24,0.9); border: 1px solid var(--gold);
-      border-radius: 0 12px 12px 12px; padding: 8px 12px;
-      font-family: 'Crimson Text', serif; font-size: 14px; color: var(--bright);
-      font-style: italic; opacity: 0; transition: opacity 0.4s;
-      box-shadow: 0 0 20px rgba(212,166,75,0.1); backdrop-filter: blur(8px);
+      position: relative;
+      background: rgba(14,10,24,0.95); border: 1px solid var(--gold);
+      border-radius: 10px; padding: 9px 13px;
+      box-shadow: 0 0 20px rgba(212,166,75,0.12); backdrop-filter: blur(10px);
+      min-width: 160px; max-width: 230px;
     }
-    .nerm-bubble.visible { opacity: 1; }
-    .nerm-label { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--gold); margin-bottom: 3px; letter-spacing: 1px; }
+    .nerm-bubble::before {
+      content: ''; position: absolute; left: -7px; bottom: 14px;
+      border-top: 6px solid transparent; border-bottom: 6px solid transparent;
+      border-right: 7px solid var(--gold);
+    }
+    .nerm-bubble::after {
+      content: ''; position: absolute; left: -5px; bottom: 15px;
+      border-top: 5px solid transparent; border-bottom: 5px solid transparent;
+      border-right: 6px solid rgba(14,10,24,0.95);
+    }
+    .nerm-label { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--gold); margin-bottom: 5px; letter-spacing: 1px; }
+    #nerm-text { font-family: 'Crimson Text', serif; font-size: 14px; color: var(--bright); font-style: italic; line-height: 1.45; min-height: 18px; }
+    .nerm-cursor { display: inline-block; width: 2px; height: 13px; background: var(--gold); margin-left: 1px; vertical-align: middle; animation: nermBlink 0.7s step-end infinite; }
+    @keyframes nermBlink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
 
     /* ── Bottom tray — unified build + stats ── */
     /* ══════════════════════════════════════════════
@@ -707,10 +731,10 @@
       .countdown-time { font-size: 7px; }
       .arena-scoreboard { display: none; }
       .nerm-bubble-container {
-        top: auto; bottom: 225px; left: 0; right: 0;
-        max-width: 100%; padding: 0 10px; z-index: 30;
+        bottom: 240px; left: 8px; right: auto; max-width: calc(100% - 16px);
       }
-      .nerm-bubble { border-radius: 10px; font-size: 12px; padding: 6px 10px; text-align: center; border-bottom: none; }
+      .nerm-bubble { min-width: 0; max-width: 200px; font-size: 12px; padding: 7px 10px; }
+      .nerm-pfp { width: 36px; height: 36px; }
 
       /* On mobile: tray is full width (no sidebar) */
       .arena-bottom-tray { right: 0; }
@@ -891,9 +915,10 @@
     <button class="btn-join-battle" id="btn-join-battle">⚔️ JOIN BATTLE</button>
   </div>
 
-  <div class="nerm-bubble-container">
+  <div class="nerm-bubble-container" id="nerm-bubble-container">
+    <div class="nerm-pfp"><span class="nerm-pfp-fallback">🐱</span></div>
     <div class="nerm-bubble" id="nerm-bubble">
-      <div class="nerm-label">🐱 NERM</div>
+      <div class="nerm-label">NERM</div>
       <div id="nerm-text"></div>
     </div>
   </div>
@@ -4397,11 +4422,47 @@
     feed.scrollTop = feed.scrollHeight;
   }
 
+  // Nerm typewriter state
+  let _nermTypeTimer = null;
+  let _nermHideTimer = null;
+
   function showNermBubble(text) {
-    const bubble = document.getElementById('nerm-bubble');
-    document.getElementById('nerm-text').textContent = text;
-    bubble.classList.add('visible');
-    setTimeout(() => bubble.classList.remove('visible'), 6000);
+    const container = document.getElementById('nerm-bubble-container');
+    const textEl = document.getElementById('nerm-text');
+    if (!container || !textEl) return;
+
+    // Cancel any in-progress typewriter or hide timer
+    if (_nermTypeTimer) { clearInterval(_nermTypeTimer); _nermTypeTimer = null; }
+    if (_nermHideTimer) { clearTimeout(_nermHideTimer); _nermHideTimer = null; }
+
+    // Show container
+    container.classList.add('visible');
+    textEl.innerHTML = '';
+
+    // Typewriter — add one character every 28ms
+    let i = 0;
+    const cursor = document.createElement('span');
+    cursor.className = 'nerm-cursor';
+    textEl.appendChild(cursor);
+
+    _nermTypeTimer = setInterval(() => {
+      if (i < text.length) {
+        textEl.insertBefore(document.createTextNode(text[i]), cursor);
+        i++;
+      } else {
+        clearInterval(_nermTypeTimer);
+        _nermTypeTimer = null;
+        // Remove cursor 1s after typing finishes
+        setTimeout(() => { if (cursor.parentNode) cursor.remove(); }, 1000);
+      }
+    }, 28);
+
+    // Auto-hide after text duration (typing time + 4s reading time)
+    const displayMs = text.length * 28 + 4000;
+    _nermHideTimer = setTimeout(() => {
+      container.classList.remove('visible');
+      _nermHideTimer = null;
+    }, displayMs);
   }
 
   // ═══════════════════════════════════════════
