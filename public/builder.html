@@ -92,14 +92,14 @@
       <div id="slotCountLabel" style="font-family:var(--font-data);font-size:6px;color:#7B2D8E;margin-top:4px">🌙 NIGHTHOLLOW · 0/8 SLOTS</div>
     </div>
     <div class="card-frame" style="padding:12px 16px;margin-bottom:12px">
-      <label style="font-family:var(--font-data);font-size:6px;color:var(--gold);letter-spacing:1px;display:block;margin-bottom:6px">NAME YOUR NINE</label>
-      <input type="text" id="nineName" maxlength="20" placeholder="e.g. Shadowfang the Unseen" class="name-input">
-      <div id="nameCount" style="font-family:var(--font-mono);font-size:8px;color:var(--faint);margin-top:3px;text-align:right">0/20</div>
+      <label style="font-family:var(--font-data);font-size:6px;color:var(--gold);letter-spacing:1px;display:block;margin-bottom:6px">YOUR NINE</label>
+      <div id="nineHandleDisplay" style="font-family:var(--font-title);font-size:18px;font-weight:700;color:var(--bright);letter-spacing:1px;padding:10px 0 4px 0">@—</div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--muted);margin-top:2px">Your Nine goes by your Twitter handle. Want a custom name? That'll cost some <span style="color:var(--gold)">$9LV</span> — coming soon.</div>
     </div>
     <!-- GUILD TAG (edit mode only) -->
     <div class="card-frame guild-tag-edit" id="guildTagEdit" style="padding:12px 16px;margin-bottom:12px">
       <label style="font-family:var(--font-data);font-size:6px;color:var(--gold);letter-spacing:1px;display:block;margin-bottom:6px">GUILD TAG</label>
-      <input type="text" id="guildTagField" maxlength="16" placeholder="e.g. $BONK, $WIF, or any team name" class="guild-tag-field">
+      <input type="text" id="guildTagField" maxlength="20" placeholder="e.g. $BONK, $WIF, or any team name" class="guild-tag-field">
       <div id="guildTagStatus" class="autosave-status" style="color:var(--faint)"></div>
       <div style="font-family:var(--font-mono);font-size:8px;color:var(--faint);margin-top:4px">Leave empty to go Lone Wolf (1.5× ATK in zones)</div>
     </div>
@@ -136,7 +136,7 @@
     <div style="padding:10px 14px;border-radius:8px;margin-bottom:16px;background:rgba(212,166,75,0.05);border:1px solid var(--border);text-align:center">
       <div style="font-family:var(--font-mono);font-size:9px;color:var(--gold)">💡 Starter items give base stat bonuses. Rarer gear drops from chests, boss loot, and the collectables shop.</div>
     </div>
-    <button class="cta-btn" id="step1Btn" disabled onclick="goStep(2)">NAME YOUR NINE TO CONTINUE</button>
+    <button class="cta-btn" id="step1Btn" onclick="goStep(2)">CUSTOMIZE YOUR NINE → </button>
     <div style="text-align:center;margin-top:8px;font-family:var(--font-mono);font-size:8px;color:var(--faint)">you can change your look anytime from your profile</div>
   </div>
 
@@ -212,15 +212,15 @@ var RC = {none:'#6B5E50',common:'#888',uncommon:'#6acd8a',rare:'#5599ff',epic:'#
 
 /* ═══ HOUSE BASE STATS (from V4 Game Design) ═══ */
 var HOUSE_BASE_STATS = {
-  smoulders:   {atk:35, hp:350, spd:25, def:10, luck:10, icon:'🔥', color:'#E03C31', role:'GLASS CANNON'},
-  darktide:    {atk:25, hp:450, spd:20, def:20, luck:10, icon:'🌊', color:'#00B4D8', role:'THIEF'},
-  stonebark:   {atk:12, hp:700, spd:10, def:40, luck:5,  icon:'🌿', color:'#5CB338', role:'WALL'},
-  ashenvale:   {atk:20, hp:380, spd:38, def:12, luck:15, icon:'💨', color:'#90E0EF', role:'ROGUE'},
-  stormrage:   {atk:40, hp:280, spd:30, def:5,  luck:15, icon:'⚡', color:'#FFC800', role:'GLASS CANNON'},
-  nighthollow: {atk:25, hp:360, spd:30, def:12, luck:25, icon:'🌙', color:'#7B2D8E', role:'DISRUPTOR'},
-  dawnbringer: {atk:15, hp:620, spd:15, def:30, luck:5,  icon:'☀️', color:'#FF8C00', role:'HEALER'},
-  manastorm:   {atk:30, hp:380, spd:25, def:15, luck:10, icon:'🔮', color:'#5B8FE0', role:'CONTROLLER'},
-  plaguemire:  {atk:20, hp:450, spd:20, def:25, luck:10, icon:'☠️', color:'#E84393', role:'DOT SPECIALIST'}
+  smoulders:   {atk:35, hp:350, spd:25, def:10, luck:10, icon:'🔥', color:'#E03C31', role:'GLASS CANNON', img:'/assets/images/houses/House-smoulders.png'},
+  darktide:    {atk:25, hp:450, spd:20, def:20, luck:10, icon:'🌊', color:'#00B4D8', role:'THIEF',        img:'/assets/images/houses/House-darktide.png'},
+  stonebark:   {atk:12, hp:700, spd:10, def:40, luck:5,  icon:'🌿', color:'#5CB338', role:'WALL',         img:'/assets/images/houses/House-stonebark.png'},
+  ashenvale:   {atk:20, hp:380, spd:38, def:12, luck:15, icon:'💨', color:'#90E0EF', role:'ROGUE',        img:'/assets/images/houses/House-Ashenvale.png'},
+  stormrage:   {atk:40, hp:280, spd:30, def:5,  luck:15, icon:'⚡', color:'#FFC800', role:'GLASS CANNON', img:'/assets/images/houses/House-stormrage.png'},
+  nighthollow: {atk:25, hp:360, spd:30, def:12, luck:25, icon:'🌙', color:'#7B2D8E', role:'DISRUPTOR',    img:'/assets/images/houses/House-nighthollow.png'},
+  dawnbringer: {atk:15, hp:620, spd:15, def:30, luck:5,  icon:'☀️', color:'#FF8C00', role:'HEALER',       img:'/assets/images/houses/House-Dwnbringer.png'},
+  manastorm:   {atk:30, hp:380, spd:25, def:15, luck:10, icon:'🔮', color:'#5B8FE0', role:'CONTROLLER',   img:'/assets/images/houses/House-manastorm.png'},
+  plaguemire:  {atk:20, hp:450, spd:20, def:25, luck:10, icon:'☠️', color:'#E84393', role:'DOT SPECIALIST',img:'/assets/images/houses/House-plaguemire.png'}
 };
 var HOUSE_ID_MAP = {1:'smoulders',2:'darktide',3:'stonebark',4:'ashenvale',5:'stormrage',6:'nighthollow',7:'dawnbringer',8:'manastorm',9:'plaguemire'};
 
@@ -239,12 +239,29 @@ try {
 var _houseData = HOUSE_BASE_STATS[_playerHouse];
 var BS = {atk:_houseData.atk, hp:_houseData.hp, spd:_houseData.spd, def:_houseData.def, luck:_houseData.luck};
 
-/* Update header to show actual house */
+/* Update header to show actual house image + twitter handle */
 (function(){
   var h = HOUSE_BASE_STATS[_playerHouse];
   var icon = document.getElementById('headerHouseIcon');
   var label = document.getElementById('headerHouseLabel');
-  if (icon) { icon.textContent = h.icon; icon.style.borderColor = h.color; icon.style.background = h.color + '15'; }
+  var welcomeEl = document.querySelector('#builderHeader [style*="font-size:14px"]');
+
+  // Replace emoji with house image
+  if (icon) {
+    icon.style.borderColor = h.color;
+    icon.style.background = h.color + '15';
+    icon.style.overflow = 'hidden';
+    icon.style.padding = '0';
+    icon.innerHTML = h.img
+      ? '<img src="' + h.img + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentElement.textContent=\'' + h.icon + '\'">'
+      : h.icon;
+  }
+
+  // Show twitter handle in welcome text
+  var handle = '';
+  try { handle = JSON.parse(localStorage.getItem('9lv_player')).twitter_handle || ''; } catch(e) {}
+  if (welcomeEl && handle) welcomeEl.textContent = 'Welcome, @' + handle;
+
   if (label) { label.textContent = _playerHouse.toUpperCase() + ' · ' + h.role; label.style.color = h.color; }
 })();
 
@@ -288,7 +305,7 @@ function loadItemsFromAPI(callback) {
     .then(function(r) { return r.json(); })
     .then(function(inventory) {
       if (!Array.isArray(inventory) || inventory.length === 0) {
-        console.warn('No owned items found for player ' + pid);
+        console.log('No owned items yet for player ' + pid + ' — starter items will show once granted');
         if (callback) callback();
         return;
       }
@@ -517,20 +534,39 @@ function eqIt(sid,iid){var it=ITEMS[sid].find(function(i){return i.id===iid});if
 function pvOn(sid,iid){pItem=ITEMS[sid].find(function(i){return i.id===iid});pSlot=sid;renderStats()}
 function pvOff(){pItem=null;pSlot=null;renderStats()}
 
-/* NAME INPUT */
-document.getElementById('nineName').addEventListener('input',function(){
-  var v=this.value;document.getElementById('nameCount').textContent=v.length+'/20';
-  var b=document.getElementById('step1Btn'),d=document.getElementById('charNameDisplay');
-  if(v.trim()){b.disabled=false;b.textContent=v.trim().toUpperCase()+' IS READY →';d.textContent=v.trim();d.style.display='block'}
-  else{b.disabled=true;b.textContent='NAME YOUR NINE TO CONTINUE';d.style.display='none'}
-});
+/* Show twitter handle in Nine display and header */
+(function(){
+  var handle = '';
+  try { handle = JSON.parse(localStorage.getItem('9lv_player')).twitter_handle || ''; } catch(e) {}
+  var display = document.getElementById('nineHandleDisplay');
+  if (display) display.textContent = handle ? '@' + handle : '@—';
+  var charName = document.getElementById('charNameDisplay');
+  if (charName && handle) { charName.textContent = '@' + handle; charName.style.display = 'block'; }
+})();
 
 function renderBuilderCard(){
   var el=document.getElementById('builderCardPreview');
   if(!el||typeof buildCardV4!=='function')return;
-  var card=HOUSE_PREVIEW_CARDS[_playerHouse]||HOUSE_PREVIEW_CARDS['nighthollow'];
-  el.innerHTML=buildCardV4(card,{delay:0});
-  setTimeout(function(){if(typeof initCards==='function')initCards()},150);
+
+  function showCard(card){
+    el.innerHTML=buildCardV4(card,{delay:0});
+    setTimeout(function(){if(typeof initCards==='function')initCards();},150);
+  }
+
+  // Pull a random card from the full codex — always works, even for brand new players
+  fetch('/api/spells')
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var cards=Array.isArray(data)?data:(data.spells||data.cards||[]);
+      if(cards.length>0){
+        showCard(cards[Math.floor(Math.random()*cards.length)]);
+      } else {
+        showCard(HOUSE_PREVIEW_CARDS[_playerHouse]||HOUSE_PREVIEW_CARDS['nighthollow']);
+      }
+    })
+    .catch(function(){
+      showCard(HOUSE_PREVIEW_CARDS[_playerHouse]||HOUSE_PREVIEW_CARDS['nighthollow']);
+    });
 }
 
 /* PACK */
@@ -539,9 +575,20 @@ function initPack(){
   PACK_V4.forEach(function(cd,i){
     h+='<div class="flip-container" onclick="rC('+i+')" style="width:160px">';
     h+='<div class="flip-inner" id="fc'+i+'" style="width:160px;min-height:252px">';
-    h+='<div class="flip-front" style="width:160px;min-height:252px">';
-    h+='<div style="font-size:32px;margin-bottom:8px;opacity:.5">🃏</div>';
-    h+='<div style="font-family:var(--font-data);font-size:6px;color:var(--gold);opacity:.6">TAP TO REVEAL</div>';
+    // Card back — styled like a real 9LN card
+    h+='<div class="flip-front" style="width:160px;min-height:252px;background:linear-gradient(160deg,#1e1630 0%,#120e1e 60%,#1a0e2e 100%);border:1.5px solid rgba(212,166,75,0.3);border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.5),inset 0 0 40px rgba(123,45,142,0.06);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px">';
+    h+='<div style="width:80px;height:80px;border-radius:50%;border:2px solid rgba(212,166,75,0.25);overflow:hidden;background:rgba(123,45,142,0.1)">';
+    h+='<img src="/assets/images/houses/9lv-logo.png" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML=\'<div style=&quot;font-size:36px;line-height:80px;text-align:center&quot;>⚔️</div>\'">';
+    h+='</div>';
+    h+='<div style="text-align:center">';
+    h+='<div style="font-family:var(--font-data);font-size:6px;color:var(--gold);letter-spacing:2px;opacity:0.8">NINE LIVES</div>';
+    h+='<div style="font-family:var(--font-data);font-size:5px;color:var(--faint);letter-spacing:1px;margin-top:3px">TAP TO REVEAL</div>';
+    h+='</div>';
+    // Corner diamonds
+    h+='<div style="position:absolute;top:10px;left:10px;font-size:8px;opacity:0.3;color:var(--gold)">◆</div>';
+    h+='<div style="position:absolute;top:10px;right:10px;font-size:8px;opacity:0.3;color:var(--gold)">◆</div>';
+    h+='<div style="position:absolute;bottom:10px;left:10px;font-size:8px;opacity:0.3;color:var(--gold)">◆</div>';
+    h+='<div style="position:absolute;bottom:10px;right:10px;font-size:8px;opacity:0.3;color:var(--gold)">◆</div>';
     h+='</div>';
     h+='<div class="flip-back" style="width:160px">';
     h+='<div id="packCard'+i+'" class="sc-tiny"></div>';
@@ -619,7 +666,6 @@ function saveEquipment(callback) {
 }
 
 function enterNethara(){
-  var name=document.getElementById('nineName').value.trim()||'Unnamed Nine';
   saveEquipment(function() {
     window.location.href='/dashboard.html';
   });
@@ -662,31 +708,6 @@ function enterNethara(){
         window.location.href = '/dashboard.html';
       });
     };
-  }
-  var nameInput = document.getElementById('nineName');
-  if (nameInput) {
-    try {
-      var pStr = localStorage.getItem('9lv_player');
-      if (pStr) {
-        var pObj = JSON.parse(pStr);
-        if (pObj.nine_name) {
-          nameInput.value = pObj.nine_name;
-          document.getElementById('nameCount').textContent = pObj.nine_name.length + '/20';
-          var charName = document.getElementById('charNameDisplay');
-          if (charName) { charName.textContent = pObj.nine_name; charName.style.display = 'block'; }
-        }
-      }
-    } catch(e) {}
-    nameInput.addEventListener('input', function() {
-      var v = this.value;
-      document.getElementById('nameCount').textContent = v.length + '/20';
-      var d = document.getElementById('charNameDisplay');
-      if (v.trim()) { d.textContent = v.trim(); d.style.display = 'block'; }
-      else { d.style.display = 'none'; }
-      var b = document.getElementById('step1Btn');
-      b.disabled = false;
-      b.textContent = '💾 SAVE & BACK TO DASHBOARD';
-    });
   }
   /* Equipment loading now handled by loadItemsFromAPI callback */
   /* ═══ GUILD TAG — autosave in edit mode ═══ */

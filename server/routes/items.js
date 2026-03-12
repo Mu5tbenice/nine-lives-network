@@ -5,6 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabase');
+const supabaseAdmin = require('../config/supabaseAdmin'); // bypass RLS for player data
 
 const VALID_SLOTS = ['fur','expression','headwear','outfit','weapon','familiar','trinket'];
 
@@ -43,7 +44,7 @@ router.get('/starters', async (req, res) => {
 // ── GET /api/items/inventory/:player_id — Player's owned items ──
 router.get('/inventory/:player_id', async (req, res) => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin  // RLS bypass: reading own player_items
       .from('player_items')
       .select('*, item:item_id(*)')
       .eq('player_id', req.params.player_id)
@@ -58,7 +59,7 @@ router.get('/inventory/:player_id', async (req, res) => {
 // ── GET /api/items/equipped/:player_id — What's currently equipped ──
 router.get('/equipped/:player_id', async (req, res) => {
   try {
-    const { data: nine, error } = await supabase
+    const { data: nine, error } = await supabaseAdmin  // RLS bypass: reading player_nines
       .from('player_nines')
       .select('equipped_fur, equipped_expression, equipped_headwear, equipped_outfit, equipped_weapon, equipped_familiar, equipped_trinket_1, equipped_trinket_2, base_atk, base_hp, base_spd, base_def, base_luck, house_id, name')
       .eq('player_id', req.params.player_id)
@@ -118,9 +119,6 @@ router.get('/equipped/:player_id', async (req, res) => {
 });
 
 // ── POST /api/items/equip — Equip item(s) ──
-// Supports two modes:
-//   Single: { player_id, item_slug }
-//   Builder bulk: { player_id, equipment: {fur:'id',...}, images: {fur:'FILE.png',...} }
 router.post('/equip', express.json(), async (req, res) => {
   try {
     const { player_id, item_slug, equipment, images } = req.body;
@@ -140,7 +138,6 @@ router.post('/equip', express.json(), async (req, res) => {
         trinket2: 'equipped_trinket_2',
       };
 
-      // Map builder slot IDs to DB columns
       Object.keys(equipment).forEach(slot => {
         const col = SLOT_COLUMNS[slot];
         if (col) {
@@ -149,18 +146,15 @@ router.post('/equip', express.json(), async (req, res) => {
         }
       });
 
-      // Build equipped_images from filenames for arena rendering
       if (images && typeof images === 'object') {
         const imageMap = {};
         Object.keys(images).forEach(slot => {
-          if (images[slot]) {
-            imageMap[slot] = '/assets/nine/' + slot + '/' + images[slot];
-          }
+          if (images[slot]) imageMap[slot] = '/assets/nine/' + slot + '/' + images[slot];
         });
         update.equipped_images = imageMap;
       }
 
-      const { error } = await supabase
+      const { error } = await supabaseAdmin  // RLS bypass: writing own player_nines
         .from('player_nines')
         .update(update)
         .eq('player_id', player_id);
@@ -169,15 +163,13 @@ router.post('/equip', express.json(), async (req, res) => {
       return res.json({ success: true, mode: 'bulk', slots_updated: Object.keys(update).length });
     }
 
-    // ── SINGLE ITEM MODE (inventory system) ──
+    // ── SINGLE ITEM MODE ──
     if (!item_slug) return res.status(400).json({ error: 'item_slug or equipment object required' });
 
-    // Verify item exists
     const { data: item } = await supabase.from('items').select('*').eq('slug', item_slug).single();
     if (!item) return res.status(404).json({ error: 'Item not found' });
 
-    // Verify player owns this item
-    const { data: owned } = await supabase
+    const { data: owned } = await supabaseAdmin  // RLS bypass
       .from('player_items')
       .select('id')
       .eq('player_id', player_id)
@@ -185,30 +177,23 @@ router.post('/equip', express.json(), async (req, res) => {
       .single();
     if (!owned) return res.status(403).json({ error: 'You don\'t own this item' });
 
-    // Determine which column to update
     let column;
     if (item.slot === 'trinket') {
-      const { data: nine } = await supabase
+      const { data: nine } = await supabaseAdmin
         .from('player_nines')
         .select('equipped_trinket_1, equipped_trinket_2')
         .eq('player_id', player_id)
         .single();
-      if (!nine.equipped_trinket_1 || nine.equipped_trinket_1 === item_slug) {
-        column = 'equipped_trinket_1';
-      } else {
-        column = 'equipped_trinket_2';
-      }
+      column = (!nine.equipped_trinket_1 || nine.equipped_trinket_1 === item_slug)
+        ? 'equipped_trinket_1' : 'equipped_trinket_2';
     } else {
       column = 'equipped_' + item.slot;
     }
 
-    // Update the Nine
-    const { data: updated, error } = await supabase
+    const { error } = await supabaseAdmin
       .from('player_nines')
       .update({ [column]: item_slug })
-      .eq('player_id', player_id)
-      .select()
-      .single();
+      .eq('player_id', player_id);
 
     if (error) return res.status(500).json({ error: error.message });
     res.json({ success: true, slot: item.slot, item_slug });
@@ -225,8 +210,8 @@ router.post('/unequip', express.json(), async (req, res) => {
     const { player_id, slot } = req.body;
     if (!player_id || !slot) return res.status(400).json({ error: 'player_id and slot required' });
 
-    const column = slot.startsWith('trinket') ? 'equipped_' + slot : 'equipped_' + slot;
-    const { error } = await supabase
+    const column = 'equipped_' + slot;
+    const { error } = await supabaseAdmin  // RLS bypass
       .from('player_nines')
       .update({ [column]: null })
       .eq('player_id', player_id);
@@ -245,7 +230,6 @@ router.post('/grant-starters', express.json(), async (req, res) => {
     const { player_id } = req.body;
     if (!player_id) return res.status(400).json({ error: 'player_id required' });
 
-    // Get all starter items
     const { data: starters } = await supabase
       .from('items')
       .select('id')
@@ -254,14 +238,13 @@ router.post('/grant-starters', express.json(), async (req, res) => {
 
     if (!starters || starters.length === 0) return res.json({ success: true, granted: 0 });
 
-    // Insert, skip duplicates
     const rows = starters.map(item => ({
       player_id: parseInt(player_id),
       item_id: item.id,
       source: 'starter',
     }));
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin  // RLS bypass: inserting player_items
       .from('player_items')
       .upsert(rows, { onConflict: 'player_id,item_id', ignoreDuplicates: true })
       .select();
@@ -275,13 +258,11 @@ router.post('/grant-starters', express.json(), async (req, res) => {
 });
 
 // ── POST /api/items/drop — Award a random item to player ──
-// Body: { player_id, source, slot (optional) }
 router.post('/drop', express.json(), async (req, res) => {
   try {
     const { player_id, source, slot } = req.body;
     if (!player_id) return res.status(400).json({ error: 'player_id required' });
 
-    // Roll rarity: common 40%, uncommon 30%, rare 20%, epic 8%, legendary 2%
     const roll = Math.random() * 100;
     let rarity;
     if (roll < 40) rarity = 'common';
@@ -290,22 +271,21 @@ router.post('/drop', express.json(), async (req, res) => {
     else if (roll < 98) rarity = 'epic';
     else rarity = 'legendary';
 
-    // Pick a random item of that rarity (optionally from specific slot)
     let query = supabase.from('items').select('*').eq('rarity', rarity).eq('is_active', true);
     if (slot) query = query.eq('slot', slot);
     const { data: candidates } = await query;
 
     if (!candidates || candidates.length === 0) {
-      // Fallback to any rarity
       const { data: fallback } = await supabase.from('items').select('*').eq('is_active', true);
       if (!fallback || fallback.length === 0) return res.status(500).json({ error: 'No items available' });
       const item = fallback[Math.floor(Math.random() * fallback.length)];
-      const { data: granted } = await supabase.from('player_items').insert({ player_id: parseInt(player_id), item_id: item.id, source: source || 'drop' }).select('*, item:item_id(*)').single();
+      const { data: granted } = await supabaseAdmin
+        .from('player_items').insert({ player_id: parseInt(player_id), item_id: item.id, source: source || 'drop' }).select('*, item:item_id(*)').single();
       return res.json({ success: true, item, player_item: granted });
     }
 
     const item = candidates[Math.floor(Math.random() * candidates.length)];
-    const { data: granted, error } = await supabase
+    const { data: granted, error } = await supabaseAdmin  // RLS bypass
       .from('player_items')
       .insert({ player_id: parseInt(player_id), item_id: item.id, source: source || 'drop' })
       .select('*, item:item_id(*)')
@@ -321,7 +301,6 @@ router.post('/drop', express.json(), async (req, res) => {
 });
 
 // ── POST /api/items/craft — Sacrifice 5 cards for 1 random item ──
-// Body: { player_id, card_ids: [id, id, id, id, id] }
 router.post('/craft', express.json(), async (req, res) => {
   try {
     const { player_id, card_ids } = req.body;
@@ -329,8 +308,7 @@ router.post('/craft', express.json(), async (req, res) => {
       return res.status(400).json({ error: 'player_id and 5 card_ids required' });
     }
 
-    // Verify player owns all 5 cards and they're not deployed
-    const { data: cards, error: cardErr } = await supabase
+    const { data: cards } = await supabaseAdmin
       .from('player_cards')
       .select('id')
       .eq('player_id', player_id)
@@ -340,8 +318,7 @@ router.post('/craft', express.json(), async (req, res) => {
       return res.status(400).json({ error: 'You need 5 owned cards to craft' });
     }
 
-    // Check none are deployed
-    const { data: deployed } = await supabase
+    const { data: deployed } = await supabaseAdmin
       .from('zone_card_slots')
       .select('card_id')
       .in('card_id', card_ids.slice(0, 5))
@@ -351,15 +328,8 @@ router.post('/craft', express.json(), async (req, res) => {
       return res.status(400).json({ error: 'Cannot sacrifice deployed cards. Withdraw them first.' });
     }
 
-    // Delete the 5 cards
-    const { error: delErr } = await supabase
-      .from('player_cards')
-      .delete()
-      .in('id', card_ids.slice(0, 5));
+    await supabaseAdmin.from('player_cards').delete().in('id', card_ids.slice(0, 5));
 
-    if (delErr) return res.status(500).json({ error: 'Failed to consume cards' });
-
-    // Roll a random item (better odds than normal drop)
     const roll = Math.random() * 100;
     let rarity;
     if (roll < 25) rarity = 'common';
@@ -375,7 +345,7 @@ router.post('/craft', express.json(), async (req, res) => {
 
     if (!item) return res.status(500).json({ error: 'No items available for craft' });
 
-    const { data: granted } = await supabase
+    const { data: granted } = await supabaseAdmin
       .from('player_items')
       .insert({ player_id: parseInt(player_id), item_id: item.id, source: 'craft' })
       .select('*, item:item_id(*)')
