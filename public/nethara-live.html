@@ -6475,7 +6475,7 @@
     const initial = (data.handle || 'A')[0].toUpperCase();
     const avatarStyle = 'width:22px;height:22px;border-radius:50%;flex-shrink:0;overflow:hidden;border:1.5px solid '+nineColor+'60;background:'+nineColor+'22;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:'+nineColor+';font-family:monospace;';
     const avatar = nineImgUrl
-      ? '<div style="'+avatarStyle+'"><img src="'+nineImgUrl+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.textContent=''+initial+''"></div>'
+      ? '<div style="'+avatarStyle+'"><img src="'+nineImgUrl+'" style="width:100%;height:100%;object-fit:cover;"></div>'
       : '<div style="'+avatarStyle+'">'+initial+'</div>';
 
     const gTag = data.guildTag ? ' <span class="chat-guild">['+data.guildTag+']</span>' : '';
@@ -6487,7 +6487,7 @@
       + '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">'
       + '<span class="chat-handle">@'+data.handle+'</span>'+gTag
       + '</div>'
-      + '<div style="color:var(--body);font-family:'Crimson Text',serif;font-size:12px;line-height:1.4;word-break:break-word;">'+safeMsg+'</div>'
+      + '<div style="color:var(--body);font-family:Crimson Text,serif;font-size:12px;line-height:1.4;word-break:break-word;">'+safeMsg+'</div>'
       + '</div></div>';
 
     ['arena-chat-log', 'sidebar-chat-log', 'mobile-chat-log'].forEach(function(id) {
