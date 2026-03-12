@@ -49,3 +49,4 @@ temp/
 *.zip
 public/assets/images/wizard-cat.mp4
 .local/
+.local/
