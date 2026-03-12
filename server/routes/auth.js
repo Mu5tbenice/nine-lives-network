@@ -293,14 +293,9 @@ router.post('/complete-registration', express.json(), async (req, res) => {
       return res.status(400).json({ error: 'Already registered' });
     }
 
-    // Validate school exists
-    const { data: school } = await supabase
-      .from('schools')
-      .select('id')
-      .eq('id', school_id)
-      .single();
-
-    if (!school) {
+    // Validate school is a valid id (1-9)
+    const school_id_int = parseInt(school_id);
+    if (!school_id_int || school_id_int < 1 || school_id_int > 9) {
       return res.status(400).json({ error: 'Invalid school' });
     }
 
