@@ -1302,8 +1302,8 @@
   // Primary: house-specific biome art. Fallback: Hanwu-Boglands.png
   const BIOME_FALLBACK = '/assets/images/biomes/Hanwu-Boglands.png';
   const BIOME_FILE_MAP = {
-    'scorched-plains.jpg': 'chaos-rift.png',
-    'scorched-plains.png': 'chaos-rift.png',
+    'scorched-plains.jpg': 'scorched-plains.png',
+    'scorched-plains.png': 'scorched-plains.png',
   };
   const BIOME_LIST = [
     'Hanwu-Boglands.png','misty-falls.png','ancient-ruins.png',
@@ -5677,8 +5677,9 @@
     state.selectedCards = [];
     state._deployNoCards = false;
     document.getElementById('deploy-selected-count').textContent = '0';
+    const alreadyDeployed = state.isDeployed;
     document.getElementById('btn-confirm-deploy').disabled = true;
-    document.getElementById('btn-confirm-deploy').textContent = 'SELECT 3 CARDS TO DEPLOY';
+    document.getElementById('btn-confirm-deploy').textContent = alreadyDeployed ? 'SELECT 3 CARDS TO SWAP' : 'SELECT 3 CARDS TO DEPLOY';
 
     // Reset stat preview
     document.getElementById('deploy-atk').textContent = '--';
@@ -5907,7 +5908,7 @@
     const btn = document.getElementById('btn-confirm-deploy');
     if (state.selectedCards.length === 3) {
       btn.disabled = false;
-      btn.textContent = '⚔️ DEPLOY TO BATTLE';
+      btn.textContent = state.isDeployed ? '🔄 UPDATE LOADOUT' : '⚔️ DEPLOY TO BATTLE';
     } else {
       btn.disabled = true;
       btn.textContent = `SELECT ${3 - state.selectedCards.length} MORE CARD${state.selectedCards.length === 2 ? '' : 'S'}`;
@@ -5946,114 +5947,113 @@
   }
 
   /** Deploy to zone — sends selected card IDs */
-  async function confirmDeploy() {
-    if (!state.playerId) {
-      alert('Please log in first');
-      return;
-    }
+  // Equip the currently selected cards into slots — works for fresh deploy AND re-equip
+  async function equipSelectedCards() {
+    const results = await Promise.all(state.selectedCards.map((c, i) =>
+      fetch('/api/zones/equip-card', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          player_id: Number(state.playerId),
+          zone_id: Number(state.currentZoneId),
+          card_id: Number(c.cardId),
+          slot_number: i + 1,
+        }),
+      }).then(r => r.json()).catch(() => null)
+    ));
+    const failed = results.filter(r => !r || !r.success);
+    return { success: failed.length === 0, failed };
+  }
 
-    // If we have cards available but haven't selected 3, block
-    if (!state._deployNoCards && state.selectedCards.length < 3) {
-      alert('Select 3 cards first');
-      return;
-    }
+  // Apply the deployed state to the UI after a successful deploy or re-equip
+  function applyDeployedUI(eventMsg) {
+    closeDeployModal();
+    state.isDeployed = true;
+    state.deployedZoneIds.add(state.currentZoneId);
+    state._deployedAt = Date.now();
+
+    document.getElementById('deploy-cta').style.display = 'none';
+    document.getElementById('arena-bottom-tray').style.display = 'flex';
+
+    const equippedCards = state.selectedCards.map(c => c.card);
+    renderCardSlots(equippedCards);
+    state.equippedCards = equippedCards;
+    try {
+      localStorage.setItem('9lv_equipped_' + state.currentZoneId + '_' + state.playerId, JSON.stringify(equippedCards));
+    } catch(e) {}
+
+    updatePlayerBar();
+    addFeedEvent(eventMsg || 'You have entered the battle!', 'join');
+
+    // Switch to BUILD tab
+    document.querySelectorAll('.tray-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tray-pane').forEach(p => p.classList.remove('active'));
+    const buildTab = document.querySelector('.tray-tab[data-tab="build"]');
+    const buildPane = document.getElementById('tray-pane-build');
+    if (buildTab) buildTab.classList.add('active');
+    if (buildPane) buildPane.classList.add('active');
+
+    // Tell combat engine to reload this zone's card loadout
+    fetch(`/api/zones/${state.currentZoneId}/force-reload`, { method: 'POST' }).catch(() => null);
+  }
+
+  async function confirmDeploy() {
+    if (!state.playerId) { alert('Please log in first'); return; }
+    if (!state._deployNoCards && state.selectedCards.length < 3) { alert('Select 3 cards first'); return; }
 
     const btn = document.getElementById('btn-confirm-deploy');
     btn.textContent = 'DEPLOYING...';
     btn.disabled = true;
 
-    // Build deploy payload — include card_ids only if cards were selected
-    const payload = {
-      player_id: state.playerId,
-      zone_id: state.currentZoneId,
-    };
-    if (state.selectedCards.length > 0) {
-      payload.card_ids = state.selectedCards.map(c => c.cardId);
-    }
-
     try {
+      // Already deployed on this zone — just swap the cards, skip the deploy POST
+      if (state.isDeployed) {
+        const { success, failed } = await equipSelectedCards();
+        if (success) {
+          applyDeployedUI('Loadout updated!');
+        } else {
+          alert((failed[0]?.error) || 'Failed to equip cards');
+          btn.textContent = '⚔️ UPDATE LOADOUT';
+          btn.disabled = false;
+        }
+        return;
+      }
+
+      // Fresh deploy
       const res = await fetch('/api/zones/deploy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          player_id: state.playerId,
+          zone_id: state.currentZoneId,
+        }),
       });
-
       const data = await res.json();
+
       if (data.success) {
-        // Close modal
-        closeDeployModal();
-
-        state.isDeployed = true;
-        document.getElementById('deploy-cta').style.display = 'none';
-        document.getElementById('arena-bottom-tray').style.display = 'flex';
-        addFeedEvent(data.message || 'You have entered the battle!', 'join');
-
-        // Show equipped cards immediately + persist to localStorage so refresh/race can't wipe them
-        const equippedCards = state.selectedCards.map(c => c.card);
-        renderCardSlots(equippedCards);
-        try {
-          localStorage.setItem('9lv_equipped_' + state.currentZoneId + '_' + state.playerId, JSON.stringify(equippedCards));
-        } catch(e) {}
-
-        // Update deployed zone tracking so the badge shows on zone list immediately
-        state.deployedZoneIds.add(state.currentZoneId);
-        state._deployedAt = Date.now(); // guard against checkDeployment race
-        updatePlayerBar();
-
-        // Equip each selected card into its slot so combat engine can use card effects
-        // The deploy endpoint only creates the deployment row — cards must be equipped separately
+        // Deployment row created — now equip the cards
         if (state.selectedCards.length > 0) {
-          console.log('[equip] Starting equip for cards:', state.selectedCards.map(c => ({slot: c.index, cardId: c.cardId, name: c.card?.name})));
-          const equipPromises = state.selectedCards.map((c, i) =>
-            fetch('/api/zones/equip-card', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                player_id: Number(state.playerId),
-                zone_id: Number(state.currentZoneId),
-                card_id: Number(c.cardId),
-                slot_number: i + 1,
-              }),
-            }).then(r => r.json()).then(result => {
-              console.log(`[equip] Slot ${i+1} (card ${c.cardId}):`, result);
-              return result;
-            }).catch(err => {
-              console.error(`[equip] Slot ${i+1} fetch error:`, err);
-              return null;
-            })
-          );
-          const equipResults = await Promise.all(equipPromises);
-          const failed = equipResults.filter(r => !r || !r.success);
-          if (failed.length > 0) {
-            console.warn(`[deploy] ${failed.length} card(s) failed to equip:`, failed.map(r => r?.error));
-          } else {
-            console.log('[deploy] ✅ All cards equipped successfully');
-          }
-          // Signal server to force-reload this zone on next tick (picks up newly equipped cards)
-          fetch(`/api/zones/${state.currentZoneId}/force-reload`, { method: 'POST' }).catch(() => null);
+          await equipSelectedCards();
         }
-
-        // Auto-switch to BUILD tab so player sees their cards immediately
-        document.querySelectorAll('.tray-tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tray-pane').forEach(p => p.classList.remove('active'));
-        const buildTab = document.querySelector('.tray-tab[data-tab="build"]');
-        const buildPane = document.getElementById('tray-pane-build');
-        if (buildTab) buildTab.classList.add('active');
-        if (buildPane) buildPane.classList.add('active');
-
-        // Don't wipe the stage — the socket broadcasts arena:nine_joined for us
-        // which addNineSprite handles. Just ping the combat engine so it picks up
-        // our newly-equipped cards on the next tick.
-        // loadZoneNines already ran at arena open; only ping force-reload here.
-        // Post-deploy: no need to call checkDeployment — cards are already rendered
-        // and the 15s guard will protect them from being overwritten.
-        // The combat engine force-reload was already fired above.
+        applyDeployedUI(data.message);
+      } else if (data.error && data.error.toLowerCase().includes('already deployed')) {
+        // Server says already deployed (state.isDeployed was stale) — just equip
+        state.isDeployed = true;
+        const { success, failed } = await equipSelectedCards();
+        if (success) {
+          applyDeployedUI('Loadout updated!');
+        } else {
+          alert((failed[0]?.error) || 'Failed to equip cards');
+          btn.textContent = '⚔️ DEPLOY TO BATTLE';
+          btn.disabled = false;
+        }
       } else {
         alert(data.error || 'Deploy failed');
         btn.textContent = '⚔️ DEPLOY TO BATTLE';
         btn.disabled = false;
       }
     } catch(e) {
+      console.error('Deploy error:', e);
       alert('Deploy failed: ' + e.message);
       btn.textContent = '⚔️ DEPLOY TO BATTLE';
       btn.disabled = false;
@@ -6475,7 +6475,7 @@
     const initial = (data.handle || 'A')[0].toUpperCase();
     const avatarStyle = 'width:22px;height:22px;border-radius:50%;flex-shrink:0;overflow:hidden;border:1.5px solid '+nineColor+'60;background:'+nineColor+'22;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:'+nineColor+';font-family:monospace;';
     const avatar = nineImgUrl
-      ? '<div style="'+avatarStyle+'"><img src="'+nineImgUrl+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.textContent=''+initial+''"></div>'
+      ? '<div style="'+avatarStyle+'"><img src="'+nineImgUrl+'" style="width:100%;height:100%;object-fit:cover;"></div>'
       : '<div style="'+avatarStyle+'">'+initial+'</div>';
 
     const gTag = data.guildTag ? ' <span class="chat-guild">['+data.guildTag+']</span>' : '';
@@ -6487,7 +6487,7 @@
       + '<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">'
       + '<span class="chat-handle">@'+data.handle+'</span>'+gTag
       + '</div>'
-      + '<div style="color:var(--body);font-family:'Crimson Text',serif;font-size:12px;line-height:1.4;word-break:break-word;">'+safeMsg+'</div>'
+      + '<div style="color:var(--body);font-family:Crimson Text,serif;font-size:12px;line-height:1.4;word-break:break-word;">'+safeMsg+'</div>'
       + '</div></div>';
 
     ['arena-chat-log', 'sidebar-chat-log', 'mobile-chat-log'].forEach(function(id) {
