@@ -24,7 +24,7 @@
     .twitter-btn:disabled{opacity:0.3;cursor:not-allowed;box-shadow:none}
     .roast-bubble{background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin:14px 0;text-align:left;position:relative}
     .roast-bubble::before{content:'';position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:8px solid rgba(0,0,0,0.3)}
-    .roast-text{font-family:var(--font-mono);font-size:11px;color:var(--text-body);line-height:1.8;font-style:italic}
+    .roast-text{font-family:var(--font-mono);font-size:14px;color:var(--text-body);line-height:1.8;font-style:italic}
     @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
     .cursor{display:inline-block;width:2px;height:14px;background:var(--text-body);margin-left:2px;animation:blink 0.8s step-end infinite;vertical-align:middle}
     @keyframes dots{0%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}
@@ -81,7 +81,7 @@
     .confirm-bar-fill{height:100%;animation:loadBar 3s ease forwards}
 
     /* ── Nerm thinking rotating text ── */
-    .thinking-text{font-family:var(--font-mono);font-size:11px;font-style:italic;color:var(--text-body);line-height:1.8;min-height:20px}
+    .thinking-text{font-family:var(--font-mono);font-size:14px;font-style:italic;color:var(--text-body);line-height:1.8;min-height:20px}
     .thinking-dots{display:flex;gap:4px;justify-content:center;margin-top:14px}
     .thinking-dot{width:3px;height:3px;border-radius:50%;background:var(--text-body);animation:dotPulse 1.2s ease-in-out infinite}
 
@@ -108,7 +108,7 @@
     .reveal-hint{font-family:var(--font-mono);font-size:9px;color:var(--text-faint);font-style:italic;text-align:center;margin-top:8px}
 
     /* ── House description ── */
-    .house-desc{font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-top:6px;font-style:italic}
+    .house-desc{font-family:var(--font-mono);font-size:13px;color:var(--text-muted);margin-top:6px;font-style:italic}
 
     /* ── Mobile ── */
     @media(max-width:400px){
@@ -178,8 +178,7 @@
 
   <!-- ═══ STEP 3: ROAST + HOUSE SELECTION ═══ -->
   <div id="step3" class="step">
-    <img src="/assets/images/nerm.jpg" class="nerm-avatar" alt="Nerm" onerror="this.style.display='none'" style="width:56px;height:56px;margin-bottom:6px;">
-    <img id="playerAvatar" class="player-avatar" src="" style="display:none;width:40px;height:40px;border-radius:50%;border:2px solid var(--border-glow);object-fit:cover;margin:0 auto 4px;" alt="" onerror="this.style.display='none'">
+    <img id="playerAvatar" class="nerm-avatar nerm-float" src="" style="display:none;margin-bottom:12px;" alt="" onerror="this.style.display='none'">
     <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-faint);margin-bottom:8px;">@<span id="playerHandle"></span></div>
     <div class="roast-bubble">
       <div class="roast-text" id="roastText"></div>
