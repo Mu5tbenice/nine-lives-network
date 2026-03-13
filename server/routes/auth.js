@@ -7,6 +7,10 @@ const supabase = require('../config/supabase');
 let nineSystem = null;
 try { nineSystem = require('../services/nineSystem'); } catch (e) { console.log('⚠️ nineSystem not loaded'); }
 
+// Pack system — for granting welcome packs on registration
+let packSystem = null;
+try { packSystem = require('../services/packSystem'); } catch (e) { console.log('⚠️ packSystem not loaded'); }
+
 // Store OAuth states temporarily (in production, use Redis or database)
 const oauthStates = new Map();
 
@@ -360,6 +364,21 @@ router.post('/complete-registration', express.json(), async (req, res) => {
       }
     } catch (itemError) {
       console.error('🎒 Starter items grant failed:', itemError.message);
+    }
+    // ========================================
+
+    // ========================================
+    // GRANT 2 WELCOME PACKS
+    // ========================================
+    try {
+      if (packSystem && packSystem.grantPack) {
+        await packSystem.grantPack(player.id, 'welcome', 'registration');
+        await packSystem.grantPack(player.id, 'welcome', 'registration');
+        console.log(`🎴 2 welcome packs granted to @${twitter_handle}`);
+      }
+    } catch (packError) {
+      // Non-critical — don't fail registration if pack grant fails
+      console.error('🎴 Welcome pack grant failed:', packError.message);
     }
     // ========================================
 

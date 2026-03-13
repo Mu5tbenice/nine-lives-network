@@ -130,7 +130,7 @@ function getAffinityMultiplier(playerHouse, spellHouse) {
 // ── GRANT A PACK TO A PLAYER ──
 async function grantPack(playerId, packType = 'daily', source = 'daily_login', packData = null) {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('pack_inventory')
       .insert({
         player_id: playerId,
@@ -330,12 +330,8 @@ function generateCardsForPackType(packType, packData, basics, nonBasics) {
 
   switch (packType) {
     case 'daily': {
-      // 1 Random Basic Attack + 1 Random Basic Defend + 3 Random non-basics
-      const basicAttack = pickRandom(attackBasics) || pickRandom(safeNonBasics);
-      const basicDefend = pickRandom(defendBasics) || pickRandom(safeNonBasics);
-      cards.push(buildCard(basicAttack, 'common'));
-      cards.push(buildCard(basicDefend, 'common'));
-      for (let i = 0; i < 3; i++) {
+      // 5 random cards from the full pool — rarity rolled per-card
+      for (let i = 0; i < 5; i++) {
         const spell = pickRandom(safeNonBasics);
         cards.push(buildCard(spell, rollRarity(spell)));
       }
@@ -375,15 +371,20 @@ function generateCardsForPackType(packType, packData, basics, nonBasics) {
       break;
     }
 
-    case 'welcome':
+    case 'welcome': {
+      // Welcome pack: 5 random cards, with 1 guaranteed uncommon or better
+      for (let i = 0; i < 5; i++) {
+        const spell = pickRandom(safeNonBasics);
+        const rarity = i === 0 ? rollRarityGuaranteed('uncommon') : rollRarity(spell);
+        cards.push(buildCard(spell, rarity));
+      }
+      break;
+    }
+
     case 'reward':
     default: {
-      // Same structure as daily
-      const basicAttack = pickRandom(attackBasics) || pickRandom(safeNonBasics);
-      const basicDefend = pickRandom(defendBasics) || pickRandom(safeNonBasics);
-      cards.push(buildCard(basicAttack, 'common'));
-      cards.push(buildCard(basicDefend, 'common'));
-      for (let i = 0; i < 3; i++) {
+      // 5 random cards from the full pool — rarity rolled per-card
+      for (let i = 0; i < 5; i++) {
         const spell = pickRandom(safeNonBasics);
         cards.push(buildCard(spell, rollRarity(spell)));
       }
