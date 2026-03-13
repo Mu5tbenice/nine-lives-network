@@ -417,6 +417,11 @@ function getPlayerId() {
   var p = new URLSearchParams(window.location.search);
   var f = p.get('player_id') || p.get('pid');
   if (f) { localStorage.setItem('player_id', f); return f; }
+  // 9lv_player is set by register.html — check it first
+  try {
+    var ninePlayer = JSON.parse(localStorage.getItem('9lv_player'));
+    if (ninePlayer && ninePlayer.id) return String(ninePlayer.id);
+  } catch(e) {}
   return localStorage.getItem('player_id');
 }
 
