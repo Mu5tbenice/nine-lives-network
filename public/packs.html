@@ -607,6 +607,7 @@
       <div class="section-label"><span class="icon">💰</span> BUY SPELL PACKS</div>
       <div class="fair-play-notice">
         All packs use <span class="gold">identical drop rates</span> — no boosted odds, no pay-to-win.
+        Prices shown in $9LV · <span class="gold">~$2 USD per pack</span> at current price · adjusted each season
       </div>
       <div class="pack-grid" id="buy-packs-grid">
         <!-- Single -->
@@ -614,7 +615,7 @@
           <div class="pack-icon"><img src="/assets/images/booster-pack.png" alt="Pack"></div>
           <div class="pack-name" style="color:#D4A64B;">Single Pack</div>
           <div class="pack-desc">1 pack · Same drop rates as daily</div>
-          <div class="price-btn" style="background:rgba(212,166,75,0.1); border:1px solid rgba(212,166,75,0.25); color:#D4A64B;">50 $9LV</div>
+          <div class="price-btn" style="background:rgba(212,166,75,0.1); border:1px solid rgba(212,166,75,0.25); color:#D4A64B;">250,000 $9LV</div>
         </div>
         <!-- 3-Pack -->
         <div class="buy-pack-card" onclick="buyPack(3)" style="border:1.5px solid rgba(85,187,255,0.15); background:linear-gradient(135deg,rgba(85,187,255,0.05),#110e1c);">
@@ -622,7 +623,7 @@
           <div class="pack-icon"><img src="/assets/images/booster-pack.png" alt="Pack"></div>
           <div class="pack-name" style="color:#55bbff;">3-Pack Bundle</div>
           <div class="pack-desc">3 packs · Same drop rates as daily</div>
-          <div class="price-btn" style="background:rgba(85,187,255,0.1); border:1px solid rgba(85,187,255,0.25); color:#55bbff;">125 $9LV</div>
+          <div class="price-btn" style="background:rgba(85,187,255,0.1); border:1px solid rgba(85,187,255,0.25); color:#55bbff;">625,000 $9LV</div>
         </div>
         <!-- 5-Pack -->
         <div class="buy-pack-card" onclick="buyPack(5)" style="border:1.5px solid rgba(187,136,255,0.15); background:linear-gradient(135deg,rgba(187,136,255,0.05),#110e1c);">
@@ -630,7 +631,7 @@
           <div class="pack-icon"><img src="/assets/images/booster-pack.png" alt="Pack"></div>
           <div class="pack-name" style="color:#bb88ff;">5-Pack Bundle</div>
           <div class="pack-desc">5 packs · Same drop rates as daily</div>
-          <div class="price-btn" style="background:rgba(187,136,255,0.1); border:1px solid rgba(187,136,255,0.25); color:#bb88ff;">200 $9LV</div>
+          <div class="price-btn" style="background:rgba(187,136,255,0.1); border:1px solid rgba(187,136,255,0.25); color:#bb88ff;">1,000,000 $9LV</div>
         </div>
       </div>
 
@@ -748,9 +749,15 @@
         <div style="flex:1;">
           <div class="title">$9LV</div>
           <div class="desc">The official token of Nine Lives Network · Solana SPL</div>
+          <div style="font-family:monospace; font-size:9px; color:var(--faint); margin-bottom:10px; line-height:1.5;">
+            Play → earn points → claim $9LV anytime.<br>
+            20% of every spend burned. 50% feeds the LP pool.<br>
+            Top 3 players win USDC prizes every 60 days.
+          </div>
           <div class="token-btns">
-            <button class="token-btn" style="background:rgba(212,166,75,0.1); border-color:rgba(212,166,75,0.25); color:#D4A64B;">VIEW ON PUMP.FUN</button>
-            <button class="token-btn" style="background:rgba(85,78,104,0.1); border-color:rgba(85,78,104,0.2); color:var(--muted);">COPY ADDRESS</button>
+            <a class="token-btn" href="https://pump.fun/coin/CMSgLxMAtGnmZBthMp6kqqjL8QceAaRkFCdxP8Xnpump" target="_blank" rel="noopener" style="background:rgba(212,166,75,0.1); border-color:rgba(212,166,75,0.25); color:#D4A64B; text-decoration:none;">VIEW ON PUMP.FUN</a>
+            <button class="token-btn" onclick="navigator.clipboard.writeText('CMSgLxMAtGnmZBthMp6kqqjL8QceAaRkFCdxP8Xnpump').then(()=>{this.textContent='COPIED ✓';setTimeout(()=>this.textContent='COPY ADDRESS',2000)})" style="background:rgba(85,78,104,0.1); border-color:rgba(85,78,104,0.2); color:var(--muted);">COPY ADDRESS</button>
+            <a class="token-btn" href="/token.html" style="background:rgba(212,166,75,0.06); border-color:rgba(212,166,75,0.2); color:#D4A64B; text-decoration:none;">TOKENOMICS →</a>
           </div>
         </div>
       </div>

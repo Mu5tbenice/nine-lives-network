@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>$9LV Token — Nine Lives Network</title>
+
+  <link rel="stylesheet" href="/css/variables-v2.css">
+  <link rel="stylesheet" href="/css/nav-v2.css">
+
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Press+Start+2P&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
+  <style>
+    :root {
+      --bg:        #0a0812;
+      --bg-card:   #110e1c;
+      --bg-panel:  rgba(255,255,255,0.03);
+      --border:    rgba(255,255,255,0.07);
+      --gold:      #D4A64B;
+      --gold-bright: #F5D680;
+      --gold-dim:  #8B7332;
+      --bright:    #F0ECF8;
+      --body:      #CCC5DB;
+      --muted:     #847C98;
+      --faint:     #554E68;
+      --cyan:      #6ac8d8;
+      --green:     #6acd8a;
+      --red:       #e85a6a;
+      --purple:    #b088e8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Crimson Text', serif; background: var(--bg); color: var(--body); min-height: 100vh; overflow-x: hidden; }
+    a { color: var(--gold); text-decoration: none; }
+
+    .page-wrap { max-width: 900px; margin: 0 auto; padding: 80px 24px 80px; }
+
+    /* ═══ HEADER ═══ */
+    .page-header { padding-bottom: 24px; border-bottom: 1px solid var(--border); margin-bottom: 32px; }
+    .page-eyebrow { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--gold); letter-spacing: 3px; margin-bottom: 10px; }
+    .page-header h1 { font-family: 'Cinzel', serif; font-size: clamp(24px,5vw,38px); font-weight: 900; color: var(--bright); letter-spacing: 2px; line-height: 1.1; margin-bottom: 10px; }
+    .page-header h1 span { color: var(--gold); }
+    .page-header p { font-family: monospace; font-size: 12px; color: var(--muted); line-height: 1.6; max-width: 560px; }
+
+    /* ═══ CONTRACT BAR ═══ */
+    .contract-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-top: 18px; }
+    .chain-pill { font-family: 'Press Start 2P', monospace; font-size: 7px; background: rgba(106,200,216,0.1); color: var(--cyan); border: 1px solid rgba(106,200,216,0.2); border-radius: 20px; padding: 4px 10px; flex-shrink: 0; }
+    .ca-label { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint); flex-shrink: 0; }
+    .ca-addr { font-family: monospace; font-size: 11px; color: var(--gold-bright); flex: 1; word-break: break-all; min-width: 0; }
+    .ca-copy { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; cursor: pointer; flex-shrink: 0; transition: color 0.2s, border-color 0.2s; }
+    .ca-copy:hover { color: var(--gold); border-color: rgba(212,166,75,0.3); }
+
+    /* ═══ SECTIONS ═══ */
+    .section-label { font-family: monospace; font-size: 11px; color: var(--faint); letter-spacing: 2px; margin-bottom: 14px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+    .section-label .icon { font-size: 14px; }
+    .section { margin-bottom: 40px; }
+    .section + .section { border-top: 1px solid var(--border); padding-top: 36px; }
+
+    /* ═══ STAT CARDS ═══ */
+    .stat-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap: 10px; margin-bottom: 20px; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; }
+    .stat-card-label { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--faint); letter-spacing: 1px; margin-bottom: 8px; }
+    .stat-card-value { font-family: 'Cinzel', serif; font-size: 22px; font-weight: 800; color: var(--bright); }
+    .stat-card-value.gold { color: var(--gold); }
+    .stat-card-value.cyan { color: var(--cyan); }
+    .stat-card-value.purple { color: var(--purple); }
+    .stat-card-value.green { color: var(--green); }
+    .stat-card-sub { font-family: monospace; font-size: 9px; color: var(--faint); margin-top: 4px; }
+
+    /* ═══ DISTRIBUTION BAR ═══ */
+    .dist-bar { height: 12px; border-radius: 6px; overflow: hidden; display: flex; gap: 2px; margin-bottom: 14px; }
+    .dist-seg { height: 100%; border-radius: 3px; }
+    .dist-legend { display: flex; flex-wrap: wrap; gap: 10px 20px; }
+    .dist-legend-item { display: flex; align-items: center; gap: 7px; font-family: monospace; font-size: 10px; color: var(--body); }
+    .dist-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+    /* ═══ INFO CARD ═══ */
+    .info-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; margin-bottom: 12px; }
+    .info-card-title { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: var(--bright); margin-bottom: 6px; }
+    .info-card-body { font-family: monospace; font-size: 10px; color: var(--muted); line-height: 1.6; }
+
+    /* ═══ RULE CARDS ═══ */
+    .rule-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 12px; }
+    .rule-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 20px; position: relative; overflow: hidden; }
+    .rule-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+    .rule-card.gold-rule::before   { background: linear-gradient(90deg, var(--gold), transparent); }
+    .rule-card.cyan-rule::before   { background: linear-gradient(90deg, var(--cyan), transparent); }
+    .rule-card.purple-rule::before { background: linear-gradient(90deg, var(--purple), transparent); }
+    .rule-card.green-rule::before  { background: linear-gradient(90deg, var(--green), transparent); }
+    .rule-card-label { font-family: 'Press Start 2P', monospace; font-size: 6px; letter-spacing: 1px; margin-bottom: 8px; color: var(--faint); }
+    .rule-card-title { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: var(--bright); margin-bottom: 12px; }
+    .rule-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-family: monospace; font-size: 10px; }
+    .rule-row:last-child { border-bottom: none; }
+    .rule-row .dest { color: var(--muted); }
+    .rule-row .pct { font-weight: 700; font-size: 11px; flex-shrink: 0; }
+    .pct-gold { color: var(--gold); } .pct-red { color: var(--red); } .pct-cyan { color: var(--cyan); }
+
+    /* ═══ EARN FLOW ═══ */
+    .flow-steps { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0; }
+    .flow-step { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; flex: 1; min-width: 120px; max-width: 200px; }
+    .flow-step-num { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--gold); margin-bottom: 6px; }
+    .flow-step-title { font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; color: var(--bright); margin-bottom: 4px; }
+    .flow-step-desc { font-family: monospace; font-size: 9px; color: var(--muted); line-height: 1.5; }
+    .flow-arrow { display: flex; align-items: center; justify-content: center; padding: 0 6px; color: var(--gold); font-size: 14px; opacity: 0.4; flex-shrink: 0; align-self: center; }
+    .flow-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .flow-choice { font-family: 'Cinzel', serif; font-size: 10px; font-weight: 700; padding: 7px 12px; border-radius: 8px; border: 1px solid; }
+    .fc-hold  { color:var(--gold);   background:rgba(212,166,75,0.06);  border-color:rgba(212,166,75,0.2); }
+    .fc-stake { color:var(--cyan);   background:rgba(106,200,216,0.06); border-color:rgba(106,200,216,0.2); }
+    .fc-spend { color:var(--purple); background:rgba(176,136,232,0.06); border-color:rgba(176,136,232,0.2); }
+    .fc-sell  { color:var(--green);  background:rgba(106,205,138,0.06); border-color:rgba(106,205,138,0.2); }
+
+    /* ═══ BURN CARDS ═══ */
+    .burn-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px,1fr)); gap: 10px; }
+    .burn-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; border-top: 2px solid rgba(232,90,106,0.35); }
+    .burn-card-season { font-family: 'Press Start 2P', monospace; font-size: 6px; margin-bottom: 6px; }
+    .burn-card-season.s1 { color: var(--green); }
+    .burn-card-season.s2 { color: var(--cyan); }
+    .burn-card-title { font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; color: var(--bright); margin-bottom: 4px; }
+    .burn-card-desc { font-family: monospace; font-size: 9px; color: var(--muted); line-height: 1.5; }
+
+    /* ═══ DATA TABLE ═══ */
+    .data-table { width: 100%; border-collapse: collapse; font-family: monospace; font-size: 11px; }
+    .data-table thead tr { border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .data-table th { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--faint); letter-spacing: 1px; text-align: left; padding: 0 0 10px; text-transform: uppercase; }
+    .data-table th:not(:first-child) { padding-left: 14px; }
+    .data-table td { padding: 10px 0; color: var(--body); border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    .data-table td:not(:first-child) { padding-left: 14px; }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .td-title { font-family: 'Cinzel', serif; font-weight: 700; color: var(--bright); font-size: 11px; }
+    .td-mono { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--gold); }
+
+    /* ═══ LOCK TIMELINE ═══ */
+    .lock-timeline { padding-left: 24px; position: relative; }
+    .lock-timeline::before { content: ''; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 1px; background: var(--border); }
+    .lock-event { position: relative; margin-bottom: 28px; }
+    .lock-event:last-child { margin-bottom: 0; }
+    .lock-event::before { content: ''; position: absolute; left: -20px; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--bg); border: 2px solid var(--border); }
+    .lock-event.done::before   { border-color: var(--green);  background: rgba(106,205,138,0.1); }
+    .lock-event.active::before { border-color: var(--gold);   background: rgba(212,166,75,0.1); }
+    .lock-event-date { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint); margin-bottom: 4px; }
+    .lock-event.done .lock-event-date   { color: var(--green); }
+    .lock-event.active .lock-event-date { color: var(--gold); }
+    .lock-event-title { font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: var(--bright); margin-bottom: 3px; }
+    .lock-event-desc { font-family: monospace; font-size: 10px; color: var(--muted); line-height: 1.5; }
+
+    /* ═══ CALLOUT ═══ */
+    .callout { background: rgba(212,166,75,0.05); border: 1px solid rgba(212,166,75,0.18); border-radius: 10px; padding: 14px 18px; font-family: monospace; font-size: 10px; color: var(--muted); line-height: 1.6; margin-top: 14px; }
+    .callout strong { color: var(--gold); }
+
+    /* ═══ TRANSPARENT NOTE ═══ */
+    .transparent-note { background: rgba(176,136,232,0.04); border: 1px solid rgba(176,136,232,0.12); border-radius: 10px; padding: 14px 18px; font-family: monospace; font-size: 10px; color: var(--muted); line-height: 1.6; }
+    .transparent-note strong { color: var(--purple); }
+
+    /* ═══ STAKING CARD ═══ */
+    .staking-card { background: var(--bg-card); border: 1.5px solid rgba(106,200,216,0.2); border-radius: 14px; padding: 20px 22px; display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+    .staking-apy { background: rgba(106,200,216,0.08); border: 1px solid rgba(106,200,216,0.2); border-radius: 10px; padding: 14px 20px; text-align: center; flex-shrink: 0; }
+    .staking-apy-num { font-family: 'Cinzel', serif; font-size: 28px; font-weight: 900; color: var(--cyan); }
+    .staking-apy-label { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--faint); margin-top: 4px; }
+    .staking-details { flex: 1; min-width: 200px; }
+    .staking-details-title { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 800; color: var(--bright); margin-bottom: 8px; }
+    .staking-row { display: flex; justify-content: space-between; font-family: monospace; font-size: 10px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .staking-row:last-of-type { border-bottom: none; }
+    .staking-row .k { color: var(--faint); } .staking-row .v { color: var(--body); }
+    .staking-btn { display: inline-block; margin-top: 14px; font-family: 'Press Start 2P', monospace; font-size: 7px; padding: 10px 18px; border-radius: 8px; text-decoration: none; background: rgba(106,200,216,0.1); color: var(--cyan); border: 1px solid rgba(106,200,216,0.25); transition: all 0.2s; }
+    .staking-btn:hover { background: rgba(106,200,216,0.18); }
+
+    /* ═══ EXTERNAL LINKS ═══ */
+    .ext-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+    .ext-link { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; transition: color 0.2s, border-color 0.2s; display: inline-flex; align-items: center; gap: 5px; text-decoration: none; }
+    .ext-link:hover { color: var(--gold); border-color: rgba(212,166,75,0.3); }
+
+    /* ═══ RESPONSIVE ═══ */
+    @media (max-width: 600px) {
+      .page-wrap { padding: 72px 16px 60px; }
+      .flow-steps { flex-direction: column; }
+      .flow-arrow { transform: rotate(90deg); align-self: flex-start; padding: 4px 0; }
+      .flow-step { max-width: 100%; }
+      .stat-row { grid-template-columns: 1fr 1fr; }
+      .rule-grid { grid-template-columns: 1fr; }
+      .staking-card { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+<script src="/js/nav.js"></script>
+
+<div class="page-wrap">
+
+  <!-- ═══ HEADER ═══ -->
+  <div class="page-header">
+    <div class="page-eyebrow">$9LV · SOLANA SPL</div>
+    <h1>Play. Earn. <span>Burn.</span></h1>
+    <p>$9LV is the lifeblood of Nethara. Every point you score becomes a token. Every token spent fuels the burn. The supply shrinks. The game grows.</p>
+    <div class="contract-bar">
+      <span class="chain-pill">SOLANA</span>
+      <span class="ca-label">CA</span>
+      <span class="ca-addr" id="ca-addr">CMSgLxMAtGnmZBthMp6kqqjL8QceAaRkFCdxP8Xnpump</span>
+      <button class="ca-copy" id="copy-btn" onclick="copyCA()">COPY</button>
+    </div>
+  </div>
+
+  <!-- ═══ SUPPLY ═══ -->
+  <div class="section">
+    <div class="section-label"><span class="icon">📊</span> Token Supply</div>
+    <div class="stat-row">
+      <div class="stat-card"><div class="stat-card-label">Total Supply</div><div class="stat-card-value gold">1B</div><div class="stat-card-sub">Fixed forever</div></div>
+      <div class="stat-card"><div class="stat-card-label">Locked On-Chain</div><div class="stat-card-value cyan">35%</div><div class="stat-card-sub">350M via Streamflow</div></div>
+      <div class="stat-card"><div class="stat-card-label">Player Rewards</div><div class="stat-card-value purple">210M</div><div class="stat-card-sub">~8.75M/month vesting</div></div>
+      <div class="stat-card"><div class="stat-card-label">Staking Pool</div><div class="stat-card-value green">15M</div><div class="stat-card-sub">15% APY · Live now</div></div>
+    </div>
+    <div class="dist-bar">
+      <div class="dist-seg" style="flex:61;background:rgba(106,205,138,0.6);"></div>
+      <div class="dist-seg" style="flex:21;background:rgba(176,136,232,0.7);"></div>
+      <div class="dist-seg" style="flex:14;background:rgba(212,166,75,0.75);"></div>
+      <div class="dist-seg" style="flex:4; background:rgba(106,200,216,0.6);"></div>
+    </div>
+    <div class="dist-legend">
+      <div class="dist-legend-item"><div class="dist-dot" style="background:rgba(106,205,138,0.6);"></div>Public / Circulating — 61%</div>
+      <div class="dist-legend-item"><div class="dist-dot" style="background:rgba(176,136,232,0.7);"></div>Player Rewards Vesting — 21%</div>
+      <div class="dist-legend-item"><div class="dist-dot" style="background:rgba(212,166,75,0.75);"></div>Team + Dev Lock — 14%</div>
+      <div class="dist-legend-item"><div class="dist-dot" style="background:rgba(106,200,216,0.6);"></div>Seasons / Staking — 4%</div>
+    </div>
+  </div>
+
+  <!-- ═══ HOW YOU EARN ═══ -->
+  <div class="section">
+    <div class="section-label"><span class="icon">⚔️</span> How You Earn $9LV</div>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <div class="flow-step-num">01</div>
+        <div class="flow-step-title">Score Points</div>
+        <div class="flow-step-desc">Zones, Chronicle, duels, gauntlet, boss raids — everything earns</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-step-num">02</div>
+        <div class="flow-step-title">Points Vest</div>
+        <div class="flow-step-desc">7-day vest period before claimable — anti-bot protection</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-step-num">03</div>
+        <div class="flow-step-title">Claim Anytime</div>
+        <div class="flow-step-desc">1 point = 1 $9LV from rewards pool — no season end required</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">
+        <div class="flow-step-num">04</div>
+        <div class="flow-step-title">Anti-Dump Vest</div>
+        <div class="flow-step-desc">Claimed tokens vest 7 more days before tradeable</div>
+      </div>
+    </div>
+    <div class="flow-choices">
+      <div class="flow-choice fc-hold">HOLD → Wizard Rank</div>
+      <div class="flow-choice fc-stake">STAKE → 15% APY</div>
+      <div class="flow-choice fc-spend">SPEND → Cosmetics</div>
+      <div class="flow-choice fc-sell">SELL → Your tokens</div>
+    </div>
+    <div class="callout">
+      <strong>Conversion rate starts at 1pt = 1 $9LV.</strong> As the player base grows the team may adjust this ratio to keep the rewards pool sustainable. Any change is announced at least 2 weeks before the new season and never applies retroactively.
+    </div>
+  </div>
+
+  <!-- ═══ INCOME RULES ═══ -->
+  <div class="section">
+    <div class="section-label"><span class="icon">📋</span> Income Allocation Rules</div>
+    <div class="transparent-note" style="margin-bottom:18px;">
+      <strong>Full transparency.</strong> Every income source has a fixed public rule. No discretion. No exceptions. Every allocation happens on-chain and is announced by Nerm on Twitter.
+    </div>
+    <div class="rule-grid">
+      <div class="rule-card gold-rule">
+        <div class="rule-card-label">RULE A</div>
+        <div class="rule-card-title">Pump.fun Creator Fees</div>
+        <div class="rule-row"><span class="dest">LP Pool (SOL → USDC → pool)</span><span class="pct pct-cyan">40%</span></div>
+        <div class="rule-row"><span class="dest">Buyback + Burn</span><span class="pct pct-red">20%</span></div>
+        <div class="rule-row"><span class="dest">Treasury</span><span class="pct pct-gold">40%</span></div>
+      </div>
+      <div class="rule-card cyan-rule">
+        <div class="rule-card-label">RULE B</div>
+        <div class="rule-card-title">Pack Purchases</div>
+        <div class="rule-row"><span class="dest">Burned immediately</span><span class="pct pct-red">20%</span></div>
+        <div class="rule-row"><span class="dest">LP Pool</span><span class="pct pct-cyan">50%</span></div>
+        <div class="rule-row"><span class="dest">Treasury</span><span class="pct pct-gold">30%</span></div>
+      </div>
+      <div class="rule-card purple-rule">
+        <div class="rule-card-label">RULE C</div>
+        <div class="rule-card-title">Cosmetics / Sinks / Passes</div>
+        <div class="rule-row"><span class="dest">Burned immediately</span><span class="pct pct-red">20%</span></div>
+        <div class="rule-row"><span class="dest">LP Pool</span><span class="pct pct-cyan">50%</span></div>
+        <div class="rule-row"><span class="dest">Treasury</span><span class="pct pct-gold">30%</span></div>
+      </div>
+      <div class="rule-card green-rule">
+        <div class="rule-card-label">RULE D — SEASON 2+</div>
+        <div class="rule-card-title">NFT Mint Revenue</div>
+        <div class="rule-row"><span class="dest">LP Pool</span><span class="pct pct-cyan">55%</span></div>
+        <div class="rule-row"><span class="dest">Treasury</span><span class="pct pct-gold">35%</span></div>
+        <div class="rule-row"><span class="dest">Burned immediately</span><span class="pct pct-red">10%</span></div>
+      </div>
+    </div>
+    <div class="callout">
+      <strong>LP pool priority:</strong> The $9LV/USDC pool on Raydium is the foundation. USDC provides a stable price base unaffected by SOL volatility. All pump.fun SOL fees are manually swapped to USDC before being added to the pool.
+    </div>
+  </div>
+
+  <!-- ═══ BURNS ═══ -->
+  <div class="section">
+    <div class="section-label"><span class="icon">🔥</span> Deflationary Mechanics</div>
+    <div class="burn-grid">
+      <div class="burn-card">
+        <div class="burn-card-season s1">SEASON 1 · LIVE</div>
+        <div class="burn-card-title">Pack &amp; Sink Burns</div>
+        <div class="burn-card-desc">20% of every pack purchase and cosmetic spend is burned instantly on-chain at the moment of transaction.</div>
+      </div>
+      <div class="burn-card">
+        <div class="burn-card-season s1">SEASON 1 · LIVE</div>
+        <div class="burn-card-title">Buyback Burns</div>
+        <div class="burn-card-desc">Treasury SOL from pump.fun fees periodically buys $9LV from the LP pool. 100% of purchased tokens burned. Announced publicly with tx hash.</div>
+      </div>
+      <div class="burn-card">
+        <div class="burn-card-season s1">SEASON 1 · EVERY 60 DAYS</div>
+        <div class="burn-card-title">Seasonal Treasury Burn</div>
+        <div class="burn-card-desc">10% of treasury balance burned at season end. If the playerbase hits 1,000,000 collective points — an additional 1,000,000 $9LV burned on top.</div>
+      </div>
+      <div class="burn-card">
+        <div class="burn-card-season s1">SEASON 1 · EVERY 60 DAYS</div>
+        <div class="burn-card-title">Unclaimed Rewards Burn</div>
+        <div class="burn-card-desc">Tokens in the rewards pool that go unclaimed at season end are burned — never rolled over. Claim your points before the season closes.</div>
+      </div>
+      <div class="burn-card">
+        <div class="burn-card-season s2">SEASON 2+</div>
+        <div class="burn-card-title">NFT Mint Burns</div>
+        <div class="burn-card-desc">10% of all 2,500 Genesis NFT mint revenue is burned instantly at mint. The largest planned single deflationary event.</div>
+      </div>
+      <div class="burn-card">
+        <div class="burn-card-season s2">SEASON 2+</div>
+        <div class="burn-card-title">Boss Kill Burns</div>
+        <div class="burn-card-desc">50,000 $9LV burned from treasury every time the community kills the weekly boss. Nerm announces each kill and burn.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ STAKING ═══ -->
+  <div class="section">
+    <div class="section-label"><span class="icon">🔒</span> Staking</div>
+    <div class="staking-card">
+      <div class="staking-apy">
+        <div class="staking-apy-num">15%</div>
+        <div class="staking-apy-label">APY</div>
+      </div>
+      <div class="staking-details">
+        <div class="staking-details-title">$9LV Staking Pool</div>
+        <div class="staking-row"><span class="k">Platform</span><span class="v">Streamflow</span></div>
+        <div class="staking-row"><span class="k">Min stake duration</span><span class="v">30 days</span></div>
+        <div class="staking-row"><span class="k">Pool expires</span><span class="v">March 2028</span></div>
+        <div class="staking-row"><span class="k">Pool capacity</span><span class="v">200,000,000 $9LV</span></div>
+        <div class="staking-row"><span class="k">Reward source</span><span class="v">15M seasons wallet allocation</span></div>
+        <a class="staking-btn" href="https://app.streamflow.finance/staking/solana/mainnet" target="_blank" rel="noopener">STAKE $9LV →</a>
+      </div>
+    </div>
+    <div class="callout">
+      Staking removes $9LV from circulation for a minimum of 30 days, reducing sell pressure. Season 2 will introduce in-game perks for stakers.
+    </div>
+  </div>
+
+  <!-- ═══ PRIZES ═══ -->
+  <div class="section">
+    <div class="section-label"><span class="icon">🏆</span> Season Prizes</div>
+    <div class="info-card">
+      <div class="info-card-title">Two Ways to Win</div>
+      <div class="info-card-body">
+        <strong style="color:var(--bright);">Every player</strong> earns $9LV by converting season points via the claim portal — no competition needed, just play and score.<br><br>
+        <strong style="color:var(--gold);">Top 3 players</strong> each season also receive a flat USDC prize funded from pump.fun trading fee revenue. Prize amounts are announced at season start and scale with trading activity.
+      </div>
+    </div>
+    <table class="data-table" style="margin-top:4px;">
+      <thead><tr><th>Placement</th><th>Prize</th><th>Type</th></tr></thead>
+      <tbody>
+        <tr><td class="td-title">1st Place</td><td class="td-mono">60% of pool</td><td style="font-family:monospace;font-size:10px;color:var(--muted);">USDC via Streamflow</td></tr>
+        <tr><td class="td-title">2nd Place</td><td class="td-mono">25% of pool</td><td style="font-family:monospace;font-size:10px;color:var(--muted);">USDC via Streamflow</td></tr>
+        <tr><td class="td-title">3rd Place</td><td class="td-mono">15% of pool</td><td style="font-family:monospace;font-size:10px;color:var(--muted);">USDC via Streamflow</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ WIZARD RANKS ═══ -->
+  <div class="section">
+    <div class="section-label"><span class="icon">🧙</span> Wizard Ranks</div>
+    <div class="callout" style="margin-bottom:14px;">
+      <strong>Cosmetic and convenience only.</strong> Wizard Ranks never give combat power, stat boosts, or point multipliers. Holding more $9LV makes you look better — it does not make you stronger in Nethara.
+    </div>
+    <table class="data-table">
+      <thead><tr><th>Rank</th><th>~USD Held</th><th>Perks</th></tr></thead>
+      <tbody>
+        <tr><td class="td-title">Apprentice</td><td style="font-family:monospace;font-size:10px;color:var(--muted);">Free</td><td style="font-family:monospace;font-size:10px;color:var(--muted);">Base game access</td></tr>
+        <tr><td class="td-title" style="color:var(--cyan);">Initiate</td><td style="font-family:monospace;font-size:10px;color:var(--muted);">~$5</td><td style="font-family:monospace;font-size:10px;color:var(--muted);">Profile border glow, custom title color</td></tr>
+        <tr><td class="td-title" style="color:var(--green);">Adept</td><td style="font-family:monospace;font-size:10px;color:var(--muted);">~$25</td><td style="font-family:monospace;font-size:10px;color:var(--muted);">+1 bonus pack/week, profile emblem</td></tr>
+        <tr><td class="td-title" style="color:var(--purple);">Mage</td><td style="font-family:monospace;font-size:10px;color:var(--muted);">~$75</td><td style="font-family:monospace;font-size:10px;color:var(--muted);">Animated card backs, house particle effects</td></tr>
+        <tr><td class="td-title" style="color:var(--gold);">Archmage</td><td style="font-family:monospace;font-size:10px;color:var(--muted);">~$200</td><td style="font-family:monospace;font-size:10px;color:var(--muted);">Gold name on leaderboard, exclusive card art variants</td></tr>
+        <tr><td class="td-title" style="color:var(--red);">Grand Sorcerer</td><td style="font-family:monospace;font-size:10px;color:var(--muted);">~$500</td><td style="font-family:monospace;font-size:10px;color:var(--muted);">Custom card frame design, name in credits</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ LOCK SCHEDULE ═══ -->
+  <div class="section">
+    <div class="section-label"><span class="icon">🔐</span> Lock Schedule</div>
+    <div class="lock-timeline">
+      <div class="lock-event done">
+        <div class="lock-event-date">MARCH 2026 · COMPLETE</div>
+        <div class="lock-event-title">Community Rewards Vesting — 180M</div>
+        <div class="lock-event-desc">Locked via Streamflow. Releases ~7.5M tokens/month to the player rewards pool through March 2028.</div>
+      </div>
+      <div class="lock-event done">
+        <div class="lock-event-date">MARCH 2026 · COMPLETE</div>
+        <div class="lock-event-title">Extra Rewards Vesting — 30M</div>
+        <div class="lock-event-desc">Second vesting contract. Adds ~1.25M/month. Combined player rewards total ~8.75M/month.</div>
+      </div>
+      <div class="lock-event done">
+        <div class="lock-event-date">MARCH 2026 · COMPLETE</div>
+        <div class="lock-event-title">Dev Wallet Lock — 40M</div>
+        <div class="lock-event-desc">18-month linear lock. Cannot be accessed until September 2027.</div>
+      </div>
+      <div class="lock-event active">
+        <div class="lock-event-date">MARCH 2027 · UPCOMING</div>
+        <div class="lock-event-title">Team Lock Release — 100M</div>
+        <div class="lock-event-desc">1-year cliff lock releases. Any decisions about these tokens will be announced publicly well in advance.</div>
+      </div>
+      <div class="lock-event active">
+        <div class="lock-event-date">SEPTEMBER 2027 · UPCOMING</div>
+        <div class="lock-event-title">Dev Wallet Fully Unlocked — 40M</div>
+        <div class="lock-event-desc">18-month linear vest completes.</div>
+      </div>
+      <div class="lock-event active">
+        <div class="lock-event-date">MARCH 2028 · UPCOMING</div>
+        <div class="lock-event-title">Rewards Pool Fully Distributed — 210M</div>
+        <div class="lock-event-desc">All 210M player rewards distributed over 24 months. Season 3+ tokenomics reviewed at this point.</div>
+      </div>
+    </div>
+    <div class="ext-links">
+      <a class="ext-link" href="https://app.streamflow.finance/project-dashboard/solana/mainnet/CMSgLxMAtGnmZBthMp6kqqjL8QceAaRkFCdxP8Xnpump" target="_blank" rel="noopener">↗ Verify Locks on Streamflow</a>
+      <a class="ext-link" href="https://dexscreener.com/solana/CMSgLxMAtGnmZBthMp6kqqjL8QceAaRkFCdxP8Xnpump" target="_blank" rel="noopener">↗ DexScreener</a>
+      <a class="ext-link" href="https://birdeye.so/token/CMSgLxMAtGnmZBthMp6kqqjL8QceAaRkFCdxP8Xnpump" target="_blank" rel="noopener">↗ Birdeye</a>
+      <a class="ext-link" href="https://jup.ag/swap/SOL-CMSgLxMAtGnmZBthMp6kqqjL8QceAaRkFCdxP8Xnpump" target="_blank" rel="noopener">↗ Buy on Jupiter</a>
+      <a class="ext-link" href="https://pump.fun/coin/CMSgLxMAtGnmZBthMp6kqqjL8QceAaRkFCdxP8Xnpump" target="_blank" rel="noopener">↗ pump.fun</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function copyCA() {
+    navigator.clipboard.writeText('CMSgLxMAtGnmZBthMp6kqqjL8QceAaRkFCdxP8Xnpump').then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = 'COPIED ✓';
+      btn.style.color = '#6acd8a';
+      btn.style.borderColor = 'rgba(106,205,138,0.3)';
+      setTimeout(() => { btn.textContent = 'COPY'; btn.style.color = ''; btn.style.borderColor = ''; }, 2000);
+    });
+  }
+</script>
+</body>
+</html>

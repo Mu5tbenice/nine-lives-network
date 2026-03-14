@@ -7,6 +7,7 @@
     { href: '/boss.html', label: 'Boss' },
     { href: '/leaderboards.html', label: 'Ranks' },
     { href: '/packs.html', label: 'Packs' },
+    { href: '/token.html', label: '$9LV' },
     { href: '/spellbook.html', label: 'Spellbook' },
     { href: '/how-to-play.html', label: 'Help' }
   ];
