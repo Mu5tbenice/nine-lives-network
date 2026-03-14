@@ -7,12 +7,7 @@
 // ═══════════════════════════════════════════════════════
 
 const supabase = require('../config/supabase');
-const { createClient } = require('@supabase/supabase-js');
-// Create admin client inline — same pattern as zones.js (no separate config file exists)
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const supabaseAdmin = require('../config/supabaseAdmin');
 
 // ── RARITY CONFIG ──
 const RARITIES = {
@@ -453,6 +448,47 @@ async function generateDailyPack(playerId) {
       .single();
 
     if (existing) {
+      // Repair pass: check if cards from this pack made it into player_cards
+      // (they may have been missed if supabaseAdmin was broken on first open)
+      try {
+        const existingCards = existing.cards || [];
+        if (existingCards.length > 0) {
+          // Check how many player_cards we already have from today's pack
+          const { data: alreadySaved } = await supabaseAdmin
+            .from('player_cards')
+            .select('id')
+            .eq('player_id', playerId)
+            .eq('source', 'pack')
+            .gte('acquired_at', today + 'T00:00:00.000Z');
+
+          if (!alreadySaved || alreadySaved.length === 0) {
+            // Cards missing — re-insert them now
+            console.log('[PackSystem] Repair: re-inserting missing player_cards for player', playerId);
+            const repairCards = existingCards.map(c => {
+              const maxCharges = CHARGES_BY_RARITY[c.rarity] || 5;
+              return {
+                player_id: playerId,
+                spell_id: c.spell_id,
+                spell_name: c.name,
+                spell_house: c.house,
+                spell_type: c.type,
+                spell_tier: 0,
+                spell_effects: c.effects,
+                rarity: c.rarity,
+                source: 'pack',
+                current_charges: maxCharges,
+                max_charges: maxCharges,
+                is_exhausted: false,
+              };
+            });
+            const { error: repairErr } = await supabaseAdmin.from('player_cards').insert(repairCards);
+            if (repairErr) console.error('[PackSystem] Repair insert error:', repairErr);
+            else console.log('[PackSystem] Repair: inserted', repairCards.length, 'cards for player', playerId);
+          }
+        }
+      } catch (repairEx) {
+        console.error('[PackSystem] Repair check error:', repairEx);
+      }
       return { success: false, error: 'Already opened today\'s pack', pack: existing };
     }
 
