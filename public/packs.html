@@ -825,7 +825,16 @@
     // ═══════════════════════════════════════
     // CONFIG
     // ═══════════════════════════════════════
-    const PLAYER_ID = localStorage.getItem('player_id') || 1;
+    // Read player ID from correct localStorage key (set by register.html)
+    let PLAYER_ID = null;
+    try {
+      const p = JSON.parse(localStorage.getItem('9lv_player') || '{}');
+      PLAYER_ID = p.id || parseInt(localStorage.getItem('player_id')) || null;
+    } catch(e) {}
+    if (!PLAYER_ID) {
+      // Fallback: check URL param
+      PLAYER_ID = new URLSearchParams(window.location.search).get('player_id') || null;
+    }
 
     const PACK_META = {
       daily:    { icon: '📦', name: 'Daily Pack',    desc: '1 Basic ATK · 1 Basic DEF · 3 Random Spells', color: '#D4A64B' },

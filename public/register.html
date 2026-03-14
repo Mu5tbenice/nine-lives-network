@@ -197,7 +197,7 @@
         <input id="guildTagInput" type="text" maxlength="4" placeholder="e.g. VOID" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:var(--text-bright);font-family:var(--font-data);font-size:12px;padding:8px 12px;letter-spacing:2px;text-transform:uppercase;" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
         <div style="font-family:var(--font-mono);font-size:7px;color:var(--text-faint);margin-top:4px;">join a guild later or enter your guild&#39;s 2-4 letter tag now</div>
       </div>
-      <button class="twitter-btn" id="confirmBtn" onclick="confirmRegistration()" style="margin-top:12px;">⚔️ JOIN NETHARA</button>
+      <button class="twitter-btn" id="confirmBtn" onclick="confirmRegistration()" style="margin-top:12px;" disabled>⚔️ READ YOUR FATE FIRST... (<span id="confirmCountdown">5</span>)</button>
   </div>
 
   <!-- ═══ STEP 4: CREATING ═══ -->
@@ -230,24 +230,24 @@
 <script>
 /* ── House Data (matches nineSystem.js) ── */
 var HOUSES = {
-  1: { name:'Smoulders', color:'#E03C31', icon:'🔥', img:'/assets/images/houses/House-smoulders.png', role:'Glass Cannon', fontClass:'house-name-smoulders', atk:8, hp:18, spd:6, def:2, luck:4, desc:'Kills fast, dies fast' },
-  2: { name:'Darktide', color:'#00B4D8', icon:'🌊', img:'/assets/images/houses/House-darktide.png', role:'Thief', fontClass:'house-name-darktide', atk:6, hp:20, spd:5, def:3, luck:4, desc:'Steals HP and buffs' },
-  3: { name:'Stonebark', color:'#5CB338', icon:'🌿', img:'/assets/images/houses/House-stonebark.png', role:'Wall', fontClass:'house-name-stonebark', atk:3, hp:24, spd:2, def:6, luck:3, desc:'Barely scratches but never dies' },
-  4: { name:'Ashenvale', color:'#B0C4DE', icon:'💨', img:'/assets/images/houses/House-Ashenvale.png', role:'Rogue', fontClass:'house-name-ashenvale', atk:5, hp:18, spd:8, def:2, luck:5, desc:'Always acts first, dodges' },
-  5: { name:'Stormrage', color:'#FFC800', icon:'⚡', img:'/assets/images/houses/House-stormrage.png', role:'Glass Cannon', fontClass:'house-name-stormrage', atk:9, hp:16, spd:7, def:2, luck:4, desc:'Highest damage, lowest survival' },
-  6: { name:'Nighthollow', color:'#7B2D8E', icon:'🌙', img:'/assets/images/houses/House-nighthollow.png', role:'Disruptor', fontClass:'house-name-nighthollow', atk:7, hp:18, spd:5, def:3, luck:5, desc:'Shuts down enemy abilities' },
-  7: { name:'Dawnbringer', color:'#FF8C00', icon:'☀️', img:'/assets/images/houses/House-dawnbringer.png', role:'Healer / Tank', fontClass:'house-name-dawnbringer', atk:5, hp:22, spd:4, def:5, luck:2, desc:'Keeps allies alive' },
-  8: { name:'Manastorm', color:'#5B8FE0', icon:'🔮', img:'/assets/images/houses/House-manastorm.png', role:'Controller', fontClass:'house-name-manastorm', atk:6, hp:20, spd:6, def:3, luck:3, desc:'Cancels and drains' },
-  9: { name:'Plaguemire', color:'#E84393', icon:'☠️', img:'/assets/images/houses/House-plaguemire.png', role:'DOT', fontClass:'house-name-plaguemire', atk:6, hp:20, spd:4, def:4, luck:4, desc:'Poisons everything slowly' }
+  1: { name:'Smoulders', color:'#E03C31', icon:'🔥', img:'/assets/images/houses/House-smoulders.png', role:'Glass Cannon', fontClass:'house-name-smoulders', atk:6, hp:12, spd:5, def:0, luck:1, desc:'Kills fast, dies fast' },
+  2: { name:'Darktide', color:'#00B4D8', icon:'🌊', img:'/assets/images/houses/House-darktide.png', role:'Thief / Vampire', fontClass:'house-name-darktide', atk:4, hp:16, spd:4, def:1, luck:1, desc:'Steals HP and buffs' },
+  3: { name:'Stonebark', color:'#5CB338', icon:'🌿', img:'/assets/images/houses/House-stonebark.png', role:'Wall / Tank', fontClass:'house-name-stonebark', atk:2, hp:24, spd:2, def:3, luck:0, desc:'Barely scratches but never dies' },
+  4: { name:'Ashenvale', color:'#B0C4DE', icon:'💨', img:'/assets/images/houses/House-Ashenvale.png', role:'Rogue / Speed', fontClass:'house-name-ashenvale', atk:3, hp:14, spd:8, def:0, luck:2, desc:'Always acts first, dodges' },
+  5: { name:'Stormrage', color:'#FFC800', icon:'⚡', img:'/assets/images/houses/House-stormrage.png', role:'Burst / Crit', fontClass:'house-name-stormrage', atk:7, hp:10, spd:6, def:0, luck:2, desc:'Highest damage, lowest survival' },
+  6: { name:'Nighthollow', color:'#7B2D8E', icon:'🌙', img:'/assets/images/houses/House-nighthollow.png', role:'Disruptor / Luck', fontClass:'house-name-nighthollow', atk:4, hp:13, spd:7, def:0, luck:3, desc:'Shuts down enemy abilities' },
+  7: { name:'Dawnbringer', color:'#FF8C00', icon:'☀️', img:'/assets/images/houses/House-dawnbringer.png', role:'Healer / Support', fontClass:'house-name-dawnbringer', atk:3, hp:18, spd:3, def:2, luck:0, desc:'Keeps allies alive' },
+  8: { name:'Manastorm', color:'#5B8FE0', icon:'🔮', img:'/assets/images/houses/House-manastorm.png', role:'Controller', fontClass:'house-name-manastorm', atk:5, hp:14, spd:5, def:1, luck:1, desc:'Cancels and drains' },
+  9: { name:'Plaguemire', color:'#E84393', icon:'☠️', img:'/assets/images/houses/House-plaguemire.png', role:'DOT / Attrition', fontClass:'house-name-plaguemire', atk:3, hp:15, spd:4, def:2, luck:1, desc:'Poisons everything slowly' }
 };
 
 /* ── Stat metadata for bars & tooltips ── */
 var STAT_META = {
-  atk:  { label:'ATK',  color:'#e85a6a', max:10, tip:'Attack — damage dealt each combat cycle' },
-  hp:   { label:'HP',   color:'#6acd8a', max:28, tip:'Hit Points — damage you can take before KO' },
-  spd:  { label:'SPD',  color:'#6ac8d8', max:10, tip:'Speed — who acts first (highest goes first)' },
-  def:  { label:'DEF',  color:'#b088e8', max:8,  tip:'Defense — reduces incoming damage' },
-  luck: { label:'LUCK', color:'#D4A64B', max:8,  tip:'Luck — crit chance, dodge, and loot drops' }
+  atk:  { label:'ATK',  color:'#e85a6a', max:7,  tip:'Attack — damage dealt each combat tick' },
+  hp:   { label:'HP',   color:'#6acd8a', max:24, tip:'Hit Points — damage you can take before KO' },
+  spd:  { label:'SPD',  color:'#6ac8d8', max:8,  tip:'Speed — who acts first (highest goes first)' },
+  def:  { label:'DEF',  color:'#b088e8', max:3,  tip:'Defense — reduces incoming damage' },
+  luck: { label:'LUCK', color:'#D4A64B', max:3,  tip:'Luck — crit chance, dodge, and loot drops' }
 };
 var STAT_KEYS = ['atk','hp','spd','def','luck'];
 
@@ -421,6 +421,27 @@ function showRoastAndReveal(data) {
     }
   }, 30);
   showStep('step3');
+  // Start JOIN NETHARA cooldown — player must read the roast
+  startConfirmCooldown();
+}
+
+function startConfirmCooldown() {
+  var btn = document.getElementById('confirmBtn');
+  var countdown = document.getElementById('confirmCountdown');
+  if (!btn) return;
+  btn.disabled = true;
+  var secs = 5;
+  countdown.textContent = secs;
+  var interval = setInterval(function() {
+    secs--;
+    if (secs <= 0) {
+      clearInterval(interval);
+      btn.disabled = false;
+      btn.textContent = '⚔️ JOIN NETHARA';
+    } else {
+      countdown.textContent = secs;
+    }
+  }, 1000);
 }
 
 /* ── Build stat pill HTML with tooltip ── */
