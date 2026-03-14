@@ -7,7 +7,12 @@
 // ═══════════════════════════════════════════════════════
 
 const supabase = require('../config/supabase');
-const supabaseAdmin = require('../config/supabaseAdmin');
+const { createClient } = require('@supabase/supabase-js');
+// Create admin client inline — same pattern as zones.js (no separate config file exists)
+const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 // ── RARITY CONFIG ──
 const RARITIES = {
