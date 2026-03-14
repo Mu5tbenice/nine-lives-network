@@ -280,28 +280,26 @@ async function openPackFromInventory(playerId, packInventoryId) {
       .select()
       .single();
 
-    // FIX: use supabaseAdmin to bypass RLS on player_cards
-    const collectionCards = cards.map(c => {
-      const maxCharges = CHARGES_BY_RARITY[c.rarity] || 5;
-      return {
-        player_id: playerId,
-        spell_id: c.spell_id,
-        spell_name: c.name,
-        spell_house: c.house,
-        spell_type: c.type,
-        spell_tier: 0,
-        spell_effects: c.effects,
-        rarity: c.rarity,
-        source: 'pack',
-        current_charges: maxCharges,
-        max_charges: maxCharges,
-        is_exhausted: false,
-      };
-    });
+    const collectionCards = cards.map(c => ({
+      player_id: playerId,
+      spell_id: c.spell_id,
+      spell_name: c.name,
+      spell_house: c.house,
+      spell_type: c.type,
+      spell_tier: 0,
+      spell_effects: c.effects || [],
+      rarity: c.rarity,
+      source: 'pack',
+      sharpness: 100,
+      is_exhausted: false,
+    }));
 
     const { error: insertErr } = await supabaseAdmin.from('player_cards').insert(collectionCards);
     if (insertErr) {
       console.error('[PackSystem] player_cards insert error (openPackFromInventory):', insertErr);
+      console.error('[PackSystem] detail:', JSON.stringify(insertErr));
+    } else {
+      console.log('[PackSystem] openPackFromInventory saved:', collectionCards.length, 'cards for player', playerId);
     }
 
     return {
@@ -464,23 +462,19 @@ async function generateDailyPack(playerId) {
           if (!alreadySaved || alreadySaved.length === 0) {
             // Cards missing — re-insert them now
             console.log('[PackSystem] Repair: re-inserting missing player_cards for player', playerId);
-            const repairCards = existingCards.map(c => {
-              const maxCharges = CHARGES_BY_RARITY[c.rarity] || 5;
-              return {
-                player_id: playerId,
-                spell_id: c.spell_id,
-                spell_name: c.name,
-                spell_house: c.house,
-                spell_type: c.type,
-                spell_tier: 0,
-                spell_effects: c.effects,
-                rarity: c.rarity,
-                source: 'pack',
-                current_charges: maxCharges,
-                max_charges: maxCharges,
-                is_exhausted: false,
-              };
-            });
+            const repairCards = existingCards.map(c => ({
+              player_id: playerId,
+              spell_id: c.spell_id,
+              spell_name: c.name,
+              spell_house: c.house,
+              spell_type: c.type,
+              spell_tier: 0,
+              spell_effects: c.effects || [],
+              rarity: c.rarity,
+              source: 'pack',
+              sharpness: 100,
+              is_exhausted: false,
+            }));
             const { error: repairErr } = await supabaseAdmin.from('player_cards').insert(repairCards);
             if (repairErr) console.error('[PackSystem] Repair insert error:', repairErr);
             else console.log('[PackSystem] Repair: inserted', repairCards.length, 'cards for player', playerId);
@@ -530,28 +524,27 @@ async function generateDailyPack(playerId) {
         cards: handCards,
       }, { onConflict: 'player_id,game_day' });
 
-    // FIX: use supabaseAdmin to bypass RLS on player_cards
-    const collectionCards = cards.map(c => {
-      const maxCharges = CHARGES_BY_RARITY[c.rarity] || 5;
-      return {
-        player_id: playerId,
-        spell_id: c.spell_id,
-        spell_name: c.name,
-        spell_house: c.house,
-        spell_type: c.type,
-        spell_tier: 0,
-        spell_effects: c.effects,
-        rarity: c.rarity,
-        source: 'pack',
-        current_charges: maxCharges,
-        max_charges: maxCharges,
-        is_exhausted: false,
-      };
-    });
+    // Insert into player_cards — columns must match table exactly
+    const collectionCards = cards.map(c => ({
+      player_id: playerId,
+      spell_id:  c.spell_id,
+      spell_name: c.name,
+      spell_house: c.house,
+      spell_type: c.type,
+      spell_tier: 0,
+      spell_effects: c.effects || [],
+      rarity: c.rarity,
+      source: 'pack',
+      sharpness: 100,
+      is_exhausted: false,
+    }));
 
     const { error: insertErr } = await supabaseAdmin.from('player_cards').insert(collectionCards);
     if (insertErr) {
       console.error('[PackSystem] player_cards insert error (generateDailyPack):', insertErr);
+      console.error('[PackSystem] insert error detail:', JSON.stringify(insertErr));
+    } else {
+      console.log('[PackSystem] player_cards saved:', collectionCards.length, 'cards for player', playerId);
     }
 
     return { success: true, pack: pack, cards: cards };
@@ -670,8 +663,7 @@ async function processUpgrades() {
       .from('player_cards')
       .update({
         rarity: newRarity,
-        max_charges: newMaxCharges,
-        current_charges: newMaxCharges,
+        sharpness: 100,
       })
       .eq('player_id', hand.player_id)
       .eq('spell_name', target.name)
