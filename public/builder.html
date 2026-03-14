@@ -169,8 +169,8 @@
     </div>
     <!-- Sealed pack to click open -->
     <div id="packWrapper" style="display:flex;flex-direction:column;align-items:center;gap:20px;margin:20px 0">
-      <div id="sealedPack" onclick="openPack()" style="cursor:pointer;width:160px;height:220px;transition:transform 0.2s;position:relative;background:transparent" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
-        <img src="/assets/images/booster-pack.png" style="width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 0 18px rgba(212,166,75,0.35)) drop-shadow(0 8px 24px rgba(0,0,0,0.7))" onerror="this.style.display='none'">
+      <div id="sealedPack" onclick="openPack()" style="cursor:pointer;width:200px;transition:transform 0.2s;position:relative;background:transparent;display:inline-block" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
+        <img src="/assets/images/booster-pack.png" style="width:100%;height:auto;display:block;filter:drop-shadow(0 0 18px rgba(212,166,75,0.35)) drop-shadow(0 8px 24px rgba(0,0,0,0.7))" onerror="this.style.display='none'">
         <div style="position:absolute;bottom:0;left:0;right:0;padding:10px;background:linear-gradient(to top,rgba(0,0,0,0.75),transparent);text-align:center;pointer-events:none">
           <div style="font-family:var(--font-data);font-size:5px;color:var(--gold);letter-spacing:2px">TAP TO OPEN</div>
         </div>
@@ -707,8 +707,8 @@ function revealCards(cards) {
   // Build 3+2 grid rows
   var row1 = document.createElement('div');
   var row2 = document.createElement('div');
-  row1.style.cssText = 'display:flex;justify-content:center;gap:10px;margin-bottom:12px;flex-wrap:wrap';
-  row2.style.cssText = 'display:flex;justify-content:center;gap:10px;flex-wrap:wrap';
+  row1.style.cssText = 'display:flex;justify-content:center;gap:12px;margin-bottom:16px;flex-wrap:wrap';
+  row2.style.cssText = 'display:flex;justify-content:center;gap:12px;flex-wrap:wrap';
   container.appendChild(row1);
   container.appendChild(row2);
 
@@ -716,15 +716,15 @@ function revealCards(cards) {
     var wrapper = document.createElement('div');
     wrapper.id = 'bfc' + i;
     // 160px wide matches tiny card size exactly, 260px height gives breathing room
-    wrapper.style.cssText = 'width:160px;height:260px;cursor:pointer;display:inline-block;perspective:600px;flex-shrink:0';
+    wrapper.style.cssText = 'width:200px;height:316px;cursor:pointer;display:inline-block;perspective:600px;flex-shrink:0';
     wrapper.onclick = (function(idx){ return function(){ revealOne(idx, cards); }; })(i);
 
     wrapper.innerHTML =
-      '<div id="bfi' + i + '" style="transition:transform 0.7s cubic-bezier(0.4,0,0.2,1);transform-style:preserve-3d;position:relative;width:160px;height:252px">' +
-        '<div style="backface-visibility:hidden;position:absolute;inset:0;width:160px;height:252px;border-radius:12px;overflow:hidden;background:#0f0a1e">' +
+      '<div id="bfi' + i + '" style="transition:transform 0.7s cubic-bezier(0.4,0,0.2,1);transform-style:preserve-3d;position:relative;width:200px;height:316px">' +
+        '<div style="backface-visibility:hidden;position:absolute;inset:0;width:200px;height:316px;border-radius:12px;overflow:hidden;background:transparent">' +
           '<img src="/assets/images/card-back.png" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:12px" onerror="this.parentNode.style.background=\'linear-gradient(160deg,#1e1630,#1a0e2e)\'">' +
         '</div>' +
-        '<div id="bfront' + i + '" style="backface-visibility:hidden;transform:rotateY(180deg);position:absolute;inset:0;width:160px"></div>' +
+        '<div id="bfront' + i + '" style="backface-visibility:hidden;transform:rotateY(180deg);position:absolute;inset:0;width:200px"></div>' +
       '</div>';
 
     if (i < 3) row1.appendChild(wrapper);
@@ -732,7 +732,7 @@ function revealCards(cards) {
 
     if (typeof buildCardV4 === 'function') {
       try {
-        document.getElementById('bfront' + i).innerHTML = buildCardV4(card, {size:'tiny', delay:0});
+        document.getElementById('bfront' + i).innerHTML = buildCardV4(card, {size:'mini', delay:0});
       } catch(e) {
         console.error('buildCardV4 error for card ' + i + ':', e, card);
       }
