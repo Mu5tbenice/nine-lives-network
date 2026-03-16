@@ -16,7 +16,7 @@ async function createNine(playerId, houseId, name = null) {
     .single();
 
   if (houseErr || !house) {
-    throw new Error(`Invalid house ID: ${houseId}`);
+    throw new Error(`Invalid house ID: ${houseId
   }
 
   const { data: existing } = await supabase
