@@ -89,6 +89,59 @@ try {
   console.error("❌ Failed to load boss routes:", e.message);
 }
 
+// ── STREAK PING ──
+// Called by dashboard on load. Updates login streak.
+// streak=0→1 first visit, +=1 if last login was yesterday, reset to 1 if gap >1 day
+app.post("/api/players/:id/streak-ping", async (req, res) => {
+  const supabase = require("./config/supabase");
+  const { createClient } = require("@supabase/supabase-js");
+  const supabaseAdmin = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+  try {
+    const playerId = parseInt(req.params.id);
+    const { data: player, error } = await supabaseAdmin
+      .from("players")
+      .select("streak, last_login")
+      .eq("id", playerId)
+      .single();
+
+    if (error || !player) return res.status(404).json({ error: "Player not found" });
+
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const lastLogin = player.last_login ? new Date(player.last_login) : null;
+    const lastLoginStr = lastLogin ? lastLogin.toISOString().slice(0, 10) : null;
+
+    if (lastLoginStr === todayStr) {
+      return res.json({ streak: player.streak, updated: false });
+    }
+
+    let newStreak;
+    if (!lastLoginStr) {
+      newStreak = 1;
+    } else {
+      const daysDiff = Math.round((now - lastLogin) / (1000 * 60 * 60 * 24));
+      if (daysDiff === 1) {
+        newStreak = (player.streak || 0) + 1;
+      } else {
+        newStreak = 1;
+      }
+    }
+
+    await supabaseAdmin
+      .from("players")
+      .update({ streak: newStreak, last_login: now.toISOString() })
+      .eq("id", playerId);
+
+    res.json({ streak: newStreak, updated: true });
+  } catch (err) {
+    console.error("Streak ping error:", err.message);
+    res.status(500).json({ error: "Failed to update streak" });
+  }
+});
+
 try {
   const playerRoutes = require("./routes/players");
   app.use("/api/players", playerRoutes);
@@ -288,59 +341,6 @@ if (combatEngine && combatEngine.startCombatEngine) {
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
-// ── STREAK PING ──
-// Called by dashboard on load. Updates login streak.
-// streak=0→1 first visit, +=1 if last login was yesterday, reset to 1 if gap >1 day
-app.post("/api/players/:id/streak-ping", async (req, res) => {
-  const supabase = require("./config/supabase");
-  const { createClient } = require("@supabase/supabase-js");
-  const supabaseAdmin = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-  try {
-    const playerId = parseInt(req.params.id);
-    const { data: player, error } = await supabaseAdmin
-      .from("players")
-      .select("streak, last_login")
-      .eq("id", playerId)
-      .single();
-
-    if (error || !player) return res.status(404).json({ error: "Player not found" });
-
-    const now = new Date();
-    const todayStr = now.toISOString().slice(0, 10);
-    const lastLogin = player.last_login ? new Date(player.last_login) : null;
-    const lastLoginStr = lastLogin ? lastLogin.toISOString().slice(0, 10) : null;
-
-    if (lastLoginStr === todayStr) {
-      return res.json({ streak: player.streak, updated: false });
-    }
-
-    let newStreak;
-    if (!lastLoginStr) {
-      newStreak = 1;
-    } else {
-      const daysDiff = Math.round((now - lastLogin) / (1000 * 60 * 60 * 24));
-      if (daysDiff === 1) {
-        newStreak = (player.streak || 0) + 1;
-      } else {
-        newStreak = 1;
-      }
-    }
-
-    await supabaseAdmin
-      .from("players")
-      .update({ streak: newStreak, last_login: now.toISOString() })
-      .eq("id", playerId);
-
-    res.json({ streak: newStreak, updated: true });
-  } catch (err) {
-    console.error("Streak ping error:", err.message);
-    res.status(500).json({ error: "Failed to update streak" });
-  }
 });
 
 // Redirect old world.html to map.html
