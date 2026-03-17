@@ -347,7 +347,7 @@ async function runSnapshot(){
     if(!zs.nines.size) continue;
     const guildHp={};
     for(const n of zs.nines.values()){if(!guildHp[n.guildTag])guildHp[n.guildTag]=0;guildHp[n.guildTag]+=n.hp;}
-    const [tag,hp]=Object.entries(guildHp).reduce((b,[t,h])=>h>b[1]?[t,h]:b,['',−1]);
+    const [tag,hp]=Object.entries(guildHp).reduce((b,[t,h])=>h>b[1]?[t,h]:b,['',-1]);
     if(!tag) continue;
     await supabaseAdmin.from('zone_control').upsert({zone_id:zoneId,controlling_guild:tag,snapshot_hp:hp,updated_at:new Date().toISOString()},{onConflict:'zone_id'}).then(({error})=>{if(error)console.error('❌ Snapshot:',error.message);});
     broadcast(zoneId,'arena:snapshot',{zoneId,controllingGuild:tag,guildHp});
