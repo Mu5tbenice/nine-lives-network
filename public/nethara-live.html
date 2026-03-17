@@ -2058,11 +2058,7 @@
     // Assign initial round positions so Nines spread out
     setTimeout(() => setRoundPositions(), 500);
 
-    // V2: Periodically reassign positions since there are no round boundaries
-    // Nines slowly drift to new spots every 20-30 seconds
-    setInterval(() => {
-      if (state.nines.size > 0) setRoundPositions();
-    }, 25000);
+    // V3: positions are server-driven via arena:positions — no random intervals needed
 
     // Handle resize
     window.addEventListener('resize', () => {
@@ -2088,20 +2084,22 @@
         const pulse = 1 + Math.sin(time * 2 + nine.bobPhase) * 0.015;
         nine.spriteGroup.scale.set(pulse, pulse);
 
-        // REPOSITION — each Nine picks a new spot every ~25s
-        // roundTarget is set by setRoundPositions() at round start
-        if (nine.roundTarget) {
-          const wx = nine.roundTarget.x - nine.container.x;
-          const wy = nine.roundTarget.y - nine.container.y;
-          const dist = Math.sqrt(wx*wx + wy*wy);
+        // V3: Server-driven movement — interpolate toward targetX/targetY
+        // targetX/targetY are set every 2s by arena:positions from the combat engine
+        if (nine.targetX !== undefined) {
+          const wx = nine.targetX - nine.container.x;
+          const wy = nine.targetY - nine.container.y;
+          const dist = Math.sqrt(wx * wx + wy * wy);
           if (dist > 2) {
-            const speed = Math.min(0.8, dist * 0.008);
+            // Speed proportional to distance so movement feels responsive but smooth
+            const speed = Math.min(3.0, dist * 0.12);
             const angle = Math.atan2(wy, wx);
             nine.container.x += Math.cos(angle) * speed;
             nine.container.y += Math.sin(angle) * speed;
-            // Face direction of travel
+            // Face direction of travel (preserve existing flip scale sign)
             if (nine.spriteGroup && Math.abs(wx) > 1) {
-              nine.spriteGroup.scale.x = wx > 0 ? 1 : -1;
+              const absScale = Math.abs(nine.spriteGroup.scale.x) || 1;
+              nine.spriteGroup.scale.x = wx > 0 ? absScale : -absScale;
             }
           }
         }
@@ -2724,6 +2722,34 @@
     state.nines.delete(nineId);
   }
 
+  /** Update the status ring on a Nine sprite based on active effects */
+  function updateStatusRings(sprite, status, activeEffect) {
+    if (!sprite || !sprite.ring) return;
+    const h = HOUSES[sprite.house] || { color: '#888888' };
+    const hColor = parseInt(h.color.replace('#', ''), 16);
+    sprite.ring.clear();
+    // Always draw the house ground ring
+    sprite.ring.lineStyle(2, hColor, 0.6);
+    sprite.ring.drawEllipse(0, 18, 14, 6);
+    // Status overlay ring
+    if (status?.burning) {
+      sprite.ring.lineStyle(2, 0xff8833, 0.9);
+      sprite.ring.drawCircle(0, 0, 16);
+    } else if (status?.poisoned) {
+      sprite.ring.lineStyle(2, 0x88cc44, 0.9);
+      sprite.ring.drawCircle(0, 0, 16);
+    } else if (status?.warded) {
+      sprite.ring.lineStyle(2, 0xD4A64B, 0.9);
+      sprite.ring.drawCircle(0, 0, 16);
+    } else if (status?.silenced) {
+      sprite.ring.lineStyle(2, 0xbb88ff, 0.7);
+      sprite.ring.drawCircle(0, 0, 16);
+    } else if (status?.taunting) {
+      sprite.ring.lineStyle(3, 0xff4466, 0.85);
+      sprite.ring.drawCircle(0, 0, 18);
+    }
+  }
+
   function showFloatingText(x, y, text, color = 0xff4466, size = 12) {
     if (!state.arenaApp) return;
     const style = new PIXI.TextStyle({
@@ -2765,6 +2791,48 @@
   // ═══════════════════════════════════════════
   // COMBAT ANIMATION SYSTEM
   // ═══════════════════════════════════════════
+
+  /**
+   * V3: Fire a projectile from explicit screen coordinates (x1,y1) → (x2,y2).
+   * Used by combat:attack events which include position data from the engine.
+   */
+  function animateProjectileFromPos(x1, y1, x2, y2, house, onHit) {
+    if (!state.arenaApp) { if (onHit) onHit(); return; }
+    const hColor = getHouseColor(house);
+    const proj = new PIXI.Graphics();
+    proj.beginFill(hColor, 0.95);
+    proj.drawCircle(0, 0, 5);
+    proj.endFill();
+    proj.beginFill(0xffffff, 0.5);
+    proj.drawCircle(0, 0, 2.5);
+    proj.endFill();
+    proj.x = x1; proj.y = y1;
+    proj.zIndex = 90;
+    state.arenaApp.stage.addChild(proj);
+
+    const dx = x2 - x1, dy = y2 - y1;
+    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+    const speed = Math.max(6, dist / 12);
+    let travelled = 0;
+    let hitFired = false;
+
+    const ticker = () => {
+      travelled += speed;
+      const t = Math.min(1, travelled / dist);
+      proj.x = x1 + dx * t;
+      proj.y = y1 + dy * t;
+      proj.alpha = t < 0.9 ? 1 : 1 - (t - 0.9) / 0.1;
+      if (t >= 0.85 && !hitFired) {
+        hitFired = true;
+        if (onHit) onHit();
+      }
+      if (t >= 1) {
+        state.arenaApp.ticker.remove(ticker);
+        state.arenaApp.stage.removeChild(proj);
+      }
+    };
+    state.arenaApp.ticker.add(ticker);
+  }
 
   /** Animate a Nine lunging toward a target position, then returning */
   function animateLunge(attackerId, targetId, onHit) {
@@ -3402,7 +3470,145 @@
     socket.on('disconnect', () => {
       addFeedEvent('Connection lost. Reconnecting...', 'system');
     });
-  }
+
+    // ── V3 COMBAT ENGINE — spatial combat events ──────────────────────
+
+    // Positions broadcast every 2s — drives all sprite movement
+    // Engine sends logical coords (0-900 x 0-500), we map to canvas via engineToScreen
+    socket.on('arena:positions', (data) => {
+      if (!data.nines) return;
+      data.nines.forEach((d) => {
+        const screenPos = engineToScreen({ x: d.x, y: d.y });
+        const sprite = state.nines.get(resolveId(d.id));
+        if (sprite) {
+          // Set target — PIXI ticker will smoothly interpolate toward it
+          sprite.targetX = screenPos.x;
+          sprite.targetY = screenPos.y;
+          // HP update
+          updateNineHP(resolveId(d.id), d.hp, d.maxHp);
+          // Status rings
+          updateStatusRings(sprite, d.status, d.activeEffect);
+        }
+        // Sync guild sidebar HP totals periodically
+      });
+      updateHpStrip();
+    });
+
+    // Attack — show projectile, damage number, lunge animation
+    socket.on('combat:attack', (data) => {
+      const fromId = resolveId(data.attackerId || data.attacker);
+      const toId   = resolveId(data.defenderId || data.defender);
+      const dmg    = data.dmg || 0;
+      const attacker = state.nines.get(fromId);
+      const target   = state.nines.get(toId);
+
+      // Use existing animateProjectile if source/target positions available
+      if (data.x != null && data.tx != null && state.arenaApp) {
+        const sx = engineToScreen({ x: data.x,  y: data.y  });
+        const tx = engineToScreen({ x: data.tx, y: data.ty });
+        animateProjectileFromPos(sx.x, sx.y, tx.x, tx.y, attacker?.house, () => {
+          if (target) {
+            if (data.crit) {
+              fireworkCRIT(target.container.x, target.container.y);
+            } else {
+              spawnFireworkExplosion(target.container.x, target.container.y, getHouseColor(attacker?.house));
+            }
+            showFloatingText(target.container.x, target.container.y, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 20 : 16);
+            shakeSprite(target);
+            if (target.spriteGroup) {
+              target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff3333; });
+              setTimeout(() => { if (target.spriteGroup) target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 300);
+            }
+          }
+        });
+      } else {
+        // Fallback to sprite-based animation
+        animateProjectile(fromId, toId, attacker?.house, () => {
+          if (target) {
+            showFloatingText(target.container.x, target.container.y, `-${dmg}`, 0xff4466, 16);
+            shakeSprite(target);
+          }
+        });
+      }
+
+      const from = data.attacker || getNineName(fromId);
+      const to   = data.defender || getNineName(toId);
+      const critPart = data.crit ? ' <span class="feed-crit">★ CRIT!</span>' : '';
+      const effectPart = data.effect ? ` <span class="feed-effect">[${data.effect}]</span>` : '';
+      if (data.crit || data.effect) {
+        addFeedEvent(`⚔️ <span class="feed-name">${from}</span> → <span class="feed-name">${to}</span> <span class="feed-dmg">-${dmg}</span>${critPart}${effectPart}`, 'attack');
+      }
+      addBattleLog(`⚔️ ${from} → ${to} -${dmg}${data.crit ? ' CRIT' : ''}${data.effect ? ' ['+data.effect+']' : ''} (slot ${data.slot||1})`, 'default');
+      if (dmg > 0 && attacker) trackCombatStat(fromId, from, attacker.guild, attacker.house, 'damage', dmg);
+    });
+
+    // Effect fired — show visual on target
+    socket.on('combat:effect', (data) => {
+      const tId = resolveId(data.targetId || data.on);
+      const sprite = state.nines.get(tId);
+      const effect = data.effect || '';
+      if (sprite) {
+        const px = sprite.container.x, py = sprite.container.y;
+        switch (effect) {
+          case 'BURN':    fireworkBURN(px, py); break;
+          case 'POISON':  fireworkPOISON(px, py); break;
+          case 'SILENCE': fireworkSILENCE(px, py); break;
+          case 'WITHER':  case 'HEX': case 'WEAKEN': fireworkWEAKEN(px, py); break;
+          case 'HEAL':    case 'BLESS': fireworkHEAL(px, py); if (data.amt) showFloatingText(px, py, `+${data.amt}`, 0x44ffaa, 13); break;
+          case 'WARD':    case 'BARRIER': case 'ANCHOR': animateShieldPop(sprite); spawnFireworkExplosion(px, py, 0xD4A64B); break;
+          case 'DODGE':   case 'DODGE_PROC': showFloatingText(px, py - 20, 'DODGE!', 0x90E0EF, 14); break;
+          case 'HASTE':   animateAuraBurst(sprite, 'HASTE'); spawnFireworkExplosion(px, py, 0x90E0EF); break;
+          case 'CORRODE': showFloatingText(px, py, `MAX HP↓`, 0x88cc44, 11); spawnParticles(px, py, 0x88cc44, 8, 'poison'); break;
+          case 'INSPIRE': spawnFireworkExplosion(px, py, 0xffd700); showFloatingText(px, py - 20, 'INSPIRE!', 0xffd700, 11); break;
+          case 'MARK':    showFloatingText(px, py - 20, '⚑ MARKED', 0xff4466, 10); spawnParticles(px, py, 0xff4466, 8, 'default'); break;
+          case 'TETHER':  showFloatingText(px, py - 20, 'TETHER', 0xff6699, 10); spawnParticles(px, py, 0xff6699, 6, 'default'); break;
+          case 'NULLIFY': showFloatingText(px, py - 20, 'NULLIFY', 0x9988ff, 12); spawnFireworkExplosion(px, py, 0x9988ff); break;
+          case 'BLIND':   showFloatingText(px, py - 20, 'BLIND', 0xbb88ff, 11); spawnParticles(px, py, 0x333333, 10, 'default'); break;
+          case 'DRAIN':   showFloatingText(px, py, 'DRAIN', 0xff3366, 11); spawnParticles(px, py, 0xff3366, 8, 'default'); break;
+          case 'CLEANSE': spawnFireworkExplosion(px, py, 0xffffff); showFloatingText(px, py, 'CLEANSE', 0xffffff, 11); break;
+          case 'SHATTER': spawnFireworkExplosion(px, py, 0xff4466); spawnParticles(px, py, 0xff4466, 20, 'fire'); screenFlash(0xff4466, 0.2); break;
+          case 'INFECT':  fireworkPOISON(px, py); showFloatingText(px, py, 'INFECT!', 0x88cc44, 13); break;
+          default: spawnFireworkExplosion(px, py, getEffectColor(effect)); break;
+        }
+      }
+      const cId = resolveId(data.casterId || data.by);
+      const caster = state.nines.get(cId);
+      if (['HEAL','BLESS','INSPIRE'].includes(effect)) {
+        addFeedEvent(`✚ <span class="feed-name">${data.by||getNineName(cId)}</span>: <span class="feed-effect">${effect}</span>`, 'heal');
+        if (data.amt > 0 && caster) trackCombatStat(cId, data.by||getNineName(cId), caster.guild, caster.house, 'heals', data.amt);
+      }
+    });
+
+    // DOT tick — small damage number
+    socket.on('combat:dot', (data) => {
+      const tId = resolveId(data.nineId);
+      const sprite = state.nines.get(tId);
+      if (sprite && data.dmg) {
+        showFloatingText(sprite.container.x, sprite.container.y, `-${data.dmg}`, 0x88cc44, 11);
+        spawnParticles(sprite.container.x, sprite.container.y, 0x88cc44, 5, 'poison');
+      }
+      if (data.hp != null) updateNineHP(tId, data.hp, data.maxHp);
+    });
+
+    // KO from V3 engine
+    socket.on('combat:ko', (data) => {
+      const koId = resolveId(data.nineId);
+      const sprite = state.nines.get(koId);
+      if (sprite) {
+        sprite.isAlive = false;
+        sprite.hp = 0;
+        animateKO(sprite);
+        showFloatingText(sprite.container.x, sprite.container.y - 30, 'K.O.', 0xff2222, 18);
+        spawnParticles(sprite.container.x, sprite.container.y, 0xff4466, 20, 'explosion');
+        screenFlash(0xff2222, 0.2);
+        renderGuildSidebar();
+      }
+      addFeedEvent(`💀 <span class="feed-name">${data.nine || getNineName(koId)}</span> was KO'd!`, 'ko');
+      if (koId == state.playerId) {
+        state.isDeployed = false;
+        showKOOverlay(null);
+      }
+    });
 
   /** Resolve Nine ID from various event formats — server might send player_id, nine_id, id, from, to */
   function resolveNineId(obj) {
