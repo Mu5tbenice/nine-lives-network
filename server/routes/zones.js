@@ -341,6 +341,23 @@ router.post('/equip-card', async (req, res) => {
 
     const spellName = card.spell?.name || card.spell_name || 'Card';
 
+    // ── Reload deployment in combat engine so new card is picked up ──
+    if (combatEngine?.loadDeploymentIntoEngine) {
+      try {
+        const { data: dep } = await supabaseAdmin
+          .from('zone_deployments')
+          .select('id, player_id, nine_id, zone_id, guild_tag, current_hp, nine:nine_id(house_id, name)')
+          .eq('id', deployment.id)
+          .single();
+        if (dep) {
+          await combatEngine.loadDeploymentIntoEngine({
+            ...dep,
+            nine: { house_key: dep.nine?.house_id, name: dep.nine?.name || 'Unknown' },
+          });
+        }
+      } catch (e) { /* non-critical */ }
+    }
+
     res.json({
       success: true,
       slot: newSlot,

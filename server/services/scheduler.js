@@ -99,25 +99,8 @@ function initializeScheduledJobs() {
     }
   });
 
-  // ════════════════════════════════
-  // V5: Mana removed — regen job disabled
-  // ════════════════════════════════
-
-  // ════════════════════════════════
-  // V3: COMBAT CYCLE — every 15 min
-  // ════════════════════════════════
-  cron.schedule('*/15 * * * *', async () => {
-    try {
-      if (combatEngine) {
-        console.log(`[${ts()}] ⚔️ Running combat cycle...`);
-        const result = await combatEngine.runCombatCycle();
-        console.log(`[${ts()}] ⚔️ Combat done: ${result.zones_processed || 0} zones, ${result.knockouts || 0} KOs`);
-        logJob('combat_cycle');
-      }
-    } catch (e) {
-      console.error('❌ Combat cycle error:', e.message);
-    }
-  });
+  // V3 combat engine runs its own internal loop via startCombatEngine()
+  // Old runCombatCycle cron removed — no longer needed
 
   // ════════════════════════════════
   // V3: BOSS SPAWN — Monday 00:30 UTC
