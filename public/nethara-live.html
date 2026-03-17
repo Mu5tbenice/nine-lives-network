@@ -1152,11 +1152,27 @@
   };
 
   const EFFECT_COLORS = {
-    BURN: '#ffaa55', WARD: '#D4A64B', POISON: '#aaee55', ANCHOR: '#ccaa66',
-    HEX: '#bb88ff', HEAL: '#66eebb', SILENCE: '#bb88ff', CHAIN: '#5599ff',
-    EXECUTE: '#ffd700', BARRIER: '#5599ff', THORNS: '#ff6666', DODGE: '#90E0EF',
-    FEAST: '#ff3366', LEECH_AURA: '#88ee44', PARASITE: '#bb88ff',
-    RESURRECT: '#ffd700', GRAVITY: '#ccaa66', MIRROR: '#5599ff',
+    // Stormrage ⚡ electric yellow/gold
+    CHAIN:   '#FFD700', CRIT:    '#FFEE00', PIERCE:  '#FFC040',
+    // Smoulders 🔥 fire orange/red
+    BURN:    '#FF6B35', SURGE:   '#FF3355', EXECUTE: '#FF9500',
+    // Stonebark 🌿 earth green/bark brown
+    WARD:    '#8BC34A', ANCHOR:  '#6D4C41', THORNS:  '#558B2F',
+    TAUNT:   '#FF5252', SHATTER: '#FF1744',
+    // Ashenvale 💨 wind cyan/sky blue
+    HASTE:   '#00E5FF', DODGE:   '#40C4FF', REFLECT: '#80D8FF',
+    // Nighthollow 🌙 shadow purple/dark violet
+    SILENCE: '#9C27B0', HEX:     '#7B1FA2', BLIND:   '#4A148C', MARK: '#E91E63',
+    // Dawnbringer ☀️ holy amber/warm gold
+    HEAL:    '#66BB6A', BLESS:   '#FFF176', INSPIRE: '#FFAB40',
+    // Manastorm 🔮 arcane blue/indigo
+    WEAKEN:  '#5C6BC0', TETHER:  '#3F51B5', NULLIFY: '#7986CB', DRAIN: '#4455BB',
+    // Plaguemire ☠️ acid green/sickly lime
+    POISON:  '#76FF03', CORRODE: '#C6FF00', WITHER:  '#69F0AE', INFECT: '#AEEA00',
+    // Darktide 🌊 blood pink
+    FEAST:   '#FF6090',
+    // Universal
+    BARRIER: '#B0BEC5', CLEANSE: '#E0E0E0',
   };
 
   // Map school_id numbers to house keys (DB uses numbers, UI uses strings)
@@ -5007,22 +5023,30 @@
     return colors[houseKey] || 0xD4A64B;
   }
 
-  /** Get effect color for particles */
+  /** Get effect color for particles — V3 palette, matches CSS EFFECT_COLORS */
   function getEffectColor(effect) {
     const colors = {
-      BURN: 0xff8833, POISON: 0x88ee44, CORRODE: 0x88aa33,
-      THORNS: 0xff5555, SHATTER: 0xff6644, CHAIN: 0x5599ff,
-      DODGE: 0x90E0EF, PHASE: 0xbb88ff, SWIFT: 0x6ac8d8,
-      TETHER: 0xff6699, AMPLIFY: 0xffd700, OVERCHARGE: 0xff4444,
-      MIRROR: 0x5599ff, PARASITE: 0xcc44aa, GRAVITY: 0x8866cc,
-      MARK: 0xff8844, EXECUTE: 0xff2222, FEAST: 0x44ffaa,
-      INFECT: 0xcc44aa, SURGE: 0xff6633, DRAIN: 0xff3366,
-      HEAL: 0x44ffaa, BLESS: 0x44ffaa, INSPIRE: 0x44ffaa,
-      WARD: 0xD4A64B, ANCHOR: 0xffd700, BARRIER: 0xD4A64B,
-      REFLECT: 0x5599ff, TAUNT: 0xD4A64B, STEALTH: 0x90E0EF,
-      HASTE: 0x6ac8d8, CLEANSE: 0x90E0EF, SILENCE: 0x8866cc,
-      HEX: 0x8866cc, WEAKEN: 0x8866cc, SLOW: 0x8866cc,
-      RESURRECT: 0xffd700,
+      // Stormrage ⚡
+      CHAIN: 0xFFD700, CRIT: 0xFFEE00, PIERCE: 0xFFC040,
+      // Smoulders 🔥
+      BURN: 0xFF6B35, SURGE: 0xFF3355, EXECUTE: 0xFF9500,
+      // Stonebark 🌿
+      WARD: 0x8BC34A, ANCHOR: 0x6D4C41, THORNS: 0x558B2F,
+      TAUNT: 0xFF5252, SHATTER: 0xFF1744,
+      // Ashenvale 💨
+      HASTE: 0x00E5FF, DODGE: 0x40C4FF, REFLECT: 0x80D8FF,
+      // Nighthollow 🌙
+      SILENCE: 0x9C27B0, HEX: 0x7B1FA2, BLIND: 0x4A148C, MARK: 0xE91E63,
+      // Dawnbringer ☀️
+      HEAL: 0x66BB6A, BLESS: 0xFFF176, INSPIRE: 0xFFAB40,
+      // Manastorm 🔮
+      WEAKEN: 0x5C6BC0, TETHER: 0x3F51B5, NULLIFY: 0x7986CB, DRAIN: 0x4455BB,
+      // Plaguemire ☠️
+      POISON: 0x76FF03, CORRODE: 0xC6FF00, WITHER: 0x69F0AE, INFECT: 0xAEEA00,
+      // Darktide 🌊
+      FEAST: 0xFF6090,
+      // Universal
+      BARRIER: 0xB0BEC5, CLEANSE: 0xE0E0E0,
     };
     return colors[effect] || 0xD4A64B;
   }
@@ -5731,7 +5755,7 @@
                 player_card_id: slot.player_card_id || slot.card_id,
                 name: slot.name || '???',
                 house: slot.house || 'universal',
-                spell_type: slot.spell_type || slot.card_type || 'attack',
+                spell_type: slot.spell_type || 'attack',
                 rarity: slot.rarity || 'common',
                 base_atk: slot.base_atk ?? 0,
                 base_hp: slot.base_hp ?? 0,
@@ -5739,7 +5763,7 @@
                 base_def: slot.base_def ?? 0,
                 base_luck: slot.base_luck ?? 0,
                 bonus_effects: slot.bonus_effects || [],
-                base_effect: slot.effect_1 || slot.base_effect || '',  // effect_1 is V3 column
+                base_effect: slot.base_effect || '',
                 flavor_text: slot.flavor_text || '',
                 image_url: slot.image_url || '',
                 sharpness: slot.sharpness ?? 100,
@@ -6183,10 +6207,7 @@
     document.getElementById('deploy-cta').style.display = 'none';
     document.getElementById('arena-bottom-tray').style.display = 'flex';
 
-    const equippedCards = state.selectedCards.map(c => ({
-      ...c.card,
-      base_effect: c.card?.effect_1 || c.card?.base_effect || '',
-    }));
+    const equippedCards = state.selectedCards.map(c => c.card);
     renderCardSlots(equippedCards);
     state.equippedCards = equippedCards;
     try {
@@ -6230,20 +6251,22 @@
         return;
       }
 
-      // Fresh deploy — send card_ids so server equips them before engine loads
+      // Fresh deploy
       const res = await fetch('/api/zones/deploy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           player_id: state.playerId,
           zone_id: state.currentZoneId,
-          card_ids: state.selectedCards.map(c => c.cardId),
         }),
       });
       const data = await res.json();
 
       if (data.success) {
-        // Cards already equipped server-side — no need to call equipSelectedCards again
+        // Deployment row created — now equip the cards
+        if (state.selectedCards.length > 0) {
+          await equipSelectedCards();
+        }
         applyDeployedUI(data.message);
       } else if (data.error && data.error.toLowerCase().includes('already deployed')) {
         // Server says already deployed (state.isDeployed was stale) — just equip
