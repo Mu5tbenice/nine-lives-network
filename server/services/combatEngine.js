@@ -22,11 +22,15 @@ const ZONE_MARGIN   = 40;
 const SPELL_RANGE = { melee:90, mid:220, ranged:380, self:0, aoe_self:120, zone:9999 };
 
 const CARD_TYPE_CONFIG = {
-  attack:  { range: SPELL_RANGE.melee,    prefer:'lowest_hp',      moveTo:'preferred_enemy' },
-  control: { range: SPELL_RANGE.mid,      prefer:'highest_atk',    moveTo:'preferred_enemy' },
-  dot:     { range: SPELL_RANGE.ranged,   prefer:'highest_hp',     moveTo:'preferred_enemy' },
-  support: { range: SPELL_RANGE.aoe_self, prefer:'lowest_hp_ally', moveTo:'ally_cluster'    },
-  utility: { range: SPELL_RANGE.self,     prefer:'self',           moveTo:'hold'            },
+  // DB spell_type values → range + targeting
+  attack:       { range: SPELL_RANGE.mid,      prefer:'lowest_hp',      moveTo:'preferred_enemy' },
+  manipulation: { range: SPELL_RANGE.mid,      prefer:'highest_atk',    moveTo:'preferred_enemy' },
+  support:      { range: SPELL_RANGE.aoe_self, prefer:'lowest_hp_ally', moveTo:'ally_cluster'    },
+  defend:       { range: SPELL_RANGE.self,     prefer:'self',           moveTo:'hold'            },
+  utility:      { range: SPELL_RANGE.mid,      prefer:'lowest_hp',      moveTo:'preferred_enemy' },
+  // Legacy keys
+  control:      { range: SPELL_RANGE.mid,      prefer:'highest_atk',    moveTo:'preferred_enemy' },
+  dot:          { range: SPELL_RANGE.ranged,   prefer:'highest_hp',     moveTo:'preferred_enemy' },
 };
 
 const HOUSE_STATS = {
@@ -374,14 +378,12 @@ async function loadDeploymentIntoEngine(dep){
   if(!zones.has(zoneId)) zones.set(zoneId,{nines:new Map(),tick:0});
 
   // Step 1: Get active card slots for this deployment
-  const {data:slots, error:slotsErr} = await supabaseAdmin
+  const {data:slots} = await supabaseAdmin
     .from('zone_card_slots')
     .select('slot_number, card_id')
     .eq('deployment_id', dep.id)
     .eq('is_active', true)
     .order('slot_number');
-
-  console.log(`🔍 [${dep.id}] slots:`, slots?.length||0, slotsErr?.message||'');
 
   let cards = [];
 
@@ -389,23 +391,19 @@ async function loadDeploymentIntoEngine(dep){
     const cardIds = slots.map(s => s.card_id).filter(Boolean);
 
     // Step 2: Get player_cards to find spell_ids
-    const {data:playerCards, error:pcErr} = await supabaseAdmin
+    const {data:playerCards} = await supabaseAdmin
       .from('player_cards')
       .select('id, spell_id')
       .in('id', cardIds);
-
-    console.log(`🔍 [${dep.id}] playerCards:`, playerCards?.length||0, pcErr?.message||'');
 
     if (playerCards && playerCards.length > 0) {
       const spellIds = playerCards.map(c => c.spell_id).filter(Boolean);
 
       // Step 3: Get spell data
-      const {data:spells, error:spellErr} = await supabaseAdmin
+      const {data:spells} = await supabaseAdmin
         .from('spells')
         .select('id, slug, name, card_type, house, base_atk, base_hp, base_spd, base_def, base_luck, effect_1')
         .in('id', spellIds);
-
-      console.log(`🔍 [${dep.id}] spells:`, spells?.length||0, spellErr?.message||'');
 
       // Step 4: Assemble — match slots → player_cards → spells
       const pcMap = {};
