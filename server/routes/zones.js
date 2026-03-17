@@ -118,14 +118,15 @@ router.post('/deploy', async (req, res) => {
     await addPoints(player_id, ZONE_POINTS.DEPLOY, 'zone_deploy', `Deployed to zone ${zone_id}`);
 
     // ── Equip cards if provided with deploy request ───────────────────
-    // Frontend passes card_ids: [slot1_id, slot2_id, slot3_id]
     const cardIds = req.body.card_ids || [];
     if (cardIds.length > 0) {
       try {
         const validSlots = [];
+        const usedCardIds = new Set();
+
         for (let i = 0; i < Math.min(cardIds.length, 3); i++) {
           const cardId = parseInt(cardIds[i]);
-          if (!cardId) continue;
+          if (!cardId || usedCardIds.has(cardId)) continue;
 
           // Verify card belongs to this player
           const { data: card } = await supabaseAdmin
@@ -134,27 +135,30 @@ router.post('/deploy', async (req, res) => {
             .eq('id', cardId)
             .eq('player_id', player_id)
             .single();
-          if (!card) continue;
+          if (!card) { console.log(`⚠️ Card ${cardId} not found for player ${player_id}`); continue; }
 
-          // Verify card isn't already on another active zone
+          // Verify card isn't on a DIFFERENT zone's active deployment
           const { data: existing } = await supabaseAdmin
             .from('zone_card_slots')
             .select('id, deployment_id')
             .eq('card_id', cardId)
             .eq('is_active', true);
 
-          const onOtherZone = (existing || []).some(s => s.deployment_id !== deployment.id);
-          if (onOtherZone) continue;
+          const onOtherZone = (existing || []).some(s => String(s.deployment_id) !== String(deployment.id));
+          if (onOtherZone) { console.log(`⚠️ Card ${cardId} already on another zone`); continue; }
 
+          usedCardIds.add(cardId);
           validSlots.push({ deployment_id: deployment.id, card_id: cardId, slot_number: i + 1, is_active: true });
         }
 
         if (validSlots.length > 0) {
           await supabaseAdmin.from('zone_card_slots').insert(validSlots);
           console.log(`⚔️ ${validSlots.length} cards equipped on deploy for player ${player_id}`);
+        } else {
+          console.log(`⚠️ No valid cards to equip — cardIds received: ${JSON.stringify(cardIds)}`);
         }
       } catch (e) {
-        console.error('⚠️ Card equip on deploy failed (non-critical):', e.message);
+        console.error('⚠️ Card equip on deploy failed:', e.message);
       }
     }
     // ─────────────────────────────────────────────────────────────────
@@ -382,23 +386,6 @@ router.post('/equip-card', async (req, res) => {
     }
 
     const spellName = card.spell?.name || card.spell_name || 'Card';
-
-    // ── Reload deployment in combat engine so new card is picked up ──
-    if (combatEngine?.loadDeploymentIntoEngine) {
-      try {
-        const { data: dep } = await supabaseAdmin
-          .from('zone_deployments')
-          .select('id, player_id, nine_id, zone_id, guild_tag, current_hp, nine:nine_id(house_id, name)')
-          .eq('id', deployment.id)
-          .single();
-        if (dep) {
-          await combatEngine.loadDeploymentIntoEngine({
-            ...dep,
-            nine: { house_key: dep.nine?.house_id, name: dep.nine?.name || 'Unknown' },
-          });
-        }
-      } catch (e) { /* non-critical */ }
-    }
 
     res.json({
       success: true,
