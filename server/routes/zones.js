@@ -123,7 +123,7 @@ router.post('/deploy', async (req, res) => {
         await combatEngine.loadDeploymentIntoEngine({
           ...deployment,
           nine: {
-            house_key: nine.house_key,
+            house_key: nine.house_id,
             name: nine.name || player?.twitter_handle || 'Unknown',
           },
         });

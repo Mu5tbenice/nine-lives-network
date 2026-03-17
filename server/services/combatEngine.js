@@ -61,7 +61,7 @@ let _tickInt=null, _snapInt=null, _nextSnap=Date.now()+SNAPSHOT_MS;
 
 // ─── BUILD NINE STATE ─────────────────────────────────────────────────
 function buildNineState(dep, nine, cards) {
-  const h = HOUSE_STATS[nine.house_key] || HOUSE_STATS.stormrage;
+  const h = HOUSE_STATS[nine.house_key || nine.house_id] || HOUSE_STATS.stormrage;
   const atk  = h.atk  + cards.reduce((s,c)=>s+(c.base_atk ||0),0);
   const hp   = h.hp   + cards.reduce((s,c)=>s+(c.base_hp  ||0),0);
   const spd  = h.spd  + cards.reduce((s,c)=>s+(c.base_spd ||0),0);
@@ -71,7 +71,7 @@ function buildNineState(dep, nine, cards) {
   const y = ZONE_MARGIN + Math.random()*(ZONE_H-ZONE_MARGIN*2);
   return {
     deploymentId: String(dep.id), playerId: dep.player_id, nineId: dep.nine_id,
-    guildTag: dep.guild_tag||'lone_wolf', playerName: nine.name||'Unknown', houseKey: nine.house_key||'stormrage',
+    guildTag: dep.guild_tag||'lone_wolf', playerName: nine.name||'Unknown', houseKey: nine.house_id||'stormrage',
     stats:{atk,hp,spd,def,luck}, cards,
     hp, maxHp:hp, x, y, destX:x, destY:y,
     moveSpeed: 30 + spd*1.2,
@@ -358,7 +358,7 @@ async function runSnapshot(){
 // ─── LOAD / UNLOAD ────────────────────────────────────────────────────
 async function loadActiveDeployments(){
   console.log('⚔️ Loading deployments...');
-  const {data,error}=await supabaseAdmin.from('zone_deployments').select('id,player_id,nine_id,zone_id,guild_tag,current_hp,nine:nine_id(house_key,name)').eq('is_active',true);
+  const {data,error}=await supabaseAdmin.from('zone_deployments').select('id,player_id,nine_id,zone_id,guild_tag,current_hp,nine:nine_id(house_id,name)').eq('is_active',true);
   if(error){console.error('❌',error.message);return;}
   for(const dep of (data||[])) await loadDeploymentIntoEngine(dep);
   console.log(`✅ ${data?.length||0} deployments loaded`);
@@ -370,7 +370,7 @@ async function loadDeploymentIntoEngine(dep){
   const {data:slots}=await supabaseAdmin.from('zone_card_slots').select('slot_number,player_card:card_id(spell:spell_id(slug,name,card_type,house_key,base_atk,base_hp,base_spd,base_def,base_luck,effect_1,effect_2,rarity))').eq('deployment_id',dep.id).eq('is_active',true).order('slot_number');
   const cards=(slots||[]).filter(s=>s.player_card?.spell).map(s=>({slot_number:s.slot_number,...s.player_card.spell})).sort((a,b)=>a.slot_number-b.slot_number);
   const nine=dep.nine||{};
-  const state=buildNineState(dep,{house_key:nine.house_key||'stormrage',name:nine.name||'Unknown'},cards);
+  const state=buildNineState(dep,{house_key:nine.house_id||'stormrage',name:nine.name||'Unknown'},cards);
   if(dep.current_hp>0) state.hp=Math.min(state.maxHp,dep.current_hp);
   zones.get(zoneId).nines.set(String(dep.id),state);
   console.log(`⚔️  ${state.playerName} (${state.houseKey}) → zone ${zoneId} [${cards.length} cards]`);
