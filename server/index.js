@@ -280,6 +280,19 @@ app.get('/api/combat/next-cycle', (req, res) => {
   }
 });
 
+// ── V3 SNAPSHOT TIMER ALIAS ──
+app.get('/api/combat/next-snapshot', (req, res) => {
+  try {
+    res.json({
+      next_snapshot_at: combatEngine?.getNextCycleAt ? combatEngine.getNextCycleAt() : (Date.now() + 15 * 60 * 1000),
+      snapshot_interval_ms: combatEngine?.getCycleIntervalMs ? combatEngine.getCycleIntervalMs() : (15 * 60 * 1000),
+      server_time: Date.now(),
+    });
+  } catch (e) {
+    res.json({ next_snapshot_at: Date.now() + 15 * 60 * 1000, server_time: Date.now() });
+  }
+});
+
 // ── START COMBAT ENGINE ──
 if (combatEngine && combatEngine.startCombatEngine) {
   combatEngine.startCombatEngine();

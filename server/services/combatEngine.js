@@ -333,10 +333,15 @@ async function tickZone(zoneId, zs) {
     })),
   });
 
-  // HP sync every 10 ticks
+  // HP sync every 10 ticks — update each row individually to avoid upsert insert attempts
   if(zs.tick%10===0){
-    const updates=Array.from(zs.nines.values()).map(n=>({id:n.deploymentId,current_hp:Math.max(0,Math.round(n.hp))}));
-    if(updates.length) await supabaseAdmin.from('zone_deployments').upsert(updates,{onConflict:'id'}).then(({error})=>{if(error)console.error('❌ HP sync:',error.message);});
+    const nineArr = Array.from(zs.nines.values());
+    for (const n of nineArr) {
+      await supabaseAdmin.from('zone_deployments')
+        .update({ current_hp: Math.max(0, Math.round(n.hp)) })
+        .eq('id', n.deploymentId)
+        .then(({error}) => { if(error) console.error('❌ HP sync:', error.message); });
+    }
   }
 }
 
@@ -367,10 +372,55 @@ async function loadActiveDeployments(){
 async function loadDeploymentIntoEngine(dep){
   const zoneId=String(dep.zone_id);
   if(!zones.has(zoneId)) zones.set(zoneId,{nines:new Map(),tick:0});
-  const {data:slots}=await supabaseAdmin.from('zone_card_slots').select('slot_number,player_card:card_id(spell:spell_id(slug,name,card_type,house_key,base_atk,base_hp,base_spd,base_def,base_luck,effect_1,effect_2,rarity))').eq('deployment_id',dep.id).eq('is_active',true).order('slot_number');
-  const cards=(slots||[]).filter(s=>s.player_card?.spell).map(s=>({slot_number:s.slot_number,...s.player_card.spell})).sort((a,b)=>a.slot_number-b.slot_number);
+
+  // Step 1: Get active card slots for this deployment
+  const {data:slots} = await supabaseAdmin
+    .from('zone_card_slots')
+    .select('slot_number, card_id')
+    .eq('deployment_id', dep.id)
+    .eq('is_active', true)
+    .order('slot_number');
+
+  let cards = [];
+
+  if (slots && slots.length > 0) {
+    const cardIds = slots.map(s => s.card_id).filter(Boolean);
+
+    // Step 2: Get player_cards to find spell_ids
+    const {data:playerCards} = await supabaseAdmin
+      .from('player_cards')
+      .select('id, spell_id')
+      .in('id', cardIds);
+
+    if (playerCards && playerCards.length > 0) {
+      const spellIds = playerCards.map(c => c.spell_id).filter(Boolean);
+
+      // Step 3: Get spell data
+      const {data:spells} = await supabaseAdmin
+        .from('spells')
+        .select('id, slug, name, card_type, house, base_atk, base_hp, base_spd, base_def, base_luck, effect_1, rarity')
+        .in('id', spellIds);
+
+      // Step 4: Assemble — match slots → player_cards → spells
+      const pcMap = {};
+      (playerCards||[]).forEach(pc => { pcMap[pc.id] = pc; });
+      const spellMap = {};
+      (spells||[]).forEach(s => { spellMap[s.id] = s; });
+
+      cards = slots
+        .map(slot => {
+          const pc    = pcMap[slot.card_id];
+          const spell = pc ? spellMap[pc.spell_id] : null;
+          if (!spell) return null;
+          return { slot_number: slot.slot_number, ...spell };
+        })
+        .filter(Boolean)
+        .sort((a,b) => a.slot_number - b.slot_number);
+    }
+  }
+
   const nine=dep.nine||{};
-  const state=buildNineState(dep,{house_key:nine.house_id||'stormrage',name:nine.name||'Unknown'},cards);
+  const state=buildNineState(dep,{house_key:nine.house_id||nine.house_key||'stormrage',name:nine.name||'Unknown'},cards);
   if(dep.current_hp>0) state.hp=Math.min(state.maxHp,dep.current_hp);
   zones.get(zoneId).nines.set(String(dep.id),state);
   console.log(`⚔️  ${state.playerName} (${state.houseKey}) → zone ${zoneId} [${cards.length} cards]`);

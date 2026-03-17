@@ -643,7 +643,106 @@ router.get('/', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════
-// BACKWARD COMPAT: keep old /play-card and /remove-card
+// GET /api/zones/:zoneId/combat-stats
+// Live fighter stats for zone detail panel
+// ═══════════════════════════════════════════
+router.get('/:zoneId/combat-stats', async (req, res) => {
+  try {
+    const zoneId = parseInt(req.params.zoneId);
+
+    const { data: deployments, error } = await supabaseAdmin
+      .from('zone_deployments')
+      .select(`
+        id, guild_tag, current_hp, max_hp, player_id,
+        nine:nine_id(name, house_id)
+      `)
+      .eq('zone_id', zoneId)
+      .eq('is_active', true);
+
+    if (error) return res.status(500).json({ error: error.message });
+
+    const fighters = (deployments || []).map(d => ({
+      id:     d.player_id,
+      name:   d.nine?.name || 'Unknown',
+      house:  d.nine?.house_id || 'unknown',
+      guild:  d.guild_tag || null,
+      hp:     d.current_hp || 0,
+      maxHp:  d.max_hp || 0,
+      damage: 0,  // tracked client-side via combat meters
+      heals:  0,
+      kos:    0,
+    }));
+
+    // Guild aggregates
+    const guilds = {};
+    fighters.forEach(f => {
+      if (!f.guild) return;
+      if (!guilds[f.guild]) guilds[f.guild] = { count: 0, totalHp: 0, maxHp: 0 };
+      guilds[f.guild].count++;
+      guilds[f.guild].totalHp += f.hp;
+      guilds[f.guild].maxHp   += f.maxHp;
+    });
+
+    res.json({ fighters, guilds, total: fighters.length });
+  } catch (err) {
+    console.error('Combat stats error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ═══════════════════════════════════════════
+// POST /api/zones/:zoneId/force-reload
+// Tell the combat engine to reload card loadouts
+// for all active deployments on this zone
+// ═══════════════════════════════════════════
+router.post('/:zoneId/force-reload', async (req, res) => {
+  try {
+    const zoneId = parseInt(req.params.zoneId);
+
+    if (combatEngine?.loadDeploymentIntoEngine) {
+      // Reload all active deployments on this zone
+      const { data: deployments } = await supabaseAdmin
+        .from('zone_deployments')
+        .select('id, player_id, nine_id, zone_id, guild_tag, current_hp, nine:nine_id(house_id, name)')
+        .eq('zone_id', zoneId)
+        .eq('is_active', true);
+
+      for (const dep of (deployments || [])) {
+        try {
+          await combatEngine.loadDeploymentIntoEngine({
+            ...dep,
+            nine: { house_key: dep.nine?.house_id, name: dep.nine?.name || 'Unknown' },
+          });
+        } catch (e) { /* non-critical per deployment */ }
+      }
+    }
+
+    res.json({ success: true, message: `Zone ${zoneId} reloaded` });
+  } catch (err) {
+    console.error('Force reload error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ═══════════════════════════════════════════
+// GET /api/zones/:zoneId — Single zone by ID
+// ═══════════════════════════════════════════
+router.get('/:zoneId', async (req, res) => {
+  try {
+    const zoneId = parseInt(req.params.zoneId);
+    const { data: zone, error } = await supabase
+      .from('zones')
+      .select('*')
+      .eq('id', zoneId)
+      .single();
+    if (error) return res.status(404).json({ error: 'Zone not found' });
+    res.json(zone);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 // ═══════════════════════════════════════════
 router.post('/play-card', async (req, res) => {
   req.body.slot_number = req.body.slot_number || 1;
