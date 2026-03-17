@@ -117,6 +117,48 @@ router.post('/deploy', async (req, res) => {
     // Award deploy points (+5)
     await addPoints(player_id, ZONE_POINTS.DEPLOY, 'zone_deploy', `Deployed to zone ${zone_id}`);
 
+    // ── Equip cards if provided with deploy request ───────────────────
+    // Frontend passes card_ids: [slot1_id, slot2_id, slot3_id]
+    const cardIds = req.body.card_ids || [];
+    if (cardIds.length > 0) {
+      try {
+        const validSlots = [];
+        for (let i = 0; i < Math.min(cardIds.length, 3); i++) {
+          const cardId = parseInt(cardIds[i]);
+          if (!cardId) continue;
+
+          // Verify card belongs to this player
+          const { data: card } = await supabaseAdmin
+            .from('player_cards')
+            .select('id')
+            .eq('id', cardId)
+            .eq('player_id', player_id)
+            .single();
+          if (!card) continue;
+
+          // Verify card isn't already on another active zone
+          const { data: existing } = await supabaseAdmin
+            .from('zone_card_slots')
+            .select('id, deployment_id')
+            .eq('card_id', cardId)
+            .eq('is_active', true);
+
+          const onOtherZone = (existing || []).some(s => s.deployment_id !== deployment.id);
+          if (onOtherZone) continue;
+
+          validSlots.push({ deployment_id: deployment.id, card_id: cardId, slot_number: i + 1, is_active: true });
+        }
+
+        if (validSlots.length > 0) {
+          await supabaseAdmin.from('zone_card_slots').insert(validSlots);
+          console.log(`⚔️ ${validSlots.length} cards equipped on deploy for player ${player_id}`);
+        }
+      } catch (e) {
+        console.error('⚠️ Card equip on deploy failed (non-critical):', e.message);
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────
+
     // ── Wire into combat engine ───────────────────────────────────────
     if (combatEngine?.loadDeploymentIntoEngine) {
       try {
