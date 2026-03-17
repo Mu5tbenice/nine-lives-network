@@ -392,4 +392,39 @@ app.get('/api/debug/engine/:zoneId', (req, res) => {
   res.json({ tick: zoneState.tick, nines });
 });
 
+app.get('/api/debug/cards/:deploymentId', async (req, res) => {
+  const { createClient } = require('@supabase/supabase-js');
+  const admin = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  const depId = parseInt(req.params.deploymentId);
+
+  const { data: slots, error: e1 } = await admin
+    .from('zone_card_slots')
+    .select('slot_number, card_id')
+    .eq('deployment_id', depId)
+    .eq('is_active', true);
+
+  const cardIds = (slots || []).map(s => s.card_id).filter(Boolean);
+
+  const { data: playerCards, error: e2 } = await admin
+    .from('player_cards')
+    .select('id, spell_id')
+    .in('id', cardIds.length ? cardIds : [0]);
+
+  const spellIds = (playerCards || []).map(c => c.spell_id).filter(Boolean);
+
+  const { data: spells, error: e3 } = await admin
+    .from('spells')
+    .select('id, name, effect_1, card_type')
+    .in('id', spellIds.length ? spellIds : [0]);
+
+  res.json({
+    depId,
+    slots, e1: e1?.message,
+    cardIds,
+    playerCards, e2: e2?.message,
+    spellIds,
+    spells, e3: e3?.message,
+  });
+});
+
 module.exports = app;
