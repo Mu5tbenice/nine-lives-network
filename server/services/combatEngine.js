@@ -402,7 +402,7 @@ async function loadDeploymentIntoEngine(dep){
       // Step 3: Get spell data
       const {data:spells, error:spellErr} = await supabaseAdmin
         .from('spells')
-        .select('id, slug, name, card_type, house, base_atk, base_hp, base_spd, base_def, base_luck, effect_1, rarity')
+        .select('id, slug, name, card_type, house, base_atk, base_hp, base_spd, base_def, base_luck, effect_1')
         .in('id', spellIds);
 
       console.log(`🔍 [${dep.id}] spells:`, spells?.length||0, spellErr?.message||'');
