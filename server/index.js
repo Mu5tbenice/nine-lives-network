@@ -379,4 +379,17 @@ server.listen(PORT, "0.0.0.0", () => {
   if (io) console.log(`⚔️ Real-time duels + arena active (Socket.io)`);
 });
 
+app.get('/api/debug/engine/:zoneId', (req, res) => {
+  const zoneState = combatEngine?.getZoneState ? combatEngine.getZoneState(req.params.zoneId) : null;
+  if (!zoneState) return res.json({ error: 'No zone state', zone: req.params.zoneId });
+  const nines = Array.from(zoneState.nines.values()).map(n => ({
+    name: n.playerName,
+    house: n.houseKey,
+    cards: n.cards.length,
+    cardNames: n.cards.map(c => c.name),
+    hp: n.hp,
+  }));
+  res.json({ tick: zoneState.tick, nines });
+});
+
 module.exports = app;
