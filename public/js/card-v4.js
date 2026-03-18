@@ -45,7 +45,6 @@ function _effectHex(tag) {
   var k = (tag||'').replace(/\s.*$/,'').toUpperCase();
   return EFFECT_HEX[k] || '#D4A64B';
 }
-};
 
 // ── STAT COLORS ──
 var STAT_COLORS = { atk: '#e85a6a', hp: '#6acd8a', spd: '#6ac8d8', def: '#b088e8', luck: '#D4A64B' };
@@ -222,7 +221,11 @@ function buildCardV4(s, options) {
 
   // ── Art image or gradient area ──
   var hasArt = s.image_url && s.image_url.length > 0;
-  var artSrc = (s.image_url && s.image_url.indexOf('http') === 0) ? s.image_url : '/assets/images/spells/' + s.image_url;
+  var artSrc = s.image_url
+    ? (s.image_url.indexOf('http') === 0 || s.image_url.indexOf('/') === 0)
+      ? s.image_url
+      : '/assets/images/spells/' + s.image_url
+    : '';
   var artImg = hasArt
       ? '<div class="sc-art-img" style="background-image:url(' + _esc(artSrc) + ')"></div>'
       : '';
