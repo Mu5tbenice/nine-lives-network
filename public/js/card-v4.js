@@ -29,6 +29,24 @@ var CARD_HOUSES = {
   universal:   { name: "Universal",   color: "#D4A64B", img: "" },
 };
 
+// ── EFFECT COLOUR MAP (V3) ──
+var EFFECT_HEX = {
+  CHAIN:'#FFD700',CRIT:'#FFEE00',PIERCE:'#FFC040',
+  BURN:'#FF6B35',SURGE:'#FF3355',EXECUTE:'#FF9500',
+  WARD:'#8BC34A',ANCHOR:'#6D4C41',THORNS:'#558B2F',TAUNT:'#FF5252',SHATTER:'#FF1744',
+  HASTE:'#00E5FF',DODGE:'#40C4FF',REFLECT:'#80D8FF',
+  SILENCE:'#9C27B0',HEX:'#7B1FA2',BLIND:'#4A148C',MARK:'#E91E63',
+  HEAL:'#66BB6A',BLESS:'#FFF176',INSPIRE:'#FFAB40',
+  WEAKEN:'#5C6BC0',TETHER:'#3F51B5',NULLIFY:'#7986CB',DRAIN:'#4455BB',
+  POISON:'#76FF03',CORRODE:'#C6FF00',WITHER:'#69F0AE',INFECT:'#AEEA00',
+  FEAST:'#FF6090',BARRIER:'#B0BEC5',CLEANSE:'#E0E0E0',
+};
+function _effectHex(tag) {
+  var k = (tag||'').replace(/\s.*$/,'').toUpperCase();
+  return EFFECT_HEX[k] || '#D4A64B';
+}
+};
+
 // ── STAT COLORS ──
 var STAT_COLORS = { atk: '#e85a6a', hp: '#6acd8a', spd: '#6ac8d8', def: '#b088e8', luck: '#D4A64B' };
 
