@@ -152,10 +152,7 @@ function buildCardV4(s, options) {
 
   // Resolve effects
   var bn = [];
-  try {
-    bn = typeof s.bonus_effects === 'string' ? JSON.parse(s.bonus_effects) : (s.bonus_effects || []);
-  } catch(e) { bn = []; }
-  if (!Array.isArray(bn)) bn = [];
+  bn = []; // V3: single effect only, shown via effect_1/base_effect above
 
   // Resolve rarity
   var rarity = s.rarity || 'common';
