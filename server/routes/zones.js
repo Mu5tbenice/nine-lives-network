@@ -539,24 +539,108 @@ router.get('/', async (req, res) => {
 // working but redirect to new equip system
 // ═══════════════════════════════════════════
 router.post('/play-card', async (req, res) => {
-  // Map old single-card system to slot 1
   req.body.slot_number = req.body.slot_number || 1;
-  // Forward to equip-card handler
   const handler = router.stack.find(r => r.route && r.route.path === '/equip-card');
-  if (handler) {
-    return handler.route.stack[0].handle(req, res);
-  }
+  if (handler) return handler.route.stack[0].handle(req, res);
   res.status(500).json({ error: 'Equip handler not found' });
 });
 
 router.post('/remove-card', async (req, res) => {
-  // Map old remove to unequip slot 1
   req.body.slot_number = req.body.slot_number || 1;
   const handler = router.stack.find(r => r.route && r.route.path === '/unequip-card');
-  if (handler) {
-    return handler.route.stack[0].handle(req, res);
-  }
+  if (handler) return handler.route.stack[0].handle(req, res);
   res.status(500).json({ error: 'Unequip handler not found' });
+});
+
+// ═══════════════════════════════════════════
+// GET /api/zones/counts
+// Fighter counts per zone for zone list badges
+// ═══════════════════════════════════════════
+router.get('/counts', async (req, res) => {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('zone_deployments')
+      .select('zone_id')
+      .eq('is_active', true);
+    if (error) return res.status(500).json({ error: error.message });
+    const counts = {};
+    (data || []).forEach(d => { counts[d.zone_id] = (counts[d.zone_id] || 0) + 1; });
+    res.json(counts);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ═══════════════════════════════════════════
+// GET /api/zones/:zoneId/combat-stats
+// ═══════════════════════════════════════════
+router.get('/:zoneId/combat-stats', async (req, res) => {
+  try {
+    const zoneId = parseInt(req.params.zoneId);
+    const { data: deployments } = await supabaseAdmin
+      .from('zone_deployments')
+      .select('id, guild_tag, current_hp, max_hp, player_id, nine:nine_id(name, house_id)')
+      .eq('zone_id', zoneId)
+      .eq('is_active', true);
+
+    const fighters = (deployments || []).map(d => ({
+      id:     d.player_id,
+      name:   d.nine?.name || 'Unknown',
+      house:  d.nine?.house_id || 'unknown',
+      guild:  d.guild_tag || null,
+      hp:     d.current_hp || 0,
+      maxHp:  d.max_hp || 0,
+    }));
+    res.json({ fighters, total: fighters.length });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ═══════════════════════════════════════════
+// POST /api/zones/:zoneId/force-reload
+// ═══════════════════════════════════════════
+router.post('/:zoneId/force-reload', async (req, res) => {
+  try {
+    let combatEngine = null;
+    try { combatEngine = require('../services/combatEngine'); } catch(e) {}
+    const zoneId = parseInt(req.params.zoneId);
+    if (combatEngine?.loadDeploymentIntoEngine) {
+      const { data: deployments } = await supabaseAdmin
+        .from('zone_deployments')
+        .select('id, player_id, nine_id, zone_id, guild_tag, current_hp, nine:nine_id(house_id, name)')
+        .eq('zone_id', zoneId)
+        .eq('is_active', true);
+      for (const dep of (deployments || [])) {
+        try {
+          await combatEngine.loadDeploymentIntoEngine({
+            ...dep,
+            nine: { house_key: dep.nine?.house_id, name: dep.nine?.name || 'Unknown' },
+          });
+        } catch(e) {}
+      }
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ═══════════════════════════════════════════
+// GET /api/zones/:zoneId — single zone
+// MUST be last to avoid catching other routes
+// ═══════════════════════════════════════════
+router.get('/:zoneId', async (req, res) => {
+  try {
+    const zoneId = parseInt(req.params.zoneId);
+    if (isNaN(zoneId)) return res.status(400).json({ error: 'Invalid zone ID' });
+    const { data: zone, error } = await supabaseAdmin
+      .from('zones').select('*').eq('id', zoneId).single();
+    if (error) return res.status(404).json({ error: 'Zone not found' });
+    res.json(zone);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 module.exports = router;
