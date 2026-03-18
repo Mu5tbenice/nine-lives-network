@@ -309,6 +309,7 @@ async function tickZone(zoneId, zs) {
     }
 
     // Auto-attack (must be in spell range)
+    console.log(`⚔️ TICK zone ${zoneId}: ${all.length} nines, enemies: ${all.filter(n=>n.guildTag!==nine.guildTag&&n.hp>0).length}`);
     if(nine.atkTimer<=0){
       const tgt=pickTarget(nine,all);
       if(tgt) resolveAttack(nine,tgt,all);

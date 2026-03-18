@@ -453,7 +453,7 @@ router.get('/:zoneId/my-loadout/:playerId', async (req, res) => {
     const playerId = parseInt(req.params.playerId);
 
     // Find deployment
-    const { data: deployment } = await supabase
+    const { data: deployment } = await supabaseAdmin
       .from('zone_deployments')
       .select('id')
       .eq('player_id', playerId)
@@ -466,7 +466,7 @@ router.get('/:zoneId/my-loadout/:playerId', async (req, res) => {
     }
 
     // Get active card slots with card details
-    const { data: slots } = await supabase
+    const { data: slots } = await supabaseAdmin
       .from('zone_card_slots')
       .select(`
         id, card_id, slot_number,
