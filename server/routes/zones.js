@@ -15,14 +15,6 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// ── Combat engine wiring ──────────────────────────────────────────────
-let combatEngine = null;
-try {
-  combatEngine = require('../services/combatEngine');
-} catch (e) {
-  console.warn('⚠️ Combat engine not available in zones.js');
-}
-
 // V5: Max cards per zone deployment
 const MAX_CARDS_PER_ZONE = 3;
 
@@ -39,9 +31,7 @@ const ZONE_POINTS = {
 // ═══════════════════════════════════════════
 router.post('/deploy', async (req, res) => {
   try {
-    // Parse as integers — JSON body can send strings, Supabase .eq() is type-strict
-    const player_id = parseInt(req.body.player_id);
-    const zone_id = parseInt(req.body.zone_id);
+    const { player_id, zone_id } = req.body;
 
     if (!player_id || !zone_id) {
       return res.status(400).json({ error: 'player_id and zone_id required' });
@@ -54,7 +44,7 @@ router.post('/deploy', async (req, res) => {
     }
 
     // Check if already deployed on this zone
-    const { data: existingDeploy } = await supabaseAdmin
+    const { data: existingDeploy } = await supabase
       .from('zone_deployments')
       .select('id')
       .eq('player_id', player_id)
@@ -67,7 +57,7 @@ router.post('/deploy', async (req, res) => {
     }
 
     // V5: Check zone deployment limit (2 zones at start, 3 at level 10)
-    const { data: currentDeploys } = await supabaseAdmin
+    const { data: currentDeploys } = await supabase
       .from('zone_deployments')
       .select('id')
       .eq('player_id', player_id)
@@ -117,69 +107,6 @@ router.post('/deploy', async (req, res) => {
     // Award deploy points (+5)
     await addPoints(player_id, ZONE_POINTS.DEPLOY, 'zone_deploy', `Deployed to zone ${zone_id}`);
 
-    // ── Equip cards if provided with deploy request ───────────────────
-    const cardIds = req.body.card_ids || [];
-    if (cardIds.length > 0) {
-      try {
-        const validSlots = [];
-        const usedCardIds = new Set();
-
-        for (let i = 0; i < Math.min(cardIds.length, 3); i++) {
-          const cardId = parseInt(cardIds[i]);
-          if (!cardId || usedCardIds.has(cardId)) continue;
-
-          // Verify card belongs to this player
-          const { data: card } = await supabaseAdmin
-            .from('player_cards')
-            .select('id')
-            .eq('id', cardId)
-            .eq('player_id', player_id)
-            .single();
-          if (!card) { console.log(`⚠️ Card ${cardId} not found for player ${player_id}`); continue; }
-
-          // Verify card isn't on a DIFFERENT zone's active deployment
-          const { data: existing } = await supabaseAdmin
-            .from('zone_card_slots')
-            .select('id, deployment_id')
-            .eq('card_id', cardId)
-            .eq('is_active', true);
-
-          const onOtherZone = (existing || []).some(s => String(s.deployment_id) !== String(deployment.id));
-          if (onOtherZone) { console.log(`⚠️ Card ${cardId} already on another zone`); continue; }
-
-          usedCardIds.add(cardId);
-          validSlots.push({ deployment_id: deployment.id, card_id: cardId, slot_number: i + 1, is_active: true });
-        }
-
-        if (validSlots.length > 0) {
-          await supabaseAdmin.from('zone_card_slots').insert(validSlots);
-          console.log(`⚔️ ${validSlots.length} cards equipped on deploy for player ${player_id}`);
-        } else {
-          console.log(`⚠️ No valid cards to equip — cardIds received: ${JSON.stringify(cardIds)}`);
-        }
-      } catch (e) {
-        console.error('⚠️ Card equip on deploy failed:', e.message);
-      }
-    }
-    // ─────────────────────────────────────────────────────────────────
-
-    // ── Wire into combat engine ───────────────────────────────────────
-    if (combatEngine?.loadDeploymentIntoEngine) {
-      try {
-        await combatEngine.loadDeploymentIntoEngine({
-          ...deployment,
-          nine: {
-            house_key: nine.house_id,
-            name: nine.name || player?.twitter_handle || 'Unknown',
-          },
-        });
-        console.log(`⚔️ ${nine.name} wired into combat engine on zone ${zone_id}`);
-      } catch (e) {
-        console.error('❌ Combat engine load (non-critical):', e.message);
-      }
-    }
-    // ─────────────────────────────────────────────────────────────────
-
     // Notify arena socket viewers
     try {
       if (global.__arenaSocket) {
@@ -225,7 +152,7 @@ router.post('/withdraw', async (req, res) => {
     }
 
     // Find active deployment
-    const { data: deployment } = await supabaseAdmin
+    const { data: deployment } = await supabase
       .from('zone_deployments')
       .select('id')
       .eq('player_id', player_id)
@@ -249,17 +176,6 @@ router.post('/withdraw', async (req, res) => {
       .from('zone_deployments')
       .update({ is_active: false, updated_at: new Date().toISOString() })
       .eq('id', deployment.id);
-
-    // ── Remove from combat engine ─────────────────────────────────────
-    if (combatEngine?.removeDeploymentFromEngine) {
-      try {
-        combatEngine.removeDeploymentFromEngine(deployment.id, zone_id);
-        console.log(`⚔️ Removed deployment ${deployment.id} from combat engine`);
-      } catch (e) {
-        console.error('❌ Combat engine remove (non-critical):', e.message);
-      }
-    }
-    // ─────────────────────────────────────────────────────────────────
 
     // Notify arena socket viewers
     try {
@@ -288,11 +204,7 @@ router.post('/withdraw', async (req, res) => {
 // ═══════════════════════════════════════════
 router.post('/equip-card', async (req, res) => {
   try {
-    // Parse all IDs as integers — JSON body can send strings, Supabase .eq() is type-strict
-    const player_id = parseInt(req.body.player_id);
-    const zone_id = parseInt(req.body.zone_id);
-    const card_id = parseInt(req.body.card_id);
-    const slot_number = req.body.slot_number;
+    const { player_id, zone_id, card_id, slot_number } = req.body;
 
     if (!player_id || !zone_id || !card_id) {
       return res.status(400).json({ error: 'player_id, zone_id, and card_id required' });
@@ -303,8 +215,8 @@ router.post('/equip-card', async (req, res) => {
       return res.status(400).json({ error: `slot_number must be 1-${MAX_CARDS_PER_ZONE}` });
     }
 
-    // Find active deployment on this zone — admin client bypasses RLS
-    const { data: deployment, error: depErr } = await supabaseAdmin
+    // Find active deployment on this zone
+    const { data: deployment } = await supabase
       .from('zone_deployments')
       .select('id')
       .eq('player_id', player_id)
@@ -312,44 +224,39 @@ router.post('/equip-card', async (req, res) => {
       .eq('is_active', true)
       .single();
 
-    if (depErr || !deployment) {
-      console.error('[equip-card] deployment lookup failed:', depErr, { player_id, zone_id });
+    if (!deployment) {
       return res.status(400).json({ error: 'Not deployed on this zone — deploy first' });
     }
 
-    // Get the card from player's collection — admin client bypasses RLS
-    const { data: card, error: cardErr } = await supabaseAdmin
+    // Get the card from player's collection
+    const { data: card } = await supabase
       .from('player_cards')
-      .select('id, spell_id, sharpness, player_id')
+      .select('*, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)')
       .eq('id', card_id)
       .eq('player_id', player_id)
       .single();
 
-    if (cardErr || !card) {
-      console.error('[equip-card] card not found:', cardErr, { card_id, player_id });
+    if (!card) {
       return res.status(404).json({ error: 'Card not found in your collection' });
     }
 
-    // Check card isn't already in an active slot on a DIFFERENT zone
-    const { data: existingSlots } = await supabaseAdmin
+    // V5: Check sharpness instead of exhaustion — 0% sharpness still works (50% power)
+    // Cards can always be equipped, sharpness just affects effectiveness
+
+    // Check card isn't already equipped on ANOTHER zone
+    const { data: existingSlots } = await supabase
       .from('zone_card_slots')
-      .select('id, deployment_id')
+      .select('id, deployment:deployment_id(zone_id)')
       .eq('card_id', card_id)
       .eq('is_active', true);
 
-    if (existingSlots && existingSlots.length > 0) {
-      const slotDeploymentIds = existingSlots.map(s => s.deployment_id).filter(Boolean);
-      if (slotDeploymentIds.length > 0) {
-        const { data: otherDeps } = await supabaseAdmin
-          .from('zone_deployments')
-          .select('id, zone_id')
-          .in('id', slotDeploymentIds)
-          .eq('is_active', true)
-          .neq('zone_id', zone_id);
-        if (otherDeps && otherDeps.length > 0) {
-          return res.status(400).json({ error: 'Card is already equipped on another zone. Unequip it first.' });
-        }
-      }
+    const otherZoneSlot = (existingSlots || []).find(s =>
+      s.deployment && s.deployment.zone_id !== zone_id
+    );
+    if (otherZoneSlot) {
+      return res.status(400).json({
+        error: 'Card is already equipped on another zone. Unequip it first.',
+      });
     }
 
     // Remove any existing card in this specific slot
@@ -412,7 +319,7 @@ router.post('/unequip-card', async (req, res) => {
       return res.status(400).json({ error: 'player_id, zone_id, and slot_number required' });
     }
 
-    const { data: deployment } = await supabaseAdmin
+    const { data: deployment } = await supabase
       .from('zone_deployments')
       .select('id')
       .eq('player_id', player_id)
@@ -452,7 +359,7 @@ router.get('/:zoneId/deployments', async (req, res) => {
   try {
     const zoneId = parseInt(req.params.zoneId);
 
-    const { data: deployments, error } = await supabaseAdmin
+    const { data: deployments, error } = await supabase
       .from('zone_deployments')
       .select(`
         *,
@@ -468,11 +375,13 @@ router.get('/:zoneId/deployments', async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch deployments' });
     }
 
+    // Filter card_slots to only active ones
     const cleaned = (deployments || []).map(d => ({
       ...d,
       card_slots: (d.card_slots || []).filter(s => s.is_active),
     }));
 
+    // Calculate guild power totals
     const guildPower = {};
     cleaned.forEach(d => {
       const tag = d.guild_tag || 'unaffiliated';
@@ -502,7 +411,7 @@ router.get('/my-deployments/:playerId', async (req, res) => {
   try {
     const playerId = parseInt(req.params.playerId);
 
-    const { data: deployments, error } = await supabaseAdmin
+    const { data: deployments, error } = await supabase
       .from('zone_deployments')
       .select(`
         *,
@@ -517,6 +426,7 @@ router.get('/my-deployments/:playerId', async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch' });
     }
 
+    // Filter to active card slots only
     const cleaned = (deployments || []).map(d => ({
       ...d,
       card_slots: (d.card_slots || []).filter(s => s.is_active),
@@ -542,7 +452,8 @@ router.get('/:zoneId/my-loadout/:playerId', async (req, res) => {
     const zoneId = parseInt(req.params.zoneId);
     const playerId = parseInt(req.params.playerId);
 
-    const { data: deployment, error: depErr } = await supabaseAdmin
+    // Find deployment
+    const { data: deployment } = await supabase
       .from('zone_deployments')
       .select('id')
       .eq('player_id', playerId)
@@ -550,72 +461,48 @@ router.get('/:zoneId/my-loadout/:playerId', async (req, res) => {
       .eq('is_active', true)
       .single();
 
-    if (depErr || !deployment) {
+    if (!deployment) {
       return res.json({ loadout: [], slots_used: 0, slots_max: MAX_CARDS_PER_ZONE });
     }
 
-    const { data: slots, error: slotErr } = await supabaseAdmin
+    // Get active card slots with card details
+    const { data: slots } = await supabase
       .from('zone_card_slots')
-      .select('id, card_id, slot_number')
+      .select(`
+        id, card_id, slot_number,
+        card:card_id(
+          id, player_id, sharpness,
+          spell:spell_id(name, spell_type, house, rarity, base_atk, base_hp, base_spd, base_def, base_luck, base_effect, effect_1, bonus_effects, image_url, flavor_text)
+        )
+      `)
       .eq('deployment_id', deployment.id)
       .eq('is_active', true)
       .order('slot_number');
 
-    if (slotErr || !slots || slots.length === 0) {
-      return res.json({ loadout: [], slots_used: 0, slots_max: MAX_CARDS_PER_ZONE });
-    }
-
-    const cardIds = slots.map(s => s.card_id).filter(Boolean);
-    const { data: playerCards, error: cardErr } = await supabaseAdmin
-      .from('player_cards')
-      .select('id, spell_id, sharpness, player_id')
-      .in('id', cardIds);
-
-    if (cardErr) {
-      console.error('[my-loadout] player_cards fetch error:', cardErr, { cardIds });
-      return res.json({ loadout: [], slots_used: 0, slots_max: MAX_CARDS_PER_ZONE });
-    }
-
-    const spellIds = (playerCards || []).map(c => c.spell_id).filter(Boolean);
-    let spells = [];
-    if (spellIds.length > 0) {
-      const { data: spellData } = await supabaseAdmin
-        .from('spells')
-        .select('id, name, spell_type, card_type, house, rarity, base_atk, base_hp, base_spd, base_def, base_luck, effect_1, bonus_effects, image_url, base_effect, flavor_text')
-        .in('id', spellIds);
-      spells = spellData || [];
-    }
-
-    const cardMap = {};
-    (playerCards || []).forEach(c => { cardMap[c.id] = c; });
-    const spellMap = {};
-    spells.forEach(s => { spellMap[s.id] = s; });
-
-    const loadout = slots.map(slot => {
-      const card = cardMap[slot.card_id] || {};
-      const spell = spellMap[card.spell_id] || {};
+    // Flatten nested spell data so frontend can read it directly
+    const loadout = (slots || []).map(slot => {
+      const spell = slot.card?.spell || {};
       return {
-        id: slot.id,
-        card_id: slot.card_id,
-        slot_number: slot.slot_number,
-        player_card_id: card.id,
-        sharpness: card.sharpness ?? 100,
-        name: spell.name || null,
-        spell_type: spell.spell_type || 'attack',
-        card_type: spell.card_type || 'attack',
-        house: spell.house || 'universal',
-        rarity: spell.rarity || 'common',
-        base_atk: spell.base_atk ?? 0,
-        base_hp: spell.base_hp ?? 0,
-        base_spd: spell.base_spd ?? 0,
-        base_def: spell.base_def ?? 0,
-        base_luck: spell.base_luck ?? 0,
-        effect_1: spell.effect_1 || spell.base_effect || '',
-        bonus_effects: spell.bonus_effects || [],
-        flavor_text: spell.flavor_text || '',
-        image_url: spell.image_url || '',
+        card_id:        slot.card_id,
+        slot_number:    slot.slot_number,
+        player_card_id: slot.card?.id,
+        sharpness:      slot.card?.sharpness ?? 100,
+        name:           spell.name || '???',
+        spell_type:     spell.spell_type || 'attack',
+        house:          spell.house || 'universal',
+        rarity:         spell.rarity || 'common',
+        base_atk:       spell.base_atk ?? 0,
+        base_hp:        spell.base_hp ?? 0,
+        base_spd:       spell.base_spd ?? 0,
+        base_def:       spell.base_def ?? 0,
+        base_luck:      spell.base_luck ?? 0,
+        effect_1:       spell.effect_1 || spell.base_effect || '',
+        base_effect:    spell.effect_1 || spell.base_effect || '',
+        bonus_effects:  spell.bonus_effects || [],
+        image_url:      spell.image_url || '',
+        flavor_text:    spell.flavor_text || '',
       };
-    }).filter(slot => slot.name);
+    });
 
     res.json({
       loadout,
@@ -626,47 +513,6 @@ router.get('/:zoneId/my-loadout/:playerId', async (req, res) => {
   } catch (err) {
     console.error('Loadout error:', err);
     res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ═══════════════════════════════════════════
-// GET /api/zones/counts
-// Active deployment counts + leading guild per zone
-// ═══════════════════════════════════════════
-router.get('/counts', async (req, res) => {
-  try {
-    const { data: deployments, error } = await supabaseAdmin
-      .from('zone_deployments')
-      .select('zone_id, guild_tag, current_hp')
-      .eq('is_active', true);
-
-    if (error) return res.status(500).json({ error: error.message });
-
-    const counts = {};
-    (deployments || []).forEach(d => {
-      const zid = d.zone_id;
-      if (!counts[zid]) counts[zid] = { count: 0, guilds: {} };
-      counts[zid].count++;
-      const tag = d.guild_tag || 'unaffiliated';
-      if (!counts[zid].guilds[tag]) counts[zid].guilds[tag] = { hp: 0, fighters: 0 };
-      counts[zid].guilds[tag].hp += d.current_hp || 0;
-      counts[zid].guilds[tag].fighters++;
-    });
-
-    const result = {};
-    for (const [zid, data] of Object.entries(counts)) {
-      const sorted = Object.entries(data.guilds).sort((a, b) => b[1].hp - a[1].hp);
-      result[zid] = {
-        count: data.count,
-        top_guild: sorted[0]?.[0] || null,
-        guilds: data.guilds,
-      };
-    }
-
-    res.json(result);
-  } catch (err) {
-    console.error('Zone counts error:', err);
-    res.status(500).json({ error: 'Failed to fetch zone counts' });
   }
 });
 
@@ -689,118 +535,27 @@ router.get('/', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════
-// GET /api/zones/:zoneId/combat-stats
-// Live fighter stats for zone detail panel
-// ═══════════════════════════════════════════
-router.get('/:zoneId/combat-stats', async (req, res) => {
-  try {
-    const zoneId = parseInt(req.params.zoneId);
-
-    const { data: deployments, error } = await supabaseAdmin
-      .from('zone_deployments')
-      .select(`
-        id, guild_tag, current_hp, max_hp, player_id,
-        nine:nine_id(name, house_id)
-      `)
-      .eq('zone_id', zoneId)
-      .eq('is_active', true);
-
-    if (error) return res.status(500).json({ error: error.message });
-
-    const fighters = (deployments || []).map(d => ({
-      id:     d.player_id,
-      name:   d.nine?.name || 'Unknown',
-      house:  d.nine?.house_id || 'unknown',
-      guild:  d.guild_tag || null,
-      hp:     d.current_hp || 0,
-      maxHp:  d.max_hp || 0,
-      damage: 0,  // tracked client-side via combat meters
-      heals:  0,
-      kos:    0,
-    }));
-
-    // Guild aggregates
-    const guilds = {};
-    fighters.forEach(f => {
-      if (!f.guild) return;
-      if (!guilds[f.guild]) guilds[f.guild] = { count: 0, totalHp: 0, maxHp: 0 };
-      guilds[f.guild].count++;
-      guilds[f.guild].totalHp += f.hp;
-      guilds[f.guild].maxHp   += f.maxHp;
-    });
-
-    res.json({ fighters, guilds, total: fighters.length });
-  } catch (err) {
-    console.error('Combat stats error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ═══════════════════════════════════════════
-// POST /api/zones/:zoneId/force-reload
-// Tell the combat engine to reload card loadouts
-// for all active deployments on this zone
-// ═══════════════════════════════════════════
-router.post('/:zoneId/force-reload', async (req, res) => {
-  try {
-    const zoneId = parseInt(req.params.zoneId);
-
-    if (combatEngine?.loadDeploymentIntoEngine) {
-      // Reload all active deployments on this zone
-      const { data: deployments } = await supabaseAdmin
-        .from('zone_deployments')
-        .select('id, player_id, nine_id, zone_id, guild_tag, current_hp, nine:nine_id(house_id, name)')
-        .eq('zone_id', zoneId)
-        .eq('is_active', true);
-
-      for (const dep of (deployments || [])) {
-        try {
-          await combatEngine.loadDeploymentIntoEngine({
-            ...dep,
-            nine: { house_key: dep.nine?.house_id, name: dep.nine?.name || 'Unknown' },
-          });
-        } catch (e) { /* non-critical per deployment */ }
-      }
-    }
-
-    res.json({ success: true, message: `Zone ${zoneId} reloaded` });
-  } catch (err) {
-    console.error('Force reload error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ═══════════════════════════════════════════
-// GET /api/zones/:zoneId — Single zone by ID
-// ═══════════════════════════════════════════
-router.get('/:zoneId', async (req, res) => {
-  try {
-    const zoneId = parseInt(req.params.zoneId);
-    const { data: zone, error } = await supabase
-      .from('zones')
-      .select('*')
-      .eq('id', zoneId)
-      .single();
-    if (error) return res.status(404).json({ error: 'Zone not found' });
-    res.json(zone);
-  } catch (err) {
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-
+// BACKWARD COMPAT: keep old /play-card and /remove-card
+// working but redirect to new equip system
 // ═══════════════════════════════════════════
 router.post('/play-card', async (req, res) => {
+  // Map old single-card system to slot 1
   req.body.slot_number = req.body.slot_number || 1;
+  // Forward to equip-card handler
   const handler = router.stack.find(r => r.route && r.route.path === '/equip-card');
-  if (handler) return handler.route.stack[0].handle(req, res);
+  if (handler) {
+    return handler.route.stack[0].handle(req, res);
+  }
   res.status(500).json({ error: 'Equip handler not found' });
 });
 
 router.post('/remove-card', async (req, res) => {
+  // Map old remove to unequip slot 1
   req.body.slot_number = req.body.slot_number || 1;
   const handler = router.stack.find(r => r.route && r.route.path === '/unequip-card');
-  if (handler) return handler.route.stack[0].handle(req, res);
+  if (handler) {
+    return handler.route.stack[0].handle(req, res);
+  }
   res.status(500).json({ error: 'Unequip handler not found' });
 });
 
