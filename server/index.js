@@ -207,10 +207,16 @@ if (io) {
   arenaNamespace.on('connection', (socket) => {
     console.log('⚔️ Arena client connected:', socket.id);
 
+    // Auto-join zone from query string (e.g. /arena?zoneId=15)
+    const qZone = socket.handshake.query?.zoneId;
+    if (qZone) {
+      socket.join(`zone_${qZone}`);
+      console.log(`⚔️ ${socket.id} auto-joined zone_${qZone}`);
+    }
+
     socket.on('join_zone', (data) => {
       const zoneId = data.zoneId || data.zone_id;
       if (!zoneId) return;
-
       const room = `zone_${zoneId}`;
       socket.join(room);
       console.log(`⚔️ ${socket.id} joined ${room}`);

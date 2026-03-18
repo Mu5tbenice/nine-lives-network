@@ -3193,7 +3193,7 @@
 
   // ===== SOCKET.IO =====
   function connectArenaSocket(zoneId) {
-    const socket = io('/arena', { transports: ['websocket', 'polling'] });
+    const socket = io('/arena', { transports: ['websocket', 'polling'], query: { zoneId: zoneId } });
     state.socket = socket;
 
     socket.on('connect', () => {
@@ -5763,8 +5763,7 @@
                 base_def: slot.base_def ?? 0,
                 base_luck: slot.base_luck ?? 0,
                 bonus_effects: slot.bonus_effects || [],
-                base_effect: slot.effect_1 || slot.base_effect || '',
-                effect_1:    slot.effect_1 || slot.base_effect || '',
+                base_effect: slot.base_effect || '',
                 flavor_text: slot.flavor_text || '',
                 image_url: slot.image_url || '',
                 sharpness: slot.sharpness ?? 100,
@@ -6000,8 +5999,6 @@
           base_def: c.base_def ?? s.base_def ?? 0,
           base_luck: c.base_luck ?? s.base_luck ?? 0,
           bonus_effects: c.bonus_effects || c.spell_effects || s.bonus_effects || [],
-          base_effect: c.effect_1 || c.base_effect || s.effect_1 || s.base_effect || '',
-          effect_1:    c.effect_1 || c.base_effect || s.effect_1 || s.base_effect || '',
           flavor_text: c.flavor_text || s.flavor_text || '',
           image_url: c.image_url || s.image_url || '',
           sharpness: c.sharpness ?? c.current_sharpness ?? 100,
