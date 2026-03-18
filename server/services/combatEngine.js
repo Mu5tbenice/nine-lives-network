@@ -22,15 +22,11 @@ const ZONE_MARGIN   = 40;
 const SPELL_RANGE = { melee:90, mid:220, ranged:380, self:0, aoe_self:120, zone:9999 };
 
 const CARD_TYPE_CONFIG = {
-  // DB spell_type values → range + targeting
-  attack:       { range: SPELL_RANGE.mid,      prefer:'lowest_hp',      moveTo:'preferred_enemy' },
-  manipulation: { range: SPELL_RANGE.mid,      prefer:'highest_atk',    moveTo:'preferred_enemy' },
-  support:      { range: SPELL_RANGE.aoe_self, prefer:'lowest_hp_ally', moveTo:'ally_cluster'    },
-  defend:       { range: SPELL_RANGE.self,     prefer:'self',           moveTo:'hold'            },
-  utility:      { range: SPELL_RANGE.mid,      prefer:'lowest_hp',      moveTo:'preferred_enemy' },
-  // Legacy keys
-  control:      { range: SPELL_RANGE.mid,      prefer:'highest_atk',    moveTo:'preferred_enemy' },
-  dot:          { range: SPELL_RANGE.ranged,   prefer:'highest_hp',     moveTo:'preferred_enemy' },
+  attack:  { range: SPELL_RANGE.melee,    prefer:'lowest_hp',      moveTo:'preferred_enemy' },
+  control: { range: SPELL_RANGE.mid,      prefer:'highest_atk',    moveTo:'preferred_enemy' },
+  dot:     { range: SPELL_RANGE.ranged,   prefer:'highest_hp',     moveTo:'preferred_enemy' },
+  support: { range: SPELL_RANGE.aoe_self, prefer:'lowest_hp_ally', moveTo:'ally_cluster'    },
+  utility: { range: SPELL_RANGE.self,     prefer:'self',           moveTo:'hold'            },
 };
 
 const HOUSE_STATS = {
@@ -238,8 +234,8 @@ function resolveAttack(caster, defender, all) {
   if(caster.hexAmt>0) caster.hexAmt=Math.max(0,caster.hexAmt-3);
 
   broadcast(caster.zoneId,'combat:attack',{
-    attacker:caster.playerName, attackerId:caster.deploymentId,
-    defender:defender.playerName, defenderId:defender.deploymentId,
+    attacker:caster.playerName, attackerId:caster.playerId,
+    defender:defender.playerName, defenderId:defender.playerId,
     dmg, crit:isCrit, slot:slot+1, effect:card?.effect_1||null,
     hp:defender.hp, maxHp:defender.maxHp,
     guildA:caster.guildTag, guildB:defender.guildTag,
@@ -249,7 +245,7 @@ function resolveAttack(caster, defender, all) {
 
 // ─── KO ───────────────────────────────────────────────────────────────
 function handleKO(nine, zoneId, all) {
-  broadcast(zoneId,'combat:ko',{nine:nine.playerName,nineId:nine.deploymentId,guildTag:nine.guildTag,x:nine.x,y:nine.y});
+  broadcast(zoneId,'combat:ko',{nine:nine.playerName,nineId:nine.playerId,guildTag:nine.guildTag,x:nine.x,y:nine.y});
   if(nine.cards.some(c=>c.effect_1==='SHATTER')){const d=Math.floor(nine.maxHp*.10);all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag&&inRange(nine,n,120)).forEach(n=>n.hp=Math.max(0,n.hp-d));broadcast(zoneId,'combat:effect',{effect:'SHATTER',by:nine.playerName,dmg:d,x:nine.x,y:nine.y});}
   if(nine.cards.some(c=>c.effect_1==='INFECT')){all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag).forEach(n=>{n.poisonStacks=Math.min(3,(n.poisonStacks||0)+1);n.poisonTimer=Math.max(n.poisonTimer||0,12);});broadcast(zoneId,'combat:effect',{effect:'INFECT',by:nine.playerName});}
   all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag&&n.cards.some(c=>c.effect_1==='FEAST')).forEach(n=>n.hp=Math.min(n.maxHp,n.hp+Math.floor(nine.maxHp*.15)));
@@ -309,7 +305,6 @@ async function tickZone(zoneId, zs) {
     }
 
     // Auto-attack (must be in spell range)
-    console.log(`⚔️ TICK zone ${zoneId}: ${all.length} nines, enemies: ${all.filter(n=>n.guildTag!==nine.guildTag&&n.hp>0).length}`);
     if(nine.atkTimer<=0){
       const tgt=pickTarget(nine,all);
       if(tgt) resolveAttack(nine,tgt,all);
@@ -330,7 +325,7 @@ async function tickZone(zoneId, zs) {
   broadcast(zoneId,'arena:positions',{
     zoneId,
     nines: Array.from(zs.nines.values()).map(n=>({
-      id:n.deploymentId, x:Math.round(n.x), y:Math.round(n.y),
+      id:n.playerId, deploymentId:n.deploymentId, x:Math.round(n.x), y:Math.round(n.y),
       hp:n.hp, maxHp:n.maxHp, guildTag:n.guildTag, houseKey:n.houseKey,
       cardSlot:n.cardIdx%Math.max(1,n.cards.length),
       activeEffect: n.cards[n.cardIdx%Math.max(1,n.cards.length)]?.effect_1||null,
@@ -403,7 +398,7 @@ async function loadDeploymentIntoEngine(dep){
       // Step 3: Get spell data
       const {data:spells} = await supabaseAdmin
         .from('spells')
-        .select('id, slug, name, card_type, house, base_atk, base_hp, base_spd, base_def, base_luck, effect_1')
+        .select('id, slug, name, card_type, house, base_atk, base_hp, base_spd, base_def, base_luck, effect_1, rarity')
         .in('id', spellIds);
 
       // Step 4: Assemble — match slots → player_cards → spells

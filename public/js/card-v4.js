@@ -179,10 +179,8 @@ function buildCardV4(s, options) {
   var houseImg = h.img || '';
 
   // Resolve effects
-  // V3: single effect per card via effect_1 — ignore old bonus_effects
+  // V3: effect shown as primary text above — no pills needed
   var bn = [];
-  var _e1 = s.effect_1 || s.base_effect || '';
-  if (_e1 && _e1 !== '—' && _e1 !== '-') bn = [_e1];
 
   // Resolve rarity
   var rarity = s.rarity || 'common';
