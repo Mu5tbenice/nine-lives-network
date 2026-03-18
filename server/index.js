@@ -192,7 +192,6 @@ try {
 }
 
 // ── COMBAT ENGINE ──
-console.log('🔧 Combat engine keys:', Object.keys(combatEngine || {}));
 let combatEngine = null;
 try {
   combatEngine = require("./services/combatEngine");
@@ -257,17 +256,10 @@ if (io) {
   // Set up global broadcast function so combat engine can send events
   global.__arenaSocket = {
     _broadcastToZone: function(zoneId, event, data) {
-      console.log(`📡 Broadcasting ${event} to zone_${zoneId}`);
+      if (event === 'arena:positions') console.log(`📡 ${event} → zone_${zoneId}, nines: ${data?.nines?.length}`);
       arenaNamespace.to(`zone_${zoneId}`).emit(event, data);
     }
   };
-  
-  global.__arenaSocket = {
-      _broadcastToZone: function(zoneId, event, data) {
-        if (event === 'arena:positions') console.log(`📡 ${event} → zone_${zoneId}, nines: ${data?.nines?.length}`);
-        arenaNamespace.to(`zone_${zoneId}`).emit(event, data);
-      }
-    };
 
   console.log("✅ Arena socket namespace ready");
 }
