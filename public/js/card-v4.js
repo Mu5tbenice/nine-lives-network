@@ -41,26 +41,37 @@ var RARITY_CONFIG = {
   legendary: { label: "Legendary", cls: "sc-rarity--legendary", foil: 1.0,  pMult: 1.5 },
 };
 
-// ── EFFECT COLOUR MAP (V3 — unique colour per effect) ──
-var EFFECT_HEX = {
-  CHAIN:'#FFD700',CRIT:'#FFEE00',PIERCE:'#FFC040',
-  BURN:'#FF6B35',SURGE:'#FF3355',EXECUTE:'#FF9500',
-  WARD:'#8BC34A',ANCHOR:'#6D4C41',THORNS:'#558B2F',TAUNT:'#FF5252',SHATTER:'#FF1744',
-  HASTE:'#00E5FF',DODGE:'#40C4FF',REFLECT:'#80D8FF',
-  SILENCE:'#9C27B0',HEX:'#7B1FA2',BLIND:'#4A148C',MARK:'#E91E63',
-  HEAL:'#66BB6A',BLESS:'#FFF176',INSPIRE:'#FFAB40',
-  WEAKEN:'#5C6BC0',TETHER:'#3F51B5',NULLIFY:'#7986CB',DRAIN:'#4455BB',
-  POISON:'#76FF03',CORRODE:'#C6FF00',WITHER:'#69F0AE',INFECT:'#AEEA00',
-  FEAST:'#FF6090',BARRIER:'#B0BEC5',CLEANSE:'#E0E0E0',
+// ── PILL COLOR MAP (V2 effects) ──
+var PILL_MAP = {
+  'BURN':'orange','CHAIN':'orange','EXECUTE':'yellow','SURGE':'orange',
+  'PIERCE':'red','HEAL':'green','WARD':'gold','ANCHOR':'brown','THORNS':'green',
+  'DRAIN':'purple','FEAST':'dark','WEAKEN':'pink','HEX':'purple','SILENCE':'dark',
+  'HASTE':'green','SWIFT':'green','DODGE':'green',
+  'POISON':'toxic','CORRODE':'toxic','INFECT':'toxic',
+  'AMPLIFY':'gold','INSPIRE':'orange','BLESS':'white',
+  'SHATTER':'red','TETHER':'purple','REFLECT':'cyan','PHASE':'ice',
+  'MARK':'red','CLEANSE':'green','OVERCHARGE':'orange','SLOW':'blue',
+  'TAUNT':'brown','STEALTH':'dark','BARRIER':'gold',
+  'LEECH_AURA':'toxic','PARASITE':'purple','RESURRECT':'gold',
+  'GRAVITY':'brown','MIRROR':'cyan',
+  'SPREAD':'red','STRIP':'red','ERUPTION':'red','PULL':'blue',
+  'CLOAK':'dark','SWAP':'pink','CONVERT':'cyan','PERSIST':'gold',
+  'REACH':'white','SWEEP':'gray','FIZZLE':'yellow','NIGHT':'dark',
+  'STEAL':'red','FREEZE':'ice','ABSORB':'blue','RANDOMIZE':'pink','NEGATE':'white',
+  'REFUND':'cyan','WITHER':'brown','PLAGUE':'toxic','TOXIC':'toxic','LOCKOUT':'red',
+  'UNDERDOG':'gold','AURA':'gold','GIFT':'white','JUSTICE':'gold','SAFE':'gold',
+  'RESTORE':'cyan','RESET':'cyan','REVEAL':'white','DOT':'green','BONUS':'gold',
+  'PURGE':'orange','PUSH':'ice','SHUFFLE':'blue','CURSE':'purple','VANISH':'dark',
+  'IMMUNE':'cyan',
 };
 
-function _effectHex(tag) {
-  var k = (tag||'').replace(/\s.*$/,'').toUpperCase();
-  return EFFECT_HEX[k] || '#D4A64B';
+function _pillColor(tag) {
+  var k = tag.replace(/[^A-Z]/g, '').toUpperCase();
+  for (var p in PILL_MAP) {
+    if (k.indexOf(p) !== -1) return PILL_MAP[p];
+  }
+  return 'gray';
 }
-
-// Legacy pill class fallback (kept for any old cards still using bonus_effects)
-function _pillColor(tag) { return 'gray'; }
 
 // ── EFFECT TOOLTIPS (Combat V2 + Effects V2) ──
 var EFFECT_TIPS = {
@@ -151,8 +162,10 @@ function buildCardV4(s, options) {
   var houseImg = h.img || '';
 
   // Resolve effects
+  // V3: single effect per card via effect_1 — ignore old bonus_effects
   var bn = [];
-  bn = []; // V3: single effect only, shown via effect_1/base_effect above
+  var _e1 = s.effect_1 || s.base_effect || '';
+  if (_e1 && _e1 !== '—' && _e1 !== '-') bn = [_e1];
 
   // Resolve rarity
   var rarity = s.rarity || 'common';
@@ -232,12 +245,9 @@ function buildCardV4(s, options) {
   var typeHtml = '<span class="sc-type">' + typeDisplay + '</span>';
 
   // ── BASE EFFECT TEXT ──
-  // ── BASE EFFECT — read effect_1 (V3), fallback to base_effect (legacy) ──
   var effectHtml = '';
-  var primaryEffect = s.effect_1 || s.base_effect || '';
-  if (primaryEffect && primaryEffect !== '—' && primaryEffect !== '-') {
-    var eColor = _effectHex(primaryEffect);
-    effectHtml = '<div class="sc-effect"><div class="sc-effect__base" style="color:' + eColor + '">' + _esc(primaryEffect) + '</div></div>';
+  if (s.base_effect && s.base_effect !== '—' && s.base_effect !== '-') {
+    effectHtml = '<div class="sc-effect"><div class="sc-effect__base" style="color:' + hc + '">' + _esc(s.base_effect) + '</div></div>';
   }
 
   // ── EFFECT PILLS with tooltips ──
@@ -253,7 +263,7 @@ function buildCardV4(s, options) {
       var pColor = _effectHex(baseTag);
       pillsHtml += '<span class="pill" style="color:' + pColor + ';background:' + pColor + '18;border:1px solid ' + pColor + '40">'
         + _esc(tag)
-        + '<span class="tip"><b style="font-family:\'Press Start 2P\',monospace;font-size:8px">' + _esc(baseTag) + '</b> — ' + _esc(tipText) + '</span>'
+        + '<span class="tip"><b style="font-family:\'Press Start 2P\',monospace;font-size:8px;color:' + pColor + '">' + _esc(baseTag) + '</b> — ' + _esc(tipText) + '</span>'
         + '</span>';
     });
     pillsHtml += '</div>';
