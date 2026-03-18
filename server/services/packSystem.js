@@ -595,7 +595,7 @@ async function useCardFromHand(playerId, cardIndex) {
 async function getCollection(playerId, filters = {}) {
   let query = supabaseAdmin
     .from('player_cards')
-    .select('*, spell:spell_id(name, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects, flavor_text, image_url)')
+    .select('*, spell:spell_id(name, house, spell_type, base_atk, base_hp, base_spd, base_def, base_luck, effect_1, base_effect, bonus_effects, flavor_text, image_url)')
     .eq('player_id', playerId)
     .order('acquired_at', { ascending: false });
 

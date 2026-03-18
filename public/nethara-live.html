@@ -6258,18 +6258,15 @@
         body: JSON.stringify({
           player_id: state.playerId,
           zone_id: state.currentZoneId,
+          card_ids: state.selectedCards.map(c => c.cardId),
         }),
       });
       const data = await res.json();
 
       if (data.success) {
-        // Deployment row created — now equip the cards
-        if (state.selectedCards.length > 0) {
-          await equipSelectedCards();
-        }
         applyDeployedUI(data.message);
       } else if (data.error && data.error.toLowerCase().includes('already deployed')) {
-        // Server says already deployed (state.isDeployed was stale) — just equip
+        // Already deployed — just equip cards via separate calls
         state.isDeployed = true;
         const { success, failed } = await equipSelectedCards();
         if (success) {
