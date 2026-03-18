@@ -3197,8 +3197,12 @@
     state.socket = socket;
 
     socket.on('connect', () => {
+      console.log('🔌 Socket connected! Joining zone', zoneId);
       socket.emit('join_zone', { zoneId });
       addFeedEvent('Connected to arena', 'system');
+    });
+    socket.on('connect_error', (err) => {
+      console.log('🔌 Socket connect error:', err.message);
     });
 
     // Current state (on first join) — engine sends snapshot with combat positions
@@ -5605,7 +5609,7 @@
           effs.forEach(e => effects.push(typeof e === 'string' ? e : (e.tag || e.name || '')));
         }
       } catch(e) {}
-      if (card.base_effect) effects.push(card.base_effect);
+      const eff = card.effect_1 || card.base_effect || ''; if (eff) effects.push(eff);
 
       // Effect pills HTML
       const effectPills = effects.filter(Boolean).slice(0, 3).map(e => {
@@ -5763,7 +5767,8 @@
                 base_def: slot.base_def ?? 0,
                 base_luck: slot.base_luck ?? 0,
                 bonus_effects: slot.bonus_effects || [],
-                base_effect: slot.base_effect || '',
+                base_effect: slot.effect_1 || slot.base_effect || '',
+                effect_1: slot.effect_1 || slot.base_effect || '',
                 flavor_text: slot.flavor_text || '',
                 image_url: slot.image_url || '',
                 sharpness: slot.sharpness ?? 100,
@@ -5999,6 +6004,8 @@
           base_def: c.base_def ?? s.base_def ?? 0,
           base_luck: c.base_luck ?? s.base_luck ?? 0,
           bonus_effects: c.bonus_effects || c.spell_effects || s.bonus_effects || [],
+          base_effect: c.effect_1 || c.base_effect || s.effect_1 || s.base_effect || '',
+          effect_1: c.effect_1 || c.base_effect || s.effect_1 || s.base_effect || '',
           flavor_text: c.flavor_text || s.flavor_text || '',
           image_url: c.image_url || s.image_url || '',
           sharpness: c.sharpness ?? c.current_sharpness ?? 100,
@@ -6300,6 +6307,7 @@
         body: JSON.stringify({
           player_id: state.playerId,
           zone_id: state.currentZoneId,
+          card_ids: state.selectedCards.map(c => c.cardId),
         }),
       });
 
