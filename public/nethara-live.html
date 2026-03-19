@@ -674,33 +674,38 @@
     #arena-sidebar {
       display: none;
       position: absolute; top: 54px; right: 10px; z-index: 25;
-      width: 280px;
+      width: 290px;
       flex-direction: column;
-      background: rgba(8,6,18,0.96); border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 16px; overflow: hidden; backdrop-filter: blur(16px);
+      background: rgba(6,4,16,0.97); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; overflow: hidden; backdrop-filter: blur(20px);
       bottom: 10px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.06);
     }
     .sidebar-section-label {
       font-family: 'Press Start 2P', monospace; font-size: 6px;
-      color: rgba(212,166,75,0.65); letter-spacing: 2px; margin-bottom: 12px;
-      text-transform: uppercase;
+      color: rgba(212,166,75,0.7); letter-spacing: 2px; margin-bottom: 10px;
+      text-transform: uppercase; display: flex; align-items: center; gap: 6px;
+    }
+    .sidebar-section-label::after {
+      content: ''; flex: 1; height: 1px; background: rgba(212,166,75,0.15);
     }
     /* Guild rows */
     .sidebar-guild-row {
-      display: flex; flex-direction: column; gap: 5px;
-      padding: 10px 12px; border-radius: 10px; margin-bottom: 8px;
-      background: rgba(255,255,255,0.04); cursor: default;
-      transition: background 0.2s; border: 1px solid rgba(255,255,255,0.05);
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 10px 12px; border-radius: 10px; margin-bottom: 6px;
+      background: rgba(255,255,255,0.03); cursor: default;
+      transition: background 0.2s, box-shadow 0.2s; border: 1px solid rgba(255,255,255,0.05);
     }
     .sidebar-guild-row:last-child { margin-bottom: 0; }
-    .sidebar-guild-row:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); }
-    .sidebar-guild-top { display: flex; align-items: center; gap: 9px; }
-    .sidebar-guild-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .sidebar-guild-row:hover { background: rgba(255,255,255,0.06); box-shadow: 0 0 0 1px rgba(255,255,255,0.1); }
+    .sidebar-guild-top { display: flex; align-items: center; gap: 8px; }
+    .sidebar-guild-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 6px currentColor; }
     .sidebar-guild-name { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--bright); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .sidebar-guild-hp { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--green); }
-    .sidebar-guild-nines { font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint); padding-left: 19px; }
-    .sidebar-guild-bar { width: 100%; height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; }
+    .sidebar-guild-hp { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--green); white-space: nowrap; }
+    .sidebar-guild-meta { display: flex; justify-content: space-between; padding-left: 17px; }
+    .sidebar-guild-nines { font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint); }
+    .sidebar-guild-dmg { font-family: 'Press Start 2P', monospace; font-size: 5px; color: #e85a6a; }
+    .sidebar-guild-bar { width: 100%; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
     .sidebar-guild-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
 
     /* Chat shared styles */
@@ -723,10 +728,30 @@
       color: var(--gold); cursor: pointer; padding: 8px 14px; font-size: 14px; transition: color 0.2s;
     }
     #arena-chat-send:hover { color: var(--bright); }
-    #contribution-list { flex: 1; overflow-y: auto; padding: 6px 10px; display: flex; flex-direction: column; gap: 5px; }
-    .contrib-row { display: flex; align-items: center; gap: 6px; padding: 4px 6px; border-radius: 6px; background: rgba(255,255,255,0.03); }
-    .contrib-name { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--bright); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .contrib-stat { font-family: 'Press Start 2P', monospace; font-size: 6px; white-space: nowrap; }
+
+    /* Combat meters — zone leaderboard */
+    #contribution-list { flex: 1; overflow-y: auto; padding: 4px 8px 8px; }
+    .meters-tabs { display: flex; border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; margin-bottom: 4px; }
+    .meters-tab {
+      flex: 1; background: none; border: none; border-bottom: 2px solid transparent;
+      font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--faint);
+      padding: 8px 4px; cursor: pointer; transition: all 0.15s; letter-spacing: 0.5px;
+    }
+    .meters-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .meters-tab:hover:not(.active) { color: var(--body); }
+    .meters-rows { display: flex; flex-direction: column; gap: 4px; }
+    .meter-row {
+      padding: 6px 8px; border-radius: 8px; background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.04); transition: background 0.15s;
+    }
+    .meter-row:hover { background: rgba(255,255,255,0.05); }
+    .meter-row-top { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .meter-rank { font-size: 12px; width: 18px; flex-shrink: 0; line-height: 1; }
+    .meter-name { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--bright); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .meter-value { font-family: 'Press Start 2P', monospace; font-size: 7px; font-weight: 700; white-space: nowrap; }
+    .meter-bar-track { height: 3px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+    .meter-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+
     #battle-log-full { flex: 1; overflow-y: auto; padding: 6px 10px; display: flex; flex-direction: column; gap: 2px; }
     .log-entry { font-family: 'Crimson Text', serif; font-size: 12px; color: var(--muted); line-height: 1.4; padding-bottom: 2px; border-bottom: 1px solid rgba(255,255,255,0.03); }
     .log-entry.log-ko { color: var(--red); }
@@ -1982,6 +2007,9 @@
     // Also load from REST for immediate display (socket may take a moment)
     loadZoneNines(zone.id);
 
+    // Load today's combat stats so people joining mid-fight see history
+    loadZoneCombatStats(zone.id);
+
     // Check if THIS player is deployed here
     checkDeployment(zone.id).then(() => checkKOState());
 
@@ -1996,6 +2024,31 @@
       if (!state.isFighting && state.nines.size === 0) return; // silent if no action
       showNermBubble(pickRandom(NERM_COMMENTS.combat_active));
     }, 75000 + Math.random() * 30000);
+  }
+
+  /** Load today's combat stats for this zone so joiners see existing history */
+  async function loadZoneCombatStats(zoneId) {
+    try {
+      const res = await fetch(`/api/zones/${zoneId}/combat-stats`);
+      if (!res.ok) return;
+      const data = await res.json();
+      // Seed combatMetrics from server-side totals
+      // combat-stats returns: { fighters: [{ id, name, house, guild, hp, maxHp }] }
+      // We merge this with any live data already tracked
+      for (const f of (data.fighters || [])) {
+        const existing = state.combatMetrics.get(f.id) || { damage:0, heals:0, kos:0, cards:{} };
+        state.combatMetrics.set(f.id, {
+          name:   f.name  || existing.name  || String(f.id).slice(0,8),
+          guild:  f.guild || existing.guild || '',
+          house:  f.house || existing.house || '',
+          damage: Math.max(existing.damage, f.damage_dealt || 0),
+          heals:  Math.max(existing.heals,  f.heals_done   || 0),
+          kos:    Math.max(existing.kos,    f.ko_count     || 0),
+          cards:  existing.cards,
+        });
+      }
+      if (data.fighters?.length) renderCombatMeters();
+    } catch(e) { /* non-critical */ }
   }
 
   /** Fetch deployed Nines from REST API for immediate display */
@@ -2218,6 +2271,29 @@
     // Draw arena ground overlay (subtle grid over biome image)
     drawArenaGround(app);
 
+    // Start ambient particles — themed to dominant house or zone school
+    const ambientHouseKey = state.currentZone?.dominant_house
+      || SCHOOL_TO_HOUSE[state.currentZone?.school_id]
+      || SCHOOL_TO_HOUSE[state.currentZone?.controlling_school_id]
+      || 'nighthollow';
+    const ambientTypeMap = {
+      smoulders:'embers', darktide:'bubbles', stonebark:'leaves',
+      ashenvale:'leaves', stormrage:'sparks', nighthollow:'wisps',
+      dawnbringer:'crystals', manastorm:'crystals', plaguemire:'miasma',
+    };
+    const ambientThemes = {
+      smoulders:   { accent: 0xe85a6a, ambientType: 'embers'   },
+      darktide:    { accent: 0x6ac8d8, ambientType: 'bubbles'  },
+      stonebark:   { accent: 0x6acd8a, ambientType: 'leaves'   },
+      ashenvale:   { accent: 0x90E0EF, ambientType: 'leaves'   },
+      stormrage:   { accent: 0xFFC800, ambientType: 'sparks'   },
+      nighthollow: { accent: 0xb088e8, ambientType: 'wisps'    },
+      dawnbringer: { accent: 0xffb347, ambientType: 'crystals' },
+      manastorm:   { accent: 0x5B8FE0, ambientType: 'crystals' },
+      plaguemire:  { accent: 0xE84393, ambientType: 'miasma'   },
+    };
+    startAmbientParticles(app, ambientThemes[ambientHouseKey] || ambientThemes.nighthollow);
+
     // Assign initial round positions so Nines spread out
     setTimeout(() => setRoundPositions(), 500);
 
@@ -2247,25 +2323,24 @@
         const pulse = 1 + Math.sin(time * 2 + nine.bobPhase) * 0.015;
         nine.spriteGroup.scale.set(pulse, pulse);
 
-        // V3: Server-driven movement — interpolate smoothly toward targetX/targetY
-        // Positions update every 2s from engine — we glide toward them at 60fps
+        // Movement: only update home position for large jumps (e.g. on spawn or range change)
+        // Nines hold their position with a gentle idle sway rather than constantly skating
         if (nine.targetX !== undefined) {
-          const wx = nine.targetX - nine.container.x;
-          const wy = nine.targetY - nine.container.y;
-          const dist = Math.sqrt(wx * wx + wy * wy);
-          if (dist > 1) {
-            // Slow smooth glide — at 60fps, 0.07 factor means ~90 frames to close
-            // a 100px gap, giving a gentle 1.5s drift rather than a snap
-            const speed = Math.min(1.8, dist * 0.07);
-            const angle = Math.atan2(wy, wx);
+          const dx = nine.targetX - nine.container.x;
+          const dy = nine.targetY - nine.container.y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          if (dist > 60) {
+            // Large position change — drift slowly toward it (this only happens on spawn or card type change)
+            const speed = Math.min(1.2, dist * 0.04);
+            const angle = Math.atan2(dy, dx);
             nine.container.x += Math.cos(angle) * speed;
             nine.container.y += Math.sin(angle) * speed;
-            // Face direction of travel
-            if (nine.spriteGroup && Math.abs(wx) > 2) {
+            if (nine.spriteGroup && Math.abs(dx) > 2) {
               const absScale = Math.abs(nine.spriteGroup.scale.x) || 1;
-              nine.spriteGroup.scale.x = wx > 0 ? absScale : -absScale;
+              nine.spriteGroup.scale.x = dx > 0 ? absScale : -absScale;
             }
           }
+          // Small nudges (<60px) are ignored — Nines hold their ground
         }
       });
     });
@@ -5856,21 +5931,10 @@
       const sharpness = card.sharpness ?? card.current_sharpness ?? 100;
       const sharpColor = sharpness > 60 ? 'var(--cyan)' : sharpness > 30 ? 'var(--gold)' : 'var(--red)';
 
-      const effects = [];
-      // Primary effect first — always visible
+      // V3: every card has exactly ONE effect (effect_1). bonus_effects is legacy — ignore it.
+      // This prevents the same effect appearing twice as two pills.
       const eff = card.effect_1 || card.base_effect || '';
-      if (eff) effects.push(eff);
-      // Then any bonus effects
-      try {
-        if (card.bonus_effects) {
-          const effs = Array.isArray(card.bonus_effects) ? card.bonus_effects
-            : (typeof card.bonus_effects === 'string' ? JSON.parse(card.bonus_effects) : []);
-          effs.forEach(e => {
-            const tag = typeof e === 'string' ? e : (e.tag || e.name || '');
-            if (tag && tag !== eff) effects.push(tag);
-          });
-        }
-      } catch(e) {}
+      const effects = eff ? [eff] : [];
 
       // Effect pills HTML
       const effectPills = effects.filter(Boolean).slice(0, 3).map(e => {
@@ -5880,19 +5944,40 @@
       }).join('');
 
       slotEl.className = 'arena-card-slot';
-      slotEl.style.borderColor = hColor + '40';
-      slotEl.style.background = `linear-gradient(135deg, ${hColor}08, transparent)`;
-      slotEl.style.cursor = 'pointer';
+      slotEl.style.cssText = `
+        border: 1px solid ${hColor}50;
+        background: linear-gradient(160deg, ${hColor}14 0%, rgba(8,6,18,0.9) 60%);
+        position: relative; overflow: hidden; cursor: pointer;
+      `;
+
+      // Stat mini-row — only show non-zero stats
+      const statParts = [];
+      if (card.base_atk > 0)  statParts.push(`<span style="color:#e85a6a">⚔${card.base_atk}</span>`);
+      if (card.base_hp > 0)   statParts.push(`<span style="color:#6acd8a">♥${card.base_hp}</span>`);
+      if (card.base_spd > 0)  statParts.push(`<span style="color:#6ac8d8">◈${card.base_spd}</span>`);
+      if (card.base_def > 0)  statParts.push(`<span style="color:#b088e8">⛊${card.base_def}</span>`);
+      if (card.base_luck > 0) statParts.push(`<span style="color:#D4A64B">★${card.base_luck}</span>`);
+      const statsRow = statParts.length
+        ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:3px;font-family:'Press Start 2P',monospace;font-size:5px;">${statParts.join('')}</div>`
+        : '';
+
+      // Single effect pill
+      const effectPill = effects[0]
+        ? `<span class="slot-effect-pill" style="color:${EFFECT_COLORS[effects[0].split(' ')[0].toUpperCase()]||'#D4A64B'};background:${EFFECT_COLORS[effects[0].split(' ')[0].toUpperCase()]||'#D4A64B'}18;border:1px solid ${EFFECT_COLORS[effects[0].split(' ')[0].toUpperCase()]||'#D4A64B'}35">${effects[0]}</span>`
+        : '';
+
       slotEl.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
-          <div class="slot-type" style="color:${typeColor}">${(card.spell_type || '???').toUpperCase()}</div>
-          <span style="font-family:\'Press Start 2P\',monospace;font-size:5px;color:${hColor};opacity:0.6">${(houseKey).toUpperCase().slice(0,4)}</span>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;">
+          <div class="slot-type" style="color:${typeColor};font-size:5px">${(card.spell_type || '???').toUpperCase()}</div>
+          <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:${hColor}">${houseKey.slice(0,4).toUpperCase()}</span>
         </div>
-        <div class="slot-name">${card.name || '???'}</div>
-        ${effectPills ? `<div class="slot-effects">${effectPills}</div>` : ''}
-        <div class="slot-sharpness">
+        <div class="slot-name" style="font-size:11px;margin-bottom:3px;">${card.name || '???'}</div>
+        ${effectPill ? `<div class="slot-effects">${effectPill}</div>` : ''}
+        ${statsRow}
+        <div class="slot-sharpness" style="margin-top:5px;">
           <div class="slot-sharpness-fill" style="width:${sharpness}%;background:${sharpColor}"></div>
         </div>
+        <div style="position:absolute;top:0;right:0;bottom:0;width:3px;background:linear-gradient(180deg,${hColor}80,${hColor}20);border-radius:0 8px 8px 0;"></div>
       `;
 
       const cardRef = card;
@@ -6881,48 +6966,66 @@
     const container = document.getElementById('sidebar-guild-rows');
     if (!container) return;
 
-    // Build guild data from live nines — exclude fully KO'd (isAlive=false and hp=0)
     const guilds = {};
     state.nines.forEach((sprite, id) => {
-      // Skip fighters that have been KO'd (hp=0 and marked dead)
       if (sprite.isAlive === false && (sprite.hp || 0) <= 0) return;
       const tag = sprite.guild || '???';
-      if (!guilds[tag]) guilds[tag] = { hp: 0, maxHp: 0, nines: [], koCount: 0 };
+      if (!guilds[tag]) guilds[tag] = { hp: 0, maxHp: 0, nines: [], color: null };
       guilds[tag].hp += sprite.hp || 0;
       guilds[tag].maxHp += sprite.maxHp || 0;
       guilds[tag].nines.push(id);
-      if (sprite.isAlive === false) guilds[tag].koCount++;
+    });
+
+    // Enrich with combat metrics (damage + KOs)
+    state.combatMetrics.forEach((m) => {
+      const tag = m.guild || '???';
+      if (!guilds[tag]) return;
+      guilds[tag].damage = (guilds[tag].damage || 0) + (m.damage || 0);
+      guilds[tag].kos    = (guilds[tag].kos    || 0) + (m.kos    || 0);
     });
 
     const entries = Object.entries(guilds).sort((a, b) => b[1].hp - a[1].hp);
     const totalHp = entries.reduce((s, [, g]) => s + g.hp, 0) || 1;
     const isLeader = entries[0]?.[0];
 
-    // Update controlling guild pill in top bar
     updateControlPill(isLeader, guilds[isLeader]);
 
     container.innerHTML = '';
     entries.forEach(([tag, data], i) => {
       const color = GUILD_COLORS_LIST[i % GUILD_COLORS_LIST.length];
-      const pct = Math.round((data.hp / (data.maxHp || 1)) * 100);
+      const hpPct  = Math.round((data.hp   / (data.maxHp || 1)) * 100);
+      const zonePct = Math.round((data.hp   / totalHp)           * 100);
+      const activeCount = data.nines.filter(id => {
+        const s = state.nines.get(id); return !s || s.isAlive !== false;
+      }).length;
+
       const row = document.createElement('div');
       row.className = 'sidebar-guild-row';
+      row.style.borderLeftColor = color + '60';
+      row.style.borderLeftWidth = '2px';
+      row.style.borderLeftStyle = 'solid';
       row.innerHTML = `
         <div class="sidebar-guild-top">
-          <div class="sidebar-guild-dot" style="background:${color}"></div>
+          <div class="sidebar-guild-dot" style="background:${color};color:${color}"></div>
           <div class="sidebar-guild-name">${tag === isLeader ? '👑 ' : ''}${tag}</div>
-          <div class="sidebar-guild-hp">${data.hp} HP</div>
+          <div class="sidebar-guild-hp" style="color:${color}">${zonePct}% zone</div>
         </div>
         <div class="sidebar-guild-bar">
-          <div class="sidebar-guild-bar-fill" style="width:${pct}%;background:${color}"></div>
+          <div class="sidebar-guild-bar-fill" style="width:${zonePct}%;background:linear-gradient(90deg,${color},${color}99)"></div>
         </div>
-        <div class="sidebar-guild-nines">${data.nines.filter(id => { const s=state.nines.get(id); return !s || s.isAlive !== false; }).length} Nine${data.nines.length !== 1 ? 's' : ''} active</div>
+        <div class="sidebar-guild-meta">
+          <span class="sidebar-guild-nines">⚔ ${activeCount} fighter${activeCount !== 1 ? 's' : ''} · ${Math.round(data.hp)} HP</span>
+          ${data.damage ? `<span class="sidebar-guild-dmg">${data.damage.toLocaleString()} dmg${data.kos ? ` · ${data.kos} KO` : ''}</span>` : ''}
+        </div>
       `;
-      // Hover: highlight this guild's sprites, dim others
       row.addEventListener('mouseenter', () => highlightGuild(tag));
       row.addEventListener('mouseleave', () => resetGuildHighlight());
       container.appendChild(row);
     });
+
+    if (entries.length === 0) {
+      container.innerHTML = '<div style="font-family:\'Crimson Text\',serif;font-size:13px;color:var(--faint);text-align:center;padding:16px;font-style:italic;">No guilds deployed yet</div>';
+    }
   }
 
   function highlightGuild(guildTag) {
@@ -7050,72 +7153,102 @@
     const el = document.getElementById('contribution-list');
     if (!el) return;
     const tab = state._metersTab || 'dmg';
-    const statKey = tab === 'dmg' ? 'damage' : tab === 'heals' ? 'heals' : 'kos';
+    const statKey   = tab === 'dmg' ? 'damage' : tab === 'heals' ? 'heals' : 'kos';
     const statColor = tab === 'dmg' ? '#e85a6a' : tab === 'heals' ? '#6acd8a' : '#D4A64B';
     const statLabel = tab === 'dmg' ? 'DMG' : tab === 'heals' ? 'HEALS' : 'KOs';
-    const tabIcon = tab === 'dmg' ? '⚔️' : tab === 'heals' ? '💚' : '💀';
 
-    const entries = [...state.combatMetrics.values()].filter(m => m[statKey] > 0).sort((a, b) => b[statKey] - a[statKey]);
+    const allEntries = [...state.combatMetrics.values()];
+    const entries = allEntries.filter(m => m[statKey] > 0).sort((a, b) => b[statKey] - a[statKey]);
     const max = entries[0]?.[statKey] || 1;
 
-    // Guild totals
+    // Zone totals summary
+    const totalDmg   = allEntries.reduce((s, m) => s + (m.damage || 0), 0);
+    const totalKOs   = allEntries.reduce((s, m) => s + (m.kos    || 0), 0);
+    const totalHeals = allEntries.reduce((s, m) => s + (m.heals  || 0), 0);
+    const summaryHtml = allEntries.length ? `
+      <div style="display:flex;justify-content:space-between;padding:6px 8px 8px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:4px;flex-shrink:0;">
+        <div style="text-align:center;flex:1;">
+          <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:#e85a6a">${totalDmg.toLocaleString()}</div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.3);margin-top:2px">TOTAL DMG</div>
+        </div>
+        <div style="text-align:center;flex:1;border-left:1px solid rgba(255,255,255,0.05);">
+          <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:#D4A64B">${totalKOs}</div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.3);margin-top:2px">KOs</div>
+        </div>
+        <div style="text-align:center;flex:1;border-left:1px solid rgba(255,255,255,0.05);">
+          <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:#6acd8a">${totalHeals.toLocaleString()}</div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.3);margin-top:2px">HEALS</div>
+        </div>
+      </div>` : '';
+
+    // Guild totals bar
     const guildTotals = {};
-    for (const m of state.combatMetrics.values()) {
+    for (const m of allEntries) {
       if (!m.guild) continue;
       guildTotals[m.guild] = (guildTotals[m.guild] || 0) + (m[statKey] || 0);
     }
     const guildEntries = Object.entries(guildTotals).sort((a, b) => b[1] - a[1]);
     const guildMax = guildEntries[0]?.[1] || 1;
-
-    // ── GUILD BARS (visual) ──
     const GUILD_BAR_COLORS = ['#D4A64B','#6ac8d8','#e85a6a','#6acd8a','#b088e8'];
-    const guildBarsHtml = guildEntries.length ? `
-      <div style="padding:6px 8px 4px;">
-        <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.25);letter-spacing:1px;margin-bottom:8px;">GUILD ${statLabel}</div>
+    const guildBarsHtml = guildEntries.length > 1 ? `
+      <div style="padding:4px 8px 6px;border-bottom:1px solid rgba(255,255,255,0.04);">
+        <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.2);letter-spacing:1px;margin-bottom:6px;">GUILD ${statLabel}</div>
         ${guildEntries.map(([g, v], i) => {
           const gc = GUILD_BAR_COLORS[i % GUILD_BAR_COLORS.length];
           const pct = Math.round((v / guildMax) * 100);
-          return `<div style="margin-bottom:6px;">
-            <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-              <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${gc}">[${g}]</span>
-              <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${gc}">${v.toLocaleString()}</span>
+          return `<div style="margin-bottom:5px;display:flex;align-items:center;gap:6px;">
+            <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:${gc};width:50px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${g}</span>
+            <div style="flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,0.04);">
+              <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,${gc},${gc}88);border-radius:2px;transition:width 0.4s;"></div>
             </div>
-            <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.05);overflow:hidden;">
-              <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,${gc},${gc}aa);border-radius:3px;transition:width 0.4s ease;"></div>
-            </div>
+            <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:${gc};min-width:32px;text-align:right;">${tab === 'kos' ? v : v.toLocaleString()}</span>
           </div>`;
         }).join('')}
-      </div>
-      <div style="height:1px;background:rgba(255,255,255,0.06);margin:2px 0 4px;"></div>` : '';
+      </div>` : '';
 
-    // ── TAB BUTTONS ──
+    // Tab bar
     const tabsHtml = `<div class="meters-tabs">
       <button class="meters-tab${tab==='dmg'?' active':''}" onclick="state._metersTab='dmg';renderCombatMeters()">⚔️ DMG</button>
-      <button class="meters-tab${tab==='heals'?' active':''}" onclick="state._metersTab='heals';renderCombatMeters()">💚 HEALS</button>
+      <button class="meters-tab${tab==='heals'?' active':''}" onclick="state._metersTab='heals';renderCombatMeters()">💚 HEAL</button>
       <button class="meters-tab${tab==='kos'?' active':''}" onclick="state._metersTab='kos';renderCombatMeters()">💀 KOs</button>
     </div>`;
 
-    // ── PLAYER ROWS with visual bars ──
+    // Player rows
     const rowsHtml = entries.length ? entries.map((m, i) => {
       const pct = Math.round((m[statKey] / max) * 100);
-      const color = houseBarColor(m.house);
+      const hColor = houseBarColor(m.house);
+      const hIcon  = HOUSES[m.house]?.icon || '⚔';
       const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
       const topCard = Object.entries(m.cards || {}).sort((a,b) => b[1]-a[1])[0];
-      const gLabel = m.guild ? `<span style="color:${color};opacity:0.7;font-size:5px">[${m.guild}]</span> ` : '';
+      const gLabel  = m.guild ? `<span style="color:${hColor};opacity:0.55;font-size:4px">[${m.guild}]</span> ` : '';
+      const dmgStr  = tab === 'dmg'   ? m.damage.toLocaleString()
+                    : tab === 'heals' ? m.heals.toLocaleString()
+                    : m.kos;
+      // Secondary stats shown small
+      const secStats = tab === 'dmg'
+        ? `${m.kos ? `<span style="color:#D4A64B">${m.kos}KO </span>` : ''}${m.heals ? `<span style="color:#6acd8a">${m.heals.toLocaleString()}hp</span>` : ''}`
+        : tab === 'heals'
+        ? `${m.damage ? `<span style="color:#e85a6a">${m.damage.toLocaleString()}dmg</span>` : ''}`
+        : `${m.damage ? `<span style="color:#e85a6a">${m.damage.toLocaleString()}dmg</span>` : ''}`;
+
       return `<div class="meter-row">
         <div class="meter-row-top">
-          <span class="meter-rank" style="${i < 3 ? 'font-size:10px' : ''}">${rank}</span>
+          <span class="meter-rank" style="${i < 3 ? 'font-size:11px' : 'font-size:7px;color:var(--faint)'}">${rank}</span>
+          <span style="font-size:11px;line-height:1">${hIcon}</span>
           <span class="meter-name">${gLabel}${m.name}</span>
-          <span class="meter-value" style="color:${statColor}">${tab === 'kos' ? m[statKey] : m[statKey].toLocaleString()}</span>
+          <span class="meter-value" style="color:${statColor}">${dmgStr}</span>
         </div>
         <div class="meter-bar-track">
-          <div class="meter-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${color},${color}88)"></div>
+          <div class="meter-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${hColor},${hColor}55)"></div>
         </div>
-        ${topCard ? `<div style="font-family:'Crimson Text',serif;font-size:10px;color:rgba(255,255,255,0.3);padding-left:20px;margin-top:1px;font-style:italic">top card: ${topCard[0]}</div>` : ''}
+        <div style="display:flex;gap:6px;padding-left:46px;margin-top:2px;font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);">
+          ${secStats}
+          ${topCard ? `<span>top: ${topCard[0]}</span>` : ''}
+        </div>
       </div>`;
-    }).join('') : `<div style="padding:20px 10px;text-align:center;font-family:'Crimson Text',serif;color:var(--faint);font-size:13px;font-style:italic">No ${statLabel} recorded yet.</div>`;
+    }).join('') : `<div style="padding:24px 10px;text-align:center;font-family:'Crimson Text',serif;color:var(--faint);font-size:13px;font-style:italic">Combat starting...<br><span style="font-size:10px;opacity:0.5">Stats appear as fighters battle</span></div>`;
 
-    el.innerHTML = guildBarsHtml + tabsHtml + `<div class="meters-rows">${rowsHtml}</div>`;
+    el.innerHTML = summaryHtml + guildBarsHtml + tabsHtml + `<div class="meters-rows">${rowsHtml}</div>`;
   }
 
   // ── FULL BATTLE LOG ──
