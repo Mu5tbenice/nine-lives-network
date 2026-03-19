@@ -76,6 +76,11 @@ function initializeScheduledJobs() {
       console.error('❌ Midnight banking error:', e.message);
     }
 
+    // Recalculate zone identities (house presence bonus + guild branding)
+    await fetch('http://localhost:' + (process.env.PORT || 5000) + '/api/zones/recalculate-identities', {
+      method: 'POST'
+    }).catch(e => console.error('Zone identity recalc failed:', e.message));
+
     // Heal all Nines to full HP at midnight
     try {
       if (nineSystem) {
