@@ -41,7 +41,23 @@ const HOUSE_STATS = {
   darktide:    { atk:25, hp:450, spd:20, def:20, luck:10 },
 };
 
-// ─── FORMULAS ─────────────────────────────────────────────────────────
+// ─── ZONE PRESENCE BONUSES ────────────────────────────────────────────
+// Applied globally to ALL fighters on a zone. Recalculated nightly from
+// yesterday's dominant house (by fighter count, not HP).
+const HOUSE_BONUSES = {
+  smoulders:   { key: 'atk',        mult: 1.20 },
+  darktide:    { key: 'regen',      pct:  0.03  }, // 3% maxHP per minute (every 30 ticks)
+  stonebark:   { key: 'hp',         mult: 1.25  },
+  ashenvale:   { key: 'spd',        mult: 1.15  },
+  stormrage:   { key: 'crit_mult',  value: 3    }, // crits deal 3× instead of 2×
+  nighthollow: { key: 'luck',       bonus: 10   },
+  dawnbringer: { key: 'heal_amp',   mult: 1.50  },
+  manastorm:   { key: 'effect_amp', mult: 1.30  },
+  plaguemire:  { key: 'poison_aura' },             // enemies start with 1 POISON stack
+};
+
+// In-memory cache: zoneId → { house, bonus } loaded at startup + refreshed nightly
+const zoneBonusCache = new Map();
 const atkInterval  = spd => Math.max(SPD_FLOOR, 10.5 - spd * 0.12);
 const cardInterval = spd => Math.max(5.5, 12.0 - spd * 0.10);
 const dist         = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
@@ -55,18 +71,44 @@ function slotMult(slot, hpPct) {
   return 1.0;
 }
 
+// ─── ZONE BONUS CACHE ─────────────────────────────────────────────────
+async function refreshZoneBonusCache() {
+  try {
+    const { data } = await supabaseAdmin
+      .from('zone_control')
+      .select('zone_id, dominant_house');
+    (data || []).forEach(row => {
+      const bonus = row.dominant_house ? HOUSE_BONUSES[row.dominant_house] : null;
+      zoneBonusCache.set(String(row.zone_id), { house: row.dominant_house, bonus });
+    });
+    console.log(`✅ Zone bonus cache refreshed — ${data?.length || 0} zones`);
+  } catch(e) {
+    console.error('❌ Zone bonus cache refresh failed:', e.message);
+  }
+}
+
+function getZoneBonus(zoneId) {
+  return zoneBonusCache.get(String(zoneId)) || null;
+}
+
 // ─── ENGINE STATE ─────────────────────────────────────────────────────
 const zones = new Map();
 let _tickInt=null, _snapInt=null, _nextSnap=Date.now()+SNAPSHOT_MS;
 
 // ─── BUILD NINE STATE ─────────────────────────────────────────────────
-function buildNineState(dep, nine, cards) {
+function buildNineState(dep, nine, cards, zoneBonus) {
   const h = HOUSE_STATS[nine.house_key || nine.house_id] || HOUSE_STATS.stormrage;
   const atk  = h.atk  + cards.reduce((s,c)=>s+(c.base_atk ||0),0);
-  const hp   = h.hp   + cards.reduce((s,c)=>s+(c.base_hp  ||0),0);
-  const spd  = h.spd  + cards.reduce((s,c)=>s+(c.base_spd ||0),0);
+  let   hp   = h.hp   + cards.reduce((s,c)=>s+(c.base_hp  ||0),0);
+  let   spd  = h.spd  + cards.reduce((s,c)=>s+(c.base_spd ||0),0);
   const def  = h.def  + cards.reduce((s,c)=>s+(c.base_def ||0),0);
   const luck = h.luck + cards.reduce((s,c)=>s+(c.base_luck||0),0);
+
+  // Apply zone bonuses that affect base pool at spawn time
+  const bk = zoneBonus?.bonus?.key;
+  if (bk === 'hp')  hp  = Math.round(hp  * (zoneBonus.bonus.mult || 1));
+  if (bk === 'spd') spd = Math.round(spd * (zoneBonus.bonus.mult || 1));
+
   const x = ZONE_MARGIN + Math.random()*(ZONE_W-ZONE_MARGIN*2);
   const y = ZONE_MARGIN + Math.random()*(ZONE_H-ZONE_MARGIN*2);
   return {
@@ -84,6 +126,7 @@ function buildNineState(dep, nine, cards) {
     hasteBonus:0, hasteTurns:0, tetherActive:false, tetherTurns:0,
     drainActive:false, witherActive:0, blindTurns:0,
     zoneId: String(dep.zone_id),
+    _zoneBonus: zoneBonus || null,
     _koProcessed:false,
   };
 }
@@ -161,23 +204,36 @@ function stepPos(nine) {
 }
 
 // ─── APPLY EFFECT ─────────────────────────────────────────────────────
+function effectAmp(caster) {
+  // manastorm zone bonus: all effects +30%
+  const bk = caster._zoneBonus?.bonus?.key;
+  return bk === 'effect_amp' ? (caster._zoneBonus.bonus.mult || 1.30) : 1.0;
+}
+function healAmp(caster) {
+  // dawnbringer zone bonus: HEAL and BLESS +50%
+  const bk = caster._zoneBonus?.bonus?.key;
+  return bk === 'heal_amp' ? (caster._zoneBonus.bonus.mult || 1.50) : 1.0;
+}
+
 function applyEffect(caster, target, card, all) {
   const e=card?.effect_1; if(!e) return;
   if(caster.silenced>0){caster.silenced=Math.max(0,caster.silenced-1);return;}
+  const amp = effectAmp(caster);
+  const hamp = healAmp(caster);
   switch(e){
     case 'BURN':    target.burnStacks=Math.min(3,target.burnStacks+1); break;
     case 'POISON':  target.poisonStacks=Math.min(3,(target.poisonStacks||0)+1); target.poisonTimer=Math.max(target.poisonTimer||0,18); break;
-    case 'CORRODE': if(caster.corrodeCd<=0){target.maxHp=Math.max(50,target.maxHp-15);target.hp=Math.min(target.hp,target.maxHp);caster.corrodeCd=CORRODE_CD;} break;
-    case 'HEAL':    {const a=pickHealTarget(caster,all);const amt=Math.floor(caster.maxHp*.07);a.hp=Math.min(a.maxHp,a.hp+(a.witherActive>0?Math.floor(amt*.5):amt));} break;
-    case 'BLESS':   {const amt=Math.floor(caster.maxHp*.04);all.filter(n=>n.hp>0&&n.guildTag===caster.guildTag&&inRange(caster,n,SPELL_RANGE.aoe_self)).forEach(a=>{a.hp=Math.min(a.maxHp,a.hp+(a.witherActive>0?Math.floor(amt*.5):amt));});} break;
+    case 'CORRODE': if(caster.corrodeCd<=0){target.maxHp=Math.max(50,target.maxHp-Math.round(15*amp));target.hp=Math.min(target.hp,target.maxHp);caster.corrodeCd=CORRODE_CD;} break;
+    case 'HEAL':    {const a=pickHealTarget(caster,all);const amt=Math.floor(caster.maxHp*.07*amp*hamp);a.hp=Math.min(a.maxHp,a.hp+(a.witherActive>0?Math.floor(amt*.5):amt));} break;
+    case 'BLESS':   {const amt=Math.floor(caster.maxHp*.04*amp*hamp);all.filter(n=>n.hp>0&&n.guildTag===caster.guildTag&&inRange(caster,n,SPELL_RANGE.aoe_self)).forEach(a=>{a.hp=Math.min(a.maxHp,a.hp+(a.witherActive>0?Math.floor(amt*.5):amt));});} break;
     case 'WARD':    caster.wardUp=true; break;
-    case 'BARRIER': caster.barrierHp=caster.witherActive>0?25:50; break;
+    case 'BARRIER': caster.barrierHp=caster.witherActive>0?25:Math.round(50*amp); break;
     case 'ANCHOR':  caster.anchorUp=true; break;
     case 'DODGE':   caster.dodgeReady=true; break;
     case 'REFLECT': caster.reflectReady=true; break;
     case 'TAUNT':   caster.tauntActive=true; break;
     case 'SILENCE': {const st=all.filter(n=>n.hp>0&&n.guildTag!==caster.guildTag&&inRange(caster,n,SPELL_RANGE.mid)).reduce((b,n)=>n.stats.atk>b.stats.atk?n:b,{stats:{atk:-1}});if(st.stats)st.silenced=Math.max(st.silenced||0,2);break;}
-    case 'HEX':     target.hexAmt=Math.min((target.hexAmt||0)+12,35); break;
+    case 'HEX':     target.hexAmt=Math.min((target.hexAmt||0)+Math.round(12*amp),35); break;
     case 'WEAKEN':  target.weakened=Math.max(target.weakened||0,2); break;
     case 'MARK':    target.marked=Math.max(target.marked||0,3); break;
     case 'TETHER':  caster.tetherActive=true;caster.tetherTurns=3; break;
@@ -187,13 +243,13 @@ function applyEffect(caster, target, card, all) {
     case 'BLIND':   target.blindTurns=Math.max(target.blindTurns||0,2); break;
     case 'NULLIFY': if(target.wardUp){target.wardUp=false;}else if(target.barrierHp){target.barrierHp=0;}else if(target.anchorUp){target.anchorUp=false;}else if(target.hasteBonus){target.hasteBonus=0;target.hasteTurns=0;}else if(target.dodgeReady){target.dodgeReady=false;} break;
     case 'CHAIN':   {const others=all.filter(n=>n.hp>0&&n.guildTag!==caster.guildTag&&n.deploymentId!==target?.deploymentId&&inRange(caster,n,SPELL_RANGE.melee*1.5));if(others.length){const ct=others[Math.floor(Math.random()*others.length)];const d=baseDmg(caster.stats.atk,ct.stats.def);ct.hp=Math.max(0,ct.hp-d);broadcast(caster.zoneId,'combat:attack',{attacker:caster.playerName,defender:ct.playerName,dmg:d,effect:'CHAIN',hp:ct.hp,maxHp:ct.maxHp,x:caster.x,y:caster.y,tx:ct.x,ty:ct.y});}} break;
-    case 'INSPIRE': all.filter(n=>n.hp>0&&n.guildTag===caster.guildTag).forEach(a=>{a.stats.atk+=2;a.stats.spd+=2;}); break;
+    case 'INSPIRE': all.filter(n=>n.hp>0&&n.guildTag===caster.guildTag).forEach(a=>{a.stats.atk+=Math.round(2*amp);a.stats.spd+=Math.round(2*amp);}); break;
     case 'CLEANSE': caster.burnStacks=caster.poisonStacks=caster.poisonTimer=caster.hexAmt=caster.weakened=caster.silenced=caster.marked=caster.witherActive=caster.blindTurns=0; break;
     case 'SURGE':   caster._surge=true; break;
     case 'CRIT':    caster._crit=true; break;
     case 'PIERCE':  caster._pierce=true; break;
     case 'EXECUTE': caster._execute=true; break;
-    default: break; // SHATTER, INFECT, FEAST handled on KO
+    default: break;
   }
   broadcast(caster.zoneId,'combat:effect',{effect:e,by:caster.playerName,on:target?.playerName||null,x:caster.x,y:caster.y});
 }
@@ -207,7 +263,11 @@ function resolveAttack(caster, defender, all) {
   const card  = caster.cards[slot];
   applyEffect(caster, defender, card, all);
 
-  const atkStat = Math.max(1, caster.stats.atk-(caster.hexAmt||0));
+  // Zone bonus: smoulders +20% ATK
+  const bk = caster._zoneBonus?.bonus?.key;
+  const atkMult = bk === 'atk' ? (caster._zoneBonus.bonus.mult || 1.20) : 1.0;
+  const atkStat = Math.max(1, Math.round((caster.stats.atk - (caster.hexAmt||0)) * atkMult));
+
   let dmg = baseDmg(atkStat, defender.stats.def);
   dmg = Math.floor(dmg * slotMult(slot, defender.hp/Math.max(1,defender.maxHp)));
   if(caster._surge)   dmg=Math.floor(dmg*1.5);
@@ -215,9 +275,15 @@ function resolveAttack(caster, defender, all) {
   if(defender.marked>0){dmg=Math.floor(dmg*1.25);defender.marked=Math.max(0,defender.marked-1);}
   if(caster._execute && defender.hp/Math.max(1,defender.maxHp)<.30) dmg=Math.floor(dmg*1.5);
 
-  const luck = defender.blindTurns>0 ? 0 : caster.stats.luck;
+  // Zone bonus: nighthollow +10 LUCK
+  const luckBonus = bk === 'luck' ? (caster._zoneBonus.bonus.bonus || 10) : 0;
+  const luck = defender.blindTurns>0 ? 0 : caster.stats.luck + luckBonus;
   const isCrit = caster._crit ? Math.random()*100<luck : Math.random()*100<luck*.3;
-  if(isCrit) dmg*=2;
+
+  // Zone bonus: stormrage crits deal 3× instead of 2×
+  const critMult = (isCrit && bk === 'crit_mult') ? (caster._zoneBonus.bonus.value || 3) : (isCrit ? 2 : 1);
+  if(isCrit) dmg = Math.floor(dmg * critMult);
+
   if(defender.blindTurns>0) defender.blindTurns=Math.max(0,defender.blindTurns-1);
 
   if(defender.dodgeReady){defender.dodgeReady=false;return;}
@@ -236,7 +302,7 @@ function resolveAttack(caster, defender, all) {
   broadcast(caster.zoneId,'combat:attack',{
     attacker:caster.playerName, attackerId:caster.playerId,
     defender:defender.playerName, defenderId:defender.playerId,
-    dmg, crit:isCrit, slot:slot+1, effect:card?.effect_1||null,
+    dmg, crit:isCrit, critMult, slot:slot+1, effect:card?.effect_1||null,
     hp:defender.hp, maxHp:defender.maxHp,
     guildA:caster.guildTag, guildB:defender.guildTag,
     x:caster.x, y:caster.y, tx:defender.x, ty:defender.y,
@@ -275,6 +341,18 @@ async function tickZone(zoneId, zs) {
         n.poisonTimer=Math.max(0,(n.poisonTimer||0)-1);
         if(n.poisonTimer<=0) n.poisonStacks=0;
         broadcast(zoneId,'combat:dot',{nine:n.playerName,nineId:n.deploymentId,dmg:dot,hp:n.hp,maxHp:n.maxHp,x:n.x,y:n.y});
+      }
+    });
+  }
+
+  // Zone bonus: darktide regen — 3% maxHP per minute = every 30 ticks (60s / 2s per tick)
+  const zBonus = getZoneBonus(zoneId);
+  if(zBonus?.bonus?.key === 'regen' && zs.tick % 30 === 0){
+    all.forEach(n=>{
+      if(n.hp>0){
+        const regen=Math.floor(n.maxHp*(zBonus.bonus.pct||0.03));
+        n.hp=Math.min(n.maxHp,n.hp+regen);
+        broadcast(zoneId,'combat:regen',{nine:n.playerName,amt:regen,hp:n.hp,maxHp:n.maxHp,x:n.x,y:n.y});
       }
     });
   }
@@ -348,15 +426,41 @@ async function tickZone(zoneId, zs) {
 // ─── SNAPSHOT ─────────────────────────────────────────────────────────
 async function runSnapshot(){
   console.log('📸 Zone snapshot...');
+  const now = new Date().toISOString();
+
   for(const [zoneId,zs] of zones){
     if(!zs.nines.size) continue;
+    const all = Array.from(zs.nines.values());
+
+    // Guild HP totals — for zone control scoring
     const guildHp={};
-    for(const n of zs.nines.values()){if(!guildHp[n.guildTag])guildHp[n.guildTag]=0;guildHp[n.guildTag]+=n.hp;}
-    const [tag,hp]=Object.entries(guildHp).reduce((b,[t,h])=>h>b[1]?[t,h]:b,['',-1]);
-    if(!tag) continue;
-    await supabaseAdmin.from('zone_control').upsert({zone_id:zoneId,controlling_guild:tag,snapshot_hp:hp,updated_at:new Date().toISOString()},{onConflict:'zone_id'}).then(({error})=>{if(error)console.error('❌ Snapshot:',error.message);});
-    broadcast(zoneId,'arena:snapshot',{zoneId,controllingGuild:tag,guildHp});
-    console.log(`📸 Zone ${zoneId} → ${tag}`);
+    all.forEach(n=>{if(!guildHp[n.guildTag])guildHp[n.guildTag]=0;guildHp[n.guildTag]+=n.hp;});
+    const [controllingGuild,topHp]=Object.entries(guildHp).reduce((b,[t,h])=>h>b[1]?[t,h]:b,['',-1]);
+
+    // House fighter counts — for zone identity (not HP — house neutral)
+    const houseCounts={};
+    all.forEach(n=>{const h=n.houseKey||'unknown';houseCounts[h]=(houseCounts[h]||0)+1;});
+    const [dominantHouse]=Object.entries(houseCounts).sort((a,b)=>b[1]-a[1])[0]||[];
+
+    // Guild presence count — for branding (who had the most fighters, period)
+    const guildCounts={};
+    all.forEach(n=>{guildCounts[n.guildTag]=(guildCounts[n.guildTag]||0)+1;});
+    const [brandedGuild]=Object.entries(guildCounts).sort((a,b)=>b[1]-a[1])[0]||[];
+
+    if(!controllingGuild) continue;
+
+    // Upsert current state
+    await supabaseAdmin.from('zone_control')
+      .upsert({zone_id:zoneId,controlling_guild:controllingGuild,snapshot_hp:topHp,dominant_house:dominantHouse,updated_at:now},{onConflict:'zone_id'})
+      .then(({error})=>{if(error)console.error('❌ Snapshot upsert:',error.message);});
+
+    // Append to history log
+    await supabaseAdmin.from('zone_control_history')
+      .insert({zone_id:zoneId,controlling_guild:controllingGuild,snapshot_hp:topHp,dominant_house:dominantHouse,branded_guild:brandedGuild,snapped_at:now})
+      .then(({error})=>{if(error)console.error('❌ Snapshot history:',error.message);});
+
+    broadcast(zoneId,'arena:snapshot',{zoneId,controllingGuild,dominantHouse,brandedGuild,guildHp});
+    console.log(`📸 Zone ${zoneId} → [${controllingGuild}] | house: ${dominantHouse} | brand: [${brandedGuild}]`);
   }
 }
 
@@ -420,10 +524,26 @@ async function loadDeploymentIntoEngine(dep){
   }
 
   const nine=dep.nine||{};
-  const state=buildNineState(dep,{house_key:nine.house_id||nine.house_key||'stormrage',name:nine.name||'Unknown'},cards);
+  const zoneBonus = getZoneBonus(String(dep.zone_id));
+  const state=buildNineState(dep,{house_key:nine.house_id||nine.house_key||'stormrage',name:nine.name||'Unknown'},cards,zoneBonus);
   if(dep.current_hp>0) state.hp=Math.min(state.maxHp,dep.current_hp);
+
+  // Zone bonus: plaguemire — newly deployed Nine enters with enemies pre-poisoned
+  // We apply 1 POISON stack to all existing enemies on the zone
+  if(zoneBonus?.bonus?.key === 'poison_aura'){
+    const zs = zones.get(zoneId);
+    if(zs){
+      for(const existing of zs.nines.values()){
+        if(existing.guildTag !== state.guildTag && existing.hp > 0){
+          existing.poisonStacks = Math.min(3, (existing.poisonStacks||0) + 1);
+          existing.poisonTimer  = Math.max(existing.poisonTimer||0, 18);
+        }
+      }
+    }
+  }
+
   zones.get(zoneId).nines.set(String(dep.id),state);
-  console.log(`⚔️  ${state.playerName} (${state.houseKey}) → zone ${zoneId} [${cards.length} cards]`);
+  console.log(`⚔️  ${state.playerName} (${state.houseKey}) → zone ${zoneId} [${cards.length} cards]${zoneBonus?.house ? ` | zone bonus: ${zoneBonus.house}` : ''}`);
 }
 
 function removeDeploymentFromEngine(deploymentId,zoneId){
@@ -439,6 +559,7 @@ function broadcast(zoneId,event,data){
 // ─── LIFECYCLE ────────────────────────────────────────────────────────
 function startCombatEngine(){
   if(_tickInt) return;
+  refreshZoneBonusCache(); // load zone bonuses before deployments
   loadActiveDeployments();
   _tickInt=setInterval(async()=>{for(const [id,zs] of zones){try{await tickZone(id,zs);}catch(e){console.error(`❌ Zone ${id}:`,e.message);}}},TICK_MS);
   _snapInt=setInterval(async()=>{_nextSnap=Date.now()+SNAPSHOT_MS;await runSnapshot();},SNAPSHOT_MS);
@@ -453,4 +574,5 @@ module.exports={
   loadDeploymentIntoEngine,
   removeDeploymentFromEngine,
   getZoneState:id=>zones.get(String(id))||null,
+  refreshZoneBonusCache,
 };
