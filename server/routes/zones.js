@@ -287,12 +287,11 @@ router.post('/update-loadout', async (req, res) => {
       return res.status(400).json({ error: 'No valid cards found in your collection' });
     }
 
-    // Clear existing slots then insert new ones
+    // DELETE existing slots (not just mark inactive) — avoids unique constraint on re-insert
     await supabaseAdmin
       .from('zone_card_slots')
-      .update({ is_active: false })
-      .eq('deployment_id', deployment.id)
-      .eq('is_active', true);
+      .delete()
+      .eq('deployment_id', deployment.id);
 
     const { error: insertErr } = await supabaseAdmin
       .from('zone_card_slots')

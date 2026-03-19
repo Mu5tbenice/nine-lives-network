@@ -5270,9 +5270,11 @@
 
   function dismissKOAndRejoin() {
     dismissKOOverlay();
-    document.getElementById('deploy-cta').style.display = 'block';
-    document.getElementById('arena-bottom-tray').style.display = 'none';
+    // Open the deploy modal so player can pick cards and redeploy
+    openDeployModal();
   }
+  // Expose to global scope — called from onclick attribute in HTML
+  window.dismissKOAndRejoin = dismissKOAndRejoin;
 
   // Check on page load if player was mid-KO cooldown when they refreshed
   function checkKOState() {
@@ -6307,12 +6309,13 @@
     document.getElementById('deploy-cta').style.display = 'none';
     document.getElementById('arena-bottom-tray').style.display = 'flex';
 
-    const equippedCards = state.selectedCards.map(c => c.card);
-    renderCardSlots(equippedCards);
-    state.equippedCards = equippedCards;
-    try {
-      localStorage.setItem('9lv_equipped_' + state.currentZoneId + '_' + state.playerId, JSON.stringify(equippedCards));
-    } catch(e) {}
+    // Immediately render from selection state (instant feedback)
+    const equippedCards = state.selectedCards.map(c => c.card).filter(Boolean);
+    if (equippedCards.length > 0) {
+      renderCardSlots(equippedCards);
+      state.equippedCards = equippedCards;
+      try { localStorage.setItem('9lv_equipped_' + state.currentZoneId + '_' + state.playerId, JSON.stringify(equippedCards)); } catch(e) {}
+    }
 
     updatePlayerBar();
     addFeedEvent(eventMsg || 'You have entered the battle!', 'join');
@@ -6327,6 +6330,37 @@
 
     // Tell combat engine to reload this zone's card loadout
     fetch(`/api/zones/${state.currentZoneId}/force-reload`, { method: 'POST' }).catch(() => null);
+
+    // Fetch authoritative loadout from server after 2s to ensure cards are correct
+    // (DB write may still be committing when we render from local state above)
+    setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/zones/${state.currentZoneId}/my-loadout/${state.playerId}`);
+        if (!r.ok) return;
+        const d = await r.json();
+        const serverCards = (d.loadout || []).map(slot => ({
+          id: slot.player_card_id || slot.card_id,
+          name: slot.name || '???',
+          house: slot.house || 'universal',
+          spell_type: slot.spell_type || 'attack',
+          rarity: slot.rarity || 'common',
+          base_atk: slot.base_atk ?? 0,
+          base_hp: slot.base_hp ?? 0,
+          base_spd: slot.base_spd ?? 0,
+          base_def: slot.base_def ?? 0,
+          base_luck: slot.base_luck ?? 0,
+          effect_1: slot.effect_1 || '',
+          base_effect: slot.effect_1 || '',
+          sharpness: slot.sharpness ?? 100,
+          slot_number: slot.slot_number,
+        })).filter(Boolean);
+        if (serverCards.length > 0) {
+          renderCardSlots(serverCards);
+          state.equippedCards = serverCards;
+          try { localStorage.setItem('9lv_equipped_' + state.currentZoneId + '_' + state.playerId, JSON.stringify(serverCards)); } catch(e) {}
+        }
+      } catch(e) { /* non-critical */ }
+    }, 2000);
   }
 
   async function confirmDeploy() {
