@@ -1156,15 +1156,15 @@
 
   // ===== HOUSE DATA =====
   const HOUSES = {
-    smoulders:   { color: '#E03C31', name: 'Smoulders', icon: '🔥', crest: '/assets/images/houses/Housesmoulders.png', biome: '/assets/images/biomes/smoulders.png' },
-    darktide:    { color: '#00B4D8', name: 'Darktide', icon: '🌊', crest: '/assets/images/houses/Housedarktide.png', biome: '/assets/images/biomes/darktide.png' },
-    stonebark:   { color: '#5CB338', name: 'Stonebark', icon: '🌿', crest: '/assets/images/houses/Housestonebark.png', biome: '/assets/images/biomes/stonebark.png' },
-    ashenvale:   { color: '#90E0EF', name: 'Ashenvale', icon: '💨', crest: '/assets/images/houses/HouseAshenvale.png', biome: '/assets/images/biomes/ashenvale.png' },
-    stormrage:   { color: '#FFC800', name: 'Stormrage', icon: '⚡', crest: '/assets/images/houses/Housestormrage.png', biome: '/assets/images/biomes/stormrage.png' },
-    nighthollow: { color: '#7B2D8E', name: 'Nighthollow', icon: '🌙', crest: '/assets/images/houses/Housenighthollow.png', biome: '/assets/images/biomes/nighthollow.png' },
-    dawnbringer: { color: '#FF8C00', name: 'Dawnbringer', icon: '☀️', crest: '/assets/images/houses/HouseDwnbringer.png', biome: '/assets/images/biomes/dawnbringer.png' },
-    manastorm:   { color: '#5B8FE0', name: 'Manastorm', icon: '🔮', crest: '/assets/images/houses/Housemanastorm.png', biome: '/assets/images/biomes/manastorm.png' },
-    plaguemire:  { color: '#E84393', name: 'Plaguemire', icon: '☠️', crest: '/assets/images/houses/Houseplaguemire.png', biome: '/assets/images/biomes/plaguemire.png' },
+    smoulders:   { color: '#E03C31', name: 'Smoulders',   icon: '🔥', crest: '/assets/images/houses/House-smoulders.png',   biome: '/assets/images/biomes/smoulders.png' },
+    darktide:    { color: '#00B4D8', name: 'Darktide',    icon: '🌊', crest: '/assets/images/houses/House-darktide.png',    biome: '/assets/images/biomes/darktide.png' },
+    stonebark:   { color: '#5CB338', name: 'Stonebark',   icon: '🌿', crest: '/assets/images/houses/House-stonebark.png',   biome: '/assets/images/biomes/stonebark.png' },
+    ashenvale:   { color: '#90E0EF', name: 'Ashenvale',   icon: '💨', crest: '/assets/images/houses/House-Ashenvale.png',   biome: '/assets/images/biomes/ashenvale.png' },
+    stormrage:   { color: '#FFC800', name: 'Stormrage',   icon: '⚡', crest: '/assets/images/houses/House-stormrage.png',   biome: '/assets/images/biomes/stormrage.png' },
+    nighthollow: { color: '#7B2D8E', name: 'Nighthollow', icon: '🌙', crest: '/assets/images/houses/House-nighthollow.png', biome: '/assets/images/biomes/nighthollow.png' },
+    dawnbringer: { color: '#FF8C00', name: 'Dawnbringer', icon: '☀️', crest: '/assets/images/houses/House-dawnbringer.png', biome: '/assets/images/biomes/dawnbringer.png' },
+    manastorm:   { color: '#5B8FE0', name: 'Manastorm',   icon: '🔮', crest: '/assets/images/houses/House-manastorm.png',   biome: '/assets/images/biomes/manastorm.png' },
+    plaguemire:  { color: '#E84393', name: 'Plaguemire',  icon: '☠️', crest: '/assets/images/houses/House-plaguemire.png',  biome: '/assets/images/biomes/plaguemire.png' },
   };
 
   const EFFECT_COLORS = {
@@ -3576,7 +3576,7 @@
         const resolvedId = resolveId(d.id);
         let sprite = state.nines.get(resolvedId);
 
-        // Create sprite if it doesn't exist yet (e.g. player was already fighting when we joined)
+        // Create sprite if it doesn't exist yet
         if (!sprite && state.arenaApp && d.houseKey) {
           addNineSprite({
             id: d.id,
@@ -3595,10 +3595,26 @@
         if (sprite) {
           sprite.targetX = screenPos.x;
           sprite.targetY = screenPos.y;
-          if (d.houseKey) sprite.house = d.houseKey; // sync house from engine
-          if (d.guildTag) sprite.guild = d.guildTag; // sync guild from engine
+          if (d.houseKey) sprite.house = d.houseKey;
+          if (d.guildTag) sprite.guild = d.guildTag;
           updateNineHP(resolvedId, d.hp, d.maxHp);
           updateStatusRings(sprite, d.status, d.activeEffect);
+        }
+
+        // Seed combatMetrics so chart tracks this Nine from first appearance
+        if (!state.combatMetrics.has(resolvedId)) {
+          state.combatMetrics.set(resolvedId, {
+            name: d.playerName || String(d.id).slice(0, 8),
+            guild: d.guildTag || '',
+            house: d.houseKey || '',
+            damage: 0, heals: 0, kos: 0, cards: {},
+          });
+        } else {
+          // Update name/guild/house if we get better data
+          const m = state.combatMetrics.get(resolvedId);
+          if (d.playerName) m.name = d.playerName;
+          if (d.guildTag) m.guild = d.guildTag;
+          if (d.houseKey) m.house = d.houseKey;
         }
       });
       updateHpStrip();
@@ -3612,33 +3628,30 @@
       const attacker = state.nines.get(fromId);
       const target   = state.nines.get(toId);
 
-      // Use existing animateProjectile if source/target positions available
-      if (data.x != null && data.tx != null && state.arenaApp) {
+      const onHit = () => {
+        if (target) {
+          if (data.crit) {
+            fireworkCRIT(target.container.x, target.container.y);
+          } else {
+            spawnFireworkExplosion(target.container.x, target.container.y, getHouseColor(attacker?.house));
+          }
+          showFloatingText(target.container.x, target.container.y, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 22 : 16);
+          shakeSprite(target);
+          if (target.spriteGroup) {
+            target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff3333; });
+            setTimeout(() => { if (target.spriteGroup) target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 300);
+          }
+        }
+      };
+
+      if (attacker && target && state.arenaApp) {
+        // Both sprites known — use the full rich animation (charge + missile + firework)
+        animateProjectile(fromId, toId, attacker.house, onHit);
+      } else if (data.x != null && data.tx != null && state.arenaApp) {
+        // Fallback: use raw coords if sprites not yet in state
         const sx = engineToScreen({ x: data.x,  y: data.y  });
         const tx = engineToScreen({ x: data.tx, y: data.ty });
-        animateProjectileFromPos(sx.x, sx.y, tx.x, tx.y, attacker?.house, () => {
-          if (target) {
-            if (data.crit) {
-              fireworkCRIT(target.container.x, target.container.y);
-            } else {
-              spawnFireworkExplosion(target.container.x, target.container.y, getHouseColor(attacker?.house));
-            }
-            showFloatingText(target.container.x, target.container.y, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 20 : 16);
-            shakeSprite(target);
-            if (target.spriteGroup) {
-              target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff3333; });
-              setTimeout(() => { if (target.spriteGroup) target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 300);
-            }
-          }
-        });
-      } else {
-        // Fallback to sprite-based animation
-        animateProjectile(fromId, toId, attacker?.house, () => {
-          if (target) {
-            showFloatingText(target.container.x, target.container.y, `-${dmg}`, 0xff4466, 16);
-            shakeSprite(target);
-          }
-        });
+        animateProjectileFromPos(sx.x, sx.y, tx.x, tx.y, attacker?.house, onHit);
       }
 
       const from = data.attacker || getNineName(fromId);
@@ -3729,12 +3742,26 @@
         renderGuildSidebar();
       }
       addFeedEvent(`💀 <span class="feed-name">${data.nine || getNineName(koId)}</span> was KO'd!`, 'ko');
+
+      // Track KO in metrics for the KO'd player
+      if (koId) {
+        const m = state.combatMetrics.get(koId);
+        if (m) { m.kos = (m.kos || 0) + 1; }
+      }
+      // Force chart re-render immediately on KO
+      renderCombatMeters();
+
       setTimeout(() => removeNineSprite(koId), 1500);
       if (koId == state.playerId) {
         state.isDeployed = false;
         showKOOverlay(null);
       }
     });
+
+    // Refresh combat meters every 5 seconds so damage numbers are always live
+    setInterval(() => {
+      if (state.combatMetrics.size > 0) renderCombatMeters();
+    }, 5000);
 
   } // end connectArenaSocket
 
@@ -5710,14 +5737,18 @@
       const sharpColor = sharpness > 60 ? 'var(--cyan)' : sharpness > 30 ? 'var(--gold)' : 'var(--red)';
 
       const effects = [];
-      // Primary effect FIRST — must always be visible
-      const eff = card.effect_1 || card.base_effect || ''; if (eff) effects.push(eff);
-      // Bonus effects after
+      // Primary effect first — always visible
+      const eff = card.effect_1 || card.base_effect || '';
+      if (eff) effects.push(eff);
+      // Then any bonus effects
       try {
         if (card.bonus_effects) {
           const effs = Array.isArray(card.bonus_effects) ? card.bonus_effects
             : (typeof card.bonus_effects === 'string' ? JSON.parse(card.bonus_effects) : []);
-          effs.forEach(e => effects.push(typeof e === 'string' ? e : (e.tag || e.name || '')));
+          effs.forEach(e => {
+            const tag = typeof e === 'string' ? e : (e.tag || e.name || '');
+            if (tag && tag !== eff) effects.push(tag);
+          });
         }
       } catch(e) {}
 
@@ -5863,15 +5894,14 @@
                 name: slot.name || '???',
                 house: slot.house || 'universal',
                 spell_type: slot.spell_type || 'attack',
-                rarity: slot.rarity || 'common',
                 base_atk: slot.base_atk ?? 0,
                 base_hp: slot.base_hp ?? 0,
                 base_spd: slot.base_spd ?? 0,
                 base_def: slot.base_def ?? 0,
                 base_luck: slot.base_luck ?? 0,
                 bonus_effects: slot.bonus_effects || [],
-                base_effect: slot.effect_1 || slot.base_effect || '',
-                effect_1: slot.effect_1 || slot.base_effect || '',
+                base_effect: slot.effect_1 || '',
+                effect_1: slot.effect_1 || '',
                 flavor_text: slot.flavor_text || '',
                 image_url: slot.image_url || '',
                 sharpness: slot.sharpness ?? 100,
@@ -6346,8 +6376,7 @@
     // Tell combat engine to reload this zone's card loadout
     fetch(`/api/zones/${state.currentZoneId}/force-reload`, { method: 'POST' }).catch(() => null);
 
-    // Fetch authoritative loadout from server after 2s to ensure cards are correct
-    // (DB write may still be committing when we render from local state above)
+    // Fetch authoritative loadout from server after 1s to confirm cards are correct
     setTimeout(async () => {
       try {
         const r = await fetch(`/api/zones/${state.currentZoneId}/my-loadout/${state.playerId}`);
@@ -6358,7 +6387,6 @@
           name: slot.name || '???',
           house: slot.house || 'universal',
           spell_type: slot.spell_type || 'attack',
-          rarity: slot.rarity || 'common',
           base_atk: slot.base_atk ?? 0,
           base_hp: slot.base_hp ?? 0,
           base_spd: slot.base_spd ?? 0,
@@ -6366,6 +6394,7 @@
           base_luck: slot.base_luck ?? 0,
           effect_1: slot.effect_1 || '',
           base_effect: slot.effect_1 || '',
+          bonus_effects: slot.bonus_effects || [],
           sharpness: slot.sharpness ?? 100,
           slot_number: slot.slot_number,
         })).filter(Boolean);
@@ -6375,7 +6404,7 @@
           try { localStorage.setItem('9lv_equipped_' + state.currentZoneId + '_' + state.playerId, JSON.stringify(serverCards)); } catch(e) {}
         }
       } catch(e) { /* non-critical */ }
-    }, 2000);
+    }, 1000);
   }
 
   async function confirmDeploy() {
@@ -6413,10 +6442,6 @@
       const data = await res.json();
 
       if (data.success) {
-        // Deployment record created — now save the card selection to the database
-        if (!state._deployNoCards && state.selectedCards.length > 0) {
-          await equipSelectedCards();
-        }
         applyDeployedUI(data.message);
       } else if (data.error && data.error.toLowerCase().includes('already deployed')) {
         // Already deployed — just equip cards via separate calls
