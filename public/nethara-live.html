@@ -1203,30 +1203,27 @@
 
   // ===== INIT =====
   async function init() {
-    // Get player from localStorage (matches dashboard save keys)
-    const stored = localStorage.getItem('9lv_player');
-    const rawId = localStorage.getItem('player_id');
-    if (stored) {
+    // Resolve player from any of the keys different pages may have saved
+    const stored9lv  = localStorage.getItem('9lv_player');
+    const rawId      = localStorage.getItem('player_id');
+    const rawId2     = localStorage.getItem('playerId');
+
+    if (stored9lv) {
       try {
-        const p = JSON.parse(stored);
-        state.playerId = p.id || p.player_id;
+        const p = JSON.parse(stored9lv);
+        state.playerId    = p.id || p.player_id;
         state.playerHouse = p.school_id;
         state.playerLevel = p.level || 1;
-        state.playerHandle = p.twitter_handle || p.handle || '';
+        state.playerHandle  = p.twitter_handle || p.handle || '';
         state.playerGuildTag = p.guild_tag || '';
-        console.log('🐱 Arena: logged in as player', state.playerId, state.playerHandle);
-      } catch(e) {
-        if (rawId) {
-          state.playerId = parseInt(rawId);
-          console.log('🐱 Arena: logged in via player_id fallback', state.playerId);
-        }
-      }
-    } else if (rawId) {
-      state.playerId = parseInt(rawId);
-      console.log('🐱 Arena: logged in via player_id only', state.playerId);
-    } else {
-      console.log('🐱 Arena: not logged in — guest mode');
+        console.log('🐱 Arena: logged in as', state.playerId, state.playerHandle);
+      } catch(e) { /* malformed — fall through */ }
     }
+
+    // Fallbacks if 9lv_player wasn't set or didn't have an id
+    if (!state.playerId && rawId)  state.playerId = parseInt(rawId);
+    if (!state.playerId && rawId2) state.playerId = parseInt(rawId2);
+    if (!state.playerId) console.log('🐱 Arena: not logged in — guest mode');
 
     setupTabs();
     await loadZones();
@@ -1399,10 +1396,13 @@
     const isObjective = zone.daily_objective || zone.is_current_objective || false;
     const ctrlGuild = zone.controlling_guild || zone.controlling_guild_tag || null;
 
-    // Zone identity (from yesterday's fighter presence — columns on zones table)
+    // Zone identity (from yesterday's fighter presence)
     const dominantHouse  = zone.dominant_house  || null;
     const brandedGuild   = zone.branded_guild   || null;
     const houseBonusLabel = zone.house_bonus_label || null;
+
+    // Use official HOUSES colours — not a separate map
+    const houseColor = (h) => HOUSES[h]?.color || '#D4A64B';
 
     // Image banner with fighter count (always shown) and gold zone name
     const fighterBadge = '<div class="zone-card-fighter-count">\u2694\uFE0F ' + casters + '</div>';
@@ -1436,7 +1436,7 @@
     if (dominantHouse || brandedGuild) {
       identityHTML = '<div class="zone-identity-row">';
       if (dominantHouse && houseBonusLabel) {
-        const hColor  = HOUSE_BONUS_COLORS[dominantHouse] || '#D4A64B';
+        const hColor  = houseColor(dominantHouse);
         const hLogoSrc = HOUSE_LOGO_PATHS[dominantHouse] || '';
         const hLogoEl = hLogoSrc
           ? '<img src="' + hLogoSrc + '" style="width:14px;height:14px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 3px ' + hColor + '88);" onerror="this.style.display=\'none\'">'
@@ -2176,20 +2176,21 @@
         const pulse = 1 + Math.sin(time * 2 + nine.bobPhase) * 0.015;
         nine.spriteGroup.scale.set(pulse, pulse);
 
-        // V3: Server-driven movement — interpolate toward targetX/targetY
-        // targetX/targetY are set every 2s by arena:positions from the combat engine
+        // V3: Server-driven movement — interpolate smoothly toward targetX/targetY
+        // Positions update every 2s from engine — we glide toward them at 60fps
         if (nine.targetX !== undefined) {
           const wx = nine.targetX - nine.container.x;
           const wy = nine.targetY - nine.container.y;
           const dist = Math.sqrt(wx * wx + wy * wy);
-          if (dist > 2) {
-            // Speed proportional to distance so movement feels responsive but smooth
-            const speed = Math.min(3.0, dist * 0.12);
+          if (dist > 1) {
+            // Slow smooth glide — at 60fps, 0.07 factor means ~90 frames to close
+            // a 100px gap, giving a gentle 1.5s drift rather than a snap
+            const speed = Math.min(1.8, dist * 0.07);
             const angle = Math.atan2(wy, wx);
             nine.container.x += Math.cos(angle) * speed;
             nine.container.y += Math.sin(angle) * speed;
-            // Face direction of travel (preserve existing flip scale sign)
-            if (nine.spriteGroup && Math.abs(wx) > 1) {
+            // Face direction of travel
+            if (nine.spriteGroup && Math.abs(wx) > 2) {
               const absScale = Math.abs(nine.spriteGroup.scale.x) || 1;
               nine.spriteGroup.scale.x = wx > 0 ? absScale : -absScale;
             }
@@ -3671,21 +3672,40 @@
 
     // Effect fired — show visual on target
     socket.on('combat:effect', (data) => {
+      // Resolve target sprite — try ID first, then name, then fall back to engine coords
       const tId = resolveId(data.targetId || data.on);
+      const cId = resolveId(data.casterId || data.by);
       const sprite = state.nines.get(tId);
+      const caster = state.nines.get(cId);
       const effect = data.effect || '';
-      if (sprite) {
-        const px = sprite.container.x, py = sprite.container.y;
+
+      // Get display position — sprite if found, engine coords if not
+      const getPos = (sp, ex, ey) => {
+        if (sp) return { x: sp.container.x, y: sp.container.y };
+        if (ex != null) return engineToScreen({ x: ex, y: ey });
+        return null;
+      };
+
+      const tPos = getPos(sprite, data.tx, data.ty);
+      const cPos = getPos(caster, data.x, data.y);
+
+      if (tPos) {
+        const px = tPos.x, py = tPos.y;
         switch (effect) {
           case 'BURN':    fireworkBURN(px, py); break;
           case 'POISON':  fireworkPOISON(px, py); break;
           case 'SILENCE': fireworkSILENCE(px, py); break;
           case 'WITHER':  case 'HEX': case 'WEAKEN': fireworkWEAKEN(px, py); break;
-          case 'HEAL':    case 'BLESS': fireworkHEAL(px, py); if (data.amt) showFloatingText(px, py, `+${data.amt}`, 0x44ffaa, 13); break;
-          case 'WARD':    case 'BARRIER': case 'ANCHOR': animateShieldPop(sprite); spawnFireworkExplosion(px, py, 0xD4A64B); break;
+          case 'HEAL':    case 'BLESS':
+            fireworkHEAL(px, py);
+            if (data.amt) showFloatingText(px, py - 20, `+${data.amt}`, 0x44ffaa, 14);
+            break;
+          case 'WARD':    case 'BARRIER': case 'ANCHOR':
+            if (sprite) animateShieldPop(sprite);
+            spawnFireworkExplosion(px, py, 0xD4A64B); break;
           case 'DODGE':   case 'DODGE_PROC': showFloatingText(px, py - 20, 'DODGE!', 0x90E0EF, 14); break;
-          case 'HASTE':   animateAuraBurst(sprite, 'HASTE'); spawnFireworkExplosion(px, py, 0x90E0EF); break;
-          case 'CORRODE': showFloatingText(px, py, `MAX HP↓`, 0x88cc44, 11); spawnParticles(px, py, 0x88cc44, 8, 'poison'); break;
+          case 'HASTE':   if (sprite) animateAuraBurst(sprite, 'HASTE'); spawnFireworkExplosion(px, py, 0x90E0EF); break;
+          case 'CORRODE': showFloatingText(px, py, 'MAX HP↓', 0x88cc44, 11); spawnParticles(px, py, 0x88cc44, 8, 'poison'); break;
           case 'INSPIRE': spawnFireworkExplosion(px, py, 0xffd700); showFloatingText(px, py - 20, 'INSPIRE!', 0xffd700, 11); break;
           case 'MARK':    showFloatingText(px, py - 20, '⚑ MARKED', 0xff4466, 10); spawnParticles(px, py, 0xff4466, 8, 'default'); break;
           case 'TETHER':  showFloatingText(px, py - 20, 'TETHER', 0xff6699, 10); spawnParticles(px, py, 0xff6699, 6, 'default'); break;
@@ -3697,9 +3717,14 @@
           case 'INFECT':  fireworkPOISON(px, py); showFloatingText(px, py, 'INFECT!', 0x88cc44, 13); break;
           default: spawnFireworkExplosion(px, py, getEffectColor(effect)); break;
         }
+      } else if (cPos) {
+        // No target position — show effect at caster (e.g. self-cast WARD, DODGE)
+        const px = cPos.x, py = cPos.y;
+        if (['WARD','BARRIER','ANCHOR','DODGE','HEAL','CLEANSE'].includes(effect)) {
+          spawnFireworkExplosion(px, py, 0xD4A64B);
+        }
       }
-      const cId = resolveId(data.casterId || data.by);
-      const caster = state.nines.get(cId);
+
       if (['HEAL','BLESS','INSPIRE'].includes(effect)) {
         addFeedEvent(`✚ <span class="feed-name">${data.by||getNineName(cId)}</span>: <span class="feed-effect">${effect}</span>`, 'heal');
         if (data.amt > 0 && caster) trackCombatStat(cId, data.by||getNineName(cId), caster.guild, caster.house, 'heals', data.amt);
@@ -5998,6 +6023,28 @@
     const sprite = state.nines.get(state.playerId);
     if (!sprite) return;
 
+    // House base stats — use from sprite.stats if populated by engine,
+    // otherwise look up from the HOUSE_STATS constant via house key
+    const HOUSE_BASE = {
+      stormrage:   { atk:40, hp:280, spd:30, def:5,  luck:15 },
+      smoulders:   { atk:35, hp:350, spd:25, def:10, luck:10 },
+      stonebark:   { atk:12, hp:700, spd:10, def:40, luck:5  },
+      ashenvale:   { atk:20, hp:380, spd:22, def:12, luck:15 },
+      nighthollow: { atk:25, hp:360, spd:30, def:12, luck:25 },
+      dawnbringer: { atk:15, hp:620, spd:15, def:30, luck:5  },
+      manastorm:   { atk:30, hp:380, spd:25, def:15, luck:10 },
+      plaguemire:  { atk:20, hp:450, spd:20, def:25, luck:10 },
+      darktide:    { atk:25, hp:450, spd:20, def:20, luck:10 },
+    };
+    const houseKey = sprite.house || SCHOOL_TO_HOUSE[state.playerHouse] || 'stormrage';
+    const base = HOUSE_BASE[houseKey] || HOUSE_BASE.stormrage;
+
+    const hAtk  = sprite.stats?.atk  || base.atk;
+    const hHp   = sprite.maxHp       || base.hp;
+    const hSpd  = sprite.stats?.spd  || base.spd;
+    const hDef  = sprite.stats?.def  || base.def;
+    const hLuck = sprite.stats?.luck || base.luck;
+
     let cardAtk = 0, cardHp = 0, cardSpd = 0, cardDef = 0, cardLuck = 0;
     if (state.equippedCards && state.equippedCards.length > 0) {
       state.equippedCards.forEach(c => {
@@ -6009,20 +6056,15 @@
         cardLuck += c.base_luck || 0;
       });
     }
-    const totalAtk  = (sprite.stats?.atk  || 0) + cardAtk;
-    const totalHp   = (sprite.maxHp        || 0) + cardHp;
-    const totalSpd  = (sprite.stats?.spd   || 0) + cardSpd;
-    const totalDef  = (sprite.stats?.def   || 0) + cardDef;
-    const totalLuck = (sprite.stats?.luck  || 0) + cardLuck;
 
     const statsEl = document.getElementById('your-nine-stats');
     if (statsEl) {
       statsEl.innerHTML = `
-        <div class="your-nine-stat" style="color:#e85a6a">⚔ ATK ${totalAtk}</div>
-        <div class="your-nine-stat" style="color:#6acd8a">♥ HP ${totalHp}</div>
-        <div class="your-nine-stat" style="color:#6ac8d8">◈ SPD ${totalSpd}</div>
-        <div class="your-nine-stat" style="color:#b088e8">⛊ DEF ${totalDef}</div>
-        <div class="your-nine-stat" style="color:#D4A64B">★ LUCK ${totalLuck}</div>
+        <div class="your-nine-stat" style="color:#e85a6a">⚔ ${hAtk + cardAtk}</div>
+        <div class="your-nine-stat" style="color:#6acd8a">♥ ${hHp + cardHp}</div>
+        <div class="your-nine-stat" style="color:#6ac8d8">◈ ${hSpd + cardSpd}</div>
+        <div class="your-nine-stat" style="color:#b088e8">⛊ ${hDef + cardDef}</div>
+        <div class="your-nine-stat" style="color:#D4A64B">★ ${hLuck + cardLuck}</div>
       `;
     }
     const fill = document.getElementById('your-hp-fill');
