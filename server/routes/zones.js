@@ -601,7 +601,7 @@ router.get('/:zoneId/my-loadout/:playerId', async (req, res) => {
         id, card_id, slot_number,
         card:card_id(
           id, player_id, sharpness,
-          spell:spell_id(name, spell_type, house, rarity, base_atk, base_hp, base_spd, base_def, base_luck, base_effect, effect_1, bonus_effects, image_url, flavor_text)
+          spell:spell_id(name, spell_type, house, base_atk, base_hp, base_spd, base_def, base_luck, effect_1, bonus_effects, image_url, flavor_text)
         )
       `)
       .eq('deployment_id', deployment.id)
@@ -619,14 +619,13 @@ router.get('/:zoneId/my-loadout/:playerId', async (req, res) => {
         name:           spell.name || '???',
         spell_type:     spell.spell_type || 'attack',
         house:          spell.house || 'universal',
-        rarity:         spell.rarity || 'common',
         base_atk:       spell.base_atk ?? 0,
         base_hp:        spell.base_hp ?? 0,
         base_spd:       spell.base_spd ?? 0,
         base_def:       spell.base_def ?? 0,
         base_luck:      spell.base_luck ?? 0,
-        effect_1:       spell.effect_1 || spell.base_effect || '',
-        base_effect:    spell.effect_1 || spell.base_effect || '',
+        effect_1:       spell.effect_1 || '',
+        base_effect:    spell.effect_1 || '',
         bonus_effects:  spell.bonus_effects || [],
         image_url:      spell.image_url || '',
         flavor_text:    spell.flavor_text || '',
