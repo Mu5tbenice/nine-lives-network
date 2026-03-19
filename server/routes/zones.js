@@ -31,7 +31,7 @@ const ZONE_POINTS = {
 // ═══════════════════════════════════════════
 router.post('/deploy', async (req, res) => {
   try {
-    const { player_id, zone_id } = req.body;
+    const { player_id, zone_id, card_ids } = req.body;
 
     if (!player_id || !zone_id) {
       return res.status(400).json({ error: 'player_id and zone_id required' });
@@ -103,6 +103,50 @@ router.post('/deploy', async (req, res) => {
       console.error('Deploy error:', deployErr);
       return res.status(500).json({ error: 'Failed to deploy' });
     }
+
+    // ── Save card slots atomically (no separate equip-card call needed) ──
+    const cardIdsArray = Array.isArray(card_ids)
+      ? card_ids.map(Number).filter(n => !isNaN(n) && n > 0)
+      : [];
+
+    if (cardIdsArray.length > 0) {
+      // Validate cards belong to this player
+      const { data: validCards } = await supabaseAdmin
+        .from('player_cards')
+        .select('id')
+        .eq('player_id', player_id)
+        .in('id', cardIdsArray);
+
+      const validIds = new Set((validCards || []).map(c => c.id));
+      const slotsToInsert = cardIdsArray
+        .filter(id => validIds.has(id))
+        .slice(0, MAX_CARDS_PER_ZONE)
+        .map((card_id, i) => ({
+          deployment_id: deployment.id,
+          card_id,
+          slot_number: i + 1,
+          is_active: true,
+        }));
+
+      if (slotsToInsert.length > 0) {
+        const { error: slotErr } = await supabaseAdmin
+          .from('zone_card_slots')
+          .insert(slotsToInsert);
+        if (slotErr) console.error('Card slot insert error:', slotErr.message);
+        else console.log(`✅ ${slotsToInsert.length} cards saved for deployment ${deployment.id}`);
+      }
+    }
+
+    // ── Load into combat engine immediately ──
+    try {
+      const combatEngine = require('../services/combatEngine');
+      if (combatEngine?.loadDeploymentIntoEngine) {
+        await combatEngine.loadDeploymentIntoEngine({
+          ...deployment,
+          nine: { house_id: nine.house_key || nine.house_id || 'stormrage', name: nine.name || 'Unknown' },
+        });
+      }
+    } catch (e) { console.error('Combat engine load error:', e.message); }
 
     // Award deploy points (+5)
     await addPoints(player_id, ZONE_POINTS.DEPLOY, 'zone_deploy', `Deployed to zone ${zone_id}`);
@@ -196,6 +240,95 @@ router.post('/withdraw', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════
+// POST /api/zones/update-loadout
+// Replace all 3 card slots at once for an existing deployment
+// Body: { player_id, zone_id, card_ids: [id1, id2, id3] }
+// Uses supabaseAdmin — no RLS issues
+// ═══════════════════════════════════════════
+router.post('/update-loadout', async (req, res) => {
+  try {
+    const { player_id, zone_id, card_ids } = req.body;
+    if (!player_id || !zone_id || !Array.isArray(card_ids) || card_ids.length === 0) {
+      return res.status(400).json({ error: 'player_id, zone_id, and card_ids required' });
+    }
+
+    const { data: deployment } = await supabaseAdmin
+      .from('zone_deployments')
+      .select('id')
+      .eq('player_id', player_id)
+      .eq('zone_id', zone_id)
+      .eq('is_active', true)
+      .single();
+
+    if (!deployment) {
+      return res.status(400).json({ error: 'Not deployed on this zone' });
+    }
+
+    // Validate cards belong to this player
+    const cardIdsArray = card_ids.map(Number).filter(n => !isNaN(n) && n > 0);
+    const { data: validCards } = await supabaseAdmin
+      .from('player_cards')
+      .select('id')
+      .eq('player_id', player_id)
+      .in('id', cardIdsArray);
+
+    const validIds = new Set((validCards || []).map(c => c.id));
+    const toInsert = cardIdsArray
+      .filter(id => validIds.has(id))
+      .slice(0, MAX_CARDS_PER_ZONE)
+      .map((card_id, i) => ({
+        deployment_id: deployment.id,
+        card_id,
+        slot_number: i + 1,
+        is_active: true,
+      }));
+
+    if (toInsert.length === 0) {
+      return res.status(400).json({ error: 'No valid cards found in your collection' });
+    }
+
+    // Clear existing slots then insert new ones
+    await supabaseAdmin
+      .from('zone_card_slots')
+      .update({ is_active: false })
+      .eq('deployment_id', deployment.id)
+      .eq('is_active', true);
+
+    const { error: insertErr } = await supabaseAdmin
+      .from('zone_card_slots')
+      .insert(toInsert);
+
+    if (insertErr) {
+      console.error('update-loadout insert error:', insertErr.message);
+      return res.status(500).json({ error: 'Failed to save loadout' });
+    }
+
+    // Reload in combat engine immediately
+    try {
+      const combatEngine = require('../services/combatEngine');
+      if (combatEngine?.loadDeploymentIntoEngine) {
+        const { data: fullDep } = await supabaseAdmin
+          .from('zone_deployments')
+          .select('id, player_id, nine_id, zone_id, guild_tag, current_hp, nine:nine_id(house_id, name)')
+          .eq('id', deployment.id)
+          .single();
+        if (fullDep) await combatEngine.loadDeploymentIntoEngine({
+          ...fullDep,
+          nine: { house_id: fullDep.nine?.house_id, name: fullDep.nine?.name || 'Unknown' },
+        });
+      }
+    } catch (e) { console.error('Engine reload error:', e.message); }
+
+    console.log(`✅ Loadout updated: player ${player_id} zone ${zone_id} [${toInsert.length} cards]`);
+    res.json({ success: true, slots: toInsert.length });
+
+  } catch (err) {
+    console.error('update-loadout error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ═══════════════════════════════════════════
 // POST /api/zones/equip-card
 // Equip a card to one of your 3 loadout slots
 // V5: FREE — no mana cost, no tiers
@@ -215,8 +348,8 @@ router.post('/equip-card', async (req, res) => {
       return res.status(400).json({ error: `slot_number must be 1-${MAX_CARDS_PER_ZONE}` });
     }
 
-    // Find active deployment on this zone
-    const { data: deployment } = await supabase
+    // Find active deployment — use admin client to bypass RLS
+    const { data: deployment } = await supabaseAdmin
       .from('zone_deployments')
       .select('id')
       .eq('player_id', player_id)
@@ -228,8 +361,8 @@ router.post('/equip-card', async (req, res) => {
       return res.status(400).json({ error: 'Not deployed on this zone — deploy first' });
     }
 
-    // Get the card from player's collection
-    const { data: card } = await supabase
+    // Get the card from player's collection — use admin client
+    const { data: card } = await supabaseAdmin
       .from('player_cards')
       .select('*, spell:spell_id(name, spell_type, rarity, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects)')
       .eq('id', card_id)
@@ -240,11 +373,8 @@ router.post('/equip-card', async (req, res) => {
       return res.status(404).json({ error: 'Card not found in your collection' });
     }
 
-    // V5: Check sharpness instead of exhaustion — 0% sharpness still works (50% power)
-    // Cards can always be equipped, sharpness just affects effectiveness
-
-    // Check card isn't already equipped on ANOTHER zone
-    const { data: existingSlots } = await supabase
+    // Check card isn't already equipped on ANOTHER zone — use admin client
+    const { data: existingSlots } = await supabaseAdmin
       .from('zone_card_slots')
       .select('id, deployment:deployment_id(zone_id)')
       .eq('card_id', card_id)

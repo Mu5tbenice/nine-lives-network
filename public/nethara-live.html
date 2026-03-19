@@ -6273,21 +6273,28 @@
 
   /** Deploy to zone — sends selected card IDs */
   // Equip the currently selected cards into slots — works for fresh deploy AND re-equip
+  /** Replace all 3 card slots server-side in one call — uses supabaseAdmin, no RLS issues */
   async function equipSelectedCards() {
-    const results = await Promise.all(state.selectedCards.map((c, i) =>
-      fetch('/api/zones/equip-card', {
+    const cardIds = state.selectedCards.map(c => Number(c.cardId)).filter(Boolean);
+    if (cardIds.length === 0) return { success: false, failed: [{ error: 'No cards selected' }] };
+    try {
+      const r = await fetch('/api/zones/update-loadout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           player_id: Number(state.playerId),
           zone_id: Number(state.currentZoneId),
-          card_id: Number(c.cardId),
-          slot_number: i + 1,
+          card_ids: cardIds,
         }),
-      }).then(r => r.json()).catch(() => null)
-    ));
-    const failed = results.filter(r => !r || !r.success);
-    return { success: failed.length === 0, failed };
+      });
+      const data = await r.json();
+      if (data.success) return { success: true, failed: [] };
+      console.error('update-loadout failed:', data.error);
+      return { success: false, failed: [data] };
+    } catch(e) {
+      console.error('update-loadout error:', e);
+      return { success: false, failed: [{ error: e.message }] };
+    }
   }
 
   // Apply the deployed state to the UI after a successful deploy or re-equip
