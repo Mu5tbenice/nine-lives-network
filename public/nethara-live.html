@@ -5601,6 +5601,9 @@
       const sharpColor = sharpness > 60 ? 'var(--cyan)' : sharpness > 30 ? 'var(--gold)' : 'var(--red)';
 
       const effects = [];
+      // Primary effect FIRST — must always be visible
+      const eff = card.effect_1 || card.base_effect || ''; if (eff) effects.push(eff);
+      // Bonus effects after
       try {
         if (card.bonus_effects) {
           const effs = Array.isArray(card.bonus_effects) ? card.bonus_effects
@@ -5608,7 +5611,6 @@
           effs.forEach(e => effects.push(typeof e === 'string' ? e : (e.tag || e.name || '')));
         }
       } catch(e) {}
-      const eff = card.effect_1 || card.base_effect || ''; if (eff) effects.push(eff);
 
       // Effect pills HTML
       const effectPills = effects.filter(Boolean).slice(0, 3).map(e => {
@@ -6270,6 +6272,10 @@
       const data = await res.json();
 
       if (data.success) {
+        // Deployment record created — now save the card selection to the database
+        if (!state._deployNoCards && state.selectedCards.length > 0) {
+          await equipSelectedCards();
+        }
         applyDeployedUI(data.message);
       } else if (data.error && data.error.toLowerCase().includes('already deployed')) {
         // Already deployed — just equip cards via separate calls
