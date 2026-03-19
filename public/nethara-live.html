@@ -1439,7 +1439,7 @@
         const hColor  = HOUSE_BONUS_COLORS[dominantHouse] || '#D4A64B';
         const hLogoSrc = HOUSE_LOGO_PATHS[dominantHouse] || '';
         const hLogoEl = hLogoSrc
-          ? '<img src="' + hLogoSrc + '" style="width:14px;height:14px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 3px ' + hColor + '88);" onerror="this.style.display='none'">'
+          ? '<img src="' + hLogoSrc + '" style="width:14px;height:14px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 3px ' + hColor + '88);" onerror="this.style.display=\'none\'">'
           : '';
         identityHTML += '<span class="zone-house-bonus-pill" style="color:' + hColor + ';background:' + hColor + '18;border:1px solid ' + hColor + '35;">'
           + hLogoEl + ' ' + houseBonusLabel
