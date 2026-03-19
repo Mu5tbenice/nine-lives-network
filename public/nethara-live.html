@@ -3197,12 +3197,8 @@
     state.socket = socket;
 
     socket.on('connect', () => {
-      console.log('🔌 Socket connected! Joining zone', zoneId);
       socket.emit('join_zone', { zoneId });
       addFeedEvent('Connected to arena', 'system');
-    });
-    socket.on('connect_error', (err) => {
-      console.log('🔌 Socket connect error:', err.message);
     });
 
     // Current state (on first join) — engine sends snapshot with combat positions
@@ -3345,7 +3341,9 @@
         animateKO(sprite);
         showFloatingText(sprite.container.x, sprite.container.y, 'KO!', 0xff4466, 20);
         addFeedEvent(`💀 ${data.name || 'A Nine'} was knocked out!`, 'ko');
-        renderGuildSidebar(); // refresh guild HP totals
+        renderGuildSidebar();
+        // Remove ghost sprite after animation completes (1.5s)
+        setTimeout(() => removeNineSprite(nineId), 1500);
       }
       // If YOUR Nine got KO'd, show KO overlay with countdown
       if (nineId == state.playerId) {
@@ -3624,6 +3622,7 @@
         renderGuildSidebar();
       }
       addFeedEvent(`💀 <span class="feed-name">${data.nine || getNineName(koId)}</span> was KO'd!`, 'ko');
+      setTimeout(() => removeNineSprite(koId), 1500);
       if (koId == state.playerId) {
         state.isDeployed = false;
         showKOOverlay(null);
