@@ -58,6 +58,21 @@ const HOUSE_BONUSES = {
 
 // In-memory cache: zoneId → { house, bonus } loaded at startup + refreshed nightly
 const zoneBonusCache = new Map();
+
+// ─── SCHOOL_ID → HOUSE KEY (DB stores numeric IDs, engine needs strings) ──────
+const SCHOOL_TO_HOUSE = {
+  1:'smoulders', 2:'darktide',  3:'stonebark', 4:'ashenvale', 5:'stormrage',
+  6:'nighthollow', 7:'dawnbringer', 8:'manastorm', 9:'plaguemire',
+};
+function resolveHouseKey(raw) {
+  if (!raw) return 'stormrage';
+  if (typeof raw === 'string' && HOUSE_STATS[raw]) return raw;
+  const n = parseInt(raw);
+  if (!isNaN(n) && SCHOOL_TO_HOUSE[n]) return SCHOOL_TO_HOUSE[n];
+  if (SCHOOL_TO_HOUSE[raw]) return SCHOOL_TO_HOUSE[raw];
+  return 'stormrage';
+}
+
 const atkInterval  = spd => Math.max(SPD_FLOOR, 10.5 - spd * 0.12);
 const cardInterval = spd => Math.max(5.5, 12.0 - spd * 0.10);
 const dist         = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
@@ -97,7 +112,8 @@ let _tickInt=null, _snapInt=null, _nextSnap=Date.now()+SNAPSHOT_MS;
 
 // ─── BUILD NINE STATE ─────────────────────────────────────────────────
 function buildNineState(dep, nine, cards, zoneBonus) {
-  const h = HOUSE_STATS[nine.house_key || nine.house_id] || HOUSE_STATS.stormrage;
+  const houseKey = resolveHouseKey(nine.house_key || nine.house_id);
+  const h = HOUSE_STATS[houseKey] || HOUSE_STATS.stormrage;
   const atk  = h.atk  + cards.reduce((s,c)=>s+(c.base_atk ||0),0);
   let   hp   = h.hp   + cards.reduce((s,c)=>s+(c.base_hp  ||0),0);
   let   spd  = h.spd  + cards.reduce((s,c)=>s+(c.base_spd ||0),0);
@@ -113,7 +129,7 @@ function buildNineState(dep, nine, cards, zoneBonus) {
   const y = ZONE_MARGIN + Math.random()*(ZONE_H-ZONE_MARGIN*2);
   return {
     deploymentId: String(dep.id), playerId: dep.player_id, nineId: dep.nine_id,
-    guildTag: dep.guild_tag||'lone_wolf', playerName: nine.name||'Unknown', houseKey: nine.house_id||'stormrage',
+    guildTag: dep.guild_tag||'lone_wolf', playerName: nine.name||'Unknown', houseKey,
     stats:{atk,hp,spd,def,luck}, cards,
     hp, maxHp:hp, x, y, destX:x, destY:y,
     moveSpeed: 30 + spd*1.2,
@@ -528,7 +544,7 @@ async function loadDeploymentIntoEngine(dep){
 
   const nine=dep.nine||{};
   const zoneBonus = getZoneBonus(String(dep.zone_id));
-  const state=buildNineState(dep,{house_key:nine.house_id||nine.house_key||'stormrage',name:nine.name||'Unknown'},cards,zoneBonus);
+  const state=buildNineState(dep,{house_key: resolveHouseKey(nine.house_id||nine.house_key), name:nine.name||'Unknown'},cards,zoneBonus);
   if(dep.current_hp>0) state.hp=Math.min(state.maxHp,dep.current_hp);
 
   // Zone bonus: plaguemire — newly deployed Nine enters with enemies pre-poisoned

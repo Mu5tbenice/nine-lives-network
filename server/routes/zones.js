@@ -656,7 +656,26 @@ router.get('/', async (req, res) => {
       .eq('is_active', true)
       .order('id');
     if (error) return res.status(500).json({ error: error.message });
-    res.json(zones || []);
+
+    // Merge in live zone_control data (dominant_house + controlling_guild)
+    // This fills the zone identity pills without waiting for the nightly scheduler
+    const { data: control } = await supabaseAdmin
+      .from('zone_control')
+      .select('zone_id, controlling_guild, dominant_house');
+
+    const controlMap = {};
+    (control || []).forEach(c => { controlMap[c.zone_id] = c; });
+
+    const merged = (zones || []).map(z => ({
+      ...z,
+      controlling_guild: controlMap[z.id]?.controlling_guild || z.controlling_guild || null,
+      dominant_house:    controlMap[z.id]?.dominant_house    || z.dominant_house    || null,
+      house_bonus_label: z.house_bonus_label || (controlMap[z.id]?.dominant_house
+        ? HOUSE_BONUSES[controlMap[z.id].dominant_house]?.label || null
+        : null),
+    }));
+
+    res.json(merged);
   } catch (err) {
     console.error('Error fetching zones:', err);
     res.status(500).json({ error: 'Failed to fetch zones' });

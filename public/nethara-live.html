@@ -3573,17 +3573,33 @@
       if (!data.nines) return;
       data.nines.forEach((d) => {
         const screenPos = engineToScreen({ x: d.x, y: d.y });
-        const sprite = state.nines.get(resolveId(d.id));
+        const resolvedId = resolveId(d.id);
+        let sprite = state.nines.get(resolvedId);
+
+        // Create sprite if it doesn't exist yet (e.g. player was already fighting when we joined)
+        if (!sprite && state.arenaApp && d.houseKey) {
+          addNineSprite({
+            id: d.id,
+            name: d.playerName || String(d.id).slice(0, 8),
+            house: d.houseKey,
+            guild_id: d.guildTag,
+            guild_name: d.guildTag,
+            current_hp: d.hp,
+            max_hp: d.maxHp,
+            position: screenPos,
+            stats: {},
+          });
+          sprite = state.nines.get(resolvedId);
+        }
+
         if (sprite) {
-          // Set target — PIXI ticker will smoothly interpolate toward it
           sprite.targetX = screenPos.x;
           sprite.targetY = screenPos.y;
-          // HP update
-          updateNineHP(resolveId(d.id), d.hp, d.maxHp);
-          // Status rings
+          if (d.houseKey) sprite.house = d.houseKey; // sync house from engine
+          if (d.guildTag) sprite.guild = d.guildTag; // sync guild from engine
+          updateNineHP(resolvedId, d.hp, d.maxHp);
           updateStatusRings(sprite, d.status, d.activeEffect);
         }
-        // Sync guild sidebar HP totals periodically
       });
       updateHpStrip();
     });
@@ -3627,13 +3643,17 @@
 
       const from = data.attacker || getNineName(fromId);
       const to   = data.defender || getNineName(toId);
-      const critPart = data.crit ? ' <span class="feed-crit">★ CRIT!</span>' : '';
+      const critPart = data.crit ? ` <span class="feed-crit">★${data.critMult && data.critMult > 2 ? data.critMult + '×' : ''} CRIT!</span>` : '';
       const effectPart = data.effect ? ` <span class="feed-effect">[${data.effect}]</span>` : '';
       if (data.crit || data.effect) {
         addFeedEvent(`⚔️ <span class="feed-name">${from}</span> → <span class="feed-name">${to}</span> <span class="feed-dmg">-${dmg}</span>${critPart}${effectPart}`, 'attack');
       }
       addBattleLog(`⚔️ ${from} → ${to} -${dmg}${data.crit ? ' CRIT' : ''}${data.effect ? ' ['+data.effect+']' : ''} (slot ${data.slot||1})`, 'default');
-      if (dmg > 0 && attacker) trackCombatStat(fromId, from, attacker.guild, attacker.house, 'damage', dmg);
+      if (dmg > 0) {
+        const atkGuild = attacker?.guild || data.guildA || '';
+        const atkHouse = attacker?.house || '';
+        trackCombatStat(fromId, from, atkGuild, atkHouse, 'damage', dmg);
+      }
     });
 
     // Effect fired — show visual on target
@@ -5816,13 +5836,6 @@
       document.getElementById('arena-bottom-tray').style.display = 'none';
       return;
     }
-    // If we just deployed within the last 15s and already have cards rendered,
-    // skip the server check entirely — equip-card calls may still be committing.
-    // The localStorage cache already has the correct cards.
-    if (state._deployedAt && (Date.now() - state._deployedAt) < 15000 && state.equippedCards.length > 0) {
-      return;
-    }
-
     try {
       const res = await fetch(`/api/zones/my-deployments/${state.playerId}`);
       const data = await res.json();
@@ -6681,6 +6694,7 @@
   if (!state._metersTab) state._metersTab = 'dmg';
 
   // Called on every tracked combat event — increments live totals
+  let _metersRenderPending = false;
   function trackCombatStat(id, name, guild, house, stat, amount) {
     if (!id || !amount) return;
     const m = state.combatMetrics.get(id) || { name: name || String(id).slice(0,8), guild: guild || '', house: house || '', damage: 0, heals: 0, kos: 0, cards: {} };
@@ -6689,7 +6703,11 @@
     m.house = house || m.house;
     m[stat] = (m[stat] || 0) + amount;
     state.combatMetrics.set(id, m);
-    renderCombatMeters();
+    // Throttle DOM re-render — at most once per 3 seconds
+    if (!_metersRenderPending) {
+      _metersRenderPending = true;
+      setTimeout(() => { _metersRenderPending = false; renderCombatMeters(); }, 3000);
+    }
   }
 
   function trackCardUsed(id, cardName) {
