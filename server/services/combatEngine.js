@@ -478,32 +478,40 @@ async function loadDeploymentIntoEngine(dep){
   if(!zones.has(zoneId)) zones.set(zoneId,{nines:new Map(),tick:0});
 
   // Step 1: Get active card slots for this deployment
-  const {data:slots} = await supabaseAdmin
+  const {data:slots, error:slotErr} = await supabaseAdmin
     .from('zone_card_slots')
     .select('slot_number, card_id')
     .eq('deployment_id', dep.id)
     .eq('is_active', true)
     .order('slot_number');
 
+  console.log(`🔍 [engine] dep.id=${dep.id} zone=${zoneId} slots=${slots?.length??'null'} slotErr=${slotErr?.message||'none'}`);
+
   let cards = [];
 
   if (slots && slots.length > 0) {
     const cardIds = slots.map(s => s.card_id).filter(Boolean);
+    console.log(`🔍 [engine] cardIds=${JSON.stringify(cardIds)}`);
 
     // Step 2: Get player_cards to find spell_ids
-    const {data:playerCards} = await supabaseAdmin
+    const {data:playerCards, error:pcErr} = await supabaseAdmin
       .from('player_cards')
       .select('id, spell_id')
       .in('id', cardIds);
 
+    console.log(`🔍 [engine] playerCards=${playerCards?.length??'null'} pcErr=${pcErr?.message||'none'}`);
+
     if (playerCards && playerCards.length > 0) {
       const spellIds = playerCards.map(c => c.spell_id).filter(Boolean);
+      console.log(`🔍 [engine] spellIds=${JSON.stringify(spellIds)}`);
 
       // Step 3: Get spell data
-      const {data:spells} = await supabaseAdmin
+      const {data:spells, error:spellErr} = await supabaseAdmin
         .from('spells')
         .select('id, slug, name, card_type, house, base_atk, base_hp, base_spd, base_def, base_luck, effect_1, rarity')
         .in('id', spellIds);
+
+      console.log(`🔍 [engine] spells=${spells?.length??'null'} spellErr=${spellErr?.message||'none'}`);
 
       // Step 4: Assemble — match slots → player_cards → spells
       const pcMap = {};
