@@ -358,15 +358,6 @@
 .sc-rarity--legendary { background: rgba(255,200,0,0.12);   border: 1px solid rgba(255,200,0,0.3);    color: #ffd700; box-shadow: 0 0 6px rgba(255,200,0,0.15); }
 
 /* ═══ EFFECT TEXT ═══ */
-.sc-effect {
-  padding: 0;
-}
-.sc-effect__base {
-  font-family: var(--font-body);
-  font-size: 12px;
-  line-height: 1.3;
-}
-
 /* ═══ EFFECT PILLS — with tooltip ═══ */
 .sc-pills {
   display: flex;
