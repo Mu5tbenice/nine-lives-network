@@ -5944,11 +5944,11 @@
       }).join('');
 
       slotEl.className = 'arena-card-slot';
-      slotEl.style.cssText = `
-        border: 1px solid ${hColor}50;
-        background: linear-gradient(160deg, ${hColor}14 0%, rgba(8,6,18,0.9) 60%);
-        position: relative; overflow: hidden; cursor: pointer;
-      `;
+      slotEl.style.position = 'relative';
+      slotEl.style.overflow = 'hidden';
+      slotEl.style.cursor = 'pointer';
+      slotEl.style.border = `1px solid ${hColor}50`;
+      slotEl.style.background = `linear-gradient(160deg, ${hColor}14 0%, rgba(8,6,18,0.9) 60%)`;
 
       // Stat mini-row — only show non-zero stats
       const statParts = [];
@@ -6231,7 +6231,7 @@
                 base_spd: slot.base_spd ?? 0,
                 base_def: slot.base_def ?? 0,
                 base_luck: slot.base_luck ?? 0,
-                bonus_effects: slot.bonus_effects || [],
+                bonus_effects: [], // V3: one effect per card
                 base_effect: slot.effect_1 || '',
                 effect_1: slot.effect_1 || '',
                 flavor_text: slot.flavor_text || '',
@@ -6268,7 +6268,7 @@
                     base_spd: c.base_spd ?? s.base_spd ?? 0,
                     base_def: c.base_def ?? s.base_def ?? 0,
                     base_luck: c.base_luck ?? s.base_luck ?? 0,
-                    bonus_effects: c.bonus_effects || c.spell_effects || s.bonus_effects || [],
+                    bonus_effects: [], // V3: one effect per card
                     image_url: c.image_url || s.image_url || '',
                     sharpness: c.sharpness ?? 100,
                   };
@@ -6485,7 +6485,7 @@
           base_spd: c.base_spd ?? s.base_spd ?? 0,
           base_def: c.base_def ?? s.base_def ?? 0,
           base_luck: c.base_luck ?? s.base_luck ?? 0,
-          bonus_effects: c.bonus_effects || c.spell_effects || s.bonus_effects || [],
+          bonus_effects: [], // V3: one effect per card — always clear bonus_effects
           base_effect: c.effect_1 || c.base_effect || s.effect_1 || s.base_effect || '',
           effect_1: c.effect_1 || c.base_effect || s.effect_1 || s.base_effect || '',
           flavor_text: c.flavor_text || s.flavor_text || '',
@@ -6743,7 +6743,7 @@
           base_luck: slot.base_luck ?? 0,
           effect_1: slot.effect_1 || '',
           base_effect: slot.effect_1 || '',
-          bonus_effects: slot.bonus_effects || [],
+          bonus_effects: [], // V3: one effect per card
           sharpness: slot.sharpness ?? 100,
           slot_number: slot.slot_number,
         })).filter(Boolean);

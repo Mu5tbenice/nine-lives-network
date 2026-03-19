@@ -460,9 +460,8 @@ async function loadData() {
           base_spd: s.base_spd || 0,
           base_def: s.base_def || 0,
           base_luck: s.base_luck || 0,
-          effect_1: s.effect_1 || s.base_effect || '',
-          base_effect: s.effect_1 || s.base_effect || '',
-          bonus_effects: parseEffects(s.bonus_effects || s.effect_tags || []),
+          effect_1: s.effect_1 || '',
+          bonus_effects: [], // V3: cleared — use effect_1 only
           flavor_text: s.flavor_text || s.motto || '',
           image_url: s.image_url || ''
         };
@@ -501,8 +500,9 @@ function normalizePlayerCard(c) {
   var sp = c.spell || {};
   var spellName = (c.spell_name || sp.name || c.name || 'Unknown').toLowerCase();
   var ref = spellLookup[spellName] || {};
-  var effects = parseEffects(c.spell_effects || sp.bonus_effects || ref.bonus_effects || []);
-  var eff1 = c.effect_1 || sp.effect_1 || ref.effect_1 || sp.base_effect || ref.base_effect || (effects.length ? (effects[0].tag || effects[0].key || effects[0]) : '');
+  // V3: one effect per card — effect_1 is the single source of truth
+  var eff1 = sp.effect_1 || c.effect_1 || ref.effect_1 || '';
+  var effects = eff1 ? [eff1] : [];
 
   return {
     id: c.id,
@@ -518,10 +518,10 @@ function normalizePlayerCard(c) {
     base_spd: sp.base_spd || ref.base_spd || 0,
     base_def: sp.base_def || ref.base_def || 0,
     base_luck: sp.base_luck || ref.base_luck || 0,
-    effect_1: eff1,
     base_effect: eff1,
+    effect_1: eff1,
     effects: effects,
-    bonus_effects: effects,
+    bonus_effects: [], // V3: always empty — single effect via effect_1 only
     flavor_text: sp.flavor_text || ref.flavor_text || '',
     image_url: sp.image_url || ref.image_url || '',
     sharpness: c.sharpness != null ? c.sharpness : (c.current_charges != null ? Math.round((c.current_charges / (c.max_charges || 1)) * 100) : 100),
