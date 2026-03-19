@@ -17,15 +17,15 @@
 
 // ── HOUSE DATA (fallback if page doesn't define HOUSES) ──
 var CARD_HOUSES = {
-  smoulders:   { name: "Smoulders",   color: "#E03C31", img: "/assets/images/houses/smoulders.png" },
-  darktide:    { name: "Darktide",    color: "#00B4D8", img: "/assets/images/houses/darktide.png" },
-  stonebark:   { name: "Stonebark",   color: "#5CB338", img: "/assets/images/houses/stonebark.png" },
-  ashenvale:   { name: "Ashenvale",   color: "#B0C4DE", img: "/assets/images/houses/ashenvale.png" },
-  stormrage:   { name: "Stormrage",   color: "#FFC800", img: "/assets/images/houses/stormrage.png" },
-  nighthollow: { name: "Nighthollow", color: "#7B2D8E", img: "/assets/images/houses/nighthollow.png" },
-  dawnbringer: { name: "Dawnbringer", color: "#FF8C00", img: "/assets/images/houses/dawnbringer.png" },
-  manastorm:   { name: "Manastorm",   color: "#5B8FE0", img: "/assets/images/houses/manastorm.png" },
-  plaguemire:  { name: "Plaguemire",  color: "#E84393", img: "/assets/images/houses/plaguemire.png" },
+  smoulders:   { name: "Smoulders",   color: "#E03C31", img: "/assets/images/houses/House-smoulders.png" },
+  darktide:    { name: "Darktide",    color: "#00B4D8", img: "/assets/images/houses/House-darktide.png" },
+  stonebark:   { name: "Stonebark",   color: "#5CB338", img: "/assets/images/houses/House-stonebark.png" },
+  ashenvale:   { name: "Ashenvale",   color: "#B0C4DE", img: "/assets/images/houses/House-Ashenvale.png" },
+  stormrage:   { name: "Stormrage",   color: "#FFC800", img: "/assets/images/houses/House-stormrage.png" },
+  nighthollow: { name: "Nighthollow", color: "#7B2D8E", img: "/assets/images/houses/House-nighthollow.png" },
+  dawnbringer: { name: "Dawnbringer", color: "#FF8C00", img: "/assets/images/houses/House-dawnbringer.png" },
+  manastorm:   { name: "Manastorm",   color: "#5B8FE0", img: "/assets/images/houses/House-manastorm.png" },
+  plaguemire:  { name: "Plaguemire",  color: "#E84393", img: "/assets/images/houses/House-plaguemire.png" },
   universal:   { name: "Universal",   color: "#D4A64B", img: "" },
 };
 
@@ -178,10 +178,16 @@ function buildCardV4(s, options) {
   var houseName = h.name || 'Universal';
   var houseImg = h.img || '';
 
-  // Resolve effects
-  // V3: single effect per card via effect_1 — ignore old bonus_effects
+  // Resolve effects — works regardless of which field the page uses:
+  // V3 engine sends effect_1. Spellbook sends bonus_effects[]. Both work.
   var bn = [];
   var _e1 = s.effect_1 || s.base_effect || '';
+  if (!_e1 || _e1 === '—' || _e1 === '-') {
+    // Fall back to bonus_effects / effects array (spellbook path)
+    var _arr = s.bonus_effects || s.effects || [];
+    if (typeof _arr === 'string') { try { _arr = JSON.parse(_arr); } catch(e) { _arr = []; } }
+    if (Array.isArray(_arr) && _arr.length > 0) _e1 = _arr[0].tag || _arr[0].key || _arr[0] || '';
+  }
   if (_e1 && _e1 !== '—' && _e1 !== '-') bn = [_e1];
 
   // Resolve rarity

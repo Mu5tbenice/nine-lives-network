@@ -226,6 +226,22 @@
     }
     .zone-casters { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--faint); }
 
+    /* Zone identity — house bonus + guild branding */
+    .zone-identity-row {
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px;
+    }
+    .zone-house-bonus-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: 'Press Start 2P', monospace; font-size: 6px;
+      padding: 3px 7px; border-radius: 20px; white-space: nowrap;
+    }
+    .zone-branded-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--muted);
+      padding: 3px 7px; border-radius: 20px; white-space: nowrap;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    }
+
     /* ====== ARENA VIEW ====== */
     #arena-view { display: none; position: fixed; top: var(--nav-height); left: 0; width: 100vw; height: calc(100vh - var(--nav-height)); z-index: 50; background: var(--bg); }
     #arena-canvas canvas { display: block; }
@@ -1346,15 +1362,34 @@
   };
 
   const HOUSE_CREST_IMAGES = {
-    smoulders:   '/assets/images/houses/Housesmoulders.png',
-    darktide:    '/assets/images/houses/Housedarktide.png',
-    stonebark:   '/assets/images/houses/Housestonebark.png',
-    ashenvale:   '/assets/images/houses/HouseAshenvale.png',
-    stormrage:   '/assets/images/houses/Housestormrage.png',
-    nighthollow: '/assets/images/houses/Housenighthollow.png',
-    dawnbringer: '/assets/images/houses/HouseDwnbringer.png',
-    manastorm:   '/assets/images/houses/Housemanastorm.png',
-    plaguemire:  '/assets/images/houses/Houseplaguemire.png',
+    smoulders:   '/assets/images/houses/House-smoulders.png',
+    darktide:    '/assets/images/houses/House-darktide.png',
+    stonebark:   '/assets/images/houses/House-stonebark.png',
+    ashenvale:   '/assets/images/houses/House-Ashenvale.png',
+    stormrage:   '/assets/images/houses/House-stormrage.png',
+    nighthollow: '/assets/images/houses/House-nighthollow.png',
+    dawnbringer: '/assets/images/houses/House-dawnbringer.png',
+    manastorm:   '/assets/images/houses/House-manastorm.png',
+    plaguemire:  '/assets/images/houses/House-plaguemire.png',
+  };
+
+  // House bonus color map for zone identity pills
+  const HOUSE_BONUS_COLORS = {
+    smoulders:   '#e85a6a', darktide: '#6ac8d8', stonebark:   '#6acd8a',
+    ashenvale:   '#90E0EF', stormrage:'#D4A64B', nighthollow: '#b088e8',
+    dawnbringer: '#ffdd88', manastorm:'#55aaff', plaguemire:  '#88cc44',
+  };
+  // Actual filenames from /public/assets/images/houses/
+  const HOUSE_LOGO_PATHS = {
+    smoulders:   '/assets/images/houses/House-smoulders.png',
+    darktide:    '/assets/images/houses/House-darktide.png',
+    stonebark:   '/assets/images/houses/House-stonebark.png',
+    ashenvale:   '/assets/images/houses/House-Ashenvale.png',
+    stormrage:   '/assets/images/houses/House-stormrage.png',
+    nighthollow: '/assets/images/houses/House-nighthollow.png',
+    dawnbringer: '/assets/images/houses/House-dawnbringer.png',
+    manastorm:   '/assets/images/houses/House-manastorm.png',
+    plaguemire:  '/assets/images/houses/House-plaguemire.png',
   };
 
   function buildZoneCard(zone) {
@@ -1363,6 +1398,11 @@
     const effects = zone.active_effects || zone.effects || [];
     const isObjective = zone.daily_objective || zone.is_current_objective || false;
     const ctrlGuild = zone.controlling_guild || zone.controlling_guild_tag || null;
+
+    // Zone identity (from yesterday's fighter presence — columns on zones table)
+    const dominantHouse  = zone.dominant_house  || null;
+    const brandedGuild   = zone.branded_guild   || null;
+    const houseBonusLabel = zone.house_bonus_label || null;
 
     // Image banner with fighter count (always shown) and gold zone name
     const fighterBadge = '<div class="zone-card-fighter-count">\u2694\uFE0F ' + casters + '</div>';
@@ -1380,12 +1420,40 @@
       ? '<div class="zone-objective-banner">\u2B50 DAILY OBJECTIVE \u2014 \u00D71.5 POINTS</div>'
       : '';
 
-    // Card body: show controlling guild (snapshot winner) or "unclaimed"
+    // Card body: controlling guild (current snapshot leader)
     let bodyHTML = '';
     if (ctrlGuild) {
-      bodyHTML = '<span class="zone-guild-leader-pill" style="color:var(--gold);background:rgba(212,166,75,0.12);border-color:rgba(212,166,75,0.35);">'        + '<span style="width:6px;height:6px;border-radius:50%;background:var(--gold);display:inline-block;flex-shrink:0;"></span>'        + '\uD83C\uDFF0 ' + ctrlGuild        + '</span>';
+      bodyHTML = '<span class="zone-guild-leader-pill" style="color:var(--gold);background:rgba(212,166,75,0.12);border-color:rgba(212,166,75,0.35);">'
+        + '<span style="width:6px;height:6px;border-radius:50%;background:var(--gold);display:inline-block;flex-shrink:0;"></span>'
+        + '\uD83C\uDFF0 ' + ctrlGuild
+        + '</span>';
     } else {
       bodyHTML = '<span style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--faint);">Unclaimed \u2014 deploy to capture!</span>';
+    }
+
+    // Zone identity row — house bonus pill + guild branding pill
+    let identityHTML = '';
+    if (dominantHouse || brandedGuild) {
+      identityHTML = '<div class="zone-identity-row">';
+      if (dominantHouse && houseBonusLabel) {
+        const hColor  = HOUSE_BONUS_COLORS[dominantHouse] || '#D4A64B';
+        const hLogoSrc = HOUSE_LOGO_PATHS[dominantHouse] || '';
+        const hLogoEl = hLogoSrc
+          ? '<img src="' + hLogoSrc + '" style="width:14px;height:14px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 3px ' + hColor + '88);" onerror="this.style.display='none'">'
+          : '';
+        identityHTML += '<span class="zone-house-bonus-pill" style="color:' + hColor + ';background:' + hColor + '18;border:1px solid ' + hColor + '35;">'
+          + hLogoEl + ' ' + houseBonusLabel
+          + '</span>';
+      }
+      if (brandedGuild) {
+        identityHTML += '<span class="zone-branded-pill"'
+          + ' style="background:linear-gradient(135deg,rgba(200,200,220,0.12),rgba(160,160,180,0.06));'
+          + 'border:1px solid rgba(200,200,230,0.28);color:#c8cce8;'
+          + 'box-shadow:0 1px 4px rgba(180,180,220,0.12),inset 0 1px 0 rgba(255,255,255,0.08);">'
+          + '⚔️ ' + brandedGuild
+          + '</span>';
+      }
+      identityHTML += '</div>';
     }
 
     // Effects pills (max 3)
@@ -1395,7 +1463,15 @@
       return '<span class="effect-pill" style="background:' + eColor + '15;color:' + eColor + ';border:1px solid ' + eColor + '30">' + eName + '</span>';
     }).join('');
 
-    return '<div class="zone-card" data-zone-id="' + zone.id + '">'      + imgBanner      + bannerHTML      + '<div class="zone-card-body">'        + bodyHTML        + (effectsHTML ? '<div class="effect-pills" style="margin-top:4px;">' + effectsHTML + '</div>' : '')      + '</div>'    + '</div>';
+    return '<div class="zone-card" data-zone-id="' + zone.id + '">'
+      + imgBanner
+      + bannerHTML
+      + '<div class="zone-card-body">'
+        + bodyHTML
+        + identityHTML
+        + (effectsHTML ? '<div class="effect-pills" style="margin-top:4px;">' + effectsHTML + '</div>' : '')
+      + '</div>'
+      + '</div>';
   }
 
   function renderRegionsTab(container) {
@@ -3606,6 +3682,17 @@
         spawnParticles(sprite.container.x, sprite.container.y, 0x88cc44, 5, 'poison');
       }
       if (data.hp != null) updateNineHP(tId, data.hp, data.maxHp);
+    });
+
+    // Zone regen tick (Darktide house bonus — 3% HP per minute)
+    socket.on('combat:regen', (data) => {
+      const rId = resolveId(data.nineId || data.nine);
+      const sprite = state.nines.get(rId);
+      if (sprite && data.amt) {
+        showFloatingText(sprite.container.x, sprite.container.y, '+' + data.amt, 0x6ac8d8, 10);
+        spawnParticles(sprite.container.x, sprite.container.y, 0x6ac8d8, 4, 'heal');
+      }
+      if (data.hp != null) updateNineHP(rId, data.hp, data.maxHp);
     });
 
     // KO from V3 engine
