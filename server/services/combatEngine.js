@@ -267,7 +267,13 @@ function applyEffect(caster, target, card, all) {
     case 'EXECUTE': caster._execute=true; break;
     default: break;
   }
-  broadcast(caster.zoneId,'combat:effect',{effect:e,by:caster.playerName,on:target?.playerName||null,x:caster.x,y:caster.y});
+  broadcast(caster.zoneId,'combat:effect',{
+    effect:e,
+    by:caster.playerName, casterId:caster.playerId,
+    on:target?.playerName||null, targetId:target?.playerId||null,
+    x:caster.x, y:caster.y,
+    tx:target?.x, ty:target?.y,
+  });
 }
 
 // ─── ATTACK RESOLUTION ───────────────────────────────────────────────
