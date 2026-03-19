@@ -425,7 +425,8 @@ async function tickZone(zoneId, zs) {
   broadcast(zoneId,'arena:positions',{
     zoneId,
     nines: Array.from(zs.nines.values()).map(n=>({
-      id:n.playerId, deploymentId:n.deploymentId, x:Math.round(n.x), y:Math.round(n.y),
+      id:n.playerId, deploymentId:n.deploymentId, playerName:n.playerName,
+      x:Math.round(n.x), y:Math.round(n.y),
       hp:n.hp, maxHp:n.maxHp, guildTag:n.guildTag, houseKey:n.houseKey,
       cardSlot:n.cardIdx%Math.max(1,n.cards.length),
       activeEffect: n.cards[n.cardIdx%Math.max(1,n.cards.length)]?.effect_1||null,

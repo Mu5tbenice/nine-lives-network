@@ -746,6 +746,63 @@
     .slot-casting-flash { animation: castFlash 0.4s ease-out; }
     @keyframes castFlash { 0% { background: rgba(212,166,75,0.4); } 100% { background: transparent; } }
 
+    /* ── Card active cast overlay — fills solid then drains to show cooldown ── */
+    .slot-cast-overlay {
+      position: absolute; inset: 0; border-radius: 10px; pointer-events: none;
+      opacity: 0; transition: none;
+    }
+    .slot-cast-overlay.casting {
+      opacity: 1;
+      animation: slotCastDrain var(--cast-duration, 6s) linear forwards;
+    }
+    @keyframes slotCastDrain {
+      0%   { opacity: 0.55; }
+      8%   { opacity: 0.45; }
+      100% { opacity: 0; }
+    }
+    /* Active card indicator — glowing border on the currently-firing slot */
+    .arena-card-slot.slot-active {
+      box-shadow: 0 0 0 2px var(--slot-color, var(--gold)), 0 0 12px var(--slot-color, var(--gold));
+    }
+
+    /* ── Always-visible nine info bar — above the tray ── */
+    #nine-info-bar {
+      position: absolute; left: 0; right: 300px; z-index: 24;
+      bottom: 280px; /* sits above the tray — adjust if tray height changes */
+      display: none;
+      background: rgba(8,6,18,0.92);
+      border-top: 1px solid rgba(255,255,255,0.09);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      backdrop-filter: blur(8px);
+      padding: 6px 14px;
+      flex-direction: row; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    #nine-info-bar.visible { display: flex; }
+    .nine-info-house-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .nine-info-hp-bar { flex: 1; min-width: 80px; max-width: 160px; height: 5px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+    .nine-info-hp-fill { height: 100%; background: linear-gradient(90deg,#44cc88,#66eebb); border-radius: 3px; transition: width 0.4s; }
+    .nine-info-stat { font-family: 'Press Start 2P', monospace; font-size: 6px; white-space: nowrap; }
+    .nine-info-hp-text { font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--green); white-space: nowrap; }
+
+    /* ── Auto-redeploy toggle ── */
+    .auto-redeploy-row {
+      display: flex; align-items: center; gap: 8px; margin-top: 6px;
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint);
+    }
+    .auto-redeploy-toggle {
+      width: 28px; height: 14px; border-radius: 7px; background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15); cursor: pointer; position: relative; transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .auto-redeploy-toggle.on { background: rgba(212,166,75,0.35); border-color: var(--gold); }
+    .auto-redeploy-toggle::after {
+      content: ''; position: absolute; top: 2px; left: 2px;
+      width: 8px; height: 8px; border-radius: 50%; background: var(--faint); transition: left 0.2s, background 0.2s;
+    }
+    .auto-redeploy-toggle.on::after { left: 16px; background: var(--gold); }
+
     /* (old card-slot overrides removed — now in bottom tray section) */
 
     /* Card popup overlay */
@@ -922,6 +979,16 @@
     <div id="scoreboard-rows"></div>
   </div>
 
+  <!-- ── Always-visible Nine info bar — shows house, HP and stats whenever in arena ── -->
+  <div id="nine-info-bar">
+    <div class="nine-info-house-dot" id="nine-info-dot"></div>
+    <div class="nine-info-hp-bar">
+      <div class="nine-info-hp-fill" id="nine-info-hp-fill" style="width:100%"></div>
+    </div>
+    <div class="nine-info-hp-text" id="nine-info-hp-text">--/--</div>
+    <div class="nine-info-stat" id="nine-info-stats" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+  </div>
+
   <!-- ═══════════════════════════════════════════════════
        UNIFIED BOTTOM PANEL — YOUR NINE + tabbed content
        Tabs: BUILD | CHAT | STATS | LOG
@@ -1041,6 +1108,10 @@
         <div class="ko-sub">Your Nine was knocked out.</div>
         <div class="ko-hint">REJOIN WINDOW CLOSING • WATCH THE FIGHT<br>CHAT AND STATS STILL ACTIVE</div>
         <button id="ko-rejoin-btn" onclick="dismissKOAndRejoin()">⚔️ REJOIN BATTLE</button>
+        <div class="auto-redeploy-row">
+          <div class="auto-redeploy-toggle" id="auto-redeploy-toggle" onclick="toggleAutoRedeploy()"></div>
+          <span id="auto-redeploy-label">AUTO-REJOIN</span>
+        </div>
         <div id="ko-expired-msg">WINDOW CLOSED — TOO SLOW</div>
       </div>
       <div class="ko-ring">
@@ -1128,8 +1199,8 @@
     currentZoneId: null,
     currentZone: null,
     socket: null,
-    arenaApp: null, // PixiJS app
-    nines: new Map(), // id → pixi sprite data
+    arenaApp: null,
+    nines: new Map(),
     selectedCards: [],
     playerCards: [],
     _deployNoCards: false,
@@ -1139,19 +1210,17 @@
     guildRoundWins: {},
     guildKOs: {},
     roundWins: {},
-    // Countdown timer
-    cycleEndTime: null,       // timestamp when next snapshot fires
-    countdownInterval: null,  // setInterval ref
-    currentRound: 0,          // legacy compat
-    totalRounds: 3,           // legacy compat
-    currentCycle: 0,          // legacy compat
-    isFighting: false,        // true when combat is active on zone
-    snapshotCount: 0,         // how many snapshots scored this session
-    // Equipped cards for this zone
+    cycleEndTime: null,
+    countdownInterval: null,
+    currentRound: 0,
+    totalRounds: 3,
+    currentCycle: 0,
+    isFighting: false,
+    snapshotCount: 0,
     equippedCards: [],
-    // Sidebar chart data: { [guildTag]: [dmg_per_snapshot, ...] }
     chartData: {},
     chartTick: 0,
+    _recentlyKOd: new Set(), // IDs of Nines KO'd in last 10s — prevents ghost re-spawn
   };
 
   // ===== HOUSE DATA =====
@@ -1891,6 +1960,8 @@
     state.chartTick = 0;
     renderSidebarChart();
     document.getElementById('arena-zone-name').textContent = zone.name;
+    // Show the persistent nine info bar
+    updateNineInfoBar();
     const h = HOUSES[zone.house || zone.region_house || SCHOOL_TO_HOUSE[zone.controlling_school_id] || SCHOOL_TO_HOUSE[zone.school_id]] || { color: '#888', icon: '❓' };
     document.getElementById('arena-zone-region').style.color = h.color;
     document.getElementById('arena-zone-region').textContent = `${h.icon} ${zone.region || zone.region_name || zone.description || ''}`;
@@ -2805,6 +2876,7 @@
         fill.style.transition = 'width 0.4s ease, background 0.4s ease';
       }
       if (text) text.textContent = `${hp}/${mhp}`;
+      updateNineInfoBar();
     }
   }
 
@@ -3577,8 +3649,12 @@
         const resolvedId = resolveId(d.id);
         let sprite = state.nines.get(resolvedId);
 
-        // Create sprite if it doesn't exist yet
-        if (!sprite && state.arenaApp && d.houseKey) {
+        // Create sprite if it doesn't exist yet (e.g. opponent already fighting when we joined)
+        // Guards: never re-create the current player's sprite if they're not deployed,
+        // and never re-create a sprite that was recently removed by KO
+        const isCurrentPlayer = String(resolvedId) === String(state.playerId);
+        const recentlyKOd = state._recentlyKOd && state._recentlyKOd.has(String(resolvedId));
+        if (!sprite && state.arenaApp && d.houseKey && !recentlyKOd && !(isCurrentPlayer && !state.isDeployed)) {
           addNineSprite({
             id: d.id,
             name: d.playerName || String(d.id).slice(0, 8),
@@ -3594,8 +3670,14 @@
         }
 
         if (sprite) {
-          sprite.targetX = screenPos.x;
-          sprite.targetY = screenPos.y;
+          // Only update target if position changed meaningfully — dead zone prevents
+          // constant micro-skating when engine nudges overlap resolution slightly
+          const dx = screenPos.x - (sprite.targetX || sprite.container.x);
+          const dy = screenPos.y - (sprite.targetY || sprite.container.y);
+          if (Math.sqrt(dx*dx + dy*dy) > 15) {
+            sprite.targetX = screenPos.x;
+            sprite.targetY = screenPos.y;
+          }
           if (d.houseKey) sprite.house = d.houseKey;
           if (d.guildTag) sprite.guild = d.guildTag;
           updateNineHP(resolvedId, d.hp, d.maxHp);
@@ -3663,6 +3745,12 @@
         addFeedEvent(`⚔️ <span class="feed-name">${from}</span> → <span class="feed-name">${to}</span> <span class="feed-dmg">-${dmg}</span>${critPart}${effectPart}`, 'attack');
       }
       addBattleLog(`⚔️ ${from} → ${to} -${dmg}${data.crit ? ' CRIT' : ''}${data.effect ? ' ['+data.effect+']' : ''} (slot ${data.slot||1})`, 'default');
+
+      // Trigger cast overlay on player's own cards
+      if (String(fromId) === String(state.playerId) && data.slot) {
+        triggerCardCastOverlay(data.slot - 1, attacker?.house);
+      }
+
       if (dmg > 0) {
         const atkGuild = attacker?.guild || data.guildA || '';
         const atkHouse = attacker?.house || '';
@@ -3767,6 +3855,12 @@
         renderGuildSidebar();
       }
       addFeedEvent(`💀 <span class="feed-name">${data.nine || getNineName(koId)}</span> was KO'd!`, 'ko');
+
+      // Mark as recently KO'd — prevents positions broadcast from re-creating ghost sprite
+      if (koId) {
+        state._recentlyKOd.add(String(koId));
+        setTimeout(() => state._recentlyKOd.delete(String(koId)), 10000);
+      }
 
       // Track KO in metrics for the KO'd player
       if (koId) {
@@ -5319,15 +5413,15 @@
       if (secondsLeft <= 0) {
         clearInterval(_koCountdownTimer);
         _koCountdownTimer = null;
-        // Window closed — disable rejoin and show expired message
         if (rejoinBtn) { rejoinBtn.disabled = true; rejoinBtn.textContent = '⛔ WINDOW CLOSED'; }
         if (expiredMsg) expiredMsg.style.display = 'block';
         if (numEl) numEl.textContent = '✗';
-        addFeedEvent('⏰ Redeploy window closed. Use the zone list to re-enter.', 'system');
-        // Auto-dismiss widget after 8s (don't kick to menu)
-        setTimeout(() => {
-          dismissKOOverlay();
-        }, 8000);
+        // Auto-redeploy if enabled and not expired
+        checkAutoRedeploy();
+        if (!_autoRedeployOn) {
+          addFeedEvent('⏰ Redeploy window closed. Use the zone list to re-enter.', 'system');
+          setTimeout(() => { dismissKOOverlay(); }, 8000);
+        }
       }
     }, 1000);
   }
@@ -5734,6 +5828,7 @@
     if (!slotsContainer) return;
 
     state.equippedCards = cards || [];
+    updateNineInfoBar(); // refresh stats bar whenever cards change
 
     // Swap build button handler
     const swapBtn = document.getElementById('btn-swap-build');
@@ -5861,6 +5956,133 @@
   function hideCardSlots() {
     const slotsContainer = document.getElementById('arena-card-slots');
     if (slotsContainer) slotsContainer.style.display = 'none';
+  }
+
+  // ─── ALWAYS-VISIBLE NINE INFO BAR ───────────────────────────────────
+  // Shows house colour, HP, and stats whenever the player is in the arena
+  function updateNineInfoBar() {
+    const bar = document.getElementById('nine-info-bar');
+    if (!bar) return;
+
+    const houseKey = state.playerHouse ? (SCHOOL_TO_HOUSE[state.playerHouse] || state.playerHouse) : 'stormrage';
+    const hColor = HOUSES[houseKey]?.color || '#D4A64B';
+
+    // Always show the bar when in the arena
+    bar.classList.add('visible');
+
+    // House dot colour
+    const dot = document.getElementById('nine-info-dot');
+    if (dot) dot.style.background = hColor;
+
+    // HP — from sprite if deployed, otherwise show --
+    const sprite = state.nines.get(state.playerId);
+    const hpFill = document.getElementById('nine-info-hp-fill');
+    const hpText = document.getElementById('nine-info-hp-text');
+    if (sprite) {
+      const pct = Math.max(0, sprite.hp / (sprite.maxHp || 1)) * 100;
+      const hpColor = pct > 50 ? '#44cc88' : pct > 25 ? '#ffaa44' : '#ff4466';
+      if (hpFill) { hpFill.style.width = pct + '%'; hpFill.style.background = hpColor; }
+      if (hpText) hpText.textContent = Math.round(sprite.hp) + '/' + sprite.maxHp;
+    } else {
+      if (hpFill) hpFill.style.width = '0%';
+      if (hpText) hpText.textContent = state.isDeployed ? '--/--' : 'NOT DEPLOYED';
+    }
+
+    // Stats
+    const statsEl = document.getElementById('nine-info-stats');
+    if (statsEl && state.equippedCards !== undefined) {
+      const HOUSE_BASE = {
+        stormrage:{atk:40,hp:280,spd:30,def:5,luck:15},smoulders:{atk:35,hp:350,spd:25,def:10,luck:10},
+        stonebark:{atk:12,hp:700,spd:10,def:40,luck:5},ashenvale:{atk:20,hp:380,spd:22,def:12,luck:15},
+        nighthollow:{atk:25,hp:360,spd:30,def:12,luck:25},dawnbringer:{atk:15,hp:620,spd:15,def:30,luck:5},
+        manastorm:{atk:30,hp:380,spd:25,def:15,luck:10},plaguemire:{atk:20,hp:450,spd:20,def:25,luck:10},
+        darktide:{atk:25,hp:450,spd:20,def:20,luck:10},
+      };
+      const b = HOUSE_BASE[houseKey] || HOUSE_BASE.stormrage;
+      let ca=0,ch=0,cs=0,cd=0,cl=0;
+      (state.equippedCards||[]).forEach(c=>{ca+=c.base_atk||0;ch+=c.base_hp||0;cs+=c.base_spd||0;cd+=c.base_def||0;cl+=c.base_luck||0;});
+      statsEl.innerHTML = `
+        <span style="color:#e85a6a">⚔${b.atk+ca}</span>
+        <span style="color:#6acd8a">♥${b.hp+ch}</span>
+        <span style="color:#6ac8d8">◈${b.spd+cs}</span>
+        <span style="color:#b088e8">⛊${b.def+cd}</span>
+        <span style="color:#D4A64B">★${b.luck+cl}</span>
+      `;
+    }
+  }
+
+  // ─── CARD CAST OVERLAY ──────────────────────────────────────────────
+  // When a card fires, its slot flashes solid colour then drains to clear
+  // Cycle interval from the engine formula: max(5.5, 12.0 - spd * 0.10) seconds
+  function triggerCardCastOverlay(slotIndex, houseKey) {
+    const slot = document.getElementById(`card-slot-${slotIndex}`);
+    if (!slot) return;
+    const hColor = HOUSES[houseKey || 'stormrage']?.color || '#D4A64B';
+
+    // Get or create the overlay div
+    let overlay = slot.querySelector('.slot-cast-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'slot-cast-overlay';
+      slot.style.position = 'relative';
+      slot.insertBefore(overlay, slot.firstChild);
+    }
+    overlay.style.background = hColor;
+
+    // Estimate cycle duration from current stats — default 7s
+    const houseKey2 = state.playerHouse ? (SCHOOL_TO_HOUSE[state.playerHouse] || 'stormrage') : 'stormrage';
+    const HOUSE_BASE_SPD = {stormrage:30,smoulders:25,stonebark:10,ashenvale:22,nighthollow:30,dawnbringer:15,manastorm:25,plaguemire:20,darktide:20};
+    const baseSpd = HOUSE_BASE_SPD[houseKey2] || 25;
+    const cardSpd = (state.equippedCards||[]).reduce((s,c)=>s+(c.base_spd||0),0);
+    const totalSpd = baseSpd + cardSpd;
+    const cycleSecs = Math.max(5.5, 12.0 - totalSpd * 0.10);
+
+    // Reset animation
+    overlay.classList.remove('casting');
+    overlay.style.setProperty('--cast-duration', cycleSecs + 's');
+    // Force reflow then add class to restart animation
+    void overlay.offsetWidth;
+    overlay.classList.add('casting');
+
+    // Active slot glow
+    slot.classList.add('slot-active');
+    slot.style.setProperty('--slot-color', hColor);
+    setTimeout(() => { slot.classList.remove('slot-active'); }, 400);
+  }
+
+  // ─── AUTO-REDEPLOY ───────────────────────────────────────────────────
+  let _autoRedeployOn = false;
+  let _autoRedeployExpiry = 0; // epoch ms when auto-redeploy stops
+  const AUTO_REDEPLOY_DURATION_MS = 60 * 60 * 1000; // 1 hour
+
+  function toggleAutoRedeploy() {
+    _autoRedeployOn = !_autoRedeployOn;
+    const toggle = document.getElementById('auto-redeploy-toggle');
+    const label  = document.getElementById('auto-redeploy-label');
+    if (toggle) toggle.classList.toggle('on', _autoRedeployOn);
+    if (_autoRedeployOn) {
+      _autoRedeployExpiry = Date.now() + AUTO_REDEPLOY_DURATION_MS;
+      if (label) label.textContent = 'AUTO-REJOIN: ON (1h)';
+    } else {
+      _autoRedeployExpiry = 0;
+      if (label) label.textContent = 'AUTO-REJOIN';
+    }
+  }
+  window.toggleAutoRedeploy = toggleAutoRedeploy;
+
+  function checkAutoRedeploy() {
+    if (!_autoRedeployOn) return;
+    if (Date.now() > _autoRedeployExpiry) {
+      // Expired — turn off silently
+      _autoRedeployOn = false;
+      const toggle = document.getElementById('auto-redeploy-toggle');
+      if (toggle) toggle.classList.remove('on');
+      addFeedEvent('⏰ Auto-rejoin expired (1h limit). Visit the site to redeploy.', 'system');
+      return;
+    }
+    // Open deploy modal automatically
+    dismissKOOverlay();
+    openDeployModal();
   }
 
   /** Fetch equipped cards for this deployment */
@@ -6532,13 +6754,16 @@
         hideCardSlots();
         addFeedEvent('You withdrew from the battle.', 'system');
 
-        // Keep deployed zone tracking in sync
         state.deployedZoneIds.delete(state.currentZoneId);
         updatePlayerBar();
         try { localStorage.removeItem('9lv_equipped_' + state.currentZoneId + '_' + state.playerId); } catch(e) {}
 
-        // Remove your sprite
+        // Remove your sprite and block ghost re-creation for 10s
         removeNineSprite(state.playerId);
+        if (state.playerId) {
+          state._recentlyKOd.add(String(state.playerId));
+          setTimeout(() => state._recentlyKOd.delete(String(state.playerId)), 10000);
+        }
       } else {
         alert(data.error || 'Withdraw failed');
       }
