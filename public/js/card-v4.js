@@ -178,16 +178,10 @@ function buildCardV4(s, options) {
   var houseName = h.name || 'Universal';
   var houseImg = h.img || '';
 
-  // Resolve effects — works regardless of which field the page uses:
-  // V3 engine sends effect_1. Spellbook sends bonus_effects[]. Both work.
+  // Resolve effects
+  // V3: single effect per card via effect_1 — ignore old bonus_effects
   var bn = [];
   var _e1 = s.effect_1 || s.base_effect || '';
-  if (!_e1 || _e1 === '—' || _e1 === '-') {
-    // Fall back to bonus_effects / effects array (spellbook path)
-    var _arr = s.bonus_effects || s.effects || [];
-    if (typeof _arr === 'string') { try { _arr = JSON.parse(_arr); } catch(e) { _arr = []; } }
-    if (Array.isArray(_arr) && _arr.length > 0) _e1 = _arr[0].tag || _arr[0].key || _arr[0] || '';
-  }
   if (_e1 && _e1 !== '—' && _e1 !== '-') bn = [_e1];
 
   // Resolve rarity
@@ -271,13 +265,7 @@ function buildCardV4(s, options) {
     : spellType.charAt(0).toUpperCase() + spellType.slice(1);
   var typeHtml = '<span class="sc-type">' + typeDisplay + '</span>';
 
-  // ── BASE EFFECT TEXT ──
-  var effectHtml = '';
-  if (s.base_effect && s.base_effect !== '—' && s.base_effect !== '-') {
-    effectHtml = '<div class="sc-effect"><div class="sc-effect__base" style="color:' + hc + '">' + _esc(s.base_effect) + '</div></div>';
-  }
-
-  // ── EFFECT PILLS with tooltips ──
+  // ── EFFECT PILLS with tooltips — single pill only (V3: one effect per card) ──
   var pillsHtml = '';
   if (bn.length > 0) {
     pillsHtml = '<div class="sc-pills">';
@@ -355,7 +343,6 @@ function buildCardV4(s, options) {
       + '<div class="sc-info-panel">'
         + '<div class="sc-info">'
           + '<div class="sc-type-row">' + typeHtml + '<span class="sc-type-spacer"></span>' + rarityHtml + '</div>'
-          + effectHtml
           + pillsHtml
           + sharpHtml
           + flavorHtml
