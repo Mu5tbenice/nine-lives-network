@@ -2049,12 +2049,7 @@
       const data = await res.json();
       const deployments = data.deployments || [];
 
-      if (deployments.length === 0) {
-        addFeedEvent('No Nines deployed on this zone yet.', 'system');
-        return;
-      }
-
-      // Build guild scores
+      // Build guild scores from DB data for immediate display
       if (data.guild_power) {
         state.guildScores = {};
         for (const [tag, info] of Object.entries(data.guild_power)) {
@@ -2063,36 +2058,22 @@
         updateScoreboard();
       }
 
-      addFeedEvent(`${deployments.length} Nines on this zone`, 'system');
-
-      // Add sprites (skip if socket already added them)
+      // Seed combatMetrics with player names/guilds from DB so sidebar shows correct info
+      // Do NOT create PIXI sprites here — arena:positions is the single source of truth
+      // for who is actually alive and fighting in the engine right now
       for (const d of deployments) {
-        if (state.nines.has(d.player_id)) continue; // already loaded by socket
         const nine = d.nine || {};
         const player = d.player || {};
-        const houseName = getHouseNameById(nine.house_id);
-
-        addNineSprite({
-          id: d.player_id,
-          name: nine.name || player.twitter_handle || 'Unknown',
-          handle: player.twitter_handle || null,
-          profile_image: player.profile_image || null,
-          house: houseName,
-          guild_id: d.guild_tag,
-          guild_name: d.guild_tag || 'Lone Wolf',
-          current_hp: d.current_hp,
-          max_hp: d.max_hp,
-          position: getSpawnPosition(d.guild_tag, d.player_id),
-          stats: { atk: nine.base_atk || 0, hp: nine.base_hp || 0, spd: nine.base_spd || 0, def: nine.base_def || 0, luck: nine.base_luck || 0 },
-          is_mercenary: d.is_mercenary,
-          equipped_images: nine.equipped_images || {},
-        });
+        const name = nine.name || player.twitter_handle || 'Unknown';
+        const guild = d.guild_tag || 'Lone Wolf';
+        const house = getHouseNameById(nine.house_id) || 'universal';
+        const id = d.player_id;
+        if (!state.combatMetrics.has(id)) {
+          state.combatMetrics.set(id, { name, guild, house, damage: 0, heals: 0, kos: 0, cards: {} });
+        }
       }
 
-      // If server didn't send guild_power, compute from loaded nines
-      if (!data.guild_power) {
-        setTimeout(recalcGuildScores, 500);
-      }
+      if (!data.guild_power) setTimeout(recalcGuildScores, 500);
     } catch(e) {
       console.error('Failed to load zone nines:', e);
     }
@@ -7119,6 +7100,7 @@
       }
     });
   }
+  window.highlightGuild = highlightGuild;
 
   function resetGuildHighlight() {
     state.nines.forEach((sprite) => {
@@ -7127,6 +7109,7 @@
       if (sprite.ring) sprite.ring.alpha = 1;
     });
   }
+  window.resetGuildHighlight = resetGuildHighlight;
 
   // ── CONTROLLING GUILD PILL ──
   function updateControlPill(leader, data) {
