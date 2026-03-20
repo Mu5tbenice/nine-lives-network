@@ -657,13 +657,23 @@ router.get('/', async (req, res) => {
     if (error) return res.status(500).json({ error: error.message });
 
     // Merge in live zone_control data (dominant_house + controlling_guild)
-    // This fills the zone identity pills without waiting for the nightly scheduler
     const { data: control } = await supabaseAdmin
       .from('zone_control')
       .select('zone_id, controlling_guild, dominant_house');
 
     const controlMap = {};
     (control || []).forEach(c => { controlMap[c.zone_id] = c; });
+
+    // Get active deployment counts per zone
+    const { data: deployments } = await supabaseAdmin
+      .from('zone_deployments')
+      .select('zone_id')
+      .eq('is_active', true);
+
+    const deployCountMap = {};
+    (deployments || []).forEach(d => {
+      deployCountMap[d.zone_id] = (deployCountMap[d.zone_id] || 0) + 1;
+    });
 
     const merged = (zones || []).map(z => ({
       ...z,
@@ -672,6 +682,7 @@ router.get('/', async (req, res) => {
       house_bonus_label: z.house_bonus_label || (controlMap[z.id]?.dominant_house
         ? HOUSE_BONUSES[controlMap[z.id].dominant_house]?.label || null
         : null),
+      deployment_count:  deployCountMap[z.id] || 0,  // live fighter count
     }));
 
     res.json(merged);

@@ -1368,11 +1368,12 @@
       }
 
       // Merge nines count + controlling guild into each zone object
+      // deployment_count now comes directly from the zones API endpoint
       state.zones = (data.zones || data || []).map(z => {
         const zCount = counts[z.id] || {};
         return {
           ...z,
-          arena_nines: zCount.count || 0,
+          arena_nines: z.deployment_count || zCount.count || 0,
           controlling_guild: z.controlling_guild || zCount.top_guild || null,
           controlling_guild_tag: z.controlling_guild_tag || zCount.top_guild || null,
         };
@@ -1507,8 +1508,10 @@
     // Use official HOUSES colours — not a separate map
     const houseColor = (h) => HOUSES[h]?.color || '#D4A64B';
 
-    // Image banner with fighter count (always shown) and gold zone name
-    const fighterBadge = '<div class="zone-card-fighter-count">\u2694\uFE0F ' + casters + '</div>';
+    // Image banner with fighter count (only shown when fighters present) and gold zone name
+    const fighterBadge = casters > 0
+      ? '<div class="zone-card-fighter-count">⚔ ' + casters + '</div>'
+      : '';
     const isDeployed = state.deployedZoneIds.has(zone.id);
     const deployedBadge = isDeployed ? '<div class="zone-card-deployed-badge">\u2694\uFE0F DEPLOYED</div>' : '';
     const imgBanner = '<div class="zone-card-img-wrap">'
@@ -1534,29 +1537,19 @@
       bodyHTML = '<span style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--faint);">Unclaimed \u2014 deploy to capture!</span>';
     }
 
-    // Zone identity row — house bonus pill + guild branding pill
+    // Zone identity row — house bonus pill only (branded guild already shown via ctrlGuild)
     let identityHTML = '';
-    if (dominantHouse || brandedGuild) {
-      identityHTML = '<div class="zone-identity-row">';
-      if (dominantHouse && houseBonusLabel) {
-        const hColor  = houseColor(dominantHouse);
-        const hLogoSrc = HOUSE_LOGO_PATHS[dominantHouse] || '';
-        const hLogoEl = hLogoSrc
-          ? '<img src="' + hLogoSrc + '" style="width:14px;height:14px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 3px ' + hColor + '88);" onerror="this.style.display=\'none\'">'
-          : '';
-        identityHTML += '<span class="zone-house-bonus-pill" style="color:' + hColor + ';background:' + hColor + '18;border:1px solid ' + hColor + '35;">'
-          + hLogoEl + ' ' + houseBonusLabel
-          + '</span>';
-      }
-      if (brandedGuild) {
-        identityHTML += '<span class="zone-branded-pill"'
-          + ' style="background:linear-gradient(135deg,rgba(200,200,220,0.12),rgba(160,160,180,0.06));'
-          + 'border:1px solid rgba(200,200,230,0.28);color:#c8cce8;'
-          + 'box-shadow:0 1px 4px rgba(180,180,220,0.12),inset 0 1px 0 rgba(255,255,255,0.08);">'
-          + '⚔️ ' + brandedGuild
-          + '</span>';
-      }
-      identityHTML += '</div>';
+    if (dominantHouse && houseBonusLabel) {
+      const hColor   = houseColor(dominantHouse);
+      const hLogoSrc = HOUSE_LOGO_PATHS[dominantHouse] || '';
+      const hLogoEl  = hLogoSrc
+        ? '<img src="' + hLogoSrc + '" style="width:14px;height:14px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 3px ' + hColor + '88);" onerror="this.style.display=\'none\'">'
+        : '';
+      identityHTML = '<div class="zone-identity-row">'
+        + '<span class="zone-house-bonus-pill" style="color:' + hColor + ';background:' + hColor + '18;border:1px solid ' + hColor + '35;">'
+        + hLogoEl + ' ' + houseBonusLabel
+        + '</span>'
+        + '</div>';
     }
 
     // Effects pills (max 3)
