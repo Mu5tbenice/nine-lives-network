@@ -337,119 +337,136 @@
     .nerm-cursor { display: inline-block; width: 2px; height: 13px; background: var(--gold); margin-left: 1px; vertical-align: middle; animation: nermBlink 0.7s step-end infinite; }
     @keyframes nermBlink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
 
-    /* ── Bottom tray — unified build + stats ── */
-    /* ══════════════════════════════════════════════
-       UNIFIED BOTTOM TRAY
-       Column: YOUR NINE header → tab bar → content
-    ══════════════════════════════════════════════ */
+    /* Bottom tray — 188px fixed height, arena stays the hero */
     .arena-bottom-tray {
-      position: absolute; bottom: 0; left: 0; right: 300px; z-index: 25;
+      position: absolute; bottom: 0; left: 0; right: 290px; z-index: 25;
       display: flex; flex-direction: column;
       background: rgba(8,6,18,0.97);
-      border-top: 1px solid rgba(255,255,255,0.09);
-      backdrop-filter: blur(12px);
-      max-height: 280px;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      backdrop-filter: blur(14px);
+      height: 188px;
     }
-
-    /* YOUR NINE — fixed header strip */
+    /* YOUR NINE row — 34px */
     .tray-nine-header {
-      padding: 12px 16px 10px; flex-shrink: 0;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
+      height: 34px; padding: 0 12px; flex-shrink: 0;
+      display: flex; align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
-    .tray-nine-top {
-      display: flex; align-items: center; gap: 12px; margin-bottom: 6px;
+    .tray-nine-top { display: flex; align-items: center; gap: 10px; width: 100%; }
+    .tray-section-label {
+      font-family: 'Press Start 2P', monospace; font-size: 7px;
+      color: var(--gold); letter-spacing: 1px; white-space: nowrap; flex-shrink: 0;
     }
-
-    /* Tab bar */
-    #arena-tray-tabs {
-      display: flex; flex-shrink: 0;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
+    .your-nine-hp { display: flex; align-items: center; gap: 6px; flex: 1; max-width: 170px; }
+    .your-nine-hp-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+    .your-nine-hp-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; background: linear-gradient(90deg,#44cc88,#66eebb); }
+    .your-nine-hp-text { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--green); white-space: nowrap; }
+    .your-nine-stats { display: flex; gap: 10px; flex: 1; align-items: center; }
+    .your-nine-stat { font-family: 'Press Start 2P', monospace; font-size: 8px; white-space: nowrap; }
+    .btn-withdraw {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; margin-top: 0;
+      padding: 4px 10px; background: rgba(255,68,102,0.06);
+      border: 1px solid rgba(255,68,102,0.25); color: var(--red);
+      border-radius: 5px; cursor: pointer; transition: background 0.2s;
+      white-space: nowrap; flex-shrink: 0; width: auto;
     }
+    .btn-withdraw:hover { background: rgba(255,68,102,0.16); }
+    /* Tab bar — 26px */
+    #arena-tray-tabs { display: flex; flex-shrink: 0; height: 26px; border-bottom: 1px solid rgba(255,255,255,0.06); }
     .tray-tab {
       flex: 1; background: none; border: none;
-      border-right: 1px solid rgba(255,255,255,0.06);
-      color: var(--faint); font-family: 'Press Start 2P', monospace; font-size: 6px;
-      padding: 10px 4px; cursor: pointer; transition: color 0.2s, background 0.2s;
-      letter-spacing: 0.5px;
+      border-right: 1px solid rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.3); font-family: 'Press Start 2P', monospace;
+      font-size: 7px; cursor: pointer; transition: color 0.15s, background 0.15s; letter-spacing: 0.5px;
     }
     .tray-tab:last-child { border-right: none; }
-    .tray-tab.active { color: var(--gold); background: rgba(212,166,75,0.08); }
-    .tray-tab:hover:not(.active) { color: var(--bright); }
-
-    /* Content area */
-    #arena-tray-body {
-      flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0;
+    .tray-tab.active { color: var(--gold); background: rgba(212,166,75,0.07); }
+    .tray-tab:hover:not(.active) { color: rgba(255,255,255,0.7); }
+    @media (min-width: 641px) { .tray-tab[data-tab="chat"] { display: none; } }
+    /* Spell cycle timeline — 22px */
+    #spell-timeline {
+      height: 22px; flex-shrink: 0;
+      background: rgba(0,0,0,0.25); border-bottom: 1px solid rgba(255,255,255,0.04);
+      display: none; align-items: center; padding: 0 10px; gap: 8px;
     }
-    .tray-pane {
-      display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;
-    }
+    #spell-timeline.visible { display: flex; }
+    .spell-timeline-label { font-family: 'Press Start 2P', monospace; font-size: 5px; color: rgba(255,255,255,0.2); white-space: nowrap; flex-shrink: 0; }
+    .spell-timeline-track { flex: 1; height: 8px; background: rgba(255,255,255,0.04); border-radius: 4px; position: relative; overflow: hidden; }
+    .spell-marker { position: absolute; top: 0; height: 100%; width: 3px; border-radius: 1px; transform: translateX(-50%); opacity: 0.7; }
+    .spell-playhead { position: absolute; top: -1px; height: 10px; width: 2px; background: rgba(255,255,255,0.9); border-radius: 1px; }
+    /* Content area — fills remaining ~106px */
+    #arena-tray-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+    .tray-pane { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
     .tray-pane.active { display: flex; }
-
     /* BUILD pane */
     .build-pane-header {
-      padding: 8px 14px 6px; flex-shrink: 0;
+      padding: 4px 10px; flex-shrink: 0;
       display: flex; align-items: center; gap: 8px;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
     }
 
-    /* ── Card slots — compact horizontal design ── */
+    /* Card slots — horizontal: art left, info right */
+    .build-swap-btn {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: rgba(255,255,255,0.35);
+      background: none; border: 1px solid rgba(255,255,255,0.1); padding: 3px 8px;
+      border-radius: 3px; cursor: pointer; transition: all 0.15s;
+    }
+    .build-swap-btn:hover { color: var(--gold); border-color: rgba(212,166,75,0.4); }
+    .build-cards { display: flex; gap: 8px; padding: 4px 10px 5px; flex: 1; }
     .arena-card-slot {
-      flex: 1; min-width: 0; background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-      border-radius: 10px; padding: 10px 10px; position: relative;
-      transition: border-color 0.2s, background 0.2s; cursor: pointer;
+      flex: 1; min-width: 0; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; position: relative;
+      transition: border-color 0.2s, box-shadow 0.2s; cursor: pointer;
+      overflow: hidden; display: flex; flex-direction: row;
+      background: rgba(255,255,255,0.02);
     }
     .arena-card-slot:hover { border-color: rgba(212,166,75,0.3); }
-    .arena-card-slot .slot-type {
-      font-family: 'Press Start 2P', monospace; font-size: 5px; font-weight: 700;
-      letter-spacing: 0.5px; margin-bottom: 2px;
+    .slot-art {
+      width: 38%; flex-shrink: 0; position: relative;
+      background-size: cover; background-position: center;
+      display: flex; align-items: center; justify-content: center; font-size: 24px;
     }
-    .arena-card-slot .slot-name {
+    .slot-art-gradient { position: absolute; inset: 0; background: linear-gradient(90deg,transparent 40%,rgba(8,6,18,0.85)); }
+    .slot-info {
+      flex: 1; padding: 6px 8px 5px; display: flex; flex-direction: column;
+      justify-content: space-between; min-width: 0;
+    }
+    .slot-type { font-family: 'Press Start 2P', monospace; font-size: 6px; letter-spacing: 0.5px; }
+    .slot-name {
       font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; color: var(--bright);
-      line-height: 1.2; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;
     }
-    .arena-card-slot .slot-effects {
-      display: flex; gap: 3px; flex-wrap: wrap;
+    .slot-effect-pill {
+      font-family: 'Press Start 2P', monospace; font-size: 7px;
+      padding: 2px 6px; border-radius: 3px; white-space: nowrap; display: inline-block;
     }
-    .arena-card-slot .slot-effect-pill {
+    .slot-stats-row { display: flex; gap: 7px; font-family: 'Press Start 2P', monospace; font-size: 7px; }
+    .slot-sharpness { height: 2px; background: rgba(255,255,255,0.06); border-radius: 1px; overflow: hidden; margin-top: 2px; }
+    .slot-sharpness-fill { height: 100%; border-radius: 1px; transition: width 0.3s; }
+    .arena-card-slot.slot-active {
+      border-color: var(--slot-color,var(--gold));
+      box-shadow: 0 0 10px rgba(212,166,75,0.2);
+    }
+    .slot-active-badge {
+      position: absolute; top: 4px; right: 4px;
       font-family: 'Press Start 2P', monospace; font-size: 5px;
-      padding: 1px 4px; border-radius: 3px; white-space: nowrap;
+      padding: 1px 4px; border-radius: 2px;
+      background: rgba(212,166,75,0.25); color: var(--gold); letter-spacing: 0.5px;
     }
-    .arena-card-slot .slot-sharpness {
-      margin-top: 3px; height: 2px; background: rgba(255,255,255,0.06); border-radius: 1px; overflow: hidden;
+    .slot-cooldown {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+      background: rgba(255,255,255,0.05); border-radius: 0 0 7px 7px; overflow: hidden;
     }
-    .arena-card-slot .slot-sharpness-fill { height: 100%; border-radius: 1px; transition: width 0.3s; }
+    .slot-cooldown-fill { height: 100%; border-radius: 0 0 7px 7px; transition: width 0.5s linear; }
+    .slot-cast-overlay {
+      position: absolute; inset: 0; border-radius: 7px; pointer-events: none; opacity: 0; z-index: 2;
+    }
+    .slot-cast-overlay.casting { animation: slotCastDrain var(--cast-duration,6s) linear forwards; }
+    @keyframes slotCastDrain { 0% { opacity: 0.35; } 100% { opacity: 0; } }
     .arena-card-slot.empty {
-      border-style: dashed; opacity: 0.3;
-      display: flex; align-items: center; justify-content: center;
-      min-height: 52px;
+      border-style: dashed; opacity: 0.25;
+      align-items: center; justify-content: center;
     }
-    .arena-card-slot.empty .slot-empty-text {
-      font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--faint);
-    }
-    .tray-section-label {
-      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--gold);
-      letter-spacing: 1px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
-    }
-    .build-swap-btn {
-      font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint);
-      background: none; border: 1px solid var(--border); padding: 3px 8px;
-      border-radius: 3px; cursor: pointer; letter-spacing: 0.5px; transition: all 0.15s;
-    }
-    .build-swap-btn:hover { color: var(--gold); border-color: var(--gold); }
-    .build-cards { display: flex; gap: 6px; padding: 4px 12px 8px; flex: 1; overflow-x: auto; }
-    .your-nine-hp { display: flex; align-items: center; gap: 6px; }
-    .your-nine-hp-bar { flex: 1; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
-    .your-nine-hp-fill { height: 100%; background: linear-gradient(90deg, var(--green), #66eebb); border-radius: 3px; transition: width 0.4s ease; }
-    .your-nine-hp-text { font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--green); white-space: nowrap; }
-    .your-nine-stats { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
-    .your-nine-stat { font-family: 'Press Start 2P', monospace; font-size: 7px; }
-    .btn-withdraw {
-      margin-top: 6px; font-family: 'Press Start 2P', monospace; font-size: 6px;
-      padding: 5px 10px; background: rgba(255,68,102,0.08); border: 1px solid rgba(255,68,102,0.2);
-      color: var(--red); border-radius: 6px; cursor: pointer; transition: background 0.2s;
-      width: 100%;
-    }
-    .btn-withdraw:hover { background: rgba(255,68,102,0.15); }
+    .arena-card-slot.empty .slot-empty-text { font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--faint); }
 
     /* ── Deploy CTA ── */
     .arena-deploy-cta {
@@ -494,33 +511,8 @@
     .feed-event .feed-crit { color: #ffd700; font-weight: 700; }
     .feed-event .feed-time { color: var(--faint); margin-left: auto; flex-shrink: 0; font-size: 11px; }
 
-    /* HP status strip above feed */
-    .arena-hp-strip {
-      position: absolute; bottom: 0; left: 0; right: 270px; z-index: 14;
-      padding: 4px 12px 6px; display: flex; gap: 8px; align-items: center;
-      background: linear-gradient(180deg, transparent, rgba(10,8,18,0.7));
-      pointer-events: none; flex-wrap: wrap;
-    }
-    .hp-strip-fighter {
-      display: flex; align-items: center; gap: 6px; flex: 1; min-width: 140px;
-    }
-    .hp-strip-name {
-      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--bright);
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 80px;
-    }
-    .hp-strip-bar {
-      flex: 1; height: 8px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden;
-    }
-    .hp-strip-fill {
-      height: 100%; border-radius: 4px; transition: width 0.4s;
-    }
-    .hp-strip-text {
-      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--muted);
-      white-space: nowrap;
-    }
-    /* Active effects icons on fighters */
-    .hp-strip-effects { display: flex; gap: 2px; }
-    .hp-strip-effect-icon { font-size: 10px; }
+    /* HP status strip — now inside YOUR NINE panel, not floating */
+    .arena-hp-strip { display: none; }
 
     /* Round banner */
     /* ── KO Widget (non-blocking corner) ── */
@@ -790,19 +782,8 @@
       box-shadow: 0 0 0 2px var(--slot-color, var(--gold)), 0 0 12px var(--slot-color, var(--gold));
     }
 
-    /* ── Always-visible nine info bar — above the tray ── */
-    #nine-info-bar {
-      position: absolute; left: 0; right: 300px; z-index: 24;
-      bottom: 280px; /* sits above the tray — adjust if tray height changes */
-      display: none;
-      background: rgba(8,6,18,0.92);
-      border-top: 1px solid rgba(255,255,255,0.09);
-      border-bottom: 1px solid rgba(255,255,255,0.05);
-      backdrop-filter: blur(8px);
-      padding: 6px 14px;
-      flex-direction: row; align-items: center; gap: 12px; flex-wrap: wrap;
-    }
-    #nine-info-bar.visible { display: flex; }
+    /* nine-info-bar merged into YOUR NINE tray header */
+    #nine-info-bar { display: none !important; }
     .nine-info-house-dot {
       width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
     }
@@ -969,25 +950,32 @@
   <div id="countdown-label" style="display:none"></div>
   <div id="countdown-sub" style="display:none"></div>
 
-  <!-- ── RIGHT SIDEBAR: Guilds + Chat/Stats/Log ── desktop only -->
+  <!-- ── RIGHT SIDEBAR: Fighters + Live Chart + Chat ── desktop only -->
   <div id="arena-sidebar">
 
-    <!-- COMPETING GUILDS -->
-    <div id="sidebar-guilds" style="padding:16px 16px 12px;flex-shrink:0;">
-      <div class="sidebar-section-label">COMPETING GUILDS</div>
+    <!-- FIGHTERS IN ZONE -->
+    <div id="sidebar-fighters-section" style="padding:12px 14px 10px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <div class="sidebar-section-label">FIGHTERS</div>
       <div id="sidebar-guild-rows"></div>
     </div>
 
-    <!-- DAMAGE CHART -->
-    <div id="sidebar-chart-section" style="padding:4px 16px 12px;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
-      <div class="sidebar-section-label" style="margin-bottom:10px;margin-top:12px;">DAMAGE CHART</div>
-      <canvas id="sidebar-dmg-chart" width="238" height="60" style="width:100%;height:60px;border-radius:8px;background:rgba(255,255,255,0.03);display:block;"></canvas>
-      <div id="sidebar-chart-legend" style="display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;"></div>
+    <!-- LIVE METRICS CHART — switchable -->
+    <div id="sidebar-chart-section" style="padding:10px 14px 10px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.06);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div class="sidebar-section-label" style="margin-bottom:0;">LIVE STATS</div>
+        <div style="display:flex;gap:3px;">
+          <button class="chart-metric-btn active" data-metric="dmg" onclick="switchChartMetric('dmg',this)" style="font-family:'Press Start 2P',monospace;font-size:4px;padding:3px 6px;border-radius:3px;border:1px solid rgba(212,166,75,0.3);background:rgba(212,166,75,0.1);color:var(--gold);cursor:pointer;">DMG</button>
+          <button class="chart-metric-btn" data-metric="heals" onclick="switchChartMetric('heals',this)" style="font-family:'Press Start 2P',monospace;font-size:4px;padding:3px 6px;border-radius:3px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--faint);cursor:pointer;">HEAL</button>
+          <button class="chart-metric-btn" data-metric="kos" onclick="switchChartMetric('kos',this)" style="font-family:'Press Start 2P',monospace;font-size:4px;padding:3px 6px;border-radius:3px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--faint);cursor:pointer;">KOs</button>
+        </div>
+      </div>
+      <canvas id="sidebar-dmg-chart" width="238" height="55" style="width:100%;height:55px;border-radius:6px;background:rgba(255,255,255,0.02);display:block;"></canvas>
+      <div id="sidebar-chart-legend" style="display:flex;flex-wrap:wrap;gap:3px 8px;margin-top:5px;"></div>
     </div>
 
-    <!-- ZONE CHAT — always visible -->
-    <div id="sidebar-chat" style="flex:1;display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,0.06);min-height:0;">
-      <div style="padding:12px 16px 8px;flex-shrink:0;">
+    <!-- ZONE CHAT -->
+    <div id="sidebar-chat" style="flex:1;display:flex;flex-direction:column;min-height:0;">
+      <div style="padding:10px 14px 6px;flex-shrink:0;">
         <div class="sidebar-section-label" style="margin-bottom:0;">ZONE CHAT</div>
       </div>
       <div id="sidebar-chat-log" style="flex:1;overflow-y:auto;padding:0 14px 6px;min-height:0;scrollbar-width:thin;scrollbar-color:rgba(212,166,75,0.2) transparent;"></div>
@@ -1021,25 +1009,35 @@
   ════════════════════════════════════════════════════ -->
   <div class="arena-bottom-tray" id="arena-bottom-tray" style="display:none;">
 
-    <!-- YOUR NINE — always visible at top -->
+    <!-- YOUR NINE — compact single row -->
     <div class="tray-nine-header" id="your-nine-panel">
       <div class="tray-nine-top">
-        <span class="tray-section-label" style="margin-bottom:0; flex-shrink:0;">YOUR NINE</span>
-        <div class="your-nine-hp">
+        <span class="tray-section-label" style="margin-bottom:0;flex-shrink:0;">YOUR NINE</span>
+        <div class="your-nine-hp" style="flex:1;max-width:200px;">
           <div class="your-nine-hp-bar"><div class="your-nine-hp-fill" id="your-hp-fill" style="width:100%"></div></div>
           <div class="your-nine-hp-text" id="your-hp-text">--/--</div>
         </div>
-        <button class="btn-withdraw" id="btn-withdraw" style="width:auto; padding:4px 10px; margin-top:0; flex-shrink:0;">WITHDRAW</button>
+        <div class="your-nine-stats" id="your-nine-stats" style="margin-top:0;flex:1;justify-content:flex-start;"></div>
+        <button class="btn-withdraw" id="btn-withdraw" style="width:auto;padding:4px 10px;margin-top:0;flex-shrink:0;">WITHDRAW</button>
       </div>
-      <div class="your-nine-stats" id="your-nine-stats"></div>
     </div>
 
-    <!-- Tab bar: BUILD | CHAT | STATS | LOG -->
+    <!-- Tab bar: BUILD | STATS | LOG -->
     <div id="arena-tray-tabs">
       <button class="tray-tab active" data-tab="build">🗡️ BUILD</button>
       <button class="tray-tab" data-tab="chat">💬 CHAT</button>
       <button class="tray-tab" data-tab="stats">📊 STATS</button>
       <button class="tray-tab" data-tab="log">📜 LOG</button>
+    </div>
+
+    <!-- Spell cycle timeline — shows 1→2→3 rotation and when next cast fires -->
+    <div id="spell-timeline">
+      <div class="spell-timeline-label">CYCLE</div>
+      <div class="spell-timeline-track" id="spell-timeline-track">
+        <!-- Spell markers injected by JS -->
+        <div class="spell-playhead" id="spell-playhead" style="left:0%"></div>
+      </div>
+      <div id="spell-timeline-slots" style="display:flex;gap:4px;flex-shrink:0;"></div>
     </div>
 
     <!-- Content pane — switches on tab click -->
@@ -1359,11 +1357,12 @@
       }
 
       // Merge nines count + controlling guild into each zone object
+      // deployment_count now comes directly from the zones API endpoint
       state.zones = (data.zones || data || []).map(z => {
         const zCount = counts[z.id] || {};
         return {
           ...z,
-          arena_nines: zCount.count || 0,
+          arena_nines: z.deployment_count || zCount.count || 0,
           controlling_guild: z.controlling_guild || zCount.top_guild || null,
           controlling_guild_tag: z.controlling_guild_tag || zCount.top_guild || null,
         };
@@ -1498,8 +1497,10 @@
     // Use official HOUSES colours — not a separate map
     const houseColor = (h) => HOUSES[h]?.color || '#D4A64B';
 
-    // Image banner with fighter count (always shown) and gold zone name
-    const fighterBadge = '<div class="zone-card-fighter-count">\u2694\uFE0F ' + casters + '</div>';
+    // Image banner with fighter count (only shown when fighters present) and gold zone name
+    const fighterBadge = casters > 0
+      ? '<div class="zone-card-fighter-count">⚔ ' + casters + '</div>'
+      : '';
     const isDeployed = state.deployedZoneIds.has(zone.id);
     const deployedBadge = isDeployed ? '<div class="zone-card-deployed-badge">\u2694\uFE0F DEPLOYED</div>' : '';
     const imgBanner = '<div class="zone-card-img-wrap">'
@@ -1525,29 +1526,19 @@
       bodyHTML = '<span style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--faint);">Unclaimed \u2014 deploy to capture!</span>';
     }
 
-    // Zone identity row — house bonus pill + guild branding pill
+    // Zone identity row — house bonus pill only (branded guild already shown via ctrlGuild)
     let identityHTML = '';
-    if (dominantHouse || brandedGuild) {
-      identityHTML = '<div class="zone-identity-row">';
-      if (dominantHouse && houseBonusLabel) {
-        const hColor  = houseColor(dominantHouse);
-        const hLogoSrc = HOUSE_LOGO_PATHS[dominantHouse] || '';
-        const hLogoEl = hLogoSrc
-          ? '<img src="' + hLogoSrc + '" style="width:14px;height:14px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 3px ' + hColor + '88);" onerror="this.style.display=\'none\'">'
-          : '';
-        identityHTML += '<span class="zone-house-bonus-pill" style="color:' + hColor + ';background:' + hColor + '18;border:1px solid ' + hColor + '35;">'
-          + hLogoEl + ' ' + houseBonusLabel
-          + '</span>';
-      }
-      if (brandedGuild) {
-        identityHTML += '<span class="zone-branded-pill"'
-          + ' style="background:linear-gradient(135deg,rgba(200,200,220,0.12),rgba(160,160,180,0.06));'
-          + 'border:1px solid rgba(200,200,230,0.28);color:#c8cce8;'
-          + 'box-shadow:0 1px 4px rgba(180,180,220,0.12),inset 0 1px 0 rgba(255,255,255,0.08);">'
-          + '⚔️ ' + brandedGuild
-          + '</span>';
-      }
-      identityHTML += '</div>';
+    if (dominantHouse && houseBonusLabel) {
+      const hColor   = houseColor(dominantHouse);
+      const hLogoSrc = HOUSE_LOGO_PATHS[dominantHouse] || '';
+      const hLogoEl  = hLogoSrc
+        ? '<img src="' + hLogoSrc + '" style="width:14px;height:14px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 0 3px ' + hColor + '88);" onerror="this.style.display=\'none\'">'
+        : '';
+      identityHTML = '<div class="zone-identity-row">'
+        + '<span class="zone-house-bonus-pill" style="color:' + hColor + ';background:' + hColor + '18;border:1px solid ' + hColor + '35;">'
+        + hLogoEl + ' ' + houseBonusLabel
+        + '</span>'
+        + '</div>';
     }
 
     // Effects pills (max 3)
@@ -3824,6 +3815,22 @@
       // Trigger cast overlay on player's own cards
       if (String(fromId) === String(state.playerId) && data.slot) {
         triggerCardCastOverlay(data.slot - 1, attacker?.house);
+        // Update which slot is active on timeline
+        state.cardCooldownIndex = (data.slot - 1);
+        updateSpellTimeline(state.equippedCards);
+        // Highlight active slot with glowing border
+        for (let si = 0; si < 3; si++) {
+          const sel = document.getElementById(`card-slot-${si}`);
+          if (!sel) continue;
+          if (si === data.slot - 1) {
+            const hk = state.equippedCards[si]?.house || 'universal';
+            const hc = HOUSES[hk]?.color || '#D4A64B';
+            sel.classList.add('slot-active');
+            sel.style.setProperty('--slot-color', hc);
+            // Remove active after 4s (one cycle)
+            setTimeout(() => sel.classList.remove('slot-active'), 4000);
+          }
+        }
       }
 
       if (dmg > 0) {
@@ -3952,9 +3959,11 @@
       }
     });
 
-    // Refresh combat meters every 5 seconds so damage numbers are always live
+    // Refresh combat meters and fighter list every 5 seconds so stats are always live
     setInterval(() => {
       if (state.combatMetrics.size > 0) renderCombatMeters();
+      renderGuildSidebar();
+      renderSidebarChart();
     }, 5000);
 
   } // end connectArenaSocket
@@ -5929,65 +5938,102 @@
       const hColor = HOUSES[houseKey]?.color || '#888';
       const typeColor = TYPE_COLORS[card.spell_type || card.type || 'attack'] || '#888';
       const sharpness = card.sharpness ?? card.current_sharpness ?? 100;
-      const sharpColor = sharpness > 60 ? 'var(--cyan)' : sharpness > 30 ? 'var(--gold)' : 'var(--red)';
+      const sharpColor = sharpness > 60 ? '#44cc88' : sharpness > 30 ? 'var(--gold)' : 'var(--red)';
 
-      // V3: every card has exactly ONE effect (effect_1). bonus_effects is legacy — ignore it.
-      // This prevents the same effect appearing twice as two pills.
+      // V3: one effect per card
       const eff = card.effect_1 || card.base_effect || '';
       const effects = eff ? [eff] : [];
+      const eColor = effects[0] ? (EFFECT_COLORS[effects[0].split(' ')[0].toUpperCase()] || '#D4A64B') : '#D4A64B';
 
-      // Effect pills HTML
-      const effectPills = effects.filter(Boolean).slice(0, 3).map(e => {
-        const tag = e.split(' ')[0].toUpperCase();
-        const eColor = EFFECT_COLORS[tag] || '#D4A64B';
-        return `<span class="slot-effect-pill" style="color:${eColor};background:${eColor}15;border:1px solid ${eColor}30">${e}</span>`;
-      }).join('');
+      // Card art src
+      const artSrc = card.image_url
+        ? (card.image_url.startsWith('http') || card.image_url.startsWith('/') ? card.image_url : '/assets/images/spells/' + card.image_url)
+        : '';
 
-      slotEl.className = 'arena-card-slot';
-      slotEl.style.position = 'relative';
-      slotEl.style.overflow = 'hidden';
-      slotEl.style.cursor = 'pointer';
-      slotEl.style.border = `1px solid ${hColor}50`;
-      slotEl.style.background = `linear-gradient(160deg, ${hColor}14 0%, rgba(8,6,18,0.9) 60%)`;
-
-      // Stat mini-row — only show non-zero stats
+      // Stat chips — non-zero only
       const statParts = [];
       if (card.base_atk > 0)  statParts.push(`<span style="color:#e85a6a">⚔${card.base_atk}</span>`);
       if (card.base_hp > 0)   statParts.push(`<span style="color:#6acd8a">♥${card.base_hp}</span>`);
       if (card.base_spd > 0)  statParts.push(`<span style="color:#6ac8d8">◈${card.base_spd}</span>`);
       if (card.base_def > 0)  statParts.push(`<span style="color:#b088e8">⛊${card.base_def}</span>`);
       if (card.base_luck > 0) statParts.push(`<span style="color:#D4A64B">★${card.base_luck}</span>`);
-      const statsRow = statParts.length
-        ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:3px;font-family:'Press Start 2P',monospace;font-size:5px;">${statParts.join('')}</div>`
-        : '';
 
-      // Single effect pill
-      const effectPill = effects[0]
-        ? `<span class="slot-effect-pill" style="color:${EFFECT_COLORS[effects[0].split(' ')[0].toUpperCase()]||'#D4A64B'};background:${EFFECT_COLORS[effects[0].split(' ')[0].toUpperCase()]||'#D4A64B'}18;border:1px solid ${EFFECT_COLORS[effects[0].split(' ')[0].toUpperCase()]||'#D4A64B'}35">${effects[0]}</span>`
-        : '';
+      slotEl.className = 'arena-card-slot';
+      slotEl.style.cssText = `border:1px solid ${hColor}40;`;
 
       slotEl.innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:3px;">
-          <div class="slot-type" style="color:${typeColor};font-size:5px">${(card.spell_type || '???').toUpperCase()}</div>
-          <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:${hColor}">${houseKey.slice(0,4).toUpperCase()}</span>
+        <!-- Art panel -->
+        <div class="slot-art" style="${artSrc ? `background-image:url('${artSrc}');background-size:cover;background-position:center;` : `background:linear-gradient(135deg,${hColor}28,rgba(8,6,18,0.9));`}">
+          ${!artSrc ? `<span style="font-size:22px;opacity:0.7">${HOUSES[houseKey]?.icon || '⚔'}</span>` : ''}
+          <div class="slot-art-gradient"></div>
         </div>
-        <div class="slot-name" style="font-size:11px;margin-bottom:3px;">${card.name || '???'}</div>
-        ${effectPill ? `<div class="slot-effects">${effectPill}</div>` : ''}
-        ${statsRow}
-        <div class="slot-sharpness" style="margin-top:5px;">
-          <div class="slot-sharpness-fill" style="width:${sharpness}%;background:${sharpColor}"></div>
+        <!-- Info panel -->
+        <div class="slot-info">
+          <div>
+            <div class="slot-type" style="color:${typeColor}">${(card.spell_type || 'ATTACK').toUpperCase()} <span style="color:${hColor};opacity:0.5">${houseKey.slice(0,4).toUpperCase()}</span></div>
+            <div class="slot-name">${card.name || '???'}</div>
+          </div>
+          ${effects[0] ? `<span class="slot-effect-pill" style="color:${eColor};background:${eColor}18;border:1px solid ${eColor}35">${effects[0]}</span>` : ''}
+          <div>
+            ${statParts.length ? `<div class="slot-stats-row">${statParts.join('')}</div>` : ''}
+            <div class="slot-sharpness"><div class="slot-sharpness-fill" style="width:${sharpness}%;background:${sharpColor}"></div></div>
+          </div>
         </div>
-        <div style="position:absolute;top:0;right:0;bottom:0;width:3px;background:linear-gradient(180deg,${hColor}80,${hColor}20);border-radius:0 8px 8px 0;"></div>
+        <!-- Cooldown bar -->
+        <div class="slot-cooldown"><div class="slot-cooldown-fill" id="cooldown-fill-${i}" style="width:0%;background:${hColor}"></div></div>
       `;
 
       const cardRef = card;
-      const waveRef = i;
-      slotEl.onclick = () => showCardPopup(cardRef, waveRef);
+      slotEl.onclick = () => showCardPopup(cardRef, i);
     }
 
-    // Inject cooldown bars after slots render
-    injectCooldownBars();
+    // Update spell cycle timeline
+    updateSpellTimeline(cards);
     if (!state.cardCooldownIndex) state.cardCooldownIndex = 0;
+  }
+
+  /** Spell cycle timeline — shows slots 1→2→3 rotation with a moving playhead */
+  function updateSpellTimeline(cards) {
+    const timeline = document.getElementById('spell-timeline');
+    const track = document.getElementById('spell-timeline-track');
+    const slotsEl = document.getElementById('spell-timeline-slots');
+    if (!timeline || !track || !slotsEl) return;
+
+    const validCards = (cards || []).filter(Boolean);
+    if (validCards.length === 0) { timeline.classList.remove('visible'); return; }
+    timeline.classList.add('visible');
+
+    // Place a marker for each card evenly spaced on the track
+    const existing = track.querySelectorAll('.spell-marker');
+    existing.forEach(m => m.remove());
+
+    validCards.forEach((card, i) => {
+      const houseKey = card.house || 'universal';
+      const hColor = HOUSES[houseKey]?.color || '#D4A64B';
+      const pct = validCards.length === 1 ? 50 : (i / (validCards.length - 1)) * 90 + 5;
+      const marker = document.createElement('div');
+      marker.className = 'spell-marker';
+      marker.style.cssText = `left:${pct}%;background:${hColor};`;
+      marker.title = `Slot ${i+1}: ${card.name}`;
+      track.appendChild(marker);
+    });
+
+    // Slot badges
+    slotsEl.innerHTML = validCards.map((card, i) => {
+      const houseKey = card.house || 'universal';
+      const hColor = HOUSES[houseKey]?.color || '#D4A64B';
+      const isActive = (state.cardCooldownIndex || 0) % validCards.length === i;
+      return `<span style="font-family:'Press Start 2P',monospace;font-size:5px;padding:2px 5px;border-radius:2px;
+        background:${isActive ? hColor+'30' : 'rgba(255,255,255,0.04)'};
+        border:1px solid ${isActive ? hColor+'60' : 'rgba(255,255,255,0.08)'};
+        color:${isActive ? hColor : 'rgba(255,255,255,0.3)'};white-space:nowrap;">${i+1} ${card.name.split(' ')[0]}</span>`;
+    }).join('');
+  }
+
+  /** Animate the playhead on the spell timeline to reflect current progress */
+  function tickSpellPlayhead(progressPct) {
+    const ph = document.getElementById('spell-playhead');
+    if (ph) ph.style.left = Math.min(100, Math.max(0, progressPct)) + '%';
   }
 
   /** Show a full-size V4 card in a popup overlay */
@@ -6903,22 +6949,24 @@
     const W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
 
+    const metric = state._chartMetric || 'dmg';
+
+    // Build per-player sparkline from combatMetrics for the selected metric
+    const statKey = metric === 'dmg' ? 'damage' : metric === 'heals' ? 'heals' : 'kos';
     const entries = Object.entries(state.chartData);
-    if (entries.length === 0) {
-      // Empty state
+
+    if (entries.length === 0 || state.combatMetrics.size === 0) {
       ctx.fillStyle = 'rgba(255,255,255,0.08)';
-      ctx.font = '9px monospace';
+      ctx.font = '8px monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('Waiting for combat data...', W/2, H/2 + 3);
+      ctx.fillText('Waiting for combat...', W/2, H/2 + 3);
       return;
     }
 
-    // Find global max for Y scaling
     let globalMax = 0;
     entries.forEach(([, pts]) => { pts.forEach(v => { if (v > globalMax) globalMax = v; }); });
     if (globalMax === 0) globalMax = 1;
 
-    // Grid lines
     ctx.strokeStyle = 'rgba(255,255,255,0.05)';
     ctx.lineWidth = 1;
     for (let i = 1; i < 4; i++) {
@@ -6926,38 +6974,32 @@
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
     }
 
-    // Draw sparkline per guild
     const numPts = MAX_CHART_POINTS;
     entries.forEach(([tag, pts], gi) => {
       const color = GUILD_COLORS_LIST[gi % GUILD_COLORS_LIST.length];
       if (pts.length < 2) return;
       ctx.beginPath();
       ctx.strokeStyle = color;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.5;
       ctx.lineJoin = 'round';
       pts.forEach((v, i) => {
         const x = (i / (numPts - 1)) * W;
-        const y = H - (v / globalMax) * (H - 6) - 2;
+        const y = H - (v / globalMax) * (H - 4) - 2;
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       });
       ctx.stroke();
-      // Dot at latest value
       const lastX = ((pts.length - 1) / (numPts - 1)) * W;
-      const lastY = H - (pts[pts.length-1] / globalMax) * (H - 6) - 2;
-      ctx.beginPath();
-      ctx.fillStyle = color;
-      ctx.arc(lastX, lastY, 3, 0, Math.PI * 2);
-      ctx.fill();
+      const lastY = H - (pts[pts.length-1] / globalMax) * (H - 4) - 2;
+      ctx.beginPath(); ctx.fillStyle = color; ctx.arc(lastX, lastY, 2.5, 0, Math.PI*2); ctx.fill();
     });
 
-    // Legend
     if (legend) {
       legend.innerHTML = entries.map(([tag, pts], gi) => {
         const color = GUILD_COLORS_LIST[gi % GUILD_COLORS_LIST.length];
         const latest = pts[pts.length - 1] || 0;
-        return `<span style="font-family:'Press Start 2P',monospace;font-size:5px;color:${color};">`
-          + `<span style="display:inline-block;width:8px;height:2px;background:${color};vertical-align:middle;margin-right:3px;"></span>`
-          + `${tag} ${latest}</span>`;
+        return `<span style="font-family:'Press Start 2P',monospace;font-size:4px;color:${color};display:flex;align-items:center;gap:3px;">
+          <span style="display:inline-block;width:10px;height:2px;background:${color};border-radius:1px;"></span>${tag} ${latest.toLocaleString()}
+        </span>`;
       }).join('');
     }
   }
@@ -6966,67 +7008,105 @@
     const container = document.getElementById('sidebar-guild-rows');
     if (!container) return;
 
-    const guilds = {};
+    // Build per-fighter rows sorted by HP desc
+    const fighters = [];
     state.nines.forEach((sprite, id) => {
       if (sprite.isAlive === false && (sprite.hp || 0) <= 0) return;
-      const tag = sprite.guild || '???';
-      if (!guilds[tag]) guilds[tag] = { hp: 0, maxHp: 0, nines: [], color: null };
-      guilds[tag].hp += sprite.hp || 0;
-      guilds[tag].maxHp += sprite.maxHp || 0;
-      guilds[tag].nines.push(id);
+      const m = state.combatMetrics.get(id);
+      fighters.push({
+        id, sprite,
+        name: sprite.name || String(id).slice(0,8),
+        guild: sprite.guild || '?',
+        house: sprite.house || 'universal',
+        hp: sprite.hp || 0,
+        maxHp: sprite.maxHp || 1,
+        isMe: String(id) === String(state.playerId),
+        damage: m?.damage || 0,
+        kos: m?.kos || 0,
+      });
     });
+    fighters.sort((a,b) => b.hp - a.hp);
 
-    // Enrich with combat metrics (damage + KOs)
-    state.combatMetrics.forEach((m) => {
-      const tag = m.guild || '???';
-      if (!guilds[tag]) return;
-      guilds[tag].damage = (guilds[tag].damage || 0) + (m.damage || 0);
-      guilds[tag].kos    = (guilds[tag].kos    || 0) + (m.kos    || 0);
+    // Also group by guild to show zone control
+    const guilds = {};
+    fighters.forEach(f => {
+      if (!guilds[f.guild]) guilds[f.guild] = { hp:0, maxHp:0, count:0, color:null };
+      guilds[f.guild].hp += f.hp;
+      guilds[f.guild].maxHp += f.maxHp;
+      guilds[f.guild].count++;
     });
-
-    const entries = Object.entries(guilds).sort((a, b) => b[1].hp - a[1].hp);
-    const totalHp = entries.reduce((s, [, g]) => s + g.hp, 0) || 1;
-    const isLeader = entries[0]?.[0];
-
+    const guildEntries = Object.entries(guilds).sort((a,b)=>b[1].hp-a[1].hp);
+    const totalHp = guildEntries.reduce((s,[,g])=>s+g.hp,0)||1;
+    const isLeader = guildEntries[0]?.[0];
     updateControlPill(isLeader, guilds[isLeader]);
 
-    container.innerHTML = '';
-    entries.forEach(([tag, data], i) => {
-      const color = GUILD_COLORS_LIST[i % GUILD_COLORS_LIST.length];
-      const hpPct  = Math.round((data.hp   / (data.maxHp || 1)) * 100);
-      const zonePct = Math.round((data.hp   / totalHp)           * 100);
-      const activeCount = data.nines.filter(id => {
-        const s = state.nines.get(id); return !s || s.isAlive !== false;
-      }).length;
+    if (fighters.length === 0) {
+      container.innerHTML = '<div style="font-family:\'Crimson Text\',serif;font-size:12px;color:var(--faint);text-align:center;padding:12px;font-style:italic">No fighters deployed</div>';
+      return;
+    }
 
-      const row = document.createElement('div');
-      row.className = 'sidebar-guild-row';
-      row.style.borderLeftColor = color + '60';
-      row.style.borderLeftWidth = '2px';
-      row.style.borderLeftStyle = 'solid';
-      row.innerHTML = `
-        <div class="sidebar-guild-top">
-          <div class="sidebar-guild-dot" style="background:${color};color:${color}"></div>
-          <div class="sidebar-guild-name">${tag === isLeader ? '👑 ' : ''}${tag}</div>
-          <div class="sidebar-guild-hp" style="color:${color}">${zonePct}% zone</div>
-        </div>
-        <div class="sidebar-guild-bar">
-          <div class="sidebar-guild-bar-fill" style="width:${zonePct}%;background:linear-gradient(90deg,${color},${color}99)"></div>
-        </div>
-        <div class="sidebar-guild-meta">
-          <span class="sidebar-guild-nines">⚔ ${activeCount} fighter${activeCount !== 1 ? 's' : ''} · ${Math.round(data.hp)} HP</span>
-          ${data.damage ? `<span class="sidebar-guild-dmg">${data.damage.toLocaleString()} dmg${data.kos ? ` · ${data.kos} KO` : ''}</span>` : ''}
-        </div>
-      `;
-      row.addEventListener('mouseenter', () => highlightGuild(tag));
-      row.addEventListener('mouseleave', () => resetGuildHighlight());
-      container.appendChild(row);
+    // Guild zone control bar (only if >1 guild)
+    let html = '';
+    if (guildEntries.length > 1) {
+      html += '<div style="display:flex;height:4px;border-radius:2px;overflow:hidden;margin-bottom:8px;gap:1px;">';
+      guildEntries.forEach(([tag, data], i) => {
+        const color = GUILD_COLORS_LIST[i % GUILD_COLORS_LIST.length];
+        const pct = Math.round((data.hp / totalHp) * 100);
+        html += `<div style="flex:${pct};background:${color};transition:flex 0.4s;" title="${tag}: ${pct}% zone control"></div>`;
+      });
+      html += '</div>';
+    }
+
+    // Per-fighter rows
+    fighters.forEach((f, i) => {
+      const hColor = HOUSES[f.house]?.color || '#888';
+      const pct = Math.round((f.hp / f.maxHp) * 100);
+      const hpColor = pct > 50 ? '#44cc88' : pct > 25 ? '#ffaa44' : '#ff4466';
+      const guildI = guildEntries.findIndex(([t])=>t===f.guild);
+      const gColor = GUILD_COLORS_LIST[guildI % GUILD_COLORS_LIST.length] || '#888';
+      const isLeaderF = f.guild === isLeader;
+      const dmgStr = f.damage > 0 ? `<span style="color:#e85a6a;font-size:4px">${f.damage.toLocaleString()}dmg</span>` : '';
+      const koStr  = f.kos > 0   ? `<span style="color:#D4A64B;font-size:4px">${f.kos}KO</span>` : '';
+
+      html += `
+        <div style="display:flex;align-items:center;gap:6px;padding:5px 0;${i < fighters.length-1?'border-bottom:1px solid rgba(255,255,255,0.04);':''}${f.isMe?'background:rgba(212,166,75,0.04);border-radius:6px;padding:5px 4px;':''}"
+          onmouseenter="highlightGuild('${f.guild}')" onmouseleave="resetGuildHighlight()">
+          <div style="width:8px;height:8px;border-radius:50%;background:${hColor};box-shadow:0 0 5px ${hColor};flex-shrink:0;"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;">
+              <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${f.isMe?'var(--gold)':'var(--bright)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px;">${isLeaderF?'👑 ':''}${f.name}</span>
+              <span style="font-family:'Press Start 2P',monospace;font-size:4px;color:${gColor};flex-shrink:0;">[${f.guild}]</span>
+            </div>
+            <div style="height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;">
+              <div style="width:${pct}%;height:100%;background:${hpColor};border-radius:2px;transition:width 0.4s;"></div>
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:${hpColor}">${Math.round(f.hp)}</div>
+            <div style="display:flex;gap:3px;justify-content:flex-end;margin-top:2px;">${dmgStr}${koStr}</div>
+          </div>
+        </div>`;
     });
 
-    if (entries.length === 0) {
-      container.innerHTML = '<div style="font-family:\'Crimson Text\',serif;font-size:13px;color:var(--faint);text-align:center;padding:16px;font-style:italic;">No guilds deployed yet</div>';
-    }
+    container.innerHTML = html;
   }
+
+  // Switch sidebar chart metric
+  function switchChartMetric(metric, btn) {
+    state._chartMetric = metric;
+    document.querySelectorAll('.chart-metric-btn').forEach(b => {
+      b.style.color = 'var(--faint)';
+      b.style.background = 'none';
+      b.style.borderColor = 'rgba(255,255,255,0.1)';
+    });
+    if (btn) {
+      btn.style.color = 'var(--gold)';
+      btn.style.background = 'rgba(212,166,75,0.1)';
+      btn.style.borderColor = 'rgba(212,166,75,0.3)';
+    }
+    renderSidebarChart();
+  }
+  window.switchChartMetric = switchChartMetric;
 
   function highlightGuild(guildTag) {
     state.nines.forEach((sprite) => {
