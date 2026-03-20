@@ -10,6 +10,11 @@ const { createClient } = require('@supabase/supabase-js');
 const { getNine, healNine } = require('../services/nineSystem');
 const { addPoints } = require('../services/pointsService');
 
+// Lazy-load combatEngine to avoid circular deps — only used for removeDeploymentFromEngine
+function getCombatEngine() {
+  try { return require('../services/combatEngine'); } catch(e) { return null; }
+}
+
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -220,6 +225,14 @@ router.post('/withdraw', async (req, res) => {
       .from('zone_deployments')
       .update({ is_active: false, updated_at: new Date().toISOString() })
       .eq('id', deployment.id);
+
+    // Remove from combat engine immediately — stops ghost sprite re-appearing every 2s
+    try {
+      const engine = getCombatEngine();
+      if (engine?.removeDeploymentFromEngine) {
+        engine.removeDeploymentFromEngine(deployment.id, zone_id);
+      }
+    } catch(e) { /* non-critical */ }
 
     // Notify arena socket viewers
     try {

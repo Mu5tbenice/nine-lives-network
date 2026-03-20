@@ -3740,6 +3740,10 @@
     // Engine sends logical coords (0-900 x 0-500), we map to canvas via engineToScreen
     socket.on('arena:positions', (data) => {
       if (!data.nines) return;
+
+      // Build set of IDs present in this tick — used to cull stale sprites below
+      const activeIds = new Set(data.nines.map(d => String(resolveId(d.id))));
+
       data.nines.forEach((d) => {
         const screenPos = engineToScreen({ x: d.x, y: d.y });
         const resolvedId = resolveId(d.id);
@@ -3766,8 +3770,6 @@
         }
 
         if (sprite) {
-          // Only update target if position changed meaningfully — dead zone prevents
-          // constant micro-skating when engine nudges overlap resolution slightly
           const dx = screenPos.x - (sprite.targetX || sprite.container.x);
           const dy = screenPos.y - (sprite.targetY || sprite.container.y);
           if (Math.sqrt(dx*dx + dy*dy) > 15) {
@@ -3780,7 +3782,7 @@
           updateStatusRings(sprite, d.status, d.activeEffect);
         }
 
-        // Seed combatMetrics so chart tracks this Nine from first appearance
+        // Seed combatMetrics
         if (!state.combatMetrics.has(resolvedId)) {
           state.combatMetrics.set(resolvedId, {
             name: d.playerName || String(d.id).slice(0, 8),
@@ -3789,13 +3791,22 @@
             damage: 0, heals: 0, kos: 0, cards: {},
           });
         } else {
-          // Update name/guild/house if we get better data
           const m = state.combatMetrics.get(resolvedId);
           if (d.playerName) m.name = d.playerName;
           if (d.guildTag) m.guild = d.guildTag;
           if (d.houseKey) m.house = d.houseKey;
         }
       });
+
+      // Cull stale sprites — remove anyone the engine no longer reports
+      // Skip current player (they manage their own sprite via deploy/withdraw flow)
+      state.nines.forEach((sprite, id) => {
+        if (String(id) === String(state.playerId)) return;
+        if (!activeIds.has(String(id))) {
+          removeNineSprite(id);
+        }
+      });
+
       updateHpStrip();
     });
 
@@ -7334,6 +7345,17 @@
 
   // ── COMBAT METERS (WoW-style) ──
   if (!state.combatMetrics) state.combatMetrics = new Map();
+  // ── Expose to window so inline onclick in dynamically-rendered HTML can reach them ──
+  window._9lvState = state;
+  window.renderCombatMeters = renderCombatMeters;
+  window.renderSidebarChart = renderSidebarChart;
+  window.renderStatsTabChart = renderStatsTabChart;
+  window.setMetersTab = function(tab) {
+    state._metersTab = tab;
+    renderCombatMeters();
+    renderStatsTabChart();
+  };
+
   if (!state._metersTab) state._metersTab = 'dmg';
 
   // Called on every tracked combat event — increments live totals
@@ -7346,14 +7368,12 @@
     m.house = house || m.house;
     m[stat] = (m[stat] || 0) + amount;
     state.combatMetrics.set(id, m);
-    // Update chart data directly on every stat change — no tick throttle needed
+    // Update chart data directly
     const key = m.name;
     const metric = state._chartMetric || 'dmg';
     const val = metric === 'dmg' ? (m.damage||0) : metric === 'heals' ? (m.heals||0) : (m.kos||0);
     if (!state.chartData[key]) state.chartData[key] = { guild: m.guild, pts: [0] };
-    // Update the last point rather than always pushing (reduces chart noise)
     state.chartData[key].pts[state.chartData[key].pts.length - 1] = val;
-    // Push a new point every ~10 damage events to build the sparkline
     state._chartEventCount = (state._chartEventCount || 0) + 1;
     if (state._chartEventCount % 8 === 0) {
       Object.entries(state.chartData).forEach(([k, d]) => {
@@ -7361,10 +7381,15 @@
         if (d.pts.length > MAX_CHART_POINTS) d.pts.shift();
       });
     }
-    // Throttle DOM re-render
+    // Throttle DOM re-render to max once per 1.5s
     if (!_metersRenderPending) {
       _metersRenderPending = true;
-      setTimeout(() => { _metersRenderPending = false; renderCombatMeters(); renderSidebarChart(); renderStatsTabChart(); }, 2000);
+      setTimeout(() => {
+        _metersRenderPending = false;
+        renderCombatMeters();
+        renderSidebarChart();
+        renderStatsTabChart();
+      }, 1500);
     }
   }
 
@@ -7463,11 +7488,11 @@
         }).join('')}
       </div>` : '';
 
-    // Tab bar
+    // Tab bar — uses window.setMetersTab so onclick works inside IIFE
     const tabsHtml = `<div class="meters-tabs">
-      <button class="meters-tab${tab==='dmg'?' active':''}" onclick="state._metersTab='dmg';renderCombatMeters()">⚔️ DMG</button>
-      <button class="meters-tab${tab==='heals'?' active':''}" onclick="state._metersTab='heals';renderCombatMeters()">💚 HEAL</button>
-      <button class="meters-tab${tab==='kos'?' active':''}" onclick="state._metersTab='kos';renderCombatMeters()">💀 KOs</button>
+      <button class="meters-tab${tab==='dmg'?' active':''}" onclick="setMetersTab('dmg')">⚔️ DMG</button>
+      <button class="meters-tab${tab==='heals'?' active':''}" onclick="setMetersTab('heals')">💚 HEAL</button>
+      <button class="meters-tab${tab==='kos'?' active':''}" onclick="setMetersTab('kos')">💀 KOs</button>
     </div>`;
 
     // Player rows
