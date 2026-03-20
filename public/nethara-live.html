@@ -383,17 +383,23 @@
     .tray-tab.active { color: var(--gold); background: rgba(212,166,75,0.07); }
     .tray-tab:hover:not(.active) { color: rgba(255,255,255,0.7); }
     @media (min-width: 641px) { .tray-tab[data-tab="chat"] { display: none; } }
-    /* Spell cycle timeline — 22px */
+    /* Spell cycle timeline — 24px, two bars side by side */
     #spell-timeline {
-      height: 22px; flex-shrink: 0;
-      background: rgba(0,0,0,0.25); border-bottom: 1px solid rgba(255,255,255,0.04);
-      display: none; align-items: center; padding: 0 10px; gap: 8px;
+      height: 24px; flex-shrink: 0;
+      background: rgba(0,0,0,0.2); border-bottom: 1px solid rgba(255,255,255,0.04);
+      display: none; align-items: center; padding: 0 10px; gap: 10px;
     }
     #spell-timeline.visible { display: flex; }
-    .spell-timeline-label { font-family: 'Press Start 2P', monospace; font-size: 5px; color: rgba(255,255,255,0.2); white-space: nowrap; flex-shrink: 0; }
+    .spell-timeline-label { font-family: 'Press Start 2P', monospace; font-size: 6px; color: rgba(255,255,255,0.3); white-space: nowrap; flex-shrink: 0; }
     .spell-timeline-track { flex: 1; height: 8px; background: rgba(255,255,255,0.04); border-radius: 4px; position: relative; overflow: hidden; }
-    .spell-marker { position: absolute; top: 0; height: 100%; width: 3px; border-radius: 1px; transform: translateX(-50%); opacity: 0.7; }
-    .spell-playhead { position: absolute; top: -1px; height: 10px; width: 2px; background: rgba(255,255,255,0.9); border-radius: 1px; }
+    .spell-marker { position: absolute; top: 0; height: 100%; width: 4px; border-radius: 2px; transform: translateX(-50%); opacity: 0.8; }
+    /* Playhead is now a moving glow dot */
+    .spell-playhead {
+      position: absolute; top: 50%; width: 10px; height: 10px;
+      border-radius: 50%; transform: translate(-50%, -50%);
+      background: #fff; box-shadow: 0 0 6px #fff;
+      transition: left 0.4s ease;
+    }
     /* Content area — fills remaining ~106px */
     #arena-tray-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
     .tray-pane { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
@@ -674,8 +680,8 @@
       box-shadow: 0 12px 40px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.06);
     }
     .sidebar-section-label {
-      font-family: 'Press Start 2P', monospace; font-size: 7px;
-      color: rgba(212,166,75,0.8); letter-spacing: 1.5px; margin-bottom: 8px;
+      font-family: 'Press Start 2P', monospace; font-size: 6px;
+      color: rgba(212,166,75,0.7); letter-spacing: 2px; margin-bottom: 10px;
       text-transform: uppercase; display: flex; align-items: center; gap: 6px;
     }
     .sidebar-section-label::after {
@@ -856,11 +862,16 @@
       .nerm-bubble { min-width: 0; max-width: 200px; font-size: 12px; padding: 7px 10px; }
       .nerm-pfp { width: 36px; height: 36px; }
 
-      /* On mobile: tray is full width (no sidebar) */
-      .arena-bottom-tray { right: 0; max-height: 240px; }
+      /* Mobile: full-width tray, no sidebar */
+      .arena-bottom-tray { right: 0; height: 200px; }
       #arena-sidebar { display: none !important; }
       .arena-feed { display: none; }
       .arena-hp-strip { display: none; }
+      /* Mobile: hide stats from YOUR NINE row to save space — just HP + buttons */
+      #your-nine-stats { display: none !important; }
+      /* Cards fill all available space */
+      .build-cards { flex: 1; }
+      .arena-card-slot { min-width: 0; flex: 1; }
 
       .arena-deploy-cta { top: 50%; left: 50%; transform: translate(-50%, -50%); padding: 0; }
       .btn-join-battle { font-size: 14px; padding: 16px 36px; }
@@ -869,7 +880,6 @@
       .deploy-title { font-size: 16px; }
       .deploy-card-grid { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 6px; max-height: 350px; }
       .btn-deploy { font-size: 14px; padding: 14px; }
-      .arena-card-slot { min-width: 100px; }
       .tray-tab { font-size: 5px; padding: 8px 2px; }
     }
 
@@ -1009,15 +1019,16 @@
   ════════════════════════════════════════════════════ -->
   <div class="arena-bottom-tray" id="arena-bottom-tray" style="display:none;">
 
-    <!-- YOUR NINE — compact single row -->
+    <!-- YOUR NINE — compact single row with stats -->
     <div class="tray-nine-header" id="your-nine-panel">
       <div class="tray-nine-top">
         <span class="tray-section-label" style="margin-bottom:0;flex-shrink:0;">YOUR NINE</span>
-        <div class="your-nine-hp" style="flex:1;max-width:200px;">
+        <div class="your-nine-hp" style="flex:0 0 160px;">
           <div class="your-nine-hp-bar"><div class="your-nine-hp-fill" id="your-hp-fill" style="width:100%"></div></div>
           <div class="your-nine-hp-text" id="your-hp-text">--/--</div>
         </div>
-        <div class="your-nine-stats" id="your-nine-stats" style="margin-top:0;flex:1;justify-content:flex-start;"></div>
+        <!-- Base stats always visible -->
+        <div id="your-nine-stats" style="display:flex;gap:10px;flex:1;align-items:center;flex-wrap:nowrap;overflow:hidden;"></div>
         <button class="build-swap-btn" id="btn-swap-build" style="margin-top:0;flex-shrink:0;">⇄ SWAP</button>
         <button class="btn-withdraw" id="btn-withdraw" style="width:auto;padding:4px 10px;margin-top:0;flex-shrink:0;">WITHDRAW</button>
       </div>
@@ -1031,14 +1042,23 @@
       <button class="tray-tab" data-tab="log">📜 LOG</button>
     </div>
 
-    <!-- Spell cycle timeline — shows 1→2→3 rotation and when next cast fires -->
+    <!-- Combat bars: spell cycle + auto-attack speed -->
     <div id="spell-timeline">
-      <div class="spell-timeline-label">CYCLE</div>
-      <div class="spell-timeline-track" id="spell-timeline-track">
-        <!-- Spell markers injected by JS -->
-        <div class="spell-playhead" id="spell-playhead" style="left:0%"></div>
+      <!-- Spell cycle: bouncing dot travels card 1→2→3 continuously -->
+      <div style="display:flex;align-items:center;gap:6px;flex:1;">
+        <div class="spell-timeline-label">SPELL</div>
+        <div class="spell-timeline-track" id="spell-timeline-track">
+          <div class="spell-playhead" id="spell-playhead" style="left:0%"></div>
+        </div>
       </div>
-      <div id="spell-timeline-slots" style="display:flex;gap:4px;flex-shrink:0;"></div>
+      <!-- Auto-attack speed bar: fills then fires -->
+      <div style="display:flex;align-items:center;gap:6px;flex:1;">
+        <div class="spell-timeline-label">ATK</div>
+        <div style="flex:1;height:8px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden;">
+          <div id="atk-speed-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#e85a6a,#ffaa44);border-radius:4px;transition:width 0.1s linear;"></div>
+        </div>
+        <div id="atk-speed-icon" style="font-size:10px;opacity:0.5;flex-shrink:0;">⚔</div>
+      </div>
     </div>
 
     <!-- Content pane — switches on tab click -->
@@ -1062,9 +1082,23 @@
         </div>
       </div>
 
-      <!-- STATS pane -->
-      <div class="tray-pane" id="tray-pane-stats">
-        <div id="contribution-list"></div>
+      <!-- STATS pane — full zone leaderboard with charts -->
+      <div class="tray-pane" id="tray-pane-stats" style="overflow-y:auto;flex-direction:column;">
+        <!-- Metric selector -->
+        <div style="display:flex;gap:4px;padding:6px 10px 4px;border-bottom:1px solid rgba(255,255,255,0.05);flex-shrink:0;">
+          <button class="chart-metric-btn active" data-metric="dmg" onclick="switchChartMetric('dmg',this)" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:4px 8px;border-radius:3px;border:1px solid rgba(212,166,75,0.3);background:rgba(212,166,75,0.1);color:var(--gold);cursor:pointer;">⚔ DMG</button>
+          <button class="chart-metric-btn" data-metric="heals" onclick="switchChartMetric('heals',this)" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:4px 8px;border-radius:3px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--faint);cursor:pointer;">💚 HEAL</button>
+          <button class="chart-metric-btn" data-metric="kos" onclick="switchChartMetric('kos',this)" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:4px 8px;border-radius:3px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--faint);cursor:pointer;">💀 KOs</button>
+          <div style="flex:1;"></div>
+          <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,0.2);align-self:center;">HOVER = HIGHLIGHT</span>
+        </div>
+        <!-- Sparkline chart -->
+        <div style="padding:6px 10px 4px;flex-shrink:0;">
+          <canvas id="stats-tab-chart" height="50" style="width:100%;height:50px;display:block;background:rgba(255,255,255,0.02);border-radius:4px;"></canvas>
+          <div id="stats-tab-legend" style="display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:4px;"></div>
+        </div>
+        <!-- Player leaderboard -->
+        <div id="contribution-list" style="flex:1;overflow-y:auto;padding:4px 8px;"></div>
       </div>
 
       <!-- LOG pane -->
@@ -3792,39 +3826,42 @@
       addBattleLog(`⚔️ ${from} → ${to} -${dmg}${data.crit ? ' CRIT' : ''}${data.effect ? ' ['+data.effect+']' : ''} (slot ${data.slot||1})`, 'default');
 
       // Trigger cast overlay on player's own cards
-      if (String(fromId) === String(state.playerId) && data.slot != null) {
+      if (String(fromId) === String(state.playerId) && data.slot) {
         const slotIdx = data.slot - 1;
         triggerCardCastOverlay(slotIdx, attacker?.house);
-        // Update cycle index
         state.cardCooldownIndex = slotIdx;
         updateSpellTimeline(state.equippedCards);
 
-        // Animate playhead to the active slot marker position
-        const validCards = (state.equippedCards || []).filter(Boolean);
-        const n = validCards.length || 1;
-        const markerPct = n === 1 ? 50 : (slotIdx / (n - 1)) * 90 + 5;
+        // Restart ATK speed bar
+        const HSPD = {stormrage:30,smoulders:25,stonebark:10,ashenvale:22,nighthollow:30,dawnbringer:15,manastorm:25,plaguemire:20,darktide:20};
+        const hk2 = SCHOOL_TO_HOUSE[state.playerHouse] || 'stormrage';
+        const cardSpd = (state.equippedCards||[]).reduce((s,c)=>s+(c?.base_spd||0),0);
+        const totalSpd = (HSPD[hk2]||25) + cardSpd;
+        const atkSecs = Math.max(2.75, (10.5 - totalSpd * 0.12) / 2);
+        startAtkBar(atkSecs * 1000);
+
+        // Move playhead glowing dot to active slot position
+        const validCards = (state.equippedCards||[]).filter(Boolean);
+        const n = Math.max(1, validCards.length);
+        const pct = n === 1 ? 50 : (slotIdx / (n - 1)) * 90 + 5;
         const ph = document.getElementById('spell-playhead');
         if (ph) {
-          ph.style.transition = 'left 0.4s ease';
-          ph.style.left = markerPct + '%';
-          // Flash it bright on cast
-          ph.style.background = attacker?.house ? (HOUSES[attacker.house]?.color || '#fff') : '#fff';
-          setTimeout(() => { if (ph) ph.style.background = 'rgba(255,255,255,0.8)'; }, 400);
+          ph.style.left = pct + '%';
+          const hc = HOUSES[state.equippedCards[slotIdx]?.house || 'universal']?.color || '#fff';
+          ph.style.background = hc;
+          ph.style.boxShadow = `0 0 8px ${hc}`;
+          setTimeout(() => { if (ph) { ph.style.background = '#fff'; ph.style.boxShadow = '0 0 6px #fff'; } }, 400);
         }
 
-        // Glow the active slot
+        // Glow the active slot, un-glow others
         for (let si = 0; si < 3; si++) {
           const sel = document.getElementById(`card-slot-${si}`);
           if (!sel) continue;
           if (si === slotIdx) {
-            const hk = state.equippedCards[si]?.house || 'universal';
-            const hc = HOUSES[hk]?.color || '#D4A64B';
-            sel.classList.add('slot-active');
-            sel.style.setProperty('--slot-color', hc);
+            const hc = HOUSES[state.equippedCards[si]?.house||'universal']?.color || '#D4A64B';
+            sel.classList.add('slot-active'); sel.style.setProperty('--slot-color', hc);
             setTimeout(() => sel.classList.remove('slot-active'), 5000);
-          } else {
-            sel.classList.remove('slot-active');
-          }
+          } else { sel.classList.remove('slot-active'); }
         }
       }
 
@@ -3959,6 +3996,7 @@
       if (state.combatMetrics.size > 0) renderCombatMeters();
       renderGuildSidebar();
       renderSidebarChart();
+      renderStatsTabChart();
     }, 5000);
 
   } // end connectArenaSocket
@@ -5957,9 +5995,11 @@
       slotEl.style.cssText = `border:1px solid ${hColor}40;`;
 
       slotEl.innerHTML = `
-        <!-- Art panel -->
-        <div class="slot-art" style="${artSrc ? `background-image:url('${artSrc}');background-size:cover;background-position:center;` : `background:linear-gradient(135deg,${hColor}28,rgba(8,6,18,0.9));`}">
-          ${!artSrc ? `<span style="font-size:22px;opacity:0.7">${HOUSES[houseKey]?.icon || '⚔'}</span>` : ''}
+        <!-- Art panel — img tag for instant loading -->
+        <div class="slot-art" style="${artSrc ? '' : `background:linear-gradient(135deg,${hColor}28,rgba(8,6,18,0.9));`}">
+          ${artSrc
+            ? `<img src="${artSrc}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;opacity:0;transition:opacity 0.3s;" onload="this.style.opacity=1" onerror="this.style.display='none'">`
+            : `<span style="font-size:22px;opacity:0.7">${HOUSES[houseKey]?.icon || '⚔'}</span>`}
           <div class="slot-art-gradient"></div>
         </div>
         <!-- Info panel -->
@@ -6025,10 +6065,32 @@
     }).join('');
   }
 
-  /** Animate the playhead on the spell timeline to reflect current progress */
-  function tickSpellPlayhead(progressPct) {
-    const ph = document.getElementById('spell-playhead');
-    if (ph) ph.style.left = Math.min(100, Math.max(0, progressPct)) + '%';
+  /** Drive the ATK speed bar — fills over attack interval, resets on attack */
+  let _atkBarStartTime = null;
+  let _atkBarInterval = 7000; // default 7s, updated from actual attack events
+  let _atkBarAnimFrame = null;
+
+  function startAtkBar(intervalMs) {
+    _atkBarInterval = intervalMs || _atkBarInterval;
+    _atkBarStartTime = performance.now();
+    if (_atkBarAnimFrame) cancelAnimationFrame(_atkBarAnimFrame);
+    function tick() {
+      const bar = document.getElementById('atk-speed-bar');
+      const icon = document.getElementById('atk-speed-icon');
+      if (!bar) return;
+      const elapsed = performance.now() - _atkBarStartTime;
+      const pct = Math.min(100, (elapsed / _atkBarInterval) * 100);
+      bar.style.width = pct + '%';
+      if (pct >= 99) {
+        // Flash icon on "fire"
+        if (icon) { icon.style.opacity = '1'; icon.style.transform = 'scale(1.3)'; }
+        setTimeout(() => {
+          if (icon) { icon.style.opacity = '0.4'; icon.style.transform = 'scale(1)'; }
+        }, 200);
+      }
+      if (pct < 100) _atkBarAnimFrame = requestAnimationFrame(tick);
+    }
+    _atkBarAnimFrame = requestAnimationFrame(tick);
   }
 
   /** Show a full-size V4 card in a popup overlay */
@@ -7051,8 +7113,8 @@
       const guildI = guildEntries.findIndex(([t])=>t===f.guild);
       const gColor = GUILD_COLORS_LIST[guildI % GUILD_COLORS_LIST.length] || '#888';
       const isLeaderF = f.guild === isLeader;
-      const dmgStr = f.damage > 0 ? `<span style="color:#e85a6a;font-size:7px">${f.damage.toLocaleString()}dmg</span>` : '';
-      const koStr  = f.kos > 0   ? `<span style="color:#D4A64B;font-size:7px">${f.kos}KO</span>` : '';
+      const dmgStr = f.damage > 0 ? `<span style="color:#e85a6a;font-size:4px">${f.damage.toLocaleString()}dmg</span>` : '';
+      const koStr  = f.kos > 0   ? `<span style="color:#D4A64B;font-size:4px">${f.kos}KO</span>` : '';
 
       html += `
         <div style="display:flex;align-items:center;gap:6px;padding:5px 0;${i < fighters.length-1?'border-bottom:1px solid rgba(255,255,255,0.04);':''}${f.isMe?'background:rgba(212,166,75,0.04);border-radius:6px;padding:5px 4px;':''}"
@@ -7077,10 +7139,65 @@
     container.innerHTML = html;
   }
 
-  function switchChartMetric(metric, btn) {
+  function renderStatsTabChart() {
+    const canvas = document.getElementById('stats-tab-chart');
+    const legend = document.getElementById('stats-tab-legend');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.offsetWidth || 400;
+    canvas.width = W;
+    const H = canvas.height = 50;
+    ctx.clearRect(0, 0, W, H);
+
+    const entries = Object.entries(state.chartData).filter(([,d]) => d.pts && d.pts.length > 0);
+    if (entries.length === 0) {
+      ctx.fillStyle = 'rgba(255,255,255,0.08)';
+      ctx.font = '9px monospace'; ctx.textAlign = 'center';
+      ctx.fillText('Combat data appears here as fighters battle', W/2, H/2+3);
+      if (legend) legend.innerHTML = '';
+      return;
+    }
+    let globalMax = 0;
+    entries.forEach(([,d]) => d.pts.forEach(v => { if (v > globalMax) globalMax = v; }));
+    if (globalMax === 0) globalMax = 1;
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'; ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      const y = H - (i/4)*H;
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+    }
+    entries.forEach(([name, d], gi) => {
+      const color = GUILD_COLORS_LIST[gi % GUILD_COLORS_LIST.length];
+      const pts = d.pts; if (pts.length < 2) return;
+      ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+      pts.forEach((v,i) => {
+        const x = (i/(MAX_CHART_POINTS-1))*W;
+        const y = H-(v/globalMax)*(H-4)-2;
+        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      });
+      ctx.stroke();
+      const lx = ((pts.length-1)/(MAX_CHART_POINTS-1))*W;
+      const ly = H-(pts[pts.length-1]/globalMax)*(H-4)-2;
+      ctx.beginPath(); ctx.fillStyle = color; ctx.arc(lx,ly,3,0,Math.PI*2); ctx.fill();
+    });
+
+    if (legend) {
+      legend.innerHTML = entries.map(([name, d], gi) => {
+        const color = GUILD_COLORS_LIST[gi % GUILD_COLORS_LIST.length];
+        const latest = d.pts[d.pts.length-1] || 0;
+        const metric = state._chartMetric || 'dmg';
+        const label = metric === 'kos' ? `${latest} KO` : latest.toLocaleString();
+        return `<span style="font-family:'Press Start 2P',monospace;font-size:7px;color:${color};display:flex;align-items:center;gap:4px;cursor:pointer;padding:2px 4px;border-radius:3px;border:1px solid transparent;"
+          onmouseenter="highlightGuild('${d.guild||name}');this.style.borderColor='${color}50'"
+          onmouseleave="resetGuildHighlight();this.style.borderColor='transparent'">
+          <span style="display:inline-block;width:12px;height:3px;background:${color};border-radius:1px;"></span>${name}: ${label}
+        </span>`;
+      }).join('');
+    }
+  }
     state._chartMetric = metric;
-    // Reset sparkline points so they rebuild for the new metric
-    state.chartData = {};
+    // Don't reset chartData — keep history, just re-render for new metric
+    // New data will accumulate from next trackCombatStat calls
     document.querySelectorAll('.chart-metric-btn').forEach(b => {
       b.style.color = 'var(--faint)';
       b.style.background = 'none';
@@ -7092,6 +7209,7 @@
       btn.style.borderColor = 'rgba(212,166,75,0.3)';
     }
     renderSidebarChart();
+    renderStatsTabChart();
   }
   window.switchChartMetric = switchChartMetric;
 
@@ -7191,7 +7309,7 @@
     // Throttle DOM re-render
     if (!_metersRenderPending) {
       _metersRenderPending = true;
-      setTimeout(() => { _metersRenderPending = false; renderCombatMeters(); renderSidebarChart(); }, 2000);
+      setTimeout(() => { _metersRenderPending = false; renderCombatMeters(); renderSidebarChart(); renderStatsTabChart(); }, 2000);
     }
   }
 
