@@ -73,8 +73,9 @@ function resolveHouseKey(raw) {
   return 'stormrage';
 }
 
-const atkInterval  = spd => Math.max(SPD_FLOOR, 10.5 - spd * 0.12);
-const cardInterval = spd => Math.max(5.5, 12.0 - spd * 0.10);
+const TICK_S        = TICK_MS / 1000; // 2.0
+const atkInterval  = spd => Math.max(SPD_FLOOR, 10.5 - spd * 0.12) / TICK_S;  // → ticks
+const cardInterval = spd => Math.max(5.5, 12.0 - spd * 0.10) / TICK_S;         // → ticks
 const dist         = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
 const clamp        = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
 const inRange      = (a,b,r) => dist(a,b) <= r;
@@ -574,7 +575,12 @@ async function loadDeploymentIntoEngine(dep){
 
 function removeDeploymentFromEngine(deploymentId,zoneId){
   const zs=zones.get(String(zoneId));
-  if(zs) zs.nines.delete(String(deploymentId));
+  if(!zs) return;
+  // Find the nine by deploymentId to get their playerId for broadcast
+  const nine = Array.from(zs.nines.values()).find(n => n.deploymentId === String(deploymentId));
+  zs.nines.delete(String(deploymentId));
+  // Broadcast removal so other clients remove the sprite immediately
+  if(nine) broadcast(zoneId,'arena:nine_left',{nine_id: nine.playerId, deploymentId: String(deploymentId)});
 }
 
 // ─── BROADCAST ────────────────────────────────────────────────────────

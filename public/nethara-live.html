@@ -430,16 +430,16 @@
       flex: 1; padding: 6px 8px 5px; display: flex; flex-direction: column;
       justify-content: space-between; min-width: 0;
     }
-    .slot-type { font-family: 'Press Start 2P', monospace; font-size: 6px; letter-spacing: 0.5px; }
+    .slot-type { font-family: 'Press Start 2P', monospace; font-size: 7px; letter-spacing: 0.5px; }
     .slot-name {
-      font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; color: var(--bright);
+      font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; color: var(--bright);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;
     }
     .slot-effect-pill {
-      font-family: 'Press Start 2P', monospace; font-size: 7px;
-      padding: 2px 6px; border-radius: 3px; white-space: nowrap; display: inline-block;
+      font-family: 'Press Start 2P', monospace; font-size: 8px;
+      padding: 3px 7px; border-radius: 3px; white-space: nowrap; display: inline-block;
     }
-    .slot-stats-row { display: flex; gap: 7px; font-family: 'Press Start 2P', monospace; font-size: 7px; }
+    .slot-stats-row { display: flex; gap: 8px; font-family: 'Press Start 2P', monospace; font-size: 8px; }
     .slot-sharpness { height: 2px; background: rgba(255,255,255,0.06); border-radius: 1px; overflow: hidden; margin-top: 2px; }
     .slot-sharpness-fill { height: 100%; border-radius: 1px; transition: width 0.3s; }
     .arena-card-slot.slot-active {
@@ -674,8 +674,8 @@
       box-shadow: 0 12px 40px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.06);
     }
     .sidebar-section-label {
-      font-family: 'Press Start 2P', monospace; font-size: 6px;
-      color: rgba(212,166,75,0.7); letter-spacing: 2px; margin-bottom: 10px;
+      font-family: 'Press Start 2P', monospace; font-size: 7px;
+      color: rgba(212,166,75,0.8); letter-spacing: 1.5px; margin-bottom: 8px;
       text-transform: uppercase; display: flex; align-items: center; gap: 6px;
     }
     .sidebar-section-label::after {
@@ -1018,6 +1018,7 @@
           <div class="your-nine-hp-text" id="your-hp-text">--/--</div>
         </div>
         <div class="your-nine-stats" id="your-nine-stats" style="margin-top:0;flex:1;justify-content:flex-start;"></div>
+        <button class="build-swap-btn" id="btn-swap-build" style="margin-top:0;flex-shrink:0;">⇄ SWAP</button>
         <button class="btn-withdraw" id="btn-withdraw" style="width:auto;padding:4px 10px;margin-top:0;flex-shrink:0;">WITHDRAW</button>
       </div>
     </div>
@@ -1043,12 +1044,9 @@
     <!-- Content pane — switches on tab click -->
     <div id="arena-tray-body">
 
-      <!-- BUILD pane -->
+      <!-- BUILD pane — no header, full height for cards -->
       <div class="tray-pane active" id="tray-pane-build">
-        <div class="build-pane-header">
-          <button class="build-swap-btn" id="btn-swap-build">⇄ SWAP CARDS</button>
-        </div>
-        <div class="build-cards" id="arena-card-slots" style="padding:10px 12px;gap:10px;">
+        <div class="build-cards" id="arena-card-slots" style="padding:6px 10px;gap:8px;">
           <div class="arena-card-slot empty" id="card-slot-0"><span class="slot-empty-text">1</span></div>
           <div class="arena-card-slot empty" id="card-slot-1"><span class="slot-empty-text">2</span></div>
           <div class="arena-card-slot empty" id="card-slot-2"><span class="slot-empty-text">3</span></div>
@@ -3794,22 +3792,38 @@
       addBattleLog(`⚔️ ${from} → ${to} -${dmg}${data.crit ? ' CRIT' : ''}${data.effect ? ' ['+data.effect+']' : ''} (slot ${data.slot||1})`, 'default');
 
       // Trigger cast overlay on player's own cards
-      if (String(fromId) === String(state.playerId) && data.slot) {
-        triggerCardCastOverlay(data.slot - 1, attacker?.house);
-        // Update which slot is active on timeline
-        state.cardCooldownIndex = (data.slot - 1);
+      if (String(fromId) === String(state.playerId) && data.slot != null) {
+        const slotIdx = data.slot - 1;
+        triggerCardCastOverlay(slotIdx, attacker?.house);
+        // Update cycle index
+        state.cardCooldownIndex = slotIdx;
         updateSpellTimeline(state.equippedCards);
-        // Highlight active slot with glowing border
+
+        // Animate playhead to the active slot marker position
+        const validCards = (state.equippedCards || []).filter(Boolean);
+        const n = validCards.length || 1;
+        const markerPct = n === 1 ? 50 : (slotIdx / (n - 1)) * 90 + 5;
+        const ph = document.getElementById('spell-playhead');
+        if (ph) {
+          ph.style.transition = 'left 0.4s ease';
+          ph.style.left = markerPct + '%';
+          // Flash it bright on cast
+          ph.style.background = attacker?.house ? (HOUSES[attacker.house]?.color || '#fff') : '#fff';
+          setTimeout(() => { if (ph) ph.style.background = 'rgba(255,255,255,0.8)'; }, 400);
+        }
+
+        // Glow the active slot
         for (let si = 0; si < 3; si++) {
           const sel = document.getElementById(`card-slot-${si}`);
           if (!sel) continue;
-          if (si === data.slot - 1) {
+          if (si === slotIdx) {
             const hk = state.equippedCards[si]?.house || 'universal';
             const hc = HOUSES[hk]?.color || '#D4A64B';
             sel.classList.add('slot-active');
             sel.style.setProperty('--slot-color', hc);
-            // Remove active after 4s (one cycle)
-            setTimeout(() => sel.classList.remove('slot-active'), 4000);
+            setTimeout(() => sel.classList.remove('slot-active'), 5000);
+          } else {
+            sel.classList.remove('slot-active');
           }
         }
       }
@@ -6908,17 +6922,15 @@
   const MAX_CHART_POINTS = 20; // keep last 20 snapshots (~40s at 2s ticks)
 
   function recordChartTick() {
-    // Called every N combat events — pull current damage from combatMetrics
-    const guildDmg = {};
-    state.combatMetrics.forEach((m) => {
-      const tag = m.guild || '???';
-      guildDmg[tag] = (guildDmg[tag] || 0) + (m.damage || 0);
+    // Push current cumulative stats into time-series data per player
+    state.combatMetrics.forEach((m, id) => {
+      const key = m.name || String(id).slice(0,8);
+      const metric = state._chartMetric || 'dmg';
+      const val = metric === 'dmg' ? (m.damage||0) : metric === 'heals' ? (m.heals||0) : (m.kos||0);
+      if (!state.chartData[key]) state.chartData[key] = { guild: m.guild, pts: [] };
+      state.chartData[key].pts.push(val);
+      if (state.chartData[key].pts.length > MAX_CHART_POINTS) state.chartData[key].pts.shift();
     });
-    for (const [tag, dmg] of Object.entries(guildDmg)) {
-      if (!state.chartData[tag]) state.chartData[tag] = [];
-      state.chartData[tag].push(dmg);
-      if (state.chartData[tag].length > MAX_CHART_POINTS) state.chartData[tag].shift();
-    }
     renderSidebarChart();
   }
 
@@ -6930,13 +6942,9 @@
     const W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
 
-    const metric = state._chartMetric || 'dmg';
+    const entries = Object.entries(state.chartData).filter(([,d]) => d.pts && d.pts.length > 0);
 
-    // Build per-player sparkline from combatMetrics for the selected metric
-    const statKey = metric === 'dmg' ? 'damage' : metric === 'heals' ? 'heals' : 'kos';
-    const entries = Object.entries(state.chartData);
-
-    if (entries.length === 0 || state.combatMetrics.size === 0) {
+    if (entries.length === 0) {
       ctx.fillStyle = 'rgba(255,255,255,0.08)';
       ctx.font = '8px monospace';
       ctx.textAlign = 'center';
@@ -6945,41 +6953,38 @@
     }
 
     let globalMax = 0;
-    entries.forEach(([, pts]) => { pts.forEach(v => { if (v > globalMax) globalMax = v; }); });
+    entries.forEach(([, d]) => { d.pts.forEach(v => { if (v > globalMax) globalMax = v; }); });
     if (globalMax === 0) globalMax = 1;
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-    ctx.lineWidth = 1;
+    // Grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 1;
     for (let i = 1; i < 4; i++) {
-      const y = H - (i / 4) * H;
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      const y = H - (i/4)*H;
+      ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
     }
 
-    const numPts = MAX_CHART_POINTS;
-    entries.forEach(([tag, pts], gi) => {
+    entries.forEach(([name, d], gi) => {
       const color = GUILD_COLORS_LIST[gi % GUILD_COLORS_LIST.length];
+      const pts = d.pts;
       if (pts.length < 2) return;
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1.5;
-      ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.lineJoin = 'round';
       pts.forEach((v, i) => {
-        const x = (i / (numPts - 1)) * W;
-        const y = H - (v / globalMax) * (H - 4) - 2;
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        const x = (i/(MAX_CHART_POINTS-1))*W;
+        const y = H - (v/globalMax)*(H-4) - 2;
+        if (i === 0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
       });
       ctx.stroke();
-      const lastX = ((pts.length - 1) / (numPts - 1)) * W;
-      const lastY = H - (pts[pts.length-1] / globalMax) * (H - 4) - 2;
-      ctx.beginPath(); ctx.fillStyle = color; ctx.arc(lastX, lastY, 2.5, 0, Math.PI*2); ctx.fill();
+      const lx = ((pts.length-1)/(MAX_CHART_POINTS-1))*W;
+      const ly = H - (pts[pts.length-1]/globalMax)*(H-4) - 2;
+      ctx.beginPath(); ctx.fillStyle = color; ctx.arc(lx, ly, 2.5, 0, Math.PI*2); ctx.fill();
     });
 
     if (legend) {
-      legend.innerHTML = entries.map(([tag, pts], gi) => {
+      legend.innerHTML = entries.map(([name, d], gi) => {
         const color = GUILD_COLORS_LIST[gi % GUILD_COLORS_LIST.length];
-        const latest = pts[pts.length - 1] || 0;
+        const latest = d.pts[d.pts.length-1] || 0;
         return `<span style="font-family:'Press Start 2P',monospace;font-size:4px;color:${color};display:flex;align-items:center;gap:3px;">
-          <span style="display:inline-block;width:10px;height:2px;background:${color};border-radius:1px;"></span>${tag} ${latest.toLocaleString()}
+          <span style="display:inline-block;width:10px;height:2px;background:${color};border-radius:1px;"></span>${name} ${latest.toLocaleString()}
         </span>`;
       }).join('');
     }
@@ -7046,8 +7051,8 @@
       const guildI = guildEntries.findIndex(([t])=>t===f.guild);
       const gColor = GUILD_COLORS_LIST[guildI % GUILD_COLORS_LIST.length] || '#888';
       const isLeaderF = f.guild === isLeader;
-      const dmgStr = f.damage > 0 ? `<span style="color:#e85a6a;font-size:4px">${f.damage.toLocaleString()}dmg</span>` : '';
-      const koStr  = f.kos > 0   ? `<span style="color:#D4A64B;font-size:4px">${f.kos}KO</span>` : '';
+      const dmgStr = f.damage > 0 ? `<span style="color:#e85a6a;font-size:7px">${f.damage.toLocaleString()}dmg</span>` : '';
+      const koStr  = f.kos > 0   ? `<span style="color:#D4A64B;font-size:7px">${f.kos}KO</span>` : '';
 
       html += `
         <div style="display:flex;align-items:center;gap:6px;padding:5px 0;${i < fighters.length-1?'border-bottom:1px solid rgba(255,255,255,0.04);':''}${f.isMe?'background:rgba(212,166,75,0.04);border-radius:6px;padding:5px 4px;':''}"
@@ -7072,9 +7077,10 @@
     container.innerHTML = html;
   }
 
-  // Switch sidebar chart metric
   function switchChartMetric(metric, btn) {
     state._chartMetric = metric;
+    // Reset sparkline points so they rebuild for the new metric
+    state.chartData = {};
     document.querySelectorAll('.chart-metric-btn').forEach(b => {
       b.style.color = 'var(--faint)';
       b.style.background = 'none';
@@ -7167,10 +7173,25 @@
     m.house = house || m.house;
     m[stat] = (m[stat] || 0) + amount;
     state.combatMetrics.set(id, m);
-    // Throttle DOM re-render — at most once per 3 seconds
+    // Update chart data directly on every stat change — no tick throttle needed
+    const key = m.name;
+    const metric = state._chartMetric || 'dmg';
+    const val = metric === 'dmg' ? (m.damage||0) : metric === 'heals' ? (m.heals||0) : (m.kos||0);
+    if (!state.chartData[key]) state.chartData[key] = { guild: m.guild, pts: [0] };
+    // Update the last point rather than always pushing (reduces chart noise)
+    state.chartData[key].pts[state.chartData[key].pts.length - 1] = val;
+    // Push a new point every ~10 damage events to build the sparkline
+    state._chartEventCount = (state._chartEventCount || 0) + 1;
+    if (state._chartEventCount % 8 === 0) {
+      Object.entries(state.chartData).forEach(([k, d]) => {
+        d.pts.push(d.pts[d.pts.length-1] || 0);
+        if (d.pts.length > MAX_CHART_POINTS) d.pts.shift();
+      });
+    }
+    // Throttle DOM re-render
     if (!_metersRenderPending) {
       _metersRenderPending = true;
-      setTimeout(() => { _metersRenderPending = false; renderCombatMeters(); }, 3000);
+      setTimeout(() => { _metersRenderPending = false; renderCombatMeters(); renderSidebarChart(); }, 2000);
     }
   }
 
