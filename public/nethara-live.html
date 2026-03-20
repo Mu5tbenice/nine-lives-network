@@ -1206,6 +1206,11 @@
       <div class="loading-text">Loading cards...</div>
     </div>
 
+    <!-- Auto-rejoin toggle — set before deploying -->
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0 4px;justify-content:center;">
+      <div class="auto-redeploy-toggle" id="deploy-modal-auto-toggle" onclick="toggleAutoRedeployFromModal()" title="Auto-rejoin when KO'd"></div>
+      <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--faint);" id="deploy-modal-auto-label">AUTO-REJOIN: OFF</span>
+    </div>
     <button class="btn-deploy" id="btn-confirm-deploy" disabled>SELECT 3 CARDS TO DEPLOY</button>
     <button class="btn-cancel" id="btn-cancel-deploy">CANCEL</button>
   </div>
@@ -1524,7 +1529,19 @@
     // Zone identity (from yesterday's fighter presence)
     const dominantHouse  = zone.dominant_house  || null;
     const brandedGuild   = zone.branded_guild   || null;
-    const houseBonusLabel = zone.house_bonus_label || null;
+    // Always derive label from our own map — never trust stale DB label
+    const CLIENT_HOUSE_BONUSES = {
+      smoulders:   '+20% ATK',
+      darktide:    '+3% HP regen/min',
+      stonebark:   '+25% max HP',
+      ashenvale:   '+15% SPD',
+      stormrage:   'Crits deal 3× dmg',
+      nighthollow: '+10 LUCK',
+      dawnbringer: 'HEAL & BLESS +50%',
+      manastorm:   'Effects +30%',
+      plaguemire:  'Enemies start poisoned',
+    };
+    const houseBonusLabel = dominantHouse ? CLIENT_HOUSE_BONUSES[dominantHouse] || null : null;
 
     // Use official HOUSES colours — not a separate map
     const houseColor = (h) => HOUSES[h]?.color || '#D4A64B';
@@ -6258,19 +6275,55 @@
   }
   window.toggleAutoRedeploy = toggleAutoRedeploy;
 
+  function toggleAutoRedeployFromModal() {
+    toggleAutoRedeploy(); // reuse same logic
+    // Sync modal toggle visual
+    const modalToggle = document.getElementById('deploy-modal-auto-toggle');
+    const modalLabel = document.getElementById('deploy-modal-auto-label');
+    if (modalToggle) modalToggle.classList.toggle('on', _autoRedeployOn);
+    if (modalLabel) modalLabel.textContent = _autoRedeployOn ? 'AUTO-REJOIN: ON ✓' : 'AUTO-REJOIN: OFF';
+  }
+  window.toggleAutoRedeployFromModal = toggleAutoRedeployFromModal;
+
   function checkAutoRedeploy() {
     if (!_autoRedeployOn) return;
     if (Date.now() > _autoRedeployExpiry) {
-      // Expired — turn off silently
       _autoRedeployOn = false;
       const toggle = document.getElementById('auto-redeploy-toggle');
       if (toggle) toggle.classList.remove('on');
-      addFeedEvent('⏰ Auto-rejoin expired (1h limit). Visit the site to redeploy.', 'system');
+      addFeedEvent('⏰ Auto-rejoin expired (1h limit).', 'system');
       return;
     }
-    // Open deploy modal automatically
+    // Silent redeploy with same cards — no modal needed
+    const cards = state.equippedCards || [];
+    if (!state.currentZoneId || !state.playerId) {
+      addFeedEvent('⚠️ Auto-rejoin: no zone or player ID.', 'system');
+      return;
+    }
+    if (cards.length === 0) {
+      // No cards cached — open modal for them to pick
+      dismissKOOverlay();
+      openDeployModal();
+      return;
+    }
     dismissKOOverlay();
-    openDeployModal();
+    addFeedEvent('🔄 Auto-rejoining battle...', 'system');
+    const cardIds = cards.map(c => c.player_card_id || c.id).filter(Boolean);
+    fetch('/api/zones/deploy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_id: state.playerId, zone_id: state.currentZoneId, card_ids: cardIds }),
+    }).then(r => r.json()).then(data => {
+      if (data.success || data.message) {
+        applyDeployedUI('♻️ Auto-redeployed with same cards!');
+        renderCardSlots(cards);
+        startAtkBar(7000); // restart ATK bar
+      } else {
+        addFeedEvent(`⚠️ Auto-rejoin failed: ${data.error || 'unknown'}`, 'system');
+      }
+    }).catch(e => {
+      addFeedEvent('⚠️ Auto-rejoin failed — deploy manually.', 'system');
+    });
   }
 
   /** Fetch equipped cards for this deployment */
@@ -7195,6 +7248,8 @@
       }).join('');
     }
   }
+
+  function switchChartMetric(metric, btn) {
     state._chartMetric = metric;
     // Don't reset chartData — keep history, just re-render for new metric
     // New data will accumulate from next trackCombatStat calls
