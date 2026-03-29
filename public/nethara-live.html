@@ -2277,12 +2277,10 @@
   }
 
   async function fetchCycleTiming() {
-    try {
-      const r = await fetch('/api/zones/cycle-timing');
-      if (!r.ok) return;
-      const d = await r.json();
-      if (d.next_snapshot_at) S.cycleEndTime = new Date(d.next_snapshot_at).getTime();
-    } catch(e) {}
+    // Endpoint doesn't exist — derive from server time: snapshots every 15 min on the :00/:15/:30/:45
+    const now = Date.now();
+    const INTERVAL = 15 * 60 * 1000;
+    S.cycleEndTime = Math.ceil(now / INTERVAL) * INTERVAL;
   }
 
   // ── CHAT ──
@@ -2379,6 +2377,10 @@
     get(_, k) { return window._S ? window._S[k] : undefined; },
     set(_, k, v) { if (window._S) window._S[k] = v; return true; },
   });
+  // Arena dimension constants
+  const ARENA_HALF_W = 320;
+  const ARENA_HALF_H = 180;
+
   function getSpawnPosition(guildTag, playerId) {
     if (!state._guildAngles) state._guildAngles = {};
     if (!state._guildCounts) state._guildCounts = {};
