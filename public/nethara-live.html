@@ -890,10 +890,10 @@
   <!-- ── RIGHT SIDEBAR: Guilds + Chat/Stats/Log ── desktop only -->
   <div id="arena-sidebar">
 
-    <!-- COMPETING GUILDS -->
-    <div id="sidebar-guilds" style="padding:16px 16px 12px;flex-shrink:0;">
-      <div class="sidebar-section-label">COMPETING GUILDS</div>
-      <div id="sidebar-guild-rows"></div>
+    <!-- FIGHTERS -->
+    <div id="sidebar-guilds" style="padding:12px 16px 6px;flex-shrink:0;overflow-y:auto;max-height:240px;">
+      <div class="sidebar-section-label">FIGHTERS</div>
+      <div id="fighters-list"></div>
     </div>
 
     <!-- DAMAGE CHART -->
@@ -950,15 +950,28 @@
       <button class="tray-tab" data-tab="log">📜 LOG</button>
     </div>
 
+    <!-- Spell cycle + ATK speed bars (shown when deployed) -->
+    <div id="spell-timeline" style="display:none;height:22px;background:rgba(0,0,0,0.2);border-bottom:1px solid rgba(255,255,255,0.04);align-items:center;padding:0 10px;gap:10px;">
+      <div style="display:flex;align-items:center;gap:5px;flex:1;">
+        <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.25);white-space:nowrap">SPELL</span>
+        <div id="spell-timeline-track" style="flex:1;height:7px;background:rgba(255,255,255,0.04);border-radius:4px;position:relative;overflow:hidden">
+          <div id="spell-playhead" style="position:absolute;top:50%;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:0 0 6px #fff;transform:translate(-50%,-50%);transition:left 0.35s ease;left:5%"></div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:5px;flex:1;">
+        <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.25);white-space:nowrap">ATK</span>
+        <div style="flex:1;height:7px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden;">
+          <div id="atk-speed-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#e85a6a,#ffaa44);border-radius:4px;transition:width 0.1s linear"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- Content pane — switches on tab click -->
     <div id="arena-tray-body">
 
       <!-- BUILD pane -->
       <div class="tray-pane active" id="tray-pane-build">
-        <div class="build-pane-header">
-          <button class="build-swap-btn" id="btn-swap-build">⇄ SWAP CARDS</button>
-        </div>
-        <div class="build-cards" id="arena-card-slots" style="padding:10px 12px;gap:10px;">
+        <div class="build-cards" id="arena-card-slots" style="padding:6px 10px;gap:8px;">
           <div class="arena-card-slot empty" id="card-slot-0"><span class="slot-empty-text">1</span></div>
           <div class="arena-card-slot empty" id="card-slot-1"><span class="slot-empty-text">2</span></div>
           <div class="arena-card-slot empty" id="card-slot-2"><span class="slot-empty-text">3</span></div>
@@ -974,9 +987,18 @@
         </div>
       </div>
 
-      <!-- STATS pane -->
-      <div class="tray-pane" id="tray-pane-stats">
-        <div id="contribution-list"></div>
+      <!-- STATS pane — sparkline chart + leaderboard -->
+      <div class="tray-pane" id="tray-pane-stats" style="overflow-y:auto;flex-direction:column;">
+        <div style="display:flex;gap:4px;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.05);flex-shrink:0;">
+          <button class="chart-metric-btn active" onclick="window.switchChartMetric('dmg',this)" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 7px;border-radius:3px;border:1px solid rgba(212,166,75,0.3);background:rgba(212,166,75,0.1);color:var(--gold);cursor:pointer;">⚔ DMG</button>
+          <button class="chart-metric-btn" onclick="window.switchChartMetric('heals',this)" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 7px;border-radius:3px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--faint);cursor:pointer;">💚 HEAL</button>
+          <button class="chart-metric-btn" onclick="window.switchChartMetric('kos',this)" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 7px;border-radius:3px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--faint);cursor:pointer;">💀 KOs</button>
+        </div>
+        <div style="padding:5px 8px 3px;flex-shrink:0;">
+          <canvas id="stats-tab-chart" height="45" style="width:100%;height:45px;display:block;background:rgba(255,255,255,0.02);border-radius:4px;"></canvas>
+          <div id="stats-tab-legend" style="display:flex;flex-wrap:wrap;gap:3px 8px;margin-top:3px;"></div>
+        </div>
+        <div id="contribution-list" style="flex:1;overflow-y:auto;padding:2px 6px;"></div>
       </div>
 
       <!-- LOG pane -->
@@ -1224,10 +1246,17 @@
   }
 
   function renderZoneList() {
-    const el = document.getElementById('zone-grid');
-    if (!el) return;
-    if (!S.zones.length) { el.innerHTML = '<div style="padding:20px;color:var(--faint)">Loading zones...</div>'; return; }
+    const el = document.getElementById('zone-container');
+    if (!el) { console.error('zone-container not found'); return; }
+    if (!S.zones.length) { el.innerHTML = '<div style="padding:20px;color:var(--faint);font-family:Crimson Text,serif">Loading zones...</div>'; return; }
     el.innerHTML = S.zones.map(zone => buildZoneCard(zone)).join('');
+    // Wire clicks
+    el.querySelectorAll('.zone-card[data-zone-id]').forEach(card => {
+      card.addEventListener('click', () => {
+        const zone = S.zones.find(z => String(z.id) === String(card.dataset.zoneId));
+        if (zone) openArena(zone);
+      });
+    });
   }
 
   function buildZoneCard(zone) {
@@ -1292,6 +1321,8 @@
     // Reset tray — show deploy CTA
     document.getElementById('arena-bottom-tray').style.display = 'none';
     document.getElementById('deploy-cta').style.display = 'block';
+    const tlReset = document.getElementById('spell-timeline');
+    if (tlReset) tlReset.style.display = 'none';
 
     renderSidebarChart();
     initPixiArena();
@@ -1344,6 +1375,8 @@
       S.deployedZoneIds.add(zoneId);
       document.getElementById('deploy-cta').style.display = 'none';
       document.getElementById('arena-bottom-tray').style.display = 'flex';
+      const tl0 = document.getElementById('spell-timeline');
+      if (tl0) tl0.style.display = 'flex';
       switchTrayTab('build');
       await loadMyCards(zoneId);
     } catch(e) { console.error('checkDeployment:', e); }
@@ -1675,6 +1708,8 @@
         closeDeployModal();
         document.getElementById('deploy-cta').style.display = 'none';
         document.getElementById('arena-bottom-tray').style.display = 'flex';
+        const tl1 = document.getElementById('spell-timeline');
+        if (tl1) tl1.style.display = 'flex';
         renderCardSlots(cards);
         updateYourNinePanel();
         switchTrayTab('build');
