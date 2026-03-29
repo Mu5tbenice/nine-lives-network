@@ -1504,7 +1504,10 @@
 
   // Swap button wiring (called after deploy modal confirms)
   document.addEventListener('click', e => {
-    if (e.target.id === 'btn-swap-build') openDeployModal();
+    if (e.target.id === 'btn-swap-build')    openDeployModal();
+    if (e.target.id === 'btn-join-battle')   openDeployModal();
+    if (e.target.id === 'btn-close-deploy')  closeDeployModal();
+    if (e.target.id === 'btn-confirm-deploy') confirmDeploy();
   });
 
   // ── YOUR NINE PANEL ──
