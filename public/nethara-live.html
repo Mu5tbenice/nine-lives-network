@@ -343,21 +343,22 @@
        Column: YOUR NINE header → tab bar → content
     ══════════════════════════════════════════════ */
     .arena-bottom-tray {
-      position: absolute; bottom: 0; left: 0; right: 300px; z-index: 25;
+      position: absolute; bottom: 0; left: 0; right: 290px; z-index: 25;
       display: flex; flex-direction: column;
       background: rgba(8,6,18,0.97);
-      border-top: 1px solid rgba(255,255,255,0.09);
+      border-top: 1px solid rgba(255,255,255,0.08);
       backdrop-filter: blur(12px);
-      max-height: 280px;
+      height: 182px;
     }
 
-    /* YOUR NINE — fixed header strip */
+    /* YOUR NINE — compact single row */
     .tray-nine-header {
-      padding: 12px 16px 10px; flex-shrink: 0;
-      border-bottom: 1px solid rgba(255,255,255,0.07);
+      height: 34px; padding: 0 12px; flex-shrink: 0;
+      display: flex; align-items: center;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
     .tray-nine-top {
-      display: flex; align-items: center; gap: 12px; margin-bottom: 6px;
+      display: flex; align-items: center; gap: 10px; width: 100%;
     }
 
     /* Tab bar */
@@ -367,9 +368,9 @@
     }
     .tray-tab {
       flex: 1; background: none; border: none;
-      border-right: 1px solid rgba(255,255,255,0.06);
-      color: var(--faint); font-family: 'Press Start 2P', monospace; font-size: 6px;
-      padding: 10px 4px; cursor: pointer; transition: color 0.2s, background 0.2s;
+      border-right: 1px solid rgba(255,255,255,0.05);
+      color: rgba(255,255,255,0.3); font-family: 'Press Start 2P', monospace; font-size: 6px;
+      padding: 7px 4px; cursor: pointer; transition: color 0.15s, background 0.15s;
       letter-spacing: 0.5px;
     }
     .tray-tab:last-child { border-right: none; }
@@ -392,39 +393,67 @@
       border-bottom: 1px solid rgba(255,255,255,0.04);
     }
 
-    /* ── Card slots — compact horizontal design ── */
+    /* ── Card slots — horizontal: art left 35%, info right 65% ── */
     .arena-card-slot {
-      flex: 1; min-width: 0; background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-      border-radius: 10px; padding: 10px 10px; position: relative;
-      transition: border-color 0.2s, background 0.2s; cursor: pointer;
+      flex: 1; min-width: 0; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; position: relative; cursor: pointer; overflow: hidden;
+      display: flex; flex-direction: row; height: 90px;
+      transition: border-color 0.2s;
     }
-    .arena-card-slot:hover { border-color: rgba(212,166,75,0.3); }
-    .arena-card-slot .slot-type {
-      font-family: 'Press Start 2P', monospace; font-size: 5px; font-weight: 700;
-      letter-spacing: 0.5px; margin-bottom: 2px;
-    }
-    .arena-card-slot .slot-name {
-      font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; color: var(--bright);
-      line-height: 1.2; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-    .arena-card-slot .slot-effects {
-      display: flex; gap: 3px; flex-wrap: wrap;
-    }
-    .arena-card-slot .slot-effect-pill {
-      font-family: 'Press Start 2P', monospace; font-size: 5px;
-      padding: 1px 4px; border-radius: 3px; white-space: nowrap;
-    }
-    .arena-card-slot .slot-sharpness {
-      margin-top: 3px; height: 2px; background: rgba(255,255,255,0.06); border-radius: 1px; overflow: hidden;
-    }
-    .arena-card-slot .slot-sharpness-fill { height: 100%; border-radius: 1px; transition: width 0.3s; }
-    .arena-card-slot.empty {
-      border-style: dashed; opacity: 0.3;
+    .arena-card-slot:hover { border-color: rgba(212,166,75,0.35); }
+    .arena-card-slot.slot-active { border-color: var(--slot-color, var(--gold)); box-shadow: 0 0 10px rgba(212,166,75,0.2); }
+    /* Art panel */
+    .slot-art {
+      width: 35%; flex-shrink: 0; position: relative; overflow: hidden;
+      background: rgba(255,255,255,0.03);
       display: flex; align-items: center; justify-content: center;
-      min-height: 52px;
+    }
+    .slot-art-img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: center top;
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .slot-art-img.loaded { opacity: 1; }
+    .slot-art-gradient {
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent 50%, rgba(8,6,18,0.7));
+      pointer-events: none;
+    }
+    /* Info panel */
+    .slot-info {
+      flex: 1; padding: 6px 8px; display: flex; flex-direction: column;
+      justify-content: space-between; min-width: 0; overflow: hidden;
+    }
+    .slot-type {
+      font-family: 'Press Start 2P', monospace; font-size: 6px;
+      letter-spacing: 0.3px; opacity: 0.7;
+    }
+    .slot-name {
+      font-family: 'Cinzel', serif; font-size: 12px; font-weight: 700; color: var(--bright);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;
+    }
+    .slot-effect-pill {
+      font-family: 'Press Start 2P', monospace; font-size: 7px;
+      padding: 2px 5px; border-radius: 3px; white-space: nowrap; display: inline-block;
+    }
+    .slot-stats-row {
+      display: flex; gap: 6px; flex-wrap: nowrap;
+      font-family: 'Press Start 2P', monospace; font-size: 7px;
+    }
+    .slot-sharpness { height: 2px; background: rgba(255,255,255,0.07); border-radius: 1px; overflow: hidden; }
+    .slot-sharpness-fill { height: 100%; border-radius: 1px; transition: width 0.3s; }
+    /* Cooldown bar at bottom */
+    .slot-cooldown {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+      background: rgba(255,255,255,0.05); border-radius: 0 0 7px 7px; overflow: hidden;
+    }
+    .slot-cooldown-fill { height: 100%; border-radius: 0 0 7px 7px; transition: width 0.4s linear; }
+    .arena-card-slot.empty {
+      border-style: dashed; opacity: 0.25; height: 90px;
+      align-items: center; justify-content: center; display: flex;
     }
     .arena-card-slot.empty .slot-empty-text {
-      font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--faint);
+      font-family: 'Press Start 2P', monospace; font-size: 10px; color: var(--faint);
     }
     .tray-section-label {
       font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--gold);
@@ -1480,7 +1509,7 @@
 
       el.innerHTML = `
         <div class="slot-art" style="${artSrc ? '' : `background:linear-gradient(135deg,${hc}28,rgba(8,6,18,0.9))`}">
-          ${artSrc ? `<img class="slot-art-img" src="${artSrc}" alt="">` : `<span style="font-size:22px;opacity:0.7">${HOUSES[hk]?.icon || '⚔'}</span>`}
+          ${artSrc ? `<img class="slot-art-img" src="${artSrc}" alt="" onload="this.classList.add('loaded')">` : `<span style="font-size:22px;opacity:0.7">${HOUSES[hk]?.icon || '⚔'}</span>`}
           <div class="slot-art-gradient"></div>
         </div>
         <div class="slot-info">
@@ -1639,31 +1668,96 @@
   function renderCardGrid(cards) {
     const grid = document.getElementById('deploy-card-grid');
     if (!grid) return;
-    if (!cards.length) { grid.innerHTML = '<div style="padding:20px;color:var(--faint);font-family:\'Cinzel\',serif">Open packs to get cards!</div>'; return; }
-    grid.innerHTML = cards.map((card, idx) => {
-      const hk = card.house || 'universal';
-      const hc = HOUSES[hk]?.color || '#888';
-      const eff = card.effect_1 || '';
-      const ec = eff ? (EFFECT_COLORS[eff.split(' ')[0].toUpperCase()]||'#D4A64B') : '#D4A64B';
-      const artSrc = card.image_url
-        ? (card.image_url.startsWith('http')||card.image_url.startsWith('/') ? card.image_url : '/assets/images/spells/'+card.image_url)
-        : '';
-      return `<div class="deploy-card-item" id="deploy-card-${idx}" onclick="toggleCardSelect(${idx})" style="border:1px solid ${hc}30;background:rgba(0,0,0,0.4);border-radius:8px;cursor:pointer;position:relative;overflow:hidden;padding:8px;">
-        ${artSrc ? `<img src="${artSrc}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.15;border-radius:8px;" alt="">` : ''}
-        <div style="position:relative;z-index:1;">
-          <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:${hc};margin-bottom:3px">${(card.spell_type||'ATTACK').toUpperCase()}</div>
-          <div style="font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:#fff;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${card.name}</div>
-          ${eff ? `<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:${ec}">${eff}</div>` : ''}
-          <div style="display:flex;gap:5px;margin-top:4px;font-family:'Press Start 2P',monospace;font-size:6px;flex-wrap:wrap">
-            ${card.base_atk>0?`<span style="color:#e85a6a">⚔${card.base_atk}</span>`:''}
-            ${card.base_hp>0?`<span style="color:#6acd8a">♥${card.base_hp}</span>`:''}
-            ${card.base_spd>0?`<span style="color:#6ac8d8">◈${card.base_spd}</span>`:''}
-            ${card.base_def>0?`<span style="color:#b088e8">⛊${card.base_def}</span>`:''}
-          </div>
-        </div>
-        <div class="deploy-card-check" id="check-${idx}" style="display:none;position:absolute;top:4px;right:4px;background:var(--gold);color:#000;border-radius:50%;width:18px;height:18px;font-size:10px;display:none;align-items:center;justify-content:center;font-weight:700">✓</div>
-      </div>`;
-    }).join('');
+    if (!cards.length) {
+      grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--faint);font-family:\'Cinzel\',serif;font-size:14px">Open packs to build your collection!</div>';
+      return;
+    }
+
+    // Sort filter UI
+    let sortBy = 'house';
+    const filterBar = document.createElement('div');
+    filterBar.style.cssText = 'display:flex;gap:6px;padding:0 0 12px;flex-shrink:0;flex-wrap:wrap;';
+    ['house','atk','hp','type'].forEach(s => {
+      const b = document.createElement('button');
+      b.textContent = s.toUpperCase();
+      b.style.cssText = `font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 8px;border-radius:3px;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:${s===sortBy?'rgba(212,166,75,0.15)':'none'};color:${s===sortBy?'var(--gold)':'var(--faint)'};transition:all 0.15s`;
+      b.onclick = () => {
+        sortBy = s;
+        filterBar.querySelectorAll('button').forEach(btn => { btn.style.background='none'; btn.style.color='var(--faint)'; });
+        b.style.background='rgba(212,166,75,0.15)'; b.style.color='var(--gold)';
+        renderSorted();
+      };
+      filterBar.appendChild(b);
+    });
+
+    const cardArea = document.createElement('div');
+    cardArea.className = 'deploy-card-grid';
+
+    grid.innerHTML = '';
+    grid.appendChild(filterBar);
+    grid.appendChild(cardArea);
+
+    function renderSorted() {
+      const sorted = [...cards].sort((a, b) => {
+        if (sortBy === 'atk') return (b.base_atk||0) - (a.base_atk||0);
+        if (sortBy === 'hp')  return (b.base_hp||0)  - (a.base_hp||0);
+        if (sortBy === 'type') return (a.spell_type||'').localeCompare(b.spell_type||'');
+        // house
+        return (a.house||'universal').localeCompare(b.house||'universal');
+      });
+
+      cardArea.innerHTML = '';
+      sorted.forEach(card => {
+        const origIdx = cards.indexOf(card);
+        const hk = card.house || SCHOOL_TO_HOUSE[card.school_id] || 'universal';
+        const hc = HOUSES[hk]?.color || '#888';
+        const isSelected = S.selectedCards.some(s => s.idx === origIdx);
+
+        const wrap = document.createElement('div');
+        wrap.className = 'deploy-card-slot' + (isSelected ? ' selected' : '');
+        wrap.id = `deploy-card-${origIdx}`;
+        wrap.style.cssText = isSelected ? `border-color:${hc};box-shadow:0 0 20px ${hc}55` : '';
+
+        // Use card-v4 renderer if available, else compact fallback
+        if (typeof buildCardV4 === 'function') {
+          wrap.innerHTML = buildCardV4(card, { compact: false });
+          try { if (typeof initCards === 'function') initCards(); } catch(e){}
+        } else {
+          const eff = card.effect_1 || '';
+          const ec = eff ? (EFFECT_COLORS[eff.split(' ')[0].toUpperCase()]||'#D4A64B') : '#D4A64B';
+          const artSrc = card.image_url ? (card.image_url.startsWith('/')||card.image_url.startsWith('http') ? card.image_url : '/assets/images/spells/'+card.image_url) : '';
+          wrap.innerHTML = `
+            <div style="width:160px;min-height:220px;background:linear-gradient(180deg,${hc}18,rgba(8,6,18,0.95));border-radius:12px;padding:12px;position:relative;overflow:hidden;">
+              ${artSrc ? `<img src="${artSrc}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.2;border-radius:12px" onload="this.style.opacity=0.25">` : ''}
+              <div style="position:relative;z-index:1">
+                <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:${hc};margin-bottom:4px">${(card.spell_type||'ATTACK').toUpperCase()}</div>
+                <div style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#fff;margin-bottom:6px;line-height:1.2">${card.name}</div>
+                ${eff ? `<div style="font-family:'Press Start 2P',monospace;font-size:8px;color:${ec};margin-bottom:8px">${eff}</div>` : ''}
+                <div style="display:flex;gap:6px;flex-wrap:wrap;font-family:'Press Start 2P',monospace;font-size:7px">
+                  ${card.base_atk>0?`<span style="color:#e85a6a">⚔ ${card.base_atk}</span>`:''}
+                  ${card.base_hp>0?`<span style="color:#6acd8a">♥ ${card.base_hp}</span>`:''}
+                  ${card.base_spd>0?`<span style="color:#6ac8d8">◈ ${card.base_spd}</span>`:''}
+                  ${card.base_def>0?`<span style="color:#b088e8">⛊ ${card.base_def}</span>`:''}
+                  ${card.base_luck>0?`<span style="color:#D4A64B">★ ${card.base_luck}</span>`:''}
+                </div>
+              </div>
+            </div>`;
+        }
+
+        // Selection badge
+        const badge = document.createElement('div');
+        badge.style.cssText = `position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--gold);color:#000;display:${isSelected?'flex':'none'};align-items:center;justify-content:center;font-size:12px;font-weight:700;z-index:10;box-shadow:0 0 8px rgba(212,166,75,0.6)`;
+        badge.textContent = '✓';
+        badge.id = `check-${origIdx}`;
+        wrap.style.position = 'relative';
+        wrap.appendChild(badge);
+
+        wrap.addEventListener('click', () => toggleCardSelect(origIdx));
+        cardArea.appendChild(wrap);
+      });
+    }
+
+    renderSorted();
   }
 
   window.toggleCardSelect = function(idx) {
@@ -1672,14 +1766,14 @@
     const existing = S.selectedCards.findIndex(s => s.idx === idx);
     const el = document.getElementById(`deploy-card-${idx}`);
     const check = document.getElementById(`check-${idx}`);
+    const hc = HOUSES[card.house||'universal']?.color || '#D4A64B';
     if (existing >= 0) {
       S.selectedCards.splice(existing, 1);
-      if (el) el.style.boxShadow = '';
+      if (el) { el.classList.remove('selected'); el.style.borderColor = ''; el.style.boxShadow = ''; }
       if (check) check.style.display = 'none';
     } else if (S.selectedCards.length < 3) {
       S.selectedCards.push({ idx, card });
-      const hc = HOUSES[card.house||'universal']?.color || '#D4A64B';
-      if (el) el.style.boxShadow = `0 0 0 2px ${hc}`;
+      if (el) { el.classList.add('selected'); el.style.borderColor = hc; el.style.boxShadow = `0 0 20px ${hc}55`; }
       if (check) check.style.display = 'flex';
     }
     const count = document.getElementById('deploy-selected-count');
@@ -1689,7 +1783,7 @@
       btn.disabled = S.selectedCards.length !== 3;
       btn.textContent = S.selectedCards.length === 3
         ? (S.isDeployed ? '⚔️ SWAP CARDS' : '⚔️ DEPLOY')
-        : `SELECT ${3-S.selectedCards.length} MORE`;
+        : `SELECT ${3 - S.selectedCards.length} MORE`;
     }
   };
 
