@@ -1265,7 +1265,17 @@
     const hColor = houseKey ? (HOUSES[houseKey]?.color || '#D4A64B') : '#D4A64B';
     const casters = zone.deployment_count || zone.arena_nines || 0;
     const isDeployed = S.deployedZoneIds.has(zone.id);
-    const biomeImg = zone.image_url || (houseKey && HOUSES[houseKey]?.biome) || '/assets/images/biomes/default.png';
+    // Use getBiomeUrl if available (defined in PIXI IIFE), else fallback inline
+    const getBiome = window.getBiomeUrl || function(z) {
+      const list = ['Hanwu-Boglands.png','misty-falls.png','ancient-ruins.png','twilight-grove.png',
+        'dragons-rest.jpg','skycastle.png','chaos-rift.png','crystal-creek.png','abysal-edge.png',
+        'moon-citadel.png','scorched-plains.png','tidal-depths.png','umbral-wall.png'];
+      let f = z.image_url || '';
+      if (!f) return '/assets/images/biomes/' + list[((z.id||1)-1) % list.length];
+      if (f.startsWith('/')||f.startsWith('http')) return f;
+      return '/assets/images/biomes/' + f;
+    };
+    const biomeImg = getBiome(zone);
     return `
       <div class="zone-card" onclick="window.__9lv_openArena && window.__9lv_openArena(${JSON.stringify(zone).replace(/"/g, '&quot;')})">
         <div class="zone-card-img-wrap">
@@ -2733,6 +2743,26 @@
     });
     console.log('🎯 Round positions assigned (polygon-based)');
   }
+
+  // Biome image helpers
+  const BIOME_FALLBACK = '/assets/images/biomes/Hanwu-Boglands.png';
+  const BIOME_LIST = [
+    'Hanwu-Boglands.png','misty-falls.png','ancient-ruins.png',
+    'twilight-grove.png','dragons-rest.jpg','skycastle.png',
+    'chaos-rift.png','crystal-creek.png','abysal-edge.png',
+    'moon-citadel.png','scorched-plains.png','tidal-depths.png',
+    'umbral-wall.png',
+  ];
+  function getBiomeUrl(zone) {
+    let f = zone.image_url || '';
+    if (!f) {
+      const idx = ((zone.id || 1) - 1) % BIOME_LIST.length;
+      return '/assets/images/biomes/' + BIOME_LIST[idx];
+    }
+    if (f.startsWith('/') || f.startsWith('http')) return f;
+    return '/assets/images/biomes/' + f;
+  }
+  window.getBiomeUrl = getBiomeUrl;
 
   function setBiomeBackground(container) {
     const imgUrl = getBiomeUrl(state.currentZone || {});
