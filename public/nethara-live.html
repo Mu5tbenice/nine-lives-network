@@ -2013,6 +2013,19 @@
     state.roundWins = {};
     state._guildAngles = {};
     state._guildCounts = {};
+    // Clear per-zone state completely so return visits start fresh
+    state.equippedCards = [];
+    state.combatMetrics = new Map();
+    state.isDeployed = false;
+    state.isFighting = false;
+    // Clear sprites from any previous arena visit
+    if (state.nines && state.nines.size > 0) {
+      state.nines.forEach((sprite) => {
+        try { if (state.arenaApp) state.arenaApp.stage.removeChild(sprite.container); } catch(e) {}
+      });
+      state.nines.clear();
+    }
+    if (state._recentlyKOd) state._recentlyKOd.clear();
 
     // Update UI
     document.getElementById('zone-list-view').style.display = 'none';
@@ -2023,6 +2036,7 @@
     if (mobileBtn) mobileBtn.style.display = isMobile ? 'block' : 'none';
     state.chartData = {};
     state.chartTick = 0;
+    state._chartEventCount = 0;
     renderSidebarChart();
     document.getElementById('arena-zone-name').textContent = zone.name;
     // Show the persistent nine info bar
@@ -3438,6 +3452,11 @@
 
   // ===== SOCKET.IO =====
   function connectArenaSocket(zoneId) {
+    // Destroy previous socket if returning to arena — prevents dual-socket race
+    if (state.socket) {
+      try { state.socket.removeAllListeners(); state.socket.disconnect(); } catch(e) {}
+      state.socket = null;
+    }
     const socket = io('/arena', { transports: ['websocket', 'polling'], query: { zoneId: zoneId } });
     state.socket = socket;
 
@@ -3749,12 +3768,14 @@
         const resolvedId = resolveId(d.id);
         let sprite = state.nines.get(resolvedId);
 
-        // Create sprite if it doesn't exist yet (e.g. opponent already fighting when we joined)
-        // Guards: never re-create the current player's sprite if they're not deployed,
-        // and never re-create a sprite that was recently removed by KO
+        // Create sprite if missing. Guards:
+        // - Never re-create if recently KO'd (still in cooldown)
+        // - If current player: only block if explicitly NOT deployed (sprite was withdrawn)
+        //   If deployed but sprite cleared (page return), DO create it
         const isCurrentPlayer = String(resolvedId) === String(state.playerId);
         const recentlyKOd = state._recentlyKOd && state._recentlyKOd.has(String(resolvedId));
-        if (!sprite && state.arenaApp && d.houseKey && !recentlyKOd && !(isCurrentPlayer && !state.isDeployed)) {
+        const blockCurrentPlayer = isCurrentPlayer && !state.isDeployed;
+        if (!sprite && state.arenaApp && d.houseKey && !recentlyKOd && !blockCurrentPlayer) {
           addNineSprite({
             id: d.id,
             name: d.playerName || String(d.id).slice(0, 8),
@@ -3780,6 +3801,13 @@
           if (d.guildTag) sprite.guild = d.guildTag;
           updateNineHP(resolvedId, d.hp, d.maxHp);
           updateStatusRings(sprite, d.status, d.activeEffect);
+          // Keep YOUR NINE HP bar in sync
+          if (isCurrentPlayer) {
+            const fill = document.getElementById('your-hp-fill');
+            const text = document.getElementById('your-hp-text');
+            if (fill) fill.style.width = `${Math.max(0, (d.hp / d.maxHp) * 100)}%`;
+            if (text) text.textContent = `${Math.round(d.hp)}/${d.maxHp}`;
+          }
         }
 
         // Seed combatMetrics
@@ -6448,37 +6476,32 @@
         if (cards.length > 0) {
           state.equippedCards = cards;
           renderCardSlots(cards);
-          // Update localStorage so our persistent cache is fresh
+          updateYourNineStats(); // show stats immediately — no sprite needed
           try { localStorage.setItem('9lv_equipped_' + zoneId + '_' + state.playerId, JSON.stringify(cards)); } catch(e) {}
         } else {
-          // No cards from server — try localStorage fallback before giving up
-          if (state.equippedCards.length === 0) {
-            try {
-              const cached = localStorage.getItem('9lv_equipped_' + zoneId + '_' + state.playerId);
-              if (cached) {
-                const cachedCards = JSON.parse(cached);
-                if (Array.isArray(cachedCards) && cachedCards.length > 0) {
-                  console.log('[checkDeployment] Using localStorage card fallback:', cachedCards.length, 'cards');
-                  state.equippedCards = cachedCards;
-                  renderCardSlots(cachedCards);
-                } else {
-                  renderCardSlots([]);
-                }
+          // No cards from server — try localStorage
+          try {
+            const cached = localStorage.getItem('9lv_equipped_' + zoneId + '_' + state.playerId);
+            if (cached) {
+              const cachedCards = JSON.parse(cached);
+              if (Array.isArray(cachedCards) && cachedCards.length > 0) {
+                state.equippedCards = cachedCards;
+                renderCardSlots(cachedCards);
+                updateYourNineStats();
               } else {
                 renderCardSlots([]);
               }
-            } catch(e) {
+            } else {
               renderCardSlots([]);
             }
+          } catch(e) {
+            renderCardSlots([]);
           }
-          // If equippedCards is already populated (e.g. just deployed), leave them alone
         }
 
-        // Update Your Nine stats (retry if sprite not loaded yet)
-        updateYourNineStats();
+        // Re-run stats when sprite arrives from positions tick (HP bar update)
         if (!state.nines.has(state.playerId)) {
-          setTimeout(updateYourNineStats, 1500);
-          setTimeout(updateYourNineStats, 4000);
+          setTimeout(updateYourNineStats, 2500);
         }
       } else {
         state.isDeployed = false;
@@ -6494,11 +6517,6 @@
 
   /** Update Your Nine stats display from sprite + equipped cards */
   function updateYourNineStats() {
-    const sprite = state.nines.get(state.playerId);
-    if (!sprite) return;
-
-    // House base stats — use from sprite.stats if populated by engine,
-    // otherwise look up from the HOUSE_STATS constant via house key
     const HOUSE_BASE = {
       stormrage:   { atk:40, hp:280, spd:30, def:5,  luck:15 },
       smoulders:   { atk:35, hp:350, spd:25, def:10, luck:10 },
@@ -6510,41 +6528,48 @@
       plaguemire:  { atk:20, hp:450, spd:20, def:25, luck:10 },
       darktide:    { atk:25, hp:450, spd:20, def:20, luck:10 },
     };
-    const houseKey = sprite.house || SCHOOL_TO_HOUSE[state.playerHouse] || 'stormrage';
+
+    // Resolve house from sprite (most accurate), or player session data
+    const sprite = state.nines.get(state.playerId);
+    const houseKey = sprite?.house
+      || SCHOOL_TO_HOUSE[state.playerHouse]
+      || (typeof state.playerHouse === 'string' ? state.playerHouse : null)
+      || 'stormrage';
     const base = HOUSE_BASE[houseKey] || HOUSE_BASE.stormrage;
 
-    const hAtk  = sprite.stats?.atk  || base.atk;
-    const hHp   = sprite.maxHp       || base.hp;
-    const hSpd  = sprite.stats?.spd  || base.spd;
-    const hDef  = sprite.stats?.def  || base.def;
-    const hLuck = sprite.stats?.luck || base.luck;
-
+    // Card bonuses
     let cardAtk = 0, cardHp = 0, cardSpd = 0, cardDef = 0, cardLuck = 0;
-    if (state.equippedCards && state.equippedCards.length > 0) {
-      state.equippedCards.forEach(c => {
-        if (!c) return;
-        cardAtk  += c.base_atk  || 0;
-        cardHp   += c.base_hp   || 0;
-        cardSpd  += c.base_spd  || 0;
-        cardDef  += c.base_def  || 0;
-        cardLuck += c.base_luck || 0;
-      });
-    }
+    (state.equippedCards || []).forEach(c => {
+      if (!c) return;
+      cardAtk  += c.base_atk  || 0;
+      cardHp   += c.base_hp   || 0;
+      cardSpd  += c.base_spd  || 0;
+      cardDef  += c.base_def  || 0;
+      cardLuck += c.base_luck || 0;
+    });
 
     const statsEl = document.getElementById('your-nine-stats');
     if (statsEl) {
       statsEl.innerHTML = `
-        <div class="your-nine-stat" style="color:#e85a6a">⚔ ${hAtk + cardAtk}</div>
-        <div class="your-nine-stat" style="color:#6acd8a">♥ ${hHp + cardHp}</div>
-        <div class="your-nine-stat" style="color:#6ac8d8">◈ ${hSpd + cardSpd}</div>
-        <div class="your-nine-stat" style="color:#b088e8">⛊ ${hDef + cardDef}</div>
-        <div class="your-nine-stat" style="color:#D4A64B">★ ${hLuck + cardLuck}</div>
+        <div class="your-nine-stat" style="color:#e85a6a" title="ATK">⚔ ${base.atk + cardAtk}</div>
+        <div class="your-nine-stat" style="color:#6acd8a" title="HP">♥ ${base.hp + cardHp}</div>
+        <div class="your-nine-stat" style="color:#6ac8d8" title="SPD">◈ ${base.spd + cardSpd}</div>
+        <div class="your-nine-stat" style="color:#b088e8" title="DEF">⛊ ${base.def + cardDef}</div>
+        <div class="your-nine-stat" style="color:#D4A64B" title="LUCK">★ ${base.luck + cardLuck}</div>
       `;
     }
+
+    // HP bar — use live sprite HP if available, otherwise show max HP
     const fill = document.getElementById('your-hp-fill');
     const text = document.getElementById('your-hp-text');
-    if (fill) fill.style.width = `${(sprite.hp / sprite.maxHp) * 100}%`;
-    if (text) text.textContent = `${sprite.hp}/${sprite.maxHp}`;
+    if (sprite && fill && text) {
+      fill.style.width = `${Math.max(0, (sprite.hp / sprite.maxHp) * 100)}%`;
+      text.textContent = `${Math.round(sprite.hp)}/${sprite.maxHp}`;
+    } else if (fill && text) {
+      fill.style.width = '100%';
+      const maxHp = base.hp + cardHp;
+      text.textContent = `${maxHp}/${maxHp}`;
+    }
   }
 
   // ===== DEPLOY MODAL — CARD SELECTION =====
