@@ -347,9 +347,15 @@
       display: flex; flex-direction: column;
       background: rgba(8,6,18,0.97);
       border-top: 1px solid rgba(255,255,255,0.08);
-      backdrop-filter: blur(12px);
-      height: 182px;
+      backdrop-filter: blur(14px);
+      height: 130px;
     }
+    /* Stat bars in the HUD */
+    .hud-stat-bar-wrap { display:flex; align-items:center; gap:5px; margin-bottom:3px; }
+    .hud-stat-label { font-family:'Press Start 2P',monospace; font-size:5px; width:20px; flex-shrink:0; }
+    .hud-stat-track { flex:1; height:5px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden; }
+    .hud-stat-fill { height:100%; border-radius:3px; transition:width 0.4s; }
+    .hud-stat-val { font-family:'Press Start 2P',monospace; font-size:5px; min-width:22px; text-align:right; }
 
     /* YOUR NINE — compact single row */
     .tray-nine-header {
@@ -629,20 +635,25 @@
     }
     .deploy-cards-title { font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--faint); letter-spacing: 1px; margin-bottom: 10px; }
     .deploy-card-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
-      gap: 10px; margin-bottom: 16px; max-height: 55vh; overflow-y: auto;
-      padding-right: 4px; justify-items: center;
+      display: flex; flex-direction: row; gap: 12px;
+      overflow-x: auto; overflow-y: hidden;
+      padding: 4px 4px 12px; scroll-snap-type: x mandatory;
+      scrollbar-width: thin; scrollbar-color: rgba(212,166,75,0.25) transparent;
     }
+    .deploy-card-grid::-webkit-scrollbar { height: 4px; }
+    .deploy-card-grid::-webkit-scrollbar-thumb { background: rgba(212,166,75,0.25); border-radius: 2px; }
     .deploy-card-slot {
-      cursor: pointer; transition: all 0.15s;
+      cursor: pointer; transition: all 0.2s;
       position: relative; border-radius: 14px;
       border: 2px solid transparent;
-      padding: 2px;
+      padding: 2px; flex-shrink: 0;
+      scroll-snap-align: start;
+      width: 168px;
     }
-    .deploy-card-slot:hover { transform: translateY(-4px); }
+    .deploy-card-slot:hover { transform: translateY(-3px); }
     .deploy-card-slot .spell-card { pointer-events: none; }
     .deploy-card-slot .spell-card:hover { transform: none; box-shadow: none; }
-    .deploy-card-slot.selected { border-color: var(--gold); box-shadow: 0 0 24px rgba(212,166,75,0.35); }
+    .deploy-card-slot.selected { border-color: var(--gold); box-shadow: 0 0 24px rgba(212,166,75,0.4); transform: translateY(-3px); }
     .deploy-card-slot.deployed-elsewhere { opacity: 0.25; pointer-events: none; }
     .selected-badge {
       display: none; position: absolute; top: -1px; left: -1px; right: -1px; z-index: 10;
@@ -951,91 +962,95 @@
     <div id="scoreboard-rows"></div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════
-       UNIFIED BOTTOM PANEL — YOUR NINE + tabbed content
-       Tabs: BUILD | CHAT | STATS | LOG
-       Same on desktop and mobile.
-  ════════════════════════════════════════════════════ -->
+  <!-- ══════════════════════════════════════════════════════
+       COMBAT HUD — Your Nine's full status panel
+       Layout: [Nine+items] [Controls] [Stats] [Cards + cast bar] [ATK bar]
+  ══════════════════════════════════════════════════════ -->
   <div class="arena-bottom-tray" id="arena-bottom-tray" style="display:none;">
 
-    <!-- YOUR NINE — always visible at top -->
-    <div class="tray-nine-header" id="your-nine-panel">
-      <div class="tray-nine-top">
-        <span class="tray-section-label" style="margin-bottom:0; flex-shrink:0;">YOUR NINE</span>
-        <div class="your-nine-hp">
-          <div class="your-nine-hp-bar"><div class="your-nine-hp-fill" id="your-hp-fill" style="width:100%"></div></div>
-          <div class="your-nine-hp-text" id="your-hp-text">--/--</div>
+    <!-- ── MAIN HUD ROW ── -->
+    <div id="hud-main" style="display:flex;flex-direction:row;height:100%;gap:0;">
+
+      <!-- [1] NINE PORTRAIT + debuff icons -->
+      <div id="hud-nine" style="width:110px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 6px;gap:4px;">
+        <div id="hud-nine-portrait" style="width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,0.05);border:2px solid rgba(212,166,75,0.25);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;">
+          <div id="hud-nine-icon" style="font-size:28px">🐱</div>
+          <img id="hud-nine-img" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;" onload="this.style.display='block';document.getElementById('hud-nine-icon').style.display='none'">
         </div>
-        <button class="btn-withdraw" id="btn-withdraw" style="width:auto; padding:4px 10px; margin-top:0; flex-shrink:0;">WITHDRAW</button>
+        <div id="hud-nine-name" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--gold);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100px;"></div>
+        <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:14px;"></div>
       </div>
-      <div class="your-nine-stats" id="your-nine-stats"></div>
-    </div>
 
-    <!-- Tab bar: BUILD | CHAT | STATS | LOG -->
-    <div id="arena-tray-tabs">
-      <button class="tray-tab active" data-tab="build">🗡️ BUILD</button>
-      <button class="tray-tab" data-tab="chat">💬 CHAT</button>
-      <button class="tray-tab" data-tab="stats">📊 STATS</button>
-      <button class="tray-tab" data-tab="log">📜 LOG</button>
-    </div>
-
-    <!-- Spell cycle + ATK speed bars (shown when deployed) -->
-    <div id="spell-timeline" style="display:none;height:22px;background:rgba(0,0,0,0.2);border-bottom:1px solid rgba(255,255,255,0.04);align-items:center;padding:0 10px;gap:10px;">
-      <div style="display:flex;align-items:center;gap:5px;flex:1;">
-        <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.25);white-space:nowrap">SPELL</span>
-        <div id="spell-timeline-track" style="flex:1;height:7px;background:rgba(255,255,255,0.04);border-radius:4px;position:relative;overflow:hidden">
-          <div id="spell-playhead" style="position:absolute;top:50%;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:0 0 6px #fff;transform:translate(-50%,-50%);transition:left 0.35s ease;left:5%"></div>
+      <!-- [2] CONTROLS: HP bar + buttons -->
+      <div id="hud-controls" style="width:130px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;justify-content:space-between;padding:8px 10px;">
+        <!-- HP bar -->
+        <div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);margin-bottom:3px;">HP</div>
+          <div style="height:6px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin-bottom:2px;">
+            <div id="your-hp-fill" style="height:100%;background:linear-gradient(90deg,#44cc88,#66eebb);border-radius:3px;transition:width 0.4s ease;width:100%"></div>
+          </div>
+          <div id="your-hp-text" style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--green);">--/--</div>
+        </div>
+        <!-- Action buttons -->
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <button id="btn-swap-build" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--faint);border-radius:4px;cursor:pointer;width:100%;transition:all 0.15s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--faint)'">⇄ LOADOUT</button>
+          <button id="btn-withdraw" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 6px;background:rgba(255,68,102,0.06);border:1px solid rgba(255,68,102,0.2);color:var(--red);border-radius:4px;cursor:pointer;width:100%;transition:all 0.15s;">WITHDRAW</button>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <div id="auto-redeploy-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()" style="width:28px;height:14px;background:rgba(255,255,255,0.06);border-radius:7px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;">
+              <div style="position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3);transition:left 0.2s;"></div>
+            </div>
+            <span id="auto-redeploy-label" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);">AUTO</span>
+          </div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:5px;flex:1;">
-        <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.25);white-space:nowrap">ATK</span>
-        <div style="flex:1;height:7px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden;">
-          <div id="atk-speed-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#e85a6a,#ffaa44);border-radius:4px;transition:width 0.1s linear"></div>
-        </div>
+
+      <!-- [3] STAT BARS -->
+      <div id="hud-stats" style="width:110px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.06);padding:8px 10px;display:flex;flex-direction:column;justify-content:center;gap:4px;">
+        <div id="your-nine-stats"></div>
       </div>
-    </div>
 
-    <!-- Content pane — switches on tab click -->
-    <div id="arena-tray-body">
-
-      <!-- BUILD pane -->
-      <div class="tray-pane active" id="tray-pane-build">
-        <div class="build-cards" id="arena-card-slots" style="padding:6px 10px;gap:8px;">
+      <!-- [4] CARD SLOTS + cast progress bar (orange liquid) -->
+      <div id="hud-cards" style="flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,0.06);">
+        <!-- Orange cast progress bar spanning all 3 cards -->
+        <div id="spell-timeline" style="display:none;height:4px;background:rgba(255,255,255,0.04);position:relative;flex-shrink:0;">
+          <div id="spell-timeline-track" style="position:absolute;inset:0;overflow:hidden;">
+            <div id="spell-playhead" style="position:absolute;top:0;height:100%;width:8px;background:linear-gradient(90deg,transparent,#ffaa44,#ff6622,transparent);box-shadow:0 0 8px #ff6622;transition:left 0.35s ease;left:0%;border-radius:2px;"></div>
+          </div>
+          <!-- Card divider markers -->
+          <div style="position:absolute;top:0;bottom:0;left:33.3%;width:1px;background:rgba(255,255,255,0.1);"></div>
+          <div style="position:absolute;top:0;bottom:0;left:66.6%;width:1px;background:rgba(255,255,255,0.1);"></div>
+        </div>
+        <!-- Card slots row -->
+        <div style="display:flex;flex:1;gap:6px;padding:6px 8px;">
           <div class="arena-card-slot empty" id="card-slot-0"><span class="slot-empty-text">1</span></div>
           <div class="arena-card-slot empty" id="card-slot-1"><span class="slot-empty-text">2</span></div>
           <div class="arena-card-slot empty" id="card-slot-2"><span class="slot-empty-text">3</span></div>
         </div>
       </div>
 
-      <!-- CHAT pane -->
-      <div class="tray-pane" id="tray-pane-chat">
-        <div id="arena-chat-log"></div>
-        <div class="chat-input-row">
-          <input id="arena-chat-input" type="text" maxlength="120" placeholder="Say something...">
-          <button id="arena-chat-send">➤</button>
+      <!-- [5] AUTO-ATTACK bar (vertical liquid fill) -->
+      <div id="hud-atk" style="width:36px;flex-shrink:0;padding:8px 6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:4px;">
+        <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);text-align:center;line-height:1.4;">AUTO<br>ATK</div>
+        <!-- Vertical fill bar -->
+        <div style="flex:1;width:14px;background:rgba(255,255,255,0.05);border-radius:7px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.08);">
+          <div id="atk-speed-bar" style="position:absolute;bottom:0;left:0;right:0;height:0%;background:linear-gradient(180deg,#ffaa44,#e85a6a);border-radius:7px;transition:height 0.1s linear;"></div>
         </div>
-      </div>
-
-      <!-- STATS pane — sparkline chart + leaderboard -->
-      <div class="tray-pane" id="tray-pane-stats" style="overflow-y:auto;flex-direction:column;">
-        <div style="display:flex;gap:4px;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.05);flex-shrink:0;">
-          <button class="chart-metric-btn active" onclick="window.switchChartMetric('dmg',this)" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 7px;border-radius:3px;border:1px solid rgba(212,166,75,0.3);background:rgba(212,166,75,0.1);color:var(--gold);cursor:pointer;">⚔ DMG</button>
-          <button class="chart-metric-btn" onclick="window.switchChartMetric('heals',this)" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 7px;border-radius:3px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--faint);cursor:pointer;">💚 HEAL</button>
-          <button class="chart-metric-btn" onclick="window.switchChartMetric('kos',this)" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 7px;border-radius:3px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--faint);cursor:pointer;">💀 KOs</button>
-        </div>
-        <div style="padding:5px 8px 3px;flex-shrink:0;">
-          <canvas id="stats-tab-chart" height="45" style="width:100%;height:45px;display:block;background:rgba(255,255,255,0.02);border-radius:4px;"></canvas>
-          <div id="stats-tab-legend" style="display:flex;flex-wrap:wrap;gap:3px 8px;margin-top:3px;"></div>
-        </div>
-        <div id="contribution-list" style="flex:1;overflow-y:auto;padding:2px 6px;"></div>
-      </div>
-
-      <!-- LOG pane -->
-      <div class="tray-pane" id="tray-pane-log">
-        <div id="battle-log-full"></div>
+        <div style="font-size:14px;line-height:1;" id="atk-speed-icon">⚔</div>
       </div>
 
     </div>
+
+    <!-- Tabs row at very bottom (secondary navigation) -->
+    <div id="arena-tray-tabs" style="position:absolute;bottom:0;left:0;right:0;height:0;overflow:hidden;"></div>
+
+    <!-- Hidden panes — chat/stats/log accessible via other means -->
+    <div id="arena-tray-body" style="display:none;">
+      <div class="tray-pane active" id="tray-pane-build"><div class="build-cards" id="arena-card-slots" style="display:none;"></div></div>
+      <div class="tray-pane" id="tray-pane-chat"><div id="arena-chat-log"></div><div class="chat-input-row"><input id="arena-chat-input" type="text" maxlength="120" placeholder="Say something..."><button id="arena-chat-send">➤</button></div></div>
+      <div class="tray-pane" id="tray-pane-stats" style="overflow-y:auto;flex-direction:column;"><div style="display:flex;gap:4px;padding:5px 8px;border-bottom:1px solid rgba(255,255,255,0.05);flex-shrink:0;"><button class="chart-metric-btn active" onclick="window.switchChartMetric('dmg',this)" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 7px;border-radius:3px;border:1px solid rgba(212,166,75,0.3);background:rgba(212,166,75,0.1);color:var(--gold);cursor:pointer;">⚔ DMG</button><button class="chart-metric-btn" onclick="window.switchChartMetric('heals',this)" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 7px;border-radius:3px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--faint);cursor:pointer;">💚 HEAL</button><button class="chart-metric-btn" onclick="window.switchChartMetric('kos',this)" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 7px;border-radius:3px;border:1px solid rgba(255,255,255,0.1);background:none;color:var(--faint);cursor:pointer;">💀 KOs</button></div><div style="padding:5px 8px 3px;flex-shrink:0;"><canvas id="stats-tab-chart" height="45" style="width:100%;height:45px;display:block;background:rgba(255,255,255,0.02);border-radius:4px;"></canvas><div id="stats-tab-legend" style="display:flex;flex-wrap:wrap;gap:3px 8px;margin-top:3px;"></div></div><div id="contribution-list" style="flex:1;overflow-y:auto;padding:2px 6px;"></div></div>
+      <div class="tray-pane" id="tray-pane-log"><div id="battle-log-full"></div></div>
+    </div>
+
   </div>
 
   <!-- Center-bottom: Deploy CTA (when NOT deployed) -->
@@ -1415,7 +1430,7 @@
       document.getElementById('deploy-cta').style.display = 'none';
       document.getElementById('arena-bottom-tray').style.display = 'flex';
       const tl0 = document.getElementById('spell-timeline');
-      if (tl0) tl0.style.display = 'flex';
+      if (tl0) tl0.style.display = 'block';
       switchTrayTab('build');
       await loadMyCards(zoneId);
     } catch(e) { console.error('checkDeployment:', e); }
@@ -1546,15 +1561,42 @@
     let ca = 0, ch = 0, cs = 0, cd = 0, cl = 0;
     S.equippedCards.forEach(c => { if(!c) return; ca+=c.base_atk||0; ch+=c.base_hp||0; cs+=c.base_spd||0; cd+=c.base_def||0; cl+=c.base_luck||0; });
 
-    const statsEl = document.getElementById('your-nine-stats');
-    if (statsEl) statsEl.innerHTML = `
-      <div class="your-nine-stat" style="color:#e85a6a">⚔ ${base.atk+ca}</div>
-      <div class="your-nine-stat" style="color:#6acd8a">♥ ${base.hp+ch}</div>
-      <div class="your-nine-stat" style="color:#6ac8d8">◈ ${base.spd+cs}</div>
-      <div class="your-nine-stat" style="color:#b088e8">⛊ ${base.def+cd}</div>
-      <div class="your-nine-stat" style="color:#D4A64B">★ ${base.luck+cl}</div>`;
+    // Update portrait icon with house colour
+    const icon = document.getElementById('hud-nine-icon');
+    const nameEl = document.getElementById('hud-nine-name');
+    const portrait = document.getElementById('hud-nine-portrait');
+    if (icon) { icon.textContent = HOUSES[hk]?.icon || '🐱'; }
+    if (portrait) { portrait.style.borderColor = (HOUSES[hk]?.color || '#D4A64B') + '66'; }
+    if (nameEl && S.playerHandle) nameEl.textContent = '@' + S.playerHandle;
 
+    // Try to set portrait image from sprite
     const sprite = S.nines.get(S.playerId);
+    const imgEl = document.getElementById('hud-nine-img');
+    if (imgEl && sprite?.profileImage) { imgEl.src = sprite.profileImage; }
+
+    // Stat bars — value / realistic max for bar width
+    const MAX = { atk:120, hp:1200, spd:80, def:80, luck:60 };
+    const stats = [
+      { key:'atk',  label:'ATK', val:base.atk+ca,  max:MAX.atk,  color:'#e85a6a' },
+      { key:'hp',   label:'HP',  val:base.hp+ch,   max:MAX.hp,   color:'#6acd8a' },
+      { key:'spd',  label:'SPD', val:base.spd+cs,  max:MAX.spd,  color:'#6ac8d8' },
+      { key:'def',  label:'DEF', val:base.def+cd,  max:MAX.def,  color:'#b088e8' },
+      { key:'luck', label:'LCK', val:base.luck+cl, max:MAX.luck, color:'#D4A64B' },
+    ];
+
+    const statsEl = document.getElementById('your-nine-stats');
+    if (statsEl) {
+      statsEl.innerHTML = stats.map(s => `
+        <div class="hud-stat-bar-wrap">
+          <div class="hud-stat-label" style="color:${s.color}">${s.label}</div>
+          <div class="hud-stat-track">
+            <div class="hud-stat-fill" style="width:${Math.min(100,Math.round((s.val/s.max)*100))}%;background:${s.color}"></div>
+          </div>
+          <div class="hud-stat-val" style="color:${s.color}">${s.val}</div>
+        </div>`).join('');
+    }
+
+    // HP bar
     const fill = document.getElementById('your-hp-fill');
     const text = document.getElementById('your-hp-text');
     if (sprite && fill && text) {
@@ -1562,7 +1604,8 @@
       text.textContent = `${Math.round(sprite.hp)}/${sprite.maxHp}`;
     } else if (fill && text) {
       fill.style.width = '100%';
-      text.textContent = `${base.hp+ch}/${base.hp+ch}`;
+      const maxHp = base.hp + ch;
+      text.textContent = `${maxHp}/${maxHp}`;
     }
   }
 
@@ -1585,7 +1628,7 @@
     });
   }
 
-  // ATK speed bar
+  // ATK speed bar — vertical fill, resets on each attack
   function startAtkBar(ms) {
     S._atkBarInterval = ms || S._atkBarInterval;
     S._atkBarStart = performance.now();
@@ -1594,10 +1637,31 @@
       const bar = document.getElementById('atk-speed-bar');
       if (!bar) return;
       const pct = Math.min(100, ((performance.now()-S._atkBarStart)/S._atkBarInterval)*100);
-      bar.style.width = pct + '%';
+      bar.style.height = pct + '%';  // vertical fill
       if (pct < 100) S._atkBarFrame = requestAnimationFrame(tick);
+      else {
+        // Flash the icon when full
+        const icon = document.getElementById('atk-speed-icon');
+        if (icon) { icon.style.opacity='1'; icon.style.transform='scale(1.3)'; setTimeout(()=>{ if(icon){icon.style.opacity='0.5';icon.style.transform='scale(1)';} },200); }
+      }
     };
     S._atkBarFrame = requestAnimationFrame(tick);
+  }
+
+  // Spell cast sweep — orange liquid flowing across the 3 card slots
+  function sweepSpellBar(slotIdx, numCards) {
+    const tl = document.getElementById('spell-timeline');
+    const ph = document.getElementById('spell-playhead');
+    if (!tl || !ph) return;
+    tl.style.display = 'block';
+    // Map slot 0/1/2 to position across full bar width
+    const n = numCards || 3;
+    const targetPct = ((slotIdx + 0.5) / n) * 100;
+    ph.style.left = targetPct + '%';
+    // Flash colour
+    const hc = HOUSES[S.equippedCards[slotIdx]?.house||'universal']?.color || '#ff6622';
+    ph.style.background = `linear-gradient(90deg,transparent,${hc},#ff6622,transparent)`;
+    ph.style.boxShadow = `0 0 8px ${hc}`;
   }
 
   // ── CARD POPUP ──
@@ -1785,6 +1849,17 @@
         ? (S.isDeployed ? '⚔️ SWAP CARDS' : '⚔️ DEPLOY')
         : `SELECT ${3 - S.selectedCards.length} MORE`;
     }
+    // Update stats preview with house base + selected card bonuses
+    const hk = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
+    const base = HOUSE_STATS[hk] || HOUSE_STATS.stormrage;
+    let ca=0,ch=0,cs=0,cd=0,cl=0;
+    S.selectedCards.forEach(s => { const c=s.card; ca+=c.base_atk||0; ch+=c.base_hp||0; cs+=c.base_spd||0; cd+=c.base_def||0; cl+=c.base_luck||0; });
+    const upd = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+    upd('deploy-atk', `${base.atk}+${ca}=${base.atk+ca}`);
+    upd('deploy-hp',  `${base.hp}+${ch}=${base.hp+ch}`);
+    upd('deploy-spd', `${base.spd}+${cs}=${base.spd+cs}`);
+    upd('deploy-def', `${base.def}+${cd}=${base.def+cd}`);
+    upd('deploy-luck',`${base.luck}+${cl}=${base.luck+cl}`);
   };
 
   function closeDeployModal() {
@@ -1816,7 +1891,7 @@
         document.getElementById('deploy-cta').style.display = 'none';
         document.getElementById('arena-bottom-tray').style.display = 'flex';
         const tl1 = document.getElementById('spell-timeline');
-        if (tl1) tl1.style.display = 'flex';
+        if (tl1) tl1.style.display = 'block';
         renderCardSlots(cards);
         updateYourNinePanel();
         switchTrayTab('build');
@@ -2030,20 +2105,11 @@
       if (fromId === String(S.playerId) && data.slot) {
         const si = data.slot - 1;
         const valid = S.equippedCards.filter(Boolean);
-        const n = Math.max(1, valid.length);
-        const pct = n === 1 ? 50 : (si/(n-1))*90+5;
-        const ph = document.getElementById('spell-playhead');
-        if (ph) {
-          ph.style.left = pct + '%';
-          const hc = HOUSES[S.equippedCards[si]?.house||'universal']?.color || '#fff';
-          ph.style.background = hc;
-          ph.style.boxShadow = `0 0 8px ${hc}`;
-          setTimeout(() => { if(ph){ph.style.background='#fff';ph.style.boxShadow='0 0 6px #fff';} }, 400);
-        }
+        sweepSpellBar(si, valid.length || 3);
         const HSPD = {stormrage:30,smoulders:25,stonebark:10,ashenvale:22,nighthollow:30,dawnbringer:15,manastorm:25,plaguemire:20,darktide:20};
-        const hk = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
+        const hk2 = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
         const cardSpd = S.equippedCards.reduce((s,c)=>s+(c?.base_spd||0),0);
-        const atkSec = Math.max(2.75, (10.5 - ((HSPD[hk]||25)+cardSpd) * 0.12) / 2);
+        const atkSec = Math.max(2.75, (10.5 - ((HSPD[hk2]||25)+cardSpd) * 0.12) / 2);
         startAtkBar(atkSec * 1000);
         // Highlight active slot
         for (let i = 0; i < 3; i++) {
@@ -2052,7 +2118,7 @@
           if (i === si) {
             const hc = HOUSES[S.equippedCards[i]?.house||'universal']?.color||'#D4A64B';
             el.classList.add('slot-active'); el.style.setProperty('--slot-color', hc);
-            setTimeout(() => el.classList.remove('slot-active'), 5000);
+            setTimeout(() => el.classList.remove('slot-active'), 4000);
           } else el.classList.remove('slot-active');
         }
       }
@@ -2075,6 +2141,8 @@
         if (target) showFloatingText(target.container.x, target.container.y-20, `+${data.amt}`, 0x44ffaa, 11);
         trackCombatStat(cId, getNineName(cId), caster?.guild||'', caster?.house||'', 'heals', data.amt);
       }
+      // Update debuff HUD if we're the target
+      if (String(tId) === String(S.playerId)) updateDebuffHUD(eff, true);
     });
 
     socket.on('combat:ko', (data) => {
@@ -2360,7 +2428,64 @@
     S.nines.forEach(sp => { sp.container.alpha = 1; });
   };
 
-  // ── COUNTDOWN ──
+  // ── DEBUFF HUD ──
+  const _activeDebuffs = new Map(); // effect → expiry timestamp
+  function updateDebuffHUD(effect, apply) {
+    const el = document.getElementById('hud-debuffs');
+    if (!el) return;
+    const ec = EFFECT_COLORS[effect.split(' ')[0].toUpperCase()] || '#D4A64B';
+    if (apply) {
+      _activeDebuffs.set(effect, Date.now() + 12000); // 12s display
+    } else {
+      _activeDebuffs.delete(effect);
+    }
+    // Prune expired
+    _activeDebuffs.forEach((exp, k) => { if (Date.now() > exp) _activeDebuffs.delete(k); });
+    el.innerHTML = [..._activeDebuffs.keys()].map(e => {
+      const c = EFFECT_COLORS[e.split(' ')[0].toUpperCase()] || '#D4A64B';
+      return `<div title="${e}" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:2px 4px;border-radius:3px;background:${c}22;border:1px solid ${c}55;color:${c}">${e.split(' ')[0].slice(0,4)}</div>`;
+    }).join('');
+  }
+
+  // Clear debuffs on CLEANSE
+  function clearDebuffs() { _activeDebuffs.clear(); updateDebuffHUD('', false); }
+
+  // ── SOUTH PARK WALK — bobbing step movement ──
+  // Applied inside PIXI ticker to each Nine's spriteGroup
+  (function initWalkAnim() {
+    // Patch into PIXI ticker after initPixiArena sets up arenaApp
+    const _origInit = window.initPixiArena;
+    window.initPixiArena = function() {
+      _origInit && _origInit();
+      // Bob/walk ticker added after app exists
+      setTimeout(() => {
+        const app = window._S?.arenaApp;
+        if (!app) return;
+        let t = 0;
+        app.ticker.add(() => {
+          t += 0.05;
+          window._S?.nines?.forEach((sp) => {
+            if (!sp.spriteGroup) return;
+            const dx = (sp.targetX||sp.container.x) - sp.container.x;
+            const dy = (sp.targetY||sp.container.y) - sp.container.y;
+            const moving = Math.sqrt(dx*dx+dy*dy) > 2;
+            // South Park bob: rapid up-down when moving, idle breath when still
+            const freq = moving ? 12 : 3;
+            const amp  = moving ? 3  : 1;
+            sp.spriteGroup.y = Math.sin(t * freq + (sp.bobPhase||0)) * amp;
+            // Foot squash: slightly scale x when foot hits ground
+            if (moving) {
+              const squash = 1 + Math.abs(Math.sin(t * freq + (sp.bobPhase||0))) * 0.08;
+              sp.spriteGroup.scale.x = Math.sign(sp.spriteGroup.scale.x || 1) * squash;
+              sp.spriteGroup.scale.y = 1 / squash; // compensate height
+            } else {
+              sp.spriteGroup.scale.y = 1;
+            }
+          });
+        });
+      }, 500);
+    };
+  })();
   function startCountdown() {
     if (S.countdownInterval) clearInterval(S.countdownInterval);
     S.countdownInterval = setInterval(() => {
