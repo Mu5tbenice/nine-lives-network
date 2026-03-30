@@ -243,13 +243,21 @@
     }
 
     /* ====== ARENA VIEW ====== */
-    #arena-view { display: none; position: fixed; top: var(--nav-height); left: 0; width: 100vw; height: calc(100vh - var(--nav-height)); z-index: 50; background: var(--bg); }
+    #arena-view { display: none; position: fixed; top: var(--nav-height); left: 0; width: 100vw; height: calc(100vh - var(--nav-height)); z-index: 50; background: var(--bg); flex-direction: row; }
     #arena-canvas canvas { display: block; }
     #arena-canvas {
-      width: 100%; height: 100%; position: relative;
+      flex: 1; height: 100%; position: relative; min-width: 0;
       background-size: cover; background-position: center center;
       background-repeat: no-repeat; background-color: var(--bg);
       transition: background-image 0.8s ease;
+    }
+    /* Left player panel */
+    #arena-left-panel {
+      width: 210px; flex-shrink: 0; height: 100%;
+      background: rgba(8,6,18,0.97);
+      border-right: 1px solid rgba(255,255,255,0.07);
+      display: flex; flex-direction: column;
+      overflow: hidden; z-index: 26;
     }
     #arena-canvas::before {
       content: ''; position: absolute; inset: 0; z-index: 0;
@@ -343,7 +351,7 @@
        Column: YOUR NINE header → tab bar → content
     ══════════════════════════════════════════════ */
     .arena-bottom-tray {
-      position: absolute; bottom: 0; left: 0; right: 290px; z-index: 25;
+      position: absolute; bottom: 0; left: 0; right: 350px; z-index: 25;
       display: flex; flex-direction: column;
       background: rgba(8,6,18,0.97);
       border-top: 2px solid rgba(255,255,255,0.09);
@@ -714,7 +722,7 @@
     #arena-sidebar {
       display: none;
       position: absolute; top: 54px; right: 10px; z-index: 25;
-      width: 280px;
+      width: 340px;
       flex-direction: column;
       background: rgba(8,6,18,0.96); border: 1px solid rgba(255,255,255,0.1);
       border-radius: 16px; overflow: hidden; backdrop-filter: blur(16px);
@@ -722,8 +730,8 @@
       box-shadow: 0 8px 32px rgba(0,0,0,0.5);
     }
     .sidebar-section-label {
-      font-family: 'Press Start 2P', monospace; font-size: 6px;
-      color: rgba(212,166,75,0.65); letter-spacing: 2px; margin-bottom: 12px;
+      font-family: 'Press Start 2P', monospace; font-size: 8px;
+      color: rgba(212,166,75,0.7); letter-spacing: 2px; margin-bottom: 12px;
       text-transform: uppercase;
     }
     /* Guild rows */
@@ -737,7 +745,7 @@
     .sidebar-guild-row:hover { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.12); }
     .sidebar-guild-top { display: flex; align-items: center; gap: 9px; }
     .sidebar-guild-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .sidebar-guild-name { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--bright); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sidebar-guild-name { font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--bright); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sidebar-guild-hp { font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--green); }
     .sidebar-guild-nines { font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint); padding-left: 19px; }
     .sidebar-guild-bar { width: 100%; height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; }
@@ -1032,6 +1040,41 @@
 
 <!-- ====== ARENA VIEW ====== -->
 <div id="arena-view">
+
+  <!-- ── LEFT PANEL: Player character + house ── -->
+  <div id="arena-left-panel" style="display:none;">
+    <!-- Nine character portrait -->
+    <div id="left-nine-portrait-wrap" style="padding:20px 16px 12px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;text-align:center;">
+      <div id="left-nine-portrait" style="width:130px;height:130px;border-radius:16px;background:rgba(255,255,255,0.04);border:2px solid rgba(212,166,75,0.2);margin:0 auto 10px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;">
+        <div id="left-nine-icon" style="font-size:56px;line-height:1;">🐱</div>
+        <img id="left-nine-img" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;" onload="this.style.display='block';document.getElementById('left-nine-icon').style.display='none'">
+      </div>
+      <div id="left-nine-handle" style="font-family:'Press Start 2P',monospace;font-size:8px;color:var(--gold);margin-bottom:4px;"></div>
+      <div id="left-nine-guild" style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--faint);"></div>
+    </div>
+    <!-- HP bar -->
+    <div style="padding:10px 16px 8px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.05);">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:var(--faint);">HP</span>
+        <span id="left-hp-text" style="font-family:'Press Start 2P',monospace;font-size:7px;color:#6acd8a;">--/--</span>
+      </div>
+      <div style="height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
+        <div id="left-hp-fill" style="height:100%;background:linear-gradient(90deg,#44cc88,#88ffcc);border-radius:4px;transition:width 0.4s;width:100%"></div>
+      </div>
+    </div>
+    <!-- Stats: builder style BASE + EQUIPMENT -->
+    <div style="padding:10px 16px;flex-shrink:0;border-bottom:1px solid rgba(255,255,255,0.05);">
+      <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(212,166,75,0.5);letter-spacing:1.5px;margin-bottom:8px;">BASE + EQUIPMENT STATS</div>
+      <div id="left-stats-bars"></div>
+    </div>
+    <!-- Debuffs -->
+    <div style="padding:6px 16px;flex-shrink:0;">
+      <div id="left-debuffs" style="display:flex;gap:4px;flex-wrap:wrap;min-height:16px;"></div>
+    </div>
+    <!-- Spacer -->
+    <div style="flex:1;"></div>
+  </div>
+
   <div id="arena-canvas"></div>
 
   <!-- Top bar: Back | Zone name | LIVE pill + timer -->
@@ -1143,45 +1186,30 @@
         <div id="your-nine-stats"></div>
       </div>
 
-      <!-- [4] CARD SLOTS + cast progress bar (orange liquid) -->
-      <div id="hud-cards" style="flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid rgba(255,255,255,0.06);">
-        <!-- Orange cast progress bar spanning all 3 cards -->
+      <!-- [4] AUTO-ATK bar (vertical, LEFT side before cards) -->
+      <div id="hud-atk" style="width:36px;flex-shrink:0;padding:8px 6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:4px;border-right:1px solid rgba(255,255,255,0.06);">
+        <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);text-align:center;line-height:1.4;">AUTO<br>ATK</div>
+        <div style="flex:1;width:14px;background:rgba(255,255,255,0.05);border-radius:7px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.08);">
+          <div id="atk-speed-bar" style="position:absolute;bottom:0;left:0;right:0;height:0%;background:linear-gradient(180deg,#ffaa44,#e85a6a);border-radius:7px;transition:height 0.1s linear;"></div>
+        </div>
+        <div style="font-size:14px;line-height:1;" id="atk-speed-icon">⚔</div>
+      </div>
+
+      <!-- [5] CARD SLOTS + cast bar sweeping left→right across all 3 cards -->
+      <div id="hud-cards" style="flex:1;min-width:0;display:flex;flex-direction:column;">
+        <!-- Orange liquid cast bar — spans full width of all 3 cards -->
         <div id="spell-timeline" style="display:none;height:4px;background:rgba(255,255,255,0.04);position:relative;flex-shrink:0;">
           <div id="spell-timeline-track" style="position:absolute;inset:0;overflow:hidden;">
             <div id="spell-playhead" style="position:absolute;top:0;height:100%;width:8px;background:linear-gradient(90deg,transparent,#ffaa44,#ff6622,transparent);box-shadow:0 0 8px #ff6622;transition:left 0.35s ease;left:0%;border-radius:2px;"></div>
           </div>
-          <!-- Card divider markers -->
           <div style="position:absolute;top:0;bottom:0;left:33.3%;width:1px;background:rgba(255,255,255,0.1);"></div>
           <div style="position:absolute;top:0;bottom:0;left:66.6%;width:1px;background:rgba(255,255,255,0.1);"></div>
         </div>
-        <!-- Card slots row (desktop) / mobile-hud-panel controls which panel shows -->
         <div id="mobile-hud-panel-cards" style="display:flex;flex:1;gap:6px;padding:6px 8px;">
           <div class="arena-card-slot empty" id="card-slot-0"><span class="slot-empty-text">1</span></div>
           <div class="arena-card-slot empty" id="card-slot-1"><span class="slot-empty-text">2</span></div>
           <div class="arena-card-slot empty" id="card-slot-2"><span class="slot-empty-text">3</span></div>
         </div>
-        <!-- Mobile-only stats panel (hidden on desktop) -->
-        <div id="mobile-hud-panel-stats" style="display:none;flex:1;overflow-y:auto;padding:6px 8px;">
-          <div id="mobile-stats-content" style="font-family:'Press Start 2P',monospace;font-size:6px;color:var(--faint);">Loading stats...</div>
-        </div>
-        <!-- Mobile-only chat panel (hidden on desktop) -->
-        <div id="mobile-hud-panel-chat" style="display:none;flex:1;flex-direction:column;">
-          <div id="mobile-hud-chat-log" style="flex:1;overflow-y:auto;padding:4px 8px;font-family:'Crimson Text',serif;font-size:11px;line-height:1.4;"></div>
-          <div style="display:flex;border-top:1px solid rgba(255,255,255,0.06);">
-            <input id="mobile-hud-chat-input" type="text" maxlength="120" placeholder="Say something..." style="flex:1;background:none;border:none;outline:none;color:var(--bright);font-family:'Crimson Text',serif;font-size:12px;padding:7px 10px;">
-            <button onclick="window.arenaSendChat('mobile-hud-chat-input')" style="background:none;border:none;color:var(--gold);cursor:pointer;padding:7px 12px;font-size:13px;">➤</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- [5] AUTO-ATTACK bar (vertical liquid fill) -->
-      <div id="hud-atk" style="width:36px;flex-shrink:0;padding:8px 6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:4px;">
-        <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);text-align:center;line-height:1.4;">AUTO<br>ATK</div>
-        <!-- Vertical fill bar -->
-        <div style="flex:1;width:14px;background:rgba(255,255,255,0.05);border-radius:7px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.08);">
-          <div id="atk-speed-bar" style="position:absolute;bottom:0;left:0;right:0;height:0%;background:linear-gradient(180deg,#ffaa44,#e85a6a);border-radius:7px;transition:height 0.1s linear;"></div>
-        </div>
-        <div style="font-size:14px;line-height:1;" id="atk-speed-icon">⚔</div>
       </div>
 
     </div><!-- close hud-main -->
@@ -1575,10 +1603,12 @@
     S.currentZoneId = zone.id;
 
     document.getElementById('zone-list-view').style.display = 'none';
-    document.getElementById('arena-view').style.display = 'block';
+    document.getElementById('arena-view').style.display = 'flex';
     const isMobile = window.innerWidth <= 640;
     const sidebar = document.getElementById('arena-sidebar');
     if (sidebar) sidebar.style.display = isMobile ? 'none' : 'flex';
+    const leftPanel = document.getElementById('arena-left-panel');
+    if (leftPanel) leftPanel.style.display = isMobile ? 'none' : 'flex';
 
     document.getElementById('arena-zone-name').textContent = zone.name;
     const houseKey = zone.dominant_house || SCHOOL_TO_HOUSE[zone.school_id] || null;
@@ -1801,6 +1831,16 @@
     if (portrait) portrait.style.borderColor = houseColor + '66';
     if (nameEl && S.playerHandle) nameEl.textContent = '@' + S.playerHandle;
 
+    // Left panel portrait sync
+    const lIcon = document.getElementById('left-nine-icon');
+    const lHandle = document.getElementById('left-nine-handle');
+    const lGuild = document.getElementById('left-nine-guild');
+    const lPortrait = document.getElementById('left-nine-portrait');
+    if (lIcon) lIcon.textContent = HOUSES[hk]?.icon || '🐱';
+    if (lHandle && S.playerHandle) lHandle.textContent = '@' + S.playerHandle;
+    if (lGuild && S.playerGuildTag) lGuild.textContent = '[' + S.playerGuildTag + ']';
+    if (lPortrait) lPortrait.style.borderColor = houseColor + '55';
+
     // Calculate stats client-side (server /api/stats endpoint not available)
     // Use cached server data if we have it, else house + cards
     _renderStatBarsFallback();
@@ -1826,19 +1866,44 @@
   function _renderStatBars(st) {
     const MAX = { atk:200, hp:2000, spd:80, def:80, luck:60 };
     const stats = [
-      { label:'ATK', val:Math.round(st.atk||0),  max:MAX.atk,  color:'#e85a6a' },
-      { label:'HP',  val:Math.round(st.hp||0),   max:MAX.hp,   color:'#6acd8a' },
-      { label:'SPD', val:Math.round(st.spd||0),  max:MAX.spd,  color:'#6ac8d8' },
-      { label:'DEF', val:Math.round(st.def||0),  max:MAX.def,  color:'#b088e8' },
-      { label:'LCK', val:Math.round(st.luck||0), max:MAX.luck, color:'#D4A64B' },
+      { label:'ATK', val:Math.round(st.atk||0),  max:MAX.atk,  color:'#e85a6a', base: st.base_atk||0 },
+      { label:'HP',  val:Math.round(st.hp||0),   max:MAX.hp,   color:'#6acd8a', base: st.base_hp||0  },
+      { label:'SPD', val:Math.round(st.spd||0),  max:MAX.spd,  color:'#6ac8d8', base: st.base_spd||0 },
+      { label:'DEF', val:Math.round(st.def||0),  max:MAX.def,  color:'#b088e8', base: st.base_def||0 },
+      { label:'LCK', val:Math.round(st.luck||0), max:MAX.luck, color:'#D4A64B', base: st.base_luck||0 },
     ];
-    const el = document.getElementById('your-nine-stats');
-    if (el) el.innerHTML = stats.map(s => `
+    const html = stats.map(s => `
       <div class="hud-stat-bar-wrap">
         <div class="hud-stat-label" style="color:${s.color}">${s.label}</div>
         <div class="hud-stat-track"><div class="hud-stat-fill" style="width:${Math.min(100,Math.round((s.val/s.max)*100))}%;background:${s.color}"></div></div>
         <div class="hud-stat-val" style="color:${s.color}">${s.val}</div>
       </div>`).join('');
+    const el = document.getElementById('your-nine-stats');
+    if (el) el.innerHTML = html;
+    // Also populate left panel with builder style (base + bonus)
+    _renderLeftStats(stats);
+  }
+
+  function _renderLeftStats(stats) {
+    const el = document.getElementById('left-stats-bars');
+    if (!el) return;
+    const hk = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
+    const base = HOUSE_STATS[hk] || HOUSE_STATS.stormrage;
+    const baseMap = { ATK: base.atk, HP: base.hp, SPD: base.spd, DEF: base.def, LCK: base.luck };
+    const MAX = { ATK:200, HP:2000, SPD:80, DEF:80, LCK:60 };
+    el.innerHTML = stats.map(s => {
+      const bv = baseMap[s.label] || 0;
+      const bonus = s.val - bv;
+      const bonusStr = bonus > 0 ? `<span style="color:${s.color};font-size:7px;margin-left:3px;">+${bonus}</span>` : '';
+      return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:${s.color};width:28px;flex-shrink:0;">${s.label}</div>
+        <div style="flex:1;height:7px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;background:${s.color};border-radius:4px;width:${Math.min(100,(s.val/MAX[s.label])*100)}%;transition:width 0.4s;"></div>
+        </div>
+        <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:${s.color};min-width:28px;text-align:right;">${s.val}</div>
+        ${bonusStr}
+      </div>`;
+    }).join('');
   }
 
   function _renderStatBarsFallback() {
@@ -1846,7 +1911,10 @@
     const base = HOUSE_STATS[hk] || HOUSE_STATS.stormrage;
     let ca=0,ch=0,cs=0,cd=0,cl=0;
     S.equippedCards.forEach(c=>{ if(!c)return; ca+=c.base_atk||0; ch+=c.base_hp||0; cs+=c.base_spd||0; cd+=c.base_def||0; cl+=c.base_luck||0; });
-    _renderStatBars({ atk:base.atk+ca, hp:base.hp+ch, spd:base.spd+cs, def:base.def+cd, luck:base.luck+cl });
+    _renderStatBars({
+      atk:base.atk+ca, hp:base.hp+ch, spd:base.spd+cs, def:base.def+cd, luck:base.luck+cl,
+      base_atk:base.atk, base_hp:base.hp, base_spd:base.spd, base_def:base.def, base_luck:base.luck
+    });
   }
 
   // ── SPELL TIMELINE ──
@@ -2296,15 +2364,30 @@
           updateNineHP(id, d.hp, d.maxHp);
           updateStatusRings(sprite, d.status, d.activeEffect);
           if (isSelf) {
+            const pct = `${Math.max(0,(d.hp/d.maxHp)*100)}%`;
+            const hpTxt = `${Math.round(d.hp)}/${d.maxHp}`;
+            // HUD tray
             const fill = document.getElementById('your-hp-fill');
             const text = document.getElementById('your-hp-text');
-            if (fill) fill.style.width = `${Math.max(0,(d.hp/d.maxHp)*100)}%`;
-            if (text) text.textContent = `${Math.round(d.hp)}/${d.maxHp}`;
-            // Update portrait from profile image if available
+            if (fill) fill.style.width = pct;
+            if (text) text.textContent = hpTxt;
+            // Left panel
+            const lfill = document.getElementById('left-hp-fill');
+            const ltext = document.getElementById('left-hp-text');
+            if (lfill) lfill.style.width = pct;
+            if (ltext) ltext.textContent = hpTxt;
+            // Mobile
+            const mfill = document.getElementById('mob-nine-hp-fill');
+            const mtext = document.getElementById('mob-nine-hp-text');
+            if (mfill) mfill.style.width = pct;
+            if (mtext) mtext.textContent = hpTxt;
+            // Profile image — all three portraits
             const cached = S._deployCache?.[id];
             if (cached?.profile_image) {
-              const img = document.getElementById('hud-nine-img');
-              if (img && !img.src.includes(cached.profile_image)) img.src = cached.profile_image;
+              ['hud-nine-img','left-nine-img','mob-nine-img'].forEach(elId => {
+                const img = document.getElementById(elId);
+                if (img && !img.src.includes(cached.profile_image)) img.src = cached.profile_image;
+              });
             }
           }
         }
