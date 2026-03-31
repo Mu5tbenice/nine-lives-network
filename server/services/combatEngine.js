@@ -11,7 +11,7 @@ const supabaseAdmin = createClient(
 );
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────
-const TICK_MS       = 2000;
+const TICK_MS       = 500;
 const SNAPSHOT_MS   = 15 * 60 * 1000;
 const SPD_FLOOR     = 5.5;
 const CORRODE_CD    = 10;
@@ -73,9 +73,8 @@ function resolveHouseKey(raw) {
   return 'stormrage';
 }
 
-const TICK_S        = TICK_MS / 1000; // 2.0
-const atkInterval  = spd => Math.max(SPD_FLOOR, 10.5 - spd * 0.12) / TICK_S;  // → ticks
-const cardInterval = spd => Math.max(5.5, 12.0 - spd * 0.10) / TICK_S;         // → ticks
+const atkInterval  = spd => Math.max(SPD_FLOOR, 10.5 - spd * 0.12);
+const cardInterval = spd => Math.max(5.5, 12.0 - spd * 0.10);
 const dist         = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
 const clamp        = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
 const inRange      = (a,b,r) => dist(a,b) <= r;
@@ -347,30 +346,31 @@ async function tickZone(zoneId, zs) {
   const all = Array.from(zs.nines.values());
   if(!all.length) return;
 
-  // Timers
+  // Timers — decrement by elapsed seconds so intervals are tick-rate independent
+  const TICK_S = TICK_MS / 1000;
   all.forEach(n=>{
     if(n.hp<=0) return;
-    n.atkTimer=Math.max(0,n.atkTimer-1);
-    n.cardTimer=Math.max(0,n.cardTimer-1);
-    if(n.corrodeCd>0) n.corrodeCd--;
+    n.atkTimer=Math.max(0,n.atkTimer-TICK_S);
+    n.cardTimer=Math.max(0,n.cardTimer-TICK_S);
+    if(n.corrodeCd>0) n.corrodeCd-=TICK_S;
   });
 
-  // Poison DOT every 3 ticks
-  if(zs.tick%3===0){
+  // Poison DOT every 6 ticks (= 3s at 500ms per tick)
+  if(zs.tick%6===0){
     all.forEach(n=>{
       if(n.hp>0&&n.poisonStacks>0){
         const dot=Math.floor(n.maxHp*.030*n.poisonStacks);
         n.hp=Math.max(0,n.hp-dot);
-        n.poisonTimer=Math.max(0,(n.poisonTimer||0)-1);
+        n.poisonTimer=Math.max(0,(n.poisonTimer||0)-TICK_S);
         if(n.poisonTimer<=0) n.poisonStacks=0;
         broadcast(zoneId,'combat:dot',{nine:n.playerName,nineId:n.deploymentId,dmg:dot,hp:n.hp,maxHp:n.maxHp,x:n.x,y:n.y});
       }
     });
   }
 
-  // Zone bonus: darktide regen — 3% maxHP per minute = every 30 ticks (60s / 2s per tick)
+  // Zone bonus: darktide regen — 3% maxHP per minute = every 120 ticks (60s / 0.5s per tick)
   const zBonus = getZoneBonus(zoneId);
-  if(zBonus?.bonus?.key === 'regen' && zs.tick % 30 === 0){
+  if(zBonus?.bonus?.key === 'regen' && zs.tick % 120 === 0){
     all.forEach(n=>{
       if(n.hp>0){
         const regen=Math.floor(n.maxHp*(zBonus.bonus.pct||0.03));
@@ -380,8 +380,8 @@ async function tickZone(zoneId, zs) {
     });
   }
 
-  // Update movement targets every 2 ticks
-  if(zs.tick%2===0) all.forEach(n=>{if(n.hp>0) updateDest(n,all);});
+  // Update movement targets every 4 ticks (= 2s at 500ms per tick)
+  if(zs.tick%4===0) all.forEach(n=>{if(n.hp>0) updateDest(n,all);});
 
   // Step positions every tick
   all.forEach(n=>{if(n.hp>0) stepPos(n);});
@@ -435,8 +435,8 @@ async function tickZone(zoneId, zs) {
     })),
   });
 
-  // HP sync every 10 ticks — update each row individually to avoid upsert insert attempts
-  if(zs.tick%10===0){
+  // HP sync every 40 ticks (= 20s at 500ms per tick)
+  if(zs.tick%40===0){
     const nineArr = Array.from(zs.nines.values());
     for (const n of nineArr) {
       await supabaseAdmin.from('zone_deployments')
