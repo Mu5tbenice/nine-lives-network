@@ -723,7 +723,7 @@
       flex-direction: column;
       background: rgba(8,6,18,0.96); border: 1px solid rgba(255,255,255,0.1);
       border-radius: 16px; overflow: hidden; backdrop-filter: blur(16px);
-      bottom: 10px;
+      bottom: 220px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.5);
     }
     .sidebar-section-label {
@@ -1187,7 +1187,7 @@
     </div><!-- close hud-main -->
 
     <!-- ══ MOBILE HUD (≤640px only — controlled by CSS display:none/flex) ══ -->
-    <div id="mobile-hud-root" style="display:none;flex-direction:row;flex:1;position:relative;overflow:visible;">
+    <div id="mobile-hud-root" style="display:none;flex-direction:row;flex:1;position:relative;overflow:hidden;min-height:0;">
 
       <!-- [PORTRAIT COL] Nine portrait overlapping arena top -->
       <div id="mob-portrait-col">
@@ -1557,7 +1557,7 @@
     };
     const biomeImg = getBiome(zone);
     return `
-      <div class="zone-card" data-zone-id="${zone.id}" onclick="window.__9lv_openArena && window.__9lv_openArena(${JSON.stringify(zone).replace(/"/g, '&quot;')})">
+      <div class="zone-card" data-zone-id="${zone.id}">
         <div class="zone-card-img-wrap">
           <img src="${biomeImg}" alt="${zone.name}" loading="lazy" onerror="this.style.display='none'">
           ${casters > 0 ? `<div class="zone-card-fighter-count">⚔ ${casters}</div>` : ''}
@@ -1597,6 +1597,13 @@
       hudPortrait.querySelectorAll('.nine-layer').forEach(el => el.remove());
       const icon = document.getElementById('hud-nine-icon');
       if (icon) icon.style.display = '';
+    }
+    const mobPortrait = document.getElementById('mob-nine-portrait');
+    if (mobPortrait) {
+      delete mobPortrait.dataset.nineRendered;
+      mobPortrait.querySelectorAll('.nine-layer').forEach(el => el.remove());
+      const mIcon = document.getElementById('mob-nine-icon');
+      if (mIcon) mIcon.style.display = '';
     }
     S.currentZone = zone;
     S.currentZoneId = zone.id;
@@ -2593,7 +2600,15 @@
     socket.on('combat:dot', (data) => {
       const id = resolveId(data.nineId);
       const sp = S.nines.get(id);
-      if (sp && data.dmg > 0) showFloatingText(sp.container.x, sp.container.y-15, `-${data.dmg}`, 0x88cc44, 10);
+      if (data.dmg > 0) {
+        const px = sp ? sp.container.x : (data.x != null ? engineToScreen({x:data.x,y:data.y||0}).x : null);
+        const py = sp ? sp.container.y : (data.x != null ? engineToScreen({x:data.x,y:data.y||0}).y : null);
+        if (px !== null) {
+          // Poison = green, Burn = orange
+          const dotColor = (data.type === 'burn') ? 0xff6b35 : 0x76ff03;
+          showFloatingText(px, py - 15, `-${data.dmg}`, dotColor, 10);
+        }
+      }
     });
 
     socket.on('combat:regen', (data) => {
@@ -2609,17 +2624,27 @@
     socket.on('arena:snapshot', (data) => {
       S.snapshotCount++;
       S.currentCycle = data.cycle || S.snapshotCount;
-      const winner = data.winner_guild || data.leading_guild;
+      // Server sends controllingGuild (not winner_guild)
+      const winner = data.controllingGuild || data.winner_guild || data.leading_guild;
       if (winner) {
         const pts = data.snapshot_points || 5;
         if (S.isDeployed) {
-          addFeedEvent(`📍 Snapshot — ${winner} controls zone (+${pts} pts)`, 'snapshot');
-          showFloatingText(300, 200, `+${pts} pts`, 0xD4A64B, 14);
+          addFeedEvent(`📍 Snapshot — [${winner}] controls zone (+${pts} pts)`, 'snapshot');
+          // Flash points at canvas centre
+          const app = window._S?.arenaApp;
+          const cx = app ? app.screen.width / 2 : 300;
+          const cy = app ? app.screen.height / 2 : 200;
+          showFloatingText(cx, cy, `+${pts} pts`, 0xD4A64B, 14);
         }
       }
-      // Refresh cards sharpness after snapshot — re-fetch loadout
+      // Refresh sharpness display after each snapshot
       if (S.isDeployed && S.playerId && S.currentZoneId) {
         loadMyCards(S.currentZoneId);
+      }
+      // Update zone bonus pill if dominant house changed
+      if (data.dominantHouse && S.currentZone) {
+        S.currentZone.dominant_house = data.dominantHouse;
+        updateZoneBonusPill(S.currentZone);
       }
     });
 
@@ -3010,13 +3035,13 @@
   function syncMobilePortrait() {
     if (window.innerWidth > 640) return;
     const hk = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
+    const houseColor = HOUSES[hk]?.color || '#D4A64B';
     const icon = document.getElementById('mob-nine-icon');
     const name = document.getElementById('mob-nine-name');
     const portrait = document.getElementById('mob-nine-portrait');
-    const img = document.getElementById('mob-nine-img');
     if (icon) icon.textContent = HOUSES[hk]?.icon || '🐱';
     if (name && S.playerHandle) name.textContent = '@' + S.playerHandle;
-    if (portrait) portrait.style.borderColor = (HOUSES[hk]?.color || '#D4A64B') + '66';
+    if (portrait) portrait.style.borderColor = houseColor + '88';
     // HP
     const sprite = S.nines.get(S.playerId);
     const fill = document.getElementById('mob-nine-hp-fill');
@@ -3025,10 +3050,28 @@
       fill.style.width = `${Math.max(0,(sprite.hp/sprite.maxHp)*100)}%`;
       text.textContent = `${Math.round(sprite.hp)}/${sprite.maxHp}`;
     }
-    // Profile image
+    // Render Nine layers (equipped_images) — same priority as desktop portrait
     const cached = S._deployCache?.[String(S.playerId)];
-    if (img && cached?.profile_image && !img.src.includes(cached.profile_image)) {
-      img.src = cached.profile_image;
+    if (portrait && cached && !portrait.dataset.nineRendered) {
+      const imgs = cached.equipped_images || {};
+      const LAYERS = ['fur','outfit','weapon','expression','headwear','familiar'];
+      const hasLayers = LAYERS.some(l => !!imgs[l]);
+      if (hasLayers) {
+        portrait.dataset.nineRendered = '1';
+        portrait.querySelectorAll('.nine-layer').forEach(el => el.remove());
+        if (icon) icon.style.display = 'none';
+        LAYERS.forEach((slot, i) => {
+          if (!imgs[slot]) return;
+          const img = document.createElement('img');
+          img.src = imgs[slot];
+          img.className = 'nine-layer';
+          img.style.cssText = `position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:${i+1};`;
+          portrait.appendChild(img);
+        });
+      } else if (cached.profile_image) {
+        const img = document.getElementById('mob-nine-img');
+        if (img && !img.src.includes(cached.profile_image)) img.src = cached.profile_image;
+      }
     }
   }
 
