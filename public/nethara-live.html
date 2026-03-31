@@ -246,7 +246,9 @@
     #arena-view { display: none; position: fixed; top: var(--nav-height); left: 0; width: 100vw; height: calc(100vh - var(--nav-height)); z-index: 50; background: var(--bg); }
     #arena-canvas canvas { display: block; }
     #arena-canvas {
-      width: 100%; height: 100%; position: relative;
+      /* Desktop: fill space left of sidebar (350px), above tray (210px) */
+      position: absolute;
+      top: 0; left: 0; right: 350px; bottom: 210px;
       background-size: cover; background-position: center center;
       background-repeat: no-repeat; background-color: var(--bg);
       transition: background-image 0.8s ease;
@@ -349,7 +351,7 @@
       background: rgba(8,6,18,0.97);
       border-top: 2px solid rgba(255,255,255,0.09);
       backdrop-filter: blur(14px);
-      height: 170px;
+      height: 210px;
     }
     /* Stat bars in the HUD */
     .hud-stat-bar-wrap { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
@@ -699,6 +701,8 @@
 
     /* Animations */
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    @keyframes debuffPulse { 0%,100% { opacity:1; } 50% { opacity:0.55; } }
+    @keyframes debuffRingPulse { 0%,100% { opacity:1; box-shadow: inherit; } 50% { opacity:0.6; } }
     @keyframes feedIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 0.8; transform: none; } }
     @keyframes bannerPop {
       0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
@@ -835,9 +839,11 @@
         height: calc(100vh - var(--nav-height));
       }
       #arena-canvas {
+        position: relative !important;
         flex: 0 0 54%;
-        height: 54% !important; width: 100% !important;
-        position: relative;
+        width: 100% !important;
+        right: auto !important;
+        bottom: auto !important;
       }
       /* Sidebar + feed hidden */
       #arena-sidebar { display: none !important; }
@@ -852,7 +858,8 @@
         display: flex !important; flex-direction: column !important;
         background: rgba(8,6,18,0.99) !important;
         border-top: 2px solid rgba(212,166,75,0.2) !important;
-        overflow: visible !important;
+        overflow: hidden !important;
+        min-height: 0 !important;
       }
       /* Hide desktop hud-main layout */
       #hud-main { display: none !important; }
@@ -871,12 +878,12 @@
       }
       /* Nine portrait — overflows upward into arena canvas */
       #mob-nine-portrait {
-        width: 72px; height: 72px; border-radius: 50%;
+        width: 64px; height: 64px; border-radius: 10px;
         background: rgba(8,6,18,0.9);
         border: 2px solid rgba(212,166,75,0.4);
         overflow: hidden; position: relative;
         display: flex; align-items: center; justify-content: center;
-        margin-top: -36px; /* overlap upward */
+        margin-top: -20px; /* overlap upward — reduced to prevent scroll */
         box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
         flex-shrink: 0;
         z-index: 30;
@@ -917,10 +924,11 @@
       #mob-tab-log    { display:none;flex:1;overflow-y:auto;padding:4px 8px; }
 
       /* Card slots — horizontal scroll on mobile */
-      #mob-card-slots { display:flex;flex-direction:row;gap:6px;padding:6px 8px;overflow-x:auto;flex:1;align-items:stretch; }
+      #mob-card-slots { display:flex;flex-direction:row;gap:4px;padding:4px 6px;flex:1;align-items:stretch;min-height:90px;max-height:130px;overflow-x:hidden; }
       .mob-card-slot {
-        flex-shrink:0;width:120px;border:1px solid rgba(255,255,255,0.1);
-        border-radius:8px;overflow:hidden;display:flex;flex-direction:row;height:100%;
+        flex:1;min-width:0;border:1px solid rgba(255,255,255,0.1);
+        border-radius:8px;overflow:hidden;display:flex;flex-direction:row;
+        min-height:80px;
         cursor:pointer;position:relative;
       }
       .mob-card-slot .slot-art { width:38%;flex-shrink:0;overflow:hidden;position:relative;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center; }
@@ -939,10 +947,10 @@
       #mob-spell-playhead { position:absolute;top:0;height:100%;width:6px;background:linear-gradient(90deg,transparent,#ffaa44,#ff6622,transparent);transition:left 0.35s;left:0; }
 
       /* Stat bars on mobile */
-      .hud-stat-bar-wrap { margin-bottom:5px; }
-      .hud-stat-label { font-size:6px !important; width:22px !important; }
-      .hud-stat-val   { font-size:6px !important; min-width:22px !important; }
-      .hud-stat-track { height:5px !important; }
+      .hud-stat-bar-wrap { display:flex !important; align-items:center; gap:5px; margin-bottom:5px; }
+      .hud-stat-label { font-size:6px !important; width:22px !important; flex-shrink:0; }
+      .hud-stat-val   { font-size:6px !important; min-width:22px !important; text-align:right; flex-shrink:0; }
+      .hud-stat-track { flex:1 !important; height:5px !important; }
 
       /* Chat */
       #mob-chat-log { flex:1;overflow-y:auto;padding:4px 8px;font-family:'Crimson Text',serif;font-size:12px;line-height:1.4; }
@@ -1094,78 +1102,82 @@
   </div>
 
   <!-- ══════════════════════════════════════════════════════
-       COMBAT HUD — Your Nine's full status panel
-       Layout: [Nine+items] [Controls] [Stats] [Cards + cast bar] [ATK bar]
+       COMBAT HUD — RPG-style portrait + stat panel
   ══════════════════════════════════════════════════════ -->
   <div class="arena-bottom-tray" id="arena-bottom-tray" style="display:none;">
 
     <!-- ── MAIN HUD ROW ── -->
     <div id="hud-main" style="display:flex;flex-direction:row;height:100%;gap:0;">
 
-      <!-- [1] NINE PORTRAIT + debuff icons -->
-      <div id="hud-nine" style="width:140px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 8px;gap:6px;">
-        <div id="hud-nine-portrait" style="width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.05);border:2px solid rgba(212,166,75,0.25);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;">
-          <div id="hud-nine-icon" style="font-size:36px">🐱</div>
+      <!-- [1] NINE PORTRAIT — RPG inventory style -->
+      <div id="hud-nine" style="width:180px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;align-items:center;padding:12px 10px 8px;gap:5px;position:relative;background:linear-gradient(180deg,rgba(212,166,75,0.04),transparent);">
+        <!-- Portrait frame -->
+        <div id="hud-nine-portrait" style="width:100px;height:100px;border-radius:12px;background:rgba(8,6,18,0.9);border:2px solid rgba(212,166,75,0.4);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(212,166,75,0.12),inset 0 0 20px rgba(0,0,0,0.4);">
+          <div id="hud-nine-icon" style="font-size:48px;line-height:1;">🐱</div>
           <img id="hud-nine-img" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;" onload="this.style.display='block';document.getElementById('hud-nine-icon').style.display='none'">
+          <!-- Effect overlay ring — animates on debuff -->
+          <div id="hud-effect-ring" style="position:absolute;inset:-2px;border-radius:13px;border:2px solid transparent;pointer-events:none;transition:border-color 0.3s,box-shadow 0.3s;"></div>
         </div>
-        <div id="hud-nine-name" style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;"></div>
-        <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:14px;"></div>
+        <!-- Name + guild -->
+        <div id="hud-nine-name" style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;"></div>
+        <div id="hud-nine-guild" style="font-family:'Press Start 2P',monospace;font-size:6px;color:var(--faint);text-align:center;"></div>
+        <!-- HP bar under portrait -->
+        <div style="width:100%;padding:0 2px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
+            <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6acd8a;">HP</span>
+            <span id="your-hp-text" style="font-family:'Press Start 2P',monospace;font-size:6px;color:#6acd8a;">--/--</span>
+          </div>
+          <div style="height:7px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;border:1px solid rgba(106,205,138,0.2);">
+            <div id="your-hp-fill" style="height:100%;background:linear-gradient(90deg,#44cc88,#66eebb);border-radius:4px;transition:width 0.4s ease;width:100%"></div>
+          </div>
+        </div>
+        <!-- Debuff pills -->
+        <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:16px;width:100%;"></div>
       </div>
 
-      <!-- [2] CONTROLS: HP bar + buttons -->
-      <div id="hud-controls" style="width:160px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.06);display:flex;flex-direction:column;justify-content:space-between;padding:10px 12px;">
-        <!-- HP bar -->
-        <div>
-          <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);margin-bottom:3px;">HP</div>
-          <div style="height:6px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin-bottom:2px;">
-            <div id="your-hp-fill" style="height:100%;background:linear-gradient(90deg,#44cc88,#66eebb);border-radius:3px;transition:width 0.4s ease;width:100%"></div>
-          </div>
-          <div id="your-hp-text" style="font-family:'Press Start 2P',monospace;font-size:9px;color:var(--green);">--/--</div>
-        </div>
-        <!-- Action buttons -->
-        <div style="display:flex;flex-direction:column;gap:4px;">
-          <button id="btn-swap-build" style="font-family:'Press Start 2P',monospace;font-size:8px;padding:6px 8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--faint);border-radius:4px;cursor:pointer;width:100%;transition:all 0.15s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='var(--faint)'">⇄ LOADOUT</button>
-          <button id="btn-withdraw" style="font-family:'Press Start 2P',monospace;font-size:8px;padding:6px 8px;background:rgba(255,68,102,0.06);border:1px solid rgba(255,68,102,0.2);color:var(--red);border-radius:4px;cursor:pointer;width:100%;transition:all 0.15s;">WITHDRAW</button>
-          <div style="display:flex;align-items:center;gap:4px;">
-            <div id="auto-redeploy-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()" style="width:28px;height:14px;background:rgba(255,255,255,0.06);border-radius:7px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;transition:background 0.2s;flex-shrink:0;">
-              <div style="position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3);transition:left 0.2s;"></div>
-            </div>
-            <span id="auto-redeploy-label" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);">AUTO</span>
-          </div>
-          <!-- Mobile-only tab strip -->
-          <div id="mobile-hud-tabs" style="display:none;gap:3px;margin-top:2px;">
-            <button onclick="switchMobileHudTab('cards')"  class="mob-tab active" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 4px;flex:1;background:rgba(212,166,75,0.1);border:1px solid rgba(212,166,75,0.3);color:var(--gold);border-radius:3px;cursor:pointer;">BUILD</button>
-            <button onclick="switchMobileHudTab('stats')"  class="mob-tab" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 4px;flex:1;background:none;border:1px solid rgba(255,255,255,0.08);color:var(--faint);border-radius:3px;cursor:pointer;">STATS</button>
-            <button onclick="switchMobileHudTab('chat')"   class="mob-tab" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 4px;flex:1;background:none;border:1px solid rgba(255,255,255,0.08);color:var(--faint);border-radius:3px;cursor:pointer;">CHAT</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- [3] STAT BARS -->
-      <div id="hud-stats" style="width:150px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.06);padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:2px;">
+      <!-- [2] STATS panel -->
+      <div id="hud-stats" style="width:160px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);padding:12px 14px;display:flex;flex-direction:column;justify-content:center;gap:0;">
+        <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(212,166,75,0.5);letter-spacing:2px;margin-bottom:8px;">STATS</div>
         <div id="your-nine-stats"></div>
       </div>
 
-      <!-- [4] AUTO-ATK bar (vertical, LEFT side before cards) -->
-      <div id="hud-atk" style="width:36px;flex-shrink:0;padding:8px 6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;gap:4px;border-right:1px solid rgba(255,255,255,0.06);">
-        <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);text-align:center;line-height:1.4;">AUTO<br>ATK</div>
-        <div style="flex:1;width:14px;background:rgba(255,255,255,0.05);border-radius:7px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.08);">
-          <div id="atk-speed-bar" style="position:absolute;bottom:0;left:0;right:0;height:0%;background:linear-gradient(180deg,#ffaa44,#e85a6a);border-radius:7px;transition:height 0.1s linear;"></div>
+      <!-- [3] CONTROLS: buttons + ATK bar -->
+      <div id="hud-controls" style="width:130px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;justify-content:space-between;padding:12px 10px;">
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <button id="btn-swap-build" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:7px 8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--faint);border-radius:5px;cursor:pointer;width:100%;transition:all 0.15s;" onmouseover="this.style.color='var(--gold)';this.style.borderColor='rgba(212,166,75,0.3)'" onmouseout="this.style.color='var(--faint)';this.style.borderColor='rgba(255,255,255,0.12)'">⇄ LOADOUT</button>
+          <button id="btn-withdraw" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:7px 8px;background:rgba(255,68,102,0.06);border:1px solid rgba(255,68,102,0.2);color:var(--red);border-radius:5px;cursor:pointer;width:100%;transition:all 0.15s;">WITHDRAW</button>
         </div>
-        <div style="font-size:14px;line-height:1;" id="atk-speed-icon">⚔</div>
+        <!-- ATK speed bar — vertical fill -->
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;justify-content:center;margin:8px 0;">
+          <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.2);letter-spacing:1px;">AUTO ATK</div>
+          <div style="width:18px;height:60px;background:rgba(255,255,255,0.05);border-radius:9px;overflow:hidden;position:relative;border:1px solid rgba(255,100,34,0.2);">
+            <div id="atk-speed-bar" style="position:absolute;bottom:0;left:0;right:0;height:0%;background:linear-gradient(180deg,#ffcc44,#ff6622,#e85a6a);border-radius:9px;transition:height 0.08s linear;"></div>
+          </div>
+          <div style="font-size:12px;opacity:0.5;" id="atk-speed-icon">⚔</div>
+        </div>
+        <!-- Auto toggle -->
+        <div style="display:flex;align-items:center;gap:5px;">
+          <div id="auto-redeploy-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()" style="width:28px;height:14px;background:rgba(255,255,255,0.06);border-radius:7px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0;">
+            <div style="position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3);transition:left 0.2s;"></div>
+          </div>
+          <span id="auto-redeploy-label" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);">AUTO</span>
+        </div>
       </div>
 
-      <!-- [5] CARD SLOTS + cast bar sweeping left→right across all 3 cards -->
+      <!-- [4] CARD SLOTS + spell cast bar -->
       <div id="hud-cards" style="flex:1;min-width:0;display:flex;flex-direction:column;">
-        <!-- Orange liquid cast bar — spans full width of all 3 cards -->
-        <div id="spell-timeline" style="display:none;height:4px;background:rgba(255,255,255,0.04);position:relative;flex-shrink:0;">
+        <!-- Spell cast bar sweeping across all 3 cards -->
+        <div style="display:flex;align-items:center;gap:6px;padding:8px 10px 4px;flex-shrink:0;">
+          <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.2);white-space:nowrap;">SPELL ROTATION</span>
+        </div>
+        <div id="spell-timeline" style="display:none;height:4px;background:rgba(255,255,255,0.04);position:relative;flex-shrink:0;margin:0 10px 4px;">
           <div id="spell-timeline-track" style="position:absolute;inset:0;overflow:hidden;">
             <div id="spell-playhead" style="position:absolute;top:0;height:100%;width:8px;background:linear-gradient(90deg,transparent,#ffaa44,#ff6622,transparent);box-shadow:0 0 8px #ff6622;transition:left 0.35s ease;left:0%;border-radius:2px;"></div>
           </div>
           <div style="position:absolute;top:0;bottom:0;left:33.3%;width:1px;background:rgba(255,255,255,0.1);"></div>
           <div style="position:absolute;top:0;bottom:0;left:66.6%;width:1px;background:rgba(255,255,255,0.1);"></div>
         </div>
-        <div id="mobile-hud-panel-cards" style="display:flex;flex:1;gap:6px;padding:6px 8px;">
+        <div id="mobile-hud-panel-cards" style="display:flex;flex:1;gap:6px;padding:4px 10px 8px;">
           <div class="arena-card-slot empty" id="card-slot-0"><span class="slot-empty-text">1</span></div>
           <div class="arena-card-slot empty" id="card-slot-1"><span class="slot-empty-text">2</span></div>
           <div class="arena-card-slot empty" id="card-slot-2"><span class="slot-empty-text">3</span></div>
@@ -1462,6 +1474,15 @@
         S.playerLevel = p.level || 1;
         S.playerHandle    = p.twitter_handle || p.handle || '';
         S.playerGuildTag  = p.guild_tag || '';
+        // Seed own profile image immediately so portrait loads without waiting
+        if (p.profile_image || p.profileImage) {
+          S._deployCache = S._deployCache || {};
+          S._deployCache[String(S.playerId)] = {
+            profile_image: p.profile_image || p.profileImage || null,
+            equipped_images: p.equipped_images || {},
+            name: p.name || p.twitter_handle || p.handle || null,
+          };
+        }
       } catch(e) {}
     }
     if (!S.playerId) S.playerId = parseInt(localStorage.getItem('player_id') || localStorage.getItem('playerId') || '0') || null;
@@ -1569,6 +1590,14 @@
     S.feedEvents = [];
     S.snapshotCount = 0;
     S.currentCycle = 0;
+    // Reset portrait so it re-renders Nine layers for this session
+    const hudPortrait = document.getElementById('hud-nine-portrait');
+    if (hudPortrait) {
+      delete hudPortrait.dataset.nineRendered;
+      hudPortrait.querySelectorAll('.nine-layer').forEach(el => el.remove());
+      const icon = document.getElementById('hud-nine-icon');
+      if (icon) icon.style.display = '';
+    }
     S.currentZone = zone;
     S.currentZoneId = zone.id;
 
@@ -1643,6 +1672,25 @@
             name: d.nine?.name || d.player?.twitter_handle || null,
           };
         });
+        // Retroactively update any sprites already on canvas with profile images
+        // (arena:positions often fires before this fetch resolves)
+        let needsPortraitUpdate = false;
+        S.nines.forEach((sp, id) => {
+          const cached = S._deployCache[String(id)];
+          if (!cached) return;
+          if (String(id) === String(S.playerId)) needsPortraitUpdate = true;
+          // Re-add sprite if only has cat fallback and now has image data
+          if (!sp.profileImage && (cached.profile_image || Object.keys(cached.equipped_images||{}).length)) {
+            removeNineSprite(id);
+            // Will be re-created on next arena:positions tick with correct image
+          }
+        });
+        // Re-render HUD portrait with Nine layers now that cache is populated
+        if (needsPortraitUpdate) {
+          const p = document.getElementById('hud-nine-portrait');
+          if (p) { delete p.dataset.nineRendered; p.querySelectorAll('.nine-layer').forEach(el => el.remove()); }
+          updateYourNinePanel();
+        }
       }).catch(() => {});
     try {
       const res = await fetch(`/api/zones/my-deployments/${S.playerId}`);
@@ -1792,15 +1840,45 @@
     const hk = (S.nines.get(S.playerId)?.house) || SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
     const houseColor = HOUSES[hk]?.color || '#D4A64B';
 
-    // Portrait
+    // Portrait — render equipped_images layers (the actual Nine, same as sprite)
     const icon = document.getElementById('hud-nine-icon');
     const nameEl = document.getElementById('hud-nine-name');
+    const guildEl = document.getElementById('hud-nine-guild');
     const portrait = document.getElementById('hud-nine-portrait');
     if (icon) icon.textContent = HOUSES[hk]?.icon || '🐱';
-    if (portrait) portrait.style.borderColor = houseColor + '66';
+    if (portrait) {
+      portrait.style.borderColor = houseColor + '88';
+      portrait.style.boxShadow = `0 0 20px ${houseColor}22, inset 0 0 20px rgba(0,0,0,0.4)`;
+      // Render Nine layers — equipped_images from deploy cache
+      const cached = S._deployCache?.[String(S.playerId)];
+      const imgs = cached?.equipped_images || {};
+      const LAYERS = ['fur','outfit','weapon','expression','headwear','familiar'];
+      const hasLayers = LAYERS.some(l => !!imgs[l]);
+      if (hasLayers && !portrait.dataset.nineRendered) {
+        portrait.dataset.nineRendered = '1';
+        // Remove old img if any
+        portrait.querySelectorAll('.nine-layer').forEach(el => el.remove());
+        if (icon) icon.style.display = 'none';
+        LAYERS.forEach((slot, i) => {
+          if (!imgs[slot]) return;
+          const img = document.createElement('img');
+          img.src = imgs[slot];
+          img.className = 'nine-layer';
+          img.style.cssText = `position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:${i+1};`;
+          portrait.appendChild(img);
+        });
+      } else if (!hasLayers && cached?.profile_image) {
+        // Twitter PFP fallback if no Nine layers
+        const existing = document.getElementById('hud-nine-img');
+        if (existing && !existing.src.includes(cached.profile_image)) {
+          existing.src = cached.profile_image;
+        }
+      }
+    }
     if (nameEl && S.playerHandle) nameEl.textContent = '@' + S.playerHandle;
+    if (guildEl && S.playerGuildTag) guildEl.textContent = '[' + S.playerGuildTag + ']';
 
-    // Left panel portrait sync
+    // Left panel portrait sync (may not exist — safe with null checks)
     const lIcon = document.getElementById('left-nine-icon');
     const lHandle = document.getElementById('left-nine-handle');
     const lGuild = document.getElementById('left-nine-guild');
@@ -1927,18 +2005,28 @@
 
   // Spell cast sweep — orange liquid flowing across the 3 card slots
   function sweepSpellBar(slotIdx, numCards) {
-    const tl = document.getElementById('spell-timeline');
-    const ph = document.getElementById('spell-playhead');
-    if (!tl || !ph) return;
-    tl.style.display = 'block';
-    // Map slot 0/1/2 to position across full bar width
     const n = numCards || 3;
     const targetPct = ((slotIdx + 0.5) / n) * 100;
-    ph.style.left = targetPct + '%';
-    // Flash colour
     const hc = HOUSES[S.equippedCards[slotIdx]?.house||'universal']?.color || '#ff6622';
-    ph.style.background = `linear-gradient(90deg,transparent,${hc},#ff6622,transparent)`;
-    ph.style.boxShadow = `0 0 8px ${hc}`;
+    const grad = `linear-gradient(90deg,transparent,${hc},#ff6622,transparent)`;
+    const shadow = `0 0 8px ${hc}`;
+
+    // Desktop spell timeline
+    const tl = document.getElementById('spell-timeline');
+    const ph = document.getElementById('spell-playhead');
+    if (tl && ph) {
+      tl.style.display = 'block';
+      ph.style.left = targetPct + '%';
+      ph.style.background = grad;
+      ph.style.boxShadow = shadow;
+    }
+    // Mobile cast bar
+    const mph = document.getElementById('mob-spell-playhead');
+    if (mph) {
+      mph.style.left = targetPct + '%';
+      mph.style.background = grad;
+      mph.style.boxShadow = shadow;
+    }
   }
 
   // ── CARD POPUP ──
@@ -2167,8 +2255,11 @@
         closeDeployModal();
         document.getElementById('deploy-cta').style.display = 'none';
         document.getElementById('arena-bottom-tray').style.display = 'flex';
+        // Show spell timeline immediately at 0% — it sweeps live during combat
         const tl1 = document.getElementById('spell-timeline');
-        if (tl1) tl1.style.display = 'block';
+        if (tl1) { tl1.style.display = 'block'; }
+        const ph1 = document.getElementById('spell-playhead');
+        if (ph1) ph1.style.left = '0%';
         renderCardSlots(cards);
         renderMobileCardSlots(cards);
         initMobileHUD();
@@ -2394,11 +2485,25 @@
       const from = attacker ? (attacker.name || getNineName(fromId)) : getNineName(fromId);
       const to   = target   ? (target.name   || getNineName(toId))   : getNineName(toId);
 
-      if (target && dmg > 0) {
-        shakeSprite(target);
-        const pos = engineToScreen({ x: data.tx||target.container.x, y: data.ty||target.container.y });
-        showFloatingText(target.container.x, target.container.y - 20, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 16 : 12);
-        if (data.crit) fireworkCRIT(target.container.x, target.container.y);
+      // Screen positions — prefer live sprite, fall back to engine coords from event
+      const sx = attacker
+        ? { x: attacker.container.x, y: attacker.container.y }
+        : (data.x  != null ? engineToScreen({ x: data.x,  y: data.y  }) : null);
+      const ex = target
+        ? { x: target.container.x,   y: target.container.y   }
+        : (data.tx != null ? engineToScreen({ x: data.tx, y: data.ty }) : null);
+
+      if (sx && ex) {
+        animateProjectileFromPos(sx.x, sx.y, ex.x, ex.y, attacker?.house || 'universal', () => {
+          if (dmg > 0) {
+            if (target) shakeSprite(target);
+            showFloatingText(ex.x, ex.y - 20, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 16 : 12);
+            if (data.crit) fireworkCRIT(ex.x, ex.y);
+          }
+        });
+      } else if (ex && dmg > 0) {
+        showFloatingText(ex.x, ex.y - 20, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 16 : 12);
+        if (data.crit) fireworkCRIT(ex.x, ex.y);
       }
 
       const critPart = data.crit ? ` <span class="feed-crit">★ CRIT!</span>` : '';
@@ -2433,22 +2538,36 @@
 
     socket.on('combat:effect', (data) => {
       const eff = data.effect || '';
+      const effName = eff.split(' ')[0].toUpperCase();
       const cId  = resolveId(data.casterId || data.by);
       const tId  = resolveId(data.targetId || data.on);
       const caster = S.nines.get(cId);
       const target  = S.nines.get(tId);
-      const tx = target ? target.container.x : (data.tx ? engineToScreen({x:data.tx,y:data.ty||0}).x : null);
-      const ty = target ? target.container.y : (data.ty ? engineToScreen({x:data.tx||0,y:data.ty}).y : null);
-      if (tx !== null) spawnParticles(tx, ty, getEffectParticles(eff+'_APPLY').color, 8, 'default');
+
+      // Screen position — sprite first, then engine coords fallback
+      const ep = data.tx != null ? engineToScreen({ x: data.tx, y: data.ty || 0 }) : null;
+      const cp = data.x  != null ? engineToScreen({ x: data.x,  y: data.y  || 0 }) : null;
+      const tx = target  ? target.container.x  : (ep?.x ?? null);
+      const ty = target  ? target.container.y  : (ep?.y ?? null);
+      const cx = caster  ? caster.container.x  : (cp?.x ?? tx);
+      const cy = caster  ? caster.container.y  : (cp?.y ?? ty);
+
+      if (tx !== null) {
+        const effColor = EFFECT_COLORS[effName] ? parseInt(EFFECT_COLORS[effName].replace('#',''), 16) : 0xD4A64B;
+        spawnParticles(tx, ty, getEffectParticles(effName+'_APPLY').color, 8, 'default');
+        showFloatingText(tx, ty - 30, effName, effColor, 9);
+      }
       if (caster) animateAuraBurst(caster, eff);
       if (data.amt > 0) {
-        if (target) showFloatingText(target.container.x, target.container.y-20, `+${data.amt}`, 0x44ffaa, 11);
+        const hx = tx ?? cx, hy = ty ?? cy;
+        if (hx !== null) showFloatingText(hx, hy - 20, `+${data.amt}`, 0x44ffaa, 11);
         trackCombatStat(cId, getNineName(cId), caster?.guild||'', caster?.house||'', 'heals', data.amt);
       }
-      // Update debuff HUD if we're the target
+
+      // Debuff HUD — update portrait ring too
       if (String(tId) === String(S.playerId)) {
         updateDebuffHUD(eff, true);
-        // Mirror to mobile debuffs
+        // Mirror pills to mobile
         const mdb = document.getElementById('mob-debuffs');
         const db  = document.getElementById('hud-debuffs');
         if (mdb && db) mdb.innerHTML = db.innerHTML;
@@ -2475,6 +2594,16 @@
       const id = resolveId(data.nineId);
       const sp = S.nines.get(id);
       if (sp && data.dmg > 0) showFloatingText(sp.container.x, sp.container.y-15, `-${data.dmg}`, 0x88cc44, 10);
+    });
+
+    socket.on('combat:regen', (data) => {
+      // Darktide zone bonus — HP regen every 60s
+      const id = resolveId(data.nineId || data.nine);
+      const sp = S.nines.get(id);
+      if (sp && data.amt > 0) {
+        showFloatingText(sp.container.x, sp.container.y - 20, `+${data.amt}`, 0x44ffaa, 10);
+        spawnParticles(sp.container.x, sp.container.y, 0x44ffaa, 5, 'heal');
+      }
     });
 
     socket.on('arena:snapshot', (data) => {
@@ -2752,12 +2881,13 @@
 
   // ── DEBUFF HUD ──
   const _activeDebuffs = new Map(); // effect → expiry timestamp
+  // Debuff colour priorities for portrait ring
+  const DEBUFF_RING_PRIORITY = ['SILENCE','WEAKEN','POISON','BURN','HEX','BLIND','WITHER','CORRODE'];
   function updateDebuffHUD(effect, apply) {
     const el = document.getElementById('hud-debuffs');
     if (!el) return;
-    const ec = EFFECT_COLORS[effect.split(' ')[0].toUpperCase()] || '#D4A64B';
     if (apply) {
-      _activeDebuffs.set(effect, Date.now() + 12000); // 12s display
+      _activeDebuffs.set(effect, Date.now() + 12000);
     } else {
       _activeDebuffs.delete(effect);
     }
@@ -2765,8 +2895,23 @@
     _activeDebuffs.forEach((exp, k) => { if (Date.now() > exp) _activeDebuffs.delete(k); });
     el.innerHTML = [..._activeDebuffs.keys()].map(e => {
       const c = EFFECT_COLORS[e.split(' ')[0].toUpperCase()] || '#D4A64B';
-      return `<div title="${e}" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:2px 4px;border-radius:3px;background:${c}22;border:1px solid ${c}55;color:${c}">${e.split(' ')[0].slice(0,4)}</div>`;
+      return `<div title="${e}" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:2px 4px;border-radius:3px;background:${c}22;border:1px solid ${c}55;color:${c};animation:debuffPulse 1.5s ease-in-out infinite">${e.split(' ')[0].slice(0,4)}</div>`;
     }).join('');
+    // Animate the portrait ring with the highest priority active debuff colour
+    const ring = document.getElementById('hud-effect-ring');
+    if (ring) {
+      const active = DEBUFF_RING_PRIORITY.find(d => [..._activeDebuffs.keys()].some(k => k.startsWith(d)));
+      if (active) {
+        const c = EFFECT_COLORS[active] || '#D4A64B';
+        ring.style.borderColor = c;
+        ring.style.boxShadow = `0 0 12px ${c}88, inset 0 0 8px ${c}33`;
+        ring.style.animation = 'debuffRingPulse 1.5s ease-in-out infinite';
+      } else {
+        ring.style.borderColor = 'transparent';
+        ring.style.boxShadow = 'none';
+        ring.style.animation = 'none';
+      }
+    }
   }
 
   // Clear debuffs on CLEANSE
@@ -2819,8 +2964,26 @@
 
   function syncMobStats() {
     const el = document.getElementById('mob-stats-bars');
-    const src = document.getElementById('your-nine-stats');
-    if (el && src) el.innerHTML = src.innerHTML;
+    if (!el) return;
+    // Calculate stats client-side — #your-nine-stats is inside #hud-main which is hidden on mobile
+    const hk = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
+    const base = HOUSE_STATS[hk] || HOUSE_STATS.stormrage;
+    let ca=0,ch=0,cs=0,cd=0,cl=0;
+    S.equippedCards.forEach(c=>{ if(!c)return; ca+=c.base_atk||0; ch+=c.base_hp||0; cs+=c.base_spd||0; cd+=c.base_def||0; cl+=c.base_luck||0; });
+    const MAX = { atk:200, hp:2000, spd:80, def:80, luck:60 };
+    const stats = [
+      { label:'ATK', val:base.atk+ca,  color:'#e85a6a', max:MAX.atk  },
+      { label:'HP',  val:base.hp+ch,   color:'#6acd8a', max:MAX.hp   },
+      { label:'SPD', val:base.spd+cs,  color:'#6ac8d8', max:MAX.spd  },
+      { label:'DEF', val:base.def+cd,  color:'#b088e8', max:MAX.def  },
+      { label:'LCK', val:base.luck+cl, color:'#D4A64B', max:MAX.luck },
+    ];
+    el.innerHTML = stats.map(s => `
+      <div class="hud-stat-bar-wrap">
+        <div class="hud-stat-label" style="color:${s.color}">${s.label}</div>
+        <div class="hud-stat-track"><div class="hud-stat-fill" style="width:${Math.min(100,Math.round((s.val/s.max)*100))}%;background:${s.color}"></div></div>
+        <div class="hud-stat-val" style="color:${s.color}">${s.val}</div>
+      </div>`).join('');
   }
 
   function syncMobChat() {
@@ -3154,13 +3317,15 @@
     const container = document.getElementById('arena-canvas');
     container.innerHTML = '';
     const navH = 52;
+    const trayH = 210; // desktop HUD tray height
     const isMobile = window.innerWidth <= 640;
 
-    // On mobile, canvas is 56% of available height; on desktop it's full height
+    // Desktop: subtract tray height so sprites stay above HUD
+    // Mobile: canvas is 54% of available height
     const canvasH = isMobile
-      ? Math.round((window.innerHeight - navH) * 0.56)
-      : (window.innerHeight - navH);
-    const canvasW = window.innerWidth;
+      ? Math.round((window.innerHeight - navH) * 0.54)
+      : (window.innerHeight - navH - trayH);
+    const canvasW = window.innerWidth - (isMobile ? 0 : 350); // subtract sidebar width on desktop
 
     const app = new PIXI.Application({
       width: canvasW,
@@ -3186,57 +3351,55 @@
       if (!state.arenaApp) return;
       const mob = window.innerWidth <= 640;
       const newH = mob
-        ? Math.round((window.innerHeight - navH) * 0.56)
-        : (window.innerHeight - navH);
-      state.arenaApp.renderer.resize(window.innerWidth, newH);
+        ? Math.round((window.innerHeight - navH) * 0.54)
+        : (window.innerHeight - navH - trayH);
+      const newW = window.innerWidth - (mob ? 0 : 350);
+      state.arenaApp.renderer.resize(newW, newH);
       drawArenaGround(state.arenaApp);
       state.arenaApp.stage.sortChildren();
     });
 
     // ── MAIN TICKER: movement + South Park walk bob ──
+    const isMob = window.innerWidth <= 640;
+    const spriteScale = isMob ? 0.8 : 1.0;
     app.ticker.add((delta) => {
       const time = performance.now() / 1000;
       state.nines.forEach((nine) => {
         if (nine.isAnimating) return;
 
-        // ── Movement: interpolate toward server-driven targetX/Y ──
+        // ── Movement: smooth lerp toward server target ──
         const wx = (nine.targetX ?? nine.container.x) - nine.container.x;
         const wy = (nine.targetY ?? nine.container.y) - nine.container.y;
         const dist = Math.sqrt(wx*wx + wy*wy);
-        const moving = dist > 1.5;
+        const moving = dist > 2;
 
         if (moving) {
-          // Smooth interpolation — closes 18% of gap per frame (60fps ≈ 0.6s to reach target)
-          const lerp = Math.min(0.18, dist * 0.08);
-          nine.container.x += wx * lerp;
-          nine.container.y += wy * lerp;
-          // Face direction
-          if (nine.spriteGroup && Math.abs(wx) > 0.5) {
-            const s = Math.abs(nine.spriteGroup.scale.x) || 1;
-            nine.spriteGroup.scale.x = wx > 0 ? s : -s;
+          // 0.07 lerp = ~1.5s to fully converge — smooth, no snapping
+          nine.container.x += wx * 0.07;
+          nine.container.y += wy * 0.07;
+          if (nine.spriteGroup && Math.abs(wx) > 0.8) {
+            const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
+            const newFacing = wx > 0 ? 1 : -1;
+            if (facing !== newFacing) {
+              nine.spriteGroup.scale.x = newFacing * Math.abs(nine.spriteGroup.scale.x);
+            }
           }
         }
 
-        // ── South Park walk bob ──
+        // ── Walk bob ──
         if (nine.spriteGroup) {
           const phase = nine.bobPhase || 0;
           if (moving) {
-            // Rapid foot-to-foot step: sharp up/down alternation
-            const step = Math.abs(Math.sin(time * 14 + phase));   // fast bilateral step
-            const lean = Math.sin(time * 14 + phase) * 1.5;       // body lean
-            nine.spriteGroup.y = -step * 5;                        // lift on each step
-            // Squash on landing (step == 0), stretch on lift (step == 1)
-            const scaleX = Math.abs(nine.spriteGroup.scale.x);
-            nine.spriteGroup.scale.y = 1 - step * 0.12;           // squash vertically on step
-            // Keep horizontal scale sign (facing direction)
-            nine.spriteGroup.scale.x = (nine.spriteGroup.scale.x >= 0 ? 1 : -1) * (1 + step * 0.08);
+            const step = Math.abs(Math.sin(time * 7 + phase));
+            nine.spriteGroup.y = -step * 3.5;
+            nine.spriteGroup.scale.y = spriteScale * (1 - step * 0.08);
+            const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
+            nine.spriteGroup.scale.x = facing * spriteScale * (1 + step * 0.05);
           } else {
-            // Idle breathing: gentle bob
-            nine.spriteGroup.y = Math.sin(time * 2.2 + phase) * 1.8;
-            nine.spriteGroup.scale.y = 1;
-            // Reset horizontal squash but keep facing direction
-            const s = Math.abs(nine.spriteGroup.scale.x) || 1;
-            nine.spriteGroup.scale.x = (nine.spriteGroup.scale.x >= 0 ? 1 : -1) * (1 + Math.sin(time*2.2+phase)*0.012);
+            nine.spriteGroup.y = Math.sin(time * 1.8 + phase) * 1.2;
+            nine.spriteGroup.scale.y = spriteScale;
+            const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
+            nine.spriteGroup.scale.x = facing * spriteScale;
           }
         }
 
@@ -3718,7 +3881,7 @@
   // ===== NINE SPRITES — LAYERED ITEM RENDERING =====
   // Layer order matches builder: fur → outfit → weapon → expression → headwear → familiar
   const ITEM_LAYER_ORDER = ['fur', 'outfit', 'weapon', 'expression', 'headwear', 'familiar'];
-  const SPRITE_SIZE = 72;
+  const SPRITE_SIZE = 54; // was 72 — cleaner at this scale
 
   function addNineSprite(nine) {
     if (!state.arenaApp) return;
@@ -4343,456 +4506,13 @@
     return effects[effectType] || { color: 0xD4A64B, count: 6, type: 'default' };
   }
 
-  // ===== SOCKET.IO =====
-  function connectArenaSocket(zoneId) {
-    const socket = io('/arena', { transports: ['websocket', 'polling'], query: { zoneId: zoneId } });
-    state.socket = socket;
+  // ── House colour helper — used by projectile and firework functions ──
+  function getHouseColor(houseKey) {
+    const h = HOUSES[houseKey] || {};
+    const hex = h.color || '#D4A64B';
+    return parseInt(hex.replace('#', ''), 16);
+  }
 
-    socket.on('connect', () => {
-      socket.emit('join_zone', { zoneId });
-      addFeedEvent('Connected to arena', 'system');
-    });
-
-    // Current state (on first join) — engine sends snapshot with combat positions
-    socket.on('arena:state', (data) => {
-      if (data.snapshot) {
-        for (const nine of data.snapshot) {
-          if (state.nines.has(nine.id)) {
-            updateNineHP(nine.id, nine.current_hp, nine.max_hp);
-          } else {
-            nine.position = engineToScreen(nine.position);
-            addNineSprite(nine);
-          }
-        }
-        updateHpStrip();
-      }
-      if (data.round) updateRoundBadge(data.round, data.cycle);
-      if (data.active) addFeedEvent('⚔️ Combat is active!', 'system');
-
-      // Sync countdown timing from server
-      if (data.next_cycle_at) {
-        state.cycleEndTime = data.next_cycle_at;
-      } else if (data.cycle_interval_ms) {
-        state.cycleEndTime = Date.now() + data.cycle_interval_ms;
-      } else if (!state.cycleEndTime) {
-        // Default 5 min if server doesn't send timing
-        state.cycleEndTime = Date.now() + 5 * 60 * 1000;
-      }
-      if (data.cycle) state.currentCycle = data.cycle;
-      updateCountdownDisplay();
-    });
-
-    // New Nine joins mid-battle
-    socket.on('arena:nine_joined', (data) => {
-      if (!state.nines.has(data.nine_id)) {
-        addNineSprite({
-          id: data.nine_id,
-          name: data.player_name,
-          house: data.house,
-          guild_id: data.guild_id,
-          guild_name: data.guild,
-          current_hp: data.stats?.hp || 10,
-          max_hp: data.stats?.hp || 10,
-          position: engineToScreen(data.position),
-          stats: data.stats || {},
-          equipped_images: data.equipped_images || {},
-        });
-      }
-      addFeedEvent(`${data.player_name} entered the arena`, 'join');
-    });
-
-    // Nine leaves
-    socket.on('arena:nine_left', (data) => {
-      removeNineSprite(data.nine_id);
-    });
-
-    // ── V2 CONTINUOUS COMBAT ──────────────────────
-    // Combat ticks every 2 seconds. Events stream continuously.
-    // All 3 cards are active at once (no waves/rounds).
-    // 15-minute snapshots score zone control.
-
-    // ── TICK EVENTS — V2 combat engine sends events every 2s
-    socket.on('arena:tick', (data) => {
-      if (!data.events || data.events.length === 0) return;
-      state.isFighting = true;
-
-      // Stagger events slightly so animations don't all fire at once
-      data.events.forEach((ev, i) => {
-        setTimeout(() => processArenaEvent(ev), i * 300);
-      });
-      // Record chart data every 5 ticks (~10s) to track damage momentum
-      state.chartTick = (state.chartTick || 0) + 1;
-      if (state.chartTick % 5 === 0) recordChartTick();
-
-      // Sync HP state + contribution/cooldown data
-      if (data.state) {
-        for (const nine of data.state) {
-          const nineId = resolveNineId(nine);
-          if (state.nines.has(nineId)) {
-            updateNineHP(nineId, nine.hp, nine.maxHp);
-            const sprite = state.nines.get(nineId);
-            if (sprite) {
-              // Respect local isAlive=false flag — don't let tick revive a sprite mid-animation
-              const serverAlive = nine.isAlive !== false;
-              const localAlive = sprite.isAlive !== false;
-              sprite.container.alpha = (serverAlive && localAlive) ? 1 : 0.15;
-              if (!serverAlive) sprite.isAlive = false; // sync server state down
-            }
-          }
-        }
-        // Update guild dominance in top bar
-        updateGuildDominance(data.state);
-        // Update contribution panel
-        updateContributions(data.state);
-        // Update spell cooldown for the local player
-        const myId = state.playerId;
-        const myState = data.state.find(n => String(n.id) === String(myId));
-        if (myState && myState.spellReady != null) {
-          updateCardCooldowns(myState.spellReady);
-        }
-      }
-    });
-
-    // ── SNAPSHOT — 15-minute zone control scoring
-    socket.on('arena:snapshot', (data) => {
-      const winner = data.winner_guild || 'No winner';
-      state.snapshotCount = (state.snapshotCount || 0) + 1;
-      console.log('📸 SNAPSHOT:', data);
-      showRoundBanner('ZONE SCORED', `${winner} controls zone`);
-      addFeedEvent(`📸 15-min snapshot — ${winner} controls zone!`, 'system');
-      nermRoundComment('cycle_end', data);
-
-      if (data.guild_scores || data.guild_power) {
-        state.guildScores = data.guild_scores || data.guild_power;
-        updateScoreboard();
-      }
-
-      // Set next snapshot timer
-      if (data.next_snapshot_at) {
-        state.cycleEndTime = data.next_snapshot_at;
-      } else {
-        state.cycleEndTime = Date.now() + 15 * 60 * 1000;
-      }
-      updateCountdownDisplay();
-
-      // Refresh deployment data
-      if (state.currentZoneId) {
-        loadZoneNines(state.currentZoneId);
-        checkDeployment(state.currentZoneId);
-      }
-    });
-
-    // ── KO EVENT — Nine knocked out of zone
-    socket.on('arena:ko', (data) => {
-      const nineId = resolveId(data.nine_id || data.target);
-      const sprite = state.nines.get(nineId);
-      if (sprite) {
-        // Mark dead immediately so tick syncs don't revive it visually
-        sprite.isAlive = false;
-        sprite.hp = 0;
-        animateKO(sprite);
-        showFloatingText(sprite.container.x, sprite.container.y, 'KO!', 0xff4466, 20);
-        addFeedEvent(`💀 ${data.name || 'A Nine'} was knocked out!`, 'ko');
-        renderGuildSidebar();
-        // Remove ghost sprite after animation completes (1.5s)
-        setTimeout(() => removeNineSprite(nineId), 1500);
-      }
-      // If YOUR Nine got KO'd, show KO overlay with countdown
-      if (nineId == state.playerId) {
-        state.isDeployed = false;
-        showKOOverlay(data.killer_name || null);
-      }
-    });
-
-    socket.on('chat:message', function(data) {
-      document.dispatchEvent(new CustomEvent('arena:chat:message', { detail: data }));
-    });
-
-    // ── RESPAWN — Nine returns after KO cooldown
-    socket.on('arena:respawn', (data) => {
-      const nineId = resolveId(data.nine_id);
-      const sprite = state.nines.get(nineId);
-      if (sprite) {
-        sprite.isAlive = true; // restore life flag
-        sprite.container.alpha = 1;
-        sprite.spriteGroup.scale.set(1, 1);
-        sprite.spriteGroup.rotation = 0;
-        updateNineHP(nineId, data.hp || data.max_hp, data.max_hp);
-        showFloatingText(sprite.container.x, sprite.container.y, 'REVIVED', 0x44ffaa, 14);
-        spawnParticles(sprite.container.x, sprite.container.y, 0x44ffaa, 12, 'heal');
-        addFeedEvent(`💚 ${data.name || 'A Nine'} respawned!`, 'system');
-        renderGuildSidebar();
-      }
-    });
-
-    // ── COMBAT STATUS — periodic full state sync (replaces cycle_start)
-    socket.on('arena:combat_status', (data) => {
-      state.isFighting = data.active || false;
-      if (data.nine_count != null) {
-        addFeedEvent(`${data.nine_count} Nines fighting on this zone`, 'system');
-      }
-      if (data.guild_power) {
-        state.guildScores = data.guild_power;
-        updateScoreboard();
-      }
-      if (data.next_snapshot_at) {
-        state.cycleEndTime = data.next_snapshot_at;
-        updateCountdownDisplay();
-      }
-    });
-
-    // ── Legacy event handlers (still useful for direct events)
-    socket.on('arena:event', (ev) => processArenaEvent(ev));
-    socket.on('arena:events', (data) => {
-      if (data.events) data.events.forEach((ev, i) => setTimeout(() => processArenaEvent(ev), i * 300));
-    });
-
-    // ── Legacy round/cycle handlers (backward compat if V6 engine is still running)
-    socket.on('arena:cycle_start', (data) => {
-      state.isFighting = true;
-      addFeedEvent('⚔️ Combat active!', 'system');
-      loadZoneNines(state.currentZoneId);
-    });
-    socket.on('arena:round_start', (data) => {
-      state.isFighting = true;
-      setRoundPositions();
-    });
-    socket.on('arena:round_events', (data) => {
-      if (data.events) data.events.forEach((ev, i) => setTimeout(() => processArenaEvent(ev), i * 300));
-    });
-
-    // ── ROUND END (legacy V6 compat — V2 doesn't use rounds)
-    socket.on('arena:round_end', (data) => {
-      // Sync HP from server
-      if (data.nines) {
-        for (const nine of data.nines) {
-          const nineId = resolveNineId(nine);
-          updateNineHP(nineId, nine.current_hp || nine.hp, nine.max_hp || nine.maxHp);
-        }
-      }
-      if (data.guild_scores) {
-        state.guildScores = data.guild_scores;
-        updateScoreboard();
-      }
-    });
-
-    // ── HEAL PHASE (legacy V6 compat — V2 handles heal via effect events)
-    socket.on('arena:heal_phase', (data) => {
-      if (data.heals) {
-        data.heals.forEach((h, i) => {
-          setTimeout(() => {
-            const nineId = resolveNineId(h);
-            updateNineHP(nineId, h.new_hp, null);
-            const sprite = state.nines.get(nineId);
-            if (sprite) {
-              showFloatingText(sprite.container.x, sprite.container.y, `+${h.amount}`, 0x44ffaa, 11);
-              spawnParticles(sprite.container.x, sprite.container.y, 0x44ffaa, 8, 'heal');
-            }
-          }, i * 200);
-        });
-      }
-    });
-
-    // ── CYCLE END (legacy V6 compat — V2 uses arena:snapshot)
-    socket.on('arena:cycle_end', (data) => {
-      const winner = data.winner_guild || 'No winner';
-      showRoundBanner('ZONE SCORED', `${winner} controls zone`);
-      addFeedEvent(`📸 Zone scored — ${winner} controls zone`, 'system');
-      nermRoundComment('cycle_end', data);
-
-      if (data.next_cycle_at) {
-        state.cycleEndTime = data.next_cycle_at;
-      } else if (data.next_snapshot_at) {
-        state.cycleEndTime = data.next_snapshot_at;
-      } else {
-        state.cycleEndTime = Date.now() + 15 * 60 * 1000;
-      }
-
-      if (!state.countdownInterval) {
-        state.countdownInterval = setInterval(updateCountdownDisplay, 250);
-      }
-      updateCountdownDisplay();
-
-      if (data.nines) {
-        for (const nine of data.nines) {
-          const nineId = resolveNineId(nine);
-          updateNineHP(nineId, nine.current_hp || nine.hp, nine.max_hp || nine.maxHp);
-        }
-      }
-      if (data.guild_scores) {
-        state.guildScores = data.guild_scores;
-        updateScoreboard();
-      }
-
-      fetchCycleTiming();
-      if (state.currentZoneId) {
-        loadZoneNines(state.currentZoneId);
-        checkDeployment(state.currentZoneId);
-      }
-    });
-
-    // Nerm commentary
-    socket.on('arena:nerm', (data) => {
-      const msg = typeof data === 'string' ? data : (data.message || data.text || data.comment || '');
-      if (msg) showNermBubble(msg);
-    });
-
-    socket.on('disconnect', () => {
-      addFeedEvent('Connection lost. Reconnecting...', 'system');
-    });
-
-    // ── V3 COMBAT ENGINE — spatial combat events ──────────────────────
-
-    // Positions broadcast every 2s — drives all sprite movement
-    // Engine sends logical coords (0-900 x 0-500), we map to canvas via engineToScreen
-    socket.on('arena:positions', (data) => {
-      if (!data.nines) return;
-      data.nines.forEach((d) => {
-        const screenPos = engineToScreen({ x: d.x, y: d.y });
-        const sprite = state.nines.get(resolveId(d.id));
-        if (sprite) {
-          // Set target — PIXI ticker will smoothly interpolate toward it
-          sprite.targetX = screenPos.x;
-          sprite.targetY = screenPos.y;
-          // HP update
-          updateNineHP(resolveId(d.id), d.hp, d.maxHp);
-          // Status rings
-          updateStatusRings(sprite, d.status, d.activeEffect);
-        }
-        // Sync guild sidebar HP totals periodically
-      });
-      updateHpStrip();
-    });
-
-    // Attack — show projectile, damage number, lunge animation
-    socket.on('combat:attack', (data) => {
-      const fromId = resolveId(data.attackerId || data.attacker);
-      const toId   = resolveId(data.defenderId || data.defender);
-      const dmg    = data.dmg || 0;
-      const attacker = state.nines.get(fromId);
-      const target   = state.nines.get(toId);
-
-      // Use existing animateProjectile if source/target positions available
-      if (data.x != null && data.tx != null && state.arenaApp) {
-        const sx = engineToScreen({ x: data.x,  y: data.y  });
-        const tx = engineToScreen({ x: data.tx, y: data.ty });
-        animateProjectileFromPos(sx.x, sx.y, tx.x, tx.y, attacker?.house, () => {
-          if (target) {
-            if (data.crit) {
-              fireworkCRIT(target.container.x, target.container.y);
-            } else {
-              spawnFireworkExplosion(target.container.x, target.container.y, getHouseColor(attacker?.house));
-            }
-            showFloatingText(target.container.x, target.container.y, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 20 : 16);
-            shakeSprite(target);
-            if (target.spriteGroup) {
-              target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xff3333; });
-              setTimeout(() => { if (target.spriteGroup) target.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xffffff; }); }, 300);
-            }
-          }
-        });
-      } else {
-        // Fallback to sprite-based animation
-        animateProjectile(fromId, toId, attacker?.house, () => {
-          if (target) {
-            showFloatingText(target.container.x, target.container.y, `-${dmg}`, 0xff4466, 16);
-            shakeSprite(target);
-          }
-        });
-      }
-
-      const from = data.attacker || getNineName(fromId);
-      const to   = data.defender || getNineName(toId);
-      const critPart = data.crit ? ' <span class="feed-crit">★ CRIT!</span>' : '';
-      const effectPart = data.effect ? ` <span class="feed-effect">[${data.effect}]</span>` : '';
-      if (data.crit || data.effect) {
-        addFeedEvent(`⚔️ <span class="feed-name">${from}</span> → <span class="feed-name">${to}</span> <span class="feed-dmg">-${dmg}</span>${critPart}${effectPart}`, 'attack');
-      }
-      addBattleLog(`⚔️ ${from} → ${to} -${dmg}${data.crit ? ' CRIT' : ''}${data.effect ? ' ['+data.effect+']' : ''} (slot ${data.slot||1})`, 'default');
-      if (dmg > 0 && attacker) trackCombatStat(fromId, from, attacker.guild, attacker.house, 'damage', dmg);
-    });
-
-    // Effect fired — show visual on target
-    socket.on('combat:effect', (data) => {
-      const tId = resolveId(data.targetId || data.on);
-      const sprite = state.nines.get(tId);
-      const effect = data.effect || '';
-      if (sprite) {
-        const px = sprite.container.x, py = sprite.container.y;
-        switch (effect) {
-          case 'BURN':    fireworkBURN(px, py); break;
-          case 'POISON':  fireworkPOISON(px, py); break;
-          case 'SILENCE': fireworkSILENCE(px, py); break;
-          case 'WITHER':  case 'HEX': case 'WEAKEN': fireworkWEAKEN(px, py); break;
-          case 'HEAL':    case 'BLESS': fireworkHEAL(px, py); if (data.amt) showFloatingText(px, py, `+${data.amt}`, 0x44ffaa, 13); break;
-          case 'WARD':    case 'BARRIER': case 'ANCHOR': animateShieldPop(sprite); spawnFireworkExplosion(px, py, 0xD4A64B); break;
-          case 'DODGE':   case 'DODGE_PROC': showFloatingText(px, py - 20, 'DODGE!', 0x90E0EF, 14); break;
-          case 'HASTE':   animateAuraBurst(sprite, 'HASTE'); spawnFireworkExplosion(px, py, 0x90E0EF); break;
-          case 'CORRODE': showFloatingText(px, py, `MAX HP↓`, 0x88cc44, 11); spawnParticles(px, py, 0x88cc44, 8, 'poison'); break;
-          case 'INSPIRE': spawnFireworkExplosion(px, py, 0xffd700); showFloatingText(px, py - 20, 'INSPIRE!', 0xffd700, 11); break;
-          case 'MARK':    showFloatingText(px, py - 20, '⚑ MARKED', 0xff4466, 10); spawnParticles(px, py, 0xff4466, 8, 'default'); break;
-          case 'TETHER':  showFloatingText(px, py - 20, 'TETHER', 0xff6699, 10); spawnParticles(px, py, 0xff6699, 6, 'default'); break;
-          case 'NULLIFY': showFloatingText(px, py - 20, 'NULLIFY', 0x9988ff, 12); spawnFireworkExplosion(px, py, 0x9988ff); break;
-          case 'BLIND':   showFloatingText(px, py - 20, 'BLIND', 0xbb88ff, 11); spawnParticles(px, py, 0x333333, 10, 'default'); break;
-          case 'DRAIN':   showFloatingText(px, py, 'DRAIN', 0xff3366, 11); spawnParticles(px, py, 0xff3366, 8, 'default'); break;
-          case 'CLEANSE': spawnFireworkExplosion(px, py, 0xffffff); showFloatingText(px, py, 'CLEANSE', 0xffffff, 11); break;
-          case 'SHATTER': spawnFireworkExplosion(px, py, 0xff4466); spawnParticles(px, py, 0xff4466, 20, 'fire'); screenFlash(0xff4466, 0.2); break;
-          case 'INFECT':  fireworkPOISON(px, py); showFloatingText(px, py, 'INFECT!', 0x88cc44, 13); break;
-          default: spawnFireworkExplosion(px, py, getEffectColor(effect)); break;
-        }
-      }
-      const cId = resolveId(data.casterId || data.by);
-      const caster = state.nines.get(cId);
-      if (['HEAL','BLESS','INSPIRE'].includes(effect)) {
-        addFeedEvent(`✚ <span class="feed-name">${data.by||getNineName(cId)}</span>: <span class="feed-effect">${effect}</span>`, 'heal');
-        if (data.amt > 0 && caster) trackCombatStat(cId, data.by||getNineName(cId), caster.guild, caster.house, 'heals', data.amt);
-      }
-    });
-
-    // DOT tick — small damage number
-    socket.on('combat:dot', (data) => {
-      const tId = resolveId(data.nineId);
-      const sprite = state.nines.get(tId);
-      if (sprite && data.dmg) {
-        showFloatingText(sprite.container.x, sprite.container.y, `-${data.dmg}`, 0x88cc44, 11);
-        spawnParticles(sprite.container.x, sprite.container.y, 0x88cc44, 5, 'poison');
-      }
-      if (data.hp != null) updateNineHP(tId, data.hp, data.maxHp);
-    });
-
-    // Zone regen tick (Darktide house bonus — 3% HP per minute)
-    socket.on('combat:regen', (data) => {
-      const rId = resolveId(data.nineId || data.nine);
-      const sprite = state.nines.get(rId);
-      if (sprite && data.amt) {
-        showFloatingText(sprite.container.x, sprite.container.y, '+' + data.amt, 0x6ac8d8, 10);
-        spawnParticles(sprite.container.x, sprite.container.y, 0x6ac8d8, 4, 'heal');
-      }
-      if (data.hp != null) updateNineHP(rId, data.hp, data.maxHp);
-    });
-
-    // KO from V3 engine
-    socket.on('combat:ko', (data) => {
-      const koId = resolveId(data.nineId);
-      const sprite = state.nines.get(koId);
-      if (sprite) {
-        sprite.isAlive = false;
-        sprite.hp = 0;
-        animateKO(sprite);
-        showFloatingText(sprite.container.x, sprite.container.y - 30, 'K.O.', 0xff2222, 18);
-        spawnParticles(sprite.container.x, sprite.container.y, 0xff4466, 20, 'explosion');
-        screenFlash(0xff2222, 0.2);
-        renderGuildSidebar();
-      }
-      addFeedEvent(`💀 <span class="feed-name">${data.nine || getNineName(koId)}</span> was KO'd!`, 'ko');
-      setTimeout(() => removeNineSprite(koId), 1500);
-      if (koId == state.playerId) {
-        state.isDeployed = false;
-        showKOOverlay(null);
-      }
-    });
-
-  } // end connectArenaSocket
 
   /** Resolve Nine ID from various event formats — server might send player_id, nine_id, id, from, to */
   function resolveNineId(obj) {
@@ -6163,7 +5883,7 @@
   const _pixi = {
     initPixiArena, addNineSprite, removeNineSprite, updateNineHP, updateStatusRings,
     showFloatingText, spawnParticles, shakeSprite, shakeCamera, screenFlash,
-    animateKO, animateLunge, animateAuraBurst, getEffectParticles,
+    animateKO, animateLunge, animateProjectileFromPos, animateAuraBurst, getEffectParticles,
     engineToScreen, getSpawnPosition,
     fireworkCRIT, fireworkBURN, fireworkPOISON, fireworkCHAIN,
     fireworkSILENCE, fireworkHEAL, fireworkWEAKEN, fireworkDODGE,
