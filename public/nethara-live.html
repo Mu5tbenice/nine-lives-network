@@ -1414,6 +1414,15 @@
   const MAX_CHART_POINTS = 20;
   const KO_COOLDOWN_MS = 60000;
 
+  // ── EXPOSE CONSTANTS TO PIXI IIFE ──
+  // The PIXI IIFE reads these via Proxy objects (window._HOUSES, etc.)
+  // They MUST be set before the PIXI IIFE runs — do it immediately after declaration.
+  window._HOUSES         = HOUSES;
+  window._HOUSE_STATS    = HOUSE_STATS;
+  window._EFFECT_COLORS  = EFFECT_COLORS;
+  window._SCHOOL_TO_HOUSE = SCHOOL_TO_HOUSE;
+  window._TYPE_COLORS    = TYPE_COLORS;
+
   // ── STATE ──
   const S = {
     playerId: null, playerHouse: null, playerLevel: 1,
@@ -1439,6 +1448,7 @@
     cycleEndTime: null, countdownInterval: null,
     snapshotCount: 0, currentCycle: 0,
   };
+  window._S = S; // expose to PIXI IIFE — set immediately so Proxy reads work on load
 
   // ── INIT ──
   async function init() {
@@ -1525,7 +1535,7 @@
     };
     const biomeImg = getBiome(zone);
     return `
-      <div class="zone-card" onclick="window.__9lv_openArena && window.__9lv_openArena(${JSON.stringify(zone).replace(/"/g, '&quot;')})">
+      <div class="zone-card" data-zone-id="${zone.id}" onclick="window.__9lv_openArena && window.__9lv_openArena(${JSON.stringify(zone).replace(/"/g, '&quot;')})">
         <div class="zone-card-img-wrap">
           <img src="${biomeImg}" alt="${zone.name}" loading="lazy" onerror="this.style.display='none'">
           ${casters > 0 ? `<div class="zone-card-fighter-count">⚔ ${casters}</div>` : ''}
@@ -2159,6 +2169,8 @@
         const tl1 = document.getElementById('spell-timeline');
         if (tl1) tl1.style.display = 'block';
         renderCardSlots(cards);
+        renderMobileCardSlots(cards);
+        initMobileHUD();
         updateYourNinePanel();
         switchTrayTab('build');
         addFeedEvent('⚔️ ' + (data.message || 'Deployed!'), 'join');
@@ -3819,6 +3831,8 @@
       bobPhase: Math.random() * Math.PI * 2,
       isAnimating: false,
     });
+    // Initialise HP bar to correct fill immediately
+    updateNineHP(nine.id, nine.current_hp || nine.max_hp || 100, nine.max_hp || 100);
   }
 
   function _drawCatFallback(spriteGroup, hColor) {
@@ -3836,11 +3850,6 @@
     body.endFill();
     body.zIndex = 1;
     spriteGroup.addChild(body);
-  }
-
-
-    // Set initial HP bar
-    updateNineHP(nine.id, nine.current_hp || nine.max_hp || 100, nine.max_hp || 100);
   }
 
   function updateNineHP(nineId, hp, maxHp) {
