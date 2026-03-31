@@ -246,9 +246,9 @@
     #arena-view { display: none; position: fixed; top: var(--nav-height); left: 0; width: 100vw; height: calc(100vh - var(--nav-height)); z-index: 50; background: var(--bg); }
     #arena-canvas canvas { display: block; }
     #arena-canvas {
-      /* Desktop: fill space left of sidebar (350px), above tray (210px) */
+      /* Desktop: fill space left of sidebar (350px), above tray (200px) */
       position: absolute;
-      top: 0; left: 0; right: 350px; bottom: 210px;
+      top: 0; left: 0; right: 350px; bottom: 200px;
       background-size: cover; background-position: center center;
       background-repeat: no-repeat; background-color: var(--bg);
       transition: background-image 0.8s ease;
@@ -351,7 +351,8 @@
       background: rgba(8,6,18,0.97);
       border-top: 2px solid rgba(255,255,255,0.09);
       backdrop-filter: blur(14px);
-      height: 210px;
+      height: 200px;
+      overflow: visible; /* allows portrait to punch up into canvas */
     }
     /* Stat bars in the HUD */
     .hud-stat-bar-wrap { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
@@ -1109,30 +1110,35 @@
     <!-- ── MAIN HUD ROW ── -->
     <div id="hud-main" style="display:flex;flex-direction:row;height:100%;gap:0;">
 
-      <!-- [1] NINE PORTRAIT — RPG inventory style -->
-      <div id="hud-nine" style="width:180px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;align-items:center;padding:12px 10px 8px;gap:5px;position:relative;background:linear-gradient(180deg,rgba(212,166,75,0.04),transparent);">
-        <!-- Portrait frame -->
-        <div id="hud-nine-portrait" style="width:100px;height:100px;border-radius:12px;background:rgba(8,6,18,0.9);border:2px solid rgba(212,166,75,0.4);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(212,166,75,0.12),inset 0 0 20px rgba(0,0,0,0.4);">
-          <div id="hud-nine-icon" style="font-size:48px;line-height:1;">🐱</div>
-          <img id="hud-nine-img" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;" onload="this.style.display='block';document.getElementById('hud-nine-icon').style.display='none'">
-          <!-- Effect overlay ring — animates on debuff -->
-          <div id="hud-effect-ring" style="position:absolute;inset:-2px;border-radius:13px;border:2px solid transparent;pointer-events:none;transition:border-color 0.3s,box-shadow 0.3s;"></div>
+      <!-- [1] NINE PORTRAIT — WC3 style, punches up into canvas -->
+      <div id="hud-nine" style="width:190px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;align-items:center;padding:0 10px 8px;position:relative;background:linear-gradient(180deg,rgba(212,166,75,0.06),transparent 60%);">
+        <!-- Portrait frame — overlaps canvas by 70px -->
+        <div id="hud-nine-portrait" style="width:140px;height:160px;border-radius:10px 10px 6px 6px;background:linear-gradient(180deg,#0d0a1a,#08061a);border:2px solid rgba(212,166,75,0.5);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 -8px 32px rgba(0,0,0,0.8),0 0 24px rgba(212,166,75,0.15),inset 0 0 30px rgba(0,0,0,0.5);margin-top:-70px;z-index:30;flex-shrink:0;">
+          <div id="hud-nine-icon" style="font-size:64px;line-height:1;filter:drop-shadow(0 0 8px rgba(212,166,75,0.4));">🐱</div>
+          <img id="hud-nine-img" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:none;" onload="this.style.display='block';document.getElementById('hud-nine-icon').style.display='none'">
+          <!-- Effect overlay ring — pulses on debuff -->
+          <div id="hud-effect-ring" style="position:absolute;inset:-2px;border-radius:11px;border:2px solid transparent;pointer-events:none;transition:border-color 0.3s,box-shadow 0.3s;"></div>
+          <!-- Gold corner brackets WC3-style -->
+          <div style="position:absolute;top:4px;left:4px;width:12px;height:12px;border-top:2px solid rgba(212,166,75,0.6);border-left:2px solid rgba(212,166,75,0.6);border-radius:2px 0 0 0;pointer-events:none;"></div>
+          <div style="position:absolute;top:4px;right:4px;width:12px;height:12px;border-top:2px solid rgba(212,166,75,0.6);border-right:2px solid rgba(212,166,75,0.6);border-radius:0 2px 0 0;pointer-events:none;"></div>
+          <div style="position:absolute;bottom:4px;left:4px;width:12px;height:12px;border-bottom:2px solid rgba(212,166,75,0.6);border-left:2px solid rgba(212,166,75,0.6);border-radius:0 0 0 2px;pointer-events:none;"></div>
+          <div style="position:absolute;bottom:4px;right:4px;width:12px;height:12px;border-bottom:2px solid rgba(212,166,75,0.6);border-right:2px solid rgba(212,166,75,0.6);border-radius:0 0 2px 0;pointer-events:none;"></div>
         </div>
-        <!-- Name + guild -->
-        <div id="hud-nine-name" style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;"></div>
-        <div id="hud-nine-guild" style="font-family:'Press Start 2P',monospace;font-size:6px;color:var(--faint);text-align:center;"></div>
-        <!-- HP bar under portrait -->
-        <div style="width:100%;padding:0 2px;">
+        <!-- Name + guild below portrait, inside tray -->
+        <div id="hud-nine-name" style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--gold);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:175px;margin-top:4px;text-shadow:0 0 8px rgba(212,166,75,0.4);"></div>
+        <div id="hud-nine-guild" style="font-family:'Press Start 2P',monospace;font-size:6px;color:var(--faint);text-align:center;margin-top:2px;"></div>
+        <!-- HP bar -->
+        <div style="width:100%;padding:4px 2px 0;margin-top:4px;">
           <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
             <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6acd8a;">HP</span>
             <span id="your-hp-text" style="font-family:'Press Start 2P',monospace;font-size:6px;color:#6acd8a;">--/--</span>
           </div>
-          <div style="height:7px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;border:1px solid rgba(106,205,138,0.2);">
-            <div id="your-hp-fill" style="height:100%;background:linear-gradient(90deg,#44cc88,#66eebb);border-radius:4px;transition:width 0.4s ease;width:100%"></div>
+          <div style="height:8px;background:rgba(0,0,0,0.4);border-radius:4px;overflow:hidden;border:1px solid rgba(106,205,138,0.25);box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);">
+            <div id="your-hp-fill" style="height:100%;background:linear-gradient(90deg,#1a8a4a,#44cc88,#66eebb);border-radius:4px;transition:width 0.4s ease;width:100%"></div>
           </div>
         </div>
         <!-- Debuff pills -->
-        <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:16px;width:100%;"></div>
+        <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:14px;width:100%;margin-top:3px;"></div>
       </div>
 
       <!-- [2] STATS panel -->
@@ -2262,7 +2268,6 @@
         closeDeployModal();
         document.getElementById('deploy-cta').style.display = 'none';
         document.getElementById('arena-bottom-tray').style.display = 'flex';
-        // Show spell timeline immediately at 0% — it sweeps live during combat
         const tl1 = document.getElementById('spell-timeline');
         if (tl1) { tl1.style.display = 'block'; }
         const ph1 = document.getElementById('spell-playhead');
@@ -2274,6 +2279,31 @@
         switchTrayTab('build');
         addFeedEvent('⚔️ ' + (data.message || 'Deployed!'), 'join');
         startAtkBar(7000);
+        // Immediately seed _deployCache so portrait + sprite render without needing a refresh
+        fetch(`/api/zones/${S.currentZoneId}/deployments`)
+          .then(r => r.ok ? r.json() : null)
+          .then(dep => {
+            if (!dep?.deployments) return;
+            S._deployCache = S._deployCache || {};
+            dep.deployments.forEach(d => {
+              S._deployCache[String(d.player_id)] = {
+                profile_image: d.player?.profile_image || null,
+                equipped_images: d.nine?.equipped_images || {},
+                name: d.nine?.name || d.player?.twitter_handle || null,
+              };
+            });
+            // Remove any cat-fallback sprites so arena:positions recreates them with correct images
+            S.nines.forEach((sp, id) => {
+              if (!sp.profileImage) removeNineSprite(id);
+            });
+            // Re-render portraits with Nine layers now available
+            const p = document.getElementById('hud-nine-portrait');
+            if (p) { delete p.dataset.nineRendered; p.querySelectorAll('.nine-layer').forEach(el=>el.remove()); }
+            const mp = document.getElementById('mob-nine-portrait');
+            if (mp) { delete mp.dataset.nineRendered; mp.querySelectorAll('.nine-layer').forEach(el=>el.remove()); }
+            updateYourNinePanel();
+            syncMobilePortrait();
+          }).catch(() => {});
       } else {
         alert(data.error || 'Deploy failed');
         if (btn) { btn.disabled = false; btn.textContent = '⚔️ DEPLOY'; }
@@ -2732,21 +2762,20 @@
       const hc = HOUSES[f.house]?.color || '#888';
       const pct = Math.round((f.hp/f.maxHp)*100);
       const hpC = pct > 50 ? '#44cc88' : pct > 25 ? '#ffaa44' : '#ff4466';
-      return `<div style="display:flex;align-items:center;gap:7px;padding:6px 14px;${i<fighters.length-1?'border-bottom:1px solid rgba(255,255,255,0.04)':''};${f.isMe?'background:rgba(212,166,75,0.04)':''}"
-        onmouseenter="window.highlightGuild&&window.highlightGuild('${f.guild}')" onmouseleave="window.resetGuildHighlight&&window.resetGuildHighlight()">
-        <div style="width:9px;height:9px;border-radius:50%;background:${hc};box-shadow:0 0 6px ${hc};flex-shrink:0"></div>
+      return `<div style="display:flex;align-items:center;gap:8px;padding:7px 12px;${i<fighters.length-1?'border-bottom:1px solid rgba(255,255,255,0.05)':''};${f.isMe?'background:rgba(212,166,75,0.06);':''}">
+        <div style="width:10px;height:10px;border-radius:50%;background:${hc};box-shadow:0 0 8px ${hc}88;flex-shrink:0"></div>
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
-            <span style="font-family:'Press Start 2P',monospace;font-size:8px;color:${f.isMe?'var(--gold)':'var(--bright)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px">${f.name}</span>
-            ${f.guild ? `<span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${hc}">[${f.guild}]</span>` : ''}
+          <div style="display:flex;align-items:baseline;gap:5px;margin-bottom:3px;flex-wrap:nowrap;">
+            <span style="font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:${f.isMe?'var(--gold)':'var(--bright)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px;line-height:1.2">${f.name}</span>
+            ${f.guild ? `<span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${hc};opacity:0.9;flex-shrink:0">[${f.guild}]</span>` : ''}
           </div>
-          <div style="height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden">
-            <div style="width:${pct}%;height:100%;background:${hpC};border-radius:2px;transition:width 0.4s"></div>
+          <div style="height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,${hpC}88,${hpC});border-radius:3px;transition:width 0.4s"></div>
           </div>
         </div>
-        <div style="text-align:right;flex-shrink:0;min-width:40px">
-          <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:${hpC}">${Math.round(f.hp)}</div>
-          ${f.damage>0?`<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:#e85a6a;margin-top:2px">${f.damage.toLocaleString()}</div>`:''}
+        <div style="text-align:right;flex-shrink:0;min-width:44px">
+          <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:${hpC};line-height:1.3">${Math.round(f.hp)}</div>
+          ${f.damage>0?`<div style="font-family:'Press Start 2P',monospace;font-size:6px;color:#e85a6a;margin-top:2px">${f.damage.toLocaleString()}</div>`:''}
         </div>
       </div>`;
     }).join('');
@@ -3287,11 +3316,18 @@
   /** Convert engine position (centered at 400,300) to screen position */
   function engineToScreen(pos) {
     if (!pos) return getSpawnPosition('unknown', Math.random());
-    const cx = (state.arenaApp ? state.arenaApp.screen.width : window.innerWidth) / 2;
-    const cy = (state.arenaApp ? state.arenaApp.screen.height : window.innerHeight) / 2;
-    const scaleX = cx / 400;
-    const scaleY = cy / 300;
-    const raw = { x: pos.x * scaleX, y: pos.y * scaleY };
+    const sw = state.arenaApp ? state.arenaApp.screen.width : window.innerWidth;
+    const sh = state.arenaApp ? state.arenaApp.screen.height : window.innerHeight;
+    const cx = sw / 2;
+    const cy = sh / 2;
+    // Map engine space (0–900 x 0–500) to 80% of canvas dimensions
+    // Using 0.8 instead of cx/400 gives more spread while keeping sprites on screen
+    const scaleX = (sw * 0.80) / 900;
+    const scaleY = (sh * 0.80) / 500;
+    const raw = {
+      x: (sw * 0.10) + pos.x * scaleX,
+      y: (sh * 0.10) + pos.y * scaleY,
+    };
     const poly = getActiveCanvasPoly();
     if (poly) return clampToPolygon(raw.x, raw.y, poly);
     return clampToDiamond(raw.x, raw.y, cx, cy, 0.85);
@@ -3360,7 +3396,7 @@
     const container = document.getElementById('arena-canvas');
     container.innerHTML = '';
     const navH = 52;
-    const trayH = 210; // desktop HUD tray height
+    const trayH = 200; // desktop HUD tray height
     const isMobile = window.innerWidth <= 640;
 
     // Desktop: subtract tray height so sprites stay above HUD
@@ -4169,39 +4205,111 @@
   function animateProjectileFromPos(x1, y1, x2, y2, house, onHit) {
     if (!state.arenaApp) { if (onHit) onHit(); return; }
     const hColor = getHouseColor(house);
-    const proj = new PIXI.Graphics();
-    proj.beginFill(hColor, 0.95);
-    proj.drawCircle(0, 0, 5);
-    proj.endFill();
-    proj.beginFill(0xffffff, 0.5);
-    proj.drawCircle(0, 0, 2.5);
-    proj.endFill();
-    proj.x = x1; proj.y = y1;
+
+    // Glowing orb — outer glow + bright core
+    const proj = new PIXI.Container();
     proj.zIndex = 90;
+
+    const glow = new PIXI.Graphics();
+    glow.beginFill(hColor, 0.25); glow.drawCircle(0, 0, 10); glow.endFill();
+    const core = new PIXI.Graphics();
+    core.beginFill(hColor, 0.9); core.drawCircle(0, 0, 5); core.endFill();
+    core.beginFill(0xffffff, 0.7); core.drawCircle(0, 0, 2.5); core.endFill();
+    proj.addChild(glow); proj.addChild(core);
+    proj.x = x1; proj.y = y1;
     state.arenaApp.stage.addChild(proj);
 
     const dx = x2 - x1, dy = y2 - y1;
     const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-    const speed = Math.max(6, dist / 12);
-    let travelled = 0;
+    // Slow: travel time ~0.5–0.8s regardless of distance
+    const totalFrames = Math.max(25, Math.min(50, dist * 0.22));
+    let frame = 0;
     let hitFired = false;
 
     const ticker = () => {
-      travelled += speed;
-      const t = Math.min(1, travelled / dist);
+      frame++;
+      const t = Math.min(1, frame / totalFrames);
+      // Slight arc — projectile curves upward slightly mid-flight
+      const arc = Math.sin(t * Math.PI) * Math.min(30, dist * 0.12);
       proj.x = x1 + dx * t;
-      proj.y = y1 + dy * t;
-      proj.alpha = t < 0.9 ? 1 : 1 - (t - 0.9) / 0.1;
-      if (t >= 0.85 && !hitFired) {
+      proj.y = y1 + dy * t - arc;
+      // Pulse glow
+      const pulse = 1 + Math.sin(frame * 0.6) * 0.3;
+      glow.scale.set(pulse);
+      proj.alpha = t > 0.85 ? 1 - (t - 0.85) / 0.15 : 1;
+
+      if (t >= 0.8 && !hitFired) {
         hitFired = true;
+        _pixelExplosion(proj.x, proj.y, hColor);
         if (onHit) onHit();
       }
       if (t >= 1) {
         state.arenaApp.ticker.remove(ticker);
-        state.arenaApp.stage.removeChild(proj);
+        if (proj.parent) state.arenaApp.stage.removeChild(proj);
       }
     };
     state.arenaApp.ticker.add(ticker);
+  }
+
+  /** Pixel starburst explosion — 8 cardinal + diagonal rays with spark particles */
+  function _pixelExplosion(x, y, color) {
+    if (!state.arenaApp) return;
+    const RAYS = 8;
+    const sparks = [];
+    for (let i = 0; i < RAYS; i++) {
+      const angle = (i / RAYS) * Math.PI * 2;
+      const speed = 2.5 + Math.random() * 2;
+      const g = new PIXI.Graphics();
+      // Square pixel spark
+      g.beginFill(color, 1); g.drawRect(-2, -2, 4, 4); g.endFill();
+      g.beginFill(0xffffff, 0.8); g.drawRect(-1, -1, 2, 2); g.endFill();
+      g.x = x; g.y = y;
+      g.zIndex = 95;
+      state.arenaApp.stage.addChild(g);
+      sparks.push({ g, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 0 });
+    }
+    // Extra small random sparks
+    for (let i = 0; i < 6; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1 + Math.random() * 3;
+      const g = new PIXI.Graphics();
+      g.beginFill(color, 0.8); g.drawRect(-1, -1, 2, 2); g.endFill();
+      g.x = x; g.y = y; g.zIndex = 95;
+      state.arenaApp.stage.addChild(g);
+      sparks.push({ g, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 0 });
+    }
+    // Central flash
+    const flash = new PIXI.Graphics();
+    flash.beginFill(0xffffff, 0.9); flash.drawCircle(0, 0, 12); flash.endFill();
+    flash.beginFill(color, 0.7); flash.drawCircle(0, 0, 7); flash.endFill();
+    flash.x = x; flash.y = y; flash.zIndex = 96;
+    state.arenaApp.stage.addChild(flash);
+
+    let explFrame = 0;
+    const explTicker = () => {
+      explFrame++;
+      const p = explFrame / 22;
+      // Shrink flash
+      flash.alpha = Math.max(0, 1 - p * 2);
+      flash.scale.set(1 + p * 0.8);
+      // Move sparks with gravity
+      for (const s of sparks) {
+        s.life++;
+        s.vy += 0.18; // gravity
+        s.g.x += s.vx;
+        s.g.y += s.vy;
+        s.g.alpha = Math.max(0, 1 - s.life / 20);
+        // Pixelate by snapping to 2px grid
+        s.g.x = Math.round(s.g.x / 2) * 2;
+        s.g.y = Math.round(s.g.y / 2) * 2;
+      }
+      if (explFrame >= 22) {
+        state.arenaApp.ticker.remove(explTicker);
+        if (flash.parent) state.arenaApp.stage.removeChild(flash);
+        sparks.forEach(s => { if (s.g.parent) state.arenaApp.stage.removeChild(s.g); });
+      }
+    };
+    state.arenaApp.ticker.add(explTicker);
   }
 
   /** Animate a Nine lunging toward a target position, then returning */
