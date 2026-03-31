@@ -1927,18 +1927,28 @@
 
   // Spell cast sweep — orange liquid flowing across the 3 card slots
   function sweepSpellBar(slotIdx, numCards) {
-    const tl = document.getElementById('spell-timeline');
-    const ph = document.getElementById('spell-playhead');
-    if (!tl || !ph) return;
-    tl.style.display = 'block';
-    // Map slot 0/1/2 to position across full bar width
     const n = numCards || 3;
     const targetPct = ((slotIdx + 0.5) / n) * 100;
-    ph.style.left = targetPct + '%';
-    // Flash colour
     const hc = HOUSES[S.equippedCards[slotIdx]?.house||'universal']?.color || '#ff6622';
-    ph.style.background = `linear-gradient(90deg,transparent,${hc},#ff6622,transparent)`;
-    ph.style.boxShadow = `0 0 8px ${hc}`;
+    const grad = `linear-gradient(90deg,transparent,${hc},#ff6622,transparent)`;
+    const shadow = `0 0 8px ${hc}`;
+
+    // Desktop spell timeline
+    const tl = document.getElementById('spell-timeline');
+    const ph = document.getElementById('spell-playhead');
+    if (tl && ph) {
+      tl.style.display = 'block';
+      ph.style.left = targetPct + '%';
+      ph.style.background = grad;
+      ph.style.boxShadow = shadow;
+    }
+    // Mobile cast bar
+    const mph = document.getElementById('mob-spell-playhead');
+    if (mph) {
+      mph.style.left = targetPct + '%';
+      mph.style.background = grad;
+      mph.style.boxShadow = shadow;
+    }
   }
 
   // ── CARD POPUP ──
@@ -2394,9 +2404,20 @@
       const from = attacker ? (attacker.name || getNineName(fromId)) : getNineName(fromId);
       const to   = target   ? (target.name   || getNineName(toId))   : getNineName(toId);
 
-      if (target && dmg > 0) {
+      // Projectile animation — shake + damage number fire on impact via onHit callback
+      if (attacker && target) {
+        const sx = { x: attacker.container.x, y: attacker.container.y };
+        const tx = { x: target.container.x,   y: target.container.y   };
+        animateProjectileFromPos(sx.x, sx.y, tx.x, tx.y, attacker.house || 'universal', () => {
+          if (dmg > 0) {
+            shakeSprite(target);
+            showFloatingText(target.container.x, target.container.y - 20, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 16 : 12);
+            if (data.crit) fireworkCRIT(target.container.x, target.container.y);
+          }
+        });
+      } else if (target && dmg > 0) {
+        // Fallback: no attacker sprite visible — instant hit
         shakeSprite(target);
-        const pos = engineToScreen({ x: data.tx||target.container.x, y: data.ty||target.container.y });
         showFloatingText(target.container.x, target.container.y - 20, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 16 : 12);
         if (data.crit) fireworkCRIT(target.container.x, target.container.y);
       }
@@ -2439,7 +2460,13 @@
       const target  = S.nines.get(tId);
       const tx = target ? target.container.x : (data.tx ? engineToScreen({x:data.tx,y:data.ty||0}).x : null);
       const ty = target ? target.container.y : (data.ty ? engineToScreen({x:data.tx||0,y:data.ty}).y : null);
-      if (tx !== null) spawnParticles(tx, ty, getEffectParticles(eff+'_APPLY').color, 8, 'default');
+      if (tx !== null) {
+        spawnParticles(tx, ty, getEffectParticles(eff+'_APPLY').color, 8, 'default');
+        // Task 4.5: floating effect name in its colour above the target
+        const effName = eff.split(' ')[0].toUpperCase();
+        const effColor = (EFFECT_COLORS[effName] ? parseInt(EFFECT_COLORS[effName].replace('#',''), 16) : 0xD4A64B);
+        showFloatingText(tx, ty - 30, effName, effColor, 9);
+      }
       if (caster) animateAuraBurst(caster, eff);
       if (data.amt > 0) {
         if (target) showFloatingText(target.container.x, target.container.y-20, `+${data.amt}`, 0x44ffaa, 11);
@@ -2475,6 +2502,16 @@
       const id = resolveId(data.nineId);
       const sp = S.nines.get(id);
       if (sp && data.dmg > 0) showFloatingText(sp.container.x, sp.container.y-15, `-${data.dmg}`, 0x88cc44, 10);
+    });
+
+    socket.on('combat:regen', (data) => {
+      // Darktide zone bonus — HP regen every 60s
+      const id = resolveId(data.nineId || data.nine);
+      const sp = S.nines.get(id);
+      if (sp && data.amt > 0) {
+        showFloatingText(sp.container.x, sp.container.y - 20, `+${data.amt}`, 0x44ffaa, 10);
+        spawnParticles(sp.container.x, sp.container.y, 0x44ffaa, 5, 'heal');
+      }
     });
 
     socket.on('arena:snapshot', (data) => {
@@ -2819,8 +2856,26 @@
 
   function syncMobStats() {
     const el = document.getElementById('mob-stats-bars');
-    const src = document.getElementById('your-nine-stats');
-    if (el && src) el.innerHTML = src.innerHTML;
+    if (!el) return;
+    // Calculate stats client-side — #your-nine-stats is inside #hud-main which is hidden on mobile
+    const hk = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
+    const base = HOUSE_STATS[hk] || HOUSE_STATS.stormrage;
+    let ca=0,ch=0,cs=0,cd=0,cl=0;
+    S.equippedCards.forEach(c=>{ if(!c)return; ca+=c.base_atk||0; ch+=c.base_hp||0; cs+=c.base_spd||0; cd+=c.base_def||0; cl+=c.base_luck||0; });
+    const MAX = { atk:200, hp:2000, spd:80, def:80, luck:60 };
+    const stats = [
+      { label:'ATK', val:base.atk+ca,  color:'#e85a6a', max:MAX.atk  },
+      { label:'HP',  val:base.hp+ch,   color:'#6acd8a', max:MAX.hp   },
+      { label:'SPD', val:base.spd+cs,  color:'#6ac8d8', max:MAX.spd  },
+      { label:'DEF', val:base.def+cd,  color:'#b088e8', max:MAX.def  },
+      { label:'LCK', val:base.luck+cl, color:'#D4A64B', max:MAX.luck },
+    ];
+    el.innerHTML = stats.map(s => `
+      <div class="hud-stat-bar-wrap">
+        <div class="hud-stat-label" style="color:${s.color}">${s.label}</div>
+        <div class="hud-stat-track"><div class="hud-stat-fill" style="width:${Math.min(100,Math.round((s.val/s.max)*100))}%;background:${s.color}"></div></div>
+        <div class="hud-stat-val" style="color:${s.color}">${s.val}</div>
+      </div>`).join('');
   }
 
   function syncMobChat() {
