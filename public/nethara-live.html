@@ -246,7 +246,9 @@
     #arena-view { display: none; position: fixed; top: var(--nav-height); left: 0; width: 100vw; height: calc(100vh - var(--nav-height)); z-index: 50; background: var(--bg); }
     #arena-canvas canvas { display: block; }
     #arena-canvas {
-      width: 100%; height: 100%; position: relative;
+      /* Desktop: fill space left of sidebar (350px), above tray (170px) */
+      position: absolute;
+      top: 0; left: 0; right: 350px; bottom: 170px;
       background-size: cover; background-position: center center;
       background-repeat: no-repeat; background-color: var(--bg);
       transition: background-image 0.8s ease;
@@ -835,9 +837,11 @@
         height: calc(100vh - var(--nav-height));
       }
       #arena-canvas {
+        position: relative !important;
         flex: 0 0 54%;
-        height: 54% !important; width: 100% !important;
-        position: relative;
+        width: 100% !important;
+        right: auto !important;
+        bottom: auto !important;
       }
       /* Sidebar + feed hidden */
       #arena-sidebar { display: none !important; }
@@ -917,11 +921,11 @@
       #mob-tab-log    { display:none;flex:1;overflow-y:auto;padding:4px 8px; }
 
       /* Card slots — horizontal scroll on mobile */
-      #mob-card-slots { display:flex;flex-direction:row;gap:6px;padding:6px 8px;overflow-x:auto;flex:1;align-items:stretch;min-height:90px;max-height:130px; }
+      #mob-card-slots { display:flex;flex-direction:row;gap:4px;padding:4px 6px;flex:1;align-items:stretch;min-height:90px;max-height:130px;overflow-x:hidden; }
       .mob-card-slot {
-        flex-shrink:0;width:120px;border:1px solid rgba(255,255,255,0.1);
+        flex:1;min-width:0;border:1px solid rgba(255,255,255,0.1);
         border-radius:8px;overflow:hidden;display:flex;flex-direction:row;
-        min-height:80px;height:100%;
+        min-height:80px;
         cursor:pointer;position:relative;
       }
       .mob-card-slot .slot-art { width:38%;flex-shrink:0;overflow:hidden;position:relative;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center; }
@@ -1643,6 +1647,24 @@
             equipped_images: d.nine?.equipped_images || {},
             name: d.nine?.name || d.player?.twitter_handle || null,
           };
+        });
+        // Retroactively update any sprites already on canvas with profile images
+        // (arena:positions often fires before this fetch resolves)
+        S.nines.forEach((sp, id) => {
+          const cached = S._deployCache[String(id)];
+          if (!cached?.profile_image) return;
+          // Update portrait images in the HUD
+          if (String(id) === String(S.playerId)) {
+            ['hud-nine-img','left-nine-img','mob-nine-img'].forEach(elId => {
+              const img = document.getElementById(elId);
+              if (img && !img.src.includes(cached.profile_image)) img.src = cached.profile_image;
+            });
+          }
+          // Re-add sprite with profile image if it only has a cat fallback
+          if (!sp.profileImage && cached.profile_image) {
+            removeNineSprite(id);
+            // Will be re-created on next arena:positions tick with correct image
+          }
         });
       }).catch(() => {});
     try {
@@ -3210,13 +3232,15 @@
     const container = document.getElementById('arena-canvas');
     container.innerHTML = '';
     const navH = 52;
+    const trayH = 170; // desktop HUD tray height
     const isMobile = window.innerWidth <= 640;
 
-    // On mobile, canvas is 56% of available height; on desktop it's full height
+    // Desktop: subtract tray height so sprites stay above HUD
+    // Mobile: canvas is 54% of available height
     const canvasH = isMobile
-      ? Math.round((window.innerHeight - navH) * 0.56)
-      : (window.innerHeight - navH);
-    const canvasW = window.innerWidth;
+      ? Math.round((window.innerHeight - navH) * 0.54)
+      : (window.innerHeight - navH - trayH);
+    const canvasW = window.innerWidth - (isMobile ? 0 : 350); // subtract sidebar width on desktop
 
     const app = new PIXI.Application({
       width: canvasW,
@@ -3242,14 +3266,17 @@
       if (!state.arenaApp) return;
       const mob = window.innerWidth <= 640;
       const newH = mob
-        ? Math.round((window.innerHeight - navH) * 0.56)
-        : (window.innerHeight - navH);
-      state.arenaApp.renderer.resize(window.innerWidth, newH);
+        ? Math.round((window.innerHeight - navH) * 0.54)
+        : (window.innerHeight - navH - trayH);
+      const newW = window.innerWidth - (mob ? 0 : 350);
+      state.arenaApp.renderer.resize(newW, newH);
       drawArenaGround(state.arenaApp);
       state.arenaApp.stage.sortChildren();
     });
 
     // ── MAIN TICKER: movement + South Park walk bob ──
+    const isMob = window.innerWidth <= 640;
+    const spriteScale = isMob ? 0.75 : 1.0; // smaller sprites on mobile
     app.ticker.add((delta) => {
       const time = performance.now() / 1000;
       state.nines.forEach((nine) => {
@@ -3262,13 +3289,13 @@
         const moving = dist > 1.5;
 
         if (moving) {
-          // Smooth interpolation — closes 18% of gap per frame (60fps ≈ 0.6s to reach target)
-          const lerp = Math.min(0.18, dist * 0.08);
+          // Flat lerp — consistent speed regardless of distance
+          const lerp = 0.12;
           nine.container.x += wx * lerp;
           nine.container.y += wy * lerp;
-          // Face direction
+          // Face direction of travel
           if (nine.spriteGroup && Math.abs(wx) > 0.5) {
-            const s = Math.abs(nine.spriteGroup.scale.x) || 1;
+            const s = Math.abs(nine.spriteGroup.scale.x) || spriteScale;
             nine.spriteGroup.scale.x = wx > 0 ? s : -s;
           }
         }
@@ -3277,22 +3304,18 @@
         if (nine.spriteGroup) {
           const phase = nine.bobPhase || 0;
           if (moving) {
-            // Rapid foot-to-foot step: sharp up/down alternation
-            const step = Math.abs(Math.sin(time * 14 + phase));   // fast bilateral step
-            const lean = Math.sin(time * 14 + phase) * 1.5;       // body lean
-            nine.spriteGroup.y = -step * 5;                        // lift on each step
-            // Squash on landing (step == 0), stretch on lift (step == 1)
-            const scaleX = Math.abs(nine.spriteGroup.scale.x);
-            nine.spriteGroup.scale.y = 1 - step * 0.12;           // squash vertically on step
-            // Keep horizontal scale sign (facing direction)
-            nine.spriteGroup.scale.x = (nine.spriteGroup.scale.x >= 0 ? 1 : -1) * (1 + step * 0.08);
+            // Snappy bilateral step at readable speed (was 14 — too fast)
+            const step = Math.abs(Math.sin(time * 9 + phase));
+            nine.spriteGroup.y = -step * 4;
+            nine.spriteGroup.scale.y = spriteScale * (1 - step * 0.10);
+            const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
+            nine.spriteGroup.scale.x = facing * spriteScale * (1 + step * 0.06);
           } else {
-            // Idle breathing: gentle bob
-            nine.spriteGroup.y = Math.sin(time * 2.2 + phase) * 1.8;
-            nine.spriteGroup.scale.y = 1;
-            // Reset horizontal squash but keep facing direction
-            const s = Math.abs(nine.spriteGroup.scale.x) || 1;
-            nine.spriteGroup.scale.x = (nine.spriteGroup.scale.x >= 0 ? 1 : -1) * (1 + Math.sin(time*2.2+phase)*0.012);
+            // Idle breathing: gentle sine
+            nine.spriteGroup.y = Math.sin(time * 2.0 + phase) * 1.5;
+            nine.spriteGroup.scale.y = spriteScale;
+            const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
+            nine.spriteGroup.scale.x = facing * spriteScale;
           }
         }
 
@@ -6226,7 +6249,7 @@
   const _pixi = {
     initPixiArena, addNineSprite, removeNineSprite, updateNineHP, updateStatusRings,
     showFloatingText, spawnParticles, shakeSprite, shakeCamera, screenFlash,
-    animateKO, animateLunge, animateAuraBurst, getEffectParticles,
+    animateKO, animateLunge, animateProjectileFromPos, animateAuraBurst, getEffectParticles,
     engineToScreen, getSpawnPosition,
     fireworkCRIT, fireworkBURN, fireworkPOISON, fireworkCHAIN,
     fireworkSILENCE, fireworkHEAL, fireworkWEAKEN, fireworkDODGE,
