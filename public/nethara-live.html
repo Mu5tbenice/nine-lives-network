@@ -829,7 +829,8 @@
        ═════════════════════════════════════════════════════ */
     @media (max-width: 640px) {
       #arena-view {
-        display: flex; flex-direction: column;
+        /* display is controlled via JS — do NOT set here or it overrides display:none on load */
+        flex-direction: column;
         position: fixed; top: var(--nav-height); left: 0; right: 0;
         height: calc(100vh - var(--nav-height));
       }
@@ -1572,8 +1573,8 @@
     S.currentZoneId = zone.id;
 
     document.getElementById('zone-list-view').style.display = 'none';
-    document.getElementById('arena-view').style.display = 'block';
     const isMobile = window.innerWidth <= 640;
+    document.getElementById('arena-view').style.display = isMobile ? 'flex' : 'block';
     const sidebar = document.getElementById('arena-sidebar');
     if (sidebar) sidebar.style.display = isMobile ? 'none' : 'flex';
 
