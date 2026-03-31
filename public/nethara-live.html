@@ -1111,63 +1111,63 @@
     <div id="hud-main" style="display:flex;flex-direction:row;height:100%;gap:0;">
 
       <!-- [1] NINE PORTRAIT — WC3 style, punches up into canvas -->
-      <div id="hud-nine" style="width:190px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;align-items:center;padding:0 10px 8px;position:relative;background:linear-gradient(180deg,rgba(212,166,75,0.06),transparent 60%);">
-        <!-- Portrait frame — overlaps canvas by 70px -->
-        <div id="hud-nine-portrait" style="width:140px;height:160px;border-radius:10px 10px 6px 6px;background:linear-gradient(180deg,#0d0a1a,#08061a);border:2px solid rgba(212,166,75,0.5);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 -8px 32px rgba(0,0,0,0.8),0 0 24px rgba(212,166,75,0.15),inset 0 0 30px rgba(0,0,0,0.5);margin-top:-70px;z-index:30;flex-shrink:0;">
-          <div id="hud-nine-icon" style="font-size:64px;line-height:1;filter:drop-shadow(0 0 8px rgba(212,166,75,0.4));">🐱</div>
-          <img id="hud-nine-img" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:none;" onload="this.style.display='block';document.getElementById('hud-nine-icon').style.display='none'">
-          <!-- Effect overlay ring — pulses on debuff -->
-          <div id="hud-effect-ring" style="position:absolute;inset:-2px;border-radius:11px;border:2px solid transparent;pointer-events:none;transition:border-color 0.3s,box-shadow 0.3s;"></div>
-          <!-- Gold corner brackets WC3-style -->
-          <div style="position:absolute;top:4px;left:4px;width:12px;height:12px;border-top:2px solid rgba(212,166,75,0.6);border-left:2px solid rgba(212,166,75,0.6);border-radius:2px 0 0 0;pointer-events:none;"></div>
-          <div style="position:absolute;top:4px;right:4px;width:12px;height:12px;border-top:2px solid rgba(212,166,75,0.6);border-right:2px solid rgba(212,166,75,0.6);border-radius:0 2px 0 0;pointer-events:none;"></div>
-          <div style="position:absolute;bottom:4px;left:4px;width:12px;height:12px;border-bottom:2px solid rgba(212,166,75,0.6);border-left:2px solid rgba(212,166,75,0.6);border-radius:0 0 0 2px;pointer-events:none;"></div>
-          <div style="position:absolute;bottom:4px;right:4px;width:12px;height:12px;border-bottom:2px solid rgba(212,166,75,0.6);border-right:2px solid rgba(212,166,75,0.6);border-radius:0 0 2px 0;pointer-events:none;"></div>
-        </div>
-        <!-- Name + guild below portrait, inside tray -->
-        <div id="hud-nine-name" style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--gold);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:175px;margin-top:4px;text-shadow:0 0 8px rgba(212,166,75,0.4);"></div>
-        <div id="hud-nine-guild" style="font-family:'Press Start 2P',monospace;font-size:6px;color:var(--faint);text-align:center;margin-top:2px;"></div>
-        <!-- HP bar -->
-        <div style="width:100%;padding:4px 2px 0;margin-top:4px;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
-            <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6acd8a;">HP</span>
-            <span id="your-hp-text" style="font-family:'Press Start 2P',monospace;font-size:6px;color:#6acd8a;">--/--</span>
+      <div id="hud-nine" style="width:280px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:row;align-items:flex-start;position:relative;overflow:visible;background:linear-gradient(135deg,rgba(212,166,75,0.05),transparent 60%);">
+
+        <!-- Portrait — overlaps canvas by 60px -->
+        <div style="position:relative;flex-shrink:0;padding:0 0 6px 8px;">
+          <div id="hud-nine-portrait" style="width:130px;height:150px;border-radius:8px 8px 4px 4px;background:linear-gradient(180deg,#0d0a1a,#06040f);border:2px solid rgba(212,166,75,0.5);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 -6px 24px rgba(0,0,0,0.85),0 0 20px rgba(212,166,75,0.12);margin-top:-60px;z-index:30;">
+            <div id="hud-nine-icon" style="font-size:56px;line-height:1;filter:drop-shadow(0 0 6px rgba(212,166,75,0.3));">🐱</div>
+            <img id="hud-nine-img" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:none;" onload="this.style.display='block';document.getElementById('hud-nine-icon').style.display='none'">
+            <div id="hud-effect-ring" style="position:absolute;inset:-2px;border-radius:9px;border:2px solid transparent;pointer-events:none;transition:border-color 0.3s,box-shadow 0.3s;"></div>
+            <!-- Corner brackets -->
+            <div style="position:absolute;top:3px;left:3px;width:10px;height:10px;border-top:2px solid rgba(212,166,75,0.7);border-left:2px solid rgba(212,166,75,0.7);pointer-events:none;"></div>
+            <div style="position:absolute;top:3px;right:3px;width:10px;height:10px;border-top:2px solid rgba(212,166,75,0.7);border-right:2px solid rgba(212,166,75,0.7);pointer-events:none;"></div>
+            <div style="position:absolute;bottom:3px;left:3px;width:10px;height:10px;border-bottom:2px solid rgba(212,166,75,0.7);border-left:2px solid rgba(212,166,75,0.7);pointer-events:none;"></div>
+            <div style="position:absolute;bottom:3px;right:3px;width:10px;height:10px;border-bottom:2px solid rgba(212,166,75,0.7);border-right:2px solid rgba(212,166,75,0.7);pointer-events:none;"></div>
           </div>
-          <div style="height:8px;background:rgba(0,0,0,0.4);border-radius:4px;overflow:hidden;border:1px solid rgba(106,205,138,0.25);box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);">
-            <div id="your-hp-fill" style="height:100%;background:linear-gradient(90deg,#1a8a4a,#44cc88,#66eebb);border-radius:4px;transition:width 0.4s ease;width:100%"></div>
+          <!-- Name + HP below portrait -->
+          <div id="hud-nine-name" style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;color:var(--gold);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:128px;margin-top:3px;"></div>
+          <div id="hud-nine-guild" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);text-align:center;margin-top:1px;"></div>
+          <div style="margin-top:4px;padding:0 2px;">
+            <div style="height:6px;background:rgba(0,0,0,0.5);border-radius:3px;overflow:hidden;border:1px solid rgba(106,205,138,0.2);">
+              <div id="your-hp-fill" style="height:100%;background:linear-gradient(90deg,#1a7a40,#44cc88);border-radius:3px;transition:width 0.4s;width:100%"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:2px;">
+              <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6acd8a;">HP</span>
+              <span id="your-hp-text" style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6acd8a;">--/--</span>
+            </div>
+          </div>
+          <!-- Debuffs -->
+          <div id="hud-debuffs" style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center;min-height:12px;width:100%;margin-top:3px;"></div>
+        </div>
+
+        <!-- Stats panel — beside portrait -->
+        <div style="flex:1;min-width:0;padding:8px 8px 6px 10px;display:flex;flex-direction:column;justify-content:center;gap:0;margin-top:4px;">
+          <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(212,166,75,0.4);letter-spacing:2px;margin-bottom:6px;">STATS</div>
+          <div id="your-nine-stats"></div>
+          <!-- Buttons -->
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px;">
+            <button id="btn-swap-build" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:5px 6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--faint);border-radius:4px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.color='var(--gold)';this.style.borderColor='rgba(212,166,75,0.3)'" onmouseout="this.style.color='var(--faint)';this.style.borderColor='rgba(255,255,255,0.12)'">⇄ LOADOUT</button>
+            <button id="btn-withdraw" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:5px 6px;background:rgba(255,68,102,0.06);border:1px solid rgba(255,68,102,0.2);color:var(--red);border-radius:4px;cursor:pointer;">WITHDRAW</button>
+            <div style="display:flex;align-items:center;gap:4px;margin-top:2px;">
+              <div id="auto-redeploy-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()" style="width:24px;height:12px;background:rgba(255,255,255,0.06);border-radius:6px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0;">
+                <div style="position:absolute;top:2px;left:2px;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.3);transition:left 0.2s;"></div>
+              </div>
+              <span id="auto-redeploy-label" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);">AUTO</span>
+            </div>
           </div>
         </div>
-        <!-- Debuff pills -->
-        <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:14px;width:100%;margin-top:3px;"></div>
       </div>
 
-      <!-- [2] STATS panel -->
-      <div id="hud-stats" style="width:160px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);padding:12px 14px;display:flex;flex-direction:column;justify-content:center;gap:0;">
-        <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(212,166,75,0.5);letter-spacing:2px;margin-bottom:8px;">STATS</div>
-        <div id="your-nine-stats"></div>
-      </div>
+      <!-- [2] STATS already in portrait column above -->
 
-      <!-- [3] CONTROLS: buttons + ATK bar -->
-      <div id="hud-controls" style="width:130px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;justify-content:space-between;padding:12px 10px;">
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button id="btn-swap-build" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:7px 8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--faint);border-radius:5px;cursor:pointer;width:100%;transition:all 0.15s;" onmouseover="this.style.color='var(--gold)';this.style.borderColor='rgba(212,166,75,0.3)'" onmouseout="this.style.color='var(--faint)';this.style.borderColor='rgba(255,255,255,0.12)'">⇄ LOADOUT</button>
-          <button id="btn-withdraw" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:7px 8px;background:rgba(255,68,102,0.06);border:1px solid rgba(255,68,102,0.2);color:var(--red);border-radius:5px;cursor:pointer;width:100%;transition:all 0.15s;">WITHDRAW</button>
+      <!-- [3] ATK bar -->
+      <div id="hud-atk" style="width:44px;flex-shrink:0;padding:10px 6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;border-right:1px solid rgba(255,255,255,0.07);">
+        <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.2);text-align:center;line-height:1.5;letter-spacing:0.5px;">AUTO<br>ATK</div>
+        <div style="flex:1;width:16px;background:rgba(0,0,0,0.4);border-radius:8px;overflow:hidden;position:relative;border:1px solid rgba(255,100,34,0.25);margin:6px 0;">
+          <div id="atk-speed-bar" style="position:absolute;bottom:0;left:0;right:0;height:0%;background:linear-gradient(180deg,#ffdd44,#ff8822,#e85a6a);border-radius:8px;transition:height 0.06s linear;"></div>
         </div>
-        <!-- ATK speed bar — vertical fill -->
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;justify-content:center;margin:8px 0;">
-          <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.2);letter-spacing:1px;">AUTO ATK</div>
-          <div style="width:18px;height:60px;background:rgba(255,255,255,0.05);border-radius:9px;overflow:hidden;position:relative;border:1px solid rgba(255,100,34,0.2);">
-            <div id="atk-speed-bar" style="position:absolute;bottom:0;left:0;right:0;height:0%;background:linear-gradient(180deg,#ffcc44,#ff6622,#e85a6a);border-radius:9px;transition:height 0.08s linear;"></div>
-          </div>
-          <div style="font-size:12px;opacity:0.5;" id="atk-speed-icon">⚔</div>
-        </div>
-        <!-- Auto toggle -->
-        <div style="display:flex;align-items:center;gap:5px;">
-          <div id="auto-redeploy-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()" style="width:28px;height:14px;background:rgba(255,255,255,0.06);border-radius:7px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0;">
-            <div style="position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3);transition:left 0.2s;"></div>
-          </div>
-          <span id="auto-redeploy-label" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);">AUTO</span>
-        </div>
+        <div style="font-size:11px;opacity:0.4;" id="atk-speed-icon">⚔</div>
       </div>
 
       <!-- [4] CARD SLOTS + spell cast bar -->
@@ -2531,16 +2531,26 @@
         : (data.tx != null ? engineToScreen({ x: data.tx, y: data.ty }) : null);
 
       if (sx && ex) {
+        // Projectile always fires — visual richness for everyone watching
         animateProjectileFromPos(sx.x, sx.y, ex.x, ex.y, attacker?.house || 'universal', () => {
-          if (dmg > 0) {
+          // Damage numbers + crit burst only when YOU are the attacker or defender
+          const isLocal = fromId === String(S.playerId) || toId === String(S.playerId);
+          if (dmg > 0 && isLocal) {
             if (target) shakeSprite(target);
             showFloatingText(ex.x, ex.y - 20, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 16 : 12);
             if (data.crit) fireworkCRIT(ex.x, ex.y);
+          } else if (target) {
+            // Still shake target for everyone — visual feedback without text spam
+            shakeSprite(target);
           }
         });
-      } else if (ex && dmg > 0) {
-        showFloatingText(ex.x, ex.y - 20, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 16 : 12);
-        if (data.crit) fireworkCRIT(ex.x, ex.y);
+      } else if (ex) {
+        // No projectile possible — at minimum shake if local
+        if (target) shakeSprite(target);
+        if (dmg > 0 && (fromId === String(S.playerId) || toId === String(S.playerId))) {
+          showFloatingText(ex.x, ex.y - 20, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 16 : 12);
+          if (data.crit) fireworkCRIT(ex.x, ex.y);
+        }
       }
 
       const critPart = data.crit ? ` <span class="feed-crit">★ CRIT!</span>` : '';
@@ -2590,14 +2600,20 @@
       const cy = caster  ? caster.container.y  : (cp?.y ?? ty);
 
       if (tx !== null) {
-        const effColor = EFFECT_COLORS[effName] ? parseInt(EFFECT_COLORS[effName].replace('#',''), 16) : 0xD4A64B;
+        // Particles fire for all fights — ambient visual activity
         spawnParticles(tx, ty, getEffectParticles(effName+'_APPLY').color, 8, 'default');
-        showFloatingText(tx, ty - 30, effName, effColor, 9);
+        // Effect name text only when YOU are caster or target
+        const isLocal = String(cId) === String(S.playerId) || String(tId) === String(S.playerId);
+        if (isLocal) {
+          const effColor = EFFECT_COLORS[effName] ? parseInt(EFFECT_COLORS[effName].replace('#',''), 16) : 0xD4A64B;
+          showFloatingText(tx, ty - 30, effName, effColor, 9);
+        }
       }
       if (caster) animateAuraBurst(caster, eff);
       if (data.amt > 0) {
+        const isLocal = String(cId) === String(S.playerId) || String(tId) === String(S.playerId);
         const hx = tx ?? cx, hy = ty ?? cy;
-        if (hx !== null) showFloatingText(hx, hy - 20, `+${data.amt}`, 0x44ffaa, 11);
+        if (hx !== null && isLocal) showFloatingText(hx, hy - 20, `+${data.amt}`, 0x44ffaa, 11);
         trackCombatStat(cId, getNineName(cId), caster?.guild||'', caster?.house||'', 'heals', data.amt);
       }
 
@@ -2630,11 +2646,11 @@
     socket.on('combat:dot', (data) => {
       const id = resolveId(data.nineId);
       const sp = S.nines.get(id);
-      if (data.dmg > 0) {
+      // Only show DOT text when it's your Nine taking the damage
+      if (data.dmg > 0 && String(id) === String(S.playerId)) {
         const px = sp ? sp.container.x : (data.x != null ? engineToScreen({x:data.x,y:data.y||0}).x : null);
         const py = sp ? sp.container.y : (data.x != null ? engineToScreen({x:data.x,y:data.y||0}).y : null);
         if (px !== null) {
-          // Poison = green, Burn = orange
           const dotColor = (data.type === 'burn') ? 0xff6b35 : 0x76ff03;
           showFloatingText(px, py - 15, `-${data.dmg}`, dotColor, 10);
         }
@@ -3438,30 +3454,44 @@
       state.arenaApp.stage.sortChildren();
     });
 
-    // ── MAIN TICKER: movement + South Park walk bob ──
+    // ── MAIN TICKER: movement + bob + separation ──
     const isMob = window.innerWidth <= 640;
-    const spriteScale = isMob ? 0.8 : 1.0;
+    const spriteScale = isMob ? 0.85 : 1.0;
     app.ticker.add((delta) => {
       const time = performance.now() / 1000;
+      const allNines = Array.from(state.nines.values());
+
       state.nines.forEach((nine) => {
         if (nine.isAnimating) return;
 
-        // ── Movement: smooth lerp toward server target ──
+        // ── Movement: smooth lerp ──
         const wx = (nine.targetX ?? nine.container.x) - nine.container.x;
         const wy = (nine.targetY ?? nine.container.y) - nine.container.y;
         const dist = Math.sqrt(wx*wx + wy*wy);
         const moving = dist > 2;
 
         if (moving) {
-          // 0.07 lerp = ~1.5s to fully converge — smooth, no snapping
-          nine.container.x += wx * 0.07;
-          nine.container.y += wy * 0.07;
+          nine.container.x += wx * 0.09;
+          nine.container.y += wy * 0.09;
           if (nine.spriteGroup && Math.abs(wx) > 0.8) {
             const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
             const newFacing = wx > 0 ? 1 : -1;
-            if (facing !== newFacing) {
-              nine.spriteGroup.scale.x = newFacing * Math.abs(nine.spriteGroup.scale.x);
-            }
+            if (facing !== newFacing) nine.spriteGroup.scale.x = newFacing * Math.abs(nine.spriteGroup.scale.x);
+          }
+        }
+
+        // ── Sprite separation — push apart when too close ──
+        const SEP_DIST = 28; // minimum pixels between sprite centres
+        const SEP_FORCE = 0.6;
+        for (const other of allNines) {
+          if (other === nine || other.isAnimating) continue;
+          const dx = nine.container.x - other.container.x;
+          const dy = nine.container.y - other.container.y;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          if (d > 0 && d < SEP_DIST) {
+            const push = (SEP_DIST - d) / SEP_DIST * SEP_FORCE;
+            nine.container.x += (dx / d) * push;
+            nine.container.y += (dy / d) * push;
           }
         }
 
@@ -3470,12 +3500,12 @@
           const phase = nine.bobPhase || 0;
           if (moving) {
             const step = Math.abs(Math.sin(time * 7 + phase));
-            nine.spriteGroup.y = -step * 3.5;
-            nine.spriteGroup.scale.y = spriteScale * (1 - step * 0.08);
+            nine.spriteGroup.y = -step * 2.5;
+            nine.spriteGroup.scale.y = spriteScale * (1 - step * 0.07);
             const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
-            nine.spriteGroup.scale.x = facing * spriteScale * (1 + step * 0.05);
+            nine.spriteGroup.scale.x = facing * spriteScale * (1 + step * 0.04);
           } else {
-            nine.spriteGroup.y = Math.sin(time * 1.8 + phase) * 1.2;
+            nine.spriteGroup.y = Math.sin(time * 1.8 + phase) * 1.0;
             nine.spriteGroup.scale.y = spriteScale;
             const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
             nine.spriteGroup.scale.x = facing * spriteScale;
@@ -3960,7 +3990,7 @@
   // ===== NINE SPRITES — LAYERED ITEM RENDERING =====
   // Layer order matches builder: fur → outfit → weapon → expression → headwear → familiar
   const ITEM_LAYER_ORDER = ['fur', 'outfit', 'weapon', 'expression', 'headwear', 'familiar'];
-  const SPRITE_SIZE = 54; // was 72 — cleaner at this scale
+  const SPRITE_SIZE = 26; // small warzone units — spells and effects are the visual stars
 
   function addNineSprite(nine) {
     if (!state.arenaApp) return;
@@ -4040,20 +4070,20 @@
 
     // Name label
     const nameText = new PIXI.Text(nine.name || '???', new PIXI.TextStyle({
-      fontFamily: 'monospace', fontSize: 9, fill: 0xF0ECF8,
+      fontFamily: 'monospace', fontSize: 7, fill: 0xF0ECF8,
       dropShadow: true, dropShadowColor: 0x000000, dropShadowDistance: 1, dropShadowBlur: 2,
     }));
-    nameText.anchor.set(0.5, 1); nameText.y = -(r + 14); nameText.zIndex = 5;
+    nameText.anchor.set(0.5, 1); nameText.y = -(r + 8); nameText.zIndex = 5;
     container.addChild(nameText);
 
-    // HP bar
+    // HP bar — narrower to match small sprite
     const hpBg = new PIXI.Graphics();
     hpBg.beginFill(0x111111, 0.85);
-    hpBg.drawRoundedRect(-22, SPRITE_SIZE*0.34, 44, 5, 2); hpBg.endFill(); hpBg.zIndex = 4;
+    hpBg.drawRoundedRect(-14, SPRITE_SIZE*0.34, 28, 3, 1); hpBg.endFill(); hpBg.zIndex = 4;
     container.addChild(hpBg);
     const hpFill = new PIXI.Graphics();
     hpFill.beginFill(0x44cc88);
-    hpFill.drawRoundedRect(-22, SPRITE_SIZE*0.34, 44, 5, 2); hpFill.endFill(); hpFill.zIndex = 4;
+    hpFill.drawRoundedRect(-14, SPRITE_SIZE*0.34, 28, 3, 1); hpFill.endFill(); hpFill.zIndex = 4;
     container.addChild(hpFill);
 
     app.stage.addChild(container);
@@ -4105,7 +4135,7 @@
     sprite.hpFill.clear();
     const color = pct > 0.5 ? 0x44cc88 : pct > 0.25 ? 0xffaa55 : 0xff4466;
     sprite.hpFill.beginFill(color);
-    sprite.hpFill.drawRoundedRect(-16, 22, 32 * pct, 4, 2);
+    sprite.hpFill.drawRoundedRect(-14, SPRITE_SIZE ? SPRITE_SIZE * 0.34 : 9, 28 * pct, 3, 1);
     sprite.hpFill.endFill();
 
     // Always update Your Nine panel if this is the player
