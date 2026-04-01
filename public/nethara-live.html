@@ -613,51 +613,122 @@
     /* Deploy modal */
     .deploy-modal {
       display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      z-index: 2000; background: rgba(26,21,40,0.96);
+      z-index: 2000; background: rgba(10,6,20,0.97);
       overflow-y: auto;
     }
     .deploy-modal.open { display: block; }
     .deploy-inner {
-      max-width: 600px; margin: 20px auto; padding: 20px; position: relative;
+      max-width: 520px; margin: 0 auto; padding: 16px 16px 24px; position: relative;
+      min-height: 100vh; display: flex; flex-direction: column;
     }
     .deploy-close-x {
-      position: absolute; top: 8px; right: 12px; z-index: 5;
-      background: none; border: none; color: var(--muted); font-size: 28px;
-      cursor: pointer; padding: 4px 10px; line-height: 1;
+      position: absolute; top: 12px; right: 12px; z-index: 5;
+      background: none; border: none; color: var(--muted); font-size: 26px;
+      cursor: pointer; padding: 4px 8px; line-height: 1;
       transition: color 0.2s;
     }
     .deploy-close-x:hover { color: var(--bright); }
-    .deploy-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--gold); margin-bottom: 16px; }
+    .deploy-title { font-family: 'Cinzel', serif; font-size: 17px; font-weight: 700; color: var(--gold); margin-bottom: 12px; padding-right: 32px; }
+
+    /* ── STATS BAR ── */
     .deploy-stats-preview {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 10px; padding: 14px; margin-bottom: 16px;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;
     }
-    .deploy-stat-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .deploy-stat-row { display: flex; gap: 0; flex-wrap: wrap; }
     .deploy-stat {
-      font-family: 'Press Start 2P', monospace; font-size: 9px;
-      display: flex; align-items: center; gap: 4px;
+      font-family: 'Press Start 2P', monospace; font-size: 8px;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      flex: 1; min-width: 52px; padding: 4px 2px;
     }
-    .deploy-cards-title { font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--faint); letter-spacing: 1px; margin-bottom: 10px; }
-    .deploy-card-grid {
-      display: flex; flex-direction: row; gap: 12px;
-      overflow-x: auto; overflow-y: hidden;
-      padding: 4px 4px 12px; scroll-snap-type: x mandatory;
-      scrollbar-width: thin; scrollbar-color: rgba(212,166,75,0.25) transparent;
+    .deploy-stat-key { font-size: 6px; opacity: 0.5; letter-spacing: 1px; }
+    .deploy-stat-val { font-size: 10px; font-weight: 700; }
+
+    /* ── HOUSE FILTER TABS ── */
+    .deploy-house-tabs {
+      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;
+      margin-bottom: 12px; scrollbar-width: none;
     }
-    .deploy-card-grid::-webkit-scrollbar { height: 4px; }
-    .deploy-card-grid::-webkit-scrollbar-thumb { background: rgba(212,166,75,0.25); border-radius: 2px; }
+    .deploy-house-tabs::-webkit-scrollbar { display: none; }
+    .deploy-house-tab {
+      flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;
+      border: 2px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; overflow: hidden; padding: 0; position: relative;
+    }
+    .deploy-house-tab img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+    .deploy-house-tab.active { border-color: var(--gold); background: rgba(212,166,75,0.1); box-shadow: 0 0 12px rgba(212,166,75,0.3); }
+    .deploy-house-tab span { font-size: 18px; line-height: 1; }
+
+    /* ── SELECTED SLOTS ── */
+    .deploy-selected-row {
+      display: flex; gap: 8px; margin-bottom: 14px;
+    }
+    .deploy-selected-slot {
+      flex: 1; height: 52px; border-radius: 8px;
+      border: 1px dashed rgba(255,255,255,0.12); background: rgba(255,255,255,0.02);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--faint);
+      position: relative; overflow: hidden; transition: all 0.2s; cursor: pointer;
+    }
+    .deploy-selected-slot.filled { border-style: solid; border-color: rgba(212,166,75,0.3); background: rgba(212,166,75,0.04); }
+    .deploy-selected-slot .slot-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.35; }
+    .deploy-selected-slot .slot-info { position: relative; z-index: 1; text-align: center; padding: 4px; }
+    .deploy-selected-slot .slot-name { font-family: 'Cinzel', serif; font-size: 9px; color: var(--bright); font-weight: 700; }
+    .deploy-selected-slot .slot-eff { font-family: 'Press Start 2P', monospace; font-size: 5px; margin-top: 2px; }
+    .deploy-selected-slot .slot-x { position: absolute; top: 3px; right: 5px; font-size: 10px; color: var(--faint); cursor: pointer; z-index: 2; line-height: 1; }
+
+    /* ── CAROUSEL ── */
+    .deploy-carousel-wrap {
+      flex: 1; position: relative; display: flex; flex-direction: column;
+    }
+    .deploy-cards-label {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint);
+      letter-spacing: 1px; margin-bottom: 8px;
+    }
+    .deploy-carousel-stage {
+      flex: 1; position: relative; overflow: hidden; min-height: 280px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .deploy-carousel-track {
+      display: flex; transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      will-change: transform; gap: 0;
+    }
+    .deploy-carousel-item {
+      flex-shrink: 0; width: 100%; display: flex; justify-content: center;
+      padding: 0 8px;
+    }
     .deploy-card-slot {
       cursor: pointer; transition: all 0.2s;
       position: relative; border-radius: 14px;
       border: 2px solid transparent;
-      padding: 2px; flex-shrink: 0;
-      scroll-snap-align: start;
-      width: 168px;
+      padding: 2px;
     }
-    .deploy-card-slot:hover { transform: translateY(-3px); }
-    .deploy-card-slot .spell-card { pointer-events: none; }
-    .deploy-card-slot .spell-card:hover { transform: none; box-shadow: none; }
-    .deploy-card-slot.selected { border-color: var(--gold); box-shadow: 0 0 24px rgba(212,166,75,0.4); transform: translateY(-3px); }
+    .deploy-card-slot.selected { border-color: var(--gold); box-shadow: 0 0 24px rgba(212,166,75,0.4); }
+
+    /* ── CAROUSEL CONTROLS ── */
+    .deploy-carousel-controls {
+      display: flex; align-items: center; justify-content: center;
+      gap: 16px; margin: 10px 0 14px;
+    }
+    .deploy-carousel-btn {
+      width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04); color: var(--bright); font-size: 16px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .deploy-carousel-btn:hover { border-color: var(--gold); color: var(--gold); background: rgba(212,166,75,0.08); }
+    .deploy-carousel-dots { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; max-width: 240px; }
+    .deploy-carousel-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(255,255,255,0.15); cursor: pointer; transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .deploy-carousel-dot.active { background: var(--gold); transform: scale(1.3); }
+    .deploy-carousel-counter {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint);
+      min-width: 50px; text-align: center;
+    }
     .deploy-card-slot.deployed-elsewhere { opacity: 0.25; pointer-events: none; }
     .selected-badge {
       display: none; position: absolute; top: -1px; left: -1px; right: -1px; z-index: 10;
@@ -1118,74 +1189,119 @@
 
     <!-- ── MAIN HUD ROW ── -->
     <div id="hud-main" style="display:flex;flex-direction:row;height:100%;gap:0;">
+    <div id="hud-main" style="display:flex;flex-direction:row;height:100%;gap:0;">
 
-      <!-- ═══════════════════════════════════════════════════
-           CHARACTER PANEL — fills the yellow box area
-           Portrait punches 90px up into canvas, square frame
-      ═══════════════════════════════════════════════════ -->
-      <div id="hud-nine" style="width:440px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:row;align-items:flex-start;position:relative;overflow:visible;background:linear-gradient(135deg,rgba(212,166,75,0.04) 0%,transparent 55%);">
+      <!-- ═══════════════════════════════════════════
+           CHARACTER BLOCK — portrait left, panels right
+           Layout matches Image 2:
+           Blue   = portrait (tall, square, central)
+           Purple = debuffs strip
+           Orange = stat bars
+           Yellow = card cooldown bars
+           Red    = action buttons
+      ═══════════════════════════════════════════ -->
+      <div id="hud-nine" style="width:480px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:row;align-items:flex-start;position:relative;overflow:visible;background:linear-gradient(135deg,rgba(212,166,75,0.04),transparent 50%);">
 
-        <!-- Portrait column — square frame -->
+        <!-- BLUE: Portrait column — square, punches up -->
         <div style="position:relative;flex-shrink:0;padding:0 0 6px 8px;display:flex;flex-direction:column;align-items:center;">
-          <!-- Portrait — 190×190px square, punches 90px up -->
-          <div id="hud-nine-portrait" style="width:190px;height:190px;border-radius:6px;background:linear-gradient(180deg,#0b0818,#060410);border:2px solid rgba(212,166,75,0.55);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;margin-top:-90px;z-index:30;box-shadow:0 -8px 30px rgba(0,0,0,0.9),0 0 24px rgba(212,166,75,0.1),inset 0 0 40px rgba(0,0,0,0.5);">
-            <div id="hud-nine-icon" style="font-size:80px;line-height:1;filter:drop-shadow(0 0 8px rgba(212,166,75,0.3));">🐱</div>
+          <div id="hud-nine-portrait" style="width:195px;height:215px;border-radius:6px;background:#060410;border:2px solid rgba(212,166,75,0.55);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;margin-top:-95px;z-index:30;box-shadow:0 -8px 30px rgba(0,0,0,0.9),0 0 20px rgba(212,166,75,0.08);">
+            <div id="hud-nine-icon" style="font-size:80px;line-height:1;">🐱</div>
             <div id="hud-effect-ring" style="position:absolute;inset:-2px;border-radius:7px;border:2px solid transparent;pointer-events:none;transition:border-color 0.3s,box-shadow 0.3s;"></div>
-            <!-- WC3 corner brackets -->
-            <div style="position:absolute;top:6px;left:6px;width:16px;height:16px;border-top:2px solid rgba(212,166,75,0.8);border-left:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
-            <div style="position:absolute;top:6px;right:6px;width:16px;height:16px;border-top:2px solid rgba(212,166,75,0.8);border-right:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
-            <div style="position:absolute;bottom:6px;left:6px;width:16px;height:16px;border-bottom:2px solid rgba(212,166,75,0.8);border-left:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
-            <div style="position:absolute;bottom:6px;right:6px;width:16px;height:16px;border-bottom:2px solid rgba(212,166,75,0.8);border-right:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
+            <div style="position:absolute;top:6px;left:6px;width:14px;height:14px;border-top:2px solid rgba(212,166,75,0.8);border-left:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
+            <div style="position:absolute;top:6px;right:6px;width:14px;height:14px;border-top:2px solid rgba(212,166,75,0.8);border-right:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
+            <div style="position:absolute;bottom:6px;left:6px;width:14px;height:14px;border-bottom:2px solid rgba(212,166,75,0.8);border-left:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
+            <div style="position:absolute;bottom:6px;right:6px;width:14px;height:14px;border-bottom:2px solid rgba(212,166,75,0.8);border-right:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
           </div>
-          <!-- Name plate -->
-          <div style="width:190px;display:flex;align-items:center;justify-content:center;gap:5px;margin-top:4px;flex-wrap:wrap;">
-            <div id="hud-nine-name" style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--gold);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;text-shadow:0 0 10px rgba(212,166,75,0.4);"></div>
-          </div>
+          <!-- Name + guild under portrait -->
+          <div id="hud-nine-name" style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;color:var(--gold);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:193px;margin-top:3px;"></div>
           <div id="hud-nine-guild" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);text-align:center;margin-top:1px;"></div>
-          <!-- HP bar full width under portrait -->
-          <div style="width:190px;padding:3px 0 0;">
-            <div style="height:8px;background:rgba(0,0,0,0.5);border-radius:4px;overflow:hidden;border:1px solid rgba(106,205,138,0.2);">
-              <div id="your-hp-fill" style="height:100%;background:linear-gradient(90deg,#1a6a35,#44cc88,#88ffbb);border-radius:4px;transition:width 0.4s;width:100%"></div>
+          <!-- HP bar -->
+          <div style="width:193px;margin-top:4px;">
+            <div style="height:7px;background:rgba(0,0,0,0.5);border-radius:3px;overflow:hidden;border:1px solid rgba(106,205,138,0.2);">
+              <div id="your-hp-fill" style="height:100%;background:linear-gradient(90deg,#1a6a35,#44cc88);border-radius:3px;transition:width 0.4s;width:100%"></div>
             </div>
             <div style="display:flex;justify-content:space-between;margin-top:2px;">
               <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6acd8a;">HP</span>
               <span id="your-hp-text" style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6acd8a;">--/--</span>
             </div>
           </div>
-          <!-- Debuff pills row -->
-          <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:14px;width:190px;margin-top:3px;overflow:visible;"></div>
         </div>
 
-        <!-- Stats + controls column — right of portrait -->
-        <div style="flex:1;min-width:0;padding:10px 10px 6px 12px;display:flex;flex-direction:column;justify-content:space-between;height:100%;box-sizing:border-box;">
-          <!-- Stats -->
-          <div>
-            <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(212,166,75,0.4);letter-spacing:2px;margin-bottom:7px;">STATS</div>
+        <!-- RIGHT COLUMN: stacked panels -->
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%;padding:6px 8px 6px 10px;gap:0;box-sizing:border-box;">
+
+          <!-- PURPLE: debuffs + buffs strip -->
+          <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;min-height:20px;padding:2px 0 3px;border-bottom:1px solid rgba(255,255,255,0.05);overflow:visible;position:relative;">
+            <span style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.15);margin-right:2px;flex-shrink:0;">STATUS</span>
+          </div>
+
+          <!-- ORANGE: stat bars -->
+          <div style="flex:1;padding:4px 0 2px;">
             <div id="your-nine-stats"></div>
           </div>
-          <!-- ATK bar -->
-          <div style="display:flex;align-items:center;gap:6px;margin:4px 0;">
-            <span style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.2);white-space:nowrap;">ATK</span>
-            <div style="flex:1;height:6px;background:rgba(0,0,0,0.4);border-radius:3px;overflow:hidden;border:1px solid rgba(255,100,34,0.2);position:relative;">
-              <div id="atk-speed-bar" style="position:absolute;top:0;left:0;height:100%;width:0%;background:linear-gradient(90deg,#ffdd44,#ff8822,#e85a6a);border-radius:3px;transition:width 0.06s linear;"></div>
-            </div>
-            <div id="atk-speed-icon" style="font-size:9px;opacity:0.4;">⚔</div>
-          </div>
-          <!-- Buttons -->
-          <div style="display:flex;flex-direction:column;gap:5px;">
-            <button id="btn-swap-build" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--faint);border-radius:4px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.color='var(--gold)';this.style.borderColor='rgba(212,166,75,0.3)'" onmouseout="this.style.color='var(--faint)';this.style.borderColor='rgba(255,255,255,0.12)'">⇄ LOADOUT</button>
-            <button id="btn-withdraw" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 8px;background:rgba(255,68,102,0.08);border:1px solid rgba(255,68,102,0.25);color:var(--red);border-radius:4px;cursor:pointer;">WITHDRAW</button>
-            <div style="display:flex;align-items:center;gap:5px;margin-top:2px;">
-              <div id="auto-redeploy-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()" style="width:26px;height:13px;background:rgba(255,255,255,0.06);border-radius:7px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0;">
-                <div style="position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3);transition:left 0.2s;"></div>
-              </div>
-              <span id="auto-redeploy-label" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);">AUTO-REJOIN</span>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- [3] CARD SLOTS + spell cast bar -->
+          <!-- YELLOW: card cooldown bars — one per slot + auto-attack -->
+          <div style="border-top:1px solid rgba(255,255,255,0.05);padding:4px 0 3px;">
+            <div style="display:flex;flex-direction:column;gap:3px;" id="hud-spell-bars">
+              <!-- S1 bar -->
+              <div class="hud-spell-bar-row" id="hud-spell-bar-0" style="display:flex;align-items:center;gap:5px;">
+                <div class="hud-spell-thumb" id="hud-spell-thumb-0" onclick="window._showCardPopupFromHUD&&window._showCardPopupFromHUD(0)" style="width:22px;height:28px;border-radius:3px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);flex-shrink:0;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                  <span style="font-size:8px;opacity:0.3;">?</span>
+                </div>
+                <div style="flex:1;height:5px;background:rgba(0,0,0,0.4);border-radius:3px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);position:relative;">
+                  <div id="spell-bar-fill-0" style="position:absolute;top:0;left:0;height:100%;width:0%;border-radius:3px;transition:width 0.06s linear;"></div>
+                </div>
+                <span id="hud-spell-name-0" style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);width:36px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;"></span>
+              </div>
+              <!-- S2 bar -->
+              <div class="hud-spell-bar-row" id="hud-spell-bar-1" style="display:flex;align-items:center;gap:5px;">
+                <div class="hud-spell-thumb" id="hud-spell-thumb-1" onclick="window._showCardPopupFromHUD&&window._showCardPopupFromHUD(1)" style="width:22px;height:28px;border-radius:3px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);flex-shrink:0;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                  <span style="font-size:8px;opacity:0.3;">?</span>
+                </div>
+                <div style="flex:1;height:5px;background:rgba(0,0,0,0.4);border-radius:3px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);position:relative;">
+                  <div id="spell-bar-fill-1" style="position:absolute;top:0;left:0;height:100%;width:0%;border-radius:3px;transition:width 0.06s linear;"></div>
+                </div>
+                <span id="hud-spell-name-1" style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);width:36px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;"></span>
+              </div>
+              <!-- S3 bar -->
+              <div class="hud-spell-bar-row" id="hud-spell-bar-2" style="display:flex;align-items:center;gap:5px;">
+                <div class="hud-spell-thumb" id="hud-spell-thumb-2" onclick="window._showCardPopupFromHUD&&window._showCardPopupFromHUD(2)" style="width:22px;height:28px;border-radius:3px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);flex-shrink:0;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                  <span style="font-size:8px;opacity:0.3;">?</span>
+                </div>
+                <div style="flex:1;height:5px;background:rgba(0,0,0,0.4);border-radius:3px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);position:relative;">
+                  <div id="spell-bar-fill-2" style="position:absolute;top:0;left:0;height:100%;width:0%;border-radius:3px;transition:width 0.06s linear;"></div>
+                </div>
+                <span id="hud-spell-name-2" style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);width:36px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;"></span>
+              </div>
+              <!-- AUTO ATTACK bar -->
+              <div style="display:flex;align-items:center;gap:5px;margin-top:1px;">
+                <div style="width:22px;height:28px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
+                  <div id="atk-speed-icon" style="font-size:11px;opacity:0.4;">⚔</div>
+                </div>
+                <div style="flex:1;height:5px;background:rgba(0,0,0,0.4);border-radius:3px;overflow:hidden;border:1px solid rgba(255,100,34,0.2);position:relative;">
+                  <div id="atk-speed-bar" style="position:absolute;top:0;left:0;height:100%;width:0%;background:linear-gradient(90deg,#ffdd44,#ff8822,#e85a6a);border-radius:3px;transition:width 0.06s linear;"></div>
+                </div>
+                <span style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,100,34,0.4);width:36px;flex-shrink:0;text-align:right;">AUTO ATK</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- RED: action buttons row -->
+          <div style="display:flex;gap:4px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.05);">
+            <button id="btn-swap-build" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:5px 6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:var(--faint);border-radius:4px;cursor:pointer;flex:1;transition:all 0.15s;" onmouseover="this.style.color='var(--gold)';this.style.borderColor='rgba(212,166,75,0.3)'" onmouseout="this.style.color='var(--faint)';this.style.borderColor='rgba(255,255,255,0.1)'">⇄ LOADOUT</button>
+            <button id="btn-withdraw" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:5px 6px;background:rgba(255,68,102,0.08);border:1px solid rgba(255,68,102,0.25);color:var(--red);border-radius:4px;cursor:pointer;flex:1;">WITHDRAW</button>
+            <div style="display:flex;align-items:center;gap:3px;flex-shrink:0;">
+              <div id="auto-redeploy-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()" style="width:24px;height:13px;background:rgba(255,255,255,0.05);border-radius:7px;border:1px solid rgba(255,255,255,0.1);cursor:pointer;position:relative;flex-shrink:0;">
+                <div style="position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.25);transition:left 0.2s;"></div>
+              </div>
+              <span id="auto-redeploy-label" style="font-family:'Press Start 2P',monospace;font-size:4px;color:var(--faint);white-space:nowrap;">AUTO</span>
+            </div>
+          </div>
+
+        </div><!-- end right column -->
+      </div><!-- end hud-nine -->
+
+      <!-- CARD SLOTS + spell timeline -->
       <div id="hud-cards" style="flex:1;min-width:0;display:flex;flex-direction:column;">
         <div style="display:flex;align-items:center;gap:6px;padding:8px 10px 4px;flex-shrink:0;">
           <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.2);white-space:nowrap;">SPELL ROTATION</span>
@@ -1205,7 +1321,6 @@
       </div>
 
     </div><!-- close hud-main -->
-
     <!-- ══ MOBILE HUD (≤640px only — controlled by CSS display:none/flex) ══ -->
     <div id="mobile-hud-root" style="display:none;flex-direction:row;flex:1;position:relative;overflow:hidden;min-height:0;">
 
@@ -1356,22 +1471,42 @@
 <div class="deploy-modal" id="deploy-modal">
   <div class="deploy-inner">
     <button class="deploy-close-x" id="btn-close-deploy">&times;</button>
-    <div class="deploy-title">⚔️ Deploy to <span id="deploy-zone-name"></span></div>
+    <div class="deploy-title">&#9876; Deploy to <span id="deploy-zone-name"></span></div>
 
     <div class="deploy-stats-preview">
-      <div style="font-family:\'Press Start 2P\',monospace; font-size:7px; color:var(--faint); letter-spacing:1px; margin-bottom:8px;">CARD STATS BONUS</div>
       <div class="deploy-stat-row" id="deploy-stats-row">
-        <div class="deploy-stat"><span style="color:#e85a6a">ATK</span> <span id="deploy-atk">--</span></div>
-        <div class="deploy-stat"><span style="color:#6acd8a">HP</span> <span id="deploy-hp">--</span></div>
-        <div class="deploy-stat"><span style="color:#6ac8d8">SPD</span> <span id="deploy-spd">--</span></div>
-        <div class="deploy-stat"><span style="color:#b088e8">DEF</span> <span id="deploy-def">--</span></div>
-        <div class="deploy-stat"><span style="color:#D4A64B">LUCK</span> <span id="deploy-luck">--</span></div>
+        <div class="deploy-stat"><span class="deploy-stat-key" style="color:#e85a6a;">ATK</span><span class="deploy-stat-val" id="deploy-atk" style="color:#e85a6a;">--</span></div>
+        <div class="deploy-stat"><span class="deploy-stat-key" style="color:#6acd8a;">HP</span><span class="deploy-stat-val" id="deploy-hp" style="color:#6acd8a;">--</span></div>
+        <div class="deploy-stat"><span class="deploy-stat-key" style="color:#6ac8d8;">SPD</span><span class="deploy-stat-val" id="deploy-spd" style="color:#6ac8d8;">--</span></div>
+        <div class="deploy-stat"><span class="deploy-stat-key" style="color:#b088e8;">DEF</span><span class="deploy-stat-val" id="deploy-def" style="color:#b088e8;">--</span></div>
+        <div class="deploy-stat"><span class="deploy-stat-key" style="color:#D4A64B;">LCK</span><span class="deploy-stat-val" id="deploy-luck" style="color:#D4A64B;">--</span></div>
       </div>
     </div>
 
-    <div class="deploy-cards-title">SELECT 3 CARDS (<span id="deploy-selected-count">0</span>/3)</div>
-    <div class="deploy-card-grid" id="deploy-card-grid">
-      <div class="loading-text">Loading cards...</div>
+    <div class="deploy-selected-row">
+      <div class="deploy-selected-slot" id="sel-slot-0"><span style="font-size:16px;opacity:0.2;">1</span></div>
+      <div class="deploy-selected-slot" id="sel-slot-1"><span style="font-size:16px;opacity:0.2;">2</span></div>
+      <div class="deploy-selected-slot" id="sel-slot-2"><span style="font-size:16px;opacity:0.2;">3</span></div>
+    </div>
+
+    <div class="deploy-house-tabs" id="deploy-house-tabs"></div>
+
+    <div class="deploy-cards-label">SELECT 3 CARDS &mdash; <span id="deploy-selected-count">0</span>/3 CHOSEN</div>
+
+    <div class="deploy-carousel-wrap">
+      <div class="deploy-carousel-stage" id="deploy-carousel-stage">
+        <div class="deploy-carousel-track" id="deploy-carousel-track">
+          <div class="deploy-carousel-item">
+            <div style="padding:40px;text-align:center;color:var(--faint);font-family:'Cinzel',serif;font-size:14px">Loading cards...</div>
+          </div>
+        </div>
+      </div>
+      <div class="deploy-carousel-controls">
+        <button class="deploy-carousel-btn" id="carousel-prev">&#8249;</button>
+        <div class="deploy-carousel-dots" id="carousel-dots"></div>
+        <span class="deploy-carousel-counter" id="carousel-counter">0 / 0</span>
+        <button class="deploy-carousel-btn" id="carousel-next">&#8250;</button>
+      </div>
     </div>
 
     <button class="btn-deploy" id="btn-confirm-deploy" disabled>SELECT 3 CARDS TO DEPLOY</button>
@@ -1933,7 +2068,56 @@
     }
     updateSpellTimeline(cards);
     updateYourNinePanel();
+    renderHUDSpellBars(cards);
   }
+
+  // Render per-card cooldown bars in the HUD yellow zone
+  // Each bar has a clickable thumbnail that opens the card popup
+  function renderHUDSpellBars(cards) {
+    for (let i = 0; i < 3; i++) {
+      const card = cards[i];
+      const thumb = document.getElementById(`hud-spell-thumb-${i}`);
+      const nameEl = document.getElementById(`hud-spell-name-${i}`);
+      const fillEl = document.getElementById(`spell-bar-fill-${i}`);
+      if (!thumb || !fillEl) continue;
+
+      if (!card) {
+        thumb.innerHTML = `<span style="font-size:8px;opacity:0.2;">${i+1}</span>`;
+        thumb.style.borderColor = 'rgba(255,255,255,0.08)';
+        if (nameEl) nameEl.textContent = '';
+        fillEl.style.background = 'rgba(255,255,255,0.15)';
+        continue;
+      }
+
+      const hk = card.house || SCHOOL_TO_HOUSE[card.school_id] || 'universal';
+      const hc = HOUSES[hk]?.color || '#888';
+      const artSrc = card.image_url
+        ? (card.image_url.startsWith('http') || card.image_url.startsWith('/') ? card.image_url : '/assets/images/spells/' + card.image_url)
+        : '';
+
+      // Thumbnail — card art or house icon
+      thumb.style.borderColor = hc + '55';
+      thumb.style.background = hc + '14';
+      if (artSrc) {
+        thumb.innerHTML = `<img src="${artSrc}" style="width:100%;height:100%;object-fit:cover;opacity:0.85;" onerror="this.style.display='none'">`;
+      } else {
+        thumb.innerHTML = `<span style="font-size:12px;">${HOUSES[hk]?.icon || '⚔'}</span>`;
+      }
+      thumb.onclick = () => showCardPopup(card, i);
+
+      if (nameEl) {
+        nameEl.textContent = (card.effect_1 || card.name || '').slice(0,6).toUpperCase();
+        nameEl.style.color = hc;
+      }
+      fillEl.style.background = `linear-gradient(90deg,${hc}88,${hc})`;
+    }
+  }
+
+  // Expose for HUD popup clicks
+  window._showCardPopupFromHUD = (slotIdx) => {
+    const card = S.equippedCards[slotIdx];
+    if (card) showCardPopup(card, slotIdx);
+  };
 
   // Swap button wiring (called after deploy modal confirms)
   document.addEventListener('click', e => {
@@ -2123,6 +2307,30 @@
     S._atkBarStart = performance.now();
   }
 
+  // Per-card spell bar animations — each fills independently at card cycle rate
+  function _animateSpellBar(slotIdx, durationMs) {
+    const key = '_spellBar' + slotIdx;
+    if (S[key + 'Frame']) cancelAnimationFrame(S[key + 'Frame']);
+    S[key + 'Start'] = performance.now();
+    S[key + 'Duration'] = durationMs;
+    const fill = document.getElementById('spell-bar-fill-' + slotIdx);
+    if (!fill) return;
+    const tick = () => {
+      if (!S.isDeployed) { S[key + 'Frame'] = null; return; }
+      const pct = Math.min(100, ((performance.now() - S[key + 'Start']) / S[key + 'Duration']) * 100);
+      fill.style.width = pct + '%';
+      if (pct < 100) {
+        S[key + 'Frame'] = requestAnimationFrame(tick);
+      } else {
+        fill.style.width = '100%';
+        S[key + 'Frame'] = null;
+      }
+    };
+    S[key + 'Frame'] = requestAnimationFrame(tick);
+  }
+  window._animateSpellBar = _animateSpellBar;
+
+
   // Spell cast sweep — orange liquid flowing across the 3 card slots
   function sweepSpellBar(slotIdx, numCards) {
     const n = numCards || 3;
@@ -2130,6 +2338,13 @@
     const hc = HOUSES[S.equippedCards[slotIdx]?.house||'universal']?.color || '#ff6622';
     const grad = `linear-gradient(90deg,transparent,${hc},#ff6622,transparent)`;
     const shadow = `0 0 8px ${hc}`;
+
+    // Restart this slot's cooldown bar from 0
+    const HSPD = {stormrage:30,smoulders:25,stonebark:10,ashenvale:22,nighthollow:30,dawnbringer:15,manastorm:25,plaguemire:20,darktide:20};
+    const hk2 = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
+    const cardSpd = S.equippedCards.reduce((s,c)=>s+(c?.base_spd||0),0);
+    const cardCycleSec = Math.max(5.5, 12.0 - ((HSPD[hk2]||25)+cardSpd) * 0.10);
+    if (typeof _animateSpellBar === 'function') _animateSpellBar(slotIdx, cardCycleSec * 1000);
 
     // Desktop spell timeline
     const tl = document.getElementById('spell-timeline');
@@ -2215,59 +2430,72 @@
   }
 
   function renderCardGrid(cards) {
-    const grid = document.getElementById('deploy-card-grid');
-    if (!grid) return;
-    if (!cards.length) {
-      grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--faint);font-family:\'Cinzel\',serif;font-size:14px">Open packs to build your collection!</div>';
-      return;
+    if (!cards.length) return;
+
+    // Build house filter tabs
+    const tabsEl = document.getElementById('deploy-house-tabs');
+    if (tabsEl) {
+      const houses = ['all', ...new Set(cards.map(c => c.house || SCHOOL_TO_HOUSE[c.school_id] || 'universal').filter(h => h !== 'universal'))];
+      tabsEl.innerHTML = '';
+      houses.forEach(h => {
+        const btn = document.createElement('button');
+        btn.className = 'deploy-house-tab' + (h === 'all' ? ' active' : '');
+        btn.dataset.house = h;
+        if (h === 'all') {
+          btn.innerHTML = '<span style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--gold);">ALL</span>';
+        } else {
+          const hData = HOUSES[h];
+          if (hData?.crest) {
+            btn.innerHTML = `<img src="${hData.crest}" alt="${h}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><span style="display:none;font-size:16px">${hData.icon||'?'}</span>`;
+            btn.title = hData.name || h;
+            btn.style.borderColor = hData.color + '44';
+          } else {
+            btn.innerHTML = `<span>${hData?.icon || '?'}</span>`;
+          }
+        }
+        btn.addEventListener('click', () => {
+          tabsEl.querySelectorAll('.deploy-house-tab').forEach(t => t.classList.remove('active'));
+          btn.classList.add('active');
+          if (h !== 'all' && HOUSES[h]) btn.style.borderColor = HOUSES[h].color;
+          buildCarousel(h === 'all' ? cards : cards.filter(c => (c.house || SCHOOL_TO_HOUSE[c.school_id] || 'universal') === h));
+        });
+        tabsEl.appendChild(btn);
+      });
     }
 
-    // Sort filter UI
-    let sortBy = 'house';
-    const filterBar = document.createElement('div');
-    filterBar.style.cssText = 'display:flex;gap:6px;padding:0 0 12px;flex-shrink:0;flex-wrap:wrap;';
-    ['house','atk','hp','type'].forEach(s => {
-      const b = document.createElement('button');
-      b.textContent = s.toUpperCase();
-      b.style.cssText = `font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 8px;border-radius:3px;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:${s===sortBy?'rgba(212,166,75,0.15)':'none'};color:${s===sortBy?'var(--gold)':'var(--faint)'};transition:all 0.15s`;
-      b.onclick = () => {
-        sortBy = s;
-        filterBar.querySelectorAll('button').forEach(btn => { btn.style.background='none'; btn.style.color='var(--faint)'; });
-        b.style.background='rgba(212,166,75,0.15)'; b.style.color='var(--gold)';
-        renderSorted();
-      };
-      filterBar.appendChild(b);
-    });
+    let _carouselCards = cards;
+    let _carouselIdx = 0;
 
-    const cardArea = document.createElement('div');
-    cardArea.className = 'deploy-card-grid';
+    function buildCarousel(filtered) {
+      _carouselCards = filtered;
+      _carouselIdx = Math.min(_carouselIdx, Math.max(0, filtered.length - 1));
+      const track = document.getElementById('deploy-carousel-track');
+      const dots = document.getElementById('carousel-dots');
+      const counter = document.getElementById('carousel-counter');
+      if (!track) return;
 
-    grid.innerHTML = '';
-    grid.appendChild(filterBar);
-    grid.appendChild(cardArea);
+      track.innerHTML = '';
+      if (!filtered.length) {
+        track.innerHTML = '<div class="deploy-carousel-item"><div style="padding:40px;text-align:center;color:var(--faint);font-family:\'Cinzel\',serif;font-size:13px">No cards in this house yet</div></div>';
+        if (dots) dots.innerHTML = '';
+        if (counter) counter.textContent = '0 / 0';
+        return;
+      }
 
-    function renderSorted() {
-      const sorted = [...cards].sort((a, b) => {
-        if (sortBy === 'atk') return (b.base_atk||0) - (a.base_atk||0);
-        if (sortBy === 'hp')  return (b.base_hp||0)  - (a.base_hp||0);
-        if (sortBy === 'type') return (a.spell_type||'').localeCompare(b.spell_type||'');
-        // house
-        return (a.house||'universal').localeCompare(b.house||'universal');
-      });
-
-      cardArea.innerHTML = '';
-      sorted.forEach(card => {
+      filtered.forEach((card, i) => {
         const origIdx = cards.indexOf(card);
         const hk = card.house || SCHOOL_TO_HOUSE[card.school_id] || 'universal';
         const hc = HOUSES[hk]?.color || '#888';
         const isSelected = S.selectedCards.some(s => s.idx === origIdx);
 
+        const item = document.createElement('div');
+        item.className = 'deploy-carousel-item';
+
         const wrap = document.createElement('div');
         wrap.className = 'deploy-card-slot' + (isSelected ? ' selected' : '');
-        wrap.id = `deploy-card-${origIdx}`;
-        wrap.style.cssText = isSelected ? `border-color:${hc};box-shadow:0 0 20px ${hc}55` : '';
+        wrap.id = 'deploy-card-' + origIdx;
+        if (isSelected) wrap.style.cssText = 'border-color:' + hc + ';box-shadow:0 0 20px ' + hc + '55';
 
-        // Use card-v4 renderer if available, else compact fallback
         if (typeof buildCardV4 === 'function') {
           wrap.innerHTML = buildCardV4(card, { compact: false });
           try { if (typeof initCards === 'function') initCards(); } catch(e){}
@@ -2275,38 +2503,108 @@
           const eff = card.effect_1 || '';
           const ec = eff ? (EFFECT_COLORS[eff.split(' ')[0].toUpperCase()]||'#D4A64B') : '#D4A64B';
           const artSrc = card.image_url ? (card.image_url.startsWith('/')||card.image_url.startsWith('http') ? card.image_url : '/assets/images/spells/'+card.image_url) : '';
-          wrap.innerHTML = `
-            <div style="width:160px;min-height:220px;background:linear-gradient(180deg,${hc}18,rgba(8,6,18,0.95));border-radius:12px;padding:12px;position:relative;overflow:hidden;">
-              ${artSrc ? `<img src="${artSrc}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.2;border-radius:12px" onload="this.style.opacity=0.25">` : ''}
-              <div style="position:relative;z-index:1">
-                <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:${hc};margin-bottom:4px">${(card.spell_type||'ATTACK').toUpperCase()}</div>
-                <div style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#fff;margin-bottom:6px;line-height:1.2">${card.name}</div>
-                ${eff ? `<div style="font-family:'Press Start 2P',monospace;font-size:8px;color:${ec};margin-bottom:8px">${eff}</div>` : ''}
-                <div style="display:flex;gap:6px;flex-wrap:wrap;font-family:'Press Start 2P',monospace;font-size:7px">
-                  ${card.base_atk>0?`<span style="color:#e85a6a">⚔ ${card.base_atk}</span>`:''}
-                  ${card.base_hp>0?`<span style="color:#6acd8a">♥ ${card.base_hp}</span>`:''}
-                  ${card.base_spd>0?`<span style="color:#6ac8d8">◈ ${card.base_spd}</span>`:''}
-                  ${card.base_def>0?`<span style="color:#b088e8">⛊ ${card.base_def}</span>`:''}
-                  ${card.base_luck>0?`<span style="color:#D4A64B">★ ${card.base_luck}</span>`:''}
-                </div>
-              </div>
-            </div>`;
+          wrap.innerHTML = '<div style="width:220px;min-height:300px;background:linear-gradient(180deg,' + hc + '18,rgba(8,6,18,0.95));border-radius:12px;padding:14px;position:relative;overflow:hidden;">'
+            + (artSrc ? '<img src="' + artSrc + '" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.22;border-radius:12px">' : '')
+            + '<div style="position:relative;z-index:1">'
+            + '<div style="font-family:\'Press Start 2P\',monospace;font-size:6px;color:' + hc + ';margin-bottom:5px">' + (card.spell_type||'ATTACK').toUpperCase() + '</div>'
+            + '<div style="font-family:\'Cinzel\',serif;font-size:17px;font-weight:700;color:#fff;margin-bottom:8px;line-height:1.2">' + card.name + '</div>'
+            + (eff ? '<div style="font-family:\'Press Start 2P\',monospace;font-size:9px;color:' + ec + ';margin-bottom:10px">' + eff + '</div>' : '')
+            + '<div style="display:flex;gap:8px;flex-wrap:wrap;font-family:\'Press Start 2P\',monospace;font-size:8px">'
+            + (card.base_atk>0?'<span style="color:#e85a6a">ATK ' + card.base_atk + '</span>':'')
+            + (card.base_hp>0?'<span style="color:#6acd8a">HP ' + card.base_hp + '</span>':'')
+            + (card.base_spd>0?'<span style="color:#6ac8d8">SPD ' + card.base_spd + '</span>':'')
+            + (card.base_def>0?'<span style="color:#b088e8">DEF ' + card.base_def + '</span>':'')
+            + (card.base_luck>0?'<span style="color:#D4A64B">LCK ' + card.base_luck + '</span>':'')
+            + '</div></div></div>';
         }
 
         // Selection badge
         const badge = document.createElement('div');
-        badge.style.cssText = `position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--gold);color:#000;display:${isSelected?'flex':'none'};align-items:center;justify-content:center;font-size:12px;font-weight:700;z-index:10;box-shadow:0 0 8px rgba(212,166,75,0.6)`;
+        badge.id = 'check-' + origIdx;
+        badge.style.cssText = 'position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:var(--gold);color:#000;display:' + (isSelected?'flex':'none') + ';align-items:center;justify-content:center;font-size:13px;font-weight:700;z-index:10;';
         badge.textContent = '✓';
-        badge.id = `check-${origIdx}`;
         wrap.style.position = 'relative';
         wrap.appendChild(badge);
+        wrap.addEventListener('click', () => { toggleCardSelect(origIdx); buildCarousel(_carouselCards); });
 
-        wrap.addEventListener('click', () => toggleCardSelect(origIdx));
-        cardArea.appendChild(wrap);
+        item.appendChild(wrap);
+        track.appendChild(item);
       });
+
+      // Update dots
+      if (dots) {
+        dots.innerHTML = '';
+        const MAX_DOTS = 20;
+        if (filtered.length <= MAX_DOTS) {
+          filtered.forEach((_, i) => {
+            const d = document.createElement('div');
+            d.className = 'deploy-carousel-dot' + (i === _carouselIdx ? ' active' : '');
+            d.addEventListener('click', () => goTo(i));
+            dots.appendChild(d);
+          });
+        }
+      }
+      if (counter) counter.textContent = (_carouselIdx + 1) + ' / ' + filtered.length;
+      goTo(_carouselIdx, false);
     }
 
-    renderSorted();
+    function goTo(idx, animate) {
+      _carouselIdx = Math.max(0, Math.min(idx, _carouselCards.length - 1));
+      const track = document.getElementById('deploy-carousel-track');
+      if (track) track.style.transform = 'translateX(-' + (_carouselIdx * 100) + '%)';
+      const dots = document.getElementById('carousel-dots');
+      if (dots) dots.querySelectorAll('.deploy-carousel-dot').forEach((d, i) => d.classList.toggle('active', i === _carouselIdx));
+      const counter = document.getElementById('carousel-counter');
+      if (counter) counter.textContent = (_carouselIdx + 1) + ' / ' + _carouselCards.length;
+    }
+
+    const prevBtn = document.getElementById('carousel-prev');
+    const nextBtn = document.getElementById('carousel-next');
+    if (prevBtn) prevBtn.onclick = () => goTo(_carouselIdx - 1);
+    if (nextBtn) nextBtn.onclick = () => goTo(_carouselIdx + 1);
+
+    // Touch swipe
+    const stage = document.getElementById('deploy-carousel-stage');
+    if (stage) {
+      let touchX = 0;
+      stage.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, {passive:true});
+      stage.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - touchX;
+        if (Math.abs(dx) > 40) dx < 0 ? goTo(_carouselIdx + 1) : goTo(_carouselIdx - 1);
+      }, {passive:true});
+    }
+
+    buildCarousel(cards);
+
+    // Refresh selected-row mini slots
+    _refreshSelectedRow();
+  }
+
+  function _refreshSelectedRow() {
+    for (let i = 0; i < 3; i++) {
+      const slot = document.getElementById('sel-slot-' + i);
+      if (!slot) continue;
+      const sel = S.selectedCards[i];
+      if (!sel) {
+        slot.className = 'deploy-selected-slot';
+        slot.innerHTML = '<span style="font-size:16px;opacity:0.2;">' + (i+1) + '</span>';
+        continue;
+      }
+      const card = sel.card;
+      const hk = card.house || SCHOOL_TO_HOUSE[card.school_id] || 'universal';
+      const hc = HOUSES[hk]?.color || '#D4A64B';
+      const artSrc = card.image_url ? (card.image_url.startsWith('/')||card.image_url.startsWith('http') ? card.image_url : '/assets/images/spells/'+card.image_url) : '';
+      const eff = card.effect_1 || '';
+      const ec = eff ? (EFFECT_COLORS[eff.split(' ')[0].toUpperCase()]||hc) : hc;
+      slot.className = 'deploy-selected-slot filled';
+      slot.style.borderColor = hc + '55';
+      slot.innerHTML = (artSrc ? '<img class="slot-art" src="' + artSrc + '">' : '')
+        + '<div class="slot-info">'
+        + '<div class="slot-name">' + card.name + '</div>'
+        + (eff ? '<div class="slot-eff" style="color:' + ec + '">' + eff + '</div>' : '')
+        + '</div>'
+        + '<span class="slot-x" onclick="event.stopPropagation();toggleCardSelect(' + sel.idx + ')">&times;</span>';
+    }
   }
 
   window.toggleCardSelect = function(idx) {
@@ -2345,6 +2643,7 @@
     upd('deploy-spd', `${base.spd}+${cs}=${base.spd+cs}`);
     upd('deploy-def', `${base.def}+${cd}=${base.def+cd}`);
     upd('deploy-luck',`${base.luck}+${cl}=${base.luck+cl}`);
+    if (typeof _refreshSelectedRow === 'function') _refreshSelectedRow();
   };
 
   function closeDeployModal() {
