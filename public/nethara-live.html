@@ -348,12 +348,21 @@
     .arena-bottom-tray {
       position: absolute; bottom: 0; left: 0; right: 350px; z-index: 25;
       display: flex; flex-direction: column;
-      background: rgba(8,6,18,0.97);
-      border-top: 2px solid rgba(255,255,255,0.09);
+      background: linear-gradient(180deg,#0d0a1a,#080514);
+      border-top: 2px solid transparent;
       backdrop-filter: blur(14px);
       height: 230px;
       overflow: visible;
     }
+    .arena-bottom-tray::before {
+      content: ''; position: absolute; top: -2px; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg,transparent 0%,rgba(212,166,75,0.3) 8%,rgba(212,166,75,0.8) 15%,rgba(212,166,75,0.8) 85%,rgba(212,166,75,0.3) 92%,transparent 100%);
+      z-index: 1;
+    }
+    /* Tab active state */
+    .hud-tab.active { color: #D4A64B !important; background: rgba(212,166,75,0.05) !important; }
+    .hud-tab.active::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,#D4A64B,transparent); }
+    .hud-tab:hover:not(.active) { color: rgba(255,255,255,0.6) !important; background: rgba(255,255,255,0.03) !important; }
     /* Stat bars in the HUD */
     .hud-stat-bar-wrap { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
     .hud-stat-label { font-family:'Press Start 2P',monospace; font-size:7px; width:26px; flex-shrink:0; }
@@ -493,9 +502,10 @@
     /* ── Deploy CTA ── */
     .arena-deploy-cta {
       position: absolute;
-      /* Center exactly in the available arena space */
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
+      /* Center in the canvas area above the tray (230px tall) */
+      top: calc(50% - 115px);
+      left: calc(50% - 175px); /* account for sidebar 350px / 2 = 175px offset */
+      transform: translateY(-50%);
       z-index: 30;
       pointer-events: auto;
       text-align: center;
@@ -1188,134 +1198,156 @@
   <div class="arena-bottom-tray" id="arena-bottom-tray" style="display:none;">
     <div id="hud-main" style="display:flex;flex-direction:row;height:100%;gap:0;">
 
-      <!-- ═══════════════════════════════════════════
-           CHARACTER BLOCK — portrait left, panels right
-           Layout matches Image 2:
-           Blue   = portrait (tall, square, central)
-           Purple = debuffs strip
-           Orange = stat bars
-           Yellow = card cooldown bars
-           Red    = action buttons
-      ═══════════════════════════════════════════ -->
-      <div id="hud-nine" style="width:480px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:row;align-items:flex-start;position:relative;overflow:visible;background:linear-gradient(135deg,rgba(212,166,75,0.04),transparent 50%);">
-
-        <!-- BLUE: Portrait column — square, punches up -->
-        <div style="position:relative;flex-shrink:0;padding:0 0 6px 8px;display:flex;flex-direction:column;align-items:center;">
-          <div id="hud-nine-portrait" style="width:195px;height:215px;border-radius:6px;background:#060410;border:2px solid rgba(212,166,75,0.55);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;margin-top:-95px;z-index:30;box-shadow:0 -8px 30px rgba(0,0,0,0.9),0 0 20px rgba(212,166,75,0.08);">
-            <div id="hud-nine-icon" style="font-size:80px;line-height:1;">🐱</div>
-            <div id="hud-effect-ring" style="position:absolute;inset:-2px;border-radius:7px;border:2px solid transparent;pointer-events:none;transition:border-color 0.3s,box-shadow 0.3s;"></div>
-            <div style="position:absolute;top:6px;left:6px;width:14px;height:14px;border-top:2px solid rgba(212,166,75,0.8);border-left:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
-            <div style="position:absolute;top:6px;right:6px;width:14px;height:14px;border-top:2px solid rgba(212,166,75,0.8);border-right:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
-            <div style="position:absolute;bottom:6px;left:6px;width:14px;height:14px;border-bottom:2px solid rgba(212,166,75,0.8);border-left:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
-            <div style="position:absolute;bottom:6px;right:6px;width:14px;height:14px;border-bottom:2px solid rgba(212,166,75,0.8);border-right:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
+      <!-- ══════════════════════════════════════════════════════
+           COL 1: ACTION BUTTONS — bottom-left, always accessible
+      ══════════════════════════════════════════════════════ -->
+      <div style="width:72px;flex-shrink:0;display:flex;flex-direction:column;justify-content:flex-end;padding:0 7px 10px 8px;gap:5px;background:linear-gradient(180deg,transparent,rgba(212,166,75,0.015));border-right:1px solid rgba(212,166,75,0.1);">
+        <button id="btn-swap-build" onclick="openDeployModal()" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:8px 4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-bottom:2px solid rgba(255,255,255,0.12);color:#8888aa;border-radius:3px;cursor:pointer;width:100%;line-height:1.6;letter-spacing:0.3px;transition:all 0.15s;" onmouseover="this.style.borderColor='rgba(212,166,75,0.4)';this.style.color='#D4A64B';" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='#8888aa';">⇄<br>LOAD<br>OUT</button>
+        <button id="btn-withdraw" onclick="withdraw()" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:8px 4px;background:rgba(255,40,80,0.07);border:1px solid rgba(255,40,80,0.2);border-bottom:2px solid rgba(255,40,80,0.3);color:#ff4466;border-radius:3px;cursor:pointer;width:100%;line-height:1.6;letter-spacing:0.3px;">✕<br>WITH<br>DRAW</button>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:2px;">
+          <div id="auto-redeploy-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()" style="width:32px;height:16px;background:rgba(68,204,136,0.1);border-radius:8px;border:1px solid rgba(68,204,136,0.4);cursor:pointer;position:relative;">
+            <div style="position:absolute;top:3px;right:3px;width:9px;height:9px;border-radius:50%;background:#44cc88;box-shadow:0 0 5px #44cc8888;transition:right 0.2s;"></div>
           </div>
-          <!-- Name + guild under portrait -->
-          <div id="hud-nine-name" style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;color:var(--gold);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:193px;margin-top:3px;"></div>
-          <div id="hud-nine-guild" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);text-align:center;margin-top:1px;"></div>
-          <!-- HP bar -->
-          <div style="width:193px;margin-top:4px;">
-            <div style="height:7px;background:rgba(0,0,0,0.5);border-radius:3px;overflow:hidden;border:1px solid rgba(106,205,138,0.2);">
-              <div id="your-hp-fill" style="height:100%;background:linear-gradient(90deg,#1a6a35,#44cc88);border-radius:3px;transition:width 0.4s;width:100%"></div>
+          <span id="auto-redeploy-label" style="font-family:'Press Start 2P',monospace;font-size:3.5px;color:#44cc8888;text-align:center;line-height:1.4;">AUTO<br>REJOIN</span>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════
+           PANEL DIVIDER — decorative gold ruled line
+      ══════════════════════════════════════════════════════ -->
+      <div style="width:1px;flex-shrink:0;background:linear-gradient(180deg,transparent,rgba(212,166,75,0.45) 20%,rgba(212,166,75,0.6) 50%,rgba(212,166,75,0.45) 80%,transparent);position:relative;">
+        <span style="position:absolute;top:18px;left:50%;transform:translateX(-50%);color:rgba(212,166,75,0.55);font-size:7px;line-height:1;">◆</span>
+        <span style="position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:rgba(212,166,75,0.4);font-size:6px;line-height:1;">◆</span>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════
+           COL 2: PORTRAIT — centred, punches into arena
+      ══════════════════════════════════════════════════════ -->
+      <div style="width:165px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:8px;position:relative;overflow:visible;">
+        <!-- Outer decorative ring -->
+        <div style="position:relative;margin-top:-90px;z-index:30;">
+          <div style="position:absolute;inset:-7px;border-radius:9px;border:1px solid rgba(212,166,75,0.18);pointer-events:none;"></div>
+          <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);color:#D4A64B;font-size:10px;line-height:1;text-shadow:0 0 10px rgba(212,166,75,0.7);z-index:1;">◆</div>
+          <div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);color:rgba(212,166,75,0.5);font-size:8px;line-height:1;">◆</div>
+          <!-- Portrait frame -->
+          <div id="hud-nine-portrait" style="width:150px;height:188px;border-radius:5px;background:linear-gradient(160deg,#0d0920,#060310);border:2px solid rgba(212,166,75,0.65);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 -12px 40px rgba(0,0,0,0.95),0 0 30px rgba(212,166,75,0.07),inset 0 0 30px rgba(0,0,0,0.6);">
+            <div id="hud-nine-icon" style="font-size:88px;line-height:1;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.8));">🐱</div>
+            <div id="hud-effect-ring" style="position:absolute;inset:-2px;border-radius:6px;border:2px solid transparent;pointer-events:none;transition:border-color 0.3s,box-shadow 0.3s;"></div>
+            <!-- WC3 corners -->
+            <div style="position:absolute;top:5px;left:5px;width:13px;height:13px;border-top:2px solid #D4A64B;border-left:2px solid #D4A64B;pointer-events:none;"></div>
+            <div style="position:absolute;top:5px;right:5px;width:13px;height:13px;border-top:2px solid #D4A64B;border-right:2px solid #D4A64B;pointer-events:none;"></div>
+            <div style="position:absolute;bottom:5px;left:5px;width:13px;height:13px;border-bottom:2px solid #D4A64B;border-left:2px solid #D4A64B;pointer-events:none;"></div>
+            <div style="position:absolute;bottom:5px;right:5px;width:13px;height:13px;border-bottom:2px solid #D4A64B;border-right:2px solid #D4A64B;pointer-events:none;"></div>
+            <!-- Bottom fade -->
+            <div style="position:absolute;bottom:0;left:0;right:0;height:50px;background:linear-gradient(transparent,rgba(6,3,16,0.85));pointer-events:none;"></div>
+          </div>
+        </div>
+        <!-- HP bar under portrait -->
+        <div style="width:150px;margin-top:7px;">
+          <div style="height:7px;background:rgba(0,0,0,0.6);border-radius:3px;overflow:hidden;border:1px solid rgba(106,205,138,0.18);">
+            <div id="your-hp-fill" style="height:100%;background:linear-gradient(90deg,#0e4420,#2a8a50,#44cc88);border-radius:3px;transition:width 0.4s;width:100%;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:2px;">
+            <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6acd8a;">HP</span>
+            <span id="your-hp-text" style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6acd8a;">--/--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DIVIDER -->
+      <div style="width:1px;flex-shrink:0;background:linear-gradient(180deg,transparent,rgba(212,166,75,0.45) 20%,rgba(212,166,75,0.6) 50%,rgba(212,166,75,0.45) 80%,transparent);position:relative;">
+        <span style="position:absolute;top:18px;left:50%;transform:translateX(-50%);color:rgba(212,166,75,0.55);font-size:7px;line-height:1;">◆</span>
+        <span style="position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:rgba(212,166,75,0.4);font-size:6px;line-height:1;">◆</span>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════
+           COL 3: STATUS + STATS + SPELL BARS
+      ══════════════════════════════════════════════════════ -->
+      <div style="width:235px;flex-shrink:0;display:flex;flex-direction:column;padding:7px 10px 8px 12px;gap:5px;overflow:hidden;">
+
+        <!-- STATUS PILLS -->
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:4px 8px;border-radius:3px;min-height:24px;background:rgba(255,255,255,0.02);border:1px solid rgba(212,166,75,0.08);">
+          <span style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(212,166,75,0.3);letter-spacing:1px;flex-shrink:0;margin-right:2px;">STATUS</span>
+          <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;overflow:visible;"></div>
+        </div>
+
+        <!-- STAT BARS -->
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:space-around;" id="your-nine-stats-wrap">
+          <div id="your-nine-stats"></div>
+        </div>
+
+        <!-- SPELL COOLDOWN BARS -->
+        <div style="display:flex;flex-direction:column;gap:3px;padding:5px 7px;border-radius:3px;background:rgba(255,255,255,0.015);border:1px solid rgba(212,166,75,0.07);" id="hud-spell-bars">
+          <div class="hud-spell-bar-row" id="hud-spell-bar-0" style="display:flex;align-items:center;gap:5px;">
+            <div class="hud-spell-thumb" id="hud-spell-thumb-0" onclick="window._showCardPopupFromHUD&&window._showCardPopupFromHUD(0)" style="width:24px;height:30px;border-radius:3px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);flex-shrink:0;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:border-color 0.15s;"><span style="font-size:9px;opacity:0.25;">?</span></div>
+            <div style="flex:1;height:5px;background:rgba(0,0,0,0.5);border-radius:2px;overflow:hidden;border:1px solid rgba(255,255,255,0.05);position:relative;"><div id="spell-bar-fill-0" style="position:absolute;top:0;left:0;height:100%;width:0%;border-radius:2px;transition:width 0.06s linear;"></div></div>
+            <span id="hud-spell-name-0" style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.2);width:34px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          </div>
+          <div class="hud-spell-bar-row" id="hud-spell-bar-1" style="display:flex;align-items:center;gap:5px;">
+            <div class="hud-spell-thumb" id="hud-spell-thumb-1" onclick="window._showCardPopupFromHUD&&window._showCardPopupFromHUD(1)" style="width:24px;height:30px;border-radius:3px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);flex-shrink:0;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:border-color 0.15s;"><span style="font-size:9px;opacity:0.25;">?</span></div>
+            <div style="flex:1;height:5px;background:rgba(0,0,0,0.5);border-radius:2px;overflow:hidden;border:1px solid rgba(255,255,255,0.05);position:relative;"><div id="spell-bar-fill-1" style="position:absolute;top:0;left:0;height:100%;width:0%;border-radius:2px;transition:width 0.06s linear;"></div></div>
+            <span id="hud-spell-name-1" style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.2);width:34px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          </div>
+          <div class="hud-spell-bar-row" id="hud-spell-bar-2" style="display:flex;align-items:center;gap:5px;">
+            <div class="hud-spell-thumb" id="hud-spell-thumb-2" onclick="window._showCardPopupFromHUD&&window._showCardPopupFromHUD(2)" style="width:24px;height:30px;border-radius:3px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);flex-shrink:0;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:border-color 0.15s;"><span style="font-size:9px;opacity:0.25;">?</span></div>
+            <div style="flex:1;height:5px;background:rgba(0,0,0,0.5);border-radius:2px;overflow:hidden;border:1px solid rgba(255,255,255,0.05);position:relative;"><div id="spell-bar-fill-2" style="position:absolute;top:0;left:0;height:100%;width:0%;border-radius:2px;transition:width 0.06s linear;"></div></div>
+            <span id="hud-spell-name-2" style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.2);width:34px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          </div>
+          <!-- Auto attack -->
+          <div style="display:flex;align-items:center;gap:5px;margin-top:2px;padding-top:4px;border-top:1px solid rgba(212,166,75,0.08);">
+            <div id="atk-speed-icon" style="font-size:11px;width:24px;text-align:center;opacity:0.4;flex-shrink:0;">⚔</div>
+            <div style="flex:1;height:5px;background:rgba(0,0,0,0.5);border-radius:2px;overflow:hidden;border:1px solid rgba(255,100,34,0.18);position:relative;">
+              <div id="atk-speed-bar" style="position:absolute;top:0;left:0;height:100%;width:0%;background:linear-gradient(90deg,#ffee44,#ff8822,#e85a6a);border-radius:2px;transition:width 0.06s linear;"></div>
             </div>
-            <div style="display:flex;justify-content:space-between;margin-top:2px;">
-              <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6acd8a;">HP</span>
-              <span id="your-hp-text" style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6acd8a;">--/--</span>
-            </div>
+            <span style="font-family:'Press Start 2P',monospace;font-size:3.5px;color:rgba(255,100,34,0.4);width:34px;text-align:right;flex-shrink:0;">AUTO ATK</span>
           </div>
         </div>
 
-        <!-- RIGHT COLUMN: stacked panels -->
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;height:100%;padding:6px 8px 6px 10px;gap:0;box-sizing:border-box;">
+      </div>
 
-          <!-- PURPLE: debuffs + buffs strip -->
-          <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;min-height:20px;padding:2px 0 3px;border-bottom:1px solid rgba(255,255,255,0.05);overflow:visible;position:relative;">
-            <span style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.15);margin-right:2px;flex-shrink:0;">STATUS</span>
-          </div>
+      <!-- DIVIDER -->
+      <div style="width:1px;flex-shrink:0;background:linear-gradient(180deg,transparent,rgba(212,166,75,0.45) 20%,rgba(212,166,75,0.6) 50%,rgba(212,166,75,0.45) 80%,transparent);position:relative;">
+        <span style="position:absolute;top:18px;left:50%;transform:translateX(-50%);color:rgba(212,166,75,0.55);font-size:7px;line-height:1;">◆</span>
+        <span style="position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:rgba(212,166,75,0.4);font-size:6px;line-height:1;">◆</span>
+      </div>
 
-          <!-- ORANGE: stat bars -->
-          <div style="flex:1;padding:4px 0 2px;">
-            <div id="your-nine-stats"></div>
-          </div>
-
-          <!-- YELLOW: card cooldown bars — one per slot + auto-attack -->
-          <div style="border-top:1px solid rgba(255,255,255,0.05);padding:4px 0 3px;">
-            <div style="display:flex;flex-direction:column;gap:3px;" id="hud-spell-bars">
-              <!-- S1 bar -->
-              <div class="hud-spell-bar-row" id="hud-spell-bar-0" style="display:flex;align-items:center;gap:5px;">
-                <div class="hud-spell-thumb" id="hud-spell-thumb-0" onclick="window._showCardPopupFromHUD&&window._showCardPopupFromHUD(0)" style="width:22px;height:28px;border-radius:3px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);flex-shrink:0;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;">
-                  <span style="font-size:8px;opacity:0.3;">?</span>
-                </div>
-                <div style="flex:1;height:5px;background:rgba(0,0,0,0.4);border-radius:3px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);position:relative;">
-                  <div id="spell-bar-fill-0" style="position:absolute;top:0;left:0;height:100%;width:0%;border-radius:3px;transition:width 0.06s linear;"></div>
-                </div>
-                <span id="hud-spell-name-0" style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);width:36px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;"></span>
-              </div>
-              <!-- S2 bar -->
-              <div class="hud-spell-bar-row" id="hud-spell-bar-1" style="display:flex;align-items:center;gap:5px;">
-                <div class="hud-spell-thumb" id="hud-spell-thumb-1" onclick="window._showCardPopupFromHUD&&window._showCardPopupFromHUD(1)" style="width:22px;height:28px;border-radius:3px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);flex-shrink:0;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;">
-                  <span style="font-size:8px;opacity:0.3;">?</span>
-                </div>
-                <div style="flex:1;height:5px;background:rgba(0,0,0,0.4);border-radius:3px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);position:relative;">
-                  <div id="spell-bar-fill-1" style="position:absolute;top:0;left:0;height:100%;width:0%;border-radius:3px;transition:width 0.06s linear;"></div>
-                </div>
-                <span id="hud-spell-name-1" style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);width:36px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;"></span>
-              </div>
-              <!-- S3 bar -->
-              <div class="hud-spell-bar-row" id="hud-spell-bar-2" style="display:flex;align-items:center;gap:5px;">
-                <div class="hud-spell-thumb" id="hud-spell-thumb-2" onclick="window._showCardPopupFromHUD&&window._showCardPopupFromHUD(2)" style="width:22px;height:28px;border-radius:3px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);flex-shrink:0;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;">
-                  <span style="font-size:8px;opacity:0.3;">?</span>
-                </div>
-                <div style="flex:1;height:5px;background:rgba(0,0,0,0.4);border-radius:3px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);position:relative;">
-                  <div id="spell-bar-fill-2" style="position:absolute;top:0;left:0;height:100%;width:0%;border-radius:3px;transition:width 0.06s linear;"></div>
-                </div>
-                <span id="hud-spell-name-2" style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);width:36px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:right;"></span>
-              </div>
-              <!-- AUTO ATTACK bar -->
-              <div style="display:flex;align-items:center;gap:5px;margin-top:1px;">
-                <div style="width:22px;height:28px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;">
-                  <div id="atk-speed-icon" style="font-size:11px;opacity:0.4;">⚔</div>
-                </div>
-                <div style="flex:1;height:5px;background:rgba(0,0,0,0.4);border-radius:3px;overflow:hidden;border:1px solid rgba(255,100,34,0.2);position:relative;">
-                  <div id="atk-speed-bar" style="position:absolute;top:0;left:0;height:100%;width:0%;background:linear-gradient(90deg,#ffdd44,#ff8822,#e85a6a);border-radius:3px;transition:width 0.06s linear;"></div>
-                </div>
-                <span style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,100,34,0.4);width:36px;flex-shrink:0;text-align:right;">AUTO ATK</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- RED: action buttons row -->
-          <div style="display:flex;gap:4px;padding-top:5px;border-top:1px solid rgba(255,255,255,0.05);">
-            <button id="btn-swap-build" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:5px 6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:var(--faint);border-radius:4px;cursor:pointer;flex:1;transition:all 0.15s;" onmouseover="this.style.color='var(--gold)';this.style.borderColor='rgba(212,166,75,0.3)'" onmouseout="this.style.color='var(--faint)';this.style.borderColor='rgba(255,255,255,0.1)'">⇄ LOADOUT</button>
-            <button id="btn-withdraw" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:5px 6px;background:rgba(255,68,102,0.08);border:1px solid rgba(255,68,102,0.25);color:var(--red);border-radius:4px;cursor:pointer;flex:1;">WITHDRAW</button>
-            <div style="display:flex;align-items:center;gap:3px;flex-shrink:0;">
-              <div id="auto-redeploy-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()" style="width:24px;height:13px;background:rgba(255,255,255,0.05);border-radius:7px;border:1px solid rgba(255,255,255,0.1);cursor:pointer;position:relative;flex-shrink:0;">
-                <div style="position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.25);transition:left 0.2s;"></div>
-              </div>
-              <span id="auto-redeploy-label" style="font-family:'Press Start 2P',monospace;font-size:4px;color:var(--faint);white-space:nowrap;">AUTO</span>
-            </div>
-          </div>
-
-        </div><!-- end right column -->
-      </div><!-- end hud-nine -->
-
-      <!-- CARD SLOTS + spell timeline -->
+      <!-- ══════════════════════════════════════════════════════
+           COL 4: CARD SLOTS WITH TAB BAR (SPELLS / LOG / FIGHTERS)
+      ══════════════════════════════════════════════════════ -->
       <div id="hud-cards" style="flex:1;min-width:0;display:flex;flex-direction:column;">
-        <div style="display:flex;align-items:center;gap:6px;padding:8px 10px 4px;flex-shrink:0;">
-          <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.2);white-space:nowrap;">SPELL ROTATION</span>
+        <!-- Tab bar -->
+        <div style="display:flex;height:26px;flex-shrink:0;border-bottom:1px solid rgba(212,166,75,0.1);background:rgba(0,0,0,0.2);">
+          <button class="hud-tab active" data-pane="build" onclick="switchTrayTab('build')" style="font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:0.5px;padding:0 12px;border:none;background:none;cursor:pointer;color:#D4A64B;border-right:1px solid rgba(255,255,255,0.05);position:relative;">⚔ SPELLS</button>
+          <button class="hud-tab" data-pane="log" onclick="switchTrayTab('log')" style="font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:0.5px;padding:0 12px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.05);">📜 LOG</button>
+          <button class="hud-tab" data-pane="stats" onclick="switchTrayTab('stats')" style="font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:0.5px;padding:0 12px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);">📊 COMBAT</button>
         </div>
-        <div id="spell-timeline" style="display:none;height:4px;background:rgba(255,255,255,0.04);position:relative;flex-shrink:0;margin:0 10px 4px;">
-          <div id="spell-timeline-track" style="position:absolute;inset:0;overflow:hidden;">
-            <div id="spell-playhead" style="position:absolute;top:0;height:100%;width:8px;background:linear-gradient(90deg,transparent,#ffaa44,#ff6622,transparent);box-shadow:0 0 8px #ff6622;transition:left 0.35s ease;left:0%;border-radius:2px;"></div>
-          </div>
-          <div style="position:absolute;top:0;bottom:0;left:33.3%;width:1px;background:rgba(255,255,255,0.1);"></div>
-          <div style="position:absolute;top:0;bottom:0;left:66.6%;width:1px;background:rgba(255,255,255,0.1);"></div>
-        </div>
-        <div id="mobile-hud-panel-cards" style="display:flex;flex:1;gap:6px;padding:4px 10px 8px;">
+        <!-- SPELLS pane -->
+        <div id="mobile-hud-panel-cards" class="tray-pane active" style="display:flex;flex:1;gap:6px;padding:5px 10px 7px 10px;">
           <div class="arena-card-slot empty" id="card-slot-0"><span class="slot-empty-text">1</span></div>
           <div class="arena-card-slot empty" id="card-slot-1"><span class="slot-empty-text">2</span></div>
           <div class="arena-card-slot empty" id="card-slot-2"><span class="slot-empty-text">3</span></div>
         </div>
+        <!-- SPELL TIMELINE (hidden under spell pane) -->
+        <div id="spell-timeline" style="display:none;height:3px;background:rgba(255,255,255,0.04);position:relative;flex-shrink:0;margin:0 10px 3px;">
+          <div id="spell-timeline-track" style="position:absolute;inset:0;overflow:hidden;">
+            <div id="spell-playhead" style="position:absolute;top:0;height:100%;width:8px;background:linear-gradient(90deg,transparent,#ffaa44,#ff6622,transparent);box-shadow:0 0 8px #ff6622;transition:left 0.35s ease;left:0%;border-radius:2px;"></div>
+          </div>
+          <div style="position:absolute;top:0;bottom:0;left:33.3%;width:1px;background:rgba(255,255,255,0.08);"></div>
+          <div style="position:absolute;top:0;bottom:0;left:66.6%;width:1px;background:rgba(255,255,255,0.08);"></div>
+        </div>
+        <!-- LOG pane -->
+        <div id="tray-pane-log" class="tray-pane" style="display:none;flex:1;overflow-y:auto;padding:5px 10px;">
+          <div id="battle-log-full" style="font-family:'Crimson Text',serif;font-size:11px;color:rgba(204,197,219,0.7);"></div>
+        </div>
+        <!-- COMBAT STATS pane -->
+        <div id="tray-pane-stats" class="tray-pane" style="display:none;flex:1;overflow-y:auto;padding:5px 10px;">
+          <div id="combat-stats-content"></div>
+        </div>
       </div>
+
+      <!-- hidden elements kept for JS compat -->
+      <div id="hud-nine-name" style="display:none;"></div>
+      <div id="hud-nine-guild" style="display:none;"></div>
 
     </div><!-- close hud-main -->
     <!-- ══ MOBILE HUD (≤640px only — controlled by CSS display:none/flex) ══ -->
@@ -3184,9 +3216,21 @@
   }
 
   function switchTrayTab(name) {
-    document.querySelectorAll('.tray-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
-    document.querySelectorAll('.tray-pane').forEach(p => p.classList.toggle('active', p.id === `tray-pane-${name}`));
-    if (name === 'stats') { renderCombatMeters(); renderStatsTabChart(); }
+    // Handle both old .tray-tab and new .hud-tab buttons
+    document.querySelectorAll('.tray-tab, .hud-tab').forEach(t => {
+      const isActive = (t.dataset.tab === name || t.dataset.pane === name);
+      t.classList.toggle('active', isActive);
+    });
+    // Show/hide panes
+    const buildPane = document.getElementById('mobile-hud-panel-cards');
+    const logPane = document.getElementById('tray-pane-log');
+    const statsPane = document.getElementById('tray-pane-stats');
+    const timeline = document.getElementById('spell-timeline');
+    if (buildPane) buildPane.style.display = name === 'build' ? 'flex' : 'none';
+    if (logPane) logPane.style.display = name === 'log' ? 'flex' : 'none';
+    if (statsPane) statsPane.style.display = name === 'stats' ? 'flex' : 'none';
+    if (timeline) timeline.style.display = name === 'build' ? 'none' : 'none'; // always hidden, bar drives it
+    if (name === 'stats') { renderCombatMeters?.(); renderStatsTabChart?.(); }
   }
   window.switchTrayTab = switchTrayTab;
 
@@ -6555,4 +6599,4 @@
 
 </script>
 </body>
-</html>  
+</html>
