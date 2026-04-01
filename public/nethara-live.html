@@ -1186,9 +1186,6 @@
        COMBAT HUD — RPG-style portrait + stat panel
   ══════════════════════════════════════════════════════ -->
   <div class="arena-bottom-tray" id="arena-bottom-tray" style="display:none;">
-
-    <!-- ── MAIN HUD ROW ── -->
-    <div id="hud-main" style="display:flex;flex-direction:row;height:100%;gap:0;">
     <div id="hud-main" style="display:flex;flex-direction:row;height:100%;gap:0;">
 
       <!-- ═══════════════════════════════════════════
@@ -2400,6 +2397,8 @@
     if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'SELECT 3 CARDS'; }
     const countEl = document.getElementById('deploy-selected-count');
     if (countEl) countEl.textContent = '0';
+    // Reset selected row slots
+    if (typeof _refreshSelectedRow === 'function') _refreshSelectedRow();
     modal.classList.add('open');
     modal.style.display = 'flex';
     // Load cards
@@ -6556,4 +6555,4 @@
 
 </script>
 </body>
-</html>
+</html>  
