@@ -246,9 +246,9 @@
     #arena-view { display: none; position: fixed; top: var(--nav-height); left: 0; width: 100vw; height: calc(100vh - var(--nav-height)); z-index: 50; background: var(--bg); }
     #arena-canvas canvas { display: block; }
     #arena-canvas {
-      /* Desktop: fill space left of sidebar (350px), above tray (200px) */
+      /* Desktop: fill space left of sidebar (350px), above tray (220px) */
       position: absolute;
-      top: 0; left: 0; right: 350px; bottom: 200px;
+      top: 0; left: 0; right: 350px; bottom: 220px;
       background-size: cover; background-position: center center;
       background-repeat: no-repeat; background-color: var(--bg);
       transition: background-image 0.8s ease;
@@ -351,7 +351,7 @@
       background: rgba(8,6,18,0.97);
       border-top: 2px solid rgba(255,255,255,0.09);
       backdrop-filter: blur(14px);
-      height: 200px;
+      height: 220px;
       overflow: visible; /* allows portrait to punch up into canvas */
     }
     /* Stat bars in the HUD */
@@ -724,7 +724,7 @@
       flex-direction: column;
       background: rgba(8,6,18,0.96); border: 1px solid rgba(255,255,255,0.1);
       border-radius: 16px; overflow: hidden; backdrop-filter: blur(16px);
-      bottom: 220px;
+      bottom: 230px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.5);
     }
     .sidebar-section-label {
@@ -1119,69 +1119,75 @@
     <!-- ── MAIN HUD ROW ── -->
     <div id="hud-main" style="display:flex;flex-direction:row;height:100%;gap:0;">
 
-      <!-- [1] NINE PORTRAIT — WC3 style, punches up into canvas -->
-      <div id="hud-nine" style="width:280px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:row;align-items:flex-start;position:relative;overflow:visible;background:linear-gradient(135deg,rgba(212,166,75,0.05),transparent 60%);">
+      <!-- ═══════════════════════════════════════════════════
+           CHARACTER PANEL — fills the yellow box area
+           Portrait punches 80px up into canvas
+      ═══════════════════════════════════════════════════ -->
+      <div id="hud-nine" style="width:420px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:row;align-items:flex-start;position:relative;overflow:visible;background:linear-gradient(135deg,rgba(212,166,75,0.04) 0%,transparent 55%);">
 
-        <!-- Portrait — overlaps canvas by 60px -->
-        <div style="position:relative;flex-shrink:0;padding:0 0 6px 8px;">
-          <div id="hud-nine-portrait" style="width:130px;height:150px;border-radius:8px 8px 4px 4px;background:linear-gradient(180deg,#0d0a1a,#06040f);border:2px solid rgba(212,166,75,0.5);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 -6px 24px rgba(0,0,0,0.85),0 0 20px rgba(212,166,75,0.12);margin-top:-60px;z-index:30;">
-            <div id="hud-nine-icon" style="font-size:56px;line-height:1;filter:drop-shadow(0 0 6px rgba(212,166,75,0.3));">🐱</div>
-            <img id="hud-nine-img" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top center;display:none;" onload="this.style.display='block';document.getElementById('hud-nine-icon').style.display='none'">
+        <!-- Portrait column -->
+        <div style="position:relative;flex-shrink:0;padding:0 0 8px 10px;display:flex;flex-direction:column;align-items:center;">
+          <!-- Portrait frame — 170×200px, punches 80px above tray -->
+          <div id="hud-nine-portrait" style="width:170px;height:200px;border-radius:8px 8px 4px 4px;background:linear-gradient(180deg,#0b0818,#060410);border:2px solid rgba(212,166,75,0.55);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;margin-top:-80px;z-index:30;box-shadow:0 -8px 30px rgba(0,0,0,0.9),0 0 24px rgba(212,166,75,0.1),inset 0 0 40px rgba(0,0,0,0.5);">
+            <!-- House icon fallback -->
+            <div id="hud-nine-icon" style="font-size:72px;line-height:1;filter:drop-shadow(0 0 8px rgba(212,166,75,0.3));">🐱</div>
+            <!-- Nine layers rendered here by JS — no Twitter PFP -->
+            <!-- Effect ring -->
             <div id="hud-effect-ring" style="position:absolute;inset:-2px;border-radius:9px;border:2px solid transparent;pointer-events:none;transition:border-color 0.3s,box-shadow 0.3s;"></div>
-            <!-- Corner brackets -->
-            <div style="position:absolute;top:3px;left:3px;width:10px;height:10px;border-top:2px solid rgba(212,166,75,0.7);border-left:2px solid rgba(212,166,75,0.7);pointer-events:none;"></div>
-            <div style="position:absolute;top:3px;right:3px;width:10px;height:10px;border-top:2px solid rgba(212,166,75,0.7);border-right:2px solid rgba(212,166,75,0.7);pointer-events:none;"></div>
-            <div style="position:absolute;bottom:3px;left:3px;width:10px;height:10px;border-bottom:2px solid rgba(212,166,75,0.7);border-left:2px solid rgba(212,166,75,0.7);pointer-events:none;"></div>
-            <div style="position:absolute;bottom:3px;right:3px;width:10px;height:10px;border-bottom:2px solid rgba(212,166,75,0.7);border-right:2px solid rgba(212,166,75,0.7);pointer-events:none;"></div>
+            <!-- WC3 corner brackets -->
+            <div style="position:absolute;top:5px;left:5px;width:14px;height:14px;border-top:2px solid rgba(212,166,75,0.8);border-left:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
+            <div style="position:absolute;top:5px;right:5px;width:14px;height:14px;border-top:2px solid rgba(212,166,75,0.8);border-right:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
+            <div style="position:absolute;bottom:5px;left:5px;width:14px;height:14px;border-bottom:2px solid rgba(212,166,75,0.8);border-left:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
+            <div style="position:absolute;bottom:5px;right:5px;width:14px;height:14px;border-bottom:2px solid rgba(212,166,75,0.8);border-right:2px solid rgba(212,166,75,0.8);pointer-events:none;"></div>
           </div>
-          <!-- Name + HP below portrait -->
-          <div id="hud-nine-name" style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;color:var(--gold);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:128px;margin-top:3px;"></div>
-          <div id="hud-nine-guild" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);text-align:center;margin-top:1px;"></div>
-          <div style="margin-top:4px;padding:0 2px;">
-            <div style="height:6px;background:rgba(0,0,0,0.5);border-radius:3px;overflow:hidden;border:1px solid rgba(106,205,138,0.2);">
-              <div id="your-hp-fill" style="height:100%;background:linear-gradient(90deg,#1a7a40,#44cc88);border-radius:3px;transition:width 0.4s;width:100%"></div>
-            </div>
-            <div style="display:flex;justify-content:space-between;margin-top:2px;">
+          <!-- Name plate under portrait -->
+          <div id="hud-nine-name" style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--gold);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:168px;margin-top:5px;text-shadow:0 0 10px rgba(212,166,75,0.4);"></div>
+          <div id="hud-nine-guild" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);text-align:center;margin-top:2px;"></div>
+          <!-- HP bar -->
+          <div style="width:100%;padding:4px 2px 0;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
               <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6acd8a;">HP</span>
               <span id="your-hp-text" style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6acd8a;">--/--</span>
             </div>
+            <div style="height:8px;background:rgba(0,0,0,0.5);border-radius:4px;overflow:hidden;border:1px solid rgba(106,205,138,0.2);box-shadow:inset 0 1px 3px rgba(0,0,0,0.6);">
+              <div id="your-hp-fill" style="height:100%;background:linear-gradient(90deg,#1a6a35,#44cc88,#88ffbb);border-radius:4px;transition:width 0.4s;width:100%"></div>
+            </div>
           </div>
-          <!-- Debuffs -->
-          <div id="hud-debuffs" style="display:flex;gap:2px;flex-wrap:wrap;justify-content:center;min-height:12px;width:100%;margin-top:3px;"></div>
+          <!-- Debuff pills -->
+          <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:14px;width:100%;margin-top:4px;"></div>
         </div>
 
-        <!-- Stats panel — beside portrait -->
-        <div style="flex:1;min-width:0;padding:8px 8px 6px 10px;display:flex;flex-direction:column;justify-content:center;gap:0;margin-top:4px;">
-          <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(212,166,75,0.4);letter-spacing:2px;margin-bottom:6px;">STATS</div>
-          <div id="your-nine-stats"></div>
+        <!-- Stats + controls column -->
+        <div style="flex:1;min-width:0;padding:10px 10px 8px 14px;display:flex;flex-direction:column;justify-content:space-between;height:100%;box-sizing:border-box;">
+          <!-- Stats -->
+          <div>
+            <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(212,166,75,0.4);letter-spacing:2px;margin-bottom:8px;">STATS</div>
+            <div id="your-nine-stats"></div>
+          </div>
+          <!-- ATK bar inline -->
+          <div style="display:flex;align-items:center;gap:8px;margin:6px 0;">
+            <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.2);">ATK</div>
+            <div style="flex:1;height:6px;background:rgba(0,0,0,0.4);border-radius:3px;overflow:hidden;border:1px solid rgba(255,100,34,0.2);position:relative;">
+              <div id="atk-speed-bar" style="position:absolute;top:0;left:0;height:100%;width:0%;background:linear-gradient(90deg,#ffdd44,#ff8822,#e85a6a);border-radius:3px;transition:width 0.06s linear;"></div>
+            </div>
+            <div id="atk-speed-icon" style="font-size:9px;opacity:0.4;">⚔</div>
+          </div>
           <!-- Buttons -->
-          <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px;">
-            <button id="btn-swap-build" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:5px 6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--faint);border-radius:4px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.color='var(--gold)';this.style.borderColor='rgba(212,166,75,0.3)'" onmouseout="this.style.color='var(--faint)';this.style.borderColor='rgba(255,255,255,0.12)'">⇄ LOADOUT</button>
-            <button id="btn-withdraw" style="font-family:'Press Start 2P',monospace;font-size:6px;padding:5px 6px;background:rgba(255,68,102,0.06);border:1px solid rgba(255,68,102,0.2);color:var(--red);border-radius:4px;cursor:pointer;">WITHDRAW</button>
-            <div style="display:flex;align-items:center;gap:4px;margin-top:2px;">
-              <div id="auto-redeploy-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()" style="width:24px;height:12px;background:rgba(255,255,255,0.06);border-radius:6px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0;">
-                <div style="position:absolute;top:2px;left:2px;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.3);transition:left 0.2s;"></div>
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <button id="btn-swap-build" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--faint);border-radius:4px;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.color='var(--gold)';this.style.borderColor='rgba(212,166,75,0.3)'" onmouseout="this.style.color='var(--faint)';this.style.borderColor='rgba(255,255,255,0.12)'">⇄ LOADOUT</button>
+            <button id="btn-withdraw" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 8px;background:rgba(255,68,102,0.08);border:1px solid rgba(255,68,102,0.25);color:var(--red);border-radius:4px;cursor:pointer;">WITHDRAW</button>
+            <div style="display:flex;align-items:center;gap:5px;margin-top:2px;">
+              <div id="auto-redeploy-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()" style="width:26px;height:13px;background:rgba(255,255,255,0.06);border-radius:7px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0;">
+                <div style="position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3);transition:left 0.2s;"></div>
               </div>
-              <span id="auto-redeploy-label" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);">AUTO</span>
+              <span id="auto-redeploy-label" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);">AUTO-REJOIN</span>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- [2] STATS already in portrait column above -->
-
-      <!-- [3] ATK bar -->
-      <div id="hud-atk" style="width:44px;flex-shrink:0;padding:10px 6px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;border-right:1px solid rgba(255,255,255,0.07);">
-        <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.2);text-align:center;line-height:1.5;letter-spacing:0.5px;">AUTO<br>ATK</div>
-        <div style="flex:1;width:16px;background:rgba(0,0,0,0.4);border-radius:8px;overflow:hidden;position:relative;border:1px solid rgba(255,100,34,0.25);margin:6px 0;">
-          <div id="atk-speed-bar" style="position:absolute;bottom:0;left:0;right:0;height:0%;background:linear-gradient(180deg,#ffdd44,#ff8822,#e85a6a);border-radius:8px;transition:height 0.06s linear;"></div>
-        </div>
-        <div style="font-size:11px;opacity:0.4;" id="atk-speed-icon">⚔</div>
-      </div>
-
-      <!-- [4] CARD SLOTS + spell cast bar -->
+      <!-- [3] CARD SLOTS + spell cast bar -->
       <div id="hud-cards" style="flex:1;min-width:0;display:flex;flex-direction:column;">
-        <!-- Spell cast bar sweeping across all 3 cards -->
         <div style="display:flex;align-items:center;gap:6px;padding:8px 10px 4px;flex-shrink:0;">
           <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.2);white-space:nowrap;">SPELL ROTATION</span>
         </div>
@@ -1666,6 +1672,22 @@
     if (tlReset) tlReset.style.display = 'none';
 
     renderSidebarChart();
+    // Pre-seed own deployCache by fetching deployments before first tick
+    // This ensures portrait + sprite load immediately without needing a page refresh
+    fetch(`/api/zones/${zone.id}/deployments`)
+      .then(r => r.ok ? r.json() : null)
+      .then(dep => {
+        if (!dep?.deployments) return;
+        S._deployCache = S._deployCache || {};
+        dep.deployments.forEach(d => {
+          const pid = String(d.player_id);
+          S._deployCache[pid] = {
+            profile_image: d.player?.profile_image || null,
+            equipped_images: d.nine?.equipped_images || {},
+            name: d.nine?.name || d.player?.twitter_handle || null,
+          };
+        });
+      }).catch(() => {});
     // Show loading overlay while PIXI and socket initialise
     _showArenaLoading('LOADING ARENA...', 0);
     // Fallback: dismiss loading after 8s even if socket is slow
@@ -1917,11 +1939,8 @@
           portrait.appendChild(img);
         });
       } else if (!hasLayers && cached?.profile_image) {
-        // Twitter PFP fallback if no Nine layers
-        const existing = document.getElementById('hud-nine-img');
-        if (existing && !existing.src.includes(cached.profile_image)) {
-          existing.src = cached.profile_image;
-        }
+        // No Twitter PFP in portrait — house icon is the fallback
+        // (PFP was distracting from the Nine character)
       }
     }
     if (nameEl && S.playerHandle) nameEl.textContent = '@' + S.playerHandle;
@@ -2042,7 +2061,7 @@
       if (!bar || !S.isDeployed) { S._atkBarFrame = null; return; }
       const elapsed = performance.now() - S._atkBarStart;
       const pct = Math.min(100, (elapsed / S._atkBarInterval) * 100);
-      bar.style.height = pct + '%';
+      bar.style.width = pct + '%';
       if (pct >= 100) {
         // Auto-restart — bar loops continuously while deployed
         S._atkBarStart = performance.now();
@@ -3518,7 +3537,7 @@
     const container = document.getElementById('arena-canvas');
     container.innerHTML = '';
     const navH = 52;
-    const trayH = 200; // desktop HUD tray height
+    const trayH = 220; // desktop HUD tray height
     const isMobile = window.innerWidth <= 640;
 
     // Desktop: subtract tray height so sprites stay above HUD
@@ -4351,18 +4370,19 @@
     proj.zIndex = 90;
 
     const glow = new PIXI.Graphics();
-    glow.beginFill(hColor, 0.25); glow.drawCircle(0, 0, 10); glow.endFill();
+    glow.beginFill(hColor, 0.22); glow.drawCircle(0, 0, 14); glow.endFill();
     const core = new PIXI.Graphics();
-    core.beginFill(hColor, 0.9); core.drawCircle(0, 0, 5); core.endFill();
-    core.beginFill(0xffffff, 0.7); core.drawCircle(0, 0, 2.5); core.endFill();
+    core.beginFill(hColor, 0.9); core.drawCircle(0, 0, 7); core.endFill();
+    core.beginFill(0xffffff, 0.75); core.drawCircle(0, 0, 3.5); core.endFill();
     proj.addChild(glow); proj.addChild(core);
     proj.x = x1; proj.y = y1;
     state.arenaApp.stage.addChild(proj);
 
     const dx = x2 - x1, dy = y2 - y1;
     const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-    // Slow: travel time ~0.5–0.8s regardless of distance
-    const totalFrames = Math.max(25, Math.min(50, dist * 0.22));
+    // Slow travel: 80-140 frames at 60fps = 1.3s to 2.3s
+    // Longer distances take more time so the orb is always visible crossing the arena
+    const totalFrames = Math.round(Math.max(80, Math.min(140, dist * 0.45)));
     let frame = 0;
     let hitFired = false;
 
