@@ -1044,6 +1044,15 @@
 <!-- ====== ARENA VIEW ====== -->
 <div id="arena-view">
 
+  <!-- Loading overlay — shown while PIXI initialises and sprites load -->
+  <div id="arena-loading" style="position:absolute;inset:0;z-index:200;background:rgba(10,6,22,0.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;pointer-events:none;transition:opacity 0.6s;">
+    <div style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gold);letter-spacing:4px;">ENTERING NETHARA</div>
+    <div style="width:200px;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;">
+      <div id="arena-loading-bar" style="height:100%;width:0%;background:linear-gradient(90deg,rgba(212,166,75,0.4),var(--gold));border-radius:2px;transition:width 0.4s;"></div>
+    </div>
+    <div id="arena-loading-text" style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--faint);letter-spacing:1px;">LOADING ARENA...</div>
+  </div>
+
   <div id="arena-canvas"></div>
 
   <!-- Top bar: Back | Zone name | LIVE pill + timer -->
@@ -1460,6 +1469,7 @@
     _metersTab: 'dmg',
     _chartMetric: 'dmg',
     _koTimer: null,
+    _koUntil: 0,
     _atkBarFrame: null, _atkBarStart: 0, _atkBarInterval: 7000,
     _metersRenderTimer: null,
     selectedCards: [], playerCards: [],
@@ -1468,6 +1478,25 @@
     snapshotCount: 0, currentCycle: 0,
   };
   window._S = S; // expose to PIXI IIFE — set immediately so Proxy reads work on load
+
+  // ── ARENA LOADING OVERLAY ──
+  function _showArenaLoading(msg, pct) {
+    const overlay = document.getElementById('arena-loading');
+    const bar     = document.getElementById('arena-loading-bar');
+    const text    = document.getElementById('arena-loading-text');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'none';
+    if (bar)  bar.style.width  = pct + '%';
+    if (text) text.textContent = msg;
+  }
+  function _dismissArenaLoading() {
+    const overlay = document.getElementById('arena-loading');
+    if (!overlay) return;
+    overlay.style.opacity = '0';
+    setTimeout(() => { overlay.style.display = 'none'; }, 650);
+  }
 
   // ── INIT ──
   async function init() {
@@ -1637,6 +1666,10 @@
     if (tlReset) tlReset.style.display = 'none';
 
     renderSidebarChart();
+    // Show loading overlay while PIXI and socket initialise
+    _showArenaLoading('LOADING ARENA...', 0);
+    // Fallback: dismiss loading after 8s even if socket is slow
+    setTimeout(() => _dismissArenaLoading(), 8000);
     initPixiArena();
     startCountdown();
     connectArenaSocket(zone.id);
@@ -1663,6 +1696,9 @@
   function closeArena() {
     if (S.socket) { try { S.socket.removeAllListeners(); S.socket.disconnect(); } catch(e) {} S.socket = null; }
     if (S.countdownInterval) { clearInterval(S.countdownInterval); S.countdownInterval = null; }
+    // Reset loading overlay for next entry
+    const lo = document.getElementById('arena-loading');
+    if (lo) { lo.style.display = 'none'; lo.style.opacity = '1'; }
     document.getElementById('arena-view').style.display = 'none';
     document.getElementById('zone-list-view').style.display = 'block';
     loadZones(); // refresh counts
@@ -2003,17 +2039,32 @@
     if (S._atkBarFrame) cancelAnimationFrame(S._atkBarFrame);
     const tick = () => {
       const bar = document.getElementById('atk-speed-bar');
-      if (!bar) return;
-      const pct = Math.min(100, ((performance.now()-S._atkBarStart)/S._atkBarInterval)*100);
-      bar.style.height = pct + '%';  // vertical fill
-      if (pct < 100) S._atkBarFrame = requestAnimationFrame(tick);
-      else {
-        // Flash the icon when full
+      if (!bar || !S.isDeployed) { S._atkBarFrame = null; return; }
+      const elapsed = performance.now() - S._atkBarStart;
+      const pct = Math.min(100, (elapsed / S._atkBarInterval) * 100);
+      bar.style.height = pct + '%';
+      if (pct >= 100) {
+        // Auto-restart — bar loops continuously while deployed
+        S._atkBarStart = performance.now();
         const icon = document.getElementById('atk-speed-icon');
-        if (icon) { icon.style.opacity='1'; icon.style.transform='scale(1.3)'; setTimeout(()=>{ if(icon){icon.style.opacity='0.5';icon.style.transform='scale(1)';} },200); }
+        if (icon) {
+          icon.style.opacity = '1';
+          icon.style.transform = 'scale(1.4)';
+          icon.style.color = '#ff8822';
+          setTimeout(() => { if (icon) { icon.style.opacity = '0.4'; icon.style.transform = 'scale(1)'; icon.style.color = ''; }}, 180);
+        }
       }
+      S._atkBarFrame = requestAnimationFrame(tick);
     };
     S._atkBarFrame = requestAnimationFrame(tick);
+  }
+
+  // Sync ATK bar phase when we receive a combat:attack from ourselves
+  // This keeps the looping bar in phase with actual server attacks
+  function syncAtkBarPhase() {
+    // When our attack arrives, snap bar back to 0 and restart
+    // This gradually keeps visual in sync with server timing
+    S._atkBarStart = performance.now();
   }
 
   // Spell cast sweep — orange liquid flowing across the 3 card slots
@@ -2249,6 +2300,14 @@
   async function confirmDeploy() {
     if (S.selectedCards.length !== 3) return;
     if (!S.playerId || !S.currentZoneId) return;
+    // Block deploy if KO cooldown still active
+    const koRemaining = Math.ceil((S._koUntil - Date.now()) / 1000);
+    if (koRemaining > 0) {
+      const btn = document.getElementById('btn-confirm-deploy');
+      if (btn) { btn.textContent = `⏳ KO COOLDOWN ${koRemaining}s`; }
+      setTimeout(() => { if (btn && !btn.disabled) btn.textContent = '⚔️ DEPLOY'; }, 2000);
+      return;
+    }
     const btn = document.getElementById('btn-confirm-deploy');
     if (btn) { btn.disabled = true; btn.textContent = 'DEPLOYING...'; }
     const cardIds = S.selectedCards.map(s => s.card.player_card_id || s.card.id);
@@ -2375,10 +2434,13 @@
     }).then(r => r.json()).then(data => {
       if (data.success || data.message) {
         S.isDeployed = true;
+        S._koUntil = 0;
         document.getElementById('deploy-cta').style.display = 'none';
         document.getElementById('arena-bottom-tray').style.display = 'flex';
         renderCardSlots(cards);
         addFeedEvent('♻️ Auto-redeployed!', 'join');
+      } else {
+        addFeedEvent(`⚠️ Auto-redeploy failed: ${data.error || 'try manually'}`, 'system');
       }
     }).catch(e => addFeedEvent('⚠️ Auto-redeploy failed.', 'system'));
   }
@@ -2391,7 +2453,9 @@
     const rejoinBtn = document.getElementById('ko-rejoin-btn');
     const expiredMsg = document.getElementById('ko-expired-msg');
     if (!overlay) return;
-    if (rejoinBtn) { rejoinBtn.style.display = 'block'; rejoinBtn.disabled = false; rejoinBtn.textContent = '⚔️ REDEPLOY (60s)'; }
+    // Store KO time so deploy endpoint can be blocked client-side
+    S._koUntil = Date.now() + 60000;
+    if (rejoinBtn) { rejoinBtn.style.display = 'block'; rejoinBtn.disabled = true; rejoinBtn.textContent = '⚔️ REDEPLOY (60s)'; }
     if (expiredMsg) expiredMsg.style.display = 'none';
     overlay.classList.add('visible');
     const circumference = 144.5;
@@ -2401,14 +2465,20 @@
       sec--;
       if (numEl) numEl.textContent = Math.max(0, sec);
       if (circle) circle.style.strokeDashoffset = circumference * (1 - sec/60);
-      if (rejoinBtn && !rejoinBtn.disabled) rejoinBtn.textContent = sec > 0 ? `⚔️ REDEPLOY (${sec}s)` : '⚔️ REDEPLOY NOW';
+      if (rejoinBtn) rejoinBtn.textContent = sec > 0 ? `⚔️ REDEPLOY (${sec}s)` : '⚔️ REDEPLOY NOW';
       if (sec <= 0) {
         clearInterval(S._koTimer); S._koTimer = null;
-        if (rejoinBtn) { rejoinBtn.disabled = true; rejoinBtn.textContent = '⛔ WINDOW CLOSED'; }
-        if (expiredMsg) expiredMsg.style.display = 'block';
-        if (numEl) numEl.textContent = '✗';
-        checkAutoRedeploy();
-        if (!S._autoRedeploy) setTimeout(() => dismissKOOverlay(), 8000);
+        S._koUntil = 0;
+        // Enable manual rejoin
+        if (rejoinBtn) { rejoinBtn.disabled = false; rejoinBtn.textContent = '⚔️ REDEPLOY NOW'; }
+        if (expiredMsg) expiredMsg.style.display = 'none';
+        if (numEl) numEl.textContent = '!';
+        // Auto-redeploy fires here
+        if (S._autoRedeploy) {
+          checkAutoRedeploy();
+        } else {
+          // Leave overlay open with active REDEPLOY button — don't auto-dismiss
+        }
       }
     }, 1000);
   }
@@ -2427,11 +2497,19 @@
     socket.on('connect', () => {
       socket.emit('join_zone', { zoneId });
       addFeedEvent('Connected to arena', 'system');
+      _showArenaLoading('JOINING ZONE...', 60);
     });
     socket.on('disconnect', () => addFeedEvent('Reconnecting...', 'system'));
 
     // Positions tick — single source of truth for who's on the battlefield
+    // First tick dismisses loading overlay
+    let _firstPositionsTick = true;
     socket.on('arena:positions', (data) => {
+      if (_firstPositionsTick) {
+        _firstPositionsTick = false;
+        _showArenaLoading('READY', 100);
+        setTimeout(_dismissArenaLoading, 400);
+      }
       if (!data.nines) return;
       const activeIds = new Set(data.nines.map(d => String(d.id)));
 
@@ -2566,7 +2644,9 @@
         const hk2 = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
         const cardSpd = S.equippedCards.reduce((s,c)=>s+(c?.base_spd||0),0);
         const atkSec = Math.max(2.75, (10.5 - ((HSPD[hk2]||25)+cardSpd) * 0.12) / 2);
-        startAtkBar(atkSec * 1000);
+        // Sync bar phase to server attack — keeps looping bar aligned
+        if (Math.abs(S._atkBarInterval - atkSec * 1000) > 200) startAtkBar(atkSec * 1000);
+        else syncAtkBarPhase();
         // Highlight active slot
         for (let i = 0; i < 3; i++) {
           const el = document.getElementById(`card-slot-${i}`);
@@ -2953,6 +3033,22 @@
   const _activeDebuffs = new Map(); // effect → expiry timestamp
   // Debuff colour priorities for portrait ring
   const DEBUFF_RING_PRIORITY = ['SILENCE','WEAKEN','POISON','BURN','HEX','BLIND','WITHER','CORRODE'];
+
+  // Human-readable descriptions shown on hover
+  const EFFECT_DESCRIPTIONS = {
+    SILENCE: 'Your card effects are suppressed — attacks deal no effects',
+    WEAKEN:  'You deal 50% damage',
+    POISON:  'Taking DOT damage every 3s — stacks up to ×3',
+    BURN:    'Taking fire damage each hit — stacks up to ×3',
+    HEX:     'Your ATK is reduced by up to 35',
+    BLIND:   'Your LUCK = 0 — no crits, DODGE won\'t activate',
+    WITHER:  'Your heals, BLESS, and BARRIER are 50% less effective',
+    CORRODE: 'Your max HP is being permanently reduced each hit',
+    MARK:    'You take +25% damage from all sources',
+    TETHER:  'Sharing 50% of all damage with your attacker',
+    SLOW:    'Your SPD is reduced — attacking slower',
+  };
+
   function updateDebuffHUD(effect, apply) {
     const el = document.getElementById('hud-debuffs');
     if (!el) return;
@@ -2961,11 +3057,21 @@
     } else {
       _activeDebuffs.delete(effect);
     }
-    // Prune expired
     _activeDebuffs.forEach((exp, k) => { if (Date.now() > exp) _activeDebuffs.delete(k); });
     el.innerHTML = [..._activeDebuffs.keys()].map(e => {
-      const c = EFFECT_COLORS[e.split(' ')[0].toUpperCase()] || '#D4A64B';
-      return `<div title="${e}" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:2px 4px;border-radius:3px;background:${c}22;border:1px solid ${c}55;color:${c};animation:debuffPulse 1.5s ease-in-out infinite">${e.split(' ')[0].slice(0,4)}</div>`;
+      const key = e.split(' ')[0].toUpperCase();
+      const c = EFFECT_COLORS[key] || '#D4A64B';
+      const desc = EFFECT_DESCRIPTIONS[key] || key;
+      return `<div
+        style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 5px;border-radius:3px;background:${c}22;border:1px solid ${c}66;color:${c};animation:debuffPulse 1.5s ease-in-out infinite;cursor:help;position:relative;"
+        onmouseenter="this.querySelector('.debuff-tip').style.display='block'"
+        onmouseleave="this.querySelector('.debuff-tip').style.display='none'">
+        ${key.slice(0,5)}
+        <div class="debuff-tip" style="display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:rgba(8,6,18,0.97);border:1px solid ${c}66;border-radius:6px;padding:6px 8px;white-space:nowrap;z-index:200;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.7);">
+          <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:${c};margin-bottom:3px;">${key}</div>
+          <div style="font-family:'Crimson Text',serif;font-size:12px;color:#CCC5DB;max-width:200px;white-space:normal;line-height:1.4;">${desc}</div>
+        </div>
+      </div>`;
     }).join('');
     // Animate the portrait ring with the highest priority active debuff colour
     const ring = document.getElementById('hud-effect-ring');
@@ -3471,8 +3577,10 @@
         const moving = dist > 2;
 
         if (moving) {
-          nine.container.x += wx * 0.09;
-          nine.container.y += wy * 0.09;
+          // Very slow lerp — South Park shuffle, not teleporting
+          // 0.025 at 60fps takes ~8 seconds to fully converge
+          nine.container.x += wx * 0.025;
+          nine.container.y += wy * 0.025;
           if (nine.spriteGroup && Math.abs(wx) > 0.8) {
             const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
             const newFacing = wx > 0 ? 1 : -1;
@@ -3725,9 +3833,11 @@
     const img = new Image();
     img.onload = () => {
       container.style.backgroundImage = `url('${imgUrl}')`;
+      if (typeof _showArenaLoading === 'function') _showArenaLoading('LOADING FIGHTERS...', 35);
     };
     img.onerror = () => {
       container.style.backgroundImage = `url('${BIOME_FALLBACK}')`;
+      if (typeof _showArenaLoading === 'function') _showArenaLoading('LOADING FIGHTERS...', 35);
     };
     img.src = imgUrl;
 
