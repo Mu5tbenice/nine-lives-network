@@ -416,20 +416,20 @@
     .arena-card-slot {
       flex: 1; min-width: 0; border: 1px solid rgba(255,255,255,0.1);
       border-radius: 8px; position: relative; cursor: pointer; overflow: hidden;
-      display: flex; flex-direction: row; height: 116px;
+      display: flex; flex-direction: row; height: 130px;
       transition: border-color 0.2s;
     }
     .arena-card-slot:hover { border-color: rgba(212,166,75,0.35); }
     .arena-card-slot.slot-active { border-color: var(--slot-color, var(--gold)); box-shadow: 0 0 10px rgba(212,166,75,0.2); }
     /* Art panel */
     .slot-art {
-      width: 35%; flex-shrink: 0; position: relative; overflow: hidden;
+      width: 42%; flex-shrink: 0; position: relative; overflow: hidden;
       background: rgba(255,255,255,0.03);
       display: flex; align-items: center; justify-content: center;
     }
     .slot-art-img {
       position: absolute; inset: 0; width: 100%; height: 100%;
-      object-fit: cover; object-position: center top;
+      object-fit: cover; object-position: center 35%;
       opacity: 0; transition: opacity 0.3s;
     }
     .slot-art-img.loaded { opacity: 1; }
@@ -444,22 +444,23 @@
       justify-content: space-between; min-width: 0; overflow: hidden;
     }
     .slot-type {
-      font-family: 'Press Start 2P', monospace; font-size: 7px;
-      letter-spacing: 0.3px; opacity: 0.7;
+      font-family: 'Press Start 2P', monospace; font-size: 6px;
+      letter-spacing: 0.5px; opacity: 0.6; margin-bottom: 2px;
     }
     .slot-name {
-      font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; color: var(--bright);
+      font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: var(--bright);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;
     }
     .slot-effect-pill {
-      font-family: 'Press Start 2P', monospace; font-size: 8px;
-      padding: 3px 6px; border-radius: 3px; white-space: nowrap; display: inline-block;
+      font-family: 'Press Start 2P', monospace; font-size: 9px;
+      padding: 4px 8px; border-radius: 3px; white-space: nowrap; display: inline-block;
+      margin-top: 2px;
     }
     .slot-stats-row {
       display: flex; gap: 6px; flex-wrap: nowrap;
-      font-family: 'Press Start 2P', monospace; font-size: 8px;
+      font-family: 'Press Start 2P', monospace; font-size: 7px; margin-top: 3px;
     }
-    .slot-sharpness { height: 2px; background: rgba(255,255,255,0.07); border-radius: 1px; overflow: hidden; }
+    .slot-sharpness { height: 3px; background: rgba(255,255,255,0.07); border-radius: 1px; overflow: hidden; margin-top: 4px; }
     .slot-sharpness-fill { height: 100%; border-radius: 1px; transition: width 0.3s; }
     /* Cooldown bar at bottom */
     .slot-cooldown {
@@ -1014,7 +1015,7 @@
         cursor:pointer;position:relative;
       }
       .mob-card-slot .slot-art { width:38%;flex-shrink:0;overflow:hidden;position:relative;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center; }
-      .mob-card-slot .slot-art-img { position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;opacity:0;transition:opacity 0.3s; }
+      .mob-card-slot .slot-art-img { position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 35%;opacity:0;transition:opacity 0.3s; }
       .mob-card-slot .slot-art-img.loaded { opacity:1; }
       .mob-card-slot .slot-info { flex:1;padding:4px 5px;display:flex;flex-direction:column;justify-content:space-between;min-width:0;overflow:hidden; }
       .mob-card-slot .slot-name { font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
@@ -1268,7 +1269,7 @@
         <!-- STATUS PILLS -->
         <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:4px 8px;border-radius:3px;min-height:24px;background:rgba(255,255,255,0.02);border:1px solid rgba(212,166,75,0.08);">
           <span style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(212,166,75,0.3);letter-spacing:1px;flex-shrink:0;margin-right:2px;">STATUS</span>
-          <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;overflow:visible;"></div>
+          <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;overflow:visible;position:relative;z-index:100;"></div>
         </div>
 
         <!-- STAT BARS -->
@@ -1914,11 +1915,17 @@
           const cached = S._deployCache[String(id)];
           if (!cached) return;
           if (String(id) === String(S.playerId)) needsPortraitUpdate = true;
-          // If sprite has no image yet but cache now has data — patch the sprite in-place
-          if (!sp.profileImage && sp.spriteGroup) {
-            const imgs = cached.equipped_images || {};
-            const LAYERS = ['fur','outfit','weapon','expression','headwear','familiar'];
-            const hasLayers = LAYERS.some(l => !!imgs[l]);
+          // Patch sprite in-place if:
+          // - No image at all, OR
+          // - Has PFP but cache now has richer Nine layers (upgrade PFP → layers)
+          const imgs = cached.equipped_images || {};
+          const LAYERS = ['fur','outfit','weapon','expression','headwear','familiar'];
+          const hasLayers = LAYERS.some(l => !!imgs[l]);
+          const needsUpgrade = sp.spriteGroup && (
+            !sp.profileImage ||
+            (sp.profileImage && !sp._hasLayers && hasLayers)
+          );
+          if (needsUpgrade) {
             if (hasLayers) {
               // Clear existing fallback graphics, add layered images
               while (sp.spriteGroup.children.length) sp.spriteGroup.removeChildAt(0);
@@ -1934,6 +1941,7 @@
                 } catch(e) {}
               });
               sp.profileImage = cached.profile_image || 'layers';
+              sp._hasLayers = true;
             } else if (cached.profile_image && !sp.profileImage) {
               // Profile image fallback
               try {
@@ -2082,7 +2090,7 @@
         </div>
         <div class="slot-info">
           <div>
-            <div class="slot-type" style="color:${tc}">${(card.spell_type||'ATTACK').toUpperCase()} <span style="color:${hc};opacity:0.5">${hk.slice(0,4).toUpperCase()}</span></div>
+            <div class="slot-type" style="color:${tc}">${(card.spell_type||'ATTACK').toUpperCase()}</div>
             <div class="slot-name">${card.name}</div>
           </div>
           ${eff ? `<span class="slot-effect-pill" style="color:${ec};background:${ec}18;border:1px solid ${ec}35">${eff}</span>` : ''}
@@ -2185,7 +2193,7 @@
           const img = document.createElement('img');
           img.src = imgs[slot];
           img.className = 'nine-layer';
-          img.style.cssText = `position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:${i+1};`;
+          img.style.cssText = `position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;z-index:${i+1};`;
           portrait.appendChild(img);
         });
       } else if (!hasLayers && cached?.profile_image) {
@@ -3476,10 +3484,11 @@
       const desc = EFFECT_DESCRIPTIONS[key] || key;
       return `<div
         style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 5px;border-radius:3px;background:${c}22;border:1px solid ${c}66;color:${c};animation:debuffPulse 1.5s ease-in-out infinite;cursor:help;position:relative;"
-        onmouseenter="this.querySelector('.debuff-tip').style.display='block'"
+        onmouseenter="(()=>{const t=this.querySelector('.debuff-tip');if(!t)return;const r=this.getBoundingClientRect();t.style.display='block';t.style.left=(r.left+r.width/2-t.offsetWidth/2)+'px';t.style.top=(r.top-t.offsetHeight-8)+'px';})()"
         onmouseleave="this.querySelector('.debuff-tip').style.display='none'">
         ${key.slice(0,5)}
-        <div class="debuff-tip" style="display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:rgba(8,6,18,0.97);border:1px solid ${c}66;border-radius:6px;padding:6px 8px;white-space:nowrap;z-index:200;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.7);">
+        <div class="debuff-tip" style="display:none;position:fixed;background:rgba(8,6,18,0.97);border:1px solid ${c}66;border-radius:6px;padding:6px 8px;white-space:nowrap;z-index:9999;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.7);"
+          onmouseenter="this.style.display='none'"
           <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:${c};margin-bottom:3px;">${key}</div>
           <div style="font-family:'Crimson Text',serif;font-size:12px;color:#CCC5DB;max-width:200px;white-space:normal;line-height:1.4;">${desc}</div>
         </div>
@@ -3628,7 +3637,7 @@
           const img = document.createElement('img');
           img.src = imgs[slot];
           img.className = 'nine-layer';
-          img.style.cssText = `position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:${i+1};`;
+          img.style.cssText = `position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;z-index:${i+1};`;
           portrait.appendChild(img);
         });
       } else if (cached.profile_image) {
