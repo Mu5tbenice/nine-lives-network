@@ -246,9 +246,9 @@
     #arena-view { display: none; position: fixed; top: var(--nav-height); left: 0; width: 100vw; height: calc(100vh - var(--nav-height)); z-index: 50; background: var(--bg); }
     #arena-canvas canvas { display: block; }
     #arena-canvas {
-      /* Desktop: fill space left of sidebar (350px), above tray (210px) */
+      /* Desktop: fill space left of sidebar (350px), above tray (230px) */
       position: absolute;
-      top: 0; left: 0; right: 350px; bottom: 210px;
+      top: 0; left: 0; right: 350px; bottom: 230px;
       background-size: cover; background-position: center center;
       background-repeat: no-repeat; background-color: var(--bg);
       transition: background-image 0.8s ease;
@@ -348,11 +348,21 @@
     .arena-bottom-tray {
       position: absolute; bottom: 0; left: 0; right: 350px; z-index: 25;
       display: flex; flex-direction: column;
-      background: rgba(8,6,18,0.97);
-      border-top: 2px solid rgba(255,255,255,0.09);
+      background: linear-gradient(180deg,#0d0a1a,#080514);
+      border-top: 2px solid transparent;
       backdrop-filter: blur(14px);
-      height: 210px;
+      height: 230px;
+      overflow: visible;
     }
+    .arena-bottom-tray::before {
+      content: ''; position: absolute; top: -2px; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg,transparent 0%,rgba(212,166,75,0.3) 8%,rgba(212,166,75,0.8) 15%,rgba(212,166,75,0.8) 85%,rgba(212,166,75,0.3) 92%,transparent 100%);
+      z-index: 1;
+    }
+    /* Tab active state */
+    .hud-tab.active { color: #D4A64B !important; background: rgba(212,166,75,0.05) !important; }
+    .hud-tab.active::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,#D4A64B,transparent); }
+    .hud-tab:hover:not(.active) { color: rgba(255,255,255,0.6) !important; background: rgba(255,255,255,0.03) !important; }
     /* Stat bars in the HUD */
     .hud-stat-bar-wrap { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
     .hud-stat-label { font-family:'Press Start 2P',monospace; font-size:7px; width:26px; flex-shrink:0; }
@@ -406,20 +416,20 @@
     .arena-card-slot {
       flex: 1; min-width: 0; border: 1px solid rgba(255,255,255,0.1);
       border-radius: 8px; position: relative; cursor: pointer; overflow: hidden;
-      display: flex; flex-direction: row; height: 116px;
+      display: flex; flex-direction: row; height: 130px;
       transition: border-color 0.2s;
     }
     .arena-card-slot:hover { border-color: rgba(212,166,75,0.35); }
     .arena-card-slot.slot-active { border-color: var(--slot-color, var(--gold)); box-shadow: 0 0 10px rgba(212,166,75,0.2); }
     /* Art panel */
     .slot-art {
-      width: 35%; flex-shrink: 0; position: relative; overflow: hidden;
+      width: 42%; flex-shrink: 0; position: relative; overflow: hidden;
       background: rgba(255,255,255,0.03);
       display: flex; align-items: center; justify-content: center;
     }
     .slot-art-img {
       position: absolute; inset: 0; width: 100%; height: 100%;
-      object-fit: cover; object-position: center top;
+      object-fit: cover; object-position: center 35%;
       opacity: 0; transition: opacity 0.3s;
     }
     .slot-art-img.loaded { opacity: 1; }
@@ -434,22 +444,23 @@
       justify-content: space-between; min-width: 0; overflow: hidden;
     }
     .slot-type {
-      font-family: 'Press Start 2P', monospace; font-size: 7px;
-      letter-spacing: 0.3px; opacity: 0.7;
+      font-family: 'Press Start 2P', monospace; font-size: 6px;
+      letter-spacing: 0.5px; opacity: 0.6; margin-bottom: 2px;
     }
     .slot-name {
-      font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; color: var(--bright);
+      font-family: 'Cinzel', serif; font-size: 13px; font-weight: 700; color: var(--bright);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;
     }
     .slot-effect-pill {
-      font-family: 'Press Start 2P', monospace; font-size: 8px;
-      padding: 3px 6px; border-radius: 3px; white-space: nowrap; display: inline-block;
+      font-family: 'Press Start 2P', monospace; font-size: 9px;
+      padding: 4px 8px; border-radius: 3px; white-space: nowrap; display: inline-block;
+      margin-top: 2px;
     }
     .slot-stats-row {
       display: flex; gap: 6px; flex-wrap: nowrap;
-      font-family: 'Press Start 2P', monospace; font-size: 8px;
+      font-family: 'Press Start 2P', monospace; font-size: 7px; margin-top: 3px;
     }
-    .slot-sharpness { height: 2px; background: rgba(255,255,255,0.07); border-radius: 1px; overflow: hidden; }
+    .slot-sharpness { height: 3px; background: rgba(255,255,255,0.07); border-radius: 1px; overflow: hidden; margin-top: 4px; }
     .slot-sharpness-fill { height: 100%; border-radius: 1px; transition: width 0.3s; }
     /* Cooldown bar at bottom */
     .slot-cooldown {
@@ -492,9 +503,10 @@
     /* ── Deploy CTA ── */
     .arena-deploy-cta {
       position: absolute;
-      /* Center exactly in the available arena space */
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
+      /* Center in the canvas area above the tray (230px tall) */
+      top: calc(50% - 115px);
+      left: calc(50% - 175px); /* account for sidebar 350px / 2 = 175px offset */
+      transform: translateY(-50%);
       z-index: 30;
       pointer-events: auto;
       text-align: center;
@@ -612,51 +624,122 @@
     /* Deploy modal */
     .deploy-modal {
       display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-      z-index: 2000; background: rgba(26,21,40,0.96);
+      z-index: 2000; background: rgba(10,6,20,0.97);
       overflow-y: auto;
     }
     .deploy-modal.open { display: block; }
     .deploy-inner {
-      max-width: 600px; margin: 20px auto; padding: 20px; position: relative;
+      max-width: 520px; margin: 0 auto; padding: 16px 16px 24px; position: relative;
+      min-height: 100vh; display: flex; flex-direction: column;
     }
     .deploy-close-x {
-      position: absolute; top: 8px; right: 12px; z-index: 5;
-      background: none; border: none; color: var(--muted); font-size: 28px;
-      cursor: pointer; padding: 4px 10px; line-height: 1;
+      position: absolute; top: 12px; right: 12px; z-index: 5;
+      background: none; border: none; color: var(--muted); font-size: 26px;
+      cursor: pointer; padding: 4px 8px; line-height: 1;
       transition: color 0.2s;
     }
     .deploy-close-x:hover { color: var(--bright); }
-    .deploy-title { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--gold); margin-bottom: 16px; }
+    .deploy-title { font-family: 'Cinzel', serif; font-size: 17px; font-weight: 700; color: var(--gold); margin-bottom: 12px; padding-right: 32px; }
+
+    /* ── STATS BAR ── */
     .deploy-stats-preview {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: 10px; padding: 14px; margin-bottom: 16px;
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;
     }
-    .deploy-stat-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .deploy-stat-row { display: flex; gap: 0; flex-wrap: wrap; }
     .deploy-stat {
-      font-family: 'Press Start 2P', monospace; font-size: 9px;
-      display: flex; align-items: center; gap: 4px;
+      font-family: 'Press Start 2P', monospace; font-size: 8px;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      flex: 1; min-width: 52px; padding: 4px 2px;
     }
-    .deploy-cards-title { font-family: 'Press Start 2P', monospace; font-size: 9px; color: var(--faint); letter-spacing: 1px; margin-bottom: 10px; }
-    .deploy-card-grid {
-      display: flex; flex-direction: row; gap: 12px;
-      overflow-x: auto; overflow-y: hidden;
-      padding: 4px 4px 12px; scroll-snap-type: x mandatory;
-      scrollbar-width: thin; scrollbar-color: rgba(212,166,75,0.25) transparent;
+    .deploy-stat-key { font-size: 6px; opacity: 0.5; letter-spacing: 1px; }
+    .deploy-stat-val { font-size: 10px; font-weight: 700; }
+
+    /* ── HOUSE FILTER TABS ── */
+    .deploy-house-tabs {
+      display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px;
+      margin-bottom: 12px; scrollbar-width: none;
     }
-    .deploy-card-grid::-webkit-scrollbar { height: 4px; }
-    .deploy-card-grid::-webkit-scrollbar-thumb { background: rgba(212,166,75,0.25); border-radius: 2px; }
+    .deploy-house-tabs::-webkit-scrollbar { display: none; }
+    .deploy-house-tab {
+      flex-shrink: 0; width: 40px; height: 40px; border-radius: 8px;
+      border: 2px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; overflow: hidden; padding: 0; position: relative;
+    }
+    .deploy-house-tab img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+    .deploy-house-tab.active { border-color: var(--gold); background: rgba(212,166,75,0.1); box-shadow: 0 0 12px rgba(212,166,75,0.3); }
+    .deploy-house-tab span { font-size: 18px; line-height: 1; }
+
+    /* ── SELECTED SLOTS ── */
+    .deploy-selected-row {
+      display: flex; gap: 8px; margin-bottom: 14px;
+    }
+    .deploy-selected-slot {
+      flex: 1; height: 52px; border-radius: 8px;
+      border: 1px dashed rgba(255,255,255,0.12); background: rgba(255,255,255,0.02);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Press Start 2P', monospace; font-size: 6px; color: var(--faint);
+      position: relative; overflow: hidden; transition: all 0.2s; cursor: pointer;
+    }
+    .deploy-selected-slot.filled { border-style: solid; border-color: rgba(212,166,75,0.3); background: rgba(212,166,75,0.04); }
+    .deploy-selected-slot .slot-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.35; }
+    .deploy-selected-slot .slot-info { position: relative; z-index: 1; text-align: center; padding: 4px; }
+    .deploy-selected-slot .slot-name { font-family: 'Cinzel', serif; font-size: 9px; color: var(--bright); font-weight: 700; }
+    .deploy-selected-slot .slot-eff { font-family: 'Press Start 2P', monospace; font-size: 5px; margin-top: 2px; }
+    .deploy-selected-slot .slot-x { position: absolute; top: 3px; right: 5px; font-size: 10px; color: var(--faint); cursor: pointer; z-index: 2; line-height: 1; }
+
+    /* ── CAROUSEL ── */
+    .deploy-carousel-wrap {
+      flex: 1; position: relative; display: flex; flex-direction: column;
+    }
+    .deploy-cards-label {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint);
+      letter-spacing: 1px; margin-bottom: 8px;
+    }
+    .deploy-carousel-stage {
+      flex: 1; position: relative; overflow: hidden; min-height: 280px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .deploy-carousel-track {
+      display: flex; transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
+      will-change: transform; gap: 0;
+    }
+    .deploy-carousel-item {
+      flex-shrink: 0; width: 100%; display: flex; justify-content: center;
+      padding: 0 8px;
+    }
     .deploy-card-slot {
       cursor: pointer; transition: all 0.2s;
       position: relative; border-radius: 14px;
       border: 2px solid transparent;
-      padding: 2px; flex-shrink: 0;
-      scroll-snap-align: start;
-      width: 168px;
+      padding: 2px;
     }
-    .deploy-card-slot:hover { transform: translateY(-3px); }
-    .deploy-card-slot .spell-card { pointer-events: none; }
-    .deploy-card-slot .spell-card:hover { transform: none; box-shadow: none; }
-    .deploy-card-slot.selected { border-color: var(--gold); box-shadow: 0 0 24px rgba(212,166,75,0.4); transform: translateY(-3px); }
+    .deploy-card-slot.selected { border-color: var(--gold); box-shadow: 0 0 24px rgba(212,166,75,0.4); }
+
+    /* ── CAROUSEL CONTROLS ── */
+    .deploy-carousel-controls {
+      display: flex; align-items: center; justify-content: center;
+      gap: 16px; margin: 10px 0 14px;
+    }
+    .deploy-carousel-btn {
+      width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04); color: var(--bright); font-size: 16px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    .deploy-carousel-btn:hover { border-color: var(--gold); color: var(--gold); background: rgba(212,166,75,0.08); }
+    .deploy-carousel-dots { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; max-width: 240px; }
+    .deploy-carousel-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(255,255,255,0.15); cursor: pointer; transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .deploy-carousel-dot.active { background: var(--gold); transform: scale(1.3); }
+    .deploy-carousel-counter {
+      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint);
+      min-width: 50px; text-align: center;
+    }
     .deploy-card-slot.deployed-elsewhere { opacity: 0.25; pointer-events: none; }
     .selected-badge {
       display: none; position: absolute; top: -1px; left: -1px; right: -1px; z-index: 10;
@@ -723,13 +806,13 @@
       flex-direction: column;
       background: rgba(8,6,18,0.96); border: 1px solid rgba(255,255,255,0.1);
       border-radius: 16px; overflow: hidden; backdrop-filter: blur(16px);
-      bottom: 10px;
+      bottom: 240px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.5);
     }
     .sidebar-section-label {
-      font-family: 'Press Start 2P', monospace; font-size: 8px;
-      color: rgba(212,166,75,0.7); letter-spacing: 2px; margin-bottom: 12px;
-      text-transform: uppercase;
+      font-family: 'Press Start 2P', monospace; font-size: 9px;
+      color: rgba(212,166,75,0.85); letter-spacing: 3px; margin-bottom: 10px;
+      text-transform: uppercase; padding: 0 12px;
     }
     /* Guild rows */
     .sidebar-guild-row {
@@ -932,7 +1015,7 @@
         cursor:pointer;position:relative;
       }
       .mob-card-slot .slot-art { width:38%;flex-shrink:0;overflow:hidden;position:relative;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center; }
-      .mob-card-slot .slot-art-img { position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;opacity:0;transition:opacity 0.3s; }
+      .mob-card-slot .slot-art-img { position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 35%;opacity:0;transition:opacity 0.3s; }
       .mob-card-slot .slot-art-img.loaded { opacity:1; }
       .mob-card-slot .slot-info { flex:1;padding:4px 5px;display:flex;flex-direction:column;justify-content:space-between;min-width:0;overflow:hidden; }
       .mob-card-slot .slot-name { font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:var(--bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
@@ -1043,6 +1126,15 @@
 <!-- ====== ARENA VIEW ====== -->
 <div id="arena-view">
 
+  <!-- Loading overlay — shown while PIXI initialises and sprites load -->
+  <div id="arena-loading" style="position:absolute;inset:0;z-index:200;background:rgba(10,6,22,0.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;pointer-events:none;transition:opacity 0.6s;">
+    <div style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gold);letter-spacing:4px;">ENTERING NETHARA</div>
+    <div style="width:200px;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;">
+      <div id="arena-loading-bar" style="height:100%;width:0%;background:linear-gradient(90deg,rgba(212,166,75,0.4),var(--gold));border-radius:2px;transition:width 0.4s;"></div>
+    </div>
+    <div id="arena-loading-text" style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--faint);letter-spacing:1px;">LOADING ARENA...</div>
+  </div>
+
   <div id="arena-canvas"></div>
 
   <!-- Top bar: Back | Zone name | LIVE pill + timer -->
@@ -1105,89 +1197,162 @@
        COMBAT HUD — RPG-style portrait + stat panel
   ══════════════════════════════════════════════════════ -->
   <div class="arena-bottom-tray" id="arena-bottom-tray" style="display:none;">
-
-    <!-- ── MAIN HUD ROW ── -->
     <div id="hud-main" style="display:flex;flex-direction:row;height:100%;gap:0;">
 
-      <!-- [1] NINE PORTRAIT — RPG inventory style -->
-      <div id="hud-nine" style="width:180px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;align-items:center;padding:12px 10px 8px;gap:5px;position:relative;background:linear-gradient(180deg,rgba(212,166,75,0.04),transparent);">
-        <!-- Portrait frame -->
-        <div id="hud-nine-portrait" style="width:100px;height:100px;border-radius:12px;background:rgba(8,6,18,0.9);border:2px solid rgba(212,166,75,0.4);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(212,166,75,0.12),inset 0 0 20px rgba(0,0,0,0.4);">
-          <div id="hud-nine-icon" style="font-size:48px;line-height:1;">🐱</div>
-          <img id="hud-nine-img" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;" onload="this.style.display='block';document.getElementById('hud-nine-icon').style.display='none'">
-          <!-- Effect overlay ring — animates on debuff -->
-          <div id="hud-effect-ring" style="position:absolute;inset:-2px;border-radius:13px;border:2px solid transparent;pointer-events:none;transition:border-color 0.3s,box-shadow 0.3s;"></div>
+      <!-- ══════════════════════════════════════════════════════
+           COL 1: ACTION BUTTONS — bottom-left, always accessible
+      ══════════════════════════════════════════════════════ -->
+      <div style="width:72px;flex-shrink:0;display:flex;flex-direction:column;justify-content:flex-end;padding:0 7px 10px 8px;gap:5px;background:linear-gradient(180deg,transparent,rgba(212,166,75,0.015));border-right:1px solid rgba(212,166,75,0.1);">
+        <button id="btn-swap-build" onclick="openDeployModal()" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:8px 4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-bottom:2px solid rgba(255,255,255,0.12);color:#8888aa;border-radius:3px;cursor:pointer;width:100%;line-height:1.6;letter-spacing:0.3px;transition:all 0.15s;" onmouseover="this.style.borderColor='rgba(212,166,75,0.4)';this.style.color='#D4A64B';" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='#8888aa';">⇄<br>LOAD<br>OUT</button>
+        <button id="btn-withdraw" onclick="withdraw()" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:8px 4px;background:rgba(255,40,80,0.07);border:1px solid rgba(255,40,80,0.2);border-bottom:2px solid rgba(255,40,80,0.3);color:#ff4466;border-radius:3px;cursor:pointer;width:100%;line-height:1.6;letter-spacing:0.3px;">✕<br>WITH<br>DRAW</button>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:2px;">
+          <div id="auto-redeploy-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()" style="width:32px;height:16px;background:rgba(68,204,136,0.1);border-radius:8px;border:1px solid rgba(68,204,136,0.4);cursor:pointer;position:relative;">
+            <div style="position:absolute;top:3px;right:3px;width:9px;height:9px;border-radius:50%;background:#44cc88;box-shadow:0 0 5px #44cc8888;transition:right 0.2s;"></div>
+          </div>
+          <span id="auto-redeploy-label" style="font-family:'Press Start 2P',monospace;font-size:3.5px;color:#44cc8888;text-align:center;line-height:1.4;">AUTO<br>REJOIN</span>
         </div>
-        <!-- Name + guild -->
-        <div id="hud-nine-name" style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;"></div>
-        <div id="hud-nine-guild" style="font-family:'Press Start 2P',monospace;font-size:6px;color:var(--faint);text-align:center;"></div>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════
+           PANEL DIVIDER — decorative gold ruled line
+      ══════════════════════════════════════════════════════ -->
+      <div style="width:1px;flex-shrink:0;background:linear-gradient(180deg,transparent,rgba(212,166,75,0.45) 20%,rgba(212,166,75,0.6) 50%,rgba(212,166,75,0.45) 80%,transparent);position:relative;">
+        <span style="position:absolute;top:18px;left:50%;transform:translateX(-50%);color:rgba(212,166,75,0.55);font-size:7px;line-height:1;">◆</span>
+        <span style="position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:rgba(212,166,75,0.4);font-size:6px;line-height:1;">◆</span>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════
+           COL 2: PORTRAIT — centred, punches into arena
+      ══════════════════════════════════════════════════════ -->
+      <div style="width:165px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:8px;position:relative;overflow:visible;">
+        <!-- Outer decorative ring -->
+        <div style="position:relative;margin-top:-90px;z-index:30;">
+          <div style="position:absolute;inset:-7px;border-radius:9px;border:1px solid rgba(212,166,75,0.18);pointer-events:none;"></div>
+          <div style="position:absolute;top:-8px;left:50%;transform:translateX(-50%);color:#D4A64B;font-size:10px;line-height:1;text-shadow:0 0 10px rgba(212,166,75,0.7);z-index:1;">◆</div>
+          <div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);color:rgba(212,166,75,0.5);font-size:8px;line-height:1;">◆</div>
+          <!-- Portrait frame -->
+          <div id="hud-nine-portrait" style="width:150px;height:188px;border-radius:5px;background:linear-gradient(160deg,#0d0920,#060310);border:2px solid rgba(212,166,75,0.65);overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;box-shadow:0 -12px 40px rgba(0,0,0,0.95),0 0 30px rgba(212,166,75,0.07),inset 0 0 30px rgba(0,0,0,0.6);">
+            <div id="hud-nine-icon" style="font-size:88px;line-height:1;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.8));">🐱</div>
+            <div id="hud-effect-ring" style="position:absolute;inset:-2px;border-radius:6px;border:2px solid transparent;pointer-events:none;transition:border-color 0.3s,box-shadow 0.3s;"></div>
+            <!-- WC3 corners -->
+            <div style="position:absolute;top:5px;left:5px;width:13px;height:13px;border-top:2px solid #D4A64B;border-left:2px solid #D4A64B;pointer-events:none;"></div>
+            <div style="position:absolute;top:5px;right:5px;width:13px;height:13px;border-top:2px solid #D4A64B;border-right:2px solid #D4A64B;pointer-events:none;"></div>
+            <div style="position:absolute;bottom:5px;left:5px;width:13px;height:13px;border-bottom:2px solid #D4A64B;border-left:2px solid #D4A64B;pointer-events:none;"></div>
+            <div style="position:absolute;bottom:5px;right:5px;width:13px;height:13px;border-bottom:2px solid #D4A64B;border-right:2px solid #D4A64B;pointer-events:none;"></div>
+            <!-- Bottom fade -->
+            <div style="position:absolute;bottom:0;left:0;right:0;height:50px;background:linear-gradient(transparent,rgba(6,3,16,0.85));pointer-events:none;"></div>
+          </div>
+        </div>
         <!-- HP bar under portrait -->
-        <div style="width:100%;padding:0 2px;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:2px;">
+        <div style="width:150px;margin-top:7px;">
+          <div style="height:7px;background:rgba(0,0,0,0.6);border-radius:3px;overflow:hidden;border:1px solid rgba(106,205,138,0.18);">
+            <div id="your-hp-fill" style="height:100%;background:linear-gradient(90deg,#0e4420,#2a8a50,#44cc88);border-radius:3px;transition:width 0.4s;width:100%;"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:2px;">
             <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6acd8a;">HP</span>
-            <span id="your-hp-text" style="font-family:'Press Start 2P',monospace;font-size:6px;color:#6acd8a;">--/--</span>
+            <span id="your-hp-text" style="font-family:'Press Start 2P',monospace;font-size:5px;color:#6acd8a;">--/--</span>
           </div>
-          <div style="height:7px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;border:1px solid rgba(106,205,138,0.2);">
-            <div id="your-hp-fill" style="height:100%;background:linear-gradient(90deg,#44cc88,#66eebb);border-radius:4px;transition:width 0.4s ease;width:100%"></div>
-          </div>
-        </div>
-        <!-- Debuff pills -->
-        <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:16px;width:100%;"></div>
-      </div>
-
-      <!-- [2] STATS panel -->
-      <div id="hud-stats" style="width:160px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);padding:12px 14px;display:flex;flex-direction:column;justify-content:center;gap:0;">
-        <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(212,166,75,0.5);letter-spacing:2px;margin-bottom:8px;">STATS</div>
-        <div id="your-nine-stats"></div>
-      </div>
-
-      <!-- [3] CONTROLS: buttons + ATK bar -->
-      <div id="hud-controls" style="width:130px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.07);display:flex;flex-direction:column;justify-content:space-between;padding:12px 10px;">
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          <button id="btn-swap-build" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:7px 8px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);color:var(--faint);border-radius:5px;cursor:pointer;width:100%;transition:all 0.15s;" onmouseover="this.style.color='var(--gold)';this.style.borderColor='rgba(212,166,75,0.3)'" onmouseout="this.style.color='var(--faint)';this.style.borderColor='rgba(255,255,255,0.12)'">⇄ LOADOUT</button>
-          <button id="btn-withdraw" style="font-family:'Press Start 2P',monospace;font-size:7px;padding:7px 8px;background:rgba(255,68,102,0.06);border:1px solid rgba(255,68,102,0.2);color:var(--red);border-radius:5px;cursor:pointer;width:100%;transition:all 0.15s;">WITHDRAW</button>
-        </div>
-        <!-- ATK speed bar — vertical fill -->
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;justify-content:center;margin:8px 0;">
-          <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.2);letter-spacing:1px;">AUTO ATK</div>
-          <div style="width:18px;height:60px;background:rgba(255,255,255,0.05);border-radius:9px;overflow:hidden;position:relative;border:1px solid rgba(255,100,34,0.2);">
-            <div id="atk-speed-bar" style="position:absolute;bottom:0;left:0;right:0;height:0%;background:linear-gradient(180deg,#ffcc44,#ff6622,#e85a6a);border-radius:9px;transition:height 0.08s linear;"></div>
-          </div>
-          <div style="font-size:12px;opacity:0.5;" id="atk-speed-icon">⚔</div>
-        </div>
-        <!-- Auto toggle -->
-        <div style="display:flex;align-items:center;gap:5px;">
-          <div id="auto-redeploy-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()" style="width:28px;height:14px;background:rgba(255,255,255,0.06);border-radius:7px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0;">
-            <div style="position:absolute;top:2px;left:2px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.3);transition:left 0.2s;"></div>
-          </div>
-          <span id="auto-redeploy-label" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);">AUTO</span>
         </div>
       </div>
 
-      <!-- [4] CARD SLOTS + spell cast bar -->
+      <!-- DIVIDER -->
+      <div style="width:1px;flex-shrink:0;background:linear-gradient(180deg,transparent,rgba(212,166,75,0.45) 20%,rgba(212,166,75,0.6) 50%,rgba(212,166,75,0.45) 80%,transparent);position:relative;">
+        <span style="position:absolute;top:18px;left:50%;transform:translateX(-50%);color:rgba(212,166,75,0.55);font-size:7px;line-height:1;">◆</span>
+        <span style="position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:rgba(212,166,75,0.4);font-size:6px;line-height:1;">◆</span>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════
+           COL 3: STATUS + STATS + SPELL BARS
+      ══════════════════════════════════════════════════════ -->
+      <div style="width:235px;flex-shrink:0;display:flex;flex-direction:column;padding:7px 10px 8px 12px;gap:5px;overflow:hidden;">
+
+        <!-- STATUS PILLS -->
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:4px 8px;border-radius:3px;min-height:24px;background:rgba(255,255,255,0.02);border:1px solid rgba(212,166,75,0.08);">
+          <span style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(212,166,75,0.3);letter-spacing:1px;flex-shrink:0;margin-right:2px;">STATUS</span>
+          <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;overflow:visible;position:relative;z-index:100;"></div>
+        </div>
+
+        <!-- STAT BARS -->
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:space-around;" id="your-nine-stats-wrap">
+          <div id="your-nine-stats"></div>
+        </div>
+
+        <!-- SPELL COOLDOWN BARS -->
+        <div style="display:flex;flex-direction:column;gap:3px;padding:5px 7px;border-radius:3px;background:rgba(255,255,255,0.015);border:1px solid rgba(212,166,75,0.07);" id="hud-spell-bars">
+          <div class="hud-spell-bar-row" id="hud-spell-bar-0" style="display:flex;align-items:center;gap:5px;">
+            <div class="hud-spell-thumb" id="hud-spell-thumb-0" onclick="window._showCardPopupFromHUD&&window._showCardPopupFromHUD(0)" style="width:24px;height:30px;border-radius:3px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);flex-shrink:0;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:border-color 0.15s;"><span style="font-size:9px;opacity:0.25;">?</span></div>
+            <div style="flex:1;height:5px;background:rgba(0,0,0,0.5);border-radius:2px;overflow:hidden;border:1px solid rgba(255,255,255,0.05);position:relative;"><div id="spell-bar-fill-0" style="position:absolute;top:0;left:0;height:100%;width:0%;border-radius:2px;transition:width 0.06s linear;"></div></div>
+            <span id="hud-spell-name-0" style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.2);width:34px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          </div>
+          <div class="hud-spell-bar-row" id="hud-spell-bar-1" style="display:flex;align-items:center;gap:5px;">
+            <div class="hud-spell-thumb" id="hud-spell-thumb-1" onclick="window._showCardPopupFromHUD&&window._showCardPopupFromHUD(1)" style="width:24px;height:30px;border-radius:3px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);flex-shrink:0;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:border-color 0.15s;"><span style="font-size:9px;opacity:0.25;">?</span></div>
+            <div style="flex:1;height:5px;background:rgba(0,0,0,0.5);border-radius:2px;overflow:hidden;border:1px solid rgba(255,255,255,0.05);position:relative;"><div id="spell-bar-fill-1" style="position:absolute;top:0;left:0;height:100%;width:0%;border-radius:2px;transition:width 0.06s linear;"></div></div>
+            <span id="hud-spell-name-1" style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.2);width:34px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          </div>
+          <div class="hud-spell-bar-row" id="hud-spell-bar-2" style="display:flex;align-items:center;gap:5px;">
+            <div class="hud-spell-thumb" id="hud-spell-thumb-2" onclick="window._showCardPopupFromHUD&&window._showCardPopupFromHUD(2)" style="width:24px;height:30px;border-radius:3px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);flex-shrink:0;cursor:pointer;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:border-color 0.15s;"><span style="font-size:9px;opacity:0.25;">?</span></div>
+            <div style="flex:1;height:5px;background:rgba(0,0,0,0.5);border-radius:2px;overflow:hidden;border:1px solid rgba(255,255,255,0.05);position:relative;"><div id="spell-bar-fill-2" style="position:absolute;top:0;left:0;height:100%;width:0%;border-radius:2px;transition:width 0.06s linear;"></div></div>
+            <span id="hud-spell-name-2" style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.2);width:34px;flex-shrink:0;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+          </div>
+          <!-- Auto attack -->
+          <div style="display:flex;align-items:center;gap:5px;margin-top:2px;padding-top:4px;border-top:1px solid rgba(212,166,75,0.08);">
+            <div id="atk-speed-icon" style="font-size:11px;width:24px;text-align:center;opacity:0.4;flex-shrink:0;">⚔</div>
+            <div style="flex:1;height:5px;background:rgba(0,0,0,0.5);border-radius:2px;overflow:hidden;border:1px solid rgba(255,100,34,0.18);position:relative;">
+              <div id="atk-speed-bar" style="position:absolute;top:0;left:0;height:100%;width:0%;background:linear-gradient(90deg,#ffee44,#ff8822,#e85a6a);border-radius:2px;transition:width 0.06s linear;"></div>
+            </div>
+            <span style="font-family:'Press Start 2P',monospace;font-size:3.5px;color:rgba(255,100,34,0.4);width:34px;text-align:right;flex-shrink:0;">AUTO ATK</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- DIVIDER -->
+      <div style="width:1px;flex-shrink:0;background:linear-gradient(180deg,transparent,rgba(212,166,75,0.45) 20%,rgba(212,166,75,0.6) 50%,rgba(212,166,75,0.45) 80%,transparent);position:relative;">
+        <span style="position:absolute;top:18px;left:50%;transform:translateX(-50%);color:rgba(212,166,75,0.55);font-size:7px;line-height:1;">◆</span>
+        <span style="position:absolute;bottom:18px;left:50%;transform:translateX(-50%);color:rgba(212,166,75,0.4);font-size:6px;line-height:1;">◆</span>
+      </div>
+
+      <!-- ══════════════════════════════════════════════════════
+           COL 4: CARD SLOTS WITH TAB BAR (SPELLS / LOG / FIGHTERS)
+      ══════════════════════════════════════════════════════ -->
       <div id="hud-cards" style="flex:1;min-width:0;display:flex;flex-direction:column;">
-        <!-- Spell cast bar sweeping across all 3 cards -->
-        <div style="display:flex;align-items:center;gap:6px;padding:8px 10px 4px;flex-shrink:0;">
-          <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.2);white-space:nowrap;">SPELL ROTATION</span>
+        <!-- Tab bar -->
+        <div style="display:flex;height:26px;flex-shrink:0;border-bottom:1px solid rgba(212,166,75,0.1);background:rgba(0,0,0,0.2);">
+          <button class="hud-tab active" data-pane="build" onclick="switchTrayTab('build')" style="font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:0.5px;padding:0 12px;border:none;background:none;cursor:pointer;color:#D4A64B;border-right:1px solid rgba(255,255,255,0.05);position:relative;">⚔ SPELLS</button>
+          <button class="hud-tab" data-pane="log" onclick="switchTrayTab('log')" style="font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:0.5px;padding:0 12px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.05);">📜 LOG</button>
+          <button class="hud-tab" data-pane="stats" onclick="switchTrayTab('stats')" style="font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:0.5px;padding:0 12px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);">📊 COMBAT</button>
         </div>
-        <div id="spell-timeline" style="display:none;height:4px;background:rgba(255,255,255,0.04);position:relative;flex-shrink:0;margin:0 10px 4px;">
-          <div id="spell-timeline-track" style="position:absolute;inset:0;overflow:hidden;">
-            <div id="spell-playhead" style="position:absolute;top:0;height:100%;width:8px;background:linear-gradient(90deg,transparent,#ffaa44,#ff6622,transparent);box-shadow:0 0 8px #ff6622;transition:left 0.35s ease;left:0%;border-radius:2px;"></div>
-          </div>
-          <div style="position:absolute;top:0;bottom:0;left:33.3%;width:1px;background:rgba(255,255,255,0.1);"></div>
-          <div style="position:absolute;top:0;bottom:0;left:66.6%;width:1px;background:rgba(255,255,255,0.1);"></div>
-        </div>
-        <div id="mobile-hud-panel-cards" style="display:flex;flex:1;gap:6px;padding:4px 10px 8px;">
+        <!-- SPELLS pane -->
+        <div id="mobile-hud-panel-cards" class="tray-pane active" style="display:flex;flex:1;gap:6px;padding:5px 10px 7px 10px;">
           <div class="arena-card-slot empty" id="card-slot-0"><span class="slot-empty-text">1</span></div>
           <div class="arena-card-slot empty" id="card-slot-1"><span class="slot-empty-text">2</span></div>
           <div class="arena-card-slot empty" id="card-slot-2"><span class="slot-empty-text">3</span></div>
         </div>
+        <!-- SPELL TIMELINE (hidden under spell pane) -->
+        <div id="spell-timeline" style="display:none;height:3px;background:rgba(255,255,255,0.04);position:relative;flex-shrink:0;margin:0 10px 3px;">
+          <div id="spell-timeline-track" style="position:absolute;inset:0;overflow:hidden;">
+            <div id="spell-playhead" style="position:absolute;top:0;height:100%;width:8px;background:linear-gradient(90deg,transparent,#ffaa44,#ff6622,transparent);box-shadow:0 0 8px #ff6622;transition:left 0.35s ease;left:0%;border-radius:2px;"></div>
+          </div>
+          <div style="position:absolute;top:0;bottom:0;left:33.3%;width:1px;background:rgba(255,255,255,0.08);"></div>
+          <div style="position:absolute;top:0;bottom:0;left:66.6%;width:1px;background:rgba(255,255,255,0.08);"></div>
+        </div>
+        <!-- LOG pane -->
+        <div id="tray-pane-log" class="tray-pane" style="display:none;flex:1;overflow-y:auto;padding:5px 10px;">
+          <div id="battle-log-full" style="font-family:'Crimson Text',serif;font-size:11px;color:rgba(204,197,219,0.7);"></div>
+        </div>
+        <!-- COMBAT STATS pane -->
+        <div id="tray-pane-stats" class="tray-pane" style="display:none;flex:1;overflow-y:auto;padding:5px 10px;">
+          <div id="combat-stats-content"></div>
+        </div>
       </div>
 
-    </div><!-- close hud-main -->
+      <!-- hidden elements kept for JS compat -->
+      <div id="hud-nine-name" style="display:none;"></div>
+      <div id="hud-nine-guild" style="display:none;"></div>
 
+    </div><!-- close hud-main -->
     <!-- ══ MOBILE HUD (≤640px only — controlled by CSS display:none/flex) ══ -->
-    <div id="mobile-hud-root" style="display:none;flex-direction:row;flex:1;position:relative;overflow:visible;">
+    <div id="mobile-hud-root" style="display:none;flex-direction:row;flex:1;position:relative;overflow:hidden;min-height:0;">
 
       <!-- [PORTRAIT COL] Nine portrait overlapping arena top -->
       <div id="mob-portrait-col">
@@ -1336,22 +1501,42 @@
 <div class="deploy-modal" id="deploy-modal">
   <div class="deploy-inner">
     <button class="deploy-close-x" id="btn-close-deploy">&times;</button>
-    <div class="deploy-title">⚔️ Deploy to <span id="deploy-zone-name"></span></div>
+    <div class="deploy-title">&#9876; Deploy to <span id="deploy-zone-name"></span></div>
 
     <div class="deploy-stats-preview">
-      <div style="font-family:\'Press Start 2P\',monospace; font-size:7px; color:var(--faint); letter-spacing:1px; margin-bottom:8px;">CARD STATS BONUS</div>
       <div class="deploy-stat-row" id="deploy-stats-row">
-        <div class="deploy-stat"><span style="color:#e85a6a">ATK</span> <span id="deploy-atk">--</span></div>
-        <div class="deploy-stat"><span style="color:#6acd8a">HP</span> <span id="deploy-hp">--</span></div>
-        <div class="deploy-stat"><span style="color:#6ac8d8">SPD</span> <span id="deploy-spd">--</span></div>
-        <div class="deploy-stat"><span style="color:#b088e8">DEF</span> <span id="deploy-def">--</span></div>
-        <div class="deploy-stat"><span style="color:#D4A64B">LUCK</span> <span id="deploy-luck">--</span></div>
+        <div class="deploy-stat"><span class="deploy-stat-key" style="color:#e85a6a;">ATK</span><span class="deploy-stat-val" id="deploy-atk" style="color:#e85a6a;">--</span></div>
+        <div class="deploy-stat"><span class="deploy-stat-key" style="color:#6acd8a;">HP</span><span class="deploy-stat-val" id="deploy-hp" style="color:#6acd8a;">--</span></div>
+        <div class="deploy-stat"><span class="deploy-stat-key" style="color:#6ac8d8;">SPD</span><span class="deploy-stat-val" id="deploy-spd" style="color:#6ac8d8;">--</span></div>
+        <div class="deploy-stat"><span class="deploy-stat-key" style="color:#b088e8;">DEF</span><span class="deploy-stat-val" id="deploy-def" style="color:#b088e8;">--</span></div>
+        <div class="deploy-stat"><span class="deploy-stat-key" style="color:#D4A64B;">LCK</span><span class="deploy-stat-val" id="deploy-luck" style="color:#D4A64B;">--</span></div>
       </div>
     </div>
 
-    <div class="deploy-cards-title">SELECT 3 CARDS (<span id="deploy-selected-count">0</span>/3)</div>
-    <div class="deploy-card-grid" id="deploy-card-grid">
-      <div class="loading-text">Loading cards...</div>
+    <div class="deploy-selected-row">
+      <div class="deploy-selected-slot" id="sel-slot-0"><span style="font-size:16px;opacity:0.2;">1</span></div>
+      <div class="deploy-selected-slot" id="sel-slot-1"><span style="font-size:16px;opacity:0.2;">2</span></div>
+      <div class="deploy-selected-slot" id="sel-slot-2"><span style="font-size:16px;opacity:0.2;">3</span></div>
+    </div>
+
+    <div class="deploy-house-tabs" id="deploy-house-tabs"></div>
+
+    <div class="deploy-cards-label">SELECT 3 CARDS &mdash; <span id="deploy-selected-count">0</span>/3 CHOSEN</div>
+
+    <div class="deploy-carousel-wrap">
+      <div class="deploy-carousel-stage" id="deploy-carousel-stage">
+        <div class="deploy-carousel-track" id="deploy-carousel-track">
+          <div class="deploy-carousel-item">
+            <div style="padding:40px;text-align:center;color:var(--faint);font-family:'Cinzel',serif;font-size:14px">Loading cards...</div>
+          </div>
+        </div>
+      </div>
+      <div class="deploy-carousel-controls">
+        <button class="deploy-carousel-btn" id="carousel-prev">&#8249;</button>
+        <div class="deploy-carousel-dots" id="carousel-dots"></div>
+        <span class="deploy-carousel-counter" id="carousel-counter">0 / 0</span>
+        <button class="deploy-carousel-btn" id="carousel-next">&#8250;</button>
+      </div>
     </div>
 
     <button class="btn-deploy" id="btn-confirm-deploy" disabled>SELECT 3 CARDS TO DEPLOY</button>
@@ -1454,6 +1639,7 @@
     _metersTab: 'dmg',
     _chartMetric: 'dmg',
     _koTimer: null,
+    _koUntil: 0,
     _atkBarFrame: null, _atkBarStart: 0, _atkBarInterval: 7000,
     _metersRenderTimer: null,
     selectedCards: [], playerCards: [],
@@ -1462,6 +1648,25 @@
     snapshotCount: 0, currentCycle: 0,
   };
   window._S = S; // expose to PIXI IIFE — set immediately so Proxy reads work on load
+
+  // ── ARENA LOADING OVERLAY ──
+  function _showArenaLoading(msg, pct) {
+    const overlay = document.getElementById('arena-loading');
+    const bar     = document.getElementById('arena-loading-bar');
+    const text    = document.getElementById('arena-loading-text');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'none';
+    if (bar)  bar.style.width  = pct + '%';
+    if (text) text.textContent = msg;
+  }
+  function _dismissArenaLoading() {
+    const overlay = document.getElementById('arena-loading');
+    if (!overlay) return;
+    overlay.style.opacity = '0';
+    setTimeout(() => { overlay.style.display = 'none'; }, 650);
+  }
 
   // ── INIT ──
   async function init() {
@@ -1557,7 +1762,7 @@
     };
     const biomeImg = getBiome(zone);
     return `
-      <div class="zone-card" data-zone-id="${zone.id}" onclick="window.__9lv_openArena && window.__9lv_openArena(${JSON.stringify(zone).replace(/"/g, '&quot;')})">
+      <div class="zone-card" data-zone-id="${zone.id}">
         <div class="zone-card-img-wrap">
           <img src="${biomeImg}" alt="${zone.name}" loading="lazy" onerror="this.style.display='none'">
           ${casters > 0 ? `<div class="zone-card-fighter-count">⚔ ${casters}</div>` : ''}
@@ -1598,6 +1803,13 @@
       const icon = document.getElementById('hud-nine-icon');
       if (icon) icon.style.display = '';
     }
+    const mobPortrait = document.getElementById('mob-nine-portrait');
+    if (mobPortrait) {
+      delete mobPortrait.dataset.nineRendered;
+      mobPortrait.querySelectorAll('.nine-layer').forEach(el => el.remove());
+      const mIcon = document.getElementById('mob-nine-icon');
+      if (mIcon) mIcon.style.display = '';
+    }
     S.currentZone = zone;
     S.currentZoneId = zone.id;
 
@@ -1624,6 +1836,26 @@
     if (tlReset) tlReset.style.display = 'none';
 
     renderSidebarChart();
+    // Pre-seed own deployCache by fetching deployments before first tick
+    // This ensures portrait + sprite load immediately without needing a page refresh
+    fetch(`/api/zones/${zone.id}/deployments`)
+      .then(r => r.ok ? r.json() : null)
+      .then(dep => {
+        if (!dep?.deployments) return;
+        S._deployCache = S._deployCache || {};
+        dep.deployments.forEach(d => {
+          const pid = String(d.player_id);
+          S._deployCache[pid] = {
+            profile_image: d.player?.profile_image || null,
+            equipped_images: d.nine?.equipped_images || {},
+            name: d.nine?.name || d.player?.twitter_handle || null,
+          };
+        });
+      }).catch(() => {});
+    // Show loading overlay while PIXI and socket initialise
+    _showArenaLoading('LOADING ARENA...', 0);
+    // Fallback: dismiss loading after 8s even if socket is slow
+    setTimeout(() => _dismissArenaLoading(), 8000);
     initPixiArena();
     startCountdown();
     connectArenaSocket(zone.id);
@@ -1650,6 +1882,9 @@
   function closeArena() {
     if (S.socket) { try { S.socket.removeAllListeners(); S.socket.disconnect(); } catch(e) {} S.socket = null; }
     if (S.countdownInterval) { clearInterval(S.countdownInterval); S.countdownInterval = null; }
+    // Reset loading overlay for next entry
+    const lo = document.getElementById('arena-loading');
+    if (lo) { lo.style.display = 'none'; lo.style.opacity = '1'; }
     document.getElementById('arena-view').style.display = 'none';
     document.getElementById('zone-list-view').style.display = 'block';
     loadZones(); // refresh counts
@@ -1672,17 +1907,62 @@
             name: d.nine?.name || d.player?.twitter_handle || null,
           };
         });
-        // Retroactively update any sprites already on canvas with profile images
+        // Retroactively update sprites already on canvas with profile images
         // (arena:positions often fires before this fetch resolves)
+        // Instead of remove+recreate (which races with blockSelf), update visuals in-place
         let needsPortraitUpdate = false;
         S.nines.forEach((sp, id) => {
           const cached = S._deployCache[String(id)];
           if (!cached) return;
           if (String(id) === String(S.playerId)) needsPortraitUpdate = true;
-          // Re-add sprite if only has cat fallback and now has image data
-          if (!sp.profileImage && (cached.profile_image || Object.keys(cached.equipped_images||{}).length)) {
-            removeNineSprite(id);
-            // Will be re-created on next arena:positions tick with correct image
+          // Patch sprite in-place if:
+          // - No image at all, OR
+          // - Has PFP but cache now has richer Nine layers (upgrade PFP → layers)
+          const imgs = cached.equipped_images || {};
+          const LAYERS = ['fur','outfit','weapon','expression','headwear','familiar'];
+          const hasLayers = LAYERS.some(l => !!imgs[l]);
+          const needsUpgrade = sp.spriteGroup && (
+            !sp.profileImage ||
+            (sp.profileImage && !sp._hasLayers && hasLayers)
+          );
+          if (needsUpgrade) {
+            if (hasLayers) {
+              // Clear existing fallback graphics, add layered images
+              while (sp.spriteGroup.children.length) sp.spriteGroup.removeChildAt(0);
+              LAYERS.forEach((slot, index) => {
+                if (!imgs[slot]) return;
+                try {
+                  const tex = PIXI.Texture.from(imgs[slot]);
+                  const spr = new PIXI.Sprite(tex);
+                  spr.anchor.set(0.5, 0.75);
+                  spr.width = SPRITE_SIZE; spr.height = SPRITE_SIZE;
+                  spr.zIndex = index + 1;
+                  sp.spriteGroup.addChild(spr);
+                } catch(e) {}
+              });
+              sp.profileImage = cached.profile_image || 'layers';
+              sp._hasLayers = true;
+            } else if (cached.profile_image && !sp.profileImage) {
+              // Profile image fallback
+              try {
+                const h = HOUSES[sp.house] || { color: '#888888' };
+                const hColor = parseInt((h.color||'#888888').replace('#',''), 16);
+                const r = SPRITE_SIZE * 0.42;
+                while (sp.spriteGroup.children.length) sp.spriteGroup.removeChildAt(0);
+                const tex = PIXI.Texture.from(cached.profile_image);
+                const mask = new PIXI.Graphics();
+                mask.beginFill(0xFFFFFF); mask.drawCircle(0, -r*0.15, r); mask.endFill();
+                const pfp = new PIXI.Sprite(tex);
+                pfp.anchor.set(0.5,0.5); pfp.width = r*2; pfp.height = r*2; pfp.y = -r*0.15;
+                pfp.mask = mask; pfp.zIndex = 2;
+                const border = new PIXI.Graphics();
+                border.lineStyle(3, hColor, 1); border.drawCircle(0, -r*0.15, r+1.5); border.zIndex = 3;
+                sp.spriteGroup.addChild(mask);
+                sp.spriteGroup.addChild(pfp);
+                sp.spriteGroup.addChild(border);
+                sp.profileImage = cached.profile_image;
+              } catch(e) {}
+            }
           }
         });
         // Re-render HUD portrait with Nine layers now that cache is populated
@@ -1810,7 +2090,7 @@
         </div>
         <div class="slot-info">
           <div>
-            <div class="slot-type" style="color:${tc}">${(card.spell_type||'ATTACK').toUpperCase()} <span style="color:${hc};opacity:0.5">${hk.slice(0,4).toUpperCase()}</span></div>
+            <div class="slot-type" style="color:${tc}">${(card.spell_type||'ATTACK').toUpperCase()}</div>
             <div class="slot-name">${card.name}</div>
           </div>
           ${eff ? `<span class="slot-effect-pill" style="color:${ec};background:${ec}18;border:1px solid ${ec}35">${eff}</span>` : ''}
@@ -1825,7 +2105,56 @@
     }
     updateSpellTimeline(cards);
     updateYourNinePanel();
+    renderHUDSpellBars(cards);
   }
+
+  // Render per-card cooldown bars in the HUD yellow zone
+  // Each bar has a clickable thumbnail that opens the card popup
+  function renderHUDSpellBars(cards) {
+    for (let i = 0; i < 3; i++) {
+      const card = cards[i];
+      const thumb = document.getElementById(`hud-spell-thumb-${i}`);
+      const nameEl = document.getElementById(`hud-spell-name-${i}`);
+      const fillEl = document.getElementById(`spell-bar-fill-${i}`);
+      if (!thumb || !fillEl) continue;
+
+      if (!card) {
+        thumb.innerHTML = `<span style="font-size:8px;opacity:0.2;">${i+1}</span>`;
+        thumb.style.borderColor = 'rgba(255,255,255,0.08)';
+        if (nameEl) nameEl.textContent = '';
+        fillEl.style.background = 'rgba(255,255,255,0.15)';
+        continue;
+      }
+
+      const hk = card.house || SCHOOL_TO_HOUSE[card.school_id] || 'universal';
+      const hc = HOUSES[hk]?.color || '#888';
+      const artSrc = card.image_url
+        ? (card.image_url.startsWith('http') || card.image_url.startsWith('/') ? card.image_url : '/assets/images/spells/' + card.image_url)
+        : '';
+
+      // Thumbnail — card art or house icon
+      thumb.style.borderColor = hc + '55';
+      thumb.style.background = hc + '14';
+      if (artSrc) {
+        thumb.innerHTML = `<img src="${artSrc}" style="width:100%;height:100%;object-fit:cover;opacity:0.85;" onerror="this.style.display='none'">`;
+      } else {
+        thumb.innerHTML = `<span style="font-size:12px;">${HOUSES[hk]?.icon || '⚔'}</span>`;
+      }
+      thumb.onclick = () => showCardPopup(card, i);
+
+      if (nameEl) {
+        nameEl.textContent = (card.effect_1 || card.name || '').slice(0,6).toUpperCase();
+        nameEl.style.color = hc;
+      }
+      fillEl.style.background = `linear-gradient(90deg,${hc}88,${hc})`;
+    }
+  }
+
+  // Expose for HUD popup clicks
+  window._showCardPopupFromHUD = (slotIdx) => {
+    const card = S.equippedCards[slotIdx];
+    if (card) showCardPopup(card, slotIdx);
+  };
 
   // Swap button wiring (called after deploy modal confirms)
   document.addEventListener('click', e => {
@@ -1864,15 +2193,12 @@
           const img = document.createElement('img');
           img.src = imgs[slot];
           img.className = 'nine-layer';
-          img.style.cssText = `position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:${i+1};`;
+          img.style.cssText = `position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;z-index:${i+1};`;
           portrait.appendChild(img);
         });
       } else if (!hasLayers && cached?.profile_image) {
-        // Twitter PFP fallback if no Nine layers
-        const existing = document.getElementById('hud-nine-img');
-        if (existing && !existing.src.includes(cached.profile_image)) {
-          existing.src = cached.profile_image;
-        }
+        // No Twitter PFP in portrait — house icon is the fallback
+        // (PFP was distracting from the Nine character)
       }
     }
     if (nameEl && S.playerHandle) nameEl.textContent = '@' + S.playerHandle;
@@ -1990,18 +2316,57 @@
     if (S._atkBarFrame) cancelAnimationFrame(S._atkBarFrame);
     const tick = () => {
       const bar = document.getElementById('atk-speed-bar');
-      if (!bar) return;
-      const pct = Math.min(100, ((performance.now()-S._atkBarStart)/S._atkBarInterval)*100);
-      bar.style.height = pct + '%';  // vertical fill
-      if (pct < 100) S._atkBarFrame = requestAnimationFrame(tick);
-      else {
-        // Flash the icon when full
+      if (!bar || !S.isDeployed) { S._atkBarFrame = null; return; }
+      const elapsed = performance.now() - S._atkBarStart;
+      const pct = Math.min(100, (elapsed / S._atkBarInterval) * 100);
+      bar.style.width = pct + '%';
+      if (pct >= 100) {
+        // Auto-restart — bar loops continuously while deployed
+        S._atkBarStart = performance.now();
         const icon = document.getElementById('atk-speed-icon');
-        if (icon) { icon.style.opacity='1'; icon.style.transform='scale(1.3)'; setTimeout(()=>{ if(icon){icon.style.opacity='0.5';icon.style.transform='scale(1)';} },200); }
+        if (icon) {
+          icon.style.opacity = '1';
+          icon.style.transform = 'scale(1.4)';
+          icon.style.color = '#ff8822';
+          setTimeout(() => { if (icon) { icon.style.opacity = '0.4'; icon.style.transform = 'scale(1)'; icon.style.color = ''; }}, 180);
+        }
       }
+      S._atkBarFrame = requestAnimationFrame(tick);
     };
     S._atkBarFrame = requestAnimationFrame(tick);
   }
+
+  // Sync ATK bar phase when we receive a combat:attack from ourselves
+  // This keeps the looping bar in phase with actual server attacks
+  function syncAtkBarPhase() {
+    // When our attack arrives, snap bar back to 0 and restart
+    // This gradually keeps visual in sync with server timing
+    S._atkBarStart = performance.now();
+  }
+
+  // Per-card spell bar animations — each fills independently at card cycle rate
+  function _animateSpellBar(slotIdx, durationMs) {
+    const key = '_spellBar' + slotIdx;
+    if (S[key + 'Frame']) cancelAnimationFrame(S[key + 'Frame']);
+    S[key + 'Start'] = performance.now();
+    S[key + 'Duration'] = durationMs;
+    const fill = document.getElementById('spell-bar-fill-' + slotIdx);
+    if (!fill) return;
+    const tick = () => {
+      if (!S.isDeployed) { S[key + 'Frame'] = null; return; }
+      const pct = Math.min(100, ((performance.now() - S[key + 'Start']) / S[key + 'Duration']) * 100);
+      fill.style.width = pct + '%';
+      if (pct < 100) {
+        S[key + 'Frame'] = requestAnimationFrame(tick);
+      } else {
+        fill.style.width = '100%';
+        S[key + 'Frame'] = null;
+      }
+    };
+    S[key + 'Frame'] = requestAnimationFrame(tick);
+  }
+  window._animateSpellBar = _animateSpellBar;
+
 
   // Spell cast sweep — orange liquid flowing across the 3 card slots
   function sweepSpellBar(slotIdx, numCards) {
@@ -2010,6 +2375,13 @@
     const hc = HOUSES[S.equippedCards[slotIdx]?.house||'universal']?.color || '#ff6622';
     const grad = `linear-gradient(90deg,transparent,${hc},#ff6622,transparent)`;
     const shadow = `0 0 8px ${hc}`;
+
+    // Restart this slot's cooldown bar from 0
+    const HSPD = {stormrage:30,smoulders:25,stonebark:10,ashenvale:22,nighthollow:30,dawnbringer:15,manastorm:25,plaguemire:20,darktide:20};
+    const hk2 = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
+    const cardSpd = S.equippedCards.reduce((s,c)=>s+(c?.base_spd||0),0);
+    const cardCycleSec = Math.max(5.5, 12.0 - ((HSPD[hk2]||25)+cardSpd) * 0.10);
+    if (typeof _animateSpellBar === 'function') _animateSpellBar(slotIdx, cardCycleSec * 1000);
 
     // Desktop spell timeline
     const tl = document.getElementById('spell-timeline');
@@ -2065,6 +2437,8 @@
     if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.textContent = 'SELECT 3 CARDS'; }
     const countEl = document.getElementById('deploy-selected-count');
     if (countEl) countEl.textContent = '0';
+    // Reset selected row slots
+    if (typeof _refreshSelectedRow === 'function') _refreshSelectedRow();
     modal.classList.add('open');
     modal.style.display = 'flex';
     // Load cards
@@ -2095,59 +2469,72 @@
   }
 
   function renderCardGrid(cards) {
-    const grid = document.getElementById('deploy-card-grid');
-    if (!grid) return;
-    if (!cards.length) {
-      grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--faint);font-family:\'Cinzel\',serif;font-size:14px">Open packs to build your collection!</div>';
-      return;
+    if (!cards.length) return;
+
+    // Build house filter tabs
+    const tabsEl = document.getElementById('deploy-house-tabs');
+    if (tabsEl) {
+      const houses = ['all', ...new Set(cards.map(c => c.house || SCHOOL_TO_HOUSE[c.school_id] || 'universal').filter(h => h !== 'universal'))];
+      tabsEl.innerHTML = '';
+      houses.forEach(h => {
+        const btn = document.createElement('button');
+        btn.className = 'deploy-house-tab' + (h === 'all' ? ' active' : '');
+        btn.dataset.house = h;
+        if (h === 'all') {
+          btn.innerHTML = '<span style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--gold);">ALL</span>';
+        } else {
+          const hData = HOUSES[h];
+          if (hData?.crest) {
+            btn.innerHTML = `<img src="${hData.crest}" alt="${h}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><span style="display:none;font-size:16px">${hData.icon||'?'}</span>`;
+            btn.title = hData.name || h;
+            btn.style.borderColor = hData.color + '44';
+          } else {
+            btn.innerHTML = `<span>${hData?.icon || '?'}</span>`;
+          }
+        }
+        btn.addEventListener('click', () => {
+          tabsEl.querySelectorAll('.deploy-house-tab').forEach(t => t.classList.remove('active'));
+          btn.classList.add('active');
+          if (h !== 'all' && HOUSES[h]) btn.style.borderColor = HOUSES[h].color;
+          buildCarousel(h === 'all' ? cards : cards.filter(c => (c.house || SCHOOL_TO_HOUSE[c.school_id] || 'universal') === h));
+        });
+        tabsEl.appendChild(btn);
+      });
     }
 
-    // Sort filter UI
-    let sortBy = 'house';
-    const filterBar = document.createElement('div');
-    filterBar.style.cssText = 'display:flex;gap:6px;padding:0 0 12px;flex-shrink:0;flex-wrap:wrap;';
-    ['house','atk','hp','type'].forEach(s => {
-      const b = document.createElement('button');
-      b.textContent = s.toUpperCase();
-      b.style.cssText = `font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 8px;border-radius:3px;cursor:pointer;border:1px solid rgba(255,255,255,0.1);background:${s===sortBy?'rgba(212,166,75,0.15)':'none'};color:${s===sortBy?'var(--gold)':'var(--faint)'};transition:all 0.15s`;
-      b.onclick = () => {
-        sortBy = s;
-        filterBar.querySelectorAll('button').forEach(btn => { btn.style.background='none'; btn.style.color='var(--faint)'; });
-        b.style.background='rgba(212,166,75,0.15)'; b.style.color='var(--gold)';
-        renderSorted();
-      };
-      filterBar.appendChild(b);
-    });
+    let _carouselCards = cards;
+    let _carouselIdx = 0;
 
-    const cardArea = document.createElement('div');
-    cardArea.className = 'deploy-card-grid';
+    function buildCarousel(filtered) {
+      _carouselCards = filtered;
+      _carouselIdx = Math.min(_carouselIdx, Math.max(0, filtered.length - 1));
+      const track = document.getElementById('deploy-carousel-track');
+      const dots = document.getElementById('carousel-dots');
+      const counter = document.getElementById('carousel-counter');
+      if (!track) return;
 
-    grid.innerHTML = '';
-    grid.appendChild(filterBar);
-    grid.appendChild(cardArea);
+      track.innerHTML = '';
+      if (!filtered.length) {
+        track.innerHTML = '<div class="deploy-carousel-item"><div style="padding:40px;text-align:center;color:var(--faint);font-family:\'Cinzel\',serif;font-size:13px">No cards in this house yet</div></div>';
+        if (dots) dots.innerHTML = '';
+        if (counter) counter.textContent = '0 / 0';
+        return;
+      }
 
-    function renderSorted() {
-      const sorted = [...cards].sort((a, b) => {
-        if (sortBy === 'atk') return (b.base_atk||0) - (a.base_atk||0);
-        if (sortBy === 'hp')  return (b.base_hp||0)  - (a.base_hp||0);
-        if (sortBy === 'type') return (a.spell_type||'').localeCompare(b.spell_type||'');
-        // house
-        return (a.house||'universal').localeCompare(b.house||'universal');
-      });
-
-      cardArea.innerHTML = '';
-      sorted.forEach(card => {
+      filtered.forEach((card, i) => {
         const origIdx = cards.indexOf(card);
         const hk = card.house || SCHOOL_TO_HOUSE[card.school_id] || 'universal';
         const hc = HOUSES[hk]?.color || '#888';
         const isSelected = S.selectedCards.some(s => s.idx === origIdx);
 
+        const item = document.createElement('div');
+        item.className = 'deploy-carousel-item';
+
         const wrap = document.createElement('div');
         wrap.className = 'deploy-card-slot' + (isSelected ? ' selected' : '');
-        wrap.id = `deploy-card-${origIdx}`;
-        wrap.style.cssText = isSelected ? `border-color:${hc};box-shadow:0 0 20px ${hc}55` : '';
+        wrap.id = 'deploy-card-' + origIdx;
+        if (isSelected) wrap.style.cssText = 'border-color:' + hc + ';box-shadow:0 0 20px ' + hc + '55';
 
-        // Use card-v4 renderer if available, else compact fallback
         if (typeof buildCardV4 === 'function') {
           wrap.innerHTML = buildCardV4(card, { compact: false });
           try { if (typeof initCards === 'function') initCards(); } catch(e){}
@@ -2155,38 +2542,108 @@
           const eff = card.effect_1 || '';
           const ec = eff ? (EFFECT_COLORS[eff.split(' ')[0].toUpperCase()]||'#D4A64B') : '#D4A64B';
           const artSrc = card.image_url ? (card.image_url.startsWith('/')||card.image_url.startsWith('http') ? card.image_url : '/assets/images/spells/'+card.image_url) : '';
-          wrap.innerHTML = `
-            <div style="width:160px;min-height:220px;background:linear-gradient(180deg,${hc}18,rgba(8,6,18,0.95));border-radius:12px;padding:12px;position:relative;overflow:hidden;">
-              ${artSrc ? `<img src="${artSrc}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.2;border-radius:12px" onload="this.style.opacity=0.25">` : ''}
-              <div style="position:relative;z-index:1">
-                <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:${hc};margin-bottom:4px">${(card.spell_type||'ATTACK').toUpperCase()}</div>
-                <div style="font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:#fff;margin-bottom:6px;line-height:1.2">${card.name}</div>
-                ${eff ? `<div style="font-family:'Press Start 2P',monospace;font-size:8px;color:${ec};margin-bottom:8px">${eff}</div>` : ''}
-                <div style="display:flex;gap:6px;flex-wrap:wrap;font-family:'Press Start 2P',monospace;font-size:7px">
-                  ${card.base_atk>0?`<span style="color:#e85a6a">⚔ ${card.base_atk}</span>`:''}
-                  ${card.base_hp>0?`<span style="color:#6acd8a">♥ ${card.base_hp}</span>`:''}
-                  ${card.base_spd>0?`<span style="color:#6ac8d8">◈ ${card.base_spd}</span>`:''}
-                  ${card.base_def>0?`<span style="color:#b088e8">⛊ ${card.base_def}</span>`:''}
-                  ${card.base_luck>0?`<span style="color:#D4A64B">★ ${card.base_luck}</span>`:''}
-                </div>
-              </div>
-            </div>`;
+          wrap.innerHTML = '<div style="width:220px;min-height:300px;background:linear-gradient(180deg,' + hc + '18,rgba(8,6,18,0.95));border-radius:12px;padding:14px;position:relative;overflow:hidden;">'
+            + (artSrc ? '<img src="' + artSrc + '" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.22;border-radius:12px">' : '')
+            + '<div style="position:relative;z-index:1">'
+            + '<div style="font-family:\'Press Start 2P\',monospace;font-size:6px;color:' + hc + ';margin-bottom:5px">' + (card.spell_type||'ATTACK').toUpperCase() + '</div>'
+            + '<div style="font-family:\'Cinzel\',serif;font-size:17px;font-weight:700;color:#fff;margin-bottom:8px;line-height:1.2">' + card.name + '</div>'
+            + (eff ? '<div style="font-family:\'Press Start 2P\',monospace;font-size:9px;color:' + ec + ';margin-bottom:10px">' + eff + '</div>' : '')
+            + '<div style="display:flex;gap:8px;flex-wrap:wrap;font-family:\'Press Start 2P\',monospace;font-size:8px">'
+            + (card.base_atk>0?'<span style="color:#e85a6a">ATK ' + card.base_atk + '</span>':'')
+            + (card.base_hp>0?'<span style="color:#6acd8a">HP ' + card.base_hp + '</span>':'')
+            + (card.base_spd>0?'<span style="color:#6ac8d8">SPD ' + card.base_spd + '</span>':'')
+            + (card.base_def>0?'<span style="color:#b088e8">DEF ' + card.base_def + '</span>':'')
+            + (card.base_luck>0?'<span style="color:#D4A64B">LCK ' + card.base_luck + '</span>':'')
+            + '</div></div></div>';
         }
 
         // Selection badge
         const badge = document.createElement('div');
-        badge.style.cssText = `position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--gold);color:#000;display:${isSelected?'flex':'none'};align-items:center;justify-content:center;font-size:12px;font-weight:700;z-index:10;box-shadow:0 0 8px rgba(212,166,75,0.6)`;
+        badge.id = 'check-' + origIdx;
+        badge.style.cssText = 'position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:var(--gold);color:#000;display:' + (isSelected?'flex':'none') + ';align-items:center;justify-content:center;font-size:13px;font-weight:700;z-index:10;';
         badge.textContent = '✓';
-        badge.id = `check-${origIdx}`;
         wrap.style.position = 'relative';
         wrap.appendChild(badge);
+        wrap.addEventListener('click', () => { toggleCardSelect(origIdx); buildCarousel(_carouselCards); });
 
-        wrap.addEventListener('click', () => toggleCardSelect(origIdx));
-        cardArea.appendChild(wrap);
+        item.appendChild(wrap);
+        track.appendChild(item);
       });
+
+      // Update dots
+      if (dots) {
+        dots.innerHTML = '';
+        const MAX_DOTS = 20;
+        if (filtered.length <= MAX_DOTS) {
+          filtered.forEach((_, i) => {
+            const d = document.createElement('div');
+            d.className = 'deploy-carousel-dot' + (i === _carouselIdx ? ' active' : '');
+            d.addEventListener('click', () => goTo(i));
+            dots.appendChild(d);
+          });
+        }
+      }
+      if (counter) counter.textContent = (_carouselIdx + 1) + ' / ' + filtered.length;
+      goTo(_carouselIdx, false);
     }
 
-    renderSorted();
+    function goTo(idx, animate) {
+      _carouselIdx = Math.max(0, Math.min(idx, _carouselCards.length - 1));
+      const track = document.getElementById('deploy-carousel-track');
+      if (track) track.style.transform = 'translateX(-' + (_carouselIdx * 100) + '%)';
+      const dots = document.getElementById('carousel-dots');
+      if (dots) dots.querySelectorAll('.deploy-carousel-dot').forEach((d, i) => d.classList.toggle('active', i === _carouselIdx));
+      const counter = document.getElementById('carousel-counter');
+      if (counter) counter.textContent = (_carouselIdx + 1) + ' / ' + _carouselCards.length;
+    }
+
+    const prevBtn = document.getElementById('carousel-prev');
+    const nextBtn = document.getElementById('carousel-next');
+    if (prevBtn) prevBtn.onclick = () => goTo(_carouselIdx - 1);
+    if (nextBtn) nextBtn.onclick = () => goTo(_carouselIdx + 1);
+
+    // Touch swipe
+    const stage = document.getElementById('deploy-carousel-stage');
+    if (stage) {
+      let touchX = 0;
+      stage.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, {passive:true});
+      stage.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - touchX;
+        if (Math.abs(dx) > 40) dx < 0 ? goTo(_carouselIdx + 1) : goTo(_carouselIdx - 1);
+      }, {passive:true});
+    }
+
+    buildCarousel(cards);
+
+    // Refresh selected-row mini slots
+    _refreshSelectedRow();
+  }
+
+  function _refreshSelectedRow() {
+    for (let i = 0; i < 3; i++) {
+      const slot = document.getElementById('sel-slot-' + i);
+      if (!slot) continue;
+      const sel = S.selectedCards[i];
+      if (!sel) {
+        slot.className = 'deploy-selected-slot';
+        slot.innerHTML = '<span style="font-size:16px;opacity:0.2;">' + (i+1) + '</span>';
+        continue;
+      }
+      const card = sel.card;
+      const hk = card.house || SCHOOL_TO_HOUSE[card.school_id] || 'universal';
+      const hc = HOUSES[hk]?.color || '#D4A64B';
+      const artSrc = card.image_url ? (card.image_url.startsWith('/')||card.image_url.startsWith('http') ? card.image_url : '/assets/images/spells/'+card.image_url) : '';
+      const eff = card.effect_1 || '';
+      const ec = eff ? (EFFECT_COLORS[eff.split(' ')[0].toUpperCase()]||hc) : hc;
+      slot.className = 'deploy-selected-slot filled';
+      slot.style.borderColor = hc + '55';
+      slot.innerHTML = (artSrc ? '<img class="slot-art" src="' + artSrc + '">' : '')
+        + '<div class="slot-info">'
+        + '<div class="slot-name">' + card.name + '</div>'
+        + (eff ? '<div class="slot-eff" style="color:' + ec + '">' + eff + '</div>' : '')
+        + '</div>'
+        + '<span class="slot-x" onclick="event.stopPropagation();toggleCardSelect(' + sel.idx + ')">&times;</span>';
+    }
   }
 
   window.toggleCardSelect = function(idx) {
@@ -2225,6 +2682,7 @@
     upd('deploy-spd', `${base.spd}+${cs}=${base.spd+cs}`);
     upd('deploy-def', `${base.def}+${cd}=${base.def+cd}`);
     upd('deploy-luck',`${base.luck}+${cl}=${base.luck+cl}`);
+    if (typeof _refreshSelectedRow === 'function') _refreshSelectedRow();
   };
 
   function closeDeployModal() {
@@ -2236,6 +2694,14 @@
   async function confirmDeploy() {
     if (S.selectedCards.length !== 3) return;
     if (!S.playerId || !S.currentZoneId) return;
+    // Block deploy if KO cooldown still active
+    const koRemaining = Math.ceil((S._koUntil - Date.now()) / 1000);
+    if (koRemaining > 0) {
+      const btn = document.getElementById('btn-confirm-deploy');
+      if (btn) { btn.textContent = `⏳ KO COOLDOWN ${koRemaining}s`; }
+      setTimeout(() => { if (btn && !btn.disabled) btn.textContent = '⚔️ DEPLOY'; }, 2000);
+      return;
+    }
     const btn = document.getElementById('btn-confirm-deploy');
     if (btn) { btn.disabled = true; btn.textContent = 'DEPLOYING...'; }
     const cardIds = S.selectedCards.map(s => s.card.player_card_id || s.card.id);
@@ -2255,7 +2721,6 @@
         closeDeployModal();
         document.getElementById('deploy-cta').style.display = 'none';
         document.getElementById('arena-bottom-tray').style.display = 'flex';
-        // Show spell timeline immediately at 0% — it sweeps live during combat
         const tl1 = document.getElementById('spell-timeline');
         if (tl1) { tl1.style.display = 'block'; }
         const ph1 = document.getElementById('spell-playhead');
@@ -2267,6 +2732,31 @@
         switchTrayTab('build');
         addFeedEvent('⚔️ ' + (data.message || 'Deployed!'), 'join');
         startAtkBar(7000);
+        // Immediately seed _deployCache so portrait + sprite render without needing a refresh
+        fetch(`/api/zones/${S.currentZoneId}/deployments`)
+          .then(r => r.ok ? r.json() : null)
+          .then(dep => {
+            if (!dep?.deployments) return;
+            S._deployCache = S._deployCache || {};
+            dep.deployments.forEach(d => {
+              S._deployCache[String(d.player_id)] = {
+                profile_image: d.player?.profile_image || null,
+                equipped_images: d.nine?.equipped_images || {},
+                name: d.nine?.name || d.player?.twitter_handle || null,
+              };
+            });
+            // Remove any cat-fallback sprites so arena:positions recreates them with correct images
+            S.nines.forEach((sp, id) => {
+              if (!sp.profileImage) removeNineSprite(id);
+            });
+            // Re-render portraits with Nine layers now available
+            const p = document.getElementById('hud-nine-portrait');
+            if (p) { delete p.dataset.nineRendered; p.querySelectorAll('.nine-layer').forEach(el=>el.remove()); }
+            const mp = document.getElementById('mob-nine-portrait');
+            if (mp) { delete mp.dataset.nineRendered; mp.querySelectorAll('.nine-layer').forEach(el=>el.remove()); }
+            updateYourNinePanel();
+            syncMobilePortrait();
+          }).catch(() => {});
       } else {
         alert(data.error || 'Deploy failed');
         if (btn) { btn.disabled = false; btn.textContent = '⚔️ DEPLOY'; }
@@ -2338,10 +2828,13 @@
     }).then(r => r.json()).then(data => {
       if (data.success || data.message) {
         S.isDeployed = true;
+        S._koUntil = 0;
         document.getElementById('deploy-cta').style.display = 'none';
         document.getElementById('arena-bottom-tray').style.display = 'flex';
         renderCardSlots(cards);
         addFeedEvent('♻️ Auto-redeployed!', 'join');
+      } else {
+        addFeedEvent(`⚠️ Auto-redeploy failed: ${data.error || 'try manually'}`, 'system');
       }
     }).catch(e => addFeedEvent('⚠️ Auto-redeploy failed.', 'system'));
   }
@@ -2354,7 +2847,9 @@
     const rejoinBtn = document.getElementById('ko-rejoin-btn');
     const expiredMsg = document.getElementById('ko-expired-msg');
     if (!overlay) return;
-    if (rejoinBtn) { rejoinBtn.style.display = 'block'; rejoinBtn.disabled = false; rejoinBtn.textContent = '⚔️ REDEPLOY (60s)'; }
+    // Store KO time so deploy endpoint can be blocked client-side
+    S._koUntil = Date.now() + 60000;
+    if (rejoinBtn) { rejoinBtn.style.display = 'block'; rejoinBtn.disabled = true; rejoinBtn.textContent = '⚔️ REDEPLOY (60s)'; }
     if (expiredMsg) expiredMsg.style.display = 'none';
     overlay.classList.add('visible');
     const circumference = 144.5;
@@ -2364,14 +2859,20 @@
       sec--;
       if (numEl) numEl.textContent = Math.max(0, sec);
       if (circle) circle.style.strokeDashoffset = circumference * (1 - sec/60);
-      if (rejoinBtn && !rejoinBtn.disabled) rejoinBtn.textContent = sec > 0 ? `⚔️ REDEPLOY (${sec}s)` : '⚔️ REDEPLOY NOW';
+      if (rejoinBtn) rejoinBtn.textContent = sec > 0 ? `⚔️ REDEPLOY (${sec}s)` : '⚔️ REDEPLOY NOW';
       if (sec <= 0) {
         clearInterval(S._koTimer); S._koTimer = null;
-        if (rejoinBtn) { rejoinBtn.disabled = true; rejoinBtn.textContent = '⛔ WINDOW CLOSED'; }
-        if (expiredMsg) expiredMsg.style.display = 'block';
-        if (numEl) numEl.textContent = '✗';
-        checkAutoRedeploy();
-        if (!S._autoRedeploy) setTimeout(() => dismissKOOverlay(), 8000);
+        S._koUntil = 0;
+        // Enable manual rejoin
+        if (rejoinBtn) { rejoinBtn.disabled = false; rejoinBtn.textContent = '⚔️ REDEPLOY NOW'; }
+        if (expiredMsg) expiredMsg.style.display = 'none';
+        if (numEl) numEl.textContent = '!';
+        // Auto-redeploy fires here
+        if (S._autoRedeploy) {
+          checkAutoRedeploy();
+        } else {
+          // Leave overlay open with active REDEPLOY button — don't auto-dismiss
+        }
       }
     }, 1000);
   }
@@ -2390,11 +2891,19 @@
     socket.on('connect', () => {
       socket.emit('join_zone', { zoneId });
       addFeedEvent('Connected to arena', 'system');
+      _showArenaLoading('JOINING ZONE...', 60);
     });
     socket.on('disconnect', () => addFeedEvent('Reconnecting...', 'system'));
 
     // Positions tick — single source of truth for who's on the battlefield
+    // First tick dismisses loading overlay
+    let _firstPositionsTick = true;
     socket.on('arena:positions', (data) => {
+      if (_firstPositionsTick) {
+        _firstPositionsTick = false;
+        _showArenaLoading('READY', 100);
+        setTimeout(_dismissArenaLoading, 400);
+      }
       if (!data.nines) return;
       const activeIds = new Set(data.nines.map(d => String(d.id)));
 
@@ -2404,9 +2913,8 @@
         let sprite = S.nines.get(id);
         const isSelf = id === String(S.playerId);
         const recentKO = S._recentlyKOd.has(id);
-        const blockSelf = isSelf && !S.isDeployed;
 
-        if (!sprite && S.arenaApp && d.houseKey && !recentKO && !blockSelf) {
+        if (!sprite && S.arenaApp && d.houseKey && !recentKO) {
           const cached = S._deployCache?.[id] || {};
           addNineSprite({ id, name: cached.name || d.playerName || id.slice(0,8),
             house: d.houseKey, guild_id: d.guildTag, guild_name: d.guildTag,
@@ -2494,16 +3002,26 @@
         : (data.tx != null ? engineToScreen({ x: data.tx, y: data.ty }) : null);
 
       if (sx && ex) {
+        // Projectile always fires — visual richness for everyone watching
         animateProjectileFromPos(sx.x, sx.y, ex.x, ex.y, attacker?.house || 'universal', () => {
-          if (dmg > 0) {
+          // Damage numbers + crit burst only when YOU are the attacker or defender
+          const isLocal = fromId === String(S.playerId) || toId === String(S.playerId);
+          if (dmg > 0 && isLocal) {
             if (target) shakeSprite(target);
             showFloatingText(ex.x, ex.y - 20, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 16 : 12);
             if (data.crit) fireworkCRIT(ex.x, ex.y);
+          } else if (target) {
+            // Still shake target for everyone — visual feedback without text spam
+            shakeSprite(target);
           }
         });
-      } else if (ex && dmg > 0) {
-        showFloatingText(ex.x, ex.y - 20, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 16 : 12);
-        if (data.crit) fireworkCRIT(ex.x, ex.y);
+      } else if (ex) {
+        // No projectile possible — at minimum shake if local
+        if (target) shakeSprite(target);
+        if (dmg > 0 && (fromId === String(S.playerId) || toId === String(S.playerId))) {
+          showFloatingText(ex.x, ex.y - 20, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 16 : 12);
+          if (data.crit) fireworkCRIT(ex.x, ex.y);
+        }
       }
 
       const critPart = data.crit ? ` <span class="feed-crit">★ CRIT!</span>` : '';
@@ -2519,7 +3037,9 @@
         const hk2 = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
         const cardSpd = S.equippedCards.reduce((s,c)=>s+(c?.base_spd||0),0);
         const atkSec = Math.max(2.75, (10.5 - ((HSPD[hk2]||25)+cardSpd) * 0.12) / 2);
-        startAtkBar(atkSec * 1000);
+        // Sync bar phase to server attack — keeps looping bar aligned
+        if (Math.abs(S._atkBarInterval - atkSec * 1000) > 200) startAtkBar(atkSec * 1000);
+        else syncAtkBarPhase();
         // Highlight active slot
         for (let i = 0; i < 3; i++) {
           const el = document.getElementById(`card-slot-${i}`);
@@ -2553,14 +3073,20 @@
       const cy = caster  ? caster.container.y  : (cp?.y ?? ty);
 
       if (tx !== null) {
-        const effColor = EFFECT_COLORS[effName] ? parseInt(EFFECT_COLORS[effName].replace('#',''), 16) : 0xD4A64B;
+        // Particles fire for all fights — ambient visual activity
         spawnParticles(tx, ty, getEffectParticles(effName+'_APPLY').color, 8, 'default');
-        showFloatingText(tx, ty - 30, effName, effColor, 9);
+        // Effect name text only when YOU are caster or target
+        const isLocal = String(cId) === String(S.playerId) || String(tId) === String(S.playerId);
+        if (isLocal) {
+          const effColor = EFFECT_COLORS[effName] ? parseInt(EFFECT_COLORS[effName].replace('#',''), 16) : 0xD4A64B;
+          showFloatingText(tx, ty - 30, effName, effColor, 9);
+        }
       }
       if (caster) animateAuraBurst(caster, eff);
       if (data.amt > 0) {
+        const isLocal = String(cId) === String(S.playerId) || String(tId) === String(S.playerId);
         const hx = tx ?? cx, hy = ty ?? cy;
-        if (hx !== null) showFloatingText(hx, hy - 20, `+${data.amt}`, 0x44ffaa, 11);
+        if (hx !== null && isLocal) showFloatingText(hx, hy - 20, `+${data.amt}`, 0x44ffaa, 11);
         trackCombatStat(cId, getNineName(cId), caster?.guild||'', caster?.house||'', 'heals', data.amt);
       }
 
@@ -2593,7 +3119,15 @@
     socket.on('combat:dot', (data) => {
       const id = resolveId(data.nineId);
       const sp = S.nines.get(id);
-      if (sp && data.dmg > 0) showFloatingText(sp.container.x, sp.container.y-15, `-${data.dmg}`, 0x88cc44, 10);
+      // Only show DOT text when it's your Nine taking the damage
+      if (data.dmg > 0 && String(id) === String(S.playerId)) {
+        const px = sp ? sp.container.x : (data.x != null ? engineToScreen({x:data.x,y:data.y||0}).x : null);
+        const py = sp ? sp.container.y : (data.x != null ? engineToScreen({x:data.x,y:data.y||0}).y : null);
+        if (px !== null) {
+          const dotColor = (data.type === 'burn') ? 0xff6b35 : 0x76ff03;
+          showFloatingText(px, py - 15, `-${data.dmg}`, dotColor, 10);
+        }
+      }
     });
 
     socket.on('combat:regen', (data) => {
@@ -2609,17 +3143,27 @@
     socket.on('arena:snapshot', (data) => {
       S.snapshotCount++;
       S.currentCycle = data.cycle || S.snapshotCount;
-      const winner = data.winner_guild || data.leading_guild;
+      // Server sends controllingGuild (not winner_guild)
+      const winner = data.controllingGuild || data.winner_guild || data.leading_guild;
       if (winner) {
         const pts = data.snapshot_points || 5;
         if (S.isDeployed) {
-          addFeedEvent(`📍 Snapshot — ${winner} controls zone (+${pts} pts)`, 'snapshot');
-          showFloatingText(300, 200, `+${pts} pts`, 0xD4A64B, 14);
+          addFeedEvent(`📍 Snapshot — [${winner}] controls zone (+${pts} pts)`, 'snapshot');
+          // Flash points at canvas centre
+          const app = window._S?.arenaApp;
+          const cx = app ? app.screen.width / 2 : 300;
+          const cy = app ? app.screen.height / 2 : 200;
+          showFloatingText(cx, cy, `+${pts} pts`, 0xD4A64B, 14);
         }
       }
-      // Refresh cards sharpness after snapshot — re-fetch loadout
+      // Refresh sharpness display after each snapshot
       if (S.isDeployed && S.playerId && S.currentZoneId) {
         loadMyCards(S.currentZoneId);
+      }
+      // Update zone bonus pill if dominant house changed
+      if (data.dominantHouse && S.currentZone) {
+        S.currentZone.dominant_house = data.dominantHouse;
+        updateZoneBonusPill(S.currentZone);
       }
     });
 
@@ -2680,9 +3224,21 @@
   }
 
   function switchTrayTab(name) {
-    document.querySelectorAll('.tray-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
-    document.querySelectorAll('.tray-pane').forEach(p => p.classList.toggle('active', p.id === `tray-pane-${name}`));
-    if (name === 'stats') { renderCombatMeters(); renderStatsTabChart(); }
+    // Handle both old .tray-tab and new .hud-tab buttons
+    document.querySelectorAll('.tray-tab, .hud-tab').forEach(t => {
+      const isActive = (t.dataset.tab === name || t.dataset.pane === name);
+      t.classList.toggle('active', isActive);
+    });
+    // Show/hide panes
+    const buildPane = document.getElementById('mobile-hud-panel-cards');
+    const logPane = document.getElementById('tray-pane-log');
+    const statsPane = document.getElementById('tray-pane-stats');
+    const timeline = document.getElementById('spell-timeline');
+    if (buildPane) buildPane.style.display = name === 'build' ? 'flex' : 'none';
+    if (logPane) logPane.style.display = name === 'log' ? 'flex' : 'none';
+    if (statsPane) statsPane.style.display = name === 'stats' ? 'flex' : 'none';
+    if (timeline) timeline.style.display = name === 'build' ? 'none' : 'none'; // always hidden, bar drives it
+    if (name === 'stats') { renderCombatMeters?.(); renderStatsTabChart?.(); }
   }
   window.switchTrayTab = switchTrayTab;
 
@@ -2701,27 +3257,41 @@
         isMe: String(id) === String(S.playerId),
       });
     });
-    if (!fighters.length) { container.innerHTML = '<div style="padding:12px;font-family:\'Press Start 2P\',monospace;font-size:6px;color:rgba(255,255,255,0.2)">No fighters yet</div>'; return; }
+    if (!fighters.length) { container.innerHTML = '<div style="padding:14px;font-family:\'Crimson Text\',serif;font-size:14px;color:rgba(255,255,255,0.25)">No fighters on this zone</div>'; return; }
     fighters.sort((a,b) => b.hp - a.hp);
     container.innerHTML = fighters.map((f,i) => {
       const hc = HOUSES[f.house]?.color || '#888';
       const pct = Math.round((f.hp/f.maxHp)*100);
       const hpC = pct > 50 ? '#44cc88' : pct > 25 ? '#ffaa44' : '#ff4466';
-      return `<div style="display:flex;align-items:center;gap:7px;padding:6px 14px;${i<fighters.length-1?'border-bottom:1px solid rgba(255,255,255,0.04)':''};${f.isMe?'background:rgba(212,166,75,0.04)':''}"
-        onmouseenter="window.highlightGuild&&window.highlightGuild('${f.guild}')" onmouseleave="window.resetGuildHighlight&&window.resetGuildHighlight()">
-        <div style="width:9px;height:9px;border-radius:50%;background:${hc};box-shadow:0 0 6px ${hc};flex-shrink:0"></div>
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
-            <span style="font-family:'Press Start 2P',monospace;font-size:8px;color:${f.isMe?'var(--gold)':'var(--bright)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px">${f.name}</span>
-            ${f.guild ? `<span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${hc}">[${f.guild}]</span>` : ''}
-          </div>
-          <div style="height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden">
-            <div style="width:${pct}%;height:100%;background:${hpC};border-radius:2px;transition:width 0.4s"></div>
-          </div>
+      const m = S.combatMetrics.get(String(f.id)) || {};
+      const dmg = m.damage || 0;
+      const heals = m.heals || 0;
+      const kos = m.kos || 0;
+      return `<div style="padding:8px 12px;${i<fighters.length-1?'border-bottom:1px solid rgba(255,255,255,0.06)':''};${f.isMe?'background:rgba(212,166,75,0.07);':''}"
+        onmouseenter="window.highlightGuild&&window.highlightGuild('${f.guild}')"
+        onmouseleave="window.resetGuildHighlight&&window.resetGuildHighlight()">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:${hc};box-shadow:0 0 6px ${hc};flex-shrink:0;margin-top:1px;"></div>
+          <div style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:${f.isMe?'var(--gold)':'var(--bright)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;line-height:1.2;">${f.name}</div>
+          ${f.guild?`<div style="font-family:'Press Start 2P',monospace;font-size:6px;color:${hc};flex-shrink:0;">[${f.guild}]</div>`:''}
+          <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:${hpC};flex-shrink:0;">${Math.round(f.hp)}</div>
         </div>
-        <div style="text-align:right;flex-shrink:0;min-width:40px">
-          <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:${hpC}">${Math.round(f.hp)}</div>
-          ${f.damage>0?`<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:#e85a6a;margin-top:2px">${f.damage.toLocaleString()}</div>`:''}
+        <div style="height:4px;background:rgba(0,0,0,0.4);border-radius:2px;overflow:hidden;margin-bottom:5px;">
+          <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,${hpC}66,${hpC});border-radius:2px;transition:width 0.4s;"></div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <div style="display:flex;flex-direction:column;align-items:center;min-width:40px;">
+            <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:#e85a6a;">${dmg > 999 ? (dmg/1000).toFixed(1)+'k' : dmg}</span>
+            <span style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);margin-top:1px;">DMG</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;min-width:40px;">
+            <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:#44cc88;">${heals > 999 ? (heals/1000).toFixed(1)+'k' : heals}</span>
+            <span style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);margin-top:1px;">HEAL</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;min-width:30px;">
+            <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:#ffaa44;">${kos}</span>
+            <span style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);margin-top:1px;">KOs</span>
+          </div>
         </div>
       </div>`;
     }).join('');
@@ -2883,6 +3453,22 @@
   const _activeDebuffs = new Map(); // effect → expiry timestamp
   // Debuff colour priorities for portrait ring
   const DEBUFF_RING_PRIORITY = ['SILENCE','WEAKEN','POISON','BURN','HEX','BLIND','WITHER','CORRODE'];
+
+  // Human-readable descriptions shown on hover
+  const EFFECT_DESCRIPTIONS = {
+    SILENCE: 'Your card effects are suppressed — attacks deal no effects',
+    WEAKEN:  'You deal 50% damage',
+    POISON:  'Taking DOT damage every 3s — stacks up to ×3',
+    BURN:    'Taking fire damage each hit — stacks up to ×3',
+    HEX:     'Your ATK is reduced by up to 35',
+    BLIND:   'Your LUCK = 0 — no crits, DODGE won\'t activate',
+    WITHER:  'Your heals, BLESS, and BARRIER are 50% less effective',
+    CORRODE: 'Your max HP is being permanently reduced each hit',
+    MARK:    'You take +25% damage from all sources',
+    TETHER:  'Sharing 50% of all damage with your attacker',
+    SLOW:    'Your SPD is reduced — attacking slower',
+  };
+
   function updateDebuffHUD(effect, apply) {
     const el = document.getElementById('hud-debuffs');
     if (!el) return;
@@ -2891,11 +3477,22 @@
     } else {
       _activeDebuffs.delete(effect);
     }
-    // Prune expired
     _activeDebuffs.forEach((exp, k) => { if (Date.now() > exp) _activeDebuffs.delete(k); });
     el.innerHTML = [..._activeDebuffs.keys()].map(e => {
-      const c = EFFECT_COLORS[e.split(' ')[0].toUpperCase()] || '#D4A64B';
-      return `<div title="${e}" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:2px 4px;border-radius:3px;background:${c}22;border:1px solid ${c}55;color:${c};animation:debuffPulse 1.5s ease-in-out infinite">${e.split(' ')[0].slice(0,4)}</div>`;
+      const key = e.split(' ')[0].toUpperCase();
+      const c = EFFECT_COLORS[key] || '#D4A64B';
+      const desc = EFFECT_DESCRIPTIONS[key] || key;
+      return `<div
+        style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 5px;border-radius:3px;background:${c}22;border:1px solid ${c}66;color:${c};animation:debuffPulse 1.5s ease-in-out infinite;cursor:help;position:relative;"
+        onmouseenter="(()=>{const t=this.querySelector('.debuff-tip');if(!t)return;const r=this.getBoundingClientRect();t.style.display='block';t.style.left=(r.left+r.width/2-t.offsetWidth/2)+'px';t.style.top=(r.top-t.offsetHeight-8)+'px';})()"
+        onmouseleave="this.querySelector('.debuff-tip').style.display='none'">
+        ${key.slice(0,5)}
+        <div class="debuff-tip" style="display:none;position:fixed;background:rgba(8,6,18,0.97);border:1px solid ${c}66;border-radius:6px;padding:6px 8px;white-space:nowrap;z-index:9999;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.7);"
+          onmouseenter="this.style.display='none'"
+          <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:${c};margin-bottom:3px;">${key}</div>
+          <div style="font-family:'Crimson Text',serif;font-size:12px;color:#CCC5DB;max-width:200px;white-space:normal;line-height:1.4;">${desc}</div>
+        </div>
+      </div>`;
     }).join('');
     // Animate the portrait ring with the highest priority active debuff colour
     const ring = document.getElementById('hud-effect-ring');
@@ -3010,13 +3607,13 @@
   function syncMobilePortrait() {
     if (window.innerWidth > 640) return;
     const hk = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
+    const houseColor = HOUSES[hk]?.color || '#D4A64B';
     const icon = document.getElementById('mob-nine-icon');
     const name = document.getElementById('mob-nine-name');
     const portrait = document.getElementById('mob-nine-portrait');
-    const img = document.getElementById('mob-nine-img');
     if (icon) icon.textContent = HOUSES[hk]?.icon || '🐱';
     if (name && S.playerHandle) name.textContent = '@' + S.playerHandle;
-    if (portrait) portrait.style.borderColor = (HOUSES[hk]?.color || '#D4A64B') + '66';
+    if (portrait) portrait.style.borderColor = houseColor + '88';
     // HP
     const sprite = S.nines.get(S.playerId);
     const fill = document.getElementById('mob-nine-hp-fill');
@@ -3025,10 +3622,28 @@
       fill.style.width = `${Math.max(0,(sprite.hp/sprite.maxHp)*100)}%`;
       text.textContent = `${Math.round(sprite.hp)}/${sprite.maxHp}`;
     }
-    // Profile image
+    // Render Nine layers (equipped_images) — same priority as desktop portrait
     const cached = S._deployCache?.[String(S.playerId)];
-    if (img && cached?.profile_image && !img.src.includes(cached.profile_image)) {
-      img.src = cached.profile_image;
+    if (portrait && cached && !portrait.dataset.nineRendered) {
+      const imgs = cached.equipped_images || {};
+      const LAYERS = ['fur','outfit','weapon','expression','headwear','familiar'];
+      const hasLayers = LAYERS.some(l => !!imgs[l]);
+      if (hasLayers) {
+        portrait.dataset.nineRendered = '1';
+        portrait.querySelectorAll('.nine-layer').forEach(el => el.remove());
+        if (icon) icon.style.display = 'none';
+        LAYERS.forEach((slot, i) => {
+          if (!imgs[slot]) return;
+          const img = document.createElement('img');
+          img.src = imgs[slot];
+          img.className = 'nine-layer';
+          img.style.cssText = `position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;z-index:${i+1};`;
+          portrait.appendChild(img);
+        });
+      } else if (cached.profile_image) {
+        const img = document.getElementById('mob-nine-img');
+        if (img && !img.src.includes(cached.profile_image)) img.src = cached.profile_image;
+      }
     }
   }
 
@@ -3244,11 +3859,18 @@
   /** Convert engine position (centered at 400,300) to screen position */
   function engineToScreen(pos) {
     if (!pos) return getSpawnPosition('unknown', Math.random());
-    const cx = (state.arenaApp ? state.arenaApp.screen.width : window.innerWidth) / 2;
-    const cy = (state.arenaApp ? state.arenaApp.screen.height : window.innerHeight) / 2;
-    const scaleX = cx / 400;
-    const scaleY = cy / 300;
-    const raw = { x: pos.x * scaleX, y: pos.y * scaleY };
+    const sw = state.arenaApp ? state.arenaApp.screen.width : window.innerWidth;
+    const sh = state.arenaApp ? state.arenaApp.screen.height : window.innerHeight;
+    const cx = sw / 2;
+    const cy = sh / 2;
+    // Map engine space (0–900 x 0–500) to 80% of canvas dimensions
+    // Using 0.8 instead of cx/400 gives more spread while keeping sprites on screen
+    const scaleX = (sw * 0.80) / 900;
+    const scaleY = (sh * 0.80) / 500;
+    const raw = {
+      x: (sw * 0.10) + pos.x * scaleX,
+      y: (sh * 0.10) + pos.y * scaleY,
+    };
     const poly = getActiveCanvasPoly();
     if (poly) return clampToPolygon(raw.x, raw.y, poly);
     return clampToDiamond(raw.x, raw.y, cx, cy, 0.85);
@@ -3317,7 +3939,7 @@
     const container = document.getElementById('arena-canvas');
     container.innerHTML = '';
     const navH = 52;
-    const trayH = 210; // desktop HUD tray height
+    const trayH = 230; // desktop HUD tray height
     const isMobile = window.innerWidth <= 640;
 
     // Desktop: subtract tray height so sprites stay above HUD
@@ -3359,30 +3981,48 @@
       state.arenaApp.stage.sortChildren();
     });
 
-    // ── MAIN TICKER: movement + South Park walk bob ──
+    // ── MAIN TICKER: movement + bob + separation ──
     const isMob = window.innerWidth <= 640;
-    const spriteScale = isMob ? 0.8 : 1.0;
+    const spriteScale = isMob ? 0.85 : 1.0;
     app.ticker.add((delta) => {
       const time = performance.now() / 1000;
+      const allNines = Array.from(state.nines.values());
+
       state.nines.forEach((nine) => {
         if (nine.isAnimating) return;
 
-        // ── Movement: smooth lerp toward server target ──
+        // ── Movement: capped pixels-per-frame so long journeys shuffle slowly ──
         const wx = (nine.targetX ?? nine.container.x) - nine.container.x;
         const wy = (nine.targetY ?? nine.container.y) - nine.container.y;
         const dist = Math.sqrt(wx*wx + wy*wy);
-        const moving = dist > 2;
+        const moving = dist > 1.5;
 
         if (moving) {
-          // 0.07 lerp = ~1.5s to fully converge — smooth, no snapping
-          nine.container.x += wx * 0.07;
-          nine.container.y += wy * 0.07;
+          // Max 2px per frame — a 300px trip takes ~150 frames (~2.5s at 60fps)
+          // This is completely independent of distance so no leaping to far positions
+          const MAX_PX = 2.0;
+          const step = Math.min(MAX_PX, dist);
+          nine.container.x += (wx / dist) * step;
+          nine.container.y += (wy / dist) * step;
           if (nine.spriteGroup && Math.abs(wx) > 0.8) {
             const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
             const newFacing = wx > 0 ? 1 : -1;
-            if (facing !== newFacing) {
-              nine.spriteGroup.scale.x = newFacing * Math.abs(nine.spriteGroup.scale.x);
-            }
+            if (facing !== newFacing) nine.spriteGroup.scale.x = newFacing * Math.abs(nine.spriteGroup.scale.x);
+          }
+        }
+
+        // ── Sprite separation — push apart when too close ──
+        const SEP_DIST = 28; // minimum pixels between sprite centres
+        const SEP_FORCE = 0.6;
+        for (const other of allNines) {
+          if (other === nine || other.isAnimating) continue;
+          const dx = nine.container.x - other.container.x;
+          const dy = nine.container.y - other.container.y;
+          const d = Math.sqrt(dx*dx + dy*dy);
+          if (d > 0 && d < SEP_DIST) {
+            const push = (SEP_DIST - d) / SEP_DIST * SEP_FORCE;
+            nine.container.x += (dx / d) * push;
+            nine.container.y += (dy / d) * push;
           }
         }
 
@@ -3391,12 +4031,12 @@
           const phase = nine.bobPhase || 0;
           if (moving) {
             const step = Math.abs(Math.sin(time * 7 + phase));
-            nine.spriteGroup.y = -step * 3.5;
-            nine.spriteGroup.scale.y = spriteScale * (1 - step * 0.08);
+            nine.spriteGroup.y = -step * 2.5;
+            nine.spriteGroup.scale.y = spriteScale * (1 - step * 0.07);
             const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
-            nine.spriteGroup.scale.x = facing * spriteScale * (1 + step * 0.05);
+            nine.spriteGroup.scale.x = facing * spriteScale * (1 + step * 0.04);
           } else {
-            nine.spriteGroup.y = Math.sin(time * 1.8 + phase) * 1.2;
+            nine.spriteGroup.y = Math.sin(time * 1.8 + phase) * 1.0;
             nine.spriteGroup.scale.y = spriteScale;
             const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
             nine.spriteGroup.scale.x = facing * spriteScale;
@@ -3616,9 +4256,11 @@
     const img = new Image();
     img.onload = () => {
       container.style.backgroundImage = `url('${imgUrl}')`;
+      if (typeof _showArenaLoading === 'function') _showArenaLoading('LOADING FIGHTERS...', 35);
     };
     img.onerror = () => {
       container.style.backgroundImage = `url('${BIOME_FALLBACK}')`;
+      if (typeof _showArenaLoading === 'function') _showArenaLoading('LOADING FIGHTERS...', 35);
     };
     img.src = imgUrl;
 
@@ -3881,7 +4523,7 @@
   // ===== NINE SPRITES — LAYERED ITEM RENDERING =====
   // Layer order matches builder: fur → outfit → weapon → expression → headwear → familiar
   const ITEM_LAYER_ORDER = ['fur', 'outfit', 'weapon', 'expression', 'headwear', 'familiar'];
-  const SPRITE_SIZE = 54; // was 72 — cleaner at this scale
+  const SPRITE_SIZE = 26; // small warzone units — spells and effects are the visual stars
 
   function addNineSprite(nine) {
     if (!state.arenaApp) return;
@@ -3961,20 +4603,20 @@
 
     // Name label
     const nameText = new PIXI.Text(nine.name || '???', new PIXI.TextStyle({
-      fontFamily: 'monospace', fontSize: 9, fill: 0xF0ECF8,
+      fontFamily: 'monospace', fontSize: 7, fill: 0xF0ECF8,
       dropShadow: true, dropShadowColor: 0x000000, dropShadowDistance: 1, dropShadowBlur: 2,
     }));
-    nameText.anchor.set(0.5, 1); nameText.y = -(r + 14); nameText.zIndex = 5;
+    nameText.anchor.set(0.5, 1); nameText.y = -(r + 8); nameText.zIndex = 5;
     container.addChild(nameText);
 
-    // HP bar
+    // HP bar — narrower to match small sprite
     const hpBg = new PIXI.Graphics();
     hpBg.beginFill(0x111111, 0.85);
-    hpBg.drawRoundedRect(-22, SPRITE_SIZE*0.34, 44, 5, 2); hpBg.endFill(); hpBg.zIndex = 4;
+    hpBg.drawRoundedRect(-14, SPRITE_SIZE*0.34, 28, 3, 1); hpBg.endFill(); hpBg.zIndex = 4;
     container.addChild(hpBg);
     const hpFill = new PIXI.Graphics();
     hpFill.beginFill(0x44cc88);
-    hpFill.drawRoundedRect(-22, SPRITE_SIZE*0.34, 44, 5, 2); hpFill.endFill(); hpFill.zIndex = 4;
+    hpFill.drawRoundedRect(-14, SPRITE_SIZE*0.34, 28, 3, 1); hpFill.endFill(); hpFill.zIndex = 4;
     container.addChild(hpFill);
 
     app.stage.addChild(container);
@@ -4026,7 +4668,7 @@
     sprite.hpFill.clear();
     const color = pct > 0.5 ? 0x44cc88 : pct > 0.25 ? 0xffaa55 : 0xff4466;
     sprite.hpFill.beginFill(color);
-    sprite.hpFill.drawRoundedRect(-16, 22, 32 * pct, 4, 2);
+    sprite.hpFill.drawRoundedRect(-14, SPRITE_SIZE ? SPRITE_SIZE * 0.34 : 9, 28 * pct, 3, 1);
     sprite.hpFill.endFill();
 
     // Always update Your Nine panel if this is the player
@@ -4126,39 +4768,112 @@
   function animateProjectileFromPos(x1, y1, x2, y2, house, onHit) {
     if (!state.arenaApp) { if (onHit) onHit(); return; }
     const hColor = getHouseColor(house);
-    const proj = new PIXI.Graphics();
-    proj.beginFill(hColor, 0.95);
-    proj.drawCircle(0, 0, 5);
-    proj.endFill();
-    proj.beginFill(0xffffff, 0.5);
-    proj.drawCircle(0, 0, 2.5);
-    proj.endFill();
-    proj.x = x1; proj.y = y1;
+
+    // Glowing orb — outer glow + bright core
+    const proj = new PIXI.Container();
     proj.zIndex = 90;
+
+    const glow = new PIXI.Graphics();
+    glow.beginFill(hColor, 0.22); glow.drawCircle(0, 0, 14); glow.endFill();
+    const core = new PIXI.Graphics();
+    core.beginFill(hColor, 0.9); core.drawCircle(0, 0, 7); core.endFill();
+    core.beginFill(0xffffff, 0.75); core.drawCircle(0, 0, 3.5); core.endFill();
+    proj.addChild(glow); proj.addChild(core);
+    proj.x = x1; proj.y = y1;
     state.arenaApp.stage.addChild(proj);
 
     const dx = x2 - x1, dy = y2 - y1;
     const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-    const speed = Math.max(6, dist / 12);
-    let travelled = 0;
+    // Slow travel: 80-140 frames at 60fps = 1.3s to 2.3s
+    // Longer distances take more time so the orb is always visible crossing the arena
+    const totalFrames = Math.round(Math.max(80, Math.min(140, dist * 0.45)));
+    let frame = 0;
     let hitFired = false;
 
     const ticker = () => {
-      travelled += speed;
-      const t = Math.min(1, travelled / dist);
+      frame++;
+      const t = Math.min(1, frame / totalFrames);
+      // Slight arc — projectile curves upward slightly mid-flight
+      const arc = Math.sin(t * Math.PI) * Math.min(30, dist * 0.12);
       proj.x = x1 + dx * t;
-      proj.y = y1 + dy * t;
-      proj.alpha = t < 0.9 ? 1 : 1 - (t - 0.9) / 0.1;
-      if (t >= 0.85 && !hitFired) {
+      proj.y = y1 + dy * t - arc;
+      // Pulse glow
+      const pulse = 1 + Math.sin(frame * 0.6) * 0.3;
+      glow.scale.set(pulse);
+      proj.alpha = t > 0.85 ? 1 - (t - 0.85) / 0.15 : 1;
+
+      if (t >= 0.8 && !hitFired) {
         hitFired = true;
+        _pixelExplosion(proj.x, proj.y, hColor);
         if (onHit) onHit();
       }
       if (t >= 1) {
         state.arenaApp.ticker.remove(ticker);
-        state.arenaApp.stage.removeChild(proj);
+        if (proj.parent) state.arenaApp.stage.removeChild(proj);
       }
     };
     state.arenaApp.ticker.add(ticker);
+  }
+
+  /** Pixel starburst explosion — 8 cardinal + diagonal rays with spark particles */
+  function _pixelExplosion(x, y, color) {
+    if (!state.arenaApp) return;
+    const RAYS = 8;
+    const sparks = [];
+    for (let i = 0; i < RAYS; i++) {
+      const angle = (i / RAYS) * Math.PI * 2;
+      const speed = 2.5 + Math.random() * 2;
+      const g = new PIXI.Graphics();
+      // Square pixel spark
+      g.beginFill(color, 1); g.drawRect(-2, -2, 4, 4); g.endFill();
+      g.beginFill(0xffffff, 0.8); g.drawRect(-1, -1, 2, 2); g.endFill();
+      g.x = x; g.y = y;
+      g.zIndex = 95;
+      state.arenaApp.stage.addChild(g);
+      sparks.push({ g, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 0 });
+    }
+    // Extra small random sparks
+    for (let i = 0; i < 6; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1 + Math.random() * 3;
+      const g = new PIXI.Graphics();
+      g.beginFill(color, 0.8); g.drawRect(-1, -1, 2, 2); g.endFill();
+      g.x = x; g.y = y; g.zIndex = 95;
+      state.arenaApp.stage.addChild(g);
+      sparks.push({ g, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 0 });
+    }
+    // Central flash
+    const flash = new PIXI.Graphics();
+    flash.beginFill(0xffffff, 0.9); flash.drawCircle(0, 0, 12); flash.endFill();
+    flash.beginFill(color, 0.7); flash.drawCircle(0, 0, 7); flash.endFill();
+    flash.x = x; flash.y = y; flash.zIndex = 96;
+    state.arenaApp.stage.addChild(flash);
+
+    let explFrame = 0;
+    const explTicker = () => {
+      explFrame++;
+      const p = explFrame / 22;
+      // Shrink flash
+      flash.alpha = Math.max(0, 1 - p * 2);
+      flash.scale.set(1 + p * 0.8);
+      // Move sparks with gravity
+      for (const s of sparks) {
+        s.life++;
+        s.vy += 0.18; // gravity
+        s.g.x += s.vx;
+        s.g.y += s.vy;
+        s.g.alpha = Math.max(0, 1 - s.life / 20);
+        // Pixelate by snapping to 2px grid
+        s.g.x = Math.round(s.g.x / 2) * 2;
+        s.g.y = Math.round(s.g.y / 2) * 2;
+      }
+      if (explFrame >= 22) {
+        state.arenaApp.ticker.remove(explTicker);
+        if (flash.parent) state.arenaApp.stage.removeChild(flash);
+        sparks.forEach(s => { if (s.g.parent) state.arenaApp.stage.removeChild(s.g); });
+      }
+    };
+    state.arenaApp.ticker.add(explTicker);
   }
 
   /** Animate a Nine lunging toward a target position, then returning */

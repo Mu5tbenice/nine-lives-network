@@ -22,11 +22,11 @@ const ZONE_MARGIN   = 40;
 const SPELL_RANGE = { melee:90, mid:220, ranged:380, self:0, aoe_self:120, zone:9999 };
 
 const CARD_TYPE_CONFIG = {
-  attack:  { range: SPELL_RANGE.melee,    prefer:'lowest_hp',      moveTo:'preferred_enemy' },
-  control: { range: SPELL_RANGE.mid,      prefer:'highest_atk',    moveTo:'preferred_enemy' },
-  dot:     { range: SPELL_RANGE.ranged,   prefer:'highest_hp',     moveTo:'preferred_enemy' },
-  support: { range: SPELL_RANGE.aoe_self, prefer:'lowest_hp_ally', moveTo:'ally_cluster'    },
-  utility: { range: SPELL_RANGE.self,     prefer:'self',           moveTo:'hold'            },
+  attack:  { range: SPELL_RANGE.melee,    prefer:'random', moveTo:'preferred_enemy' },
+  control: { range: SPELL_RANGE.mid,      prefer:'random', moveTo:'preferred_enemy' },
+  dot:     { range: SPELL_RANGE.ranged,   prefer:'random', moveTo:'preferred_enemy' },
+  support: { range: SPELL_RANGE.aoe_self, prefer:'random_ally', moveTo:'ally_cluster' },
+  utility: { range: SPELL_RANGE.self,     prefer:'self',   moveTo:'hold'            },
 };
 
 const HOUSE_STATS = {
@@ -144,6 +144,8 @@ function buildNineState(dep, nine, cards, zoneBonus) {
     zoneId: String(dep.zone_id),
     _zoneBonus: zoneBonus || null,
     _koProcessed:false,
+    _currentTarget: null,
+    _targetLockedUntil: 0,
   };
 }
 
@@ -157,17 +159,40 @@ function cardCfg(nine) {
 }
 
 function pickTarget(nine, all) {
+  // TAUNT overrides everything
   const taunter = all.find(n=>n.hp>0 && n.guildTag!==nine.guildTag && n.tauntActive);
-  if (taunter) return taunter;
+  if (taunter) { nine._currentTarget = taunter.deploymentId; return taunter; }
+
   const cfg = cardCfg(nine);
-  const enemies = all.filter(n=>n.hp>0 && n.guildTag!==nine.guildTag && (cfg.range>=SPELL_RANGE.zone || inRange(nine,n,cfg.range)));
-  if (!enemies.length) return null;
-  switch(cfg.prefer) {
-    case 'lowest_hp':   return enemies.reduce((b,e)=>e.hp<b.hp?e:b);
-    case 'highest_atk': return enemies.reduce((b,e)=>e.stats.atk>b.stats.atk?e:b);
-    case 'highest_hp':  return enemies.reduce((b,e)=>e.hp>b.hp?e:b);
-    default:            return enemies[Math.floor(Math.random()*enemies.length)];
+  // Use engagement distance as the firing range — matches desiredDist in updateDest
+  const firingRange = cfg.range === SPELL_RANGE.melee ? 260
+    : cfg.range === SPELL_RANGE.mid    ? 340
+    : cfg.range >= SPELL_RANGE.zone    ? SPELL_RANGE.zone
+    : 420;
+  const enemies = all.filter(n =>
+    n.hp > 0 &&
+    n.guildTag !== nine.guildTag &&
+    (cfg.range >= SPELL_RANGE.zone || inRange(nine, n, firingRange))
+  );
+  if (!enemies.length) { nine._currentTarget = null; return null; }
+
+  // Sticky target — keep attacking the same Nine for TARGET_LOCK_S seconds
+  const TARGET_LOCK_S = 6;
+  const now = Date.now() / 1000;
+  if (
+    nine._currentTarget &&
+    nine._targetLockedUntil &&
+    now < nine._targetLockedUntil
+  ) {
+    const locked = enemies.find(e => e.deploymentId === nine._currentTarget);
+    if (locked) return locked; // still alive and in range — keep attacking
   }
+
+  // Pick a new random target and lock in
+  const chosen = enemies[Math.floor(Math.random() * enemies.length)];
+  nine._currentTarget = chosen.deploymentId;
+  nine._targetLockedUntil = now + TARGET_LOCK_S + Math.random() * 3; // 6–9s lock
+  return chosen;
 }
 
 function pickHealTarget(nine, all) {
@@ -181,33 +206,48 @@ function updateDest(nine, all) {
   if (nine.tauntActive) { nine.destX=ZONE_W/2; nine.destY=ZONE_H/2; return; }
   const cfg = cardCfg(nine);
   if (cfg.moveTo==='hold') return;
+
   if (cfg.moveTo==='ally_cluster') {
     const allies = all.filter(n=>n.hp>0&&n.guildTag===nine.guildTag&&n.deploymentId!==nine.deploymentId);
     if (allies.length) {
       const ax=allies.reduce((s,a)=>s+a.x,0)/allies.length, ay=allies.reduce((s,a)=>s+a.y,0)/allies.length;
-      nine.destX=clamp(ax+(Math.random()-.5)*60,ZONE_MARGIN,ZONE_W-ZONE_MARGIN);
-      nine.destY=clamp(ay+(Math.random()-.5)*60,ZONE_MARGIN,ZONE_H-ZONE_MARGIN);
+      nine.destX=clamp(ax+(Math.random()-.5)*80,ZONE_MARGIN,ZONE_W-ZONE_MARGIN);
+      nine.destY=clamp(ay+(Math.random()-.5)*80,ZONE_MARGIN,ZONE_H-ZONE_MARGIN);
     }
     return;
   }
-  const enemies=all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag);
-  if (!enemies.length) return;
-  let tgt;
-  switch(cfg.prefer){
-    case 'lowest_hp':   tgt=enemies.reduce((b,e)=>e.hp<b.hp?e:b); break;
-    case 'highest_atk': tgt=enemies.reduce((b,e)=>e.stats.atk>b.stats.atk?e:b); break;
-    case 'highest_hp':  tgt=enemies.reduce((b,e)=>e.hp>b.hp?e:b); break;
-    default: tgt=enemies[0];
+
+  const enemies = all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag);
+  if (!enemies.length) {
+    // Wander randomly when no enemies
+    nine.destX = clamp(nine.x + (Math.random()-.5)*200, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
+    nine.destY = clamp(nine.y + (Math.random()-.5)*200, ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
+    return;
   }
-  const dx=tgt.x-nine.x, dy=tgt.y-nine.y, d=Math.hypot(dx,dy)||1;
-  const desiredDist = cfg.range===SPELL_RANGE.melee?70 : cfg.range===SPELL_RANGE.mid?180 : 300;
-  if (d<=cfg.range) {
-    const ang=Math.random()*Math.PI*2;
-    nine.destX=clamp(tgt.x+Math.cos(ang)*desiredDist*.6,ZONE_MARGIN,ZONE_W-ZONE_MARGIN);
-    nine.destY=clamp(tgt.y+Math.sin(ang)*desiredDist*.6,ZONE_MARGIN,ZONE_H-ZONE_MARGIN);
+
+  // Use locked target if available, else random
+  let tgt = enemies.find(e => e.deploymentId === nine._currentTarget) || enemies[Math.floor(Math.random()*enemies.length)];
+
+  const dx = tgt.x - nine.x, dy = tgt.y - nine.y;
+  const d  = Math.hypot(dx, dy) || 1;
+
+  // Desired engagement distance — keep well apart so spells have room to travel
+  // melee: 220, mid: 300, ranged: 380 engine units
+  const desiredDist = cfg.range === SPELL_RANGE.melee ? 220
+    : cfg.range === SPELL_RANGE.mid    ? 300
+    : 380;
+
+  if (d <= desiredDist) {
+    // Already in comfortable range — orbit to a random angle around target
+    // This is what produces the nonchalant wandering feel
+    const ang = Math.random() * Math.PI * 2;
+    const orbitR = desiredDist * (0.7 + Math.random() * 0.4);
+    nine.destX = clamp(tgt.x + Math.cos(ang) * orbitR, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
+    nine.destY = clamp(tgt.y + Math.sin(ang) * orbitR, ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
   } else {
-    nine.destX=clamp(tgt.x-(dx/d)*desiredDist,ZONE_MARGIN,ZONE_W-ZONE_MARGIN);
-    nine.destY=clamp(tgt.y-(dy/d)*desiredDist,ZONE_MARGIN,ZONE_H-ZONE_MARGIN);
+    // Move toward target but stop at desiredDist
+    nine.destX = clamp(tgt.x - (dx/d)*desiredDist, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
+    nine.destY = clamp(tgt.y - (dy/d)*desiredDist, ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
   }
 }
 
