@@ -1249,6 +1249,10 @@
             <div style="position:absolute;bottom:5px;right:5px;width:13px;height:13px;border-bottom:2px solid #D4A64B;border-right:2px solid #D4A64B;pointer-events:none;"></div>
             <!-- Bottom fade -->
             <div style="position:absolute;bottom:0;left:0;right:0;height:50px;background:linear-gradient(transparent,rgba(6,3,16,0.85));pointer-events:none;"></div>
+            <!-- STATUS debuffs — floated over portrait bottom -->
+            <div style="position:absolute;bottom:6px;left:5px;right:5px;display:flex;gap:3px;flex-wrap:wrap;align-items:flex-end;z-index:40;overflow:visible;">
+              <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;overflow:visible;position:relative;z-index:100;"></div>
+            </div>
           </div>
         </div>
         <!-- HP bar under portrait -->
@@ -1270,15 +1274,9 @@
       </div>
 
       <!-- ══════════════════════════════════════════════════════
-           COL 3: STATUS + STATS + SPELL BARS
+           COL 3: STATS + SPELL BARS
       ══════════════════════════════════════════════════════ -->
-      <div style="width:235px;flex-shrink:0;display:flex;flex-direction:column;padding:7px 10px 8px 12px;gap:5px;overflow:hidden;">
-
-        <!-- STATUS PILLS — dedicated row, never collapses -->
-        <div style="min-height:28px;display:flex;align-items:flex-start;padding:4px 8px;border-radius:3px;background:rgba(255,255,255,0.02);border:1px solid rgba(212,166,75,0.08);flex-shrink:0;">
-          <span style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(212,166,75,0.3);letter-spacing:1px;flex-shrink:0;margin-right:5px;margin-top:4px;">STATUS</span>
-          <div id="hud-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;align-items:center;overflow:visible;position:relative;z-index:100;flex:1;"></div>
-        </div>
+      <div style="width:235px;flex-shrink:0;display:flex;flex-direction:column;padding:6px 10px 8px 12px;gap:5px;overflow:hidden;">
 
         <!-- STAT BARS -->
         <div style="flex:1;display:flex;flex-direction:column;justify-content:space-around;" id="your-nine-stats-wrap">
@@ -1325,13 +1323,13 @@
       ══════════════════════════════════════════════════════ -->
       <div id="hud-cards" style="flex:1;min-width:0;display:flex;flex-direction:column;">
         <!-- Tab bar -->
-        <div style="display:flex;height:26px;flex-shrink:0;border-bottom:1px solid rgba(212,166,75,0.1);background:rgba(0,0,0,0.2);">
-          <button class="hud-tab active" data-pane="build" onclick="switchTrayTab('build')" style="font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:0.5px;padding:0 10px;border:none;background:none;cursor:pointer;color:#D4A64B;border-right:1px solid rgba(255,255,255,0.05);position:relative;">⚔ SPELLS</button>
-          <button class="hud-tab" data-pane="log" onclick="switchTrayTab('log')" style="font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:0.5px;padding:0 10px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.05);">📜 LOG</button>
-          <button class="hud-tab" data-pane="stats" onclick="switchTrayTab('stats')" style="font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:0.5px;padding:0 10px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.05);">📊 COMBAT</button>
-          <button class="hud-tab" data-pane="buildhist" onclick="switchTrayTab('buildhist')" style="font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:0.5px;padding:0 10px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.05);">🏆 BUILDS</button>
-          <button class="hud-tab" data-pane="zone" onclick="switchTrayTab('zone')" style="font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:0.5px;padding:0 10px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.05);">🗺 ZONE</button>
-          <button class="hud-tab" data-pane="points" onclick="switchTrayTab('points')" style="font-family:'Press Start 2P',monospace;font-size:5px;letter-spacing:0.5px;padding:0 10px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);">🎯 POINTS</button>
+        <div style="display:flex;height:32px;flex-shrink:0;border-bottom:1px solid rgba(212,166,75,0.12);background:rgba(0,0,0,0.25);">
+          <button class="hud-tab active" data-pane="build" onclick="switchTrayTab('build')" style="font-family:'Press Start 2P',monospace;font-size:6.5px;letter-spacing:0.5px;padding:0 13px;border:none;background:none;cursor:pointer;color:#D4A64B;border-right:1px solid rgba(255,255,255,0.05);position:relative;">⚔ SPELLS</button>
+          <button class="hud-tab" data-pane="log" onclick="switchTrayTab('log')" style="font-family:'Press Start 2P',monospace;font-size:6.5px;letter-spacing:0.5px;padding:0 13px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.05);">📜 LOG</button>
+          <button class="hud-tab" data-pane="stats" onclick="switchTrayTab('stats')" style="font-family:'Press Start 2P',monospace;font-size:6.5px;letter-spacing:0.5px;padding:0 13px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.05);">📊 COMBAT</button>
+          <button class="hud-tab" data-pane="buildhist" onclick="switchTrayTab('buildhist')" style="font-family:'Press Start 2P',monospace;font-size:6.5px;letter-spacing:0.5px;padding:0 13px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.05);">🏆 BUILDS</button>
+          <button class="hud-tab" data-pane="zone" onclick="switchTrayTab('zone')" style="font-family:'Press Start 2P',monospace;font-size:6.5px;letter-spacing:0.5px;padding:0 13px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.05);">🗺 ZONE</button>
+          <button class="hud-tab" data-pane="points" onclick="switchTrayTab('points')" style="font-family:'Press Start 2P',monospace;font-size:6.5px;letter-spacing:0.5px;padding:0 13px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);">🎯 POINTS</button>
         </div>
         <!-- SPELLS pane -->
         <div id="mobile-hud-panel-cards" class="tray-pane active" style="display:flex;flex:1;gap:6px;padding:5px 10px 7px 10px;">
