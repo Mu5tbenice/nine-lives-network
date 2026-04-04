@@ -647,17 +647,19 @@
 
     /* ── STATS BAR ── */
     .deploy-stats-preview {
-      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 8px; padding: 10px 14px; margin-bottom: 14px;
+      background: rgba(255,255,255,0.02); border: 1px solid rgba(212,166,75,0.15);
+      border-radius: 6px; padding: 8px 12px; margin-bottom: 12px;
     }
-    .deploy-stat-row { display: flex; gap: 0; flex-wrap: wrap; }
+    .deploy-stat-row { display: flex; gap: 0; flex-wrap: nowrap; }
     .deploy-stat {
-      font-family: 'Press Start 2P', monospace; font-size: 8px;
+      font-family: 'Press Start 2P', monospace;
       display: flex; flex-direction: column; align-items: center; gap: 3px;
-      flex: 1; min-width: 52px; padding: 4px 2px;
+      flex: 1; padding: 5px 2px;
+      border-right: 1px solid rgba(255,255,255,0.05);
     }
-    .deploy-stat-key { font-size: 6px; opacity: 0.5; letter-spacing: 1px; }
-    .deploy-stat-val { font-size: 10px; font-weight: 700; }
+    .deploy-stat:last-child { border-right: none; }
+    .deploy-stat-key { font-size: 6px; opacity: 0.45; letter-spacing: 1px; }
+    .deploy-stat-val { font-size: 13px; font-weight: 700; line-height: 1; }
 
     /* ── HOUSE FILTER TABS ── */
     .deploy-house-tabs {
@@ -1560,7 +1562,8 @@
         <div class="ko-title">K.O.</div>
         <div class="ko-sub">Your Nine was knocked out.</div>
         <div class="ko-hint">REJOIN WINDOW CLOSING • WATCH THE FIGHT<br>CHAT AND STATS STILL ACTIVE</div>
-        <button id="ko-rejoin-btn" onclick="dismissKOAndRejoin()">⚔️ REJOIN BATTLE</button>
+        <button id="ko-rejoin-btn" onclick="dismissKOAndRejoin()">⚔️ REDEPLOY NOW</button>
+        <div id="ko-pick-cards-link" style="display:none;margin-top:6px;font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(212,166,75,0.5);cursor:pointer;text-align:center;" onclick="dismissKOOverlay();openDeployModal();">or pick different cards</div>
         <div id="ko-expired-msg">WINDOW CLOSED — TOO SLOW</div>
       </div>
       <div class="ko-ring">
@@ -2780,12 +2783,12 @@
     const base = HOUSE_STATS[hk] || HOUSE_STATS.stormrage;
     let ca=0,ch=0,cs=0,cd=0,cl=0;
     S.selectedCards.forEach(s => { const c=s.card; ca+=c.base_atk||0; ch+=c.base_hp||0; cs+=c.base_spd||0; cd+=c.base_def||0; cl+=c.base_luck||0; });
-    const upd = (id, val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
-    upd('deploy-atk', `${base.atk}+${ca}=${base.atk+ca}`);
-    upd('deploy-hp',  `${base.hp}+${ch}=${base.hp+ch}`);
-    upd('deploy-spd', `${base.spd}+${cs}=${base.spd+cs}`);
-    upd('deploy-def', `${base.def}+${cd}=${base.def+cd}`);
-    upd('deploy-luck',`${base.luck}+${cl}=${base.luck+cl}`);
+    const upd = (id, val) => { const el=document.getElementById(id); if(el) el.innerHTML=val; };
+    upd('deploy-atk', `${base.atk+ca}<span style="font-size:9px;opacity:0.55;"> +${ca}</span>`);
+    upd('deploy-hp',  `${base.hp+ch}<span style="font-size:9px;opacity:0.55;"> +${ch}</span>`);
+    upd('deploy-spd', `${base.spd+cs}<span style="font-size:9px;opacity:0.55;"> +${cs}</span>`);
+    upd('deploy-def', `${base.def+cd}<span style="font-size:9px;opacity:0.55;"> +${cd}</span>`);
+    upd('deploy-luck',`${base.luck+cl}<span style="font-size:9px;opacity:0.55;"> +${cl}</span>`);
     if (typeof _refreshSelectedRow === 'function') _refreshSelectedRow();
   };
 
@@ -3011,10 +3014,18 @@
     const circle = document.getElementById('ko-ring-circle');
     const rejoinBtn = document.getElementById('ko-rejoin-btn');
     const expiredMsg = document.getElementById('ko-expired-msg');
+    const pickLink = document.getElementById('ko-pick-cards-link');
     if (!overlay) return;
     // Store KO time so deploy endpoint can be blocked client-side
     S._koUntil = Date.now() + 60000;
-    if (rejoinBtn) { rejoinBtn.style.display = 'block'; rejoinBtn.disabled = true; rejoinBtn.textContent = '⚔️ REDEPLOY (60s)'; }
+    // Show "pick cards" link if we have a saved build
+    const hasSavedBuild = S._lastDeployedCardIds?.length > 0;
+    if (rejoinBtn) {
+      rejoinBtn.style.display = 'block';
+      rejoinBtn.disabled = true;
+      rejoinBtn.textContent = hasSavedBuild ? '⚔️ SAME BUILD (60s)' : '⚔️ REDEPLOY (60s)';
+    }
+    if (pickLink) pickLink.style.display = hasSavedBuild ? 'block' : 'none';
     if (expiredMsg) expiredMsg.style.display = 'none';
     overlay.classList.add('visible');
     const circumference = 144.5;
@@ -3024,7 +3035,10 @@
       sec--;
       if (numEl) numEl.textContent = Math.max(0, sec);
       if (circle) circle.style.strokeDashoffset = circumference * (1 - sec/60);
-      if (rejoinBtn) rejoinBtn.textContent = sec > 0 ? `⚔️ REDEPLOY (${sec}s)` : '⚔️ REDEPLOY NOW';
+      const hasBuild = S._lastDeployedCardIds?.length > 0;
+      if (rejoinBtn) rejoinBtn.textContent = sec > 0
+        ? (hasBuild ? `⚔️ SAME BUILD (${sec}s)` : `⚔️ REDEPLOY (${sec}s)`)
+        : (hasBuild ? '⚔️ SAME BUILD — REJOIN' : '⚔️ REDEPLOY NOW');
       if (sec <= 0) {
         clearInterval(S._koTimer); S._koTimer = null;
         S._koUntil = 0;
@@ -3046,7 +3060,39 @@
     document.getElementById('ko-overlay')?.classList.remove('visible');
     if (S._koTimer) { clearInterval(S._koTimer); S._koTimer = null; }
   }
-  window.dismissKOAndRejoin = function() { dismissKOOverlay(); openDeployModal(); };
+  window.dismissKOAndRejoin = function() {
+    // If we have a saved build, redeploy immediately without modal
+    const savedCards = S._lastDeployedCards;
+    const savedIds   = S._lastDeployedCardIds;
+    if (savedIds?.length && savedCards?.length) {
+      dismissKOOverlay();
+      addFeedEvent('🔄 Redeploying with same build...', 'system');
+      fetch('/api/zones/deploy', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_id: S.playerId, zone_id: S.currentZoneId, card_ids: savedIds }),
+      }).then(r => r.json()).then(data => {
+        if (data.success || data.message) {
+          S.isDeployed = true;
+          S._koUntil = 0;
+          S._sessionStartAt = S._sessionStartAt || Date.now();
+          S.equippedCards = savedCards;
+          S._lastDeployedCards = savedCards;
+          renderCardSlots(savedCards);
+          document.getElementById('deploy-cta').style.display = 'none';
+          document.getElementById('arena-bottom-tray').style.display = 'flex';
+          addFeedEvent('♻️ Redeployed!', 'join');
+          recordBuildStart();
+        } else {
+          // Server rejected — fall back to modal
+          openDeployModal();
+        }
+      }).catch(() => openDeployModal());
+    } else {
+      // No saved build — must pick cards
+      dismissKOOverlay();
+      openDeployModal();
+    }
+  };
 
   // ── SOCKET ──
   function connectArenaSocket(zoneId) {
@@ -3280,19 +3326,21 @@
       // Track heals (only actual healing effects, not damage effects with amt)
       const HEAL_EFFECT_NAMES = ['HEAL','BLESS','DRAIN','FEAST','LEECH AURA','REGEN'];
       const isHealEffect = HEAL_EFFECT_NAMES.includes(effName);
-      if (data.amt > 0 && isHealEffect) {
+      const healAmt = data.amt || data.value || data.amount || 0;
+      if (healAmt > 0 && isHealEffect) {
         const isLocal = String(cId) === String(S.playerId) || String(tId) === String(S.playerId);
         const hx = tx ?? cx, hy = ty ?? cy;
-        if (hx !== null && isLocal) showFloatingText(hx, hy - 20, `+${data.amt}`, 0x44ffaa, 11);
-        trackCombatStat(cId, getNineName(cId), caster?.guild||'', caster?.house||'', 'heals', data.amt);
+        if (hx !== null && isLocal) showFloatingText(hx, hy - 20, `+${healAmt}`, 0x44ffaa, 11);
+        trackCombatStat(cId, getNineName(cId), caster?.guild||'', caster?.house||'', 'heals', healAmt);
         if (String(cId) === String(S.playerId) && S._buildMetrics) {
-          S._buildMetrics.heals = (S._buildMetrics.heals||0) + data.amt;
+          S._buildMetrics.heals = (S._buildMetrics.heals||0) + healAmt;
         }
-      } else if (data.amt > 0 && !isHealEffect) {
+      } else if ((data.amt || data.value || data.amount || 0) > 0 && !isHealEffect) {
+        const dmgAmt = data.amt || data.value || data.amount || 0;
         // Effect dealt damage (BURN, POISON, THORNS etc.) — count toward damage total
-        trackCombatStat(cId, getNineName(cId), caster?.guild||'', caster?.house||'', 'damage', data.amt);
+        trackCombatStat(cId, getNineName(cId), caster?.guild||'', caster?.house||'', 'damage', dmgAmt);
         if (String(cId) === String(S.playerId) && S._buildMetrics) {
-          S._buildMetrics.damage = (S._buildMetrics.damage||0) + data.amt;
+          S._buildMetrics.damage = (S._buildMetrics.damage||0) + dmgAmt;
         }
       }
 
@@ -3323,14 +3371,18 @@
         document.getElementById('arena-bottom-tray').style.display = 'none';
         recordBuildEnd();
       }
-      // Award KO points to local player if they got the kill
-      if (String(killerId) === String(S.playerId)) {
+      // Award KO points — check by killerId OR killerName matching handle
+      const isMyKill = (killerId && String(killerId) === String(S.playerId)) ||
+                       (data.killerName && S.playerHandle && data.killerName === S.playerHandle);
+      if (isMyKill) {
         _addSessionPoints('kos', 10);
-        if (S._buildMetrics) S._buildMetrics.damage = (S._buildMetrics.damage||0) + 0; // kos tracked separately
+        if (S._buildMetrics) S._buildMetrics.kos = (S._buildMetrics.kos||0) + 1;
       }
       setTimeout(() => removeNineSprite(koId), 1500);
-      addFeedEvent(`💀 ${data.nine || getNineName(koId)} KO'd!`, 'ko');
-      trackCombatStat(killerId, getNineName(data.killerId), '', '', 'kos', 1);
+      addFeedEvent(`💀 ${data.nine || getNineName(koId)} KO'd!${isMyKill?' <span style="color:#ffaa44">+10 pts</span>':''}`, 'ko');
+      // Track KO stat — use killerName to find the right player id
+      const kTracked = killerId || (data.killerName ? [...S.nines.entries()].find(([,s])=>s.name===data.killerName)?.[0] : null);
+      if (kTracked) trackCombatStat(kTracked, data.killerName || getNineName(kTracked), '', '', 'kos', 1);
     });
 
     socket.on('combat:dot', (data) => {
@@ -3632,8 +3684,11 @@
     if (S._snapshotHistory.length > 10) S._snapshotHistory.shift();
     // Update session points
     if (S.isDeployed) {
-      const pts = data.snapshot_points || (S._lastSnapshotWinner === S.playerGuildTag ? 5 : 3);
-      _addSessionPoints('snapshots', pts);
+      const myGuild = S.playerGuildTag;
+      const winner = S._lastSnapshotWinner;
+      // +5 pts for winning snapshot, +3 pts for surviving
+      const snapPts = winner && myGuild && winner === myGuild ? 5 : 3;
+      _addSessionPoints('snapshots', snapPts);
     }
     // Re-render if zone tab is visible
     const zp = document.getElementById('tray-pane-zone');
@@ -3692,18 +3747,18 @@
     const bkEl = document.getElementById('pts-breakdown');
     if (bkEl) {
       const sources = [
-        { key:'snapshots', label:'Snapshots',     color:'#D4A64B' },
-        { key:'kos',       label:'KOs',           color:'#e85a6a' },
-        { key:'zone',      label:'Zone Control',  color:'#44cc88' },
-        { key:'duels',     label:'Duels',         color:'#6ac8d8' },
-        { key:'chronicle', label:'Chronicle',     color:'#b088e8' },
+        { key:'snapshots', label:'Snapshots', color:'#D4A64B' },
+        { key:'kos',       label:'KOs',       color:'#e85a6a' },
+        { key:'zone',      label:'Control',   color:'#44cc88' },
+        { key:'duels',     label:'Duels',     color:'#6ac8d8' },
+        { key:'chronicle', label:'Chronicle', color:'#b088e8' },
       ];
       const maxVal = Math.max(...sources.map(s => pts[s.key]||0), 1);
       bkEl.innerHTML = sources.map(s => {
         const v = pts[s.key] || 0;
         const pct = Math.round((v/maxVal)*100);
         return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-          <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.4);width:80px;flex-shrink:0;">${s.label}</div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.4);width:72px;flex-shrink:0;white-space:nowrap;">${s.label}</div>
           <div style="flex:1;height:8px;background:rgba(0,0,0,0.4);border-radius:3px;overflow:hidden;border:1px solid rgba(255,255,255,0.05);">
             <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,${s.color}66,${s.color});border-radius:3px;transition:width 0.4s;"></div>
           </div>
@@ -3732,7 +3787,7 @@
       const tips = [];
       if (!S.isDeployed) tips.push('Deploy to a zone to earn Zone Control and Snapshot points.');
       if ((pts.kos||0) === 0) tips.push('Get kills — +10 pts per KO. High ATK builds score fast.');
-      if ((pts.chronicle||0) === 0) tips.push('Reply to the Chronicle on Twitter for +15–35 pts per act.');
+      if ((pts.chronicle||0) === 0) tips.push('Reply to @9LVNetwork on Twitter for +15–35 Chronicle pts per act. Chronicle points are added to your season total automatically.');
       if ((pts.duels||0) === 0) tips.push('Quick Duels cost nothing and earn +8 pts per win.');
       if (!tips.length) tips.push('Strong session! Hold the zone for Snapshot bonuses.');
       tipsEl.innerHTML = tips.map(t =>
