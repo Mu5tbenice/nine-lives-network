@@ -136,7 +136,7 @@ function buildNineState(dep, nine, cards, zoneBonus) {
     atkTimer:  atkInterval(spd),
     cardTimer: cardInterval(spd),
     cardIdx:0,
-    burnStacks:0, poisonStacks:0, poisonTimer:0, corrodeCd:0,
+    burnStacks:0, burnTimer:0, poisonStacks:0, poisonTimer:0, corrodeCd:0,
     wardUp:false, anchorUp:false, barrierHp:0, dodgeReady:false, reflectReady:false, tauntActive:false,
     silenced:0, weakened:0, marked:0, hexAmt:0,
     hasteBonus:0, hasteTurns:0, tetherActive:false, tetherTurns:0,
@@ -146,6 +146,8 @@ function buildNineState(dep, nine, cards, zoneBonus) {
     _koProcessed:false,
     _currentTarget: null,
     _targetLockedUntil: 0,
+    _deployedAt: Date.now(),
+    _lastHitBy: null, _lastHitById: null,
   };
 }
 
@@ -202,53 +204,31 @@ function pickHealTarget(nine, all) {
 }
 
 // ─── MOVEMENT ─────────────────────────────────────────────────────────
+// Nines NEVER chase targets. All attacks are ranged — projectiles travel to target.
+// Movement is pure aesthetic patrol: gentle random wander, South Park shuffle feel.
 function updateDest(nine, all) {
   if (nine.tauntActive) { nine.destX=ZONE_W/2; nine.destY=ZONE_H/2; return; }
   const cfg = cardCfg(nine);
   if (cfg.moveTo==='hold') return;
 
+  // Support cards: orbit the most wounded nearby ally
   if (cfg.moveTo==='ally_cluster') {
     const allies = all.filter(n=>n.hp>0&&n.guildTag===nine.guildTag&&n.deploymentId!==nine.deploymentId);
     if (allies.length) {
-      const ax=allies.reduce((s,a)=>s+a.x,0)/allies.length, ay=allies.reduce((s,a)=>s+a.y,0)/allies.length;
-      nine.destX=clamp(ax+(Math.random()-.5)*80,ZONE_MARGIN,ZONE_W-ZONE_MARGIN);
-      nine.destY=clamp(ay+(Math.random()-.5)*80,ZONE_MARGIN,ZONE_H-ZONE_MARGIN);
+      const wounded = allies.reduce((b,a)=>a.hp<b.hp?a:b);
+      const ang = Math.random()*Math.PI*2;
+      nine.destX = clamp(wounded.x + Math.cos(ang)*70, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
+      nine.destY = clamp(wounded.y + Math.sin(ang)*70, ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
     }
     return;
   }
 
-  const enemies = all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag);
-  if (!enemies.length) {
-    // Wander randomly when no enemies
-    nine.destX = clamp(nine.x + (Math.random()-.5)*200, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
-    nine.destY = clamp(nine.y + (Math.random()-.5)*200, ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
-    return;
-  }
-
-  // Use locked target if available, else random
-  let tgt = enemies.find(e => e.deploymentId === nine._currentTarget) || enemies[Math.floor(Math.random()*enemies.length)];
-
-  const dx = tgt.x - nine.x, dy = tgt.y - nine.y;
-  const d  = Math.hypot(dx, dy) || 1;
-
-  // Desired engagement distance — keep well apart so spells have room to travel
-  // melee: 220, mid: 300, ranged: 380 engine units
-  const desiredDist = cfg.range === SPELL_RANGE.melee ? 220
-    : cfg.range === SPELL_RANGE.mid    ? 300
-    : 380;
-
-  if (d <= desiredDist) {
-    // Already in comfortable range — orbit to a random angle around target
-    // This is what produces the nonchalant wandering feel
-    const ang = Math.random() * Math.PI * 2;
-    const orbitR = desiredDist * (0.7 + Math.random() * 0.4);
-    nine.destX = clamp(tgt.x + Math.cos(ang) * orbitR, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
-    nine.destY = clamp(tgt.y + Math.sin(ang) * orbitR, ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
-  } else {
-    // Move toward target but stop at desiredDist
-    nine.destX = clamp(tgt.x - (dx/d)*desiredDist, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
-    nine.destY = clamp(tgt.y - (dy/d)*desiredDist, ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
-  }
+  // All card types: short random wander — never approaches target
+  // Small radius keeps sprites in their local area, producing the shuffle look
+  const wanderR = 60 + Math.random()*80;
+  const wanderAng = Math.random()*Math.PI*2;
+  nine.destX = clamp(nine.x + Math.cos(wanderAng)*wanderR, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
+  nine.destY = clamp(nine.y + Math.sin(wanderAng)*wanderR, ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
 }
 
 function stepPos(nine) {
@@ -277,7 +257,7 @@ function applyEffect(caster, target, card, all) {
   const amp = effectAmp(caster);
   const hamp = healAmp(caster);
   switch(e){
-    case 'BURN':    target.burnStacks=Math.min(3,target.burnStacks+1); break;
+    case 'BURN':    target.burnStacks=Math.min(3,target.burnStacks+1); target.burnTimer=Math.max(target.burnTimer||0, cardInterval(caster.stats.spd)*2); break;
     case 'POISON':  target.poisonStacks=Math.min(3,(target.poisonStacks||0)+1); target.poisonTimer=Math.max(target.poisonTimer||0,18); break;
     case 'CORRODE': if(caster.corrodeCd<=0){target.maxHp=Math.max(50,target.maxHp-Math.round(15*amp));target.hp=Math.min(target.hp,target.maxHp);caster.corrodeCd=CORRODE_CD;} break;
     case 'HEAL':    {const a=pickHealTarget(caster,all);const amt=Math.floor(caster.maxHp*.07*amp*hamp);a.hp=Math.min(a.maxHp,a.hp+(a.witherActive>0?Math.floor(amt*.5):amt));} break;
@@ -357,9 +337,12 @@ function resolveAttack(caster, defender, all) {
   if(defender.anchorUp&&defender.hp-dmg<=0){dmg=defender.hp-1;defender.anchorUp=false;}
   defender.hp=Math.max(0,defender.hp-dmg);
   if(defender.hp>0&&defender.cards.some(c=>c.effect_1==='THORNS')) caster.hp=Math.max(0,caster.hp-Math.floor(dmg*.18));
-  if(defender.burnStacks>0&&defender.hp>0) defender.hp=Math.max(0,defender.hp-defender.burnStacks*6);
+  // BURN damage handled in tick loop (like POISON) — removed from here
   if(caster.drainActive&&dmg>0){caster.hp=Math.min(caster.maxHp,caster.hp+Math.max(1,Math.floor(dmg*.20)));caster.drainActive=false;}
   if(caster.hexAmt>0) caster.hexAmt=Math.max(0,caster.hexAmt-3);
+
+  // Track who last hit this Nine (for KO credit)
+  if(dmg>0){ defender._lastHitBy=caster.playerName; defender._lastHitById=caster.playerId; }
 
   broadcast(caster.zoneId,'combat:attack',{
     attacker:caster.playerName, attackerId:caster.playerId,
@@ -373,11 +356,20 @@ function resolveAttack(caster, defender, all) {
 
 // ─── KO ───────────────────────────────────────────────────────────────
 function handleKO(nine, zoneId, all) {
-  broadcast(zoneId,'combat:ko',{nine:nine.playerName,nineId:nine.playerId,guildTag:nine.guildTag,x:nine.x,y:nine.y});
+  broadcast(zoneId,'combat:ko',{nine:nine.playerName,nineId:nine.playerId,guildTag:nine.guildTag,killerName:nine._lastHitBy||null,killerId:nine._lastHitById||null,x:nine.x,y:nine.y});
   if(nine.cards.some(c=>c.effect_1==='SHATTER')){const d=Math.floor(nine.maxHp*.10);all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag&&inRange(nine,n,120)).forEach(n=>n.hp=Math.max(0,n.hp-d));broadcast(zoneId,'combat:effect',{effect:'SHATTER',by:nine.playerName,dmg:d,x:nine.x,y:nine.y});}
   if(nine.cards.some(c=>c.effect_1==='INFECT')){all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag).forEach(n=>{n.poisonStacks=Math.min(3,(n.poisonStacks||0)+1);n.poisonTimer=Math.max(n.poisonTimer||0,12);});broadcast(zoneId,'combat:effect',{effect:'INFECT',by:nine.playerName});}
   all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag&&n.cards.some(c=>c.effect_1==='FEAST')).forEach(n=>n.hp=Math.min(n.maxHp,n.hp+Math.floor(nine.maxHp*.15)));
-  supabaseAdmin.from('zone_deployments').update({is_active:false,current_hp:0,ko_until:new Date(Date.now()+60000).toISOString()}).eq('id',nine.deploymentId).then(({error})=>{if(error)console.error('❌ KO:',error.message);});
+  // KO: update deployment + award killer points
+  supabaseAdmin.from('zone_deployments')
+    .update({is_active:false,current_hp:0,ko_until:new Date(Date.now()+60000).toISOString()})
+    .eq('id',nine.deploymentId)
+    .then(({error})=>{if(error)console.error('❌ KO:',error.message);});
+  // Award 25 pts to killer (identified by _lastHitById)
+  if(nine._lastHitById){
+    supabaseAdmin.rpc('increment_season_points',{p_player_id:nine._lastHitById,p_pts:25})
+      .then(({error})=>{if(error)console.error('❌ KO pts:',error.message);});
+  }
 }
 
 // ─── ZONE TICK ────────────────────────────────────────────────────────
@@ -398,12 +390,24 @@ async function tickZone(zoneId, zs) {
   // Poison DOT every 6 ticks (= 3s at 500ms per tick)
   if(zs.tick%6===0){
     all.forEach(n=>{
+      // POISON DOT tick
       if(n.hp>0&&n.poisonStacks>0){
         const dot=Math.floor(n.maxHp*.030*n.poisonStacks);
         n.hp=Math.max(0,n.hp-dot);
-        n.poisonTimer=Math.max(0,(n.poisonTimer||0)-TICK_S);
+        n.poisonTimer=Math.max(0,(n.poisonTimer||0)-TICK_S*6);
         if(n.poisonTimer<=0) n.poisonStacks=0;
-        broadcast(zoneId,'combat:dot',{nine:n.playerName,nineId:n.deploymentId,dmg:dot,hp:n.hp,maxHp:n.maxHp,x:n.x,y:n.y});
+        broadcast(zoneId,'combat:dot',{nine:n.playerName,nineId:n.deploymentId,dmg:dot,hp:n.hp,maxHp:n.maxHp,effect:'POISON',x:n.x,y:n.y});
+      }
+      // BURN DOT tick (same cadence as poison — every 6 ticks)
+      if(n.hp>0&&n.burnStacks>0&&(n.burnTimer||0)>0){
+        const bdot=n.burnStacks*5;
+        n.hp=Math.max(0,n.hp-bdot);
+        broadcast(zoneId,'combat:dot',{nine:n.playerName,nineId:n.deploymentId,dmg:bdot,hp:n.hp,maxHp:n.maxHp,effect:'BURN',x:n.x,y:n.y});
+      }
+      // BURN timer decay — stacks clear when timer expires
+      if((n.burnTimer||0)>0){
+        n.burnTimer=Math.max(0,n.burnTimer-TICK_S*6);
+        if(n.burnTimer<=0) n.burnStacks=0;
       }
     });
   }
@@ -525,6 +529,39 @@ async function runSnapshot(){
 
     broadcast(zoneId,'arena:snapshot',{zoneId,controllingGuild,dominantHouse,brandedGuild,guildHp});
     console.log(`📸 Zone ${zoneId} → [${controllingGuild}] | house: ${dominantHouse} | brand: [${brandedGuild}]`);
+
+    // ── SNAPSHOT POINTS ── Award server-side, write to DB ──────────────
+    // Survive = +20 pts (if deployed >= 5 cumulative minutes today on this zone)
+    // Win = +10 bonus pts (on top of survive) for controlling guild
+    // Per-minute alive points (2pts/min) are written separately via HP sync heartbeat
+    const MIN_SNAP_SECS = 5 * 60; // must have been deployed 5+ cumulative minutes
+    const snapNow = Date.now();
+    const pointUpdates = [];
+    for(const nine of all) {
+      // Calculate cumulative time on zone today for this player
+      // deployedAt is stored on nine state; we use it to check eligibility
+      const deployedSecs = nine._deployedAt ? (snapNow - nine._deployedAt) / 1000 : 0;
+      const eligible = deployedSecs >= MIN_SNAP_SECS;
+      if(!eligible) continue;
+
+      const isWinner = nine.guildTag === controllingGuild;
+      const pts = isWinner ? 30 : 20; // win=30 total, survive=20
+      pointUpdates.push({ playerId: nine.playerId, deploymentId: nine.deploymentId, pts, isWinner });
+    }
+
+    // Write points to DB in parallel
+    await Promise.all(pointUpdates.map(async ({ playerId, deploymentId, pts }) => {
+      // Increment season_points on player
+      await supabaseAdmin.rpc('increment_season_points', { p_player_id: playerId, p_pts: pts })
+        .then(({error}) => { if(error) console.error(`❌ Snapshot pts player ${playerId}:`, error.message); });
+      // Log on deployment row
+      await supabaseAdmin.from('zone_deployments')
+        .update({ points_earned: supabaseAdmin.raw('points_earned + ' + pts) })
+        .eq('id', deploymentId)
+        .then(({error}) => { if(error) { /* column may not exist yet — non-fatal */ } });
+    }));
+    if(pointUpdates.length) console.log(`💰 Snapshot pts: ${pointUpdates.map(p=>p.playerId+':'+p.pts).join(', ')}`);
+
   }
 }
 

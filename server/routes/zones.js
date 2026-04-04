@@ -48,7 +48,8 @@ router.post('/deploy', async (req, res) => {
       return res.status(404).json({ error: 'No Nine found — complete registration first' });
     }
 
-    // Check if already deployed on this zone
+    // Check if already deployed on this zone — if so, treat as loadout swap:
+    // silently withdraw first so the player can redeploy with new cards
     const { data: existingDeploy } = await supabase
       .from('zone_deployments')
       .select('id')
@@ -58,19 +59,35 @@ router.post('/deploy', async (req, res) => {
       .single();
 
     if (existingDeploy) {
-      return res.status(400).json({ error: 'Already deployed on this zone' });
+      // Deactivate old card slots
+      await supabaseAdmin.from('zone_card_slots')
+        .update({ is_active: false })
+        .eq('deployment_id', existingDeploy.id)
+        .eq('is_active', true);
+      // Deactivate old deployment
+      await supabaseAdmin.from('zone_deployments')
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq('id', existingDeploy.id);
+      // Remove from engine
+      try {
+        const engine = getCombatEngine();
+        if (engine?.removeDeploymentFromEngine) engine.removeDeploymentFromEngine(existingDeploy.id, zone_id);
+      } catch(e) { /* non-critical */ }
     }
 
     // V5: Check zone deployment limit (2 zones at start, 3 at level 10)
+    // Re-query AFTER any swap withdrawal above, so count is accurate
     const { data: currentDeploys } = await supabase
       .from('zone_deployments')
-      .select('id')
+      .select('id, zone_id')
       .eq('player_id', player_id)
       .eq('is_active', true);
 
     const playerLevel = nine.level || 1;
     const maxZones = playerLevel >= 10 ? 3 : 2;
-    if ((currentDeploys || []).length >= maxZones) {
+    // Count only OTHER zones (we already withdrew from this one if it existed)
+    const otherZoneDeploys = (currentDeploys || []).filter(d => String(d.zone_id) !== String(zone_id));
+    if (otherZoneDeploys.length >= maxZones) {
       return res.status(400).json({
         error: `Already deployed to ${maxZones} zones (max for level ${playerLevel}). Withdraw from one first.`
       });
