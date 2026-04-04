@@ -2213,6 +2213,21 @@
     updateSpellTimeline(cards);
     updateYourNinePanel();
     renderHUDSpellBars(cards);
+    // If already deployed (e.g. after page refresh) kick off bars immediately
+    if (S.isDeployed) {
+      const hk2 = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
+      const HSPD = {stormrage:30,smoulders:25,stonebark:10,ashenvale:22,nighthollow:30,dawnbringer:15,manastorm:25,plaguemire:20,darktide:20};
+      const cardSpd = cards.reduce((s,c) => s + (c?.base_spd||0), 0);
+      const atkSec = Math.max(2.75, (10.5 - ((HSPD[hk2]||25) + cardSpd) * 0.12) / 2);
+      const cycleSec = Math.max(5.5, 12.0 - ((HSPD[hk2]||25) + cardSpd) * 0.10);
+      startAtkBar(atkSec * 1000);
+      for (let i = 0; i < 3; i++) {
+        if (cards[i] && typeof _animateSpellBar === 'function') {
+          // Stagger starts so bars aren't all in sync
+          setTimeout(() => _animateSpellBar(i, cycleSec * 1000), i * (cycleSec * 333));
+        }
+      }
+    }
   }
 
   // Render per-card cooldown bars in the HUD yellow zone
@@ -2812,6 +2827,15 @@
     const btn = document.getElementById('btn-confirm-deploy');
     if (btn) { btn.disabled = true; btn.textContent = 'DEPLOYING...'; }
     const cardIds = S.selectedCards.map(s => s.card.player_card_id || s.card.id);
+    // If already deployed on this zone, withdraw first (card swap), not a new deployment
+    if (S.isDeployed && S.currentZoneId) {
+      try {
+        await fetch('/api/zones/withdraw', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ player_id: S.playerId, zone_id: S.currentZoneId }),
+        });
+      } catch(e) { /* ignore — proceed with deploy anyway */ }
+    }
     try {
       const res = await fetch('/api/zones/deploy', {
         method: 'POST',
@@ -3139,7 +3163,7 @@
         if (sprite) {
           const dx = pos.x - (sprite.targetX || sprite.container.x);
           const dy = pos.y - (sprite.targetY || sprite.container.y);
-          if (Math.sqrt(dx*dx+dy*dy) > 15) { sprite.targetX = pos.x; sprite.targetY = pos.y; }
+          if (Math.sqrt(dx*dx+dy*dy) > 22) { sprite.targetX = pos.x; sprite.targetY = pos.y; }
           if (d.houseKey) sprite.house = d.houseKey;
           if (d.guildTag) sprite.guild = d.guildTag;
           updateNineHP(id, d.hp, d.maxHp);
@@ -3236,8 +3260,9 @@
         : (data.tx != null ? engineToScreen({ x: data.tx, y: data.ty }) : null);
 
       if (sx && ex) {
-        // Projectile always fires — visual richness for everyone watching
-        animateProjectileFromPos(sx.x, sx.y, ex.x, ex.y, attacker?.house || 'universal', () => {
+        // Use homing animateProjectile when both sprites exist, else use fixed coords
+        if (attacker && target && typeof animateProjectile === 'function') {
+          animateProjectile(resolveId(fromId), resolveId(toId), attacker?.house || 'universal', () => {
           // Damage numbers + crit burst only when YOU are the attacker or defender
           const isLocal = fromId === String(S.playerId) || toId === String(S.playerId);
           if (dmg > 0 && isLocal) {
@@ -3245,10 +3270,19 @@
             showFloatingText(ex.x, ex.y - 20, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 16 : 12);
             if (data.crit) fireworkCRIT(ex.x, ex.y);
           } else if (target) {
-            // Still shake target for everyone — visual feedback without text spam
             shakeSprite(target);
           }
         });
+        } else {
+          // Fallback — no live sprites, use fixed coords
+          animateProjectileFromPos(sx.x, sx.y, ex.x, ex.y, attacker?.house || 'universal', () => {
+            const isLocal = fromId === String(S.playerId) || toId === String(S.playerId);
+            if (dmg > 0 && isLocal) {
+              showFloatingText(ex.x, ex.y - 20, `-${dmg}`, data.crit ? 0xffd700 : 0xff4466, data.crit ? 16 : 12);
+              if (data.crit) fireworkCRIT(ex.x, ex.y);
+            }
+          });
+        }
       } else if (ex) {
         // No projectile possible — at minimum shake if local
         if (target) shakeSprite(target);
@@ -4628,8 +4662,8 @@
         }
 
         // ── Sprite separation — push apart when too close ──
-        const SEP_DIST = 28; // minimum pixels between sprite centres
-        const SEP_FORCE = 0.6;
+        const SEP_DIST = 20; // tighter — less push, less jitter
+        const SEP_FORCE = 0.25; // gentler force
         for (const other of allNines) {
           if (other === nine || other.isAnimating) continue;
           const dx = nine.container.x - other.container.x;
@@ -5385,51 +5419,91 @@
   function animateProjectileFromPos(x1, y1, x2, y2, house, onHit) {
     if (!state.arenaApp) { if (onHit) onHit(); return; }
     const hColor = getHouseColor(house);
+    const app = state.arenaApp;
 
-    // Glowing orb — outer glow + bright core
-    const proj = new PIXI.Container();
-    proj.zIndex = 90;
+    // ── CONFETTI PIXEL MISSILE ──
+    const missile = new PIXI.Container();
+    missile.zIndex = 100;
+    missile.x = x1; missile.y = y1;
 
+    // Core pixel body — 2x2 bright square
+    const body = new PIXI.Graphics();
+    body.beginFill(0xffffff, 1); body.drawRect(-3,-3,6,6); body.endFill();
+    body.beginFill(hColor, 1); body.drawRect(-2,-2,4,4); body.endFill();
+    missile.addChild(body);
+
+    // Outer glow
     const glow = new PIXI.Graphics();
-    glow.beginFill(hColor, 0.22); glow.drawCircle(0, 0, 14); glow.endFill();
-    const core = new PIXI.Graphics();
-    core.beginFill(hColor, 0.9); core.drawCircle(0, 0, 7); core.endFill();
-    core.beginFill(0xffffff, 0.75); core.drawCircle(0, 0, 3.5); core.endFill();
-    proj.addChild(glow); proj.addChild(core);
-    proj.x = x1; proj.y = y1;
-    state.arenaApp.stage.addChild(proj);
+    glow.beginFill(hColor, 0.3); glow.drawCircle(0, 0, 9); glow.endFill();
+    missile.addChild(glow);
+
+    app.stage.addChild(missile);
 
     const dx = x2 - x1, dy = y2 - y1;
     const dist = Math.sqrt(dx*dx + dy*dy) || 1;
-    // Slow travel: 80-140 frames at 60fps = 1.3s to 2.3s
-    // Longer distances take more time so the orb is always visible crossing the arena
-    const totalFrames = Math.round(Math.max(80, Math.min(140, dist * 0.45)));
+    const totalFrames = Math.round(Math.max(25, Math.min(55, dist * 0.3)));
     let frame = 0;
     let hitFired = false;
+    const CONFETTI_COLORS = [hColor, 0xffffff, 0xffee44, 0xff8822, 0x44ffcc, hColor];
+    const trails = [];
 
     const ticker = () => {
       frame++;
       const t = Math.min(1, frame / totalFrames);
-      // Slight arc — projectile curves upward slightly mid-flight
-      const arc = Math.sin(t * Math.PI) * Math.min(30, dist * 0.12);
-      proj.x = x1 + dx * t;
-      proj.y = y1 + dy * t - arc;
-      // Pulse glow
-      const pulse = 1 + Math.sin(frame * 0.6) * 0.3;
-      glow.scale.set(pulse);
-      proj.alpha = t > 0.85 ? 1 - (t - 0.85) / 0.15 : 1;
+      const ease = 1 - Math.pow(1 - t, 2); // ease-out
+      const arc = Math.sin(t * Math.PI) * Math.min(18, dist * 0.08);
+      const newX = x1 + dx * ease;
+      const newY = y1 + dy * ease - arc;
 
-      if (t >= 0.8 && !hitFired) {
+      // Rotate to face direction
+      if (frame > 1) {
+        missile.rotation = Math.atan2(newY - missile.y, newX - missile.x);
+      }
+      missile.x = newX;
+      missile.y = newY;
+
+      // Confetti trail — spawn pixel sparks every 2 frames
+      if (frame % 2 === 0) {
+        const tc = PIXI.Graphics ? new PIXI.Graphics() : null;
+        if (tc) {
+          const cc = CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)];
+          const sz = 1 + Math.random() * 2;
+          tc.beginFill(cc, 0.9); tc.drawRect(-sz/2,-sz/2,sz,sz); tc.endFill();
+          tc.x = newX + (Math.random()-0.5)*6;
+          tc.y = newY + (Math.random()-0.5)*6;
+          tc.zIndex = 95;
+          app.stage.addChild(tc);
+          trails.push({ g: tc, life: 12, vx: (Math.random()-0.5)*1.5, vy: (Math.random()-0.5)*1.5 });
+        }
+      }
+
+      // Update trails
+      for (let i = trails.length - 1; i >= 0; i--) {
+        const tr = trails[i];
+        tr.life--;
+        tr.g.x += tr.vx;
+        tr.g.y += tr.vy;
+        tr.g.alpha = tr.life / 12;
+        if (tr.life <= 0) { app.stage.removeChild(tr.g); trails.splice(i, 1); }
+      }
+
+      missile.alpha = t > 0.85 ? 1 - (t - 0.85) / 0.15 : 1;
+      glow.scale.set(1 + Math.sin(frame * 0.8) * 0.2);
+
+      if (t >= 0.75 && !hitFired) {
         hitFired = true;
-        _pixelExplosion(proj.x, proj.y, hColor);
+        _pixelExplosion(missile.x, missile.y, hColor);
         if (onHit) onHit();
       }
       if (t >= 1) {
-        state.arenaApp.ticker.remove(ticker);
-        if (proj.parent) state.arenaApp.stage.removeChild(proj);
+        app.ticker.remove(ticker);
+        app.stage.removeChild(missile);
+        // Clear any remaining trail
+        trails.forEach(tr => app.stage.removeChild(tr.g));
+        trails.length = 0;
       }
     };
-    state.arenaApp.ticker.add(ticker);
+    app.ticker.add(ticker);
   }
 
   /** Pixel starburst explosion — 8 cardinal + diagonal rays with spark particles */
@@ -6816,15 +6890,19 @@
       let frame = 0;
       let prevX = startX, prevY = startY;
       const totalFrames = 35; // 0.6s flight — snappy
-      // NO ARC — straight line missile
+      // NO ARC — straight line missile, but HOMING: reads target position each frame
 
       const ticker = () => {
         frame++;
         const t = frame / totalFrames;
         const ease = t < 0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
 
-        const newX = startX + (endX - startX) * ease;
-        const newY = startY + (endY - startY) * ease; // straight line — no arc
+        // Homing: always aim at current target position (target may have moved)
+        const curEndX = (target?.container?.x ?? endX);
+        const curEndY = (target?.container?.y ?? endY) - 5;
+
+        const newX = startX + (curEndX - startX) * ease;
+        const newY = startY + (curEndY - startY) * ease; // straight line — no arc
 
         // Rotate missile to face flight direction
         const dx = newX - prevX;
