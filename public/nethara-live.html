@@ -1169,14 +1169,21 @@
 
     <!-- FIGHTERS -->
     <div id="sidebar-guilds" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 12px 6px;flex-shrink:0;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px 4px;flex-shrink:0;">
         <div class="sidebar-section-label" style="margin-bottom:0;">FIGHTERS</div>
         <div id="sidebar-sort-btns" style="display:flex;gap:3px;">
-          <button onclick="window._sortFighters('hp')"    data-sort="hp"    class="sb-sort-btn sb-sort-active" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 6px;border-radius:2px;cursor:pointer;background:rgba(212,166,75,0.12);border:1px solid rgba(212,166,75,0.3);color:var(--gold);">HP</button>
+          <button onclick="window._sortFighters('hp')"     data-sort="hp"     class="sb-sort-btn sb-sort-active" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 6px;border-radius:2px;cursor:pointer;background:rgba(212,166,75,0.12);border:1px solid rgba(212,166,75,0.3);color:var(--gold);">HP</button>
           <button onclick="window._sortFighters('damage')" data-sort="damage" class="sb-sort-btn" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 6px;border-radius:2px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:var(--faint);">DMG</button>
           <button onclick="window._sortFighters('heals')"  data-sort="heals"  class="sb-sort-btn" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 6px;border-radius:2px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:var(--faint);">HEAL</button>
           <button onclick="window._sortFighters('kos')"    data-sort="kos"    class="sb-sort-btn" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 6px;border-radius:2px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:var(--faint);">KOs</button>
         </div>
+      </div>
+      <!-- ROUND / SESSION toggle -->
+      <div style="display:flex;gap:0;padding:0 12px 6px;flex-shrink:0;">
+        <button id="sb-view-round" onclick="window._setSidebarView('round')"
+          style="font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 10px;border-radius:3px 0 0 3px;cursor:pointer;background:rgba(106,200,216,0.15);border:1px solid rgba(106,200,216,0.4);color:#6ac8d8;">⚡ ROUND</button>
+        <button id="sb-view-session" onclick="window._setSidebarView('session')"
+          style="font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 10px;border-radius:0 3px 3px 0;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-left:none;color:var(--faint);">📊 SESSION</button>
       </div>
       <div id="fighters-list" style="flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(212,166,75,0.2) transparent;"></div>
     </div>
@@ -2494,9 +2501,17 @@
   function sweepSpellBar(slotIdx, numCards) {
     const n = numCards || 3;
     const targetPct = ((slotIdx + 0.5) / n) * 100;
-    const hc = HOUSES[S.equippedCards[slotIdx]?.house||'universal']?.color || '#ff6622';
+    const card = S.equippedCards[slotIdx];
+    const hk = card?.house || 'universal';
+    const hc = HOUSES[hk]?.color || '#ff6622';
     const grad = `linear-gradient(90deg,transparent,${hc},#ff6622,transparent)`;
     const shadow = `0 0 8px ${hc}`;
+
+    // ── CARD CAST VISUAL — fires for every card type ──
+    const selfSprite = S.nines.get(String(S.playerId));
+    if (selfSprite && card && typeof _triggerCardCastVisual === 'function') {
+      _triggerCardCastVisual(selfSprite, card, slotIdx);
+    }
 
     // Restart this slot's cooldown bar from 0
     const HSPD = {stormrage:30,smoulders:25,stonebark:10,ashenvale:22,nighthollow:30,dawnbringer:15,manastorm:25,plaguemire:20,darktide:20};
@@ -3447,6 +3462,10 @@
       S.snapshotCount++;
       S.currentCycle = data.cycle || S.snapshotCount;
       _onSnapshotData(data);
+      // Reset round metrics for the new 15-min window
+      resetRoundMetrics();
+      // Re-render sidebar (round view resets, session accumulates)
+      renderGuildSidebar();
       // Persist fighter metrics to localStorage so they survive page refresh
       try {
         const today = new Date().toISOString().slice(0,10);
@@ -3831,6 +3850,46 @@
   }
   window.renderPointsTab = renderPointsTab;
 
+  // ── SIDEBAR VIEW: ROUND vs SESSION ──
+  S._sidebarView = 'round'; // default to THIS ROUND
+  S._roundMetrics = new Map(); // resets every 15-min snapshot
+
+  window._setSidebarView = function(view) {
+    S._sidebarView = view;
+    const rBtn = document.getElementById('sb-view-round');
+    const sBtn = document.getElementById('sb-view-session');
+    if (rBtn) {
+      const isRound = view === 'round';
+      rBtn.style.background = isRound ? 'rgba(106,200,216,0.15)' : 'rgba(255,255,255,0.03)';
+      rBtn.style.borderColor = isRound ? 'rgba(106,200,216,0.4)' : 'rgba(255,255,255,0.08)';
+      rBtn.style.color = isRound ? '#6ac8d8' : 'var(--faint)';
+      if (sBtn) {
+        sBtn.style.background = !isRound ? 'rgba(212,166,75,0.12)' : 'rgba(255,255,255,0.03)';
+        sBtn.style.borderColor = !isRound ? 'rgba(212,166,75,0.3)' : 'rgba(255,255,255,0.08)';
+        sBtn.style.color = !isRound ? 'var(--gold)' : 'var(--faint)';
+      }
+    }
+    renderGuildSidebar();
+  };
+
+  // Reset round metrics on every snapshot
+  function resetRoundMetrics() {
+    S._roundMetrics = new Map();
+  }
+
+  // Track round metrics separately from session metrics
+  function trackRoundStat(id, name, guild, house, stat, amount) {
+    if (!id || !amount) return;
+    const key = String(id);
+    const m = S._roundMetrics.get(key) || { name: name||key.slice(0,8), guild: guild||'', house: house||'', damage:0, heals:0, kos:0 };
+    if (name) m.name = name;
+    if (guild) m.guild = guild;
+    if (house) m.house = house;
+    m[stat] = (m[stat]||0) + amount;
+    S._roundMetrics.set(key, m);
+  }
+  window.trackRoundStat = trackRoundStat;
+
   // ── SIDEBAR SORT ──
   S._sidebarSort = 'hp';
   window._sortFighters = function(field) {
@@ -3848,38 +3907,46 @@
   function renderGuildSidebar() {
     const container = document.getElementById('fighters-list');
     if (!container) return;
+    const isRound = S._sidebarView === 'round';
+    const metrics = isRound ? S._roundMetrics : S.combatMetrics;
     const fighters = [];
     // Start with live nines on canvas
     const seenIds = new Set();
     S.nines.forEach((sp, id) => {
-      const m = S.combatMetrics.get(String(id));
+      const m = metrics.get(String(id));
+      const ms = S.combatMetrics.get(String(id)); // always get session for name/guild
       seenIds.add(String(id));
       fighters.push({
-        id, name: sp.name || m?.name || String(id).slice(0,8),
-        guild: sp.guild || m?.guild || '', house: sp.house || m?.house || 'universal',
+        id, name: sp.name || ms?.name || String(id).slice(0,8),
+        guild: sp.guild || ms?.guild || '', house: sp.house || ms?.house || 'universal',
         hp: sp.hp || 0, maxHp: sp.maxHp || 1,
         damage: m?.damage || 0, heals: m?.heals || 0, kos: m?.kos || 0,
         isMe: String(id) === String(S.playerId), live: true,
       });
     });
-    // Also show persisted fighters from metrics (even if not currently on canvas)
-    S.combatMetrics.forEach((m, id) => {
-      if (seenIds.has(String(id))) return; // already included
-      if (!m.name) return; // skip anonymous entries
-      fighters.push({
-        id, name: m.name, guild: m.guild || '', house: m.house || 'universal',
-        hp: 0, maxHp: 1,
-        damage: m.damage || 0, heals: m.heals || 0, kos: m.kos || 0,
-        isMe: String(id) === String(S.playerId), live: false,
+    // Also show persisted fighters from session metrics (not for round view — round is live only)
+    if (!isRound) {
+      S.combatMetrics.forEach((m, id) => {
+        if (seenIds.has(String(id))) return;
+        if (!m.name) return;
+        fighters.push({
+          id, name: m.name, guild: m.guild || '', house: m.house || 'universal',
+          hp: 0, maxHp: 1,
+          damage: m.damage || 0, heals: m.heals || 0, kos: m.kos || 0,
+          isMe: String(id) === String(S.playerId), live: false,
+        });
       });
-    });
-    if (!fighters.length) { container.innerHTML = '<div style="padding:14px;font-family:\'Crimson Text\',serif;font-size:14px;color:rgba(255,255,255,0.25)">No fighters on this zone</div>'; return; }
+    }
+    if (!fighters.length) {
+      container.innerHTML = `<div style="padding:14px;font-family:'Crimson Text',serif;font-size:14px;color:rgba(255,255,255,0.25)">${isRound ? 'No action yet this round' : 'No fighters on this zone'}</div>`;
+      return;
+    }
     const sortField = S._sidebarSort || 'hp';
     fighters.sort((a, b) => {
       if (sortField === 'hp')     return b.hp - a.hp;
-      if (sortField === 'damage') return (S.combatMetrics.get(String(b.id))?.damage||0) - (S.combatMetrics.get(String(a.id))?.damage||0);
-      if (sortField === 'heals')  return (S.combatMetrics.get(String(b.id))?.heals||0)  - (S.combatMetrics.get(String(a.id))?.heals||0);
-      if (sortField === 'kos')    return (S.combatMetrics.get(String(b.id))?.kos||0)    - (S.combatMetrics.get(String(a.id))?.kos||0);
+      if (sortField === 'damage') return (b.damage||0) - (a.damage||0);
+      if (sortField === 'heals')  return (b.heals||0)  - (a.heals||0);
+      if (sortField === 'kos')    return (b.kos||0)    - (a.kos||0);
       return b.hp - a.hp;
     });
     container.innerHTML = fighters.map((f,i) => {
@@ -3923,6 +3990,8 @@
   // ── COMBAT STATS / CHART ──
   function trackCombatStat(id, name, guild, house, stat, amount) {
     if (!id || !amount) return;
+    // Track in both session and current round
+    trackRoundStat(id, name, guild, house, stat, amount);
     const key = String(id);
     const m = S.combatMetrics.get(key) || { name: name||key.slice(0,8), guild: guild||'', house: house||'', damage:0, heals:0, kos:0 };
     if (name)  m.name  = name;
