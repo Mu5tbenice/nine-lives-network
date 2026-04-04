@@ -362,13 +362,17 @@
     /* Tab active state */
     .hud-tab.active { color: #D4A64B !important; background: rgba(212,166,75,0.05) !important; }
     .hud-tab.active::after { content:''; position:absolute; bottom:-1px; left:0; right:0; height:2px; background:linear-gradient(90deg,transparent,#D4A64B,transparent); }
+    /* Auto-redeploy toggle */
+    #auto-redeploy-toggle .tog-dot { position:absolute;top:3px;left:3px;width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,0.2);box-shadow:none;transition:left 0.2s, background 0.2s; }
+    #auto-redeploy-toggle.on { background:rgba(68,204,136,0.15); border-color:rgba(68,204,136,0.5); }
+    #auto-redeploy-toggle.on .tog-dot { left:calc(100% - 12px); background:#44cc88; box-shadow:0 0 5px #44cc8888; }
     .hud-tab:hover:not(.active) { color: rgba(255,255,255,0.6) !important; background: rgba(255,255,255,0.03) !important; }
     /* Stat bars in the HUD */
     .hud-stat-bar-wrap { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
-    .hud-stat-label { font-family:'Press Start 2P',monospace; font-size:7px; width:26px; flex-shrink:0; }
-    .hud-stat-track { flex:1; height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden; }
+    .hud-stat-label { font-family:'Press Start 2P',monospace; font-size:8px; width:28px; flex-shrink:0; }
+    .hud-stat-track { flex:1; height:7px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden; }
     .hud-stat-fill { height:100%; border-radius:3px; transition:width 0.4s; }
-    .hud-stat-val { font-family:'Press Start 2P',monospace; font-size:7px; min-width:28px; text-align:right; }
+    .hud-stat-val { font-family:'Press Start 2P',monospace; font-size:8px; min-width:30px; text-align:right; }
 
     /* YOUR NINE — compact single row */
     .tray-nine-header {
@@ -1206,11 +1210,11 @@
   ══════════════════════════════════════════════════════ -->
   <div class="arena-bottom-tray" id="arena-bottom-tray" style="display:none;">
     <!-- STATUS DEBUFFS — floats above tray, never clipped -->
-    <div id="hud-debuffs-bar" style="position:absolute;top:-32px;left:0;right:0;height:28px;
-      display:flex;align-items:center;gap:5px;padding:0 10px;
+    <div id="hud-debuffs-bar" style="position:absolute;top:-40px;left:0;right:0;height:36px;
+      display:flex;align-items:center;gap:6px;padding:0 12px;
       background:linear-gradient(180deg,transparent,rgba(9,6,15,0.85));
       pointer-events:auto;z-index:60;overflow:visible;">
-      <span style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(212,166,75,0.3);letter-spacing:1px;flex-shrink:0;margin-right:3px;">STATUS</span>
+      <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(212,166,75,0.5);letter-spacing:1px;flex-shrink:0;margin-right:6px;">STATUS</span>
       <div id="hud-debuffs" style="display:flex;gap:4px;flex-wrap:nowrap;align-items:center;overflow:visible;position:relative;z-index:100;"></div>
     </div>
     <div id="hud-main" style="display:flex;flex-direction:row;height:100%;gap:0;">
@@ -1222,10 +1226,10 @@
         <button id="btn-swap-build" onclick="openDeployModal()" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:8px 4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-bottom:2px solid rgba(255,255,255,0.12);color:#8888aa;border-radius:3px;cursor:pointer;width:100%;line-height:1.6;letter-spacing:0.3px;transition:all 0.15s;" onmouseover="this.style.borderColor='rgba(212,166,75,0.4)';this.style.color='#D4A64B';" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='#8888aa';">⇄<br>LOAD<br>OUT</button>
         <button id="btn-withdraw" onclick="withdraw()" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:8px 4px;background:rgba(255,40,80,0.07);border:1px solid rgba(255,40,80,0.2);border-bottom:2px solid rgba(255,40,80,0.3);color:#ff4466;border-radius:3px;cursor:pointer;width:100%;line-height:1.6;letter-spacing:0.3px;">✕<br>WITH<br>DRAW</button>
         <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:2px;">
-          <div id="auto-redeploy-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()" style="width:32px;height:16px;background:rgba(68,204,136,0.1);border-radius:8px;border:1px solid rgba(68,204,136,0.4);cursor:pointer;position:relative;">
-            <div style="position:absolute;top:3px;right:3px;width:9px;height:9px;border-radius:50%;background:#44cc88;box-shadow:0 0 5px #44cc8888;transition:right 0.2s;"></div>
+          <div id="auto-redeploy-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()" style="width:32px;height:16px;background:rgba(255,255,255,0.05);border-radius:8px;border:1px solid rgba(255,255,255,0.15);cursor:pointer;position:relative;">
+            <div class="tog-dot"></div>
           </div>
-          <span id="auto-redeploy-label" style="font-family:'Press Start 2P',monospace;font-size:3.5px;color:#44cc8888;text-align:center;line-height:1.4;">AUTO<br>REJOIN</span>
+          <span id="auto-redeploy-label" style="font-family:'Press Start 2P',monospace;font-size:5px;color:#44cc8899;text-align:center;line-height:1.5;">AUTO<br>REJOIN</span>
         </div>
       </div>
 
@@ -1311,7 +1315,7 @@
             <div style="flex:1;height:5px;background:rgba(0,0,0,0.5);border-radius:2px;overflow:hidden;border:1px solid rgba(255,100,34,0.18);position:relative;">
               <div id="atk-speed-bar" style="position:absolute;top:0;left:0;height:100%;width:0%;background:linear-gradient(90deg,#ffee44,#ff8822,#e85a6a);border-radius:2px;transition:width 0.06s linear;"></div>
             </div>
-            <span style="font-family:'Press Start 2P',monospace;font-size:3.5px;color:rgba(255,100,34,0.4);width:34px;text-align:right;flex-shrink:0;">AUTO ATK</span>
+            <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,100,34,0.5);width:40px;text-align:right;flex-shrink:0;">AUTO ATK</span>
           </div>
         </div>
 
@@ -1370,9 +1374,9 @@
         <!-- BUILDS pane — loadout performance over time -->
         <div id="tray-pane-buildhist" class="tray-pane" style="display:none;flex:1;overflow-y:auto;padding:5px 10px;">
           <div id="build-history-content" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);">
-            <div style="font-family:'Cinzel',serif;font-size:10px;color:rgba(212,166,75,0.5);margin-bottom:6px;">BUILD HISTORY</div>
+            <div style="font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:rgba(212,166,75,0.7);margin-bottom:8px;letter-spacing:2px;">BUILD HISTORY</div>
             <div id="build-history-list"></div>
-            <div style="margin-top:6px;font-family:'Crimson Text',serif;font-size:11px;color:rgba(204,197,219,0.4);line-height:1.5;">Track your loadout performance across sessions. Each unique 3-card combo is recorded with total damage, heals, KOs, and survival time.</div>
+            <div style="margin-top:6px;font-family:'Crimson Text',serif;font-size:14px;color:rgba(204,197,219,0.4);line-height:1.6;">Track your loadout performance across sessions. Each unique 3-card combo is recorded with total damage, heals, KOs, and survival time.</div>
           </div>
         </div>
 
@@ -1381,25 +1385,25 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">
             <!-- Controlling guild -->
             <div style="background:rgba(212,166,75,0.05);border:1px solid rgba(212,166,75,0.15);border-radius:4px;padding:6px 8px;">
-              <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(212,166,75,0.4);letter-spacing:1px;margin-bottom:4px;">CONTROLLING</div>
+              <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(212,166,75,0.55);letter-spacing:1px;margin-bottom:5px;">CONTROLLING</div>
               <div id="zt-controlling" style="font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:#D4A64B;">—</div>
             </div>
             <!-- Next snapshot -->
             <div style="background:rgba(106,200,216,0.05);border:1px solid rgba(106,200,216,0.15);border-radius:4px;padding:6px 8px;">
-              <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(106,200,216,0.4);letter-spacing:1px;margin-bottom:4px;">NEXT SNAPSHOT</div>
+              <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(106,200,216,0.55);letter-spacing:1px;margin-bottom:5px;">NEXT SNAPSHOT</div>
               <div id="zt-snapshot-countdown" style="font-family:'Press Start 2P',monospace;font-size:11px;color:#6ac8d8;">15:00</div>
             </div>
           </div>
           <!-- Active zone bonus -->
           <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:4px;padding:6px 8px;margin-bottom:8px;">
-            <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);letter-spacing:1px;margin-bottom:4px;">ZONE BONUS</div>
+            <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.4);letter-spacing:1px;margin-bottom:5px;">ZONE BONUS</div>
             <div id="zt-bonus" style="font-family:'Crimson Text',serif;font-size:13px;color:#CCC5DB;">No active bonus</div>
           </div>
           <!-- Guild HP totals from last snapshot -->
-          <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);letter-spacing:1px;margin-bottom:5px;">GUILD STRENGTH</div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.4);letter-spacing:1px;margin-bottom:6px;">GUILD STRENGTH</div>
           <div id="zt-guild-bars" style="display:flex;flex-direction:column;gap:4px;"></div>
           <!-- Snapshot history -->
-          <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);letter-spacing:1px;margin:7px 0 4px;">RECENT SNAPSHOTS</div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.4);letter-spacing:1px;margin:8px 0 5px;">RECENT SNAPSHOTS</div>
           <div id="zt-history" style="font-family:'Crimson Text',serif;font-size:11px;color:rgba(204,197,219,0.5);line-height:1.6;"></div>
         </div>
 
@@ -1407,19 +1411,19 @@
         <div id="tray-pane-points" class="tray-pane" style="display:none;flex:1;overflow-y:auto;padding:6px 10px;">
           <!-- Session total -->
           <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;padding:6px 8px;background:rgba(212,166,75,0.06);border:1px solid rgba(212,166,75,0.15);border-radius:4px;">
-            <div id="pts-session-total" style="font-family:'Press Start 2P',monospace;font-size:16px;color:#D4A64B;">0</div>
-            <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(212,166,75,0.5);">PTS THIS SESSION</div>
+            <div id="pts-session-total" style="font-family:'Press Start 2P',monospace;font-size:22px;color:#D4A64B;">0</div>
+            <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(212,166,75,0.5);">PTS THIS SESSION</div>
           </div>
           <!-- Breakdown by source -->
-          <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);letter-spacing:1px;margin-bottom:5px;">BREAKDOWN</div>
-          <div id="pts-breakdown" style="display:flex;flex-direction:column;gap:3px;margin-bottom:8px;"></div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:rgba(255,255,255,0.35);letter-spacing:1px;margin-bottom:7px;">BREAKDOWN</div>
+          <div id="pts-breakdown" style="display:flex;flex-direction:column;gap:5px;margin-bottom:10px;"></div>
           <!-- Rate indicator -->
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
-            <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);">SCORING RATE</div>
-            <div id="pts-rate" style="font-family:'Press Start 2P',monospace;font-size:7px;color:#44cc88;">—</div>
+            <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:rgba(255,255,255,0.35);">SCORING RATE</div>
+            <div id="pts-rate" style="font-family:'Press Start 2P',monospace;font-size:11px;color:#44cc88;">—</div>
           </div>
           <!-- Scoring guide -->
-          <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.25);letter-spacing:1px;margin-bottom:5px;">HOW TO SCORE MORE</div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:rgba(255,255,255,0.35);letter-spacing:1px;margin-bottom:7px;">HOW TO SCORE MORE</div>
           <div id="pts-tips" style="font-family:'Crimson Text',serif;font-size:11px;color:rgba(204,197,219,0.5);line-height:1.6;"></div>
         </div>
       </div>
@@ -2816,7 +2820,11 @@
         const cards = S.selectedCards.map(s => s.card);
         S.equippedCards = cards;
         S.isDeployed = true;
+        S._sessionStartAt = S._sessionStartAt || Date.now();
         S.deployedZoneIds.add(S.currentZoneId);
+        // Cache card IDs so auto-redeploy always has them even after equippedCards clears
+        S._lastDeployedCardIds = cards.map(c => c.player_card_id || c.id).filter(Boolean);
+        S._lastDeployedCards = cards;
         try { localStorage.setItem(`9lv_cards_${S.currentZoneId}_${S.playerId}`, JSON.stringify(cards)); } catch(e) {}
         closeDeployModal();
         document.getElementById('deploy-cta').style.display = 'none';
@@ -2853,14 +2861,30 @@
             if (selfCache) {
               const existingSprite = S.nines.get(selfId);
               if (existingSprite?.spriteGroup) {
-                // Patch in-place: clear old graphics, add profile image
+                // Patch in-place: prefer equipped_images layers, fall back to PFP
                 const sg = existingSprite.spriteGroup;
                 while (sg.children.length) sg.removeChildAt(0);
                 const h = (window._HOUSES || {})[existingSprite.house] || { color: '#888888' };
                 const hColor = parseInt((h.color||'#888888').replace('#',''), 16);
                 const SSIZE = window.SPRITE_SIZE || 26;
                 const r = SSIZE * 0.42;
-                if (selfCache.profile_image) {
+                const LAYER_ORDER = ['fur','outfit','weapon','expression','headwear','familiar'];
+                const imgs = selfCache.equipped_images || {};
+                const hasLayers = LAYER_ORDER.some(l => !!imgs[l]);
+                if (hasLayers) {
+                  // Render Nine layers (same as addNineSprite)
+                  LAYER_ORDER.forEach((slot, index) => {
+                    const imgPath = imgs[slot]; if (!imgPath) return;
+                    try {
+                      const tex = PIXI.Texture.from(imgPath);
+                      const sp = new PIXI.Sprite(tex);
+                      sp.anchor.set(0.5, 0.75); sp.width = SSIZE; sp.height = SSIZE; sp.zIndex = index+1;
+                      sg.addChild(sp);
+                    } catch(e) {}
+                  });
+                  existingSprite.profileImage = selfCache.profile_image || 'layers';
+                  existingSprite._hasLayers = true;
+                } else if (selfCache.profile_image) {
                   try {
                     const tex = PIXI.Texture.from(selfCache.profile_image);
                     const mask = new PIXI.Graphics();
@@ -2947,26 +2971,37 @@
   function checkAutoRedeploy() {
     if (!S._autoRedeploy) return;
     if (Date.now() > S._autoRedeployExpiry) { S._autoRedeploy = false; return; }
-    const cards = S.equippedCards;
-    if (!cards.length) { dismissKOOverlay(); openDeployModal(); return; }
-    dismissKOOverlay();
-    addFeedEvent('🔄 Auto-redeploying...', 'system');
+    // Use equippedCards, or last known deployed cards — never open modal
+    const cards = (S.equippedCards?.length ? S.equippedCards : S._lastDeployedCards) || [];
     const ids = cards.map(c => c.player_card_id || c.id).filter(Boolean);
+    const finalIds = ids.length ? ids : (S._lastDeployedCardIds || []);
+    if (!finalIds.length) { dismissKOOverlay(); openDeployModal(); return; }
+    dismissKOOverlay();
+    addFeedEvent('🔄 Auto-redeploying with same build...', 'system');
     fetch('/api/zones/deploy', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ player_id: S.playerId, zone_id: S.currentZoneId, card_ids: ids }),
+      body: JSON.stringify({ player_id: S.playerId, zone_id: S.currentZoneId, card_ids: finalIds }),
     }).then(r => r.json()).then(data => {
       if (data.success || data.message) {
         S.isDeployed = true;
+        S._sessionStartAt = S._sessionStartAt || Date.now();
         S._koUntil = 0;
+        const restoreCards = cards.length ? cards : (S._lastDeployedCards || []);
+        if (restoreCards.length) {
+          S.equippedCards = restoreCards;
+          S._lastDeployedCards = restoreCards;
+          S._lastDeployedCardIds = restoreCards.map(c => c.player_card_id || c.id).filter(Boolean);
+          renderCardSlots(restoreCards);
+        }
         document.getElementById('deploy-cta').style.display = 'none';
         document.getElementById('arena-bottom-tray').style.display = 'flex';
-        renderCardSlots(cards);
         addFeedEvent('♻️ Auto-redeployed!', 'join');
+        recordBuildStart();
       } else {
-        addFeedEvent(`⚠️ Auto-redeploy failed: ${data.error || 'try manually'}`, 'system');
+        addFeedEvent(`⚠️ Auto-redeploy failed: ${data.error||'try manually'}`, 'system');
+        openDeployModal();
       }
-    }).catch(e => addFeedEvent('⚠️ Auto-redeploy failed.', 'system'));
+    }).catch(() => { addFeedEvent('⚠️ Auto-redeploy failed.', 'system'); openDeployModal(); });
   }
 
   // ── KO OVERLAY ──
@@ -3119,7 +3154,9 @@
       const handle  = data.handle  || data.playerHandle || 'Unknown';
       const message = data.message || data.msg || '';
       if (!message) return;
-      const isMe = handle === S.playerHandle;
+      // Skip our own messages — already shown optimistically
+      if (handle === S.playerHandle) return;
+      const isMe = false;
       const ts   = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
       const html = `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;gap:5px;align-items:flex-start;">
         <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${isMe?'#D4A64B':'#6ac8d8'};flex-shrink:0;margin-top:2px;">${handle}</span>
@@ -3240,13 +3277,22 @@
         }
       }
       if (caster) animateAuraBurst(caster, eff);
-      if (data.amt > 0) {
+      // Track heals (only actual healing effects, not damage effects with amt)
+      const HEAL_EFFECT_NAMES = ['HEAL','BLESS','DRAIN','FEAST','LEECH AURA','REGEN'];
+      const isHealEffect = HEAL_EFFECT_NAMES.includes(effName);
+      if (data.amt > 0 && isHealEffect) {
         const isLocal = String(cId) === String(S.playerId) || String(tId) === String(S.playerId);
         const hx = tx ?? cx, hy = ty ?? cy;
         if (hx !== null && isLocal) showFloatingText(hx, hy - 20, `+${data.amt}`, 0x44ffaa, 11);
         trackCombatStat(cId, getNineName(cId), caster?.guild||'', caster?.house||'', 'heals', data.amt);
         if (String(cId) === String(S.playerId) && S._buildMetrics) {
           S._buildMetrics.heals = (S._buildMetrics.heals||0) + data.amt;
+        }
+      } else if (data.amt > 0 && !isHealEffect) {
+        // Effect dealt damage (BURN, POISON, THORNS etc.) — count toward damage total
+        trackCombatStat(cId, getNineName(cId), caster?.guild||'', caster?.house||'', 'damage', data.amt);
+        if (String(cId) === String(S.playerId) && S._buildMetrics) {
+          S._buildMetrics.damage = (S._buildMetrics.damage||0) + data.amt;
         }
       }
 
@@ -3360,6 +3406,7 @@
 
     socket.on('arena:zone_flip', (data) => {
       addFeedEvent(`🏰 ${data.guild} captured the zone!`, 'flip');
+      if (data.guild && data.guild === S.playerGuildTag) _addSessionPoints('zone', 15);
       const pill = document.getElementById('guild-control-pill');
       if (pill && data.guild) {
         pill.innerHTML = `<span style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);padding:2px 6px;background:rgba(212,166,75,0.1);border:1px solid rgba(212,166,75,0.3);border-radius:3px;">🏰 ${data.guild} controls</span>`;
@@ -3471,22 +3518,29 @@
       const raw = localStorage.getItem('9lv_builds') || '{}';
       const all = JSON.parse(raw);
       const entries = Object.values(all).sort((a,b) => b.totalDmg - a.totalDmg);
-      if (!entries.length) { el.innerHTML = '<div style="font-family:\'Crimson Text\',serif;font-size:11px;color:rgba(204,197,219,0.4);">No builds recorded yet. Deploy and fight to start tracking.</div>'; return; }
+      if (!entries.length) {
+        el.innerHTML = '<div style="font-family:\'Crimson Text\',serif;font-size:15px;color:rgba(204,197,219,0.5);line-height:1.5;padding:8px 0;">No builds recorded yet.<br>Deploy and fight to start tracking your loadout performance.</div>';
+        return;
+      }
       el.innerHTML = entries.map((b, i) => {
-        const avgDmg = b.sessions ? Math.round(b.totalDmg / b.sessions) : 0;
+        const avgDmg  = b.sessions ? Math.round(b.totalDmg / b.sessions) : 0;
+        const avgHeal = b.sessions ? Math.round((b.totalHeal||0) / b.sessions) : 0;
+        const avgKOs  = b.sessions ? Math.round((b.totalKOs||0) / b.sessions) : 0;
         const avgTime = b.sessions ? Math.round(b.totalSecs / b.sessions) : 0;
-        const mins = Math.floor(avgTime/60), secs = avgTime%60;
-        return `<div style="margin-bottom:7px;padding:6px 8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:4px;">
-          <div style="font-family:'Cinzel',serif;font-size:9px;color:var(--gold);margin-bottom:3px;">#${i+1} ${b.cards.join(' + ')}</div>
-          <div style="display:flex;gap:10px;font-family:'Press Start 2P',monospace;font-size:5px;flex-wrap:wrap;">
-            <span style="color:#e85a6a;">DMG ${avgDmg.toLocaleString()}/run</span>
-            <span style="color:#44cc88;">HEAL ${Math.round((b.totalHeal||0)/b.sessions).toLocaleString()}/run</span>
-            <span style="color:#ffaa44;">KOs ${Math.round((b.totalKOs||0)/b.sessions)}/run</span>
-            <span style="color:rgba(255,255,255,0.3);">${mins}m${secs}s avg · ${b.sessions} run${b.sessions!==1?'s':''}</span>
+        const mins = Math.floor(avgTime/60), secs = avgTime % 60;
+        const isTop = i === 0;
+        return `<div style="margin-bottom:10px;padding:10px 12px;background:${isTop?'rgba(212,166,75,0.07)':'rgba(255,255,255,0.02)'};border:1px solid ${isTop?'rgba(212,166,75,0.25)':'rgba(255,255,255,0.07)'};border-radius:5px;">
+          <div style="font-family:'Cinzel',serif;font-size:13px;font-weight:700;color:${isTop?'#D4A64B':'var(--bright)'};margin-bottom:6px;line-height:1.3;">#${i+1} — ${b.cards.join(' + ')}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;font-family:'Press Start 2P',monospace;font-size:8px;">
+            <span style="color:#e85a6a;">DMG ${avgDmg > 999 ? (avgDmg/1000).toFixed(1)+'k' : avgDmg}/run</span>
+            <span style="color:#44cc88;">HEAL ${avgHeal > 999 ? (avgHeal/1000).toFixed(1)+'k' : avgHeal}/run</span>
+            <span style="color:#ffaa44;">KOs ${avgKOs}/run</span>
+            <span style="color:rgba(255,255,255,0.4);">${mins}m${String(secs).padStart(2,'0')}s avg</span>
           </div>
+          <div style="margin-top:5px;font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.25);">${b.sessions} session${b.sessions!==1?'s':''} recorded</div>
         </div>`;
       }).join('');
-    } catch(e) { el.innerHTML = '<div style="color:var(--faint);">No data</div>'; }
+    } catch(e) { el.innerHTML = '<div style="font-family:\'Crimson Text\',serif;font-size:14px;color:var(--faint);">No data</div>'; }
   }
   window.renderBuildHistory = renderBuildHistory;
 
@@ -3579,7 +3633,7 @@
     // Update session points
     if (S.isDeployed) {
       const pts = data.snapshot_points || (S._lastSnapshotWinner === S.playerGuildTag ? 5 : 3);
-      _addSessionPoints('zone', pts);
+      _addSessionPoints('snapshots', pts);
     }
     // Re-render if zone tab is visible
     const zp = document.getElementById('tray-pane-zone');
@@ -3638,22 +3692,22 @@
     const bkEl = document.getElementById('pts-breakdown');
     if (bkEl) {
       const sources = [
-        { key:'snapshots', label:'Zone Snapshots', color:'#D4A64B' },
-        { key:'kos',       label:'KOs',            color:'#e85a6a' },
-        { key:'zone',      label:'Zone Control',   color:'#44cc88' },
-        { key:'duels',     label:'Duels',          color:'#6ac8d8' },
-        { key:'chronicle', label:'Chronicle',      color:'#b088e8' },
+        { key:'snapshots', label:'Snapshots',     color:'#D4A64B' },
+        { key:'kos',       label:'KOs',           color:'#e85a6a' },
+        { key:'zone',      label:'Zone Control',  color:'#44cc88' },
+        { key:'duels',     label:'Duels',         color:'#6ac8d8' },
+        { key:'chronicle', label:'Chronicle',     color:'#b088e8' },
       ];
       const maxVal = Math.max(...sources.map(s => pts[s.key]||0), 1);
       bkEl.innerHTML = sources.map(s => {
         const v = pts[s.key] || 0;
         const pct = Math.round((v/maxVal)*100);
-        return `<div style="display:flex;align-items:center;gap:6px;">
-          <div style="font-family:'Press Start 2P',monospace;font-size:4.5px;color:rgba(255,255,255,0.35);width:72px;flex-shrink:0;">${s.label}</div>
-          <div style="flex:1;height:5px;background:rgba(0,0,0,0.4);border-radius:2px;overflow:hidden;border:1px solid rgba(255,255,255,0.05);">
-            <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,${s.color}66,${s.color});border-radius:2px;transition:width 0.4s;"></div>
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.4);width:80px;flex-shrink:0;">${s.label}</div>
+          <div style="flex:1;height:8px;background:rgba(0,0,0,0.4);border-radius:3px;overflow:hidden;border:1px solid rgba(255,255,255,0.05);">
+            <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,${s.color}66,${s.color});border-radius:3px;transition:width 0.4s;"></div>
           </div>
-          <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:${s.color};width:22px;text-align:right;flex-shrink:0;">${v}</div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:${s.color};width:28px;text-align:right;flex-shrink:0;">${v}</div>
         </div>`;
       }).join('');
     }
@@ -3665,21 +3719,25 @@
       const rate = (total/mins).toFixed(1);
       rateEl.textContent = `${rate} pts/min`;
       rateEl.style.color = rate > 5 ? '#44cc88' : rate > 2 ? '#ffaa44' : '#e85a6a';
+      rateEl.style.fontSize = '10px';
     } else if (rateEl) {
       rateEl.textContent = 'Deploy to start earning';
       rateEl.style.color = 'rgba(255,255,255,0.3)';
+      rateEl.style.fontSize = '8px';
     }
 
-    // Tips based on what player is doing least
+    // Tips
     const tipsEl = document.getElementById('pts-tips');
     if (tipsEl) {
       const tips = [];
       if (!S.isDeployed) tips.push('Deploy to a zone to earn Zone Control and Snapshot points.');
-      if ((pts.kos||0) === 0) tips.push('Get kills to earn +10 pts per KO — high ATK builds score fast.');
+      if ((pts.kos||0) === 0) tips.push('Get kills — +10 pts per KO. High ATK builds score fast.');
       if ((pts.chronicle||0) === 0) tips.push('Reply to the Chronicle on Twitter for +15–35 pts per act.');
       if ((pts.duels||0) === 0) tips.push('Quick Duels cost nothing and earn +8 pts per win.');
-      if (!tips.length) tips.push('Strong performance! Keep the zone held for Snapshot bonuses.');
-      tipsEl.innerHTML = tips.map(t => `<div style="padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.04);">→ ${t}</div>`).join('');
+      if (!tips.length) tips.push('Strong session! Hold the zone for Snapshot bonuses.');
+      tipsEl.innerHTML = tips.map(t =>
+        `<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px;line-height:1.5;">→ ${t}</div>`
+      ).join('');
     }
   }
   window.renderPointsTab = renderPointsTab;
@@ -3841,7 +3899,7 @@
     if (legend) legend.innerHTML = entries.map(([name,d],gi)=>{
       const color=GUILD_COLORS_LIST[gi%GUILD_COLORS_LIST.length];
       const v=d.pts[d.pts.length-1]||0;
-      return `<span style="font-family:'Press Start 2P',monospace;font-size:4px;color:${color};display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:10px;height:2px;background:${color};border-radius:1px"></span>${name} ${v.toLocaleString()}</span>`;
+      return `<span style="font-family:'Press Start 2P',monospace;font-size:8px;color:${color};display:flex;align-items:center;gap:3px"><span style="display:inline-block;width:14px;height:3px;background:${color};border-radius:2px"></span>${name} ${v.toLocaleString()}</span>`;
     }).join('');
   }
 
@@ -3969,7 +4027,7 @@
       const c = EFFECT_COLORS[key] || '#D4A64B';
       const desc = EFFECT_DESCRIPTIONS[key] || key;
       return `<div
-        style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 5px;border-radius:3px;background:${c}22;border:1px solid ${c}66;color:${c};animation:debuffPulse 1.5s ease-in-out infinite;cursor:help;position:relative;"
+        style="font-family:'Press Start 2P',monospace;font-size:9px;padding:5px 9px;border-radius:3px;background:${c}22;border:1px solid ${c}66;color:${c};animation:debuffPulse 1.5s ease-in-out infinite;cursor:help;position:relative;"
         onmouseenter="(()=>{const t=this.querySelector('.debuff-tip');if(!t)return;const r=this.getBoundingClientRect();t.style.display='block';t.style.left=(r.left+r.width/2-t.offsetWidth/2)+'px';t.style.top=(r.top-t.offsetHeight-8)+'px';})()"
         onmouseleave="this.querySelector('.debuff-tip').style.display='none'">
         ${key.slice(0,5)}
@@ -4197,9 +4255,27 @@
   // ── CHAT ──
   window.arenaSendChat = function(inputId) {
     const input = document.getElementById(inputId || 'arena-chat-input');
-    if (!input || !input.value.trim() || !S.socket) return;
-    S.socket.emit('zone:chat', { zoneId: S.currentZoneId, playerId: S.playerId, handle: S.playerHandle, message: input.value.trim() });
+    if (!input || !input.value.trim()) return;
+    const msg = input.value.trim();
+    const handle = S.playerHandle || 'You';
     input.value = '';
+    // Show immediately (optimistic) — don't wait for server echo
+    const ts = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    const html = `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;gap:5px;align-items:flex-start;">
+      <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:#D4A64B;flex-shrink:0;margin-top:2px;">${handle}</span>
+      <span style="font-family:'Crimson Text',serif;font-size:12px;color:var(--bright);flex:1;line-height:1.4;">${msg}</span>
+      <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);flex-shrink:0;margin-top:2px;">${ts}</span>
+    </div>`;
+    ['sidebar-chat-log', 'arena-chat-log'].forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.insertAdjacentHTML('beforeend', html);
+      el.scrollTop = el.scrollHeight;
+    });
+    // Emit to server (broadcasts to others)
+    if (S.socket) {
+      S.socket.emit('zone:chat', { zoneId: S.currentZoneId, playerId: S.playerId, handle, message: msg });
+    }
   };
 
   if (document.getElementById('arena-chat-send')) {
