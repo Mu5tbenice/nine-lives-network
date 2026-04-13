@@ -1,4 +1,6 @@
 (function(){
+  var NAV_HEIGHT = 76; // single source of truth — update here if nav height changes
+
   var NAV_LINKS = [
     { href: '/dashboard.html', label: 'Dashboard' },
     { href: '/nethara-live.html', label: 'Nethara' },
@@ -14,6 +16,10 @@
 
   var currentPath = window.location.pathname.split('?')[0].split('#')[0];
   if (currentPath === '/' || currentPath === '') currentPath = '/index.html';
+
+  // Don't inject nav or add padding on the splash page
+  var isSplash = (currentPath === '/index.html' || currentPath === '/');
+  if (isSplash) return;
 
   function isActive(href) { return currentPath === href; }
 
@@ -33,7 +39,7 @@
     + '<img '
     + 'src="/assets/images/title-nethara.png" '
     + 'alt="Nines of Nethara" '
-    + 'style="height:68px;width:auto;mix-blend-mode:screen;filter:drop-shadow(0 0 8px rgba(212,166,75,0.45));vertical-align:middle;display:block;"'
+    + 'style="height:70px;width:auto;mix-blend-mode:screen;filter:drop-shadow(0 0 8px rgba(212,166,75,0.45));vertical-align:middle;display:block;"'
     + ' onerror="this.style.display=\'none\';this.nextSibling.style.display=\'block\'"'
     + '>'
     + '<span style="display:none;font-family:Cinzel,serif;font-weight:700;color:#D4A64B;font-size:15px;letter-spacing:2px;">Nines of Nethara</span>'
@@ -51,6 +57,9 @@
   var wrapper = document.createElement('div');
   wrapper.innerHTML = navHTML;
   while (wrapper.firstChild) { body.insertBefore(wrapper.firstChild, firstChild); }
+
+  // Apply padding to every page that has a nav — no CSS import required
+  body.style.paddingTop = NAV_HEIGHT + 'px';
 
   window.__toggleMobileMenu = function() {
     var h = document.getElementById('hamburger');
