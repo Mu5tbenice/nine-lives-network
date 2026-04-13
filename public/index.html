@@ -10,8 +10,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&display=swap" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -24,31 +22,81 @@
       --purple:#7B3FBE;--text-muted:#7a7668;--text-dim:#4a4840;
     }
     html,body{overflow-x:hidden;width:100%;min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);font-family:'Cinzel',serif}
-    #canvas-container{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
-    .bg-glow{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:hidden}
-    .bg-glow::before{content:'';position:absolute;top:-5%;left:50%;transform:translateX(-50%);width:80%;height:55%;background:radial-gradient(ellipse,rgba(123,63,190,0.10) 0%,rgba(138,43,226,0.04) 50%,transparent 70%)}
-    .bg-glow::after{content:'';position:absolute;bottom:10%;left:50%;transform:translateX(-50%);width:60%;height:40%;background:radial-gradient(ellipse,rgba(212,166,75,0.07) 0%,transparent 70%)}
-    .bottom-fade{position:fixed;bottom:0;left:0;width:100%;height:50%;background:linear-gradient(to bottom,transparent 0%,rgba(26,21,40,0.5) 20%,rgba(26,21,40,0.92) 55%,rgba(26,21,40,1) 75%,rgba(26,21,40,1) 100%);z-index:2;pointer-events:none}
+
+    /* ─── Video background ─── */
+    .bg-video{
+      position:fixed;top:0;left:0;
+      width:100%;height:100%;
+      object-fit:cover;
+      z-index:1;
+      opacity:0.38;
+      pointer-events:none;
+    }
+
+    /* ─── Vignettes ─── */
+    .bottom-fade{
+      position:fixed;bottom:0;left:0;width:100%;height:55%;
+      background:linear-gradient(to bottom,
+        transparent 0%,rgba(26,21,40,0.45) 18%,
+        rgba(26,21,40,0.9) 52%,rgba(26,21,40,1) 72%);
+      z-index:2;pointer-events:none;
+    }
+    .top-fade{
+      position:fixed;top:0;left:0;width:100%;height:22%;
+      background:linear-gradient(to top,transparent 0%,rgba(26,21,40,0.75) 100%);
+      z-index:2;pointer-events:none;
+    }
+
+    /* ─── Ambient particles ─── */
     .particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:3}
     .particle{position:absolute;border-radius:50%;opacity:0;animation:particle-drift ease-in-out infinite}
-    @keyframes particle-drift{0%{transform:translateY(0) translateX(0) scale(1);opacity:0}15%{opacity:0.7}85%{opacity:0.15}100%{transform:translateY(-80px) translateX(10px) scale(0.5);opacity:0}}
+    @keyframes particle-drift{
+      0%  {transform:translateY(0) translateX(0) scale(1);opacity:0}
+      15% {opacity:0.65}85%{opacity:0.12}
+      100%{transform:translateY(-85px) translateX(12px) scale(0.4);opacity:0}
+    }
+
+    /* ─── Crystal sparkles ─── */
     .sparkle-layer{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:12}
     .sparkle{position:absolute;animation:sparkle-twinkle ease-in-out infinite;transform-origin:center}
-    .sparkle.star{width:4px;height:4px;background:var(--gold);clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
+    .sparkle.star{background:var(--gold);clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
     .sparkle.crystal{background:#9B59D4;clip-path:polygon(50% 0%,75% 25%,75% 75%,50% 100%,25% 75%,25% 25%)}
     .sparkle.dot{border-radius:50%;background:var(--gold-dim)}
-    @keyframes sparkle-twinkle{0%,100%{transform:scale(0) rotate(0deg);opacity:0}30%{transform:scale(1.4) rotate(72deg);opacity:1}60%{transform:scale(0.8) rotate(144deg);opacity:0.5}}
-    .landing-container{position:relative;height:100vh;height:-webkit-fill-available;display:flex;flex-direction:column;align-items:center;padding:24px 15px;z-index:10;pointer-events:none}
+    @keyframes sparkle-twinkle{
+      0%,100%{transform:scale(0) rotate(0deg);opacity:0}
+      30%    {transform:scale(1.4) rotate(72deg);opacity:1}
+      60%    {transform:scale(0.8) rotate(144deg);opacity:0.5}
+    }
+
+    /* ─── Layout ─── */
+    .landing-container{
+      position:relative;height:100vh;height:-webkit-fill-available;
+      display:flex;flex-direction:column;align-items:center;
+      padding:24px 15px;z-index:10;pointer-events:none;
+    }
     .landing-container a,.landing-container button{pointer-events:auto}
     .model-spacer{flex:1;min-height:20px}
+
+    /* ─── Title ─── */
     .title-area{position:relative;display:flex;flex-direction:column;align-items:center;width:100%}
-    .platform-label{font-family:'Press Start 2P',monospace;font-size:6px;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:2px}
-    .title-img{width:94%;max-width:520px;height:auto;mix-blend-mode:screen;display:block;margin:0 auto;filter:drop-shadow(0 0 20px rgba(212,166,75,0.45)) drop-shadow(0 0 45px rgba(123,63,190,0.28));animation:title-breathe 5s ease-in-out infinite}
-    @keyframes title-breathe{0%,100%{filter:drop-shadow(0 0 20px rgba(212,166,75,0.45)) drop-shadow(0 0 45px rgba(123,63,190,0.28))}50%{filter:drop-shadow(0 0 32px rgba(212,166,75,0.7)) drop-shadow(0 0 60px rgba(123,63,190,0.45))}}
+    .platform-label{font-family:'Press Start 2P',monospace;font-size:6px;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:4px}
+    .title-img{
+      width:94%;max-width:540px;height:auto;
+      mix-blend-mode:screen;
+      display:block;margin:0 auto;
+      filter:drop-shadow(0 0 22px rgba(212,166,75,0.5)) drop-shadow(0 0 50px rgba(123,63,190,0.3));
+      animation:title-breathe 5s ease-in-out infinite;
+    }
+    @keyframes title-breathe{
+      0%,100%{filter:drop-shadow(0 0 22px rgba(212,166,75,0.5)) drop-shadow(0 0 50px rgba(123,63,190,0.3))}
+      50%    {filter:drop-shadow(0 0 36px rgba(212,166,75,0.75)) drop-shadow(0 0 70px rgba(123,63,190,0.5))}
+    }
     .title-fallback{display:none;font-family:'Cinzel',serif;font-weight:700;font-size:clamp(1.4rem,6vw,3rem);color:var(--gold);letter-spacing:clamp(4px,2vw,10px);text-shadow:0 0 40px rgba(212,166,75,0.4);text-align:center}
     .title-img.img-error{display:none}
     .title-img.img-error~.title-fallback{display:block}
     .game-tagline{font-family:'Crimson Text',serif;font-style:italic;font-size:clamp(12px,3vw,15px);color:var(--text-muted);letter-spacing:1.5px;margin-top:-2px;text-align:center}
+
+    /* ─── CTA ─── */
     .bottom-section{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;z-index:20;pointer-events:auto;gap:11px}
     .season-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(212,166,75,0.07);border:1px solid rgba(212,166,75,0.18);padding:6px 14px;border-radius:6px;font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);letter-spacing:1px}
     .season-badge__dot{width:5px;height:5px;border-radius:50%;background:#44cc44;animation:pulse-dot 2s infinite;flex-shrink:0}
@@ -60,14 +108,20 @@
     .footer-links{display:flex;gap:16px;justify-content:center}
     .footer-links a{color:var(--text-dim);font-family:'Crimson Text',serif;font-size:12px;text-decoration:none;padding:6px;transition:color 0.3s;pointer-events:auto}
     .footer-links a:hover{color:var(--text-muted)}
-    @media(min-width:768px){.title-img{max-width:580px}.game-tagline{font-size:16px}.play-btn{font-size:17px;padding:18px 56px}.footer-links a{font-size:13px}.bottom-fade{height:42%}}
-    @media(min-width:1024px){.title-img{max-width:640px}.play-btn:hover{transform:translateY(-3px);box-shadow:0 7px 0 var(--gold-dark),0 0 40px rgba(212,166,75,0.5)}.how-link:hover{background:rgba(212,166,75,0.06)}}
+
+    /* ─── Responsive ─── */
+    @media(min-width:768px){.title-img{max-width:600px}.game-tagline{font-size:16px}.play-btn{font-size:17px;padding:18px 56px}.footer-links a{font-size:13px}.bottom-fade{height:48%}}
+    @media(min-width:1024px){.title-img{max-width:660px}.play-btn:hover{transform:translateY(-3px);box-shadow:0 7px 0 var(--gold-dark),0 0 40px rgba(212,166,75,0.5)}.how-link:hover{background:rgba(212,166,75,0.06)}}
     @media(max-width:380px){.title-img{width:99%}}
   </style>
 </head>
 <body>
-  <div id="canvas-container"></div>
-  <div class="bg-glow"></div>
+
+  <video class="bg-video" autoplay muted loop playsinline>
+    <source src="/assets/video/splash-bg.mp4" type="video/mp4">
+  </video>
+
+  <div class="top-fade"></div>
   <div class="bottom-fade"></div>
   <div class="particles" id="particles"></div>
 
@@ -79,13 +133,14 @@
         src="/assets/images/title-nethara.png"
         alt="Nines of Nethara"
         class="title-img"
-        id="titleImg"
         onerror="this.classList.add('img-error')"
       >
       <h1 class="title-fallback">Nines of Nethara</h1>
       <p class="game-tagline">Your Nine Fights. Cards Are Its Weapons.</p>
     </div>
+
     <div class="model-spacer"></div>
+
     <div class="bottom-section">
       <div class="season-badge">
         <div class="season-badge__dot"></div>
@@ -102,7 +157,6 @@
   </div>
 
   <script>
-    // ═══ AMBIENT PARTICLES ═══
     (function(){
       var c=document.getElementById('particles');
       var cols=['#D4A64B','#b8903d','#8a6d2f','#7B3FBE','#5a2a9a','#4a3080'];
@@ -115,8 +169,6 @@
         c.appendChild(p);
       }
     })();
-
-    // ═══ TITLE SPARKLES ═══
     (function(){
       var layer=document.getElementById('sparkleLayer');
       var types=['star','crystal','dot','crystal','star'];
@@ -130,60 +182,13 @@
         layer.appendChild(s);
       }
     })();
-
-    // ═══ THREE.JS — wizard cat (mouse-tracked 3D model) ═══
-    var scene,camera,renderer,wizardCat;
-    var mouseX=0,mouseY=0;
-    var windowHalfX=window.innerWidth/2,windowHalfY=window.innerHeight/2;
-    var MODEL={cameraZ:7,cameraY:2.5,lookAtY:0.5,modelY:-4.8,modelScale:1};
-
-    function init3D(){
-      var cont=document.getElementById('canvas-container');
-      scene=new THREE.Scene();
-      camera=new THREE.PerspectiveCamera(35,window.innerWidth/window.innerHeight,0.1,1000);
-      camera.position.set(0,MODEL.cameraY,MODEL.cameraZ);
-      camera.lookAt(0,MODEL.lookAtY,0);
-      renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
-      renderer.setSize(window.innerWidth,window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-      renderer.setClearColor(0x000000,0);
-      renderer.outputEncoding=THREE.sRGBEncoding;
-      cont.appendChild(renderer.domElement);
-      scene.add(new THREE.AmbientLight(0xffffff,0.6));
-      var ml=new THREE.DirectionalLight(0xffffff,0.8); ml.position.set(5,5,7); scene.add(ml);
-      var pl=new THREE.PointLight(0x8A2BE2,0.6,20); pl.position.set(-4,4,5); scene.add(pl);
-      var gl=new THREE.PointLight(0xD4A64B,0.5,20); gl.position.set(4,4,5); scene.add(gl);
-      var cl=new THREE.PointLight(0x00D4FF,0.3,15); cl.position.set(0,5,-4); scene.add(cl);
-      var loader=new THREE.GLTFLoader();
-      loader.load('/assets/models/wizard-cat.glb',function(gltf){
-        wizardCat=gltf.scene;
-        wizardCat.scale.set(MODEL.modelScale,MODEL.modelScale,MODEL.modelScale);
-        wizardCat.position.set(0,MODEL.modelY,0);
-        wizardCat.traverse(function(child){
-          if(child.name==='Backdrop'||child.name==='Plane'||child.name==='Plane.002') child.visible=false;
-        });
-        scene.add(wizardCat);
-      },undefined,function(e){console.warn('GLB missing at /assets/models/wizard-cat.glb — check file path in Replit',e)});
-      document.addEventListener('mousemove',function(e){mouseX=(e.clientX-windowHalfX)/windowHalfX;mouseY=(e.clientY-windowHalfY)/windowHalfY});
-      document.addEventListener('touchmove',function(e){if(e.touches.length>0){mouseX=(e.touches[0].clientX-windowHalfX)/windowHalfX;mouseY=(e.touches[0].clientY-windowHalfY)/windowHalfY}},{passive:true});
-      window.addEventListener('resize',function(){windowHalfX=window.innerWidth/2;windowHalfY=window.innerHeight/2;camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight)});
-      animate();
-    }
-
-    function animate(){
-      requestAnimationFrame(animate);
-      if(wizardCat){
-        wizardCat.rotation.y+=(mouseX*0.5-wizardCat.rotation.y)*0.08;
-        wizardCat.rotation.x+=(mouseY*0.2-wizardCat.rotation.x)*0.08;
-        wizardCat.position.y=MODEL.modelY+Math.sin(Date.now()*0.001)*0.05;
-      }
-      renderer.render(scene,camera);modelY:-4.8,
-    }
-
     document.addEventListener('DOMContentLoaded',function(){
-      init3D();
       var pid=localStorage.getItem('player_id');
-      if(pid){var b=document.getElementById('ctaButton');b.href='/dashboard.html';b.textContent='Dashboard';}
+      if(pid){
+        var b=document.getElementById('ctaButton');
+        b.href='/dashboard.html';
+        b.textContent='Dashboard';
+      }
     });
   </script>
 </body>
