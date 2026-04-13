@@ -132,7 +132,7 @@ function buildNineState(dep, nine, cards, zoneBonus) {
     guildTag: dep.guild_tag||'lone_wolf', playerName: nine.name||'Unknown', houseKey,
     stats:{atk,hp,spd,def,luck}, cards,
     hp, maxHp:hp, x, y, destX:x, destY:y,
-    moveSpeed: 30 + spd*1.2,
+    moveSpeed: 6 + spd*0.15,   // slow shuffle: ~7-11 units/tick → 5-7s per wander step
     atkTimer:  atkInterval(spd),
     cardTimer: cardInterval(spd),
     cardIdx:0,
@@ -165,35 +165,21 @@ function pickTarget(nine, all) {
   const taunter = all.find(n=>n.hp>0 && n.guildTag!==nine.guildTag && n.tauntActive);
   if (taunter) { nine._currentTarget = taunter.deploymentId; return taunter; }
 
-  const cfg = cardCfg(nine);
-  // Use engagement distance as the firing range — matches desiredDist in updateDest
-  const firingRange = cfg.range === SPELL_RANGE.melee ? 260
-    : cfg.range === SPELL_RANGE.mid    ? 340
-    : cfg.range >= SPELL_RANGE.zone    ? SPELL_RANGE.zone
-    : 420;
-  const enemies = all.filter(n =>
-    n.hp > 0 &&
-    n.guildTag !== nine.guildTag &&
-    (cfg.range >= SPELL_RANGE.zone || inRange(nine, n, firingRange))
-  );
+  // All attacks are ranged — no distance check needed. Any enemy on the zone is valid.
+  const enemies = all.filter(n => n.hp > 0 && n.guildTag !== nine.guildTag);
   if (!enemies.length) { nine._currentTarget = null; return null; }
 
-  // Sticky target — keep attacking the same Nine for TARGET_LOCK_S seconds
-  const TARGET_LOCK_S = 6;
+  // Sticky target lock 6–9s — prevents focus-switching every tick
   const now = Date.now() / 1000;
-  if (
-    nine._currentTarget &&
-    nine._targetLockedUntil &&
-    now < nine._targetLockedUntil
-  ) {
+  if (nine._currentTarget && nine._targetLockedUntil && now < nine._targetLockedUntil) {
     const locked = enemies.find(e => e.deploymentId === nine._currentTarget);
-    if (locked) return locked; // still alive and in range — keep attacking
+    if (locked) return locked;
   }
 
-  // Pick a new random target and lock in
+  // Random target selection — no focus-firing on lowest HP (per game design)
   const chosen = enemies[Math.floor(Math.random() * enemies.length)];
   nine._currentTarget = chosen.deploymentId;
-  nine._targetLockedUntil = now + TARGET_LOCK_S + Math.random() * 3; // 6–9s lock
+  nine._targetLockedUntil = now + 6 + Math.random() * 3;
   return chosen;
 }
 
@@ -224,8 +210,8 @@ function updateDest(nine, all) {
   }
 
   // All card types: short random wander — never approaches target
-  // Small radius keeps sprites in their local area, producing the shuffle look
-  const wanderR = 60 + Math.random()*80;
+  // Tight radius keeps sprites in their local patch, slow speed = shuffle not sprint
+  const wanderR = 40 + Math.random()*60;   // 40–100 units (was 60–140)
   const wanderAng = Math.random()*Math.PI*2;
   nine.destX = clamp(nine.x + Math.cos(wanderAng)*wanderR, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
   nine.destY = clamp(nine.y + Math.sin(wanderAng)*wanderR, ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
@@ -424,8 +410,8 @@ async function tickZone(zoneId, zs) {
     });
   }
 
-  // Update movement targets every 4 ticks (= 2s at 500ms per tick)
-  if(zs.tick%4===0) all.forEach(n=>{if(n.hp>0) updateDest(n,all);});
+  // Update movement targets every 10 ticks (= 5s at 500ms per tick) — slow deliberate shuffle
+  if(zs.tick%10===0) all.forEach(n=>{if(n.hp>0) updateDest(n,all);});
 
   // Step positions every tick
   all.forEach(n=>{if(n.hp>0) stepPos(n);});
