@@ -27,7 +27,7 @@
   });
   mobileLinks += '<a href="#" class="logout-btn" onclick="doLogout()" id="mobileLogout" style="display:none;">Logout</a>';
   var navHTML = '<nav class="top-nav" id="topNav"><div class="top-nav-content">'
-    + '<a href="/" class="nav-logo">Nine Lives Network</a>'
+    + '<a href="/" class="nav-logo"><img src="/assets/images/title-nethara.png" alt="Nines of Nethara" style="height:38px;width:auto;mix-blend-mode:screen;filter:drop-shadow(0 0 8px rgba(212,166,75,0.4));vertical-align:middle;"></a>'
     + '<ul class="nav-links">' + desktopLinks + '</ul>'
     + '<button class="hamburger" id="hamburger" onclick="window.__toggleMobileMenu()"><span></span><span></span><span></span></button>'
     + '</div></nav>'
