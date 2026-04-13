@@ -135,7 +135,7 @@
     var scene,camera,renderer,wizardCat;
     var mouseX=0,mouseY=0;
     var windowHalfX=window.innerWidth/2,windowHalfY=window.innerHeight/2;
-    var MODEL={cameraZ:7,cameraY:2.5,lookAtY:0.5,modelY:-3.2,modelScale:1};
+    var MODEL={cameraZ:7,cameraY:2.5,lookAtY:0.5,modelY:-4.8,modelScale:1};
 
     function init3D(){
       var cont=document.getElementById('canvas-container');
@@ -177,7 +177,7 @@
         wizardCat.rotation.x+=(mouseY*0.2-wizardCat.rotation.x)*0.08;
         wizardCat.position.y=MODEL.modelY+Math.sin(Date.now()*0.001)*0.05;
       }
-      renderer.render(scene,camera);
+      renderer.render(scene,camera);modelY:-4.8,
     }
 
     document.addEventListener('DOMContentLoaded',function(){
