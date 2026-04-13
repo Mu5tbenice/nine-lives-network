@@ -23,31 +23,17 @@
     }
     html,body{overflow-x:hidden;width:100%;min-height:100vh;min-height:-webkit-fill-available;background:var(--bg);font-family:'Cinzel',serif}
 
+    /* ─── Splash page overrides ─── */
+    .top-nav,.mobile-menu{display:none !important} body{padding-top:0 !important}
+
     /* ─── Video background ─── */
-    .bg-video{
-      position:fixed;top:0;left:0;
-      width:100%;height:100%;
-      object-fit:cover;
-      z-index:1;
-      opacity:0.38;
-      pointer-events:none;
-    }
+    .bg-video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1;opacity:0.28;pointer-events:none}
 
     /* ─── Vignettes ─── */
-    .bottom-fade{
-      position:fixed;bottom:0;left:0;width:100%;height:55%;
-      background:linear-gradient(to bottom,
-        transparent 0%,rgba(26,21,40,0.45) 18%,
-        rgba(26,21,40,0.9) 52%,rgba(26,21,40,1) 72%);
-      z-index:2;pointer-events:none;
-    }
-    .top-fade{
-      position:fixed;top:0;left:0;width:100%;height:22%;
-      background:linear-gradient(to top,transparent 0%,rgba(26,21,40,0.75) 100%);
-      z-index:2;pointer-events:none;
-    }
+    .bottom-fade{position:fixed;bottom:0;left:0;width:100%;height:55%;background:linear-gradient(to bottom,transparent 0%,rgba(26,21,40,0.45) 18%,rgba(26,21,40,0.9) 52%,rgba(26,21,40,1) 72%);z-index:2;pointer-events:none}
+    .top-fade{position:fixed;top:0;left:0;width:100%;height:22%;background:linear-gradient(to top,transparent 0%,rgba(26,21,40,0.75) 100%);z-index:2;pointer-events:none}
 
-    /* ─── Ambient particles ─── */
+    /* ─── Particles ─── */
     .particles{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden;z-index:3}
     .particle{position:absolute;border-radius:50%;opacity:0;animation:particle-drift ease-in-out infinite}
     @keyframes particle-drift{
@@ -56,7 +42,7 @@
       100%{transform:translateY(-85px) translateX(12px) scale(0.4);opacity:0}
     }
 
-    /* ─── Crystal sparkles ─── */
+    /* ─── Sparkles ─── */
     .sparkle-layer{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:12}
     .sparkle{position:absolute;animation:sparkle-twinkle ease-in-out infinite;transform-origin:center}
     .sparkle.star{background:var(--gold);clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)}
@@ -71,19 +57,17 @@
     /* ─── Layout ─── */
     .landing-container{
       position:relative;height:100vh;height:-webkit-fill-available;
-      display:flex;flex-direction:column;align-items:center;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
       padding:24px 15px;z-index:10;pointer-events:none;
     }
     .landing-container a,.landing-container button{pointer-events:auto}
-    .model-spacer{flex:1;min-height:20px}
 
     /* ─── Title ─── */
     .title-area{position:relative;display:flex;flex-direction:column;align-items:center;width:100%}
-    .platform-label{font-family:'Press Start 2P',monospace;font-size:6px;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:4px}
+    .platform-label{font-family:'Press Start 2P',monospace;font-size:6px;color:var(--text-dim);letter-spacing:3px;text-transform:uppercase;margin-bottom:6px}
     .title-img{
-      width:94%;max-width:540px;height:auto;
-      mix-blend-mode:screen;
-      display:block;margin:0 auto;
+      width:94%;max-width:560px;height:auto;
+      mix-blend-mode:screen;display:block;margin:0 auto;
       filter:drop-shadow(0 0 22px rgba(212,166,75,0.5)) drop-shadow(0 0 50px rgba(123,63,190,0.3));
       animation:title-breathe 5s ease-in-out infinite;
     }
@@ -94,24 +78,80 @@
     .title-fallback{display:none;font-family:'Cinzel',serif;font-weight:700;font-size:clamp(1.4rem,6vw,3rem);color:var(--gold);letter-spacing:clamp(4px,2vw,10px);text-shadow:0 0 40px rgba(212,166,75,0.4);text-align:center}
     .title-img.img-error{display:none}
     .title-img.img-error~.title-fallback{display:block}
-    .game-tagline{font-family:'Crimson Text',serif;font-style:italic;font-size:clamp(12px,3vw,15px);color:var(--text-muted);letter-spacing:1.5px;margin-top:-2px;text-align:center}
 
-    /* ─── CTA ─── */
-    .bottom-section{position:fixed;bottom:32px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;z-index:20;pointer-events:auto;gap:11px}
-    .season-badge{display:inline-flex;align-items:center;gap:7px;background:rgba(212,166,75,0.07);border:1px solid rgba(212,166,75,0.18);padding:6px 14px;border-radius:6px;font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);letter-spacing:1px}
+    /* ─── Bottom CTA ─── */
+    .bottom-section{
+      position:fixed;
+      bottom:0;left:0;right:0;
+      display:flex;flex-direction:column;align-items:center;
+      z-index:20;pointer-events:auto;
+      padding-bottom:32px;
+      gap:0; /* controlled per element below */
+    }
+
+    .game-tagline{
+      font-family:'Crimson Text',serif;font-style:italic;
+      font-size:clamp(13px,3vw,16px);
+      color:var(--text-muted);letter-spacing:1.5px;
+      text-align:center;
+      margin-bottom:14px;
+    }
+
+    .season-badge{
+      display:inline-flex;align-items:center;gap:7px;
+      background:rgba(212,166,75,0.07);
+      border:1px solid rgba(212,166,75,0.18);
+      padding:6px 14px;border-radius:6px;
+      font-family:'Press Start 2P',monospace;
+      font-size:7px;color:var(--gold);letter-spacing:1px;
+      margin-bottom:16px;
+    }
     .season-badge__dot{width:5px;height:5px;border-radius:50%;background:#44cc44;animation:pulse-dot 2s infinite;flex-shrink:0}
     @keyframes pulse-dot{0%,100%{opacity:1;box-shadow:0 0 5px #44cc44}50%{opacity:0.3;box-shadow:none}}
-    .play-btn{display:inline-flex;align-items:center;justify-content:center;padding:16px 48px;min-height:52px;background:linear-gradient(180deg,#D4A64B 0%,#b8903d 100%);border:none;color:#1a1528;font-family:'Cinzel',serif;font-weight:700;font-size:15px;text-decoration:none;text-transform:uppercase;letter-spacing:3px;cursor:pointer;border-radius:8px;box-shadow:0 4px 0 var(--gold-dark),0 0 30px rgba(212,166,75,0.3);transition:all 0.15s;white-space:nowrap}
+
+    .play-btn{
+      display:inline-flex;align-items:center;justify-content:center;
+      padding:16px 52px;min-height:52px;
+      background:linear-gradient(180deg,#D4A64B 0%,#b8903d 100%);
+      border:none;color:#1a1528;
+      font-family:'Cinzel',serif;font-weight:700;font-size:15px;
+      text-decoration:none;text-transform:uppercase;letter-spacing:3px;
+      cursor:pointer;border-radius:8px;
+      box-shadow:0 4px 0 var(--gold-dark),0 0 30px rgba(212,166,75,0.3);
+      transition:all 0.15s;white-space:nowrap;
+      margin-bottom:12px;
+    }
     .play-btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--gold-dark)}
-    .how-link{font-family:'Cinzel',serif;font-size:11px;font-weight:600;color:var(--text-muted);text-decoration:none;letter-spacing:2px;padding:8px 16px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);transition:all 0.3s}
+
+    .how-link{
+      font-family:'Cinzel',serif;font-size:11px;font-weight:600;
+      color:var(--text-muted);text-decoration:none;letter-spacing:2px;
+      padding:8px 16px;border-radius:6px;
+      border:1px solid rgba(255,255,255,0.06);
+      transition:all 0.3s;
+      margin-bottom:16px;
+    }
     .how-link:hover{color:var(--gold);border-color:rgba(212,166,75,0.2)}
+
     .footer-links{display:flex;gap:16px;justify-content:center}
-    .footer-links a{color:var(--text-dim);font-family:'Crimson Text',serif;font-size:12px;text-decoration:none;padding:6px;transition:color 0.3s;pointer-events:auto}
+    .footer-links a{
+      color:var(--text-dim);font-family:'Crimson Text',serif;
+      font-size:12px;text-decoration:none;padding:4px 6px;
+      transition:color 0.3s;
+    }
     .footer-links a:hover{color:var(--text-muted)}
 
     /* ─── Responsive ─── */
-    @media(min-width:768px){.title-img{max-width:600px}.game-tagline{font-size:16px}.play-btn{font-size:17px;padding:18px 56px}.footer-links a{font-size:13px}.bottom-fade{height:48%}}
-    @media(min-width:1024px){.title-img{max-width:660px}.play-btn:hover{transform:translateY(-3px);box-shadow:0 7px 0 var(--gold-dark),0 0 40px rgba(212,166,75,0.5)}.how-link:hover{background:rgba(212,166,75,0.06)}}
+    @media(min-width:768px){
+      .title-img{max-width:620px}
+      .play-btn{font-size:17px;padding:18px 60px}
+      .footer-links a{font-size:13px}
+    }
+    @media(min-width:1024px){
+      .title-img{max-width:680px}
+      .play-btn:hover{transform:translateY(-3px);box-shadow:0 7px 0 var(--gold-dark),0 0 40px rgba(212,166,75,0.5)}
+      .how-link:hover{background:rgba(212,166,75,0.06)}
+    }
     @media(max-width:380px){.title-img{width:99%}}
   </style>
 </head>
@@ -136,23 +176,22 @@
         onerror="this.classList.add('img-error')"
       >
       <h1 class="title-fallback">Nines of Nethara</h1>
-      <p class="game-tagline">Your Nine Fights. Cards Are Its Weapons.</p>
     </div>
+  </div>
 
-    <div class="model-spacer"></div>
-
-    <div class="bottom-section">
-      <div class="season-badge">
-        <div class="season-badge__dot"></div>
-        SEASON 0 LIVE
-      </div>
-      <a href="/register.html" class="play-btn" id="ctaButton">Enter the Realm</a>
-      <a href="/how-to-play.html" class="how-link">How To Play</a>
-      <div class="footer-links">
-        <a href="/terms.html">Terms</a>
-        <a href="/privacy.html">Privacy</a>
-        <a href="https://twitter.com/9LVNetwork" target="_blank">@9LVNetwork</a>
-      </div>
+  <!-- Bottom section outside landing-container so it sits cleanly at the bottom -->
+  <div class="bottom-section">
+    <p class="game-tagline">Your Nine Fights. Cards Are Its Weapons.</p>
+    <div class="season-badge">
+      <div class="season-badge__dot"></div>
+      SEASON 0 LIVE
+    </div>
+    <a href="/register.html" class="play-btn" id="ctaButton">Enter the Realm</a>
+    <a href="/how-to-play.html" class="how-link">How To Play</a>
+    <div class="footer-links">
+      <a href="/terms.html">Terms</a>
+      <a href="/privacy.html">Privacy</a>
+      <a href="https://twitter.com/9LVNetwork" target="_blank">@9LVNetwork</a>
     </div>
   </div>
 

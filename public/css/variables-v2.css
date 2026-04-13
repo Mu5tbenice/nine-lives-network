@@ -103,3 +103,11 @@
   --house-manastorm:   #5B8FE0;
   --house-plaguemire:  #E84393;
 }
+
+/* ── Global nav offset ──
+   Pushes all page content below the fixed 76px nav bar.
+   The splash page (index.html) cancels this with padding-top: 0.
+   If nav height ever changes, update this value to match .top-nav height in nav-v2.css. */
+body {
+  padding-top: 76px;
+}
