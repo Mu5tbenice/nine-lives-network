@@ -5547,7 +5547,7 @@
       const t = Math.min(1, frame / totalFrames);
       const ease = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2; // ease in-out
       // Gentle arc — crests at midpoint
-      const arcH = Math.min(28, dist * 0.1);
+      const arcH = Math.min(5, dist * 0.02);
       const arc  = Math.sin(t * Math.PI) * arcH;
       const newX = x1 + dx * ease;
       const newY = y1 + dy * ease - arc;
@@ -5837,44 +5837,421 @@
 
   /** Shake a sprite briefly on hit */
   // ── CARD CAST VISUAL ──────────────────────────────────────────────────
-  // Fires every time a card slot cycles. Produces a brief visual moment per effect type.
-  // These are placeholder visuals — designed to be replaced with unique spell art later.
-  // ── CARD CAST VISUAL ──────────────────────────────────────────────────
-  // ── CARD CAST PLACEHOLDER ────────────────────────────────────────────
-  // This is where each card's unique spell animation will live.
-  // For now: caster gets a brief house-colour ring pulse (visible "something cast").
-  // Targeted card types (attack, control, dot) also fire a simple placeholder
-  // projectile toward their target — so the spell visibly travels somewhere.
-  // Support/utility cards stay caster-only (buff applies to self or nearby allies).
+
+  // ══════════════════════════════════════════════════════════════════════
+  // SPELL VFX SYSTEM — organic particles, effect-based routing
+  // Helpers operate on state.arenaApp.stage directly.
+  // ══════════════════════════════════════════════════════════════════════
+
+  // ── Coordinate helpers ────────────────────────────────────────────────
+  const _hpt = s => ({ x: s.container.x, y: s.container.y - SPRITE_SIZE * 0.3 });
+  const _cpt = s => ({ x: s.container.x, y: s.container.y - SPRITE_SIZE * 0.7 });
+
+  // ── Teardrop / petal particle ─────────────────────────────────────────
+  function _tdrop(x, y, col, vx, vy, life, sz) {
+    const app = state.arenaApp; if (!app) return;
+    sz = sz || 2.2;
+    const g = new PIXI.Graphics();
+    g.beginFill(col, 0.88);
+    g.moveTo(0,0); g.bezierCurveTo(sz,-sz, sz,-sz*2.5, 0,-sz*4);
+    g.bezierCurveTo(-sz,-sz*2.5, -sz,-sz, 0,0); g.endFill();
+    g.x = x; g.y = y; g.zIndex = 98;
+    g.rotation = Math.atan2(vy, vx) + Math.PI/2 + (Math.random()-0.5)*0.6;
+    app.stage.addChild(g);
+    const spin = (Math.random()-0.5)*0.14; let f = 0;
+    const t = () => { f++; g.x+=vx; g.y+=vy; vy+=0.08; g.rotation+=spin;
+      g.alpha = Math.pow(Math.max(0,1-f/life),1.4);
+      g.scale.set(Math.max(0.05, 1-f/life*0.5));
+      if (f>=life) { app.ticker.remove(t); if(g.parent) g.parent.removeChild(g); }
+    }; app.ticker.add(t);
+  }
+
+  // ── Soft dust mote ────────────────────────────────────────────────────
+  function _dust(x, y, col, vx, vy, life) {
+    const app = state.arenaApp; if (!app) return;
+    const g = new PIXI.Graphics(); g.beginFill(col,0.7); g.drawCircle(0,0,1.2); g.endFill();
+    g.x=x; g.y=y; g.zIndex=97; app.stage.addChild(g); let f=0;
+    const t=()=>{f++;g.x+=vx;g.y+=vy;vy+=0.04;g.alpha=Math.pow(Math.max(0,1-f/life),2);
+      if(f>=life){app.ticker.remove(t);if(g.parent)g.parent.removeChild(g);}};app.ticker.add(t);
+  }
+
+  // ── Star / sparkle glint ──────────────────────────────────────────────
+  function _glint(x, y, col, vx, vy, life) {
+    const app = state.arenaApp; if (!app) return;
+    const g = new PIXI.Graphics(); const sz = 0.8+Math.random()*2; const r = Math.random();
+    if (r<0.4) {
+      g.beginFill(col,0.95); g.drawRect(-sz/2,-sz*1.5,sz,sz*3); g.endFill();
+      g.beginFill(col,0.95); g.drawRect(-sz*1.5,-sz/2,sz*3,sz); g.endFill();
+    } else if (r<0.7) {
+      g.beginFill(col,0.9); g.moveTo(0,-sz*1.7); g.lineTo(sz,0); g.lineTo(0,sz*1.7); g.lineTo(-sz,0); g.closePath(); g.endFill();
+    } else {
+      g.beginFill(col,0.85); g.moveTo(0,-sz*2); g.lineTo(sz*0.5,-sz*0.5); g.lineTo(sz*2,0);
+      g.lineTo(sz*0.5,sz*0.5); g.lineTo(0,sz*2); g.lineTo(-sz*0.5,sz*0.5);
+      g.lineTo(-sz*2,0); g.lineTo(-sz*0.5,-sz*0.5); g.closePath(); g.endFill();
+    }
+    g.x=x; g.y=y; g.zIndex=98; g.rotation=Math.random()*Math.PI*2; app.stage.addChild(g);
+    let f=0; const spin=(Math.random()-0.5)*0.16;
+    const t=()=>{f++;g.x+=vx;g.y+=vy;vy+=0.1;g.rotation+=spin;
+      g.alpha=Math.pow(Math.max(0,1-f/life),1.4); g.scale.set(Math.max(0.05,1-f/life*0.45));
+      if(f>=life){app.ticker.remove(t);if(g.parent)g.parent.removeChild(g);}};app.ticker.add(t);
+  }
+
+  // ── Notia firework burst ──────────────────────────────────────────────
+  function _fwBurst(x, y, col, sc) {
+    const app = state.arenaApp; if (!app) return;
+    sc = sc || 1;
+    const pal = [col, col, 0xffffff, 0xFFDD44, 0xFFEE88];
+    // Flash — line burst not circle
+    const fl = new PIXI.Graphics(); fl.lineStyle(2.5*sc, 0xffffff, 0.9);
+    for (let i=0;i<8;i++){const a=(i/8)*Math.PI*2,r=10*sc;fl.moveTo(Math.cos(a)*r*0.3,Math.sin(a)*r*0.3);fl.lineTo(Math.cos(a)*r,Math.sin(a)*r);}
+    fl.x=x; fl.y=y; fl.zIndex=108; app.stage.addChild(fl);
+    // Teardrop rays
+    for (let i=0;i<14;i++){const a=(i/14)*Math.PI*2+Math.random()*0.2,spd=(3.5+Math.random()*3)*sc;
+      _tdrop(x,y,pal[Math.floor(Math.random()*pal.length)],Math.cos(a)*spd,Math.sin(a)*spd,28+Math.floor(Math.random()*8),1.4+Math.random()*1.2);}
+    // Glint stars
+    for (let i=0;i<18;i++){const a=Math.random()*Math.PI*2,spd=(1.5+Math.random()*4.5)*sc;
+      _glint(x,y,pal[Math.floor(Math.random()*pal.length)],Math.cos(a)*spd,Math.sin(a)*spd,24);}
+    // Secondary puffs
+    setTimeout(()=>{for(let b=0;b<4;b++){const ba=(b/4)*Math.PI*2,bd=(10+Math.random()*8)*sc;
+      const bx=x+Math.cos(ba)*bd,by=y+Math.sin(ba)*bd;
+      for(let p=0;p<5;p++){const pa=Math.random()*Math.PI*2,ps=(1+Math.random()*2.5)*sc;
+        _tdrop(bx,by,pal[b%pal.length],Math.cos(pa)*ps,Math.sin(pa)*ps,18,1);}}},70);
+    let ef=0; const et=()=>{ef++;fl.alpha=Math.max(0,1-ef/8);fl.scale.set(1+ef*0.14);
+      if(ef>14){app.ticker.remove(et);if(fl.parent)fl.parent.removeChild(fl);}};app.ticker.add(et);
+  }
+
+  // ── Organic cloud shield — orbiting teardrops ─────────────────────────
+  function _cloudShield(sprite, col, dur) {
+    const app = state.arenaApp; if (!app) return;
+    const parts = []; const count = 20;
+    for (let i=0;i<count;i++){
+      const g = new PIXI.Graphics(); const sz = 1.5+Math.random()*1.8;
+      g.beginFill(col,0.7); g.moveTo(0,0); g.bezierCurveTo(sz,-sz,sz,-sz*2.5,0,-sz*4);
+      g.bezierCurveTo(-sz,-sz*2.5,-sz,-sz,0,0); g.endFill();
+      g.zIndex=96; app.stage.addChild(g);
+      parts.push({g, br: SPRITE_SIZE*0.9+Math.random()*SPRITE_SIZE*0.4, ph: Math.random()*Math.PI*2, spd: 0.038+Math.random()*0.025});
+    }
+    let f=0; const t=()=>{f++;
+      const fade=f<8?f/8:f>dur-12?Math.max(0,1-(f-(dur-12))/12):1;
+      parts.forEach(p=>{const r=p.br;
+        p.g.x=sprite.container.x+Math.cos(p.ph+f*p.spd)*r;
+        p.g.y=sprite.container.y+Math.sin(p.ph+f*p.spd)*r;
+        p.g.rotation=p.ph+f*p.spd+Math.PI/2; p.g.alpha=fade*0.72;});
+      if(f>=dur){app.ticker.remove(t);parts.forEach(p=>{if(p.g.parent)p.g.parent.removeChild(p.g);});}
+    }; app.ticker.add(t);
+  }
+
+  // ── Organic swirl outward ─────────────────────────────────────────────
+  function _swirl(x, y, col, radius, dur) {
+    const app = state.arenaApp; if (!app) return;
+    for (let i=0;i<12;i++){const a=(i/12)*Math.PI*2+Math.random()*0.3;
+      const g=new PIXI.Graphics(); const sz=1.3+Math.random()*1.4;
+      g.beginFill(col,0.8); g.moveTo(0,0); g.bezierCurveTo(sz,-sz,sz,-sz*2.5,0,-sz*4);
+      g.bezierCurveTo(-sz,-sz*2.5,-sz,-sz,0,0); g.endFill();
+      g.x=x; g.y=y; g.zIndex=99; app.stage.addChild(g); let f=0;
+      const t=()=>{f++;const p=f/dur;
+        g.x=x+Math.cos(a+p*0.65)*radius*p; g.y=y+Math.sin(a+p*0.65)*radius*p;
+        g.rotation=a+p*0.65+Math.PI/2; g.alpha=Math.max(0,1-f/dur);
+        g.scale.set(Math.max(0.05,1-f/dur*0.4));
+        if(f>=dur){app.ticker.remove(t);if(g.parent)g.parent.removeChild(t);if(g.parent)g.parent.removeChild(g);}};
+      app.ticker.add(t);}
+  }
+
+  // ── Organic missile with dust trail ───────────────────────────────────
+  function _missile(x1, y1, x2, y2, col, frames, onHit, trackFn) {
+    const app = state.arenaApp; if (!app) return;
+    const pal = [col, col, 0xffffff, 0xFFEE88];
+    const m = new PIXI.Container(); m.zIndex=102;
+    const core = new PIXI.Graphics();
+    core.beginFill(col,0.95); core.moveTo(0,0); core.bezierCurveTo(4,-3,4,-9,0,-14);
+    core.bezierCurveTo(-4,-9,-4,-3,0,0); core.endFill();
+    core.beginFill(0xffffff,0.7); core.moveTo(0,-2); core.bezierCurveTo(2,-5,2,-10,0,-13);
+    core.bezierCurveTo(-2,-10,-2,-5,0,-2); core.endFill();
+    m.addChild(core); m.x=x1; m.y=y1; app.stage.addChild(m);
+    let f=0, hit=false;
+    const tick=()=>{f++;const p=Math.min(1,f/frames);
+      const ease=p<0.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
+      const ex=trackFn?trackFn().x:x2, ey=trackFn?trackFn().y:y2;
+      const arc=Math.min(5,Math.hypot(ex-x1,ey-y1)*0.02);
+      const nx=x1+(ex-x1)*ease, ny=y1+(ey-y1)*ease-Math.sin(p*Math.PI)*arc;
+      m.x=nx; m.y=ny; m.scale.set(1+Math.sin(p*Math.PI)*0.2);
+      if(f>1){const ang=Math.atan2(ny-(y1+(ey-y1)*Math.max(0,ease-0.04)),nx-(x1+(ex-x1)*Math.max(0,ease-0.04)));m.rotation=ang+Math.PI/2;}
+      for(let s=0;s<3;s++){const ba=m.rotation-Math.PI/2+Math.PI+(Math.random()-0.5)*0.9,bd=2+Math.random()*6;
+        const tc=pal[Math.floor(Math.random()*pal.length)];
+        if(Math.random()<0.5)_tdrop(nx+Math.cos(ba)*bd,ny+Math.sin(ba)*bd,tc,Math.cos(ba)*0.5,Math.sin(ba)*0.5+0.3,14,1);
+        else _dust(nx+Math.cos(ba)*bd,ny+Math.sin(ba)*bd,tc,Math.cos(ba)*0.3+(Math.random()-0.5)*0.8,Math.sin(ba)*0.3+0.2,12);}
+      m.alpha=p>0.9?1-(p-0.9)/0.1:1;
+      if(p>=0.8&&!hit){hit=true;_fwBurst(m.x,m.y,col,0.85);if(onHit)onHit();}
+      if(p>=1){app.ticker.remove(tick);if(m.parent)m.parent.removeChild(m);}};
+    app.ticker.add(tick);
+  }
+
+  // ── Float text ────────────────────────────────────────────────────────
+  function _fwText(x, y, txt, col, sz) {
+    const app = state.arenaApp; if (!app) return;
+    const t = new PIXI.Text(txt, {fontFamily:'monospace',fontSize:sz||10,fill:col,fontWeight:'bold',stroke:0x000000,strokeThickness:2});
+    t.anchor.set(0.5); t.x=x; t.y=y; t.zIndex=115; app.stage.addChild(t);
+    let f=0; const tk=()=>{f++;t.y-=0.75;t.alpha=Math.max(0,1-f/44);
+      if(f>=44){app.ticker.remove(tk);if(t.parent)t.parent.removeChild(t);}};app.ticker.add(tk);
+  }
+
+  // ── Status pill on sprite ─────────────────────────────────────────────
+  function _pill(sprite, txt, col, dur) {
+    const app = state.arenaApp; if (!app) return;
+    const bg = new PIXI.Graphics(); bg.beginFill(col,0.82); bg.drawRoundedRect(-19,-7,38,13,3); bg.endFill();
+    const lbl = new PIXI.Text(txt,{fontFamily:'monospace',fontSize:7,fill:0x080808,fontWeight:'bold'}); lbl.anchor.set(0.5);
+    const c = new PIXI.Container(); c.addChild(bg,lbl); c.zIndex=112; app.stage.addChild(c);
+    let f=0; const t=()=>{f++;c.x=sprite.container.x;c.y=sprite.container.y-SPRITE_SIZE*1.55;
+      c.alpha=f<8?f/8:f>dur-18?Math.max(0,1-(f-(dur-18))/18):1;
+      if(f>=dur){app.ticker.remove(t);if(c.parent)c.parent.removeChild(c);}};app.ticker.add(t);
+  }
+
+  // ── Wind-up (~320ms) before every cast ───────────────────────────────
+  function _arenaWU(sprite, col, ctype, onFire) {
+    const app = state.arenaApp; if (!app) { onFire(); return; }
+    const DUR = 20;
+    const cx = sprite.container.x, cy = sprite.container.y;
+    if (ctype === 'attack') {
+      for (let i=0;i<10;i++){const a=Math.random()*Math.PI*2,d=26+Math.random()*18;
+        const ox=cx+Math.cos(a)*d, oy=cy+Math.sin(a)*d;
+        let pf=0; const g=new PIXI.Graphics(); const sz=1.6+Math.random()*1.2;
+        g.beginFill(col,0.88);g.moveTo(0,0);g.bezierCurveTo(sz,-sz,sz,-sz*2.5,0,-sz*4);g.bezierCurveTo(-sz,-sz*2.5,-sz,-sz,0,0);g.endFill();
+        g.x=ox;g.y=oy;g.rotation=Math.atan2(cy-oy,cx-ox)+Math.PI/2;g.zIndex=103;app.stage.addChild(g);
+        const t=()=>{pf++;const p=pf/DUR;g.x=ox+(cx-ox)*p;g.y=oy+(cy-oy)*p;g.alpha=1-p;g.scale.set(1-p*0.4);
+          if(pf>=DUR){app.ticker.remove(t);if(g.parent)g.parent.removeChild(g);}};app.ticker.add(t);}
+    } else if (ctype==='control'||ctype==='dot') {
+      for(let i=0;i<9;i++){const a=(i/9)*Math.PI*2;let pf=0;
+        const g=new PIXI.Graphics();const sz=1.8+Math.random()*1.2;
+        g.beginFill(col,0.75);g.moveTo(0,0);g.bezierCurveTo(sz,-sz,sz,-sz*2.5,0,-sz*4);g.bezierCurveTo(-sz,-sz*2.5,-sz,-sz,0,0);g.endFill();
+        g.zIndex=97;app.stage.addChild(g);const sr=28;
+        const t=()=>{pf++;const p=pf/DUR,r=sr*(1-p*0.72);
+          g.x=cx+Math.cos(a+p*2.8)*r;g.y=cy+Math.sin(a+p*2.8)*r;
+          g.rotation=a+p*2.8+Math.PI/2;g.alpha=0.88*(1-p);
+          if(pf>=DUR){app.ticker.remove(t);if(g.parent)g.parent.removeChild(g);}};app.ticker.add(t);}
+    } else if (ctype==='support') {
+      for(let i=0;i<8;i++){setTimeout(()=>{
+        const g=new PIXI.Graphics();const sz=2.5;
+        g.beginFill(col,0.76);g.moveTo(0,0);g.bezierCurveTo(sz,-sz*2,sz,-sz*5,0,-sz*7);g.bezierCurveTo(-sz,-sz*5,-sz,-sz*2,0,0);g.endFill();
+        g.x=cx+(Math.random()-0.5)*18;g.y=cy+10;g.rotation=(Math.random()-0.5)*0.9;g.zIndex=97;app.stage.addChild(g);
+        let pf=0;const t=()=>{pf++;g.y-=1.9;g.rotation+=(Math.random()-0.5)*0.07;g.alpha=Math.max(0,1-pf/16);
+          if(pf>=16){app.ticker.remove(t);if(g.parent)g.parent.removeChild(g);}};app.ticker.add(t);
+      },i*35);}
+    } else {
+      for(let i=0;i<8;i++){setTimeout(()=>{_dust(cx+(Math.random()-0.5)*20,cy+(Math.random()-0.5)*14,col,(Math.random()-0.5)*1.5,-1.5-Math.random()*1.5,18);},i*25);}
+    }
+    setTimeout(onFire, DUR * 16);
+  }
+
+  // ── Beam VFX ──────────────────────────────────────────────────────────
+  function _beam(x1,y1,x2,y2,col,w,dur){
+    const app=state.arenaApp;if(!app)return;
+    const g=new PIXI.Graphics();g.zIndex=100;app.stage.addChild(g);let f=0;
+    const t=()=>{f++;g.clear();const a=f<8?f/8:f>dur-12?Math.max(0,1-(f-(dur-12))/12):1;
+      g.lineStyle(w,col,a*0.7+Math.random()*0.25);g.moveTo(x1,y1);g.lineTo(x2+(Math.random()-0.5)*6,y2+(Math.random()-0.5)*6);
+      g.lineStyle(w*0.4,0xffffff,a*0.35);g.moveTo(x1,y1);g.lineTo(x2,y2);
+      if(f>=dur){app.ticker.remove(t);if(g.parent)g.parent.removeChild(g);}};app.ticker.add(t);}
+
+  // ══════════════════════════════════════════════════════════════════════
+  // MAIN SPELL ROUTER — replaces old _triggerCardCastVisual
+  // ══════════════════════════════════════════════════════════════════════
   function _triggerCardCastVisual(sprite, card, slotIdx) {
     if (!sprite || !state.arenaApp) return;
-    const hColor  = getHouseColor(card?.house || 'universal');
-    const cardType = (card?.card_type || 'attack').toLowerCase();
-    const cx = sprite.container.x, cy = sprite.container.y;
+    const app  = state.arenaApp;
+    const col  = getHouseColor(card?.house || 'universal');
+    const ctype = (card?.spell_type || card?.card_type || 'attack').toLowerCase();
+    const eff  = (card?.effect_1 || '').toUpperCase().trim();
+    const id   = card?.id || 0;
+    const cx   = sprite.container.x, cy = sprite.container.y;
 
-    // Caster pop — always
+    // Target sprite
+    const tgt = sprite._lockedTarget ? state.nines.get(sprite._lockedTarget) : null;
+    const tx = tgt?.container?.x ?? cx + 90;
+    const ty = tgt?.container?.y ?? cy;
+
+    // Sprite pop on cast — always
     if (sprite.spriteGroup) {
-      sprite.spriteGroup.scale.set(1.12, 1.12);
-      setTimeout(() => { if (sprite.spriteGroup) sprite.spriteGroup.scale.set(1, 1); }, 150);
+      sprite.spriteGroup.scale.set(1.1, 1.1);
+      setTimeout(() => { if (sprite.spriteGroup) sprite.spriteGroup.scale.set(1,1); }, 140);
     }
 
-    // Caster ring — always (house colour = spell identity)
-    _castRing(cx, cy, hColor, 14, 3);
-
-    // Targeted card types: also fire a small placeholder bolt toward current target
-    // This will be replaced per-card with unique spell animations later
-    const TARGETED_TYPES = ['attack', 'control', 'dot'];
-    if (TARGETED_TYPES.includes(cardType)) {
-      // Find the current target sprite from the locked target ID
-      const targetSprite = sprite._lockedTarget
-        ? state.nines.get(sprite._lockedTarget)
-        : null;
-      if (targetSprite) {
-        _castPlaceholderBolt(cx, cy, targetSprite.container.x, targetSprite.container.y, hColor);
-      }
-    }
+    // Wind-up then spell
+    _arenaWU(sprite, col, ctype, () => _castByEffect(sprite, tgt, id, eff, col, ctype, cx, cy, tx, ty, app));
   }
   window._triggerCardCastVisual = _triggerCardCastVisual;
+
+  // ── Per-effect animation dispatch ─────────────────────────────────────
+  function _castByEffect(sprite, tgt, id, eff, col, ctype, cx, cy, tx, ty, app) {
+
+    const FRAMES = 22; // missile travel frames (~flat trajectory)
+    const trackTgt = tgt ? () => ({ x: tgt.container.x, y: tgt.container.y - SPRITE_SIZE*0.3 }) : null;
+
+    // ── Special per-ID overrides ───────────────────────────────────────
+    // ID 7 War Banner — plant physical banner
+    if (id === 7) {
+      const bn=new PIXI.Container();bn.x=cx;bn.y=cy+SPRITE_SIZE*0.28;bn.zIndex=108;app.stage.addChild(bn);
+      const pole=new PIXI.Graphics();pole.beginFill(0x886633,1);pole.drawRect(-1.5,-48,3,48);pole.endFill();bn.addChild(pole);
+      const flag=new PIXI.Graphics();flag.beginFill(0xFFD4AA,0.92);flag.moveTo(0,-48);flag.lineTo(20,-38);flag.lineTo(18,-30);flag.lineTo(0,-30);flag.closePath();flag.endFill();bn.addChild(flag);
+      let f=0,dur=200,ff=0; const ft=()=>{ff++;flag.skew.x=Math.sin(ff*0.11)*0.18;};app.ticker.add(ft);
+      const tf=()=>{f++;bn.scale.y=f<8?f/8:1;bn.alpha=f>dur-20?Math.max(0,1-(f-(dur-20))/20):1;
+        if(f>=dur){app.ticker.remove(tf);app.ticker.remove(ft);if(bn.parent)bn.parent.removeChild(bn);}};app.ticker.add(tf);
+      _swirl(cx,cy,col,65,24);_fwText(cx,cy-SPRITE_SIZE*2,'WAR BANNER',col,9);
+      return;
+    }
+
+    // ID 34 Petrify — stone overlay on target
+    if (id === 34 && tgt) {
+      for(let i=0;i<12;i++){const a=Math.random()*Math.PI*2,d=28+Math.random()*16;
+        _tdrop(tgt.container.x+Math.cos(a)*d,tgt.container.y+Math.sin(a)*d,0x888888,-Math.cos(a)*2,-Math.sin(a)*2,18,2);}
+      setTimeout(()=>{
+        const stone=new PIXI.Container();stone.x=tgt.container.x;stone.y=tgt.container.y;stone.zIndex=113;app.stage.addChild(stone);
+        const bd=new PIXI.Graphics();bd.beginFill(0x888888,0.8);
+        const sv=[[-SPRITE_SIZE*0.36,-SPRITE_SIZE*0.88],[SPRITE_SIZE*0.33,-SPRITE_SIZE*0.86],[SPRITE_SIZE*0.38,-SPRITE_SIZE*0.5],[SPRITE_SIZE*0.35,-SPRITE_SIZE*0.1],[SPRITE_SIZE*0.36,SPRITE_SIZE*0.06],[-SPRITE_SIZE*0.34,SPRITE_SIZE*0.08],[-SPRITE_SIZE*0.38,-SPRITE_SIZE*0.12],[-SPRITE_SIZE*0.36,-SPRITE_SIZE*0.5]];
+        bd.moveTo(sv[0][0],sv[0][1]);sv.forEach((p,i)=>{const n=sv[(i+1)%sv.length];const cx2=(p[0]+n[0])/2+(Math.random()-0.5)*3,cy2=(p[1]+n[1])/2+(Math.random()-0.5)*3;bd.bezierCurveTo(cx2,cy2,cx2,cy2,n[0],n[1]);});bd.endFill();stone.addChild(bd);
+        // crack lines
+        for(let c=0;c<4;c++){const cl=new PIXI.Graphics();cl.lineStyle(1,0x555555,0.7);const sx=(Math.random()-0.5)*SPRITE_SIZE*0.4,sy=-SPRITE_SIZE*(0.2+Math.random()*0.55);cl.moveTo(sx,sy);cl.lineTo(sx+(Math.random()-0.5)*SPRITE_SIZE*0.35,sy-SPRITE_SIZE*(0.1+Math.random()*0.3));stone.addChild(cl);}
+        if(tgt.spriteGroup)tgt.spriteGroup.tint=0x999999;
+        let f2=0,dur2=150;
+        const ts=()=>{f2++;stone.x=tgt.container.x;stone.y=tgt.container.y;stone.alpha=f2<10?f2/10:f2>dur2-20?Math.max(0,1-(f2-(dur2-20))/20):0.8;
+          if(f2>=dur2){app.ticker.remove(ts);if(stone.parent)stone.parent.removeChild(stone);if(tgt.spriteGroup)tgt.spriteGroup.tint=0xFFFFFF;}};app.ticker.add(ts);
+        _pill(tgt,'PETRIFIED',0x888888,150);
+      },300);
+      return;
+    }
+
+    // ── Effect-based routing ───────────────────────────────────────────
+
+    // ── ATTACK EFFECTS — fire toward target ────────────────────────────
+    if (['BURN','CHAIN','EXECUTE','SURGE','CRIT','PIERCE'].includes(eff) && tgt) {
+      const c2 = _cpt(sprite), t2 = _hpt(tgt);
+      _missile(c2.x,c2.y,t2.x,t2.y,col,FRAMES,()=>{
+        if(tgt.spriteGroup){const orig=tgt.container.x;let sf=0;const sh=()=>{sf++;tgt.container.x=orig+(Math.random()-0.5)*6*(1-sf/10);if(sf>=10){app.ticker.remove(sh);tgt.container.x=orig;}};app.ticker.add(sh);}
+        if(eff==='BURN')_fwText(tx,ty-SPRITE_SIZE*1.8,'BURN',0xFF6B35,9);
+        if(eff==='CHAIN'){_fwText(tx,ty-SPRITE_SIZE*1.8,'CHAIN',0xFF9900,9);
+          // Find second target and fork
+          const others=[...state.nines.values()].filter(n=>n!==sprite&&n!==tgt&&n.container);
+          if(others.length>0){const t3=others[Math.floor(Math.random()*others.length)];setTimeout(()=>{_missile(tx,ty,t3.container.x,t3.container.y-SPRITE_SIZE*0.3,col,16,()=>{_fwBurst(t3.container.x,t3.container.y-SPRITE_SIZE*0.3,col,0.65);});},120);}
+        }
+        if(eff==='EXECUTE'){_fwText(tx,ty-SPRITE_SIZE*2,'EXECUTE',0xFF5500,10);_fwBurst(tx,ty,0xFF5500,1.2);}
+        if(eff==='SURGE'){_swirl(cx,cy,col,32,16);_fwText(cx,cy-SPRITE_SIZE*2,'SURGE',col,9);}
+        if(eff==='CRIT'){_fwBurst(tx,ty,col,1.3);_fwText(tx,ty-SPRITE_SIZE*2,'CRIT',0xFFD700,12);}
+        if(eff==='PIERCE'){_fwText(tx,ty-SPRITE_SIZE*1.8,'PIERCED',0x00EEFF,9);}
+      },trackTgt);
+      return;
+    }
+
+    // ── CONTROL EFFECTS — targeted debuffs ─────────────────────────────
+    if (['HEX','MARK','WEAKEN','DRAIN','TETHER','NULLIFY','BLIND','SILENCE'].includes(eff) && tgt) {
+      const c2=_cpt(sprite),t2=_hpt(tgt);
+      if(eff==='DRAIN'){
+        // Beam from target to caster (lifesteal direction)
+        _beam(t2.x,t2.y,c2.x,c2.y,col,3,120);
+        _pill(tgt,'DRAIN',col,120);
+        return;
+      }
+      if(eff==='TETHER'){
+        _pill(tgt,'TETHER',col,160);_pill(sprite,'TETHER',col,160);
+        let f=0,dur=160;
+        const tf=()=>{f++;const g=new PIXI.Graphics();g.lineStyle(2.5,col,0.65+Math.sin(f*0.18)*0.28);g.moveTo(sprite.container.x,sprite.container.y-SPRITE_SIZE*0.5);g.lineTo(tgt.container.x,tgt.container.y-SPRITE_SIZE*0.5);g.zIndex=101;app.stage.addChild(g);let bf=0;const bt=()=>{bf++;g.alpha=Math.max(0,1-bf/4);if(bf>=4){app.ticker.remove(bt);if(g.parent)g.parent.removeChild(g);}};app.ticker.add(bt);if(f>=dur)app.ticker.remove(tf);};app.ticker.add(tf);
+        return;
+      }
+      if(eff==='SILENCE'){
+        // Fog cloud drifts to target
+        const fog=new PIXI.Graphics();fog.beginFill(0x330044,0.5);
+        const fr=SPRITE_SIZE*1.1;fog.moveTo(fr,0);for(let fi=1;fi<=8;fi++){const fa=fi/8*Math.PI*2,ffr=fr*(0.85+Math.random()*0.28);fog.bezierCurveTo(Math.cos(fa-0.4)*ffr*1.1,Math.sin(fa-0.4)*ffr*1.1,Math.cos(fa)*ffr*1.1,Math.sin(fa)*ffr*1.1,Math.cos(fa)*ffr,Math.sin(fa)*ffr);}
+        fog.endFill();fog.x=tgt.container.x;fog.y=tgt.container.y;fog.zIndex=96;app.stage.addChild(fog);
+        let f=0,dur=140;const tf=()=>{f++;fog.x=tgt.container.x;fog.y=tgt.container.y;fog.alpha=f<12?f/12:f>dur-18?Math.max(0,1-(f-(dur-18))/18):0.82;if(f>=dur){app.ticker.remove(tf);if(fog.parent)fog.parent.removeChild(fog);}};app.ticker.add(tf);
+        _pill(tgt,'SILENCED',0xDD88FF,140);
+        return;
+      }
+      // Default control: missile + debuff pill
+      _missile(c2.x,c2.y,t2.x,t2.y,col,FRAMES,()=>{
+        _pill(tgt,eff,col,120);
+        if(eff==='HEX')_fwText(tx,ty-SPRITE_SIZE*1.8,'HEX',col,9);
+        if(eff==='MARK'){_fwText(tx,ty-SPRITE_SIZE*2,'MARKED',0xFF4444,9);_pill(tgt,'MARKED',0xFF4444,140);}
+        if(eff==='WEAKEN')_fwText(tx,ty-SPRITE_SIZE*1.8,'WEAKENED',0xFFAA44,9);
+        if(eff==='BLIND')_fwText(tx,ty-SPRITE_SIZE*1.8,'BLIND',0x9933FF,9);
+        if(eff==='NULLIFY')_fwText(tx,ty-SPRITE_SIZE*1.8,'NULLIFIED',col,9);
+      },trackTgt);
+      return;
+    }
+
+    // ── DEFENSIVE SELF BUFFS ────────────────────────────────────────────
+    if (['WARD','BARRIER','ANCHOR'].includes(eff)) {
+      _cloudShield(sprite, col, 180);
+      _swirl(cx,cy,col,38,18);
+      _pill(sprite,eff,col,180);
+      return;
+    }
+
+    if (eff==='THORNS') {
+      // Organic thorns ring around caster
+      for(let i=0;i<12;i++){const a=(i/12)*Math.PI*2;
+        const g=new PIXI.Graphics();g.beginFill(col,0.88);g.moveTo(0,0);g.bezierCurveTo(2.5,-5,2,-11,0,-15);g.bezierCurveTo(-2,-11,-2.5,-5,0,0);g.endFill();
+        g.x=sprite.container.x+Math.cos(a)*28;g.y=sprite.container.y+Math.sin(a)*28;g.rotation=a+Math.PI;g.zIndex=99;app.stage.addChild(g);
+        let f=0;const t=()=>{f++;g.alpha=f>180?Math.max(0,1-(f-180)/20):1;if(f>=200){app.ticker.remove(t);if(g.parent)g.parent.removeChild(g);}};app.ticker.add(t);}
+      _pill(sprite,'THORNS',col,200);
+      return;
+    }
+
+    if (eff==='DODGE') {
+      // Fade caster
+      const sg=sprite.spriteGroup;if(!sg)return;
+      const oa=sg.alpha;let f=0;const t=()=>{f++;sg.alpha=Math.max(0.12,1-f/18);if(f>=120){app.ticker.remove(t);sg.alpha=oa;}};app.ticker.add(t);
+      _pill(sprite,'DODGE',col,120);
+      return;
+    }
+
+    if (eff==='HASTE') {
+      for(let i=0;i<14;i++)setTimeout(()=>{_tdrop(cx+(Math.random()-0.5)*8,cy+(Math.random()-0.5)*16,col,(Math.random()-0.5)*2,-3.5,-0.06,22,2);},i*38);
+      _pill(sprite,'HASTE',col,100);
+      return;
+    }
+
+    // ── SUPPORT / HEAL ─────────────────────────────────────────────────
+    if (['HEAL','BLESS','INSPIRE'].includes(eff)) {
+      // Find lowest HP ally to heal
+      const allies=[...state.nines.values()].filter(n=>n!==sprite&&n.container&&n.guild===sprite.guild);
+      const healTarget=allies.length>0?allies.reduce((a,b)=>(b.hp||0)<(a.hp||0)?b:a):sprite;
+      const ht=_hpt(healTarget);
+      _beam(_cpt(sprite).x,_cpt(sprite).y,ht.x,ht.y,col,3,80);
+      _fwBurst(ht.x,ht.y,col,0.7);
+      _fwText(ht.x,ht.y-SPRITE_SIZE*2,eff==='INSPIRE'?'INSPIRED':'+HEAL',col,9);
+      if(eff==='INSPIRE')_swirl(cx,cy,col,65,24);
+      return;
+    }
+
+    // ── DOT EFFECTS ─────────────────────────────────────────────────────
+    if (['POISON','CORRODE','WITHER'].includes(eff) && tgt) {
+      const c2=_cpt(sprite),t2=_hpt(tgt);
+      if(eff==='CORRODE'){
+        // Blob falls from above target
+        const g=new PIXI.Graphics();g.beginFill(col,0.88);
+        const bv=8;g.moveTo(10,0);for(let bi=0;bi<bv;bi++){const ba=((bi+1)/bv)*Math.PI*2,br=9+Math.random()*4,ca=(bi/bv)*Math.PI*2,cbr=9+Math.random()*4;g.bezierCurveTo(Math.cos(ca)*cbr*1.1,Math.sin(ca)*cbr*1.1,Math.cos(ba)*br*1.1,Math.sin(ba)*br*1.1,Math.cos(ba)*br,Math.sin(ba)*br);}g.endFill();
+        g.x=tgt.container.x+(Math.random()-0.5)*20;g.y=tgt.container.y-80;g.zIndex=102;app.stage.addChild(g);
+        let f=0;const tf=()=>{f++;g.y+=5.5;if(f>=18){app.ticker.remove(tf);if(g.parent)g.parent.removeChild(g);_fwBurst(tgt.container.x,tgt.container.y-SPRITE_SIZE*0.3,col,0.9);for(let s=0;s<12;s++)_tdrop(tgt.container.x+(Math.random()-0.5)*36,tgt.container.y-SPRITE_SIZE*0.3,col,(Math.random()-0.5)*4,-(Math.random()*2.5),0.14,30,2);_pill(tgt,'CORRODE',col,120);}};app.ticker.add(tf);
+        return;
+      }
+      if(eff==='WITHER'){
+        // Close-range touch — sprite approaches
+        const oc=sprite.container.x;let f=0;
+        const tf=()=>{f++;sprite.container.x=oc+(tgt.container.x-oc)*(f/22);if(f===22){app.ticker.remove(tf);sprite.container.x=oc;_pill(tgt,'WITHER',col,120);_fwText(tx,ty-SPRITE_SIZE*1.8,'HEALS -50%',col,9);}};app.ticker.add(tf);
+        return;
+      }
+      // POISON: dart missile
+      _missile(c2.x,c2.y,t2.x,t2.y,col,FRAMES,()=>{_pill(tgt,'POISON',col,130);_fwText(tx,ty-SPRITE_SIZE*1.8,'POISON',col,9);},trackTgt);
+      return;
+    }
+
+    // ── FALLBACK — generic missile for anything not caught above ────────
+    if (tgt) {
+      const c2=_cpt(sprite),t2=_hpt(tgt);
+      _missile(c2.x,c2.y,t2.x,t2.y,col,FRAMES,()=>{_fwText(tx,ty-SPRITE_SIZE*1.8,eff||'CAST',col,9);},trackTgt);
+    } else {
+      _swirl(cx,cy,col,40,20);
+      _fwText(cx,cy-SPRITE_SIZE*2,eff||'CAST',col,9);
+    }
+  }
+
 
 
 
