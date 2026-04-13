@@ -15,9 +15,7 @@
   var currentPath = window.location.pathname.split('?')[0].split('#')[0];
   if (currentPath === '/' || currentPath === '') currentPath = '/index.html';
 
-  function isActive(href) {
-    return currentPath === href;
-  }
+  function isActive(href) { return currentPath === href; }
 
   var desktopLinks = '';
   NAV_LINKS.forEach(function(link) {
@@ -31,16 +29,14 @@
   });
   mobileLinks += '<a href="#" class="logout-btn" onclick="doLogout()" id="mobileLogout" style="display:none;">Logout</a>';
 
-  // Title image logo — black bg disappears via mix-blend-mode:screen
   var logoHTML = '<a href="/" class="nav-logo">'
     + '<img '
     + 'src="/assets/images/title-nethara.png" '
     + 'alt="Nines of Nethara" '
-    + 'style="height:52px;width:auto;mix-blend-mode:screen;filter:drop-shadow(0 0 8px rgba(212,166,75,0.45));vertical-align:middle;display:block;"'
+    + 'style="height:68px;width:auto;mix-blend-mode:screen;filter:drop-shadow(0 0 8px rgba(212,166,75,0.45));vertical-align:middle;display:block;"'
     + ' onerror="this.style.display=\'none\';this.nextSibling.style.display=\'block\'"'
     + '>'
-    // Fallback text if image fails
-    + '<span style="display:none;font-family:Cinzel,serif;font-weight:700;color:#D4A64B;font-size:14px;letter-spacing:2px;">Nines of Nethara</span>'
+    + '<span style="display:none;font-family:Cinzel,serif;font-weight:700;color:#D4A64B;font-size:15px;letter-spacing:2px;">Nines of Nethara</span>'
     + '</a>';
 
   var navHTML = '<nav class="top-nav" id="topNav"><div class="top-nav-content">'
@@ -54,9 +50,7 @@
   var firstChild = body.firstChild;
   var wrapper = document.createElement('div');
   wrapper.innerHTML = navHTML;
-  while (wrapper.firstChild) {
-    body.insertBefore(wrapper.firstChild, firstChild);
-  }
+  while (wrapper.firstChild) { body.insertBefore(wrapper.firstChild, firstChild); }
 
   window.__toggleMobileMenu = function() {
     var h = document.getElementById('hamburger');

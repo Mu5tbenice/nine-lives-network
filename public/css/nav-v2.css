@@ -18,7 +18,7 @@
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-subtle);
-  height: 52px;
+  height: 76px; /* increased from 52px to fit 68px logo */
 }
 
 .top-nav-content {
@@ -41,6 +41,8 @@
   letter-spacing: 1.5px;
   white-space: nowrap;
   transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
 }
 
 .nav-logo:hover {
@@ -126,7 +128,7 @@
 .mobile-menu {
   display: none;
   position: fixed;
-  top: 52px;
+  top: 76px; /* matches new nav height */
   left: 0;
   right: 0;
   bottom: 0;
