@@ -13,7 +13,8 @@ const supabaseAdmin = createClient(
 // ─── CONSTANTS ────────────────────────────────────────────────────────
 const TICK_MS       = 500;
 const SNAPSHOT_MS   = 15 * 60 * 1000;
-const SPD_FLOOR     = 5.5;
+const SPD_FLOOR     = 5.5;   // card cycle floor (effects stay deliberate)
+const ATK_FLOOR     = 2.5;   // auto-attack floor (constant visual activity)
 const CORRODE_CD    = 10;
 const ZONE_W        = 900;
 const ZONE_H        = 500;
@@ -73,7 +74,7 @@ function resolveHouseKey(raw) {
   return 'stormrage';
 }
 
-const atkInterval  = spd => Math.max(SPD_FLOOR, 10.5 - spd * 0.12);
+const atkInterval  = spd => Math.max(ATK_FLOOR, 7.5 - spd * 0.10);  // faster: 2.5–6.5s range
 const cardInterval = spd => Math.max(5.5, 12.0 - spd * 0.10);
 const dist         = (a,b) => Math.hypot(a.x-b.x, a.y-b.y);
 const clamp        = (v,lo,hi) => Math.max(lo, Math.min(hi, v));
@@ -189,32 +190,68 @@ function pickHealTarget(nine, all) {
   return allies.reduce((b,a)=>a.hp<b.hp?a:b);
 }
 
-// ─── MOVEMENT ─────────────────────────────────────────────────────────
-// Nines NEVER chase targets. All attacks are ranged — projectiles travel to target.
-// Movement is pure aesthetic patrol: gentle random wander, South Park shuffle feel.
+// ─── MOVEMENT — intention-based positioning ──────────────────────────
+// Each Nine has a preferred combat position based on card type.
+// They drift toward that position continuously, with micro-wander layered on top.
+// Attack lunge and hit flinch are applied as temporary destX/Y offsets.
 function updateDest(nine, all) {
   if (nine.tauntActive) { nine.destX=ZONE_W/2; nine.destY=ZONE_H/2; return; }
   const cfg = cardCfg(nine);
-  if (cfg.moveTo==='hold') return;
+  if (cfg.moveTo==='hold') {
+    // Utility/self: hold position with tiny micro-drift only
+    nine.destX = clamp(nine.x + (Math.random()-0.5)*20, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
+    nine.destY = clamp(nine.y + (Math.random()-0.5)*20, ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
+    return;
+  }
 
-  // Support cards: orbit the most wounded nearby ally
+  const enemies = all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag);
+  const allies  = all.filter(n=>n.hp>0&&n.guildTag===nine.guildTag&&n.deploymentId!==nine.deploymentId);
+
+  // Support: orbit the most wounded nearby ally
   if (cfg.moveTo==='ally_cluster') {
-    const allies = all.filter(n=>n.hp>0&&n.guildTag===nine.guildTag&&n.deploymentId!==nine.deploymentId);
-    if (allies.length) {
-      const wounded = allies.reduce((b,a)=>a.hp<b.hp?a:b);
-      const ang = Math.random()*Math.PI*2;
-      nine.destX = clamp(wounded.x + Math.cos(ang)*70, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
-      nine.destY = clamp(wounded.y + Math.sin(ang)*70, ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
+    const target = allies.length
+      ? allies.reduce((b,a)=>a.hp<b.hp?a:b)
+      : null;
+    if (target) {
+      const ang = Math.atan2(nine.y-target.y, nine.x-target.x) + (Math.random()-0.5)*1.2;
+      const orbitR = 55 + Math.random()*20;
+      nine.destX = clamp(target.x + Math.cos(ang)*orbitR, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
+      nine.destY = clamp(target.y + Math.sin(ang)*orbitR, ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
+    } else {
+      // No allies — wander center
+      nine.destX = clamp(ZONE_W/2 + (Math.random()-0.5)*120, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
+      nine.destY = clamp(ZONE_H/2 + (Math.random()-0.5)*80,  ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
     }
     return;
   }
 
-  // All card types: short random wander — never approaches target
-  // Tight radius keeps sprites in their local patch, slow speed = shuffle not sprint
-  const wanderR = 40 + Math.random()*60;   // 40–100 units (was 60–140)
-  const wanderAng = Math.random()*Math.PI*2;
-  nine.destX = clamp(nine.x + Math.cos(wanderAng)*wanderR, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
-  nine.destY = clamp(nine.y + Math.sin(wanderAng)*wanderR, ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
+  // Pick a preferred enemy to position around
+  const anchor = enemies.length
+    ? enemies[Math.floor(Math.random()*Math.min(3,enemies.length))]  // one of nearest 3
+    : null;
+
+  if (anchor) {
+    // Preferred standoff distance by card type:
+    // attack=80 (close, aggressive), control=150 (mid), dot=220 (ranged backline)
+    const standoff = cfg.moveTo==='preferred_enemy'
+      ? (nine.cards[0]?.card_type==='dot' ? 220
+         : nine.cards[0]?.card_type==='control' ? 150 : 80)
+      : 120;
+
+    // Position at standoff distance on a slightly random angle from anchor
+    const baseAng = Math.atan2(nine.y-anchor.y, nine.x-anchor.x);
+    const jitter  = (Math.random()-0.5)*0.8; // ±~45° arc
+    const ang     = baseAng + jitter;
+    const drift   = (Math.random()-0.5)*30;  // overshoot/undershoot
+    nine.destX = clamp(anchor.x + Math.cos(ang)*(standoff+drift), ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
+    nine.destY = clamp(anchor.y + Math.sin(ang)*(standoff+drift), ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
+  } else {
+    // No enemies — patrol toward zone centre with wide wander
+    const wanderR = 60 + Math.random()*80;
+    const wanderAng = Math.random()*Math.PI*2;
+    nine.destX = clamp(nine.x + Math.cos(wanderAng)*wanderR, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
+    nine.destY = clamp(nine.y + Math.sin(wanderAng)*wanderR, ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
+  }
 }
 
 function stepPos(nine) {
@@ -322,6 +359,12 @@ function resolveAttack(caster, defender, all) {
   if(caster.tetherActive){const h=Math.floor(dmg/2);dmg=h;caster.hp=Math.max(0,caster.hp-h);caster.tetherTurns=Math.max(0,caster.tetherTurns-1);if(caster.tetherTurns===0)caster.tetherActive=false;}
   if(defender.anchorUp&&defender.hp-dmg<=0){dmg=defender.hp-1;defender.anchorUp=false;}
   defender.hp=Math.max(0,defender.hp-dmg);
+  // Hit flinch: push defender away from attacker
+  if(defender.hp>0){
+    const _fa=Math.atan2(defender.y-caster.y,defender.x-caster.x);
+    defender.destX=clamp(defender.x+Math.cos(_fa)*12,ZONE_MARGIN,ZONE_W-ZONE_MARGIN);
+    defender.destY=clamp(defender.y+Math.sin(_fa)*12,ZONE_MARGIN,ZONE_H-ZONE_MARGIN);
+  }
   if(defender.hp>0&&defender.cards.some(c=>c.effect_1==='THORNS')) caster.hp=Math.max(0,caster.hp-Math.floor(dmg*.18));
   // BURN damage handled in tick loop (like POISON) — removed from here
   if(caster.drainActive&&dmg>0){caster.hp=Math.min(caster.maxHp,caster.hp+Math.max(1,Math.floor(dmg*.20)));caster.drainActive=false;}
@@ -411,7 +454,7 @@ async function tickZone(zoneId, zs) {
   }
 
   // Update movement targets every 10 ticks (= 5s at 500ms per tick) — slow deliberate shuffle
-  if(zs.tick%10===0) all.forEach(n=>{if(n.hp>0) updateDest(n,all);});
+  if(zs.tick%6===0) all.forEach(n=>{if(n.hp>0) updateDest(n,all);}); // tighter drift = livelier
 
   // Step positions every tick
   all.forEach(n=>{if(n.hp>0) stepPos(n);});
@@ -435,10 +478,16 @@ async function tickZone(zoneId, zs) {
       if(nine.hasteTurns>0){nine.hasteTurns--;if(nine.hasteTurns===0)nine.hasteBonus=0;}
     }
 
-    // Auto-attack (must be in spell range)
+    // Auto-attack
     if(nine.atkTimer<=0){
       const tgt=pickTarget(nine,all);
-      if(tgt) resolveAttack(nine,tgt,all);
+      if(tgt){
+        resolveAttack(nine,tgt,all);
+        // Attack lunge: briefly push destX/Y 18px toward target, snaps back on next updateDest
+        const lungeAng=Math.atan2(tgt.y-nine.y,tgt.x-nine.x);
+        nine.destX=clamp(nine.x+Math.cos(lungeAng)*18,ZONE_MARGIN,ZONE_W-ZONE_MARGIN);
+        nine.destY=clamp(nine.y+Math.sin(lungeAng)*18,ZONE_MARGIN,ZONE_H-ZONE_MARGIN);
+      }
       nine.atkTimer=atkInterval(nine.stats.spd+(nine.hasteBonus||0));
     }
   }
