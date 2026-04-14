@@ -964,4 +964,46 @@ router.post('/recalculate-identities', async (req, res) => {
   }
 });
 
+
+// ── GET /api/leaderboard/season — top N players by season_points ──────
+router.get('/leaderboard/season', async (req, res) => {
+  try {
+    const limit  = Math.min(parseInt(req.query.limit) || 10, 50);
+    const player_id = req.query.player_id || null;
+
+    // Top N players
+    const { data: rows, error } = await supabaseAdmin
+      .from('players')
+      .select('id, handle, username, season_points')
+      .order('season_points', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    // Own rank (if player_id provided)
+    let my_rank = null, my_points = null;
+    if (player_id) {
+      const { data: mine } = await supabaseAdmin
+        .from('players')
+        .select('season_points')
+        .eq('id', player_id)
+        .single();
+      if (mine) {
+        my_points = mine.season_points || 0;
+        // Count players with more points
+        const { count } = await supabaseAdmin
+          .from('players')
+          .select('id', { count: 'exact', head: true })
+          .gt('season_points', my_points);
+        my_rank = (count || 0) + 1;
+      }
+    }
+
+    res.json({ rows: rows || [], my_rank, my_points });
+  } catch (err) {
+    console.error('Leaderboard error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 module.exports = router;

@@ -1434,6 +1434,12 @@
           <!-- Scoring guide -->
           <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:rgba(255,255,255,0.35);letter-spacing:1px;margin-bottom:7px;">HOW TO SCORE MORE</div>
           <div id="pts-tips" style="font-family:'Crimson Text',serif;font-size:11px;color:rgba(204,197,219,0.5);line-height:1.6;"></div>
+
+          <!-- Season leaderboard preview -->
+          <div style="margin-top:10px;">
+            <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(212,166,75,0.7);letter-spacing:1px;margin-bottom:6px;">SEASON LEADERBOARD</div>
+            <div id="pts-leaderboard" style="font-size:12px;color:rgba(255,255,255,0.5);">Loading...</div>
+          </div>
         </div>
       </div>
 
@@ -1892,8 +1898,14 @@
       // Restore session points
       const pKey = `9lv_pts_${zone.id}_${today}`;
       const pSaved = localStorage.getItem(pKey);
-      if (pSaved) S._sessionPoints = JSON.parse(pSaved);
-      else S._sessionPoints = { zone:0, kos:0, snapshots:0, chronicle:0, duels:0 };
+      if (pSaved) {
+        S._sessionPoints = JSON.parse(pSaved);
+        console.log('[pts] Restored from localStorage:', S._sessionPoints);
+        // Restore session start time so pts/min calc continues
+        const today2 = new Date().toISOString().slice(0,10);
+        const startSaved = localStorage.getItem('9lv_start_'+(S.currentZoneId||'global')+'_'+today2);
+        if (startSaved) S._sessionStartAt = parseInt(startSaved);
+      } else S._sessionPoints = { zone:0, kos:0, snapshots:0, chronicle:0, duels:0 };
       // Restore snapshot history
       const sKey = `9lv_snapshots_${zone.id}_${today}`;
       const sSaved = localStorage.getItem(sKey);
@@ -3751,6 +3763,26 @@
   }
   window._onSnapshotData = _onSnapshotData;
 
+  // Per-minute alive bonus — +2 pts per minute while deployed
+  (function _aliveTicker() {
+    let _lastMinutePts = 0;
+    setInterval(() => {
+      if (!S.isDeployed || !S._sessionStartAt) return;
+      const mins = Math.floor((Date.now() - S._sessionStartAt) / 60000);
+      if (mins > _lastMinutePts) {
+        const earned = (mins - _lastMinutePts) * 2;
+        _lastMinutePts = mins;
+        _addSessionPoints('zone', earned);
+        // Flash small +pts on the points tab counter
+        const totalEl = document.getElementById('pts-session-total');
+        if (totalEl) {
+          totalEl.style.color = '#44cc88';
+          setTimeout(() => { if (totalEl) totalEl.style.color = ''; }, 600);
+        }
+      }
+    }, 15000); // check every 15s, award whole minutes
+  })();
+
   // Snapshot countdown ticker — runs every second
   (function _snapshotTicker() {
     setInterval(() => {
@@ -3788,12 +3820,28 @@
     S._sessionPoints[source] = (S._sessionPoints[source] || 0) + amount;
     const pp = document.getElementById('tray-pane-points');
     if (pp && pp.style.display !== 'none') renderPointsTab();
-    // Also feed build metrics
-    if (S._buildMetrics) {
-      if (source === 'kos') S._buildMetrics.kos++;
-    }
+    if (S._buildMetrics && source === 'kos') S._buildMetrics.kos++;
+    // Auto-save on every points award
+    _saveSessionState();
   }
   window._addSessionPoints = _addSessionPoints;
+
+  function _saveSessionState() {
+    try {
+      const today = new Date().toISOString().slice(0,10);
+      const zId = S.currentZoneId || 'global';
+      localStorage.setItem('9lv_pts_'+zId+'_'+today, JSON.stringify(S._sessionPoints || {}));
+      if (S._sessionStartAt) localStorage.setItem('9lv_start_'+zId+'_'+today, String(S._sessionStartAt));
+    } catch(e) {}
+  }
+  window._saveSessionState = _saveSessionState;
+
+  // Save on page hide (tab switch, close)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') _saveSessionState();
+  });
+  // Periodic save every 60s
+  setInterval(_saveSessionState, 60000);
 
   function renderPointsTab() {
     const pts = S._sessionPoints || {};
@@ -3846,12 +3894,43 @@
       const tips = [];
       if (!S.isDeployed) tips.push('Deploy to a zone to earn Zone Control and Snapshot points.');
       if ((pts.kos||0) === 0) tips.push('Get kills — +10 pts per KO. High ATK builds score fast.');
-      if ((pts.chronicle||0) === 0) tips.push('Reply to @9LVNetwork on Twitter for +15–35 Chronicle pts per act. Chronicle points are added to your season total automatically.');
+      if ((pts.chronicle||0) === 0) tips.push('Reply to @9LVNetwork on Twitter for +15-35 Chronicle pts per act.');
       if ((pts.duels||0) === 0) tips.push('Quick Duels cost nothing and earn +8 pts per win.');
       if (!tips.length) tips.push('Strong session! Hold the zone for Snapshot bonuses.');
       tipsEl.innerHTML = tips.map(t =>
-        `<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px;line-height:1.5;">→ ${t}</div>`
+        `<div style="padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:13px;line-height:1.5;">- ${t}</div>`
       ).join('');
+    }
+
+    // Season leaderboard preview — fetch top 5 from server
+    const lbEl = document.getElementById('pts-leaderboard');
+    if (lbEl && !lbEl._fetching) {
+      const now = Date.now();
+      if (!lbEl._lastFetch || now - lbEl._lastFetch > 60000) { // refresh max 1/min
+        lbEl._fetching = true;
+        lbEl._lastFetch = now;
+        fetch('/api/zones/leaderboard/season?limit=5')
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            lbEl._fetching = false;
+            if (!data || !data.rows) { lbEl.innerHTML = '<div style="font-size:11px;color:rgba(255,255,255,0.3)">Leaderboard unavailable</div>'; return; }
+            const myId = String(S.playerId);
+            lbEl.innerHTML = data.rows.map((row, i) => {
+              const isMe = String(row.player_id) === myId;
+              const medal = i===0?'#1':i===1?'#2':i===2?'#3':('#'+(i+1));
+              return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);${isMe?'background:rgba(212,166,75,0.06);border-radius:3px;padding-left:4px;':''}">
+                <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:${i<3?'#D4A64B':'rgba(255,255,255,0.3)'};width:22px;">${medal}</span>
+                <span style="flex:1;font-size:12px;color:${isMe?'#D4A64B':'rgba(255,255,255,0.8)'};">${row.handle || row.username || '???'}</span>
+                <span style="font-family:'Press Start 2P',monospace;font-size:8px;color:${isMe?'#D4A64B':'rgba(255,255,255,0.5)'};">${(row.season_points||0).toLocaleString()}</span>
+              </div>`;
+            }).join('');
+            // Show own rank if not in top 5
+            if (data.my_rank && data.my_rank > 5) {
+              lbEl.innerHTML += `<div style="padding:4px 0;font-family:'Press Start 2P',monospace;font-size:7px;color:#D4A64B;">YOUR RANK: #${data.my_rank} — ${(data.my_points||0).toLocaleString()} pts</div>`;
+            }
+          })
+          .catch(() => { lbEl._fetching = false; });
+      }
     }
   }
   window.renderPointsTab = renderPointsTab;
@@ -6039,7 +6118,7 @@
     } else {
       for(let i=0;i<8;i++){setTimeout(()=>{_dust(cx+(Math.random()-0.5)*20,cy+(Math.random()-0.5)*14,col,(Math.random()-0.5)*1.5,-1.5-Math.random()*1.5,18);},i*25);}
     }
-    setTimeout(onFire, DUR * 16);
+    setTimeout(onFire, DUR * 25); // ~500ms wind-up so players read the cast
   }
 
   // ── Beam VFX ──────────────────────────────────────────────────────────
@@ -6082,7 +6161,7 @@
   // ── Per-effect animation dispatch ─────────────────────────────────────
   function _castByEffect(sprite, tgt, id, eff, col, ctype, cx, cy, tx, ty, app) {
 
-    const FRAMES = 22; // missile travel frames (~flat trajectory)
+    const FRAMES = 45; // missile travel frames — ~0.75s at 60fps, readable on screen
     const trackTgt = tgt ? () => ({ x: tgt.container.x, y: tgt.container.y - SPRITE_SIZE*0.3 }) : null;
 
     // ── Special per-ID overrides ───────────────────────────────────────
