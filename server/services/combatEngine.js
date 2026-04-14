@@ -11,7 +11,7 @@ const supabaseAdmin = createClient(
 );
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────
-const TICK_MS       = 500;
+const TICK_MS       = 200;  // 200ms ticks — 5 server updates/sec for fluid movement
 const SNAPSHOT_MS   = 15 * 60 * 1000;
 const SPD_FLOOR     = 5.5;   // card cycle floor (effects stay deliberate)
 const ATK_FLOOR     = 2.5;   // auto-attack floor (constant visual activity)

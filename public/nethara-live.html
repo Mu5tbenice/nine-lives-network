@@ -3190,7 +3190,7 @@
         if (sprite) {
           const dx = pos.x - (sprite.targetX || sprite.container.x);
           const dy = pos.y - (sprite.targetY || sprite.container.y);
-          if (Math.sqrt(dx*dx+dy*dy) > 22) { sprite.targetX = pos.x; sprite.targetY = pos.y; }
+          sprite.targetX = pos.x; sprite.targetY = pos.y; // always update — 200ms ticks = smaller jumps
           if (d.houseKey) sprite.house = d.houseKey;
           if (d.guildTag) sprite.guild = d.guildTag;
           updateNineHP(id, d.hp, d.maxHp);
@@ -4785,9 +4785,14 @@
       state.arenaApp.stage.sortChildren();
     });
 
-    // ── MAIN TICKER: movement + bob + separation ──
+    // ── MAIN TICKER: South Park movement — vel-lerp + predict + z-sort ──
+    // LERP 0.02 base, vel-lerp scales with SPD stat, predict extrapolates between ticks
+    const LERP_BASE = 0.02;
     const isMob = window.innerWidth <= 640;
     const spriteScale = isMob ? 0.85 : 1.0;
+    const HOUSE_SPD = { stormrage:30, smoulders:25, stonebark:10, ashenvale:22,
+      nighthollow:30, dawnbringer:15, manastorm:25, plaguemire:20, darktide:20 };
+
     app.ticker.add((delta) => {
       const time = performance.now() / 1000;
       const allNines = Array.from(state.nines.values());
@@ -4795,29 +4800,81 @@
       state.nines.forEach((nine) => {
         if (nine.isAnimating) return;
 
-        // ── Movement: capped pixels-per-frame so long journeys shuffle slowly ──
-        const wx = (nine.targetX ?? nine.container.x) - nine.container.x;
-        const wy = (nine.targetY ?? nine.container.y) - nine.container.y;
-        const dist = Math.sqrt(wx*wx + wy*wy);
-        const moving = dist > 1.5;
+        // ── VEL-LERP: lerp factor scales with house SPD ──────────────────
+        const hSpd = HOUSE_SPD[nine.house] || 20;
+        const lf = LERP_BASE * (0.5 + hSpd / 80);
 
-        if (moving) {
-          // Max 2px per frame — a 300px trip takes ~150 frames (~2.5s at 60fps)
-          // This is completely independent of distance so no leaping to far positions
-          const MAX_PX = 2.0;
-          const step = Math.min(MAX_PX, dist);
-          nine.container.x += (wx / dist) * step;
-          nine.container.y += (wy / dist) * step;
-          if (nine.spriteGroup && Math.abs(wx) > 0.8) {
-            const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
-            const newFacing = wx > 0 ? 1 : -1;
-            if (facing !== newFacing) nine.spriteGroup.scale.x = newFacing * Math.abs(nine.spriteGroup.scale.x);
+        // ── VELOCITY ESTIMATE: delta between last two server positions ────
+        const prevTx = nine._prevTargetX ?? nine.targetX ?? nine.container.x;
+        const prevTy = nine._prevTargetY ?? nine.targetY ?? nine.container.y;
+        const tx = nine.targetX ?? nine.container.x;
+        const ty = nine.targetY ?? nine.container.y;
+        const velX = tx - prevTx;
+        const velY = ty - prevTy;
+        nine._prevTargetX = tx;
+        nine._prevTargetY = ty;
+
+        // ── PREDICT: overshoot target by 35% of last velocity ─────────────
+        const predX = tx + velX * 0.35;
+        const predY = ty + velY * 0.35;
+
+        // ── LERP toward predicted position ────────────────────────────────
+        const prevX = nine.container.x;
+        const prevY = nine.container.y;
+        nine.container.x += (predX - nine.container.x) * lf;
+        nine.container.y += (predY - nine.container.y) * lf;
+
+        // movement delta this frame
+        const mdx = nine.container.x - prevX;
+        const mdy = nine.container.y - prevY;
+        const spd = Math.sqrt(mdx*mdx + mdy*mdy);
+        const moving = spd > 0.05;
+
+        // ── DIRECTION FLIP ────────────────────────────────────────────────
+        if (nine.spriteGroup && Math.abs(mdx) > 0.15) {
+          const newFacing = mdx > 0 ? 1 : -1;
+          const cur = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
+          if (cur !== newFacing) {
+            nine.spriteGroup.scale.x = newFacing * Math.abs(nine.spriteGroup.scale.x);
           }
         }
 
-        // ── Sprite separation — push apart when too close ──
-        const SEP_DIST = 20; // tighter — less push, less jitter
-        const SEP_FORCE = 0.25; // gentler force
+        // ── SOUTH PARK MOVEMENT: bob + waddle + idle sway ─────────────────
+        if (nine.spriteGroup) {
+          // phase advances with movement speed (fast Nines animate faster)
+          nine._mvPhase = (nine._mvPhase || nine.bobPhase || 0) + spd * 0.18;
+          const phase = nine._mvPhase;
+
+          if (moving) {
+            // BOB — vertical sine, amplitude scales with speed
+            const bobAmp = Math.min(3.5, spd * 1.4);
+            const bobY = Math.sin(phase * 0.5) * bobAmp;
+
+            // WADDLE — left/right body rotation
+            const waddleAmp = Math.min(0.15, spd * 0.055);
+            const waddleR = Math.sin(phase * 0.45) * waddleAmp;
+
+            nine.spriteGroup.y = bobY;
+            nine.spriteGroup.rotation = waddleR;
+
+            const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
+            nine.spriteGroup.scale.x = facing * spriteScale;
+            nine.spriteGroup.scale.y = spriteScale;
+          } else {
+            // IDLE SWAY — gentle continuous sway when standing still
+            const idleSway = Math.sin(time * 1.8 + (nine.bobPhase || 0)) * 0.055;
+            nine.spriteGroup.rotation += (idleSway - nine.spriteGroup.rotation) * 0.08;
+            nine.spriteGroup.y += (0 - nine.spriteGroup.y) * 0.06;
+
+            const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
+            nine.spriteGroup.scale.x = facing * spriteScale;
+            nine.spriteGroup.scale.y = spriteScale;
+          }
+        }
+
+        // ── SPRITE SEPARATION — push apart when too close ──────────────────
+        const SEP_DIST = 20;
+        const SEP_FORCE = 0.25;
         for (const other of allNines) {
           if (other === nine || other.isAnimating) continue;
           const dx = nine.container.x - other.container.x;
@@ -4830,24 +4887,10 @@
           }
         }
 
-        // ── Walk bob ──
-        if (nine.spriteGroup) {
-          const phase = nine.bobPhase || 0;
-          if (moving) {
-            const step = Math.abs(Math.sin(time * 7 + phase));
-            nine.spriteGroup.y = -step * 2.5;
-            nine.spriteGroup.scale.y = spriteScale * (1 - step * 0.07);
-            const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
-            nine.spriteGroup.scale.x = facing * spriteScale * (1 + step * 0.04);
-          } else {
-            nine.spriteGroup.y = Math.sin(time * 1.8 + phase) * 1.0;
-            nine.spriteGroup.scale.y = spriteScale;
-            const facing = nine.spriteGroup.scale.x >= 0 ? 1 : -1;
-            nine.spriteGroup.scale.x = facing * spriteScale;
-          }
-        }
+        // ── Z-SORT — lower on screen renders in front ─────────────────────
+        nine.container.zIndex = Math.round(nine.container.y);
 
-        // ── Hard clamp to polygon (prevents floating off platform) ──
+        // ── HARD CLAMP to polygon ─────────────────────────────────────────
         const poly = getActiveCanvasPoly();
         if (poly && !isInsidePolygon(nine.container.x, nine.container.y, poly)) {
           const clamped = clampToPolygon(nine.container.x, nine.container.y, poly);
