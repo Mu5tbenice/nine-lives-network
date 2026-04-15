@@ -965,6 +965,43 @@ router.post('/recalculate-identities', async (req, res) => {
 });
 
 
+// ── POST /api/zones/midnight-reset — daily guild branding + house bonus ──
+// Called by a scheduled job (or cron) at midnight UTC
+// Reads zone_control_history for today, counts round wins per guild per zone
+// Sets branded_guild + dominant_house on each zone for tomorrow
+router.post('/midnight-reset', async (req, res) => {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: history } = await supabaseAdmin
+      .from('zone_control_history')
+      .select('zone_id, controlling_guild, dominant_house')
+      .gte('snapped_at', today + 'T00:00:00Z');
+
+    if (!history?.length) { res.json({ success: true, updated: 0 }); return; }
+
+    // Tally wins per zone
+    const zoneMap = {};
+    history.forEach(r => {
+      const z = r.zone_id;
+      if (!zoneMap[z]) zoneMap[z] = { guilds: {}, houses: {} };
+      if (r.controlling_guild) zoneMap[z].guilds[r.controlling_guild] = (zoneMap[z].guilds[r.controlling_guild]||0)+1;
+      if (r.dominant_house)    zoneMap[z].houses[r.dominant_house]    = (zoneMap[z].houses[r.dominant_house]||0)+1;
+    });
+
+    let updated = 0;
+    for (const [zoneId, counts] of Object.entries(zoneMap)) {
+      const brandedGuild   = Object.entries(counts.guilds).sort((a,b)=>b[1]-a[1])[0]?.[0] || null;
+      const dominantHouse  = Object.entries(counts.houses).sort((a,b)=>b[1]-a[1])[0]?.[0] || null;
+      await supabaseAdmin.from('zones').update({ branded_guild: brandedGuild, dominant_house: dominantHouse }).eq('id', zoneId);
+      updated++;
+    }
+    res.json({ success: true, updated });
+  } catch (err) {
+    console.error('Midnight reset error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ── GET /api/leaderboard/season — top N players by season_points ──────
 router.get('/leaderboard/season', async (req, res) => {
   try {

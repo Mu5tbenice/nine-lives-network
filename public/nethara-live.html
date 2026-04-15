@@ -1397,10 +1397,10 @@
               <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(212,166,75,0.55);letter-spacing:1px;margin-bottom:5px;">CONTROLLING</div>
               <div id="zt-controlling" style="font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:#D4A64B;">—</div>
             </div>
-            <!-- Next snapshot -->
+            <!-- Round timer -->
             <div style="background:rgba(106,200,216,0.05);border:1px solid rgba(106,200,216,0.15);border-radius:4px;padding:6px 8px;">
-              <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(106,200,216,0.55);letter-spacing:1px;margin-bottom:5px;">NEXT SNAPSHOT</div>
-              <div id="zt-snapshot-countdown" style="font-family:'Press Start 2P',monospace;font-size:11px;color:#6ac8d8;">15:00</div>
+              <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(106,200,216,0.55);letter-spacing:1px;margin-bottom:5px;" id="zt-round-label">ROUND</div>
+              <div id="zt-round-timer" style="font-family:'Press Start 2P',monospace;font-size:11px;color:#6ac8d8;">3:00</div>
             </div>
           </div>
           <!-- Active zone bonus -->
@@ -1412,7 +1412,7 @@
           <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.4);letter-spacing:1px;margin-bottom:6px;">GUILD STRENGTH</div>
           <div id="zt-guild-bars" style="display:flex;flex-direction:column;gap:4px;"></div>
           <!-- Snapshot history -->
-          <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.4);letter-spacing:1px;margin:8px 0 5px;">RECENT SNAPSHOTS</div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,0.4);letter-spacing:1px;margin:8px 0 5px;">RECENT ROUNDS</div>
           <div id="zt-history" style="font-family:'Crimson Text',serif;font-size:11px;color:rgba(204,197,219,0.5);line-height:1.6;"></div>
         </div>
 
@@ -1920,6 +1920,9 @@
     S.guildScores = {};
     S.feedEvents = [];
     S.snapshotCount = 0;
+    S._roundNumber = 1;
+    S._roundState  = 'FIGHTING';
+    S._roundEndsAt = Date.now() + 180000; // 3 min default until server syncs
     S.currentCycle = 0;
     // Reset portrait so it re-renders Nine layers for this session
     const hudPortrait = document.getElementById('hud-nine-portrait');
@@ -3444,7 +3447,22 @@
       // Track KO stat — use killerName to find the right player id
       const kTracked = killerId || (data.killerName ? [...S.nines.entries()].find(([,s])=>s.name===data.killerName)?.[0] : null);
       if (kTracked) trackCombatStat(kTracked, data.killerName || getNineName(kTracked), '', '', 'kos', 1);
-    });
+    })
+    // ── WAITING STATE: dim sprite + badge when KO'd mid-round ────────────
+    socket.on('combat:ko', (dataKo) => {
+      if (!dataKo.waitingForRound) return; // old events without this flag
+      const sp = S.nines.get(resolveId(dataKo.nineId));
+      if (!sp) return;
+      sp._waitingForRound = true;
+      sp.container.alpha = 0.25; // dim — waiting for next round
+      // Show WAITING badge above sprite
+      if (sp.container && window._S?.arenaApp) {
+        const badge = new PIXI.Text('WAITING', { fontFamily:'monospace', fontSize:7, fill:0x888888 });
+        badge.anchor.set(0.5); badge.x = 0; badge.y = -SPRITE_SIZE * 1.6; badge.zIndex = 10;
+        sp.container.addChild(badge);
+        sp._waitingBadge = badge;
+      }
+    });;
 
     socket.on('combat:dot', (data) => {
       const id = resolveId(data.nineId);
@@ -3470,65 +3488,70 @@
       }
     });
 
-    socket.on('arena:snapshot', (data) => {
-      S.snapshotCount++;
-      S.currentCycle = data.cycle || S.snapshotCount;
-      _onSnapshotData(data);
-      // Reset round metrics for the new 15-min window
-      resetRoundMetrics();
-      // Re-render sidebar (round view resets, session accumulates)
-      renderGuildSidebar();
-      // Persist fighter metrics to localStorage so they survive page refresh
-      try {
-        const today = new Date().toISOString().slice(0,10);
-        const key = `9lv_metrics_${S.currentZoneId}_${today}`;
-        const toSave = {};
-        S.combatMetrics.forEach((m, id) => { toSave[id] = m; });
-        localStorage.setItem(key, JSON.stringify(toSave));
-        // Persist session points
-        const pKey = `9lv_pts_${S.currentZoneId}_${today}`;
-        localStorage.setItem(pKey, JSON.stringify(S._sessionPoints || {}));
-        // Persist snapshot history (last 10)
-        const sKey = `9lv_snapshots_${S.currentZoneId}_${today}`;
-        localStorage.setItem(sKey, JSON.stringify((S._snapshotHistory||[]).slice(-10)));
-        // Prune old keys (keep only today)
-        Object.keys(localStorage).filter(k =>
-          (k.startsWith('9lv_metrics_') || k.startsWith('9lv_pts_') || k.startsWith('9lv_snapshots_'))
-          && !k.endsWith(today)
-        ).forEach(k => localStorage.removeItem(k));
-      } catch(e) {}
-      // Server sends controllingGuild (not winner_guild)
-      const winner = data.controllingGuild || data.winner_guild || data.leading_guild;
-      if (winner) {
-        const pts = data.snapshot_points || 5;
-        if (S.isDeployed) {
-          addFeedEvent(`📍 Snapshot — [${winner}] controls zone (+${pts} pts)`, 'snapshot');
-          // Flash points at canvas centre
+    // ── ROUND END — cinematic moment ────────────────────────────────────
+    socket.on('arena:round_end', (data) => {
+      S._roundState  = 'INTERMISSION';
+      S._roundNumber = (data.roundNumber || 1) + 1;
+      S._roundEndsAt = Date.now() + (data.intermissionMs || 25000);
+
+      const winner = data.winner;
+      const flipped = data.flipped;
+
+      // Update controlling guild display
+      const ctrlEl = document.getElementById('zt-controlling');
+      if (ctrlEl) ctrlEl.textContent = winner || '—';
+
+      // Points I earned this round
+      if (S.isDeployed) {
+        const myPts = (data.pointsLog || []).find(p => String(p.playerId) === String(S.playerId));
+        if (myPts && myPts.pts > 0) {
+          _addSessionPoints('snapshots', myPts.pts);
           const app = window._S?.arenaApp;
           const cx = app ? app.screen.width / 2 : 300;
           const cy = app ? app.screen.height / 2 : 200;
-          showFloatingText(cx, cy, `+${pts} pts`, 0xD4A64B, 14);
+          showFloatingText(cx, cy, `+${myPts.pts} pts`, 0xD4A64B, 16);
         }
       }
-      // Refresh sharpness display after each snapshot
-      if (S.isDeployed && S.playerId && S.currentZoneId) {
-        loadMyCards(S.currentZoneId);
-      }
-      // Update zone bonus pill if dominant house changed
-      if (data.dominantHouse && S.currentZone) {
-        S.currentZone.dominant_house = data.dominantHouse;
-        updateZoneBonusPill(S.currentZone);
-      }
+
+      // Feed event
+      const flipTxt = flipped ? ' (FLIP +10)' : '';
+      addFeedEvent(`ROUND END — [${winner || 'none'}] controls${flipTxt}`, 'snapshot');
+
+      // Show cinematic overlay
+      _showRoundEnd(data);
+
+      // Reset round metrics, refresh sidebar
+      resetRoundMetrics();
+      renderGuildSidebar();
+      _saveSessionState();
     });
 
-    socket.on('arena:zone_flip', (data) => {
-      addFeedEvent(`🏰 ${data.guild} captured the zone!`, 'flip');
-      if (data.guild && data.guild === S.playerGuildTag) _addSessionPoints('zone', 15);
-      const pill = document.getElementById('guild-control-pill');
-      if (pill && data.guild) {
-        pill.innerHTML = `<span style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);padding:2px 6px;background:rgba(212,166,75,0.1);border:1px solid rgba(212,166,75,0.3);border-radius:3px;">🏰 ${data.guild} controls</span>`;
-      }
+    // ── ROUND START — full HP reset, all waiting players rejoin ─────────
+    socket.on('arena:round_start', (data) => {
+      S._roundState  = 'FIGHTING';
+      S._roundNumber = data.roundNumber || 1;
+      S._roundEndsAt = Date.now() + (data.roundMs || 180000);
+
+      // Dismiss cinematic overlay
+      _dismissRoundEnd();
+
+      // Update HP bars for all Nines (server reset to full)
+      (data.nines || []).forEach(n => {
+        updateNineHP(String(n.deploymentId || n.id), n.hp, n.maxHp);
+        // Restore waiting sprites to visible
+        const sp = S.nines.get(String(n.deploymentId || n.id));
+        if (sp) {
+          sp.container.alpha = 1;
+          delete sp._waitingForRound;
+        }
+      });
+
+      addFeedEvent(`ROUND ${data.roundNumber} — FIGHT!`, 'flip');
+      if (S.isDeployed && S.playerId && S.currentZoneId) loadMyCards(S.currentZoneId);
     });
+
+    // ── KO: mark sprite as waiting ────────────────────────────────────────
+    // (original handler already exists — extend it to handle waiting state)
   }
 
   function resolveId(raw) {
@@ -3763,50 +3786,132 @@
   }
   window._onSnapshotData = _onSnapshotData;
 
-  // Per-minute alive bonus — +2 pts per minute while deployed
-  (function _aliveTicker() {
-    let _lastMinutePts = 0;
+  // ══════════════════════════════════════════════════
+  // CINEMATIC ROUND END OVERLAY
+  // ══════════════════════════════════════════════════
+  function _showRoundEnd(data) {
+    // Remove existing overlay if any
+    _dismissRoundEnd();
+
+    const winner  = data.winner || null;
+    const flipped = data.flipped;
+    const koBoard = data.koBoard || [];
+    const guildAlive = data.guildAlive || {};
+
+    // Build KO board HTML
+    const koHTML = koBoard.length
+      ? koBoard.map((k,i) => `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06);">
+          <span style="color:rgba(255,255,255,.7)">${i+1}. ${k.name}</span>
+          <span style="color:#e85a6a;font-family:'Press Start 2P',monospace;font-size:7px">${k.kos} KO${k.kos!==1?'s':''}</span>
+        </div>`).join('')
+      : '<div style="color:rgba(255,255,255,.3);font-size:11px">No KOs this round</div>';
+
+    // Build guild alive HTML
+    const guildHTML = Object.entries(guildAlive)
+      .sort((a,b)=>b[1]-a[1])
+      .map(([g,n])=>`<div style="display:flex;justify-content:space-between;padding:2px 0">
+          <span style="color:rgba(255,255,255,.65)">${g}</span>
+          <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:#6ac8d8">${n} alive</span>
+        </div>`).join('');
+
+    const overlay = document.createElement('div');
+    overlay.id = 'round-end-overlay';
+    overlay.style.cssText = `position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;
+      display:flex;align-items:center;justify-content:center;
+      background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);
+      animation:fadeInOverlay 0.4s ease;`;
+
+    overlay.innerHTML = `
+      <style>@keyframes fadeInOverlay{from{opacity:0}to{opacity:1}}
+      @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}</style>
+      <div style="background:linear-gradient(180deg,#16102a,#0d0a18);border:1px solid rgba(212,166,75,.3);
+        border-radius:6px;padding:24px 28px;min-width:320px;max-width:420px;width:90vw;
+        animation:slideUp 0.35s ease;box-shadow:0 0 40px rgba(212,166,75,.1);">
+
+        <div style="text-align:center;margin-bottom:16px;">
+          <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:rgba(255,255,255,.4);letter-spacing:2px;margin-bottom:8px">
+            ROUND ${data.roundNumber || ''} OVER
+          </div>
+          ${winner ? `
+          <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#D4A64B;margin-bottom:4px">
+            [${winner}]
+          </div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(212,166,75,.6)">
+            ${flipped ? 'CAPTURED THE ZONE' : 'CONTROLS THE ZONE'}
+          </div>` : `
+          <div style="font-family:'Cinzel',serif;font-size:18px;color:rgba(255,255,255,.4)">CONTESTED</div>`}
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div>
+            <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,.35);margin-bottom:6px;letter-spacing:1px">SURVIVORS</div>
+            ${guildHTML || '<div style="color:rgba(255,255,255,.3);font-size:11px">All fallen</div>'}
+          </div>
+          <div>
+            <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,.35);margin-bottom:6px;letter-spacing:1px">KO BOARD</div>
+            ${koHTML}
+          </div>
+        </div>
+
+        <div style="text-align:center;padding-top:12px;border-top:1px solid rgba(255,255,255,.07)">
+          <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:#6ac8d8" id="round-next-countdown">
+            NEXT ROUND IN ${Math.round((data.intermissionMs||25000)/1000)}s
+          </div>
+        </div>
+      </div>`;
+
+    document.body.appendChild(overlay);
+
+    // Countdown inside the overlay
+    let secs = Math.round((data.intermissionMs || 25000) / 1000);
+    const countdownEl = overlay.querySelector('#round-next-countdown');
+    const countInt = setInterval(() => {
+      secs--;
+      if (countdownEl) countdownEl.textContent = `NEXT ROUND IN ${secs}s`;
+      if (secs <= 0) { clearInterval(countInt); _dismissRoundEnd(); }
+    }, 1000);
+    overlay._countInt = countInt;
+
+    // Auto-dismiss safety
+    setTimeout(_dismissRoundEnd, (data.intermissionMs || 25000) + 1000);
+  }
+
+  function _dismissRoundEnd() {
+    const el = document.getElementById('round-end-overlay');
+    if (!el) return;
+    if (el._countInt) clearInterval(el._countInt);
+    el.style.opacity = '0';
+    el.style.transition = 'opacity 0.3s';
+    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 320);
+  }
+
+  window._showRoundEnd    = _showRoundEnd;
+  window._dismissRoundEnd = _dismissRoundEnd;
+
+  // Round countdown ticker
+  (function _roundTicker() {
     setInterval(() => {
-      if (!S.isDeployed || !S._sessionStartAt) return;
-      const mins = Math.floor((Date.now() - S._sessionStartAt) / 60000);
-      if (mins > _lastMinutePts) {
-        const earned = (mins - _lastMinutePts) * 2;
-        _lastMinutePts = mins;
-        _addSessionPoints('zone', earned);
-        // Flash small +pts on the points tab counter
-        const totalEl = document.getElementById('pts-session-total');
-        if (totalEl) {
-          totalEl.style.color = '#44cc88';
-          setTimeout(() => { if (totalEl) totalEl.style.color = ''; }, 600);
-        }
+      const el  = document.getElementById('zt-round-timer');
+      const lbl = document.getElementById('zt-round-label');
+      if (!el) return;
+      if (!S._roundEndsAt) return;
+      const secLeft = Math.max(0, Math.round((S._roundEndsAt - Date.now()) / 1000));
+      const m = Math.floor(secLeft/60), s = secLeft % 60;
+      el.textContent = `${m}:${String(s).padStart(2,'0')}`;
+      if (S._roundState === 'INTERMISSION') {
+        el.style.color = '#ffaa44';
+        if (lbl) lbl.textContent = 'NEXT ROUND';
+        el.classList.add('urgent');
+      } else {
+        if (lbl) lbl.textContent = `ROUND ${S._roundNumber || 1}`;
+        el.style.color = secLeft < 30 ? '#ff4466' : secLeft < 60 ? '#ffaa44' : '#6ac8d8';
+        el.classList.toggle('urgent', secLeft < 30);
       }
-    }, 15000); // check every 15s, award whole minutes
+    }, 500);
   })();
 
-  // Snapshot countdown ticker — runs every second
-  (function _snapshotTicker() {
-    setInterval(() => {
-      const el = document.getElementById('zt-snapshot-countdown');
-      if (!el) return;
-      const now = Date.now();
-      // Calculate seconds until next 15-min boundary
-      const ms = 15 * 60 * 1000;
-      const secLeft = S._lastSnapshotAt
-        ? Math.max(0, Math.round((S._lastSnapshotAt + ms - now) / 1000))
-        : Math.round((ms - (now % ms)) / 1000);
-      const m = Math.floor(secLeft/60);
-      const s = secLeft % 60;
-      el.textContent = `${m}:${String(s).padStart(2,'0')}`;
-      // Pulse red when under 30s
-      el.style.color = secLeft < 30 ? '#ff4466' : secLeft < 60 ? '#ffaa44' : '#6ac8d8';
-      // Mirror countdown on ROUND button
-      const rTimer = document.getElementById('sb-round-timer');
-      if (rTimer) {
-        const rm = Math.floor(secLeft/60), rs = secLeft % 60;
-        rTimer.textContent = `${rm}:${String(rs).padStart(2,'0')}`;
-      }
-    }, 1000);
-  })();
+  // Per-minute alive bonus — +2 pts per minute while deployed
+
 
   // ══════════════════════════════════════════════════
   // POINTS TAB
@@ -3854,7 +3959,7 @@
     const bkEl = document.getElementById('pts-breakdown');
     if (bkEl) {
       const sources = [
-        { key:'snapshots', label:'Snapshots', color:'#D4A64B' },
+        { key:'snapshots', label:'Rounds',    color:'#D4A64B' },
         { key:'kos',       label:'KOs',       color:'#e85a6a' },
         { key:'zone',      label:'Control',   color:'#44cc88' },
         { key:'duels',     label:'Duels',     color:'#6ac8d8' },
