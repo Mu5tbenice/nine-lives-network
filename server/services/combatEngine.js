@@ -12,12 +12,12 @@ const supabaseAdmin = createClient(
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────
 const TICK_MS        = 200;   // 200ms ticks — 5 server updates/sec
-const ROUND_MS       = 3 * 60 * 1000;    // 3 min rounds (tunable in playtesting)
+const ROUND_CAP_MS   = 5 * 60 * 1000;    // 5 min hard cap — rounds end early on last guild standing
 const INTERMISSION_MS = 25 * 1000;       // 25s between rounds
 const SESSION_MS     = 2 * 60 * 60 * 1000; // 2hr session timer before auto-withdraw
 const SPD_FLOOR     = 5.5;   // card cycle floor (effects stay deliberate)
 const ATK_FLOOR     = 2.5;   // auto-attack floor (constant visual activity)
-const CORRODE_CD    = 10;
+const CORRODE_CD    = 5.0;  // 5 second cooldown — time-based, tick-rate independent
 const ZONE_W        = 900;
 const ZONE_H        = 500;
 const ZONE_MARGIN   = 40;
@@ -132,7 +132,7 @@ function buildNineState(dep, nine, cards, zoneBonus) {
   const y = ZONE_MARGIN + Math.random()*(ZONE_H-ZONE_MARGIN*2);
   return {
     deploymentId: String(dep.id), playerId: dep.player_id, nineId: dep.nine_id,
-    guildTag: dep.guild_tag||'lone_wolf', playerName: nine.name||'Unknown', houseKey,
+    guildTag: dep.guild_tag||'lone_wolf', playerName: nine.name||'Unknown', houseKey, // no lone_wolf ATK bonus — FFA makes it irrelevant
     waitingForRound: false,   // true = KO'd this round, waiting to rejoin
     stats:{atk,hp,spd,def,luck}, cards,
     hp, maxHp:hp, x, y, destX:x, destY:y,
@@ -283,19 +283,19 @@ function applyEffect(caster, target, card, all) {
   const amp = effectAmp(caster);
   const hamp = healAmp(caster);
   switch(e){
-    case 'BURN':    target.burnStacks=Math.min(3,target.burnStacks+1); target.burnTimer=Math.max(target.burnTimer||0, cardInterval(caster.stats.spd)*2); break;
-    case 'POISON':  target.poisonStacks=Math.min(3,(target.poisonStacks||0)+1); target.poisonTimer=Math.max(target.poisonTimer||0,18); break;
+    case 'BURN':    target.burnStacks=Math.min(3,target.burnStacks+1); target.burnTimer=Math.max(target.burnTimer||0, cardInterval(caster.stats.spd)*2); target._dotAppliedBy=caster.playerName; target._dotAppliedById=caster.playerId; break;
+    case 'POISON':  target.poisonStacks=Math.min(3,(target.poisonStacks||0)+1); if(!target._poisonNextAt||Date.now()>target._poisonNextAt) target._poisonNextAt=Date.now()+1500; target._dotAppliedBy=caster.playerName; target._dotAppliedById=caster.playerId; break;
     case 'CORRODE': if(caster.corrodeCd<=0){target.maxHp=Math.max(50,target.maxHp-Math.round(15*amp));target.hp=Math.min(target.hp,target.maxHp);caster.corrodeCd=CORRODE_CD;} break;
     case 'HEAL':    {const a=pickHealTarget(caster,all);const amt=Math.floor(caster.maxHp*.07*amp*hamp);a.hp=Math.min(a.maxHp,a.hp+(a.witherActive>0?Math.floor(amt*.5):amt));} break;
     case 'BLESS':   {const amt=Math.floor(caster.maxHp*.04*amp*hamp);all.filter(n=>n.hp>0&&n.guildTag===caster.guildTag&&inRange(caster,n,SPELL_RANGE.aoe_self)).forEach(a=>{a.hp=Math.min(a.maxHp,a.hp+(a.witherActive>0?Math.floor(amt*.5):amt));});} break;
-    case 'WARD':    caster.wardUp=true; break;
+    case 'WARD':    if(!caster.wardUp) caster.wardUp=true; break; // no reapply if already active
     case 'BARRIER': caster.barrierHp=caster.witherActive>0?25:Math.round(50*amp); break;
     case 'ANCHOR':  caster.anchorUp=true; break;
     case 'DODGE':   caster.dodgeReady=true; break;
     case 'REFLECT': caster.reflectReady=true; break;
     case 'TAUNT':   caster.tauntActive=true; break;
     case 'SILENCE': {const st=all.filter(n=>n.hp>0&&n.guildTag!==caster.guildTag&&inRange(caster,n,SPELL_RANGE.mid)).reduce((b,n)=>n.stats.atk>b.stats.atk?n:b,{stats:{atk:-1}});if(st.stats)st.silenced=Math.max(st.silenced||0,2);break;}
-    case 'HEX':     target.hexAmt=Math.min((target.hexAmt||0)+Math.round(12*amp),35); break;
+    case 'HEX':     target.hexAmt=Math.min((target.hexAmt||0)+Math.round(8*amp),24); break; // -8/stack max -24 (was -12 max -36 — too dominant)
     case 'WEAKEN':  target.weakened=Math.max(target.weakened||0,2); break;
     case 'MARK':    target.marked=Math.max(target.marked||0,3); break;
     case 'TETHER':  caster.tetherActive=true;caster.tetherTurns=3; break;
@@ -304,9 +304,9 @@ function applyEffect(caster, target, card, all) {
     case 'WITHER':  target.witherActive=Math.max(target.witherActive||0,3); break;
     case 'BLIND':   target.blindTurns=Math.max(target.blindTurns||0,2); break;
     case 'NULLIFY': if(target.wardUp){target.wardUp=false;}else if(target.barrierHp){target.barrierHp=0;}else if(target.anchorUp){target.anchorUp=false;}else if(target.hasteBonus){target.hasteBonus=0;target.hasteTurns=0;}else if(target.dodgeReady){target.dodgeReady=false;} break;
-    case 'CHAIN':   {const others=all.filter(n=>n.hp>0&&n.guildTag!==caster.guildTag&&n.deploymentId!==target?.deploymentId&&inRange(caster,n,SPELL_RANGE.melee*1.5));if(others.length){const ct=others[Math.floor(Math.random()*others.length)];const d=baseDmg(caster.stats.atk,ct.stats.def);ct.hp=Math.max(0,ct.hp-d);broadcast(caster.zoneId,'combat:attack',{attacker:caster.playerName,defender:ct.playerName,dmg:d,effect:'CHAIN',hp:ct.hp,maxHp:ct.maxHp,x:caster.x,y:caster.y,tx:ct.x,ty:ct.y});}} break;
+    case 'CHAIN':   {const others=all.filter(n=>n.hp>0&&n.guildTag!==caster.guildTag&&n.deploymentId!==target?.deploymentId&&inRange(caster,n,SPELL_RANGE.melee*1.5));if(others.length){const ct=others[Math.floor(Math.random()*others.length)];const d=baseDmg(caster.stats.atk,ct.stats.def);ct.hp=Math.max(0,ct.hp-d);ct._lastHitBy=caster.playerName;ct._lastHitById=caster.playerId;if(ct.hp<=0)caster._killsThisRound=(caster._killsThisRound||0)+1;broadcast(caster.zoneId,'combat:attack',{attacker:caster.playerName,defender:ct.playerName,dmg:d,effect:'CHAIN',hp:ct.hp,maxHp:ct.maxHp,x:caster.x,y:caster.y,tx:ct.x,ty:ct.y});}} break;
     case 'INSPIRE': all.filter(n=>n.hp>0&&n.guildTag===caster.guildTag).forEach(a=>{a.stats.atk+=Math.round(2*amp);a.stats.spd+=Math.round(2*amp);}); break;
-    case 'CLEANSE': caster.burnStacks=caster.poisonStacks=caster.poisonTimer=caster.hexAmt=caster.weakened=caster.silenced=caster.marked=caster.witherActive=caster.blindTurns=0; break;
+    case 'CLEANSE': caster.burnStacks=caster.poisonStacks=caster.poisonTimer=caster.burnTimer=caster.hexAmt=caster.weakened=caster.silenced=caster.marked=caster.witherActive=caster.blindTurns=0;caster._poisonNextAt=0;caster._burnNextAt=0;caster._poisonFires=0; break;
     case 'SURGE':   caster._surge=true; break;
     case 'CRIT':    caster._crit=true; break;
     case 'PIERCE':  caster._pierce=true; break;
@@ -396,10 +396,10 @@ function handleKO(nine, zoneId, all) {
   // Mark as waiting — will rejoin at next round start (no mid-round respawn)
   nine.waitingForRound = true;
 
-  broadcast(zoneId,'combat:ko',{nine:nine.playerName,nineId:nine.playerId,guildTag:nine.guildTag,killerName:nine._lastHitBy||null,killerId:nine._lastHitById||null,x:nine.x,y:nine.y,waitingForRound:true});
+  broadcast(zoneId,'combat:ko',{nine:nine.playerName,nineId:nine.playerId,guildTag:nine.guildTag,killerName:killerName||nine._lastHitBy||null,killerId:killerId||nine._lastHitById||null,x:nine.x,y:nine.y,waitingForRound:true,dotKill:!nine._lastHitById&&!!nine._dotAppliedById});
 
   // On-death effects
-  if(nine.cards.some(c=>c.effect_1==='SHATTER')){const d=Math.floor(nine.maxHp*.10);all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag&&inRange(nine,n,120)).forEach(n=>n.hp=Math.max(0,n.hp-d));broadcast(zoneId,'combat:effect',{effect:'SHATTER',by:nine.playerName,dmg:d,x:nine.x,y:nine.y});}
+  if(nine.cards.some(c=>c.effect_1==='SHATTER')){const d=Math.floor(nine.maxHp*.10);all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag&&inRange(nine,n,120)).forEach(n=>{n.hp=Math.max(0,n.hp-d);n._lastHitBy=nine.playerName;n._lastHitById=nine.playerId;if(n.hp<=0)nine._killsThisRound=(nine._killsThisRound||0)+1;});broadcast(zoneId,'combat:effect',{effect:'SHATTER',by:nine.playerName,dmg:d,x:nine.x,y:nine.y});}
   if(nine.cards.some(c=>c.effect_1==='INFECT')){all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag).forEach(n=>{n.poisonStacks=Math.min(3,(n.poisonStacks||0)+1);n.poisonTimer=Math.max(n.poisonTimer||0,12);});broadcast(zoneId,'combat:effect',{effect:'INFECT',by:nine.playerName});}
   all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag&&n.cards.some(c=>c.effect_1==='FEAST')).forEach(n=>n.hp=Math.min(n.maxHp,n.hp+Math.floor(nine.maxHp*.15)));
 
@@ -409,8 +409,8 @@ function handleKO(nine, zoneId, all) {
     .eq('id',nine.deploymentId)
     .then(({error})=>{if(error)console.error('❌ KO:',error.message);});
   // Award 25 pts to killer (identified by _lastHitById)
-  if(nine._lastHitById){
-    supabaseAdmin.rpc('increment_season_points',{p_player_id:nine._lastHitById,p_pts:10})
+  if(killerId){
+    supabaseAdmin.rpc('increment_season_points',{p_player_id:killerId,p_pts:10})
       .then(({error})=>{if(error)console.error('❌ KO pts:',error.message);});
   }
 }
@@ -430,34 +430,45 @@ async function tickZone(zoneId, zs) {
     if(n.corrodeCd>0) n.corrodeCd-=TICK_S;
   });
 
-  // Poison DOT every 6 ticks (= 3s at 500ms per tick)
-  if(zs.tick%6===0){
-    all.forEach(n=>{
-      // POISON DOT tick
-      if(n.hp>0&&n.poisonStacks>0){
-        const dot=Math.floor(n.maxHp*.030*n.poisonStacks);
+  // ── DOT EFFECTS — time-based, tick-rate independent ────────────────
+  const nowTs = Date.now();
+  all.forEach(n=>{
+    if(n.hp<=0||n.waitingForRound) return;
+
+    // POISON — fires every 1.5s, 3% maxHp per stack
+    // Duration: 3 applications per stack group (~4.5s), then stacks decay
+    if(n.poisonStacks>0){
+      if(!n._poisonNextAt||nowTs>=n._poisonNextAt){
+        const dot=Math.floor(n.maxHp*.03*n.poisonStacks);
         n.hp=Math.max(0,n.hp-dot);
-        n.poisonTimer=Math.max(0,(n.poisonTimer||0)-TICK_S*6);
-        if(n.poisonTimer<=0) n.poisonStacks=0;
+        n._poisonNextAt=nowTs+1500;
+        n._poisonFires=(n._poisonFires||0)+1;
+        if(n._poisonFires>=3){ // decay one stack after 3 fires
+          n.poisonStacks=Math.max(0,n.poisonStacks-1);
+          n._poisonFires=0;
+          if(n.poisonStacks<=0) n._poisonNextAt=0;
+        }
         broadcast(zoneId,'combat:dot',{nine:n.playerName,nineId:n.deploymentId,dmg:dot,hp:n.hp,maxHp:n.maxHp,effect:'POISON',x:n.x,y:n.y});
       }
-      // BURN DOT tick (same cadence as poison — every 6 ticks)
-      if(n.hp>0&&n.burnStacks>0&&(n.burnTimer||0)>0){
-        const bdot=n.burnStacks*5;
+    } else { n._poisonNextAt=0; n._poisonFires=0; }
+
+    // BURN — fires every 1.0s, flat 6 per stack
+    // Duration controlled by burnTimer (seconds remaining)
+    if(n.burnStacks>0&&(n.burnTimer||0)>0){
+      if(!n._burnNextAt||nowTs>=n._burnNextAt){
+        const bdot=n.burnStacks*6;
         n.hp=Math.max(0,n.hp-bdot);
+        n._burnNextAt=nowTs+1000;
+        n.burnTimer=Math.max(0,n.burnTimer-1.0); // burn timer in seconds
+        if(n.burnTimer<=0) n.burnStacks=0;
         broadcast(zoneId,'combat:dot',{nine:n.playerName,nineId:n.deploymentId,dmg:bdot,hp:n.hp,maxHp:n.maxHp,effect:'BURN',x:n.x,y:n.y});
       }
-      // BURN timer decay — stacks clear when timer expires
-      if((n.burnTimer||0)>0){
-        n.burnTimer=Math.max(0,n.burnTimer-TICK_S*6);
-        if(n.burnTimer<=0) n.burnStacks=0;
-      }
-    });
-  }
+    } else if(n.burnTimer<=0){ n.burnStacks=0; n._burnNextAt=0; }
+  });
 
   // Zone bonus: darktide regen — 3% maxHP per minute = every 120 ticks (60s / 0.5s per tick)
   const zBonus = getZoneBonus(zoneId);
-  if(zBonus?.bonus?.key === 'regen' && zs.tick % 120 === 0){
+  if(zBonus?.bonus?.key === 'regen' && zs.tick % 300 === 0){ // 300 ticks × 200ms = 60s
     all.forEach(n=>{
       if(n.hp>0){
         const regen=Math.floor(n.maxHp*(zBonus.bonus.pct||0.03));
@@ -506,25 +517,43 @@ async function tickZone(zoneId, zs) {
     }
   }
 
-  // KO check — set waitingForRound, don't re-process
+  // ── KO CHECK + ROUND END EVALUATION ─────────────────────────────────
+  // Process all deaths this tick, then check if round should end
+  let anyKO = false;
   for(const nine of all){
     if(nine.hp<=0&&!nine.waitingForRound){
       nine.waitingForRound=true;
       handleKO(nine,zoneId,all);
       zs.nines.delete(nine.deploymentId);
+      anyKO=true;
     }
   }
 
-  // Broadcast positions every tick for PIXI
-  // ── ROUND TIMER ───────────────────────────────────────────────────────
   const now = Date.now();
-  if(zs.roundState==='FIGHTING' && now >= zs.roundEndsAt){
-    await endRound(zoneId, zs, all);
-    return; // positions broadcast handled in endRound
-  }
-  if(zs.roundState==='INTERMISSION' && now >= zs.roundEndsAt){
-    startRound(zoneId, zs, all);
+
+  // Intermission check — start new round when countdown expires
+  if(zs.roundState==='INTERMISSION'){
+    if(now >= zs.roundEndsAt) startRound(zoneId, zs, Array.from(zs.nines.values()));
     return;
+  }
+
+  // Hard cap — 5 minutes, end regardless
+  if(zs.roundState==='FIGHTING' && now >= zs.roundEndsAt){
+    await endRound(zoneId, zs, Array.from(zs.nines.values()), 'cap');
+    return;
+  }
+
+  // Last guild standing — check after any KO this tick
+  if(anyKO && zs.roundState==='FIGHTING'){
+    const alive = Array.from(zs.nines.values()).filter(n=>!n.waitingForRound&&n.hp>0);
+    if(alive.length>0){
+      const guilds = new Set(alive.map(n=>n.guildTag));
+      if(guilds.size<=1){
+        // Only one guild (or one lone wolf) remains — end round immediately
+        await endRound(zoneId, zs, Array.from(zs.nines.values()), 'last_standing');
+        return;
+      }
+    }
   }
 
     broadcast(zoneId,'arena:positions',{
@@ -552,7 +581,7 @@ async function tickZone(zoneId, zs) {
 }
 
 // ─── ROUND END ────────────────────────────────────────────────────────
-async function endRound(zoneId, zs, all) {
+async function endRound(zoneId, zs, all, endReason) {
   zs.roundState = 'INTERMISSION';
   zs.roundEndsAt = Date.now() + INTERMISSION_MS;
 
@@ -591,10 +620,10 @@ async function endRound(zoneId, zs, all) {
   const now = new Date().toISOString();
   for(const n of all) {
     if(n.hp <= 0 || n.waitingForRound) continue;
-    let pts = 3; // alive at round end
+    let pts = 5; // alive at round end (+5)
     if(winner && n.guildTag === winner) {
-      pts += 5;             // guild controls
-      if(flipped) pts += 10; // guild flipped control
+      pts += 8;              // guild controls (+8)
+      if(flipped) pts += 15; // guild flipped control (+15)
     }
     pointsLog.push({playerId:n.playerId, deploymentId:n.deploymentId, pts, name:n.playerName});
 
@@ -619,17 +648,20 @@ async function endRound(zoneId, zs, all) {
     .then(({error})=>{if(error){/* non-fatal if column missing */}});
 
   // Broadcast cinematic round end to all clients on zone
+  const elapsedMs = Date.now() - (zs.roundStartedAt || Date.now());
   broadcast(zoneId, 'arena:round_end', {
     zoneId,
-    roundNumber:  zs.roundNumber,
+    roundNumber:    zs.roundNumber,
     winner,
     flipped,
     guildAlive,
     guildHp,
-    koBoard:      koBoard.slice(0,5),
+    koBoard:        koBoard.slice(0,5),
     pointsLog,
     intermissionMs: INTERMISSION_MS,
-    nextRoundIn:  INTERMISSION_MS,
+    nextRoundIn:    INTERMISSION_MS,
+    endReason:      endReason || 'cap',  // 'last_standing' | 'cap'
+    elapsedMs,
   });
 
   console.log(`🔔 Zone ${zoneId} Round ${zs.roundNumber} END — winner: [${winner||'none'}]${flipped?' (FLIP)':''} | ${pointsLog.length} pts awarded`);
@@ -639,7 +671,8 @@ async function endRound(zoneId, zs, all) {
 // ─── ROUND START ────────────────────────────────────────────────────────
 function startRound(zoneId, zs, all) {
   zs.roundState = 'FIGHTING';
-  zs.roundEndsAt = Date.now() + ROUND_MS;
+  zs.roundStartedAt = Date.now();
+  zs.roundEndsAt = Date.now() + ROUND_CAP_MS;  // 5min hard cap
 
   // Full HP reset for all surviving Nines, restore waiters
   all.forEach(n => {
@@ -651,6 +684,7 @@ function startRound(zoneId, zs, all) {
     n._killsThisRound = 0;
     // Clear all status effects for clean round start
     n.poisonStacks=0;n.poisonTimer=0;n.burnStacks=0;n.burnTimer=0;
+    n._poisonNextAt=0;n._poisonFires=0;n._burnNextAt=0;
     n.silenced=0;n.hexAmt=0;n.weakened=0;n.blindTurns=0;n.witherActive=0;
     n.wardUp=false;n.barrierHp=0;n.anchorUp=false;n.dodgeReady=false;
     n.reflectReady=false;n.hasteBonus=0;n.hasteTurns=0;n.tetherActive=false;
@@ -683,7 +717,8 @@ async function loadDeploymentIntoEngine(dep){
   if(!zones.has(zoneId)) zones.set(zoneId,{
     nines:new Map(), tick:0,
     roundState:'FIGHTING',  // FIGHTING | INTERMISSION
-    roundEndsAt: Date.now()+ROUND_MS,
+    roundStartedAt: Date.now(),
+    roundEndsAt: Date.now()+ROUND_CAP_MS,
     roundNumber: 1,
     roundWins: {},          // guildTag → round wins today (for branding calc)
     housePresence: {},      // houseKey → fighter-days (for house bonus)
@@ -751,7 +786,7 @@ async function loadDeploymentIntoEngine(dep){
       for(const existing of zs.nines.values()){
         if(existing.guildTag !== state.guildTag && existing.hp > 0){
           existing.poisonStacks = Math.min(3, (existing.poisonStacks||0) + 1);
-          existing.poisonTimer  = Math.max(existing.poisonTimer||0, 18);
+          if(!existing._poisonNextAt||Date.now()>existing._poisonNextAt) existing._poisonNextAt=Date.now()+1500;
         }
       }
     }
