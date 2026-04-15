@@ -14,7 +14,7 @@ const supabaseAdmin = createClient(
 const TICK_MS        = 200;   // 200ms ticks — 5 server updates/sec
 const ROUND_CAP_MS   = 5 * 60 * 1000;    // 5 min hard cap — rounds end early on last guild standing
 const INTERMISSION_MS = 25 * 1000;       // 25s between rounds
-const SESSION_MS     = 2 * 60 * 60 * 1000; // 2hr session timer before auto-withdraw
+const SESSION_MS     = 1 * 60 * 60 * 1000; // 1hr session timer before auto-withdraw
 const SPD_FLOOR     = 5.5;   // card cycle floor (effects stay deliberate)
 const ATK_FLOOR     = 2.5;   // auto-attack floor (constant visual activity)
 const CORRODE_CD    = 5.0;  // 5 second cooldown — time-based, tick-rate independent
@@ -243,17 +243,15 @@ function updateDest(nine, all) {
 
     // Position at standoff distance on a slightly random angle from anchor
     const baseAng = Math.atan2(nine.y-anchor.y, nine.x-anchor.x);
-    const jitter  = (Math.random()-0.5)*0.8; // ±~45° arc
+    const jitter  = (Math.random()-0.5)*1.4; // ±~80° arc — more flanking movement
     const ang     = baseAng + jitter;
-    const drift   = (Math.random()-0.5)*30;  // overshoot/undershoot
+    const drift   = (Math.random()-0.5)*50;  // larger overshoot = more canvas coverage
     nine.destX = clamp(anchor.x + Math.cos(ang)*(standoff+drift), ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
     nine.destY = clamp(anchor.y + Math.sin(ang)*(standoff+drift), ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
   } else {
-    // No enemies — patrol toward zone centre with wide wander
-    const wanderR = 60 + Math.random()*80;
-    const wanderAng = Math.random()*Math.PI*2;
-    nine.destX = clamp(nine.x + Math.cos(wanderAng)*wanderR, ZONE_MARGIN, ZONE_W-ZONE_MARGIN);
-    nine.destY = clamp(nine.y + Math.sin(wanderAng)*wanderR, ZONE_MARGIN, ZONE_H-ZONE_MARGIN);
+    // No enemies — patrol anywhere on the full zone (not just nearby)
+    nine.destX = ZONE_MARGIN + Math.random()*(ZONE_W - ZONE_MARGIN*2);
+    nine.destY = ZONE_MARGIN + Math.random()*(ZONE_H - ZONE_MARGIN*2);
   }
 }
 
@@ -393,8 +391,9 @@ function resolveAttack(caster, defender, all) {
 
 // ─── KO ───────────────────────────────────────────────────────────────
 function handleKO(nine, zoneId, all) {
-  // Mark as waiting — will rejoin at next round start (no mid-round respawn)
+  // Mark as waiting — will become withdrawn at round start (must click rejoin)
   nine.waitingForRound = true;
+  nine._wasKOdThisRound = true;
 
   broadcast(zoneId,'combat:ko',{nine:nine.playerName,nineId:nine.playerId,guildTag:nine.guildTag,killerName:killerName||nine._lastHitBy||null,killerId:killerId||nine._lastHitById||null,x:nine.x,y:nine.y,waitingForRound:true,dotKill:!nine._lastHitById&&!!nine._dotAppliedById});
 
@@ -479,15 +478,22 @@ async function tickZone(zoneId, zs) {
   }
 
   // Update movement targets every 10 ticks (= 5s at 500ms per tick) — slow deliberate shuffle
-  if(zs.tick%6===0) all.forEach(n=>{if(n.hp>0) updateDest(n,all);}); // tighter drift = livelier
+  // Update dest only when Nine has nearly reached its current dest (within 18px)
+  // This stops the jitter caused by recalculating dest before arrival
+  all.forEach(n=>{
+    if(n.hp<=0||n.waitingForRound) return;
+    const distToDest = Math.hypot(n.destX-n.x, n.destY-n.y);
+    if(distToDest < 18) updateDest(n, all); // arrived — pick new dest
+    else if(zs.tick%30===0) updateDest(n, all); // safety refresh every 6s so stuck Nines don't freeze
+  });
 
   // Step positions every tick
   all.forEach(n=>{if(n.hp>0) stepPos(n);});
 
   // Combat — skip nines waiting for next round
   for(const nine of all){
-    if(nine.hp<=0||nine.waitingForRound) continue;
-    const enemies=all.filter(n=>n.hp>0&&!n.waitingForRound&&n.guildTag!==nine.guildTag);
+    if(nine.hp<=0||nine.waitingForRound||nine.withdrawn) continue;
+    const enemies=all.filter(n=>n.hp>0&&!n.waitingForRound&&!n.withdrawn&&n.guildTag!==nine.guildTag);
     if(!enemies.length) continue;
 
     // Card effect rotation
@@ -514,6 +520,22 @@ async function tickZone(zoneId, zs) {
         nine.destY=clamp(nine.y+Math.sin(lungeAng)*18,ZONE_MARGIN,ZONE_H-ZONE_MARGIN);
       }
       nine.atkTimer=atkInterval(nine.stats.spd+(nine.hasteBonus||0));
+    }
+  }
+
+  // ── SESSION TIMER — server-side enforcement ─────────────────────────
+  const nowMs = Date.now();
+  for(const nine of all){
+    if(!nine.waitingForRound && nine._deployedAt && (nowMs - nine._deployedAt) >= SESSION_MS){
+      // Session expired — force withdraw
+      nine.waitingForRound = true;
+      zs.nines.delete(nine.deploymentId);
+      await supabaseAdmin.from('zone_deployments')
+        .update({is_active:false, current_hp: Math.round(nine.hp)})
+        .eq('id', nine.deploymentId)
+        .then(({error})=>{if(error)console.error('❌ Session expire:',error.message);});
+      broadcast(zoneId,'arena:session_expired',{nineId:nine.playerId,deploymentId:nine.deploymentId,name:nine.playerName});
+      console.log(`⏰ Session expired: ${nine.playerName} on zone ${zoneId}`);
     }
   }
 
@@ -674,22 +696,29 @@ function startRound(zoneId, zs, all) {
   zs.roundStartedAt = Date.now();
   zs.roundEndsAt = Date.now() + ROUND_CAP_MS;  // 5min hard cap
 
-  // Full HP reset for all surviving Nines, restore waiters
+  // Full HP reset for survivors — KO'd Nines become 'withdrawn' (must click rejoin)
   all.forEach(n => {
-    const origHp = n.maxHp; // maxHp may have been CORRODE-reduced — reset it too
-    // Reset maxHp to base (stored separately if we need — for now reset to current maxHp)
+    if(n._wasKOdThisRound) {
+      // KO'd last round → withdrawn state. Remove from zone engine until player rejoins.
+      // They are kept in zs.nines for the broadcast but flagged as withdrawn.
+      n.withdrawn = true;
+      n.waitingForRound = false; // clear old flag
+      return; // don't reset HP or stats yet
+    }
+    // Survivors auto-continue into next round at full HP
     n.hp = n.maxHp;
     n.waitingForRound = false;
     n._koProcessed    = false;
     n._killsThisRound = 0;
-    // Clear all status effects for clean round start
+    // Clear all status effects for clean round start (survivors only)
     n.poisonStacks=0;n.poisonTimer=0;n.burnStacks=0;n.burnTimer=0;
     n._poisonNextAt=0;n._poisonFires=0;n._burnNextAt=0;
     n.silenced=0;n.hexAmt=0;n.weakened=0;n.blindTurns=0;n.witherActive=0;
     n.wardUp=false;n.barrierHp=0;n.anchorUp=false;n.dodgeReady=false;
     n.reflectReady=false;n.hasteBonus=0;n.hasteTurns=0;n.tetherActive=false;
     n.marked=0;n.tauntActive=false;n.drainActive=false;
-    n.lx=0;n.ly=0; // clear lunge impulse
+    n.lx=0;n.ly=0;
+    n._wasKOdThisRound=false;
   });
 
   broadcast(zoneId, 'arena:round_start', {
@@ -796,6 +825,40 @@ async function loadDeploymentIntoEngine(dep){
   console.log(`⚔️  ${state.playerName} (${state.houseKey}) → zone ${zoneId} [${cards.length} cards]${zoneBonus?.house ? ` | zone bonus: ${zoneBonus.house}` : ''}`);
 }
 
+// ── REJOIN — player clicks rejoin after being KO'd ───────────────────
+function rejoinRound(deploymentId, zoneId, newCards) {
+  const zs = zones.get(String(zoneId));
+  if(!zs) return false;
+  const nine = zs.nines.get(String(deploymentId));
+  if(!nine) return false;
+  if(!nine.withdrawn) return false; // already active or not withdrawn
+
+  // Restore to fighting state with full HP
+  nine.hp = nine.maxHp;
+  nine.withdrawn = false;
+  nine.waitingForRound = false;
+  nine._wasKOdThisRound = false;
+  nine._killsThisRound = 0;
+
+  // Apply new cards if provided (loadout swap on rejoin)
+  if(newCards && newCards.length) nine.cards = newCards;
+
+  // Reset timers so they don't immediately fire
+  nine.atkTimer  = atkInterval(nine.stats.spd);
+  nine.cardTimer = cardInterval(nine.stats.spd);
+  nine.cardIdx   = 0;
+
+  broadcast(zoneId, 'arena:nine_rejoined', {
+    deploymentId: String(deploymentId),
+    playerId: nine.playerId,
+    name: nine.playerName,
+    hp: nine.hp, maxHp: nine.maxHp,
+    guildTag: nine.guildTag, houseKey: nine.houseKey,
+  });
+  console.log(`🔄 ${nine.playerName} rejoined zone ${zoneId}`);
+  return true;
+}
+
 function removeDeploymentFromEngine(deploymentId,zoneId){
   const zs=zones.get(String(zoneId));
   if(!zs) return;
@@ -831,6 +894,7 @@ module.exports={
   getRoundMs:()=>ROUND_MS,
   getIntermissionMs:()=>INTERMISSION_MS,
   loadDeploymentIntoEngine,
+  rejoinRound,
   removeDeploymentFromEngine,
   getZoneState:id=>zones.get(String(id))||null,
   refreshZoneBonusCache,

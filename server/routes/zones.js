@@ -1002,6 +1002,49 @@ router.post('/midnight-reset', async (req, res) => {
   }
 });
 
+// ── POST /api/zones/:zoneId/rejoin — player clicks rejoin after KO ────
+router.post('/:zoneId/rejoin', requireAuth, async (req, res) => {
+  try {
+    const { zoneId } = req.params;
+    const playerId = req.user?.id;
+    if (!playerId) { res.status(401).json({ error: 'Not authenticated' }); return; }
+
+    // Find the player's active deployment on this zone
+    const { data: dep, error } = await supabaseAdmin
+      .from('zone_deployments')
+      .select('id, player_id, nine_id, guild_tag')
+      .eq('zone_id', zoneId)
+      .eq('player_id', playerId)
+      .eq('is_active', true)
+      .single();
+
+    if (error || !dep) { res.status(404).json({ error: 'No active deployment found' }); return; }
+
+    // Optional: new card slots passed in body for loadout swap on rejoin
+    const { cardSlots } = req.body || {};
+    let newCards = null;
+    if (cardSlots && Array.isArray(cardSlots) && cardSlots.length > 0) {
+      // Update card slots in DB then reload cards
+      // For now just reload existing cards — full swap in next pass
+    }
+
+    const engine = getCombatEngine();
+    if (!engine?.rejoinRound) {
+      res.status(503).json({ error: 'Combat engine unavailable' }); return;
+    }
+    const rejoined = engine.rejoinRound(String(dep.id), String(zoneId), newCards);
+    if (!rejoined) {
+      res.status(400).json({ error: 'Cannot rejoin — not in withdrawn state' });
+      return;
+    }
+
+    res.json({ success: true, deploymentId: dep.id, zoneId });
+  } catch (err) {
+    console.error('Rejoin error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ── GET /api/leaderboard/season — top N players by season_points ──────
 router.get('/leaderboard/season', async (req, res) => {
   try {
