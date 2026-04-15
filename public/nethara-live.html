@@ -1920,9 +1920,10 @@
     S.guildScores = {};
     S.feedEvents = [];
     S.snapshotCount = 0;
-    S._roundNumber = 1;
-    S._roundState  = 'FIGHTING';
-    S._roundEndsAt = Date.now() + 180000; // 3 min default until server syncs
+    S._roundNumber    = 1;
+    S._roundState     = 'FIGHTING';
+    S._roundStartedAt = Date.now();
+    S._roundEndsAt    = Date.now() + 300000; // 5min hard cap default until server syncs
     S.currentCycle = 0;
     // Reset portrait so it re-renders Nine layers for this session
     const hudPortrait = document.getElementById('hud-nine-portrait');
@@ -3490,9 +3491,10 @@
 
     // ── ROUND END — cinematic moment ────────────────────────────────────
     socket.on('arena:round_end', (data) => {
-      S._roundState  = 'INTERMISSION';
-      S._roundNumber = (data.roundNumber || 1) + 1;
-      S._roundEndsAt = Date.now() + (data.intermissionMs || 25000);
+      S._roundState     = 'INTERMISSION';
+      S._roundNumber    = (data.roundNumber || 1) + 1;
+      S._roundEndsAt    = Date.now() + (data.intermissionMs || 25000);
+      S._roundStartedAt = null; // reset — will be set on arena:round_start
 
       const winner = data.winner;
       const flipped = data.flipped;
@@ -3528,9 +3530,10 @@
 
     // ── ROUND START — full HP reset, all waiting players rejoin ─────────
     socket.on('arena:round_start', (data) => {
-      S._roundState  = 'FIGHTING';
-      S._roundNumber = data.roundNumber || 1;
-      S._roundEndsAt = Date.now() + (data.roundMs || 180000);
+      S._roundState     = 'FIGHTING';
+      S._roundNumber    = data.roundNumber || 1;
+      S._roundStartedAt = Date.now();
+      S._roundEndsAt    = Date.now() + 300000; // 5min hard cap
 
       // Dismiss cinematic overlay
       _dismissRoundEnd();
@@ -3829,8 +3832,11 @@
         animation:slideUp 0.35s ease;box-shadow:0 0 40px rgba(212,166,75,.1);">
 
         <div style="text-align:center;margin-bottom:16px;">
-          <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:rgba(255,255,255,.4);letter-spacing:2px;margin-bottom:8px">
+          <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:rgba(255,255,255,.4);letter-spacing:2px;margin-bottom:4px">
             ROUND ${data.roundNumber || ''} OVER
+          </div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,.25);margin-bottom:8px">
+            ${data.endReason === 'last_standing' ? 'LAST GUILD STANDING' : 'TIME CAP REACHED'} — ${Math.floor((data.elapsedMs||0)/60000)}:${String(Math.round(((data.elapsedMs||0)%60000)/1000)).padStart(2,'0')} elapsed
           </div>
           ${winner ? `
           <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#D4A64B;margin-bottom:4px">
@@ -3894,18 +3900,22 @@
       const el  = document.getElementById('zt-round-timer');
       const lbl = document.getElementById('zt-round-label');
       if (!el) return;
-      if (!S._roundEndsAt) return;
-      const secLeft = Math.max(0, Math.round((S._roundEndsAt - Date.now()) / 1000));
-      const m = Math.floor(secLeft/60), s = secLeft % 60;
-      el.textContent = `${m}:${String(s).padStart(2,'0')}`;
       if (S._roundState === 'INTERMISSION') {
+        // Intermission: show countdown to next round
+        const secLeft = Math.max(0, Math.round((S._roundEndsAt - Date.now()) / 1000));
+        const m = Math.floor(secLeft/60), s = secLeft % 60;
+        el.textContent = `${m}:${String(s).padStart(2,'0')}`;
         el.style.color = '#ffaa44';
         if (lbl) lbl.textContent = 'NEXT ROUND';
         el.classList.add('urgent');
       } else {
+        // Fighting: show elapsed time — round has no fixed end
+        const elapsed = Math.round((Date.now() - (S._roundStartedAt || Date.now())) / 1000);
+        const m = Math.floor(elapsed/60), s = elapsed % 60;
+        el.textContent = `${m}:${String(s).padStart(2,'0')}`;
+        el.style.color = elapsed > 240 ? '#ffaa44' : '#6ac8d8'; // warm at 4+ min (near cap)
+        el.classList.remove('urgent');
         if (lbl) lbl.textContent = `ROUND ${S._roundNumber || 1}`;
-        el.style.color = secLeft < 30 ? '#ff4466' : secLeft < 60 ? '#ffaa44' : '#6ac8d8';
-        el.classList.toggle('urgent', secLeft < 30);
       }
     }, 500);
   })();
