@@ -11,8 +11,10 @@ const supabaseAdmin = createClient(
 );
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────
-const TICK_MS       = 500;
-const SNAPSHOT_MS   = 15 * 60 * 1000;
+const TICK_MS        = 200;   // 200ms ticks — 5 server updates/sec
+const ROUND_MS       = 3 * 60 * 1000;    // 3 min rounds (tunable in playtesting)
+const INTERMISSION_MS = 25 * 1000;       // 25s between rounds
+const SESSION_MS     = 2 * 60 * 60 * 1000; // 2hr session timer before auto-withdraw
 const SPD_FLOOR     = 5.5;   // card cycle floor (effects stay deliberate)
 const ATK_FLOOR     = 2.5;   // auto-attack floor (constant visual activity)
 const CORRODE_CD    = 10;
@@ -109,7 +111,7 @@ function getZoneBonus(zoneId) {
 
 // ─── ENGINE STATE ─────────────────────────────────────────────────────
 const zones = new Map();
-let _tickInt=null, _snapInt=null, _nextSnap=Date.now()+SNAPSHOT_MS;
+let _tickInt=null;
 
 // ─── BUILD NINE STATE ─────────────────────────────────────────────────
 function buildNineState(dep, nine, cards, zoneBonus) {
@@ -131,6 +133,7 @@ function buildNineState(dep, nine, cards, zoneBonus) {
   return {
     deploymentId: String(dep.id), playerId: dep.player_id, nineId: dep.nine_id,
     guildTag: dep.guild_tag||'lone_wolf', playerName: nine.name||'Unknown', houseKey,
+    waitingForRound: false,   // true = KO'd this round, waiting to rejoin
     stats:{atk,hp,spd,def,luck}, cards,
     hp, maxHp:hp, x, y, destX:x, destY:y,
     moveSpeed: 6 + spd*0.15,   // slow shuffle: ~7-11 units/tick → 5-7s per wander step
@@ -371,7 +374,12 @@ function resolveAttack(caster, defender, all) {
   if(caster.hexAmt>0) caster.hexAmt=Math.max(0,caster.hexAmt-3);
 
   // Track who last hit this Nine (for KO credit)
-  if(dmg>0){ defender._lastHitBy=caster.playerName; defender._lastHitById=caster.playerId; }
+  if(dmg>0){ defender._lastHitBy=caster.playerName; defender._lastHitById=caster.playerId;
+  // Track kills for round KO board
+  if(defender.hp<=0 && !defender.waitingForRound) {
+    caster._killsThisRound=(caster._killsThisRound||0)+1;
+  }
+}
 
   broadcast(caster.zoneId,'combat:attack',{
     attacker:caster.playerName, attackerId:caster.playerId,
@@ -385,18 +393,24 @@ function resolveAttack(caster, defender, all) {
 
 // ─── KO ───────────────────────────────────────────────────────────────
 function handleKO(nine, zoneId, all) {
-  broadcast(zoneId,'combat:ko',{nine:nine.playerName,nineId:nine.playerId,guildTag:nine.guildTag,killerName:nine._lastHitBy||null,killerId:nine._lastHitById||null,x:nine.x,y:nine.y});
+  // Mark as waiting — will rejoin at next round start (no mid-round respawn)
+  nine.waitingForRound = true;
+
+  broadcast(zoneId,'combat:ko',{nine:nine.playerName,nineId:nine.playerId,guildTag:nine.guildTag,killerName:nine._lastHitBy||null,killerId:nine._lastHitById||null,x:nine.x,y:nine.y,waitingForRound:true});
+
+  // On-death effects
   if(nine.cards.some(c=>c.effect_1==='SHATTER')){const d=Math.floor(nine.maxHp*.10);all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag&&inRange(nine,n,120)).forEach(n=>n.hp=Math.max(0,n.hp-d));broadcast(zoneId,'combat:effect',{effect:'SHATTER',by:nine.playerName,dmg:d,x:nine.x,y:nine.y});}
   if(nine.cards.some(c=>c.effect_1==='INFECT')){all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag).forEach(n=>{n.poisonStacks=Math.min(3,(n.poisonStacks||0)+1);n.poisonTimer=Math.max(n.poisonTimer||0,12);});broadcast(zoneId,'combat:effect',{effect:'INFECT',by:nine.playerName});}
   all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag&&n.cards.some(c=>c.effect_1==='FEAST')).forEach(n=>n.hp=Math.min(n.maxHp,n.hp+Math.floor(nine.maxHp*.15)));
-  // KO: update deployment + award killer points
+
+  // KO points — +10 to killer immediately (per design doc)
   supabaseAdmin.from('zone_deployments')
     .update({is_active:false,current_hp:0,ko_until:new Date(Date.now()+60000).toISOString()})
     .eq('id',nine.deploymentId)
     .then(({error})=>{if(error)console.error('❌ KO:',error.message);});
   // Award 25 pts to killer (identified by _lastHitById)
   if(nine._lastHitById){
-    supabaseAdmin.rpc('increment_season_points',{p_player_id:nine._lastHitById,p_pts:25})
+    supabaseAdmin.rpc('increment_season_points',{p_player_id:nine._lastHitById,p_pts:10})
       .then(({error})=>{if(error)console.error('❌ KO pts:',error.message);});
   }
 }
@@ -459,10 +473,10 @@ async function tickZone(zoneId, zs) {
   // Step positions every tick
   all.forEach(n=>{if(n.hp>0) stepPos(n);});
 
-  // Combat
+  // Combat — skip nines waiting for next round
   for(const nine of all){
-    if(nine.hp<=0) continue;
-    const enemies=all.filter(n=>n.hp>0&&n.guildTag!==nine.guildTag);
+    if(nine.hp<=0||nine.waitingForRound) continue;
+    const enemies=all.filter(n=>n.hp>0&&!n.waitingForRound&&n.guildTag!==nine.guildTag);
     if(!enemies.length) continue;
 
     // Card effect rotation
@@ -492,17 +506,28 @@ async function tickZone(zoneId, zs) {
     }
   }
 
-  // KO check
+  // KO check — set waitingForRound, don't re-process
   for(const nine of all){
-    if(nine.hp<=0&&!nine._koProcessed){
-      nine._koProcessed=true;
+    if(nine.hp<=0&&!nine.waitingForRound){
+      nine.waitingForRound=true;
       handleKO(nine,zoneId,all);
       zs.nines.delete(nine.deploymentId);
     }
   }
 
   // Broadcast positions every tick for PIXI
-  broadcast(zoneId,'arena:positions',{
+  // ── ROUND TIMER ───────────────────────────────────────────────────────
+  const now = Date.now();
+  if(zs.roundState==='FIGHTING' && now >= zs.roundEndsAt){
+    await endRound(zoneId, zs, all);
+    return; // positions broadcast handled in endRound
+  }
+  if(zs.roundState==='INTERMISSION' && now >= zs.roundEndsAt){
+    startRound(zoneId, zs, all);
+    return;
+  }
+
+    broadcast(zoneId,'arena:positions',{
     zoneId,
     nines: Array.from(zs.nines.values()).map(n=>({
       id:n.playerId, deploymentId:n.deploymentId, playerName:n.playerName,
@@ -526,79 +551,123 @@ async function tickZone(zoneId, zs) {
   }
 }
 
-// ─── SNAPSHOT ─────────────────────────────────────────────────────────
-async function runSnapshot(){
-  console.log('📸 Zone snapshot...');
-  const now = new Date().toISOString();
+// ─── ROUND END ────────────────────────────────────────────────────────
+async function endRound(zoneId, zs, all) {
+  zs.roundState = 'INTERMISSION';
+  zs.roundEndsAt = Date.now() + INTERMISSION_MS;
 
-  for(const [zoneId,zs] of zones){
-    if(!zs.nines.size) continue;
-    const all = Array.from(zs.nines.values());
-
-    // Guild HP totals — for zone control scoring
-    const guildHp={};
-    all.forEach(n=>{if(!guildHp[n.guildTag])guildHp[n.guildTag]=0;guildHp[n.guildTag]+=n.hp;});
-    const [controllingGuild,topHp]=Object.entries(guildHp).reduce((b,[t,h])=>h>b[1]?[t,h]:b,['',-1]);
-
-    // House fighter counts — for zone identity (not HP — house neutral)
-    const houseCounts={};
-    all.forEach(n=>{const h=n.houseKey||'unknown';houseCounts[h]=(houseCounts[h]||0)+1;});
-    const [dominantHouse]=Object.entries(houseCounts).sort((a,b)=>b[1]-a[1])[0]||[];
-
-    // Guild presence count — for branding (who had the most fighters, period)
-    const guildCounts={};
-    all.forEach(n=>{guildCounts[n.guildTag]=(guildCounts[n.guildTag]||0)+1;});
-    const [brandedGuild]=Object.entries(guildCounts).sort((a,b)=>b[1]-a[1])[0]||[];
-
-    if(!controllingGuild) continue;
-
-    // Upsert current state
-    await supabaseAdmin.from('zone_control')
-      .upsert({zone_id:zoneId,controlling_guild:controllingGuild,snapshot_hp:topHp,dominant_house:dominantHouse,updated_at:now},{onConflict:'zone_id'})
-      .then(({error})=>{if(error)console.error('❌ Snapshot upsert:',error.message);});
-
-    // Append to history log
-    await supabaseAdmin.from('zone_control_history')
-      .insert({zone_id:zoneId,controlling_guild:controllingGuild,snapshot_hp:topHp,dominant_house:dominantHouse,branded_guild:brandedGuild,snapped_at:now})
-      .then(({error})=>{if(error)console.error('❌ Snapshot history:',error.message);});
-
-    broadcast(zoneId,'arena:snapshot',{zoneId,controllingGuild,dominantHouse,brandedGuild,guildHp});
-    console.log(`📸 Zone ${zoneId} → [${controllingGuild}] | house: ${dominantHouse} | brand: [${brandedGuild}]`);
-
-    // ── SNAPSHOT POINTS ── Award server-side, write to DB ──────────────
-    // Survive = +20 pts (if deployed >= 5 cumulative minutes today on this zone)
-    // Win = +10 bonus pts (on top of survive) for controlling guild
-    // Per-minute alive points (2pts/min) are written separately via HP sync heartbeat
-    const MIN_SNAP_SECS = 5 * 60; // must have been deployed 5+ cumulative minutes
-    const snapNow = Date.now();
-    const pointUpdates = [];
-    for(const nine of all) {
-      // Calculate cumulative time on zone today for this player
-      // deployedAt is stored on nine state; we use it to check eligibility
-      const deployedSecs = nine._deployedAt ? (snapNow - nine._deployedAt) / 1000 : 0;
-      const eligible = deployedSecs >= MIN_SNAP_SECS;
-      if(!eligible) continue;
-
-      const isWinner = nine.guildTag === controllingGuild;
-      const pts = isWinner ? 30 : 20; // win=30 total, survive=20
-      pointUpdates.push({ playerId: nine.playerId, deploymentId: nine.deploymentId, pts, isWinner });
+  // Guild control: most alive members wins. Ties by total HP.
+  const guildAlive = {}, guildHp = {};
+  all.forEach(n => {
+    if(n.hp > 0 && !n.waitingForRound) {
+      guildAlive[n.guildTag] = (guildAlive[n.guildTag] || 0) + 1;
+      guildHp[n.guildTag]    = (guildHp[n.guildTag]    || 0) + n.hp;
     }
+  });
 
-    // Write points to DB in parallel
-    await Promise.all(pointUpdates.map(async ({ playerId, deploymentId, pts }) => {
-      // Increment season_points on player
-      await supabaseAdmin.rpc('increment_season_points', { p_player_id: playerId, p_pts: pts })
-        .then(({error}) => { if(error) console.error(`❌ Snapshot pts player ${playerId}:`, error.message); });
-      // Log on deployment row
-      await supabaseAdmin.from('zone_deployments')
-        .update({ points_earned: supabaseAdmin.raw('points_earned + ' + pts) })
-        .eq('id', deploymentId)
-        .then(({error}) => { if(error) { /* column may not exist yet — non-fatal */ } });
-    }));
-    if(pointUpdates.length) console.log(`💰 Snapshot pts: ${pointUpdates.map(p=>p.playerId+':'+p.pts).join(', ')}`);
+  // Sort: most alive, tiebreak by HP
+  const guilds = Object.entries(guildAlive).sort((a,b) =>
+    b[1]!==a[1] ? b[1]-a[1] : (guildHp[b[0]]||0)-(guildHp[a[0]]||0));
 
+  const winner    = guilds[0]?.[0] || null;
+  const prevWinner = zs._lastRoundWinner || null;
+  zs._lastRoundWinner = winner;
+
+  // Track round wins for daily guild branding
+  if(winner) zs.roundWins[winner] = (zs.roundWins[winner] || 0) + 1;
+
+  // Track house presence for daily house bonus
+  all.forEach(n => {
+    const h = n.houseKey||'unknown';
+    zs.housePresence[h] = (zs.housePresence[h]||0) + 1;
+  });
+
+  // ── ROUND SCORING ──────────────────────────────────────────────────
+  // Alive at end: +3 pts  |  Guild controls: +5  |  Guild flips: +10 bonus
+  // KO points (+10) already awarded in handleKO immediately
+  const flipped = winner && winner !== prevWinner;
+  const pointsLog = [];
+
+  const now = new Date().toISOString();
+  for(const n of all) {
+    if(n.hp <= 0 || n.waitingForRound) continue;
+    let pts = 3; // alive at round end
+    if(winner && n.guildTag === winner) {
+      pts += 5;             // guild controls
+      if(flipped) pts += 10; // guild flipped control
+    }
+    pointsLog.push({playerId:n.playerId, deploymentId:n.deploymentId, pts, name:n.playerName});
+
+    // Write to DB
+    await supabaseAdmin.rpc('increment_season_points',{p_player_id:n.playerId,p_pts:pts})
+      .then(({error})=>{if(error)console.error(`❌ Round pts ${n.playerId}:`,error.message);});
   }
+
+  // KO leaderboard for this round — derive from _killsThisRound
+  const koBoard = [];
+  all.forEach(n => { if((n._killsThisRound||0)>0) koBoard.push({name:n.playerName,guild:n.guildTag,kos:n._killsThisRound}); });
+  koBoard.sort((a,b)=>b.kos-a.kos);
+
+  // Upsert zone control
+  await supabaseAdmin.from('zone_control')
+    .upsert({zone_id:zoneId,controlling_guild:winner,updated_at:now},{onConflict:'zone_id'})
+    .then(({error})=>{if(error)console.error('❌ Zone control upsert:',error.message);});
+
+  // Append round history
+  await supabaseAdmin.from('zone_control_history')
+    .insert({zone_id:zoneId,controlling_guild:winner,round_number:zs.roundNumber,snapped_at:now})
+    .then(({error})=>{if(error){/* non-fatal if column missing */}});
+
+  // Broadcast cinematic round end to all clients on zone
+  broadcast(zoneId, 'arena:round_end', {
+    zoneId,
+    roundNumber:  zs.roundNumber,
+    winner,
+    flipped,
+    guildAlive,
+    guildHp,
+    koBoard:      koBoard.slice(0,5),
+    pointsLog,
+    intermissionMs: INTERMISSION_MS,
+    nextRoundIn:  INTERMISSION_MS,
+  });
+
+  console.log(`🔔 Zone ${zoneId} Round ${zs.roundNumber} END — winner: [${winner||'none'}]${flipped?' (FLIP)':''} | ${pointsLog.length} pts awarded`);
+  zs.roundNumber++;
 }
+
+// ─── ROUND START ────────────────────────────────────────────────────────
+function startRound(zoneId, zs, all) {
+  zs.roundState = 'FIGHTING';
+  zs.roundEndsAt = Date.now() + ROUND_MS;
+
+  // Full HP reset for all surviving Nines, restore waiters
+  all.forEach(n => {
+    const origHp = n.maxHp; // maxHp may have been CORRODE-reduced — reset it too
+    // Reset maxHp to base (stored separately if we need — for now reset to current maxHp)
+    n.hp = n.maxHp;
+    n.waitingForRound = false;
+    n._koProcessed    = false;
+    n._killsThisRound = 0;
+    // Clear all status effects for clean round start
+    n.poisonStacks=0;n.poisonTimer=0;n.burnStacks=0;n.burnTimer=0;
+    n.silenced=0;n.hexAmt=0;n.weakened=0;n.blindTurns=0;n.witherActive=0;
+    n.wardUp=false;n.barrierHp=0;n.anchorUp=false;n.dodgeReady=false;
+    n.reflectReady=false;n.hasteBonus=0;n.hasteTurns=0;n.tetherActive=false;
+    n.marked=0;n.tauntActive=false;n.drainActive=false;
+    n.lx=0;n.ly=0; // clear lunge impulse
+  });
+
+  broadcast(zoneId, 'arena:round_start', {
+    zoneId,
+    roundNumber: zs.roundNumber,
+    roundMs: ROUND_MS,
+    nines: all.map(n=>({id:n.deploymentId,playerId:n.playerId,hp:n.hp,maxHp:n.maxHp,guildTag:n.guildTag,houseKey:n.houseKey})),
+  });
+
+  console.log(`⚔️  Zone ${zoneId} Round ${zs.roundNumber} START — ${all.length} Nines`);
+}
+
 
 // ─── LOAD / UNLOAD ────────────────────────────────────────────────────
 async function loadActiveDeployments(){
@@ -611,7 +680,14 @@ async function loadActiveDeployments(){
 
 async function loadDeploymentIntoEngine(dep){
   const zoneId=String(dep.zone_id);
-  if(!zones.has(zoneId)) zones.set(zoneId,{nines:new Map(),tick:0});
+  if(!zones.has(zoneId)) zones.set(zoneId,{
+    nines:new Map(), tick:0,
+    roundState:'FIGHTING',  // FIGHTING | INTERMISSION
+    roundEndsAt: Date.now()+ROUND_MS,
+    roundNumber: 1,
+    roundWins: {},          // guildTag → round wins today (for branding calc)
+    housePresence: {},      // houseKey → fighter-days (for house bonus)
+  });
 
   // Step 1: Get active card slots for this deployment
   const {data:slots} = await supabaseAdmin
@@ -703,18 +779,22 @@ function broadcast(zoneId,event,data){
 // ─── LIFECYCLE ────────────────────────────────────────────────────────
 function startCombatEngine(){
   if(_tickInt) return;
-  refreshZoneBonusCache(); // load zone bonuses before deployments
+  refreshZoneBonusCache();
   loadActiveDeployments();
-  _tickInt=setInterval(async()=>{for(const [id,zs] of zones){try{await tickZone(id,zs);}catch(e){console.error(`❌ Zone ${id}:`,e.message);}}},TICK_MS);
-  _snapInt=setInterval(async()=>{_nextSnap=Date.now()+SNAPSHOT_MS;await runSnapshot();},SNAPSHOT_MS);
-  console.log('✅ Combat engine V3 started — spatial combat, 2s ticks, 15min snapshots');
+  _tickInt=setInterval(async()=>{
+    for(const [id,zs] of zones){
+      try{ await tickZone(id,zs); }
+      catch(e){ console.error(`❌ Zone ${id}:`,e.message); }
+    }
+  },TICK_MS);
+  console.log('✅ Combat engine V3 started — round-based combat, 200ms ticks, 3min rounds');
 }
-function stopCombatEngine(){clearInterval(_tickInt);clearInterval(_snapInt);_tickInt=_snapInt=null;}
+function stopCombatEngine(){ clearInterval(_tickInt); _tickInt=null; }
 
 module.exports={
   startCombatEngine,stopCombatEngine,
-  getNextCycleAt:()=>_nextSnap,
-  getCycleIntervalMs:()=>SNAPSHOT_MS,
+  getRoundMs:()=>ROUND_MS,
+  getIntermissionMs:()=>INTERMISSION_MS,
   loadDeploymentIntoEngine,
   removeDeploymentFromEngine,
   getZoneState:id=>zones.get(String(id))||null,
