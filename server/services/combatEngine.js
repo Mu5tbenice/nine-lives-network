@@ -20,7 +20,7 @@ const ATK_FLOOR     = 2.5;   // auto-attack floor (constant visual activity)
 const CORRODE_CD    = 5.0;  // 5 second cooldown — time-based, tick-rate independent
 const ZONE_W        = 900;
 const ZONE_H        = 500;
-const ZONE_MARGIN   = 40;
+const ZONE_MARGIN   = 80;  // increased from 40 — keeps nines away from edges that may be outside canvas polygon
 
 const SPELL_RANGE = { melee:90, mid:220, ranged:380, self:0, aoe_self:120, zone:9999 };
 
@@ -587,6 +587,7 @@ async function tickZone(zoneId, zs) {
       cardSlot:n.cardIdx%Math.max(1,n.cards.length),
       activeEffect: n.cards[n.cardIdx%Math.max(1,n.cards.length)]?.effect_1||null,
       status:{burning:n.burnStacks>0,poisoned:n.poisonStacks>0,warded:n.wardUp,silenced:n.silenced>0,taunting:n.tauntActive},
+      waitingForRound: !!n.waitingForRound || !!n.withdrawn,
     })),
   });
 
