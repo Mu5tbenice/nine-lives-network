@@ -520,13 +520,18 @@ router.get('/leaderboard/season', async (req, res) => {
     const player_id = req.query.player_id || null;
 
     // Top N players
-    const { data: rows, error } = await supabaseAdmin
+    // Try season_points first; fall back to 0 if column missing
+  const { data: rows, error } = await supabaseAdmin
       .from('players')
       .select('id, handle, username, season_points')
       .order('season_points', { ascending: false })
       .limit(limit);
 
-    if (error) throw error;
+  // Don't throw — column may not exist yet. Return empty rows gracefully.
+  if (error) {
+    console.warn('Leaderboard query error (column may not exist):', error.message);
+    return res.json({ rows: [], my_rank: null, my_points: null });
+  }
 
     // Own rank (if player_id provided)
     let my_rank = null, my_points = null;

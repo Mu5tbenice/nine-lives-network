@@ -243,7 +243,7 @@
     }
 
     /* ====== ARENA VIEW ====== */
-    #arena-view { display: none; position: fixed; top: var(--nav-height); left: 0; width: 100vw; height: calc(100vh - var(--nav-height)); z-index: 50; background: var(--bg); }
+    #arena-view { display: none; position: fixed; top: var(--nav-height); left: 0; width: 100vw; height: calc(100vh - var(--nav-height)); z-index: 50; background: var(--bg); overflow: hidden; box-sizing: border-box; }
     #arena-canvas canvas { display: block; }
     #arena-canvas {
       /* Desktop: fill space left of sidebar (350px), above tray (230px) */
@@ -3002,6 +3002,12 @@
                 profile_image: d.player?.profile_image || null,
                 equipped_images: d.nine?.equipped_images || {},
                 name: d.nine?.name || d.player?.twitter_handle || null,
+                cards: (d.cards || d.loadout || []).map(c => ({
+                  name: c.name || c.spell?.name || '?',
+                  effect_1: c.effect_1 || c.spell?.effect_1 || '',
+                  rarity: c.rarity || c.spell?.rarity || 'common',
+                  house: c.house || c.spell?.house || 'universal',
+                })),
               };
             });
             // Fix self sprite: patch in-place NOW with fresh cache data
@@ -3264,7 +3270,19 @@
   };
 
   // ── SOCKET ──
-  function connectArenaSocket(zoneId) {
+  // resolveId — normalises IDs for S.nines Map lookup (string, number, or raw)
+  function resolveId(rawId) {
+    if (rawId === undefined || rawId === null) return null;
+    if (S.nines.has(rawId)) return rawId;
+    const asStr = String(rawId);
+    if (S.nines.has(asStr)) return asStr;
+    const asNum = Number(rawId);
+    if (!isNaN(asNum) && S.nines.has(asNum)) return asNum;
+    return asStr; // fallback to string
+  }
+  window.resolveId = resolveId;
+
+    function connectArenaSocket(zoneId) {
     const socket = io('/arena', { transports: ['websocket','polling'], query: { zoneId } });
     S.socket = socket;
 
@@ -3761,7 +3779,7 @@
     // (original handler already exists — extend it to handle waiting state)
   }
 
-  // resolveId defined below
+  // resolveId defined above
 
   function getNineName(id) {
     return S.nines.get(resolveId(id))?.name || String(id||'').slice(0,8) || 'Unknown';
@@ -4820,7 +4838,7 @@
           <span style="font-family:'Cinzel',serif;font-size:11px;color:var(--bright);flex:1;">${c.name}</span>
           <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:${hc}">${(c.rarity||'').toUpperCase()}</span>
         </div>`).join('')
-      : '<div style="color:rgba(255,255,255,0.3);font-size:11px;font-family:Crimson Text,serif;">Build not visible</div>';
+      : `<div style="color:rgba(255,255,255,0.35);font-size:13px;font-family:'Crimson Text',serif;line-height:1.5;">${isMe ? 'No cards equipped' : 'Deploy to same zone to see their build'}</div>`;
 
     popup.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;">
@@ -7342,15 +7360,18 @@
   }
 
   /** Resolve a specific field from event for sprite lookup */
-  function resolveId(rawId) {
+  // resolveId in PIXI scope uses state.nines (PIXI proxy of window._S)
+  function _pixiResolveId(rawId) {
     if (rawId === undefined || rawId === null) return null;
     if (state.nines.has(rawId)) return rawId;
     const asStr = String(rawId);
     if (state.nines.has(asStr)) return asStr;
     const asNum = Number(rawId);
     if (!isNaN(asNum) && state.nines.has(asNum)) return asNum;
-    return rawId; // fallback
+    return asStr;
   }
+  // Also proxy global for PIXI event handlers that call resolveId directly
+  const resolveId = _pixiResolveId;
 
   // ═══════════════════════════════════════════════════════════════
   // V2 EVENT PROCESSOR — handles continuous combat + legacy events
