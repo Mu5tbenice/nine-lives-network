@@ -1920,9 +1920,12 @@
     S.guildScores = {};
     S.feedEvents = [];
     S.snapshotCount = 0;
-    S._roundNumber = 1;
-    S._roundState  = 'FIGHTING';
-    S._roundEndsAt = Date.now() + 180000; // 3 min default until server syncs
+    S._roundNumber       = 1;
+    S._roundState        = 'FIGHTING';
+    S._roundStartedAt    = Date.now();
+    S._roundEndsAt       = Date.now() + 300000; // 5min hard cap default
+    S._wasKOdThisRound   = false;
+    S._withdrawnAfterKO  = false;
     S.currentCycle = 0;
     // Reset portrait so it re-renders Nine layers for this session
     const hudPortrait = document.getElementById('hud-nine-portrait');
@@ -3448,13 +3451,27 @@
       const kTracked = killerId || (data.killerName ? [...S.nines.entries()].find(([,s])=>s.name===data.killerName)?.[0] : null);
       if (kTracked) trackCombatStat(kTracked, data.killerName || getNineName(kTracked), '', '', 'kos', 1);
     })
+    // ── SESSION EXPIRED — server auto-withdrew this Nine ────────────────
+    socket.on('arena:session_expired', (data) => {
+      if (String(data.nineId) !== String(S.playerId)) return;
+      S.isDeployed = false;
+      addFeedEvent('⏰ Session ended (1 hour) — redeploy to continue', 'snapshot');
+      // Show redeploy prompt
+      const pill = document.getElementById('deploy-status-pill');
+      if (pill) {
+        pill.innerHTML = `<span style="font-family:'Press Start 2P',monospace;font-size:6px;color:#ffaa44;padding:2px 8px;background:rgba(255,170,68,0.1);border:1px solid rgba(255,170,68,0.3);border-radius:3px;">⏰ SESSION ENDED</span>`;
+      }
+    });
+
     // ── WAITING STATE: dim sprite + badge when KO'd mid-round ────────────
     socket.on('combat:ko', (dataKo) => {
       if (!dataKo.waitingForRound) return; // old events without this flag
       const sp = S.nines.get(resolveId(dataKo.nineId));
       if (!sp) return;
       sp._waitingForRound = true;
-      sp.container.alpha = 0.25; // dim — waiting for next round
+      sp.container.alpha = 0.25; // dim — withdrawn state
+      // Track for self
+      if (String(dataKo.nineId) === String(S.playerId)) S._wasKOdThisRound = true;
       // Show WAITING badge above sprite
       if (sp.container && window._S?.arenaApp) {
         const badge = new PIXI.Text('WAITING', { fontFamily:'monospace', fontSize:7, fill:0x888888 });
@@ -3490,9 +3507,17 @@
 
     // ── ROUND END — cinematic moment ────────────────────────────────────
     socket.on('arena:round_end', (data) => {
-      S._roundState  = 'INTERMISSION';
-      S._roundNumber = (data.roundNumber || 1) + 1;
-      S._roundEndsAt = Date.now() + (data.intermissionMs || 25000);
+      S._roundState     = 'INTERMISSION';
+      S._roundNumber    = (data.roundNumber || 1) + 1;
+      S._roundEndsAt    = Date.now() + (data.intermissionMs || 25000);
+      S._roundStartedAt = null; // reset — will be set on arena:round_start
+
+      // Was this player KO'd during the round? If so, show rejoin prompt
+      if (S.isDeployed && S._wasKOdThisRound) {
+        S._withdrawnAfterKO = true;
+        S._wasKOdThisRound  = false;
+        _showRejoinPrompt(data);
+      }
 
       const winner = data.winner;
       const flipped = data.flipped;
@@ -3526,11 +3551,29 @@
       _saveSessionState();
     });
 
+    // ── NINE REJOINED — restore sprite from withdrawn state ─────────────
+    socket.on('arena:nine_rejoined', (data) => {
+      const sp = S.nines.get(String(data.deploymentId));
+      if (sp) {
+        sp.container.alpha = 1;
+        delete sp._waitingForRound;
+        delete sp._withdrawn;
+        if (sp._waitingBadge) { sp.container.removeChild(sp._waitingBadge); delete sp._waitingBadge; }
+        updateNineHP(String(data.deploymentId), data.hp, data.maxHp);
+      }
+      if (String(data.playerId) === String(S.playerId)) {
+        _dismissRejoinPrompt();
+        S._withdrawnAfterKO = false;
+        addFeedEvent('✅ Rejoined the round', 'flip');
+      }
+    });
+
     // ── ROUND START — full HP reset, all waiting players rejoin ─────────
     socket.on('arena:round_start', (data) => {
-      S._roundState  = 'FIGHTING';
-      S._roundNumber = data.roundNumber || 1;
-      S._roundEndsAt = Date.now() + (data.roundMs || 180000);
+      S._roundState     = 'FIGHTING';
+      S._roundNumber    = data.roundNumber || 1;
+      S._roundStartedAt = Date.now();
+      S._roundEndsAt    = Date.now() + 300000; // 5min hard cap
 
       // Dismiss cinematic overlay
       _dismissRoundEnd();
@@ -3829,8 +3872,11 @@
         animation:slideUp 0.35s ease;box-shadow:0 0 40px rgba(212,166,75,.1);">
 
         <div style="text-align:center;margin-bottom:16px;">
-          <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:rgba(255,255,255,.4);letter-spacing:2px;margin-bottom:8px">
+          <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:rgba(255,255,255,.4);letter-spacing:2px;margin-bottom:4px">
             ROUND ${data.roundNumber || ''} OVER
+          </div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,.25);margin-bottom:8px">
+            ${data.endReason === 'last_standing' ? 'LAST GUILD STANDING' : 'TIME CAP REACHED'} — ${Math.floor((data.elapsedMs||0)/60000)}:${String(Math.round(((data.elapsedMs||0)%60000)/1000)).padStart(2,'0')} elapsed
           </div>
           ${winner ? `
           <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#D4A64B;margin-bottom:4px">
@@ -3888,24 +3934,101 @@
   window._showRoundEnd    = _showRoundEnd;
   window._dismissRoundEnd = _dismissRoundEnd;
 
+  // ══════════════════════════════════════════════════
+  // REJOIN PROMPT — shown after player is KO'd
+  // ══════════════════════════════════════════════════
+  function _showRejoinPrompt(roundData) {
+    _dismissRejoinPrompt();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'rejoin-prompt-overlay';
+    overlay.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+      z-index:9000;animation:slideUp 0.3s ease;`;
+
+    overlay.innerHTML = `
+      <div style="background:linear-gradient(180deg,#1a1030,#0d0a18);border:1px solid rgba(232,90,106,0.4);
+        border-radius:6px;padding:16px 20px;text-align:center;min-width:280px;
+        box-shadow:0 0 30px rgba(232,90,106,0.15);">
+        <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:#e85a6a;margin-bottom:8px">
+          YOU WERE KO'D
+        </div>
+        <div style="font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,.6);margin-bottom:12px">
+          Click rejoin to enter the next round.<br>
+          <span style="color:rgba(255,255,255,.35);font-size:11px">This is your chance to swap cards.</span>
+        </div>
+        <button id="rejoin-btn" onclick="window._doRejoin()" style="
+          font-family:'Press Start 2P',monospace;font-size:8px;
+          padding:10px 20px;border-radius:3px;cursor:pointer;border:none;
+          background:linear-gradient(135deg,#e85a6a,#c94455);color:#fff;
+          box-shadow:0 2px 12px rgba(232,90,106,0.4);width:100%;margin-bottom:8px;">
+          ⚔ REJOIN ROUND ${(roundData?.roundNumber||0)+1}
+        </button>
+        <button onclick="window._dismissRejoinPrompt()" style="
+          font-family:'Press Start 2P',monospace;font-size:6px;
+          padding:6px 14px;border-radius:3px;cursor:pointer;
+          background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+          color:rgba(255,255,255,.4);width:100%;">
+          STAY WITHDRAWN
+        </button>
+      </div>`;
+
+    document.body.appendChild(overlay);
+  }
+
+  function _dismissRejoinPrompt() {
+    const el = document.getElementById('rejoin-prompt-overlay');
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  }
+
+  window._dismissRejoinPrompt = _dismissRejoinPrompt;
+
+  window._doRejoin = async function() {
+    if (!S.currentZoneId || !S.playerId) return;
+    const btn = document.getElementById('rejoin-btn');
+    if (btn) { btn.textContent = 'REJOINING...'; btn.disabled = true; }
+    try {
+      const res = await fetch(`/api/zones/${S.currentZoneId}/rejoin`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ player_id: S.playerId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        _dismissRejoinPrompt();
+        S._withdrawnAfterKO = false;
+        addFeedEvent('✅ Rejoined — next round starting soon', 'flip');
+      } else {
+        if (btn) { btn.textContent = '⚔ REJOIN ROUND'; btn.disabled = false; }
+        addFeedEvent(`Rejoin failed: ${data.error || 'Try again'}`, 'snapshot');
+      }
+    } catch(e) {
+      if (btn) { btn.textContent = '⚔ REJOIN ROUND'; btn.disabled = false; }
+    }
+  };
+
   // Round countdown ticker
   (function _roundTicker() {
     setInterval(() => {
       const el  = document.getElementById('zt-round-timer');
       const lbl = document.getElementById('zt-round-label');
       if (!el) return;
-      if (!S._roundEndsAt) return;
-      const secLeft = Math.max(0, Math.round((S._roundEndsAt - Date.now()) / 1000));
-      const m = Math.floor(secLeft/60), s = secLeft % 60;
-      el.textContent = `${m}:${String(s).padStart(2,'0')}`;
       if (S._roundState === 'INTERMISSION') {
+        // Intermission: show countdown to next round
+        const secLeft = Math.max(0, Math.round((S._roundEndsAt - Date.now()) / 1000));
+        const m = Math.floor(secLeft/60), s = secLeft % 60;
+        el.textContent = `${m}:${String(s).padStart(2,'0')}`;
         el.style.color = '#ffaa44';
         if (lbl) lbl.textContent = 'NEXT ROUND';
         el.classList.add('urgent');
       } else {
+        // Fighting: show elapsed time — round has no fixed end
+        const elapsed = Math.round((Date.now() - (S._roundStartedAt || Date.now())) / 1000);
+        const m = Math.floor(elapsed/60), s = elapsed % 60;
+        el.textContent = `${m}:${String(s).padStart(2,'0')}`;
+        el.style.color = elapsed > 240 ? '#ffaa44' : '#6ac8d8'; // warm at 4+ min (near cap)
+        el.classList.remove('urgent');
         if (lbl) lbl.textContent = `ROUND ${S._roundNumber || 1}`;
-        el.style.color = secLeft < 30 ? '#ff4466' : secLeft < 60 ? '#ffaa44' : '#6ac8d8';
-        el.classList.toggle('urgent', secLeft < 30);
       }
     }, 500);
   })();
