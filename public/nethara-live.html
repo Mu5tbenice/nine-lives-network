@@ -419,8 +419,8 @@
     /* ── Card slots — horizontal: art left 35%, info right 65% ── */
     .arena-card-slot {
       flex: 1; min-width: 0; border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 8px; position: relative; cursor: pointer; overflow: hidden;
-      display: flex; flex-direction: row; height: 130px;
+      border-radius: 8px; position: relative; cursor: pointer; overflow: visible;
+      display: flex; flex-direction: row; height: 136px;
       transition: border-color 0.2s;
     }
     .arena-card-slot:hover { border-color: rgba(212,166,75,0.35); }
@@ -445,7 +445,7 @@
     /* Info panel */
     .slot-info {
       flex: 1; padding: 6px 8px; display: flex; flex-direction: column;
-      justify-content: space-between; min-width: 0; overflow: hidden;
+      justify-content: space-between; min-width: 0; overflow: visible;
     }
     .slot-type {
       font-family: 'Press Start 2P', monospace; font-size: 6px;
@@ -693,59 +693,25 @@
     .deploy-selected-slot .slot-info { position: relative; z-index: 1; text-align: center; padding: 4px; }
     .deploy-selected-slot .slot-name { font-family: 'Cinzel', serif; font-size: 9px; color: var(--bright); font-weight: 700; }
     .deploy-selected-slot .slot-eff { font-family: 'Press Start 2P', monospace; font-size: 5px; margin-top: 2px; }
-    .deploy-selected-slot .slot-x { position: absolute; top: 3px; right: 5px; font-size: 10px; color: var(--faint); cursor: pointer; z-index: 2; line-height: 1; }
+    .deploy-selected-slot .slot-x {
+      position: absolute; top: 3px; right: 5px; font-size: 16px;
+      color: rgba(255,255,255,0.15); cursor: pointer; z-index: 2; line-height: 1;
+      width: 22px; height: 22px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s; background: transparent;
+    }
+    .deploy-selected-slot.filled:hover .slot-x {
+      color: #ff4466; background: rgba(255,68,102,0.15);
+    }
+    .deploy-selected-slot.filled:hover::after {
+      content: 'CLICK TO REMOVE';
+      position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
+      font-family: 'Press Start 2P', monospace; font-size: 5px; color: #ff4466;
+      white-space: nowrap; pointer-events: none;
+    }
 
     /* ── CAROUSEL ── */
-    .deploy-carousel-wrap {
-      flex: 1; position: relative; display: flex; flex-direction: column;
-    }
-    .deploy-cards-label {
-      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint);
-      letter-spacing: 1px; margin-bottom: 8px;
-    }
-    .deploy-carousel-stage {
-      flex: 1; position: relative; overflow: hidden; min-height: 280px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .deploy-carousel-track {
-      display: flex; transition: transform 0.35s cubic-bezier(0.4,0,0.2,1);
-      will-change: transform; gap: 0;
-    }
-    .deploy-carousel-item {
-      flex-shrink: 0; width: 100%; display: flex; justify-content: center;
-      padding: 0 8px;
-    }
-    .deploy-card-slot {
-      cursor: pointer; transition: all 0.2s;
-      position: relative; border-radius: 14px;
-      border: 2px solid transparent;
-      padding: 2px;
-    }
-    .deploy-card-slot.selected { border-color: var(--gold); box-shadow: 0 0 24px rgba(212,166,75,0.4); }
 
-    /* ── CAROUSEL CONTROLS ── */
-    .deploy-carousel-controls {
-      display: flex; align-items: center; justify-content: center;
-      gap: 16px; margin: 10px 0 14px;
-    }
-    .deploy-carousel-btn {
-      width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.12);
-      background: rgba(255,255,255,0.04); color: var(--bright); font-size: 16px;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      transition: all 0.15s;
-    }
-    .deploy-carousel-btn:hover { border-color: var(--gold); color: var(--gold); background: rgba(212,166,75,0.08); }
-    .deploy-carousel-dots { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; max-width: 240px; }
-    .deploy-carousel-dot {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: rgba(255,255,255,0.15); cursor: pointer; transition: all 0.2s;
-      flex-shrink: 0;
-    }
-    .deploy-carousel-dot.active { background: var(--gold); transform: scale(1.3); }
-    .deploy-carousel-counter {
-      font-family: 'Press Start 2P', monospace; font-size: 7px; color: var(--faint);
-      min-width: 50px; text-align: center;
-    }
     .deploy-card-slot.deployed-elsewhere { opacity: 0.25; pointer-events: none; }
     .selected-badge {
       display: none; position: absolute; top: -1px; left: -1px; right: -1px; z-index: 10;
@@ -926,6 +892,8 @@
         flex-direction: column;
         position: fixed; top: var(--nav-height); left: 0; right: 0;
         height: calc(100vh - var(--nav-height));
+        overflow: hidden;
+        box-sizing: border-box;
       }
       #arena-canvas {
         position: relative !important;
@@ -1188,12 +1156,14 @@
       <div id="fighters-list" style="flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(212,166,75,0.2) transparent;"></div>
     </div>
 
-    <!-- DAMAGE CHART -->
-    <div id="sidebar-chart-section" style="padding:4px 16px 12px;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
-      <div class="sidebar-section-label" style="margin-bottom:10px;margin-top:12px;">DAMAGE CHART</div>
-      <canvas id="sidebar-dmg-chart" width="238" height="60" style="width:100%;height:60px;border-radius:8px;background:rgba(255,255,255,0.03);display:block;"></canvas>
-      <div id="sidebar-chart-legend" style="display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:6px;"></div>
+    <!-- INFO SLIDESHOW (replaces damage chart) -->
+    <div id="sidebar-slideshow" style="padding:6px 12px 10px;border-top:1px solid rgba(255,255,255,0.06);flex-shrink:0;min-height:72px;position:relative;">
+      <div id="ss-slides" style="position:relative;min-height:52px;overflow:hidden;"></div>
+      <div style="display:flex;justify-content:center;gap:4px;margin-top:5px;" id="ss-dots"></div>
     </div>
+    <!-- Keep canvas hidden for JS compat -->
+    <canvas id="sidebar-dmg-chart" style="display:none;"></canvas>
+    <div id="sidebar-chart-legend" style="display:none;"></div>
 
     <!-- ZONE CHAT — always visible -->
     <div id="sidebar-chat" style="flex:1;display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,0.06);min-height:0;">
@@ -1224,7 +1194,11 @@
       background:linear-gradient(180deg,transparent,rgba(9,6,15,0.85));
       pointer-events:auto;z-index:60;overflow:visible;">
       <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(212,166,75,0.5);letter-spacing:1px;flex-shrink:0;margin-right:6px;">STATUS</span>
+      <!-- Debuffs: effects ON the player -->
       <div id="hud-debuffs" style="display:flex;gap:4px;flex-wrap:nowrap;align-items:center;overflow:visible;position:relative;z-index:100;"></div>
+      <!-- Buffs: effects applied by the player or boosting the player -->
+      <div style="width:1px;height:18px;background:rgba(255,255,255,0.1);margin:0 4px;flex-shrink:0;"></div>
+      <div id="hud-buffs" style="display:flex;gap:4px;flex-wrap:nowrap;align-items:center;overflow:visible;position:relative;z-index:100;"></div>
     </div>
     <div id="hud-main" style="display:flex;flex-direction:row;height:100%;gap:0;">
 
@@ -1344,8 +1318,7 @@
         <div style="display:flex;height:32px;flex-shrink:0;border-bottom:1px solid rgba(212,166,75,0.12);background:rgba(0,0,0,0.25);">
           <button class="hud-tab active" data-pane="build" onclick="switchTrayTab('build')" style="font-family:'Press Start 2P',monospace;font-size:6.5px;letter-spacing:0.5px;padding:0 13px;border:none;background:none;cursor:pointer;color:#D4A64B;border-right:1px solid rgba(255,255,255,0.05);position:relative;">⚔ SPELLS</button>
           <button class="hud-tab" data-pane="log" onclick="switchTrayTab('log')" style="font-family:'Press Start 2P',monospace;font-size:6.5px;letter-spacing:0.5px;padding:0 13px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.05);">📜 LOG</button>
-          <button class="hud-tab" data-pane="stats" onclick="switchTrayTab('stats')" style="font-family:'Press Start 2P',monospace;font-size:6.5px;letter-spacing:0.5px;padding:0 13px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.05);">📊 COMBAT</button>
-          <button class="hud-tab" data-pane="buildhist" onclick="switchTrayTab('buildhist')" style="font-family:'Press Start 2P',monospace;font-size:6.5px;letter-spacing:0.5px;padding:0 13px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.05);">🏆 BUILDS</button>
+          <button class="hud-tab" data-pane="buildhist" onclick="switchTrayTab('buildhist')" style="font-family:'Press Start 2P',monospace;font-size:6.5px;letter-spacing:0.5px;padding:0 13px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.05);">📈 STATS</button>
           <button class="hud-tab" data-pane="zone" onclick="switchTrayTab('zone')" style="font-family:'Press Start 2P',monospace;font-size:6.5px;letter-spacing:0.5px;padding:0 13px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);border-right:1px solid rgba(255,255,255,0.05);">🗺 ZONE</button>
           <button class="hud-tab" data-pane="points" onclick="switchTrayTab('points')" style="font-family:'Press Start 2P',monospace;font-size:6.5px;letter-spacing:0.5px;padding:0 13px;border:none;background:none;cursor:pointer;color:rgba(255,255,255,0.3);">🎯 POINTS</button>
         </div>
@@ -1380,13 +1353,12 @@
           </div>
           <div id="contribution-list" style="flex:1;overflow-y:auto;padding:2px 6px;"></div>
         </div>
-        <!-- BUILDS pane — loadout performance over time -->
+        <!-- STATS pane — round averages, card thumbnails -->
         <div id="tray-pane-buildhist" class="tray-pane" style="display:none;flex:1;overflow-y:auto;padding:5px 10px;">
-          <div id="build-history-content" style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);">
-            <div style="font-family:'Cinzel',serif;font-size:16px;font-weight:700;color:rgba(212,166,75,0.7);margin-bottom:8px;letter-spacing:2px;">BUILD HISTORY</div>
-            <div id="build-history-list"></div>
-            <div style="margin-top:6px;font-family:'Crimson Text',serif;font-size:14px;color:rgba(204,197,219,0.4);line-height:1.6;">Track your loadout performance across sessions. Each unique 3-card combo is recorded with total damage, heals, KOs, and survival time.</div>
-          </div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:8px;">AVG PER ROUND</div>
+          <div id="stats-round-avgs" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;"></div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:6px;">CURRENT LOADOUT</div>
+          <div id="stats-loadout-cards" style="display:flex;flex-direction:column;gap:4px;"></div>
         </div>
 
         <!-- ZONE pane — live zone status, control, next snapshot countdown -->
@@ -1619,23 +1591,34 @@
     <div class="deploy-house-tabs" id="deploy-house-tabs"></div>
 
     <div class="deploy-cards-label">SELECT 3 CARDS &mdash; <span id="deploy-selected-count">0</span>/3 CHOSEN</div>
+    <!-- Sort controls -->
+    <div id="deploy-sort-bar" style="display:flex;gap:4px;align-items:center;padding:0 16px 6px;flex-shrink:0;">
+      <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.3);margin-right:4px;">SORT</span>
+      <button class="deploy-sort-btn active" data-sort="rarity"  onclick="window._sortDeployCards('rarity')"  style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 7px;border-radius:2px;cursor:pointer;background:rgba(212,166,75,0.12);border:1px solid rgba(212,166,75,0.3);color:var(--gold);">RARITY</button>
+      <button class="deploy-sort-btn"        data-sort="atk"    onclick="window._sortDeployCards('atk')"    style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 7px;border-radius:2px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:var(--faint);">ATK</button>
+      <button class="deploy-sort-btn"        data-sort="hp"     onclick="window._sortDeployCards('hp')"     style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 7px;border-radius:2px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:var(--faint);">HP</button>
+      <button class="deploy-sort-btn"        data-sort="spd"    onclick="window._sortDeployCards('spd')"    style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 7px;border-radius:2px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:var(--faint);">SPD</button>
+      <button class="deploy-sort-btn"        data-sort="def"    onclick="window._sortDeployCards('def')"    style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 7px;border-radius:2px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:var(--faint);">DEF</button>
+      <button class="deploy-sort-btn"        data-sort="luck"   onclick="window._sortDeployCards('luck')"   style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 7px;border-radius:2px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);color:var(--faint);">LCK</button>
+    </div>
 
-    <div class="deploy-carousel-wrap">
-      <div class="deploy-carousel-stage" id="deploy-carousel-stage">
-        <div class="deploy-carousel-track" id="deploy-carousel-track">
-          <div class="deploy-carousel-item">
-            <div style="padding:40px;text-align:center;color:var(--faint);font-family:'Cinzel',serif;font-size:14px">Loading cards...</div>
-          </div>
-        </div>
-      </div>
-      <div class="deploy-carousel-controls">
-        <button class="deploy-carousel-btn" id="carousel-prev">&#8249;</button>
-        <div class="deploy-carousel-dots" id="carousel-dots"></div>
-        <span class="deploy-carousel-counter" id="carousel-counter">0 / 0</span>
-        <button class="deploy-carousel-btn" id="carousel-next">&#8250;</button>
+    <!-- Card grid — replaces carousel. Shows ~3 cards per row, scrollable. -->
+    <div id="deploy-card-grid-wrap" style="flex:1;overflow-y:auto;padding:4px 12px 8px;scrollbar-width:thin;scrollbar-color:rgba(212,166,75,0.2) transparent;min-height:0;">
+      <div id="deploy-card-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px;align-content:start;">
+        <div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--faint);font-family:'Cinzel',serif;font-size:14px">Loading cards...</div>
       </div>
     </div>
 
+    <!-- Auto-rejoin toggle row -->
+    <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;">
+      <div id="deploy-auto-rejoin-toggle"
+        onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy();window._syncAutoRejoinUI()"
+        style="width:32px;height:16px;border-radius:8px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);position:relative;cursor:pointer;transition:all 0.2s;flex-shrink:0;">
+        <div style="position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:rgba(255,255,255,0.25);transition:all 0.2s;"></div>
+      </div>
+      <span id="deploy-auto-rejoin-label" style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,0.4);">AUTO-REJOIN: OFF</span>
+      <span style="font-family:'Crimson Text',serif;font-size:11px;color:rgba(255,255,255,0.25);">— stay deployed for 1 hr</span>
+    </div>
     <button class="btn-deploy" id="btn-confirm-deploy" disabled>SELECT 3 CARDS TO DEPLOY</button>
     <button class="btn-cancel" id="btn-cancel-deploy">CANCEL</button>
   </div>
@@ -1808,10 +1791,19 @@
   }
 
   // ── ZONE LIST ──
-  async function loadZones() {
+  async function loadZones(attempt = 0) {
     try {
       const zonesRes = await fetch('/api/zones');
-      if (!zonesRes.ok) throw new Error(`zones ${zonesRes.status}`);
+      if (!zonesRes.ok) {
+        // Retry up to 3 times with exponential backoff (server may be restarting)
+        if (attempt < 3) {
+          const delay = 1000 * Math.pow(2, attempt); // 1s, 2s, 4s
+          console.warn(`loadZones attempt ${attempt+1} failed (${zonesRes.status}), retrying in ${delay}ms`);
+          await new Promise(r => setTimeout(r, delay));
+          return loadZones(attempt + 1);
+        }
+        throw new Error(`zones ${zonesRes.status}`);
+      }
       const zones = await zonesRes.json();
       // Counts endpoint may not exist — fetch separately and ignore failure
       let counts = {};
@@ -1824,7 +1816,15 @@
       } catch(e) {}
       S.zones = zones.map(z => ({ ...z, deployment_count: counts[z.id] || z.deployment_count || 0 }));
       renderZoneList();
-    } catch(e) { console.error('loadZones:', e); }
+    } catch(e) {
+      console.error('loadZones:', e);
+      const zc = document.getElementById('zone-container');
+      if (zc) zc.innerHTML = `<div style="padding:40px;text-align:center;font-family:'Crimson Text',serif;color:rgba(255,255,255,0.4);font-size:15px;">
+          Could not reach server.
+          <div style="margin-top:12px;">
+            <button onclick="loadZones(0)" style="font-family:'Press Start 2P',monospace;font-size:8px;padding:8px 16px;background:rgba(212,166,75,0.1);border:1px solid rgba(212,166,75,0.3);color:#D4A64B;border-radius:4px;cursor:pointer;">↻ RETRY</button>
+          </div></div>`;
+    }
   }
 
   function renderZoneList() {
@@ -1920,6 +1920,8 @@
     S.guildScores = {};
     S.feedEvents = [];
     S.snapshotCount = 0;
+    // Start info slideshow
+    if (typeof _startSlideshow === 'function') setTimeout(_startSlideshow, 2000);
     S._roundNumber       = 1;
     S._roundState        = 'FIGHTING';
     S._roundStartedAt    = Date.now();
@@ -1944,10 +1946,32 @@
     }
     S.currentZone = zone;
     S.currentZoneId = zone.id;
+    // #16 Update zone tab bonus display immediately on zone entry
+    if (window.updateZoneBonusPill) updateZoneBonusPill(zone);
+    const ztBonus = document.getElementById('zt-bonus');
+    if (ztBonus) {
+      const dh = zone.dominant_house;
+      if (dh && CLIENT_HOUSE_BONUSES?.[dh]) {
+        const hc = HOUSES[dh]?.color || '#D4A64B';
+        const icon = HOUSES[dh]?.icon || '';
+        ztBonus.innerHTML = `<span style="color:${hc}">${icon} ${HOUSES[dh]?.name||dh}: ${CLIENT_HOUSE_BONUSES[dh]}</span>`;
+      } else {
+        ztBonus.textContent = 'No active bonus';
+      }
+    }
+    const ztCtrl = document.getElementById('zt-controlling');
+    if (ztCtrl) ztCtrl.textContent = zone.controlling_guild || '—';
 
     document.getElementById('zone-list-view').style.display = 'none';
     const isMobile = window.innerWidth <= 640;
     document.getElementById('arena-view').style.display = isMobile ? 'flex' : 'block';
+    // #17 Safety timeout — if loading takes > 8s, dismiss and show arena anyway
+    if (window._arenaLoadTimeout) clearTimeout(window._arenaLoadTimeout);
+    window._arenaLoadTimeout = setTimeout(() => {
+      _dismissArenaLoading();
+      window._arenaLoadTimeout = null;
+      console.warn('Arena loading timeout — forcing dismiss');
+    }, 8000);
     const sidebar = document.getElementById('arena-sidebar');
     if (sidebar) sidebar.style.display = isMobile ? 'none' : 'flex';
 
@@ -2011,15 +2035,61 @@
     } else { pill.innerHTML = ''; }
   }
 
+  // ── CLOSE ARENA — leave zone, clean up socket + PIXI ──────────────
   function closeArena() {
-    if (S.socket) { try { S.socket.removeAllListeners(); S.socket.disconnect(); } catch(e) {} S.socket = null; }
-    if (S.countdownInterval) { clearInterval(S.countdownInterval); S.countdownInterval = null; }
-    // Reset loading overlay for next entry
-    const lo = document.getElementById('arena-loading');
-    if (lo) { lo.style.display = 'none'; lo.style.opacity = '1'; }
-    document.getElementById('arena-view').style.display = 'none';
-    document.getElementById('zone-list-view').style.display = 'block';
-    loadZones(); // refresh counts
+    // Dismiss any overlays
+    if (typeof dismissKOOverlay === 'function') dismissKOOverlay();
+    const endOverlay = document.getElementById('round-end-overlay');
+    if (endOverlay) endOverlay.remove();
+
+    // Stop cast bars / timers
+    S.isDeployed = false;
+    if (S._atkBarFrame) { cancelAnimationFrame(S._atkBarFrame); S._atkBarFrame = null; }
+
+    // Disconnect socket
+    if (S.socket) {
+      try { S.socket.emit('leave_zone', { zoneId: S.currentZoneId }); } catch(e) {}
+      try { S.socket.removeAllListeners(); S.socket.disconnect(); } catch(e) {}
+      S.socket = null;
+    }
+
+    // Hide arena, show zone list
+    const av = document.getElementById('arena-view');
+    if (av) av.style.display = 'none';
+    const sb = document.getElementById('arena-sidebar');
+    if (sb) sb.style.display = 'none';
+    const tray = document.getElementById('arena-bottom-tray');
+    if (tray) tray.style.display = 'none';
+    const cta = document.getElementById('deploy-cta');
+    if (cta) cta.style.display = 'none';
+    const zl = document.getElementById('zone-list-view');
+    if (zl) zl.style.display = 'block';
+
+    // Close deploy modal if open
+    const modal = document.getElementById('deploy-modal');
+    if (modal) { modal.classList.remove('open'); modal.style.display = 'none'; }
+
+    // Clear chat logs
+    ['sidebar-chat-log','arena-chat-log','mobile-chat-log','battle-log-full'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '';
+    });
+
+    // Reset state
+    S.selectedCards = [];
+    S.deployedZoneIds.clear();
+    S.currentZoneId = null;
+    S.currentZone = null;
+    S.equippedCards = [];
+    S.nines.clear();
+    S.combatMetrics.clear();
+    S.chartData = {};
+
+    // PIXI cleanup — destroy app via the PIXI IIFE's exported close function
+    if (typeof window._pixiClose === 'function') window._pixiClose();
+
+    // Reload zone list
+    if (typeof loadZones === 'function') loadZones();
   }
   window.closeArena = closeArena;
 
@@ -2208,6 +2278,10 @@
       if (card.base_luck > 0) stats.push(`<span style="color:#D4A64B">★${card.base_luck}</span>`);
 
       el.className = 'arena-card-slot';
+      // Rarity border tint
+      const rarityBorderColors = {legendary:'rgba(212,166,75,0.35)',epic:'rgba(176,136,232,0.35)',rare:'rgba(106,200,216,0.35)',uncommon:'rgba(106,205,138,0.35)'};
+      const rarityKey = (card.rarity||'').toLowerCase();
+      if (rarityBorderColors[rarityKey]) el.style.borderColor = rarityBorderColors[rarityKey];
       el.style.border = `1px solid ${hc}40`;
 
       // Art panel — use img element so cached images show instantly
@@ -2616,6 +2690,7 @@
           effect_1:   c.effect_1  || s.effect_1  || '',
           image_url:  c.image_url || s.image_url || '',
           sharpness:  c.sharpness ?? 100,
+          rarity:     c.rarity     || s.rarity     || 'common',
         };
       });
       S.playerCards = cards;
@@ -2623,157 +2698,172 @@
     } catch(e) { console.error('openDeployModal cards:', e); }
   }
 
+  // ── DEPLOY CARD GRID (replaces carousel) ─────────────────────────
+  let _gridCards = [];
+  let _gridSort  = 'rarity';
+
   function renderCardGrid(cards) {
-    if (!cards.length) return;
+    if (!cards) return;
+    _gridCards = cards;
 
     // Build house filter tabs
     const tabsEl = document.getElementById('deploy-house-tabs');
     if (tabsEl) {
-      const houses = ['all', ...new Set(cards.map(c => c.house || SCHOOL_TO_HOUSE[c.school_id] || 'universal').filter(h => h !== 'universal'))];
+      const houses = ['all', ...new Set(cards.map(c => c.house || SCHOOL_TO_HOUSE[c.school_id] || 'universal'))];
       tabsEl.innerHTML = '';
       houses.forEach(h => {
         const btn = document.createElement('button');
         btn.className = 'deploy-house-tab' + (h === 'all' ? ' active' : '');
         btn.dataset.house = h;
         if (h === 'all') {
-          btn.innerHTML = '<span style="font-family:\'Press Start 2P\',monospace;font-size:7px;color:var(--gold);">ALL</span>';
+          btn.innerHTML = `<span style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--gold);">ALL</span>`;
         } else {
           const hData = HOUSES[h];
           if (hData?.crest) {
-            btn.innerHTML = `<img src="${hData.crest}" alt="${h}" onerror="this.style.display='none';this.nextSibling.style.display='flex'"><span style="display:none;font-size:16px">${hData.icon||'?'}</span>`;
-            btn.title = hData.name || h;
-            btn.style.borderColor = hData.color + '44';
+            btn.innerHTML = `<img src="${hData.crest}" alt="${h}" onerror="this.style.display='none'"><span style="font-size:16px">${hData.icon||'?'}</span>`;
           } else {
             btn.innerHTML = `<span>${hData?.icon || '?'}</span>`;
           }
+          btn.title = (HOUSES[h]?.name || h);
         }
         btn.addEventListener('click', () => {
           tabsEl.querySelectorAll('.deploy-house-tab').forEach(t => t.classList.remove('active'));
           btn.classList.add('active');
-          if (h !== 'all' && HOUSES[h]) btn.style.borderColor = HOUSES[h].color;
-          buildCarousel(h === 'all' ? cards : cards.filter(c => (c.house || SCHOOL_TO_HOUSE[c.school_id] || 'universal') === h));
+          _buildGrid(h === 'all' ? _gridCards : _gridCards.filter(c => (c.house || SCHOOL_TO_HOUSE[c.school_id] || 'universal') === h));
         });
         tabsEl.appendChild(btn);
       });
     }
-
-    let _carouselCards = cards;
-    let _carouselIdx = 0;
-
-    function buildCarousel(filtered) {
-      _carouselCards = filtered;
-      _carouselIdx = Math.min(_carouselIdx, Math.max(0, filtered.length - 1));
-      const track = document.getElementById('deploy-carousel-track');
-      const dots = document.getElementById('carousel-dots');
-      const counter = document.getElementById('carousel-counter');
-      if (!track) return;
-
-      track.innerHTML = '';
-      if (!filtered.length) {
-        track.innerHTML = '<div class="deploy-carousel-item"><div style="padding:40px;text-align:center;color:var(--faint);font-family:\'Cinzel\',serif;font-size:13px">No cards in this house yet</div></div>';
-        if (dots) dots.innerHTML = '';
-        if (counter) counter.textContent = '0 / 0';
-        return;
-      }
-
-      filtered.forEach((card, i) => {
-        const origIdx = cards.indexOf(card);
-        const hk = card.house || SCHOOL_TO_HOUSE[card.school_id] || 'universal';
-        const hc = HOUSES[hk]?.color || '#888';
-        const isSelected = S.selectedCards.some(s => s.idx === origIdx);
-
-        const item = document.createElement('div');
-        item.className = 'deploy-carousel-item';
-
-        const wrap = document.createElement('div');
-        wrap.className = 'deploy-card-slot' + (isSelected ? ' selected' : '');
-        wrap.id = 'deploy-card-' + origIdx;
-        if (isSelected) wrap.style.cssText = 'border-color:' + hc + ';box-shadow:0 0 20px ' + hc + '55';
-
-        if (typeof buildCardV4 === 'function') {
-          wrap.innerHTML = buildCardV4(card, { compact: false });
-          try { if (typeof initCards === 'function') initCards(); } catch(e){}
-        } else {
-          const eff = card.effect_1 || '';
-          const ec = eff ? (EFFECT_COLORS[eff.split(' ')[0].toUpperCase()]||'#D4A64B') : '#D4A64B';
-          const artSrc = card.image_url ? (card.image_url.startsWith('/')||card.image_url.startsWith('http') ? card.image_url : '/assets/images/spells/'+card.image_url) : '';
-          wrap.innerHTML = '<div style="width:220px;min-height:300px;background:linear-gradient(180deg,' + hc + '18,rgba(8,6,18,0.95));border-radius:12px;padding:14px;position:relative;overflow:hidden;">'
-            + (artSrc ? '<img src="' + artSrc + '" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.22;border-radius:12px">' : '')
-            + '<div style="position:relative;z-index:1">'
-            + '<div style="font-family:\'Press Start 2P\',monospace;font-size:6px;color:' + hc + ';margin-bottom:5px">' + (card.spell_type||'ATTACK').toUpperCase() + '</div>'
-            + '<div style="font-family:\'Cinzel\',serif;font-size:17px;font-weight:700;color:#fff;margin-bottom:8px;line-height:1.2">' + card.name + '</div>'
-            + (eff ? '<div style="font-family:\'Press Start 2P\',monospace;font-size:9px;color:' + ec + ';margin-bottom:10px">' + eff + '</div>' : '')
-            + '<div style="display:flex;gap:8px;flex-wrap:wrap;font-family:\'Press Start 2P\',monospace;font-size:8px">'
-            + (card.base_atk>0?'<span style="color:#e85a6a">ATK ' + card.base_atk + '</span>':'')
-            + (card.base_hp>0?'<span style="color:#6acd8a">HP ' + card.base_hp + '</span>':'')
-            + (card.base_spd>0?'<span style="color:#6ac8d8">SPD ' + card.base_spd + '</span>':'')
-            + (card.base_def>0?'<span style="color:#b088e8">DEF ' + card.base_def + '</span>':'')
-            + (card.base_luck>0?'<span style="color:#D4A64B">LCK ' + card.base_luck + '</span>':'')
-            + '</div></div></div>';
-        }
-
-        // Selection badge
-        const badge = document.createElement('div');
-        badge.id = 'check-' + origIdx;
-        badge.style.cssText = 'position:absolute;top:8px;right:8px;width:24px;height:24px;border-radius:50%;background:var(--gold);color:#000;display:' + (isSelected?'flex':'none') + ';align-items:center;justify-content:center;font-size:13px;font-weight:700;z-index:10;';
-        badge.textContent = '✓';
-        wrap.style.position = 'relative';
-        wrap.appendChild(badge);
-        wrap.addEventListener('click', () => { toggleCardSelect(origIdx); buildCarousel(_carouselCards); });
-
-        item.appendChild(wrap);
-        track.appendChild(item);
-      });
-
-      // Update dots
-      if (dots) {
-        dots.innerHTML = '';
-        const MAX_DOTS = 20;
-        if (filtered.length <= MAX_DOTS) {
-          filtered.forEach((_, i) => {
-            const d = document.createElement('div');
-            d.className = 'deploy-carousel-dot' + (i === _carouselIdx ? ' active' : '');
-            d.addEventListener('click', () => goTo(i));
-            dots.appendChild(d);
-          });
-        }
-      }
-      if (counter) counter.textContent = (_carouselIdx + 1) + ' / ' + filtered.length;
-      goTo(_carouselIdx, false);
-    }
-
-    function goTo(idx, animate) {
-      _carouselIdx = Math.max(0, Math.min(idx, _carouselCards.length - 1));
-      const track = document.getElementById('deploy-carousel-track');
-      if (track) track.style.transform = 'translateX(-' + (_carouselIdx * 100) + '%)';
-      const dots = document.getElementById('carousel-dots');
-      if (dots) dots.querySelectorAll('.deploy-carousel-dot').forEach((d, i) => d.classList.toggle('active', i === _carouselIdx));
-      const counter = document.getElementById('carousel-counter');
-      if (counter) counter.textContent = (_carouselIdx + 1) + ' / ' + _carouselCards.length;
-    }
-
-    const prevBtn = document.getElementById('carousel-prev');
-    const nextBtn = document.getElementById('carousel-next');
-    if (prevBtn) prevBtn.onclick = () => goTo(_carouselIdx - 1);
-    if (nextBtn) nextBtn.onclick = () => goTo(_carouselIdx + 1);
-
-    // Touch swipe
-    const stage = document.getElementById('deploy-carousel-stage');
-    if (stage) {
-      let touchX = 0;
-      stage.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, {passive:true});
-      stage.addEventListener('touchend', e => {
-        const dx = e.changedTouches[0].clientX - touchX;
-        if (Math.abs(dx) > 40) dx < 0 ? goTo(_carouselIdx + 1) : goTo(_carouselIdx - 1);
-      }, {passive:true});
-    }
-
-    buildCarousel(cards);
-
-    // Refresh selected-row mini slots
-    _refreshSelectedRow();
+    _buildGrid(cards);
   }
 
+  const RARITY_ORD = {legendary:0, epic:1, rare:2, uncommon:3, common:4};
+  const RARITY_COLORS = {legendary:'#D4A64B', epic:'#b088e8', rare:'#6ac8d8', uncommon:'#6acd8a', common:'rgba(255,255,255,0.35)'};
+
+  function _sortedGrid(list) {
+    const s = _gridSort;
+    const statKey = {atk:'base_atk', hp:'base_hp', spd:'base_spd', def:'base_def', luck:'base_luck'};
+    return [...list].sort((a, b) => {
+      if (s === 'rarity') {
+        const ra = RARITY_ORD[a.rarity?.toLowerCase()] ?? 4;
+        const rb = RARITY_ORD[b.rarity?.toLowerCase()] ?? 4;
+        return ra - rb || (a.name||'').localeCompare(b.name||'');
+      }
+      const key = statKey[s] || 'base_atk';
+      return (b[key]||0) - (a[key]||0);
+    });
+  }
+
+  function _buildGrid(filtered) {
+    const grid = document.getElementById('deploy-card-grid');
+    if (!grid) return;
+    const sorted = _sortedGrid(filtered);
+    grid.innerHTML = '';
+    if (!sorted.length) {
+      grid.innerHTML = `<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--faint);font-family:'Cinzel',serif;font-size:13px">No cards in this house</div>`;
+      return;
+    }
+    sorted.forEach(card => {
+      // Use player_card_id as unique key so duplicate cards select independently
+      const origIdx = _gridCards.findIndex((c, i) =>
+        c === card || (c.player_card_id && c.player_card_id === card.player_card_id && _gridCards.indexOf(c) === i)
+      );
+      const hk = card.house || SCHOOL_TO_HOUSE[card.school_id] || 'universal';
+      const hc = HOUSES[hk]?.color || '#888';
+      const isSelected = S.selectedCards.some(s =>
+        s.idx === origIdx ||
+        (card.player_card_id && s.card?.player_card_id === card.player_card_id && s.idx === origIdx)
+      );
+      const rarity = (card.rarity || 'common').toLowerCase();
+      const rc = RARITY_COLORS[rarity] || RARITY_COLORS.common;
+      const eff = card.effect_1 || '';
+      const ec = eff ? (EFFECT_COLORS[eff.split(' ')[0].toUpperCase()] || '#D4A64B') : '#D4A64B';
+      const sharp = card.sharpness ?? 100;
+      const sharpC = sharp > 60 ? '#44cc88' : sharp > 30 ? '#ffaa44' : '#ff4466';
+      const artSrc = card.image_url ? (card.image_url.startsWith('/') || card.image_url.startsWith('http') ? card.image_url : '/assets/images/spells/' + card.image_url) : '';
+
+      const item = document.createElement('div');
+      item.className = 'deploy-grid-card' + (isSelected ? ' selected' : '');
+      item.id = 'deploy-card-' + origIdx;
+      item.style.cssText = `
+        position:relative;border-radius:8px;overflow:hidden;cursor:pointer;
+        background:linear-gradient(180deg,${hc}18,rgba(8,6,18,0.95));
+        border:1px solid ${isSelected ? hc : 'rgba(255,255,255,0.07)'};
+        box-shadow:${isSelected ? '0 0 14px ' + hc + '55' : 'none'};
+        transition:all 0.15s;min-height:180px;display:flex;flex-direction:column;
+      `;
+
+      // Art background
+      const artEl = artSrc ? `<img src="${artSrc}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.2;pointer-events:none;" loading="lazy">` : '';
+
+      // Rarity badge
+      const rarityBadge = `<div style="position:absolute;top:5px;left:6px;font-family:'Press Start 2P',monospace;font-size:4px;color:${rc};letter-spacing:0.5px;">${rarity.toUpperCase()}</div>`;
+
+      // Selection checkmark
+      const check = isSelected ? `<div style="position:absolute;top:5px;right:6px;width:18px;height:18px;border-radius:50%;background:${hc};color:#000;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;z-index:5;">✓</div>` : '';
+
+      // Stats
+      const stats = [];
+      if (card.base_atk  > 0) stats.push(`<span style="color:#e85a6a">⚔${card.base_atk}</span>`);
+      if (card.base_hp   > 0) stats.push(`<span style="color:#6acd8a">♥${card.base_hp}</span>`);
+      if (card.base_spd  > 0) stats.push(`<span style="color:#6ac8d8">◈${card.base_spd}</span>`);
+      if (card.base_def  > 0) stats.push(`<span style="color:#b088e8">⛊${card.base_def}</span>`);
+      if (card.base_luck > 0) stats.push(`<span style="color:#D4A64B">★${card.base_luck}</span>`);
+
+      item.innerHTML = `
+        ${artEl}
+        ${rarityBadge}
+        ${check}
+        <div style="position:relative;z-index:2;padding:20px 7px 6px;display:flex;flex-direction:column;flex:1;">
+          <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:${hc};margin-bottom:3px;">${(card.spell_type||'attack').toUpperCase()}</div>
+          <div style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:#fff;line-height:1.25;margin-bottom:4px;">${card.name}</div>
+          ${eff ? `<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:${ec};margin-bottom:5px;">${eff}</div>` : ''}
+          <div style="display:flex;flex-wrap:wrap;gap:3px 6px;font-family:'Press Start 2P',monospace;font-size:6px;margin-top:auto;">${stats.join('')}</div>
+          <div style="margin-top:4px;height:2px;background:rgba(0,0,0,0.4);border-radius:1px;overflow:hidden;">
+            <div style="width:${sharp}%;height:100%;background:${sharpC};border-radius:1px;"></div>
+          </div>
+        </div>`;
+
+      item.addEventListener('click', () => {
+        toggleCardSelect(origIdx);
+        // Rebuild current filtered set keeping current house tab
+        const activeHouseBtn = document.querySelector('.deploy-house-tab.active');
+        const activeHouse = activeHouseBtn?.dataset?.house || 'all';
+        _buildGrid(activeHouse === 'all' ? _gridCards : _gridCards.filter(c => (c.house || SCHOOL_TO_HOUSE[c.school_id] || 'universal') === activeHouse));
+      });
+
+      item.addEventListener('mouseenter', () => { if (!item.classList.contains('selected')) item.style.borderColor = hc + '44'; });
+      item.addEventListener('mouseleave', () => { if (!item.classList.contains('selected')) item.style.borderColor = 'rgba(255,255,255,0.07)'; });
+
+      grid.appendChild(item);
+    });
+  }
+
+  // ── CARD SELECTION — toggle a card in/out of the 3-slot loadout ─────────
+  function toggleCardSelect(idx) {
+    const card = _gridCards[idx];
+    if (!card) return;
+    const already = S.selectedCards.findIndex(s => s.idx === idx);
+    if (already >= 0) {
+      // Deselect
+      S.selectedCards.splice(already, 1);
+    } else {
+      if (S.selectedCards.length >= 3) return; // full
+      S.selectedCards.push({ idx, card });
+    }
+    _refreshSelectedRow();
+    // Update confirm button
+    const btn = document.getElementById('btn-confirm-deploy');
+    const cnt = document.getElementById('deploy-selected-count');
+    if (cnt) cnt.textContent = S.selectedCards.length;
+    if (btn) {
+      btn.disabled = S.selectedCards.length !== 3;
+      btn.textContent = S.selectedCards.length === 3 ? '⚔️ DEPLOY' : `SELECT ${3 - S.selectedCards.length} MORE`;
+    }
+  }
+  window.toggleCardSelect = toggleCardSelect;
+
+  // ── REFRESH TOP ROW — show selected cards in the 3 slot row ────────────
   function _refreshSelectedRow() {
     for (let i = 0; i < 3; i++) {
       const slot = document.getElementById('sel-slot-' + i);
@@ -2781,66 +2871,62 @@
       const sel = S.selectedCards[i];
       if (!sel) {
         slot.className = 'deploy-selected-slot';
-        slot.innerHTML = '<span style="font-size:16px;opacity:0.2;">' + (i+1) + '</span>';
+        slot.style.borderColor = '';
+        slot.style.boxShadow = '';
+        slot.innerHTML = `<span style="font-size:16px;opacity:0.2;">${i+1}</span>`;
+        slot.onclick = null;
         continue;
       }
       const card = sel.card;
       const hk = card.house || SCHOOL_TO_HOUSE[card.school_id] || 'universal';
       const hc = HOUSES[hk]?.color || '#D4A64B';
-      const artSrc = card.image_url ? (card.image_url.startsWith('/')||card.image_url.startsWith('http') ? card.image_url : '/assets/images/spells/'+card.image_url) : '';
+      const artSrc = card.image_url ? (card.image_url.startsWith('/') || card.image_url.startsWith('http') ? card.image_url : '/assets/images/spells/' + card.image_url) : '';
       const eff = card.effect_1 || '';
-      const ec = eff ? (EFFECT_COLORS[eff.split(' ')[0].toUpperCase()]||hc) : hc;
+      const ec = eff ? (EFFECT_COLORS[eff.split(' ')[0].toUpperCase()] || hc) : hc;
+      const rarity = (card.rarity || 'common').toLowerCase();
+      const rc = {legendary:'#D4A64B',epic:'#b088e8',rare:'#6ac8d8',uncommon:'#6acd8a'}[rarity] || 'rgba(255,255,255,0.3)';
       slot.className = 'deploy-selected-slot filled';
       slot.style.borderColor = hc + '55';
-      slot.innerHTML = (artSrc ? '<img class="slot-art" src="' + artSrc + '">' : '')
-        + '<div class="slot-info">'
-        + '<div class="slot-name">' + card.name + '</div>'
-        + (eff ? '<div class="slot-eff" style="color:' + ec + '">' + eff + '</div>' : '')
-        + '</div>'
-        + '<span class="slot-x" onclick="event.stopPropagation();toggleCardSelect(' + sel.idx + ')">&times;</span>';
+      slot.style.boxShadow = '0 0 8px ' + hc + '22';
+      slot.style.cursor = 'pointer';
+      slot.title = 'Click to remove';
+      slot.innerHTML =
+        (artSrc ? `<img class="slot-art-img loaded" src="${artSrc}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.25;border-radius:7px;">` : '')
+        + `<div style="position:relative;z-index:1;padding:4px 6px;width:100%;">`
+        + `<div style="font-family:'Press Start 2P',monospace;font-size:4px;color:${rc};margin-bottom:2px;">${rarity.toUpperCase()}</div>`
+        + `<div style="font-family:'Cinzel',serif;font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${card.name}</div>`
+        + (eff ? `<div style="font-family:'Press Start 2P',monospace;font-size:6px;color:${ec};margin-top:2px;">${eff}</div>` : '')
+        + `</div>`
+        + `<span class="slot-x" title="Remove">✕</span>`;
+      // Click slot to remove
+      slot.onclick = (e) => {
+        e.stopPropagation();
+        toggleCardSelect(sel.idx);
+        // Rebuild grid to deselect visual
+        const activeHouseBtn = document.querySelector('.deploy-house-tab.active');
+        const activeHouse = activeHouseBtn?.dataset?.house || 'all';
+        _buildGrid(activeHouse === 'all' ? _gridCards : _gridCards.filter(c => (c.house || SCHOOL_TO_HOUSE[c.school_id] || 'universal') === activeHouse));
+      };
     }
   }
+  window._refreshSelectedRow = _refreshSelectedRow;
 
-  window.toggleCardSelect = function(idx) {
-    const card = S.playerCards[idx];
-    if (!card) return;
-    const existing = S.selectedCards.findIndex(s => s.idx === idx);
-    const el = document.getElementById(`deploy-card-${idx}`);
-    const check = document.getElementById(`check-${idx}`);
-    const hc = HOUSES[card.house||'universal']?.color || '#D4A64B';
-    if (existing >= 0) {
-      S.selectedCards.splice(existing, 1);
-      if (el) { el.classList.remove('selected'); el.style.borderColor = ''; el.style.boxShadow = ''; }
-      if (check) check.style.display = 'none';
-    } else if (S.selectedCards.length < 3) {
-      S.selectedCards.push({ idx, card });
-      if (el) { el.classList.add('selected'); el.style.borderColor = hc; el.style.boxShadow = `0 0 20px ${hc}55`; }
-      if (check) check.style.display = 'flex';
-    }
-    const count = document.getElementById('deploy-selected-count');
-    if (count) count.textContent = S.selectedCards.length;
-    const btn = document.getElementById('btn-confirm-deploy');
-    if (btn) {
-      btn.disabled = S.selectedCards.length !== 3;
-      btn.textContent = S.selectedCards.length === 3
-        ? (S.isDeployed ? '⚔️ SWAP CARDS' : '⚔️ DEPLOY')
-        : `SELECT ${3 - S.selectedCards.length} MORE`;
-    }
-    // Update stats preview with house base + selected card bonuses
-    const hk = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
-    const base = HOUSE_STATS[hk] || HOUSE_STATS.stormrage;
-    let ca=0,ch=0,cs=0,cd=0,cl=0;
-    S.selectedCards.forEach(s => { const c=s.card; ca+=c.base_atk||0; ch+=c.base_hp||0; cs+=c.base_spd||0; cd+=c.base_def||0; cl+=c.base_luck||0; });
-    const upd = (id, val) => { const el=document.getElementById(id); if(el) el.innerHTML=val; };
-    upd('deploy-atk', `${base.atk+ca}<span style="font-size:9px;opacity:0.55;"> +${ca}</span>`);
-    upd('deploy-hp',  `${base.hp+ch}<span style="font-size:9px;opacity:0.55;"> +${ch}</span>`);
-    upd('deploy-spd', `${base.spd+cs}<span style="font-size:9px;opacity:0.55;"> +${cs}</span>`);
-    upd('deploy-def', `${base.def+cd}<span style="font-size:9px;opacity:0.55;"> +${cd}</span>`);
-    upd('deploy-luck',`${base.luck+cl}<span style="font-size:9px;opacity:0.55;"> +${cl}</span>`);
-    if (typeof _refreshSelectedRow === 'function') _refreshSelectedRow();
+    window._sortDeployCards = function(field) {
+    _gridSort = field;
+    // Update button styles
+    document.querySelectorAll('.deploy-sort-btn').forEach(b => {
+      const isActive = b.dataset.sort === field;
+      b.style.background    = isActive ? 'rgba(212,166,75,0.12)' : 'rgba(255,255,255,0.03)';
+      b.style.borderColor   = isActive ? 'rgba(212,166,75,0.3)'  : 'rgba(255,255,255,0.1)';
+      b.style.color         = isActive ? 'var(--gold)'            : 'var(--faint)';
+    });
+    // Rebuild with current house filter
+    const activeHouseBtn = document.querySelector('.deploy-house-tab.active');
+    const activeHouse    = activeHouseBtn?.dataset?.house || 'all';
+    _buildGrid(activeHouse === 'all' ? _gridCards : _gridCards.filter(c => (c.house || SCHOOL_TO_HOUSE[c.school_id] || 'universal') === activeHouse));
   };
 
-  function closeDeployModal() {
+    function closeDeployModal() {
     const modal = document.getElementById('deploy-modal');
     if (modal) { modal.classList.remove('open'); modal.style.display = 'none'; }
   }
@@ -2899,7 +2985,11 @@
         updateYourNinePanel();
         switchTrayTab('build');
         addFeedEvent('⚔️ ' + (data.message || 'Deployed!'), 'join');
-        startAtkBar(7000);
+        // V4: initial ATK bar based on house SPD
+        { const hkInit = SCHOOL_TO_HOUSE[S.playerHouse]||'stormrage';
+          const HSPD2 = {stormrage:30,smoulders:25,stonebark:10,ashenvale:22,nighthollow:30,dawnbringer:15,manastorm:25,plaguemire:20,darktide:20};
+          const spdInit = (HSPD2[hkInit]||25) + (cards||[]).reduce((s,c)=>s+(c?.base_spd||0),0);
+          startAtkBar(Math.max(2500, (7500 - spdInit * 100))); }
         recordBuildStart();
         // Immediately seed _deployCache so portrait + sprite render without needing a refresh
         fetch(`/api/zones/${S.currentZoneId}/deployments`)
@@ -3021,10 +3111,32 @@
     const l = document.getElementById('auto-redeploy-label');
     if (t) t.classList.toggle('on', S._autoRedeploy);
     if (l) l.textContent = S._autoRedeploy ? 'AUTO-REJOIN: ON ✓' : 'AUTO-REJOIN';
-    const mt = document.getElementById('deploy-modal-auto-toggle');
-    const ml = document.getElementById('deploy-modal-auto-label');
-    if (mt) mt.classList.toggle('on', S._autoRedeploy);
+    if (window._syncAutoRejoinUI) window._syncAutoRejoinUI();
+    // deploy modal auto toggle now handled by _syncAutoRejoinUI
     if (ml) ml.textContent = S._autoRedeploy ? 'AUTO-REJOIN: ON ✓' : 'AUTO-REJOIN: OFF';
+  };
+  // Sync all auto-rejoin UI elements (HUD toggle + deploy modal toggle)
+  window._syncAutoRejoinUI = function() {
+    const on = !!S._autoRedeploy;
+    // HUD bottom-left
+    const hudTog = document.getElementById('auto-redeploy-toggle');
+    if (hudTog) hudTog.className = on ? 'on' : '';
+    // Mobile
+    const mobTog = document.getElementById('mob-auto-toggle');
+    if (mobTog) mobTog.style.background = on ? 'rgba(68,204,136,0.15)' : '';
+    const mobLbl = document.getElementById('mob-auto-label');
+    if (mobLbl) mobLbl.textContent = on ? 'AUTO-REJOIN: ON ✓' : 'AUTO-REJOIN: OFF';
+    // Deploy modal
+    const depTog = document.getElementById('deploy-auto-rejoin-toggle');
+    if (depTog) {
+      depTog.style.background = on ? 'rgba(68,204,136,0.15)' : 'rgba(255,255,255,0.08)';
+      depTog.style.borderColor = on ? 'rgba(68,204,136,0.5)' : 'rgba(255,255,255,0.15)';
+      const dot = depTog.querySelector('div');
+      if (dot) { dot.style.left = on ? 'calc(100% - 13px)' : '2px'; dot.style.background = on ? '#44cc88' : 'rgba(255,255,255,0.25)'; }
+    }
+    const depLbl = document.getElementById('deploy-auto-rejoin-label');
+    if (depLbl) depLbl.textContent = on ? 'AUTO-REJOIN: ON ✓' : 'AUTO-REJOIN: OFF';
+    if (depLbl) depLbl.style.color = on ? '#44cc88' : 'rgba(255,255,255,0.4)';
   };
   window.toggleAutoRedeployFromModal = window.toggleAutoRedeploy;
 
@@ -3170,7 +3282,9 @@
       if (_firstPositionsTick) {
         _firstPositionsTick = false;
         _showArenaLoading('READY', 100);
-        setTimeout(_dismissArenaLoading, 400);
+        setTimeout(_dismissArenaLoading, 500);
+        // Clear any loading timeout since we got real data
+        if (window._arenaLoadTimeout) { clearTimeout(window._arenaLoadTimeout); window._arenaLoadTimeout = null; }
       }
       if (!data.nines) return;
       const activeIds = new Set(data.nines.map(d => String(d.id)));
@@ -3194,9 +3308,25 @@
         }
 
         if (sprite) {
+          // Skip position updates for sprites that should be removed
+          if (d.hp <= 0 && d.waitingForRound) return;
           const dx = pos.x - (sprite.targetX || sprite.container.x);
           const dy = pos.y - (sprite.targetY || sprite.container.y);
-          sprite.targetX = pos.x; sprite.targetY = pos.y; // always update — 200ms ticks = smaller jumps
+          // Clamp incoming target to polygon so sprites never lerp out-of-bounds
+          const poly4 = typeof getActiveCanvasPoly === 'function' ? getActiveCanvasPoly() : null;
+          let tPos = { x: pos.x, y: pos.y };
+          if (poly4 && typeof clampToPolygon === 'function' && typeof isInsidePolygon === 'function') {
+            if (!isInsidePolygon(pos.x, pos.y, poly4)) tPos = clampToPolygon(pos.x, pos.y, poly4);
+          }
+          sprite.targetX = tPos.x; sprite.targetY = tPos.y;
+          // Dim withdrawn/waiting sprites
+          if (d.waitingForRound && !sprite._waitingForRound) {
+            sprite.container.alpha = 0.2;
+            sprite._waitingForRound = true;
+          } else if (!d.waitingForRound && sprite._waitingForRound) {
+            sprite.container.alpha = 1;
+            sprite._waitingForRound = false;
+          }
           if (d.houseKey) sprite.house = d.houseKey;
           if (d.guildTag) sprite.guild = d.guildTag;
           updateNineHP(id, d.hp, d.maxHp);
@@ -3337,7 +3467,8 @@
         const HSPD = {stormrage:30,smoulders:25,stonebark:10,ashenvale:22,nighthollow:30,dawnbringer:15,manastorm:25,plaguemire:20,darktide:20};
         const hk2 = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
         const cardSpd = S.equippedCards.reduce((s,c)=>s+(c?.base_spd||0),0);
-        const atkSec = Math.max(2.75, (10.5 - ((HSPD[hk2]||25)+cardSpd) * 0.12) / 2);
+        // V4 formula: max(2.5, 7.5 - SPD * 0.10)
+        const atkSec = Math.max(2.5, 7.5 - ((HSPD[hk2]||25)+cardSpd) * 0.10);
         // Sync bar phase to server attack — keeps looping bar aligned
         if (Math.abs(S._atkBarInterval - atkSec * 1000) > 200) startAtkBar(atkSec * 1000);
         else syncAtkBarPhase();
@@ -3444,8 +3575,20 @@
       if (isMyKill) {
         _addSessionPoints('kos', 10);
         if (S._buildMetrics) S._buildMetrics.kos = (S._buildMetrics.kos||0) + 1;
+        // Track KO in fighter metrics for sidebar display
+        if (S.playerId) {
+          trackCombatStat(String(S.playerId), S.playerHandle||'You', S.playerGuildTag||'', S.playerHouse||'', 'kos', 1);
+        }
       }
-      setTimeout(() => removeNineSprite(koId), 1500);
+      // Track the KO'd player leaving
+      if (koId) {
+        const ko_sprite = S.nines.get(String(koId));
+        if (ko_sprite) {
+          const ko_m = S.combatMetrics.get(String(koId));
+          if (ko_m) ko_m.ko_this_round = true;
+        }
+      }
+      setTimeout(() => { removeNineSprite(koId); }, 800); // remove promptly after KO anim
       addFeedEvent(`💀 ${data.nine || getNineName(koId)} KO'd!${isMyKill?' <span style="color:#ffaa44">+10 pts</span>':''}`, 'ko');
       // Track KO stat — use killerName to find the right player id
       const kTracked = killerId || (data.killerName ? [...S.nines.entries()].find(([,s])=>s.name===data.killerName)?.[0] : null);
@@ -3522,11 +3665,20 @@
       const winner = data.winner;
       const flipped = data.flipped;
 
-      // Update controlling guild display
+      // Update controlling guild display + zone tab data
       const ctrlEl = document.getElementById('zt-controlling');
       if (ctrlEl) ctrlEl.textContent = winner || '—';
+      // Feed round data into zone tab
+      if (data.guildHp)  S._lastGuildHp = data.guildHp;
+      if (winner)        S._lastSnapshotWinner = winner;
+      if (S.currentZone && winner) S.currentZone.controlling_guild = winner;
+      // Refresh zone tab if it's open
+      const ztPane = document.getElementById('tray-pane-zone');
+      if (ztPane && ztPane.style.display !== 'none' && typeof renderZoneTab === 'function') renderZoneTab();
 
       // Points I earned this round
+      // Track survival
+      if (S.isDeployed && !S._wasKOdThisRound) S._survRounds = (S._survRounds||0) + 1;
       if (S.isDeployed) {
         const myPts = (data.pointsLog || []).find(p => String(p.playerId) === String(S.playerId));
         if (myPts && myPts.pts > 0) {
@@ -3545,9 +3697,10 @@
       // Show cinematic overlay
       _showRoundEnd(data);
 
-      // Reset round metrics, refresh sidebar
+      // Reset round metrics, refresh sidebar + slideshow
       resetRoundMetrics();
       renderGuildSidebar();
+      if (typeof _renderSlideshow === 'function') _renderSlideshow();
       _saveSessionState();
     });
 
@@ -3590,6 +3743,17 @@
       });
 
       addFeedEvent(`ROUND ${data.roundNumber} — FIGHT!`, 'flip');
+      // Reset per-round tracking flags
+      S._wasKOdThisRound = false;
+      S._withdrawnAfterKO = false;
+      // Clear active debuffs/buffs — new round, fresh state
+      if (typeof clearDebuffs === 'function') clearDebuffs();
+      if (typeof _activeBuffs !== 'undefined') _activeBuffs.clear();
+      if (typeof updateDebuffHUD === 'function') updateDebuffHUD('', false);
+      // Reset round metrics for per-round stats
+      if (typeof resetRoundMetrics === 'function') resetRoundMetrics();
+      // Refresh sidebar
+      if (typeof renderGuildSidebar === 'function') renderGuildSidebar();
       if (S.isDeployed && S.playerId && S.currentZoneId) loadMyCards(S.currentZoneId);
     });
 
@@ -3597,13 +3761,7 @@
     // (original handler already exists — extend it to handle waiting state)
   }
 
-  function resolveId(raw) {
-    if (raw === undefined || raw === null) return null;
-    if (S.nines.has(raw)) return raw;
-    const s = String(raw);
-    if (S.nines.has(s)) return s;
-    return s;
-  }
+  // resolveId defined below
 
   function getNineName(id) {
     return S.nines.get(resolveId(id))?.name || String(id||'').slice(0,8) || 'Unknown';
@@ -3661,8 +3819,8 @@
       if (!el) return;
       el.style.display = k === name ? 'flex' : 'none';
     });
-    if (name === 'stats')     { renderCombatMeters?.(); renderStatsTabChart?.(); }
-    if (name === 'buildhist') renderBuildHistory();
+    // 'stats' tab removed — combat metrics shown in sidebar fighter cards
+    if (name === 'buildhist') { renderBuildHistory(); if (window.renderStatsPane) renderStatsPane(); }
     if (name === 'zone')      renderZoneTab();
     if (name === 'points')    renderPointsTab();
   }
@@ -3832,6 +3990,61 @@
   // ══════════════════════════════════════════════════
   // CINEMATIC ROUND END OVERLAY
   // ══════════════════════════════════════════════════
+  // ── #7 NERM ROUND END QUIPS ───────────────────────────────────────────
+  const NERM_QUIPS = {
+    lastStanding: [
+      (w,t) => `[${w}] wiped the floor. ${t||'Someone'} is probably crying right now. Classic.`,
+      (w,t) => `${t||'The last one'} standing. Not because they're good — everyone else just died first.`,
+      (w,t) => `${t||'['+w+']'} wins by attrition. Beautiful, ugly, chaotic attrition.`,
+      (w,t) => `Round over. [${w}] is still alive and that's more than I can say for the others.`,
+      (w,t) => `${t||'Nobody'} asked for a bloodbath but here we are. [${w}] takes it.`,
+    ],
+    cap: [
+      (w,t) => `Five whole minutes and they still couldn't finish it. [${w}] edges it by HP. Pathetic. Glorious.`,
+      (w,t) => `Time cap. The tanks were just standing there. I need a nap after watching that.`,
+      (w,t) => `If I wanted to watch rocks sit still I'd go outside. [${w}] wins by surviving, barely.`,
+    ],
+    topKO: [
+      (n,k) => `${n} with ${k} KO${k!==1?'s':''} this round. Absolutely unhinged behaviour.`,
+      (n,k) => `Shoutout to ${n} for ${k} kill${k!==1?'s':''}. The others should be embarrassed.`,
+      (n,k) => `${n} said 'I will personally remove everyone' and then did ${k} of it.`,
+    ],
+    dotKill: [
+      n => `${n} died to a DOT tick. Not in battle. Just... slowly. Tick tick tick. Sad.`,
+      n => `${n} walked into POISON and kept walking. Brave. Incorrect. Gone.`,
+    ],
+    survived: [
+      n => `${n} somehow survived the whole round. Luck? Skill? I choose not to investigate.`,
+      n => `Everyone is dead and ${n} is still just standing there. Suspicious.`,
+    ],
+    generic: [
+      () => 'Another round in the books. I have seen things in Nethara that would make your ears fall off.',
+      () => 'The battlefield is quiet now. For about 25 seconds.',
+      () => 'Round over. No survivors. Well, some survivors. You know what I mean.',
+      () => 'What a time to be a floating cat head.',
+    ],
+  };
+
+  function _getNermQuip(data) {
+    const winner = data.winner;
+    const reason = data.endReason;
+    const koBoard = data.koBoard || [];
+    const topKiller = koBoard[0];
+    const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+    // Priority: top killer if notable, then winner, then generic
+    if (topKiller && topKiller.kos >= 2) {
+      return pick(NERM_QUIPS.topKO)(topKiller.name, topKiller.kos);
+    }
+    if (reason === 'cap') {
+      return pick(NERM_QUIPS.cap)(winner, topKiller?.name);
+    }
+    if (winner) {
+      return pick(NERM_QUIPS.lastStanding)(winner, topKiller?.name);
+    }
+    return pick(NERM_QUIPS.generic)();
+  }
+
   function _showRoundEnd(data) {
     // Remove existing overlay if any
     _dismissRoundEnd();
@@ -3859,17 +4072,17 @@
 
     const overlay = document.createElement('div');
     overlay.id = 'round-end-overlay';
-    overlay.style.cssText = `position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:9999;
-      display:flex;align-items:center;justify-content:center;
-      background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);
-      animation:fadeInOverlay 0.4s ease;`;
+    // Slide in from right — leaves arena + chat visible
+    overlay.style.cssText = `position:fixed;top:var(--nav-height,52px);right:0;width:340px;max-width:90vw;
+      height:auto;max-height:calc(100vh - var(--nav-height,52px));overflow-y:auto;
+      z-index:8500;background:linear-gradient(180deg,#16102a,#0d0a18);
+      border-left:1px solid rgba(212,166,75,0.25);border-bottom:1px solid rgba(212,166,75,0.15);
+      animation:ssSlide 0.35s ease;box-shadow:-4px 0 30px rgba(0,0,0,0.5);`;
 
     overlay.innerHTML = `
       <style>@keyframes fadeInOverlay{from{opacity:0}to{opacity:1}}
       @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}</style>
-      <div style="background:linear-gradient(180deg,#16102a,#0d0a18);border:1px solid rgba(212,166,75,.3);
-        border-radius:6px;padding:24px 28px;min-width:320px;max-width:420px;width:90vw;
-        animation:slideUp 0.35s ease;box-shadow:0 0 40px rgba(212,166,75,.1);">
+      <div style="padding:20px 22px;">
 
         <div style="text-align:center;margin-bottom:16px;">
           <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:rgba(255,255,255,.4);letter-spacing:2px;margin-bottom:4px">
@@ -3899,7 +4112,17 @@
           </div>
         </div>
 
-        <div style="text-align:center;padding-top:12px;border-top:1px solid rgba(255,255,255,.07)">
+        <!-- Nerm commentary -->
+        <div style="background:rgba(212,166,75,0.05);border:1px solid rgba(212,166,75,0.12);border-radius:4px;padding:8px 10px;margin-bottom:10px;">
+          <div style="display:flex;gap:8px;align-items:flex-start;">
+            <span style="font-size:18px;flex-shrink:0;">🐱</span>
+            <div>
+              <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(212,166,75,0.5);margin-bottom:4px;">NERM SAYS</div>
+              <div style="font-family:'Crimson Text',serif;font-size:13px;color:#CCC5DB;line-height:1.5;font-style:italic;">"${_getNermQuip(data)}"</div>
+            </div>
+          </div>
+        </div>
+        <div style="text-align:center;padding-top:10px;border-top:1px solid rgba(255,255,255,.07)">
           <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:#6ac8d8" id="round-next-countdown">
             NEXT ROUND IN ${Math.round((data.intermissionMs||25000)/1000)}s
           </div>
@@ -4030,6 +4253,9 @@
         el.classList.remove('urgent');
         if (lbl) lbl.textContent = `ROUND ${S._roundNumber || 1}`;
       }
+      // Also update sidebar ROUND button timer label
+      const sbTimer = document.getElementById('sb-round-timer');
+      if (sbTimer) sbTimer.textContent = el.textContent;
     }, 500);
   })();
 
@@ -4137,14 +4363,14 @@
       if (!lbEl._lastFetch || now - lbEl._lastFetch > 60000) { // refresh max 1/min
         lbEl._fetching = true;
         lbEl._lastFetch = now;
-        fetch('/api/zones/leaderboard/season?limit=5')
+        fetch(`/api/zones/leaderboard/season?limit=5${S.playerId ? '&player_id=' + encodeURIComponent(S.playerId) : ''}`)
           .then(r => r.ok ? r.json() : null)
           .then(data => {
             lbEl._fetching = false;
             if (!data || !data.rows) { lbEl.innerHTML = '<div style="font-size:11px;color:rgba(255,255,255,0.3)">Leaderboard unavailable</div>'; return; }
             const myId = String(S.playerId);
             lbEl.innerHTML = data.rows.map((row, i) => {
-              const isMe = String(row.player_id) === myId;
+              const isMe = String(row.player_id || row.id) === myId;
               const medal = i===0?'#1':i===1?'#2':i===2?'#3':('#'+(i+1));
               return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);${isMe?'background:rgba(212,166,75,0.06);border-radius:3px;padding-left:4px;':''}">
                 <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:${i<3?'#D4A64B':'rgba(255,255,255,0.3)'};width:22px;">${medal}</span>
@@ -4216,6 +4442,79 @@
     renderGuildSidebar();
   };
 
+  // ── STATS PANE RENDERER (round averages + loadout cards) ──────────
+  function renderStatsPane() {
+    const avgsEl = document.getElementById('stats-round-avgs');
+    const cardsEl = document.getElementById('stats-loadout-cards');
+    if (!avgsEl && !cardsEl) return;
+
+    // Calculate averages from session metrics and round count
+    const rn = Math.max(1, S._roundNumber || 1);
+    let totalDmg = 0, totalHeal = 0, totalKOs = 0, totalSurv = 0;
+    S.combatMetrics.forEach(m => {
+      if (String(m.id||'') === String(S.playerId) || S.nines.has(String(m.id||''))) {
+        // Use self stats
+      }
+    });
+    const me = S.combatMetrics.get(String(S.playerId));
+    if (me) {
+      totalDmg  = me.damage || 0;
+      totalHeal = me.heals  || 0;
+      totalKOs  = me.kos    || 0;
+    }
+    const survRounds = S._survRounds || 0;
+    const survRatio  = rn > 0 ? Math.round(survRounds / rn * 100) : 0;
+
+    const stats = [
+      { label:'DMG / ROUND',  value: rn > 1 ? Math.round(totalDmg/rn) : totalDmg, color:'#e85a6a' },
+      { label:'KO / ROUND',   value: rn > 1 ? (totalKOs/rn).toFixed(1) : totalKOs, color:'#ffaa44' },
+      { label:'HEAL / ROUND', value: rn > 1 ? Math.round(totalHeal/rn) : totalHeal, color:'#44cc88' },
+      { label:'SURVIVAL',     value: survRatio + '%', color:'#6ac8d8' },
+    ];
+
+    if (avgsEl) avgsEl.innerHTML = stats.map(s => `
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:4px;padding:6px 8px;text-align:center;">
+        <div style="font-family:'Press Start 2P',monospace;font-size:11px;color:${s.color};margin-bottom:3px;">${s.value}</div>
+        <div style="font-family:'Press Start 2P',monospace;font-size:4px;color:rgba(255,255,255,0.3);letter-spacing:0.5px;">${s.label}</div>
+      </div>`).join('');
+
+    // Loadout cards with art thumbnails
+    if (cardsEl) {
+      const cards = S.equippedCards || [];
+      if (!cards.length) {
+        cardsEl.innerHTML = '<div style="color:rgba(255,255,255,0.25);font-family:Crimson Text,serif;font-size:13px;">No cards equipped</div>';
+        return;
+      }
+      cardsEl.innerHTML = cards.map((c,i) => {
+        const hk = c.house || 'universal';
+        const hc = HOUSES[hk]?.color || '#888';
+        const eff = c.effect_1 || '';
+        const ec = eff ? (EFFECT_COLORS[eff.split(' ')[0].toUpperCase()] || '#D4A64B') : '#D4A64B';
+        const artSrc = c.image_url ? (c.image_url.startsWith('/') || c.image_url.startsWith('http') ? c.image_url : '/assets/images/spells/'+c.image_url) : '';
+        const sharp = c.sharpness ?? 100;
+        const sharpC = sharp > 60 ? '#44cc88' : sharp > 30 ? '#ffaa44' : '#ff4466';
+        const rarity = (c.rarity||'common').toUpperCase();
+        return `<div style="display:flex;gap:8px;align-items:center;padding:5px 6px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:4px;border-left:2px solid ${hc};">
+          ${artSrc ? `<img src="${artSrc}" style="width:32px;height:32px;object-fit:cover;border-radius:3px;flex-shrink:0;">` : `<div style="width:32px;height:32px;background:${hc}22;border-radius:3px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;">${HOUSES[hk]?.icon||'?'}</div>`}
+          <div style="flex:1;min-width:0;">
+            <div style="font-family:'Cinzel',serif;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.name}</div>
+            <div style="display:flex;gap:6px;align-items:center;margin-top:2px;">
+              ${eff ? `<span style="font-family:'Press Start 2P',monospace;font-size:6px;color:${ec};">${eff}</span>` : ''}
+              <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.25);">${rarity}</span>
+            </div>
+            <div style="margin-top:3px;height:2px;background:rgba(0,0,0,0.4);border-radius:1px;overflow:hidden;">
+              <div style="width:${sharp}%;height:100%;background:${sharpC};"></div>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+  window.renderStatsPane = renderStatsPane;
+
+  // Track survival rounds
+  if (!S._survRounds) S._survRounds = 0;
+
   // ── SIDEBAR FIGHTERS ──
   function renderGuildSidebar() {
     const container = document.getElementById('fighters-list');
@@ -4271,12 +4570,13 @@
       const heals = m.heals || 0;
       const kos = m.kos || 0;
       return `<div style="padding:8px 12px;${i<fighters.length-1?'border-bottom:1px solid rgba(255,255,255,0.06)':''};${f.isMe?'background:rgba(212,166,75,0.07);':''}${!f.live?'opacity:0.55;':''}"
-        onmouseenter="window.highlightGuild&&window.highlightGuild('${f.guild}')"
+        onclick="window._showFighterPopup&&window._showFighterPopup('${f.id}')" style="cursor:pointer;"
+                onmouseenter="window.highlightGuild&&window.highlightGuild('${f.guild}')"
         onmouseleave="window.resetGuildHighlight&&window.resetGuildHighlight()">
         <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
           <div style="width:8px;height:8px;border-radius:50%;background:${hc};box-shadow:0 0 6px ${hc};flex-shrink:0;margin-top:1px;"></div>
           <div style="font-family:'Cinzel',serif;font-size:15px;font-weight:700;color:${f.isMe?'var(--gold)':'var(--bright)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;line-height:1.2;">${f.name}</div>
-          ${f.guild?`<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:${hc};flex-shrink:0;">[${f.guild}]</div>`:''}
+          ${f.guild && f.guild !== 'lone_wolf' && !f.guild.startsWith('lone_wolf') ?`<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:${hc};opacity:0.7;flex-shrink:0;">[${f.guild}]</div>`:''}
           <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:${hpC};flex-shrink:0;">${Math.round(f.hp)}</div>
         </div>
         <div style="height:4px;background:rgba(0,0,0,0.4);border-radius:2px;overflow:hidden;margin-bottom:5px;">
@@ -4446,6 +4746,109 @@
   window._SCHOOL_TO_HOUSE = SCHOOL_TO_HOUSE;
   window._TYPE_COLORS = TYPE_COLORS;
   window.renderSidebarChart = renderSidebarChart;
+
+  // ══════════════════════════════════════════════════
+  // #10 INFO SLIDESHOW — cycles through zone stats
+  // ══════════════════════════════════════════════════
+  let _ssIdx = 0, _ssTimer = null;
+  function _buildSlides() {
+    const alive = Array.from(S.nines.values()).filter(n => n.hp > 0);
+    const topDmg = [...S.combatMetrics.entries()].sort((a,b)=>(b[1].damage||0)-(a[1].damage||0))[0];
+    const topKO  = [...S.combatMetrics.entries()].sort((a,b)=>(b[1].kos||0)-(a[1].kos||0))[0];
+    const slides = [];
+    if (alive.length > 0) slides.push({ label:'FIGHTERS ALIVE', value: alive.length, sub: `${alive.length} on zone`, color:'#6ac8d8' });
+    if (topDmg) slides.push({ label:'TOP DAMAGE', value: topDmg[1].damage > 999 ? (topDmg[1].damage/1000).toFixed(1)+'k' : topDmg[1].damage, sub: topDmg[1].name||'?', color:'#e85a6a' });
+    if (topKO)  slides.push({ label:'MOST KOs',   value: topKO[1].kos, sub: topKO[1].name||'?', color:'#ffaa44' });
+    if (S._roundNumber) slides.push({ label:'ROUND', value: S._roundNumber, sub: S._roundState === 'INTERMISSION' ? 'INTERMISSION' : 'FIGHTING', color:'#D4A64B' });
+    slides.push({ label:'ZONE', value: S.currentZone?.name || '—', sub: S.currentZone?.controlling_guild ? `[${S.currentZone.controlling_guild}] controls` : 'Contested', color:'#b088e8' });
+    return slides;
+  }
+  function _renderSlideshow() {
+    const el = document.getElementById('ss-slides');
+    const dots = document.getElementById('ss-dots');
+    if (!el) return;
+    const slides = _buildSlides();
+    if (!slides.length) return;
+    _ssIdx = _ssIdx % slides.length;
+    const s = slides[_ssIdx];
+    el.innerHTML = `
+      <div style="animation:ssSlide 0.3s ease;text-align:center;padding:2px 4px;">
+        <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:3px;">${s.label}</div>
+        <div style="font-family:'Press Start 2P',monospace;font-size:14px;color:${s.color};">${s.value}</div>
+        <div style="font-family:'Crimson Text',serif;font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;">${s.sub}</div>
+      </div>`;
+    if (dots) dots.innerHTML = slides.map((_, i) =>
+      `<div onclick="window._ssGo(${i})" style="width:5px;height:5px;border-radius:50%;background:${i===_ssIdx?'var(--gold)':'rgba(255,255,255,0.18)'};cursor:pointer;transition:background 0.2s;"></div>`
+    ).join('');
+  }
+  window._ssGo = function(i) { _ssIdx = i; _renderSlideshow(); };
+  function _startSlideshow() {
+    if (_ssTimer) clearInterval(_ssTimer);
+    _renderSlideshow();
+    _ssTimer = setInterval(() => { _ssIdx++; _renderSlideshow(); }, 4000);
+  }
+
+  // ══════════════════════════════════════════════════
+  // #9 FIGHTER POPUP — build + stats on click
+  // ══════════════════════════════════════════════════
+  window._showFighterPopup = function(id) {
+    const sp = S.nines.get(String(id));
+    const m  = S.combatMetrics.get(String(id)) || {};
+    if (!sp && !m.name) return;
+    const name  = sp?.name || m.name || '?';
+    const house = sp?.house || m.house || 'universal';
+    const guild = sp?.guild || m.guild || '';
+    const hp    = sp?.hp ?? 0;
+    const maxHp = sp?.maxHp ?? 1;
+    const hc    = HOUSES[house]?.color || '#888';
+
+    // Remove existing popup
+    const existing = document.getElementById('fighter-popup');
+    if (existing) existing.remove();
+
+    const popup = document.createElement('div');
+    popup.id = 'fighter-popup';
+    popup.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+      z-index:8000;background:linear-gradient(180deg,#16102a,#0d0a18);
+      border:1px solid ${hc}44;border-radius:8px;padding:16px 20px;min-width:240px;max-width:300px;
+      box-shadow:0 0 30px ${hc}22;animation:slideUp 0.25s ease;`;
+
+    const cards = S.equippedCards || [];
+    const cardHtml = cards.length
+      ? cards.map(c => `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+          <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:${EFFECT_COLORS[(c.effect_1||'').split(' ')[0].toUpperCase()]||'#D4A64B'}">${c.effect_1||'—'}</span>
+          <span style="font-family:'Cinzel',serif;font-size:11px;color:var(--bright);flex:1;">${c.name}</span>
+          <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:${hc}">${(c.rarity||'').toUpperCase()}</span>
+        </div>`).join('')
+      : '<div style="color:rgba(255,255,255,0.3);font-size:11px;font-family:Crimson Text,serif;">Build not visible</div>';
+
+    popup.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;">
+        <div>
+          <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:${hc};margin-bottom:4px;">${HOUSES[house]?.icon||''} ${house.toUpperCase()}</div>
+          <div style="font-family:'Cinzel',serif;font-size:17px;font-weight:700;color:#fff;">${name}</div>
+          ${guild && guild !== 'lone_wolf' ? `<div style="font-family:'Press Start 2P',monospace;font-size:6px;color:${hc};margin-top:2px;">[${guild}]</div>` : ''}
+        </div>
+        <button onclick="document.getElementById('fighter-popup')?.remove()" style="background:none;border:none;color:rgba(255,255,255,0.3);cursor:pointer;font-size:18px;line-height:1;padding:0;">✕</button>
+      </div>
+      <div style="height:3px;background:rgba(0,0,0,0.4);border-radius:2px;margin-bottom:10px;overflow:hidden;">
+        <div style="width:${Math.round(hp/maxHp*100)}%;height:100%;background:linear-gradient(90deg,${hc}88,${hc});border-radius:2px;"></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:10px;">
+        <div style="text-align:center;"><div style="font-family:'Press Start 2P',monospace;font-size:9px;color:#e85a6a;">${m.damage||0}</div><div style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);margin-top:2px;">DMG</div></div>
+        <div style="text-align:center;"><div style="font-family:'Press Start 2P',monospace;font-size:9px;color:#44cc88;">${m.heals||0}</div><div style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);margin-top:2px;">HEAL</div></div>
+        <div style="text-align:center;"><div style="font-family:'Press Start 2P',monospace;font-size:9px;color:#ffaa44;">${m.kos||0}</div><div style="font-family:'Press Start 2P',monospace;font-size:5px;color:var(--faint);margin-top:2px;">KOs</div></div>
+      </div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:6px;">EQUIPPED CARDS</div>
+      <div>${cardHtml}</div>
+      <a href="/profile/${id}" style="display:block;margin-top:10px;text-align:center;font-family:'Press Start 2P',monospace;font-size:6px;color:${hc};text-decoration:none;opacity:0.6;hover:opacity:1;">VIEW PROFILE →</a>`;
+
+    document.body.appendChild(popup);
+    // Close on click outside
+    setTimeout(() => { document.addEventListener('click', function _close(e) { if (!document.getElementById('fighter-popup')?.contains(e.target)) { document.getElementById('fighter-popup')?.remove(); document.removeEventListener('click',_close); } }, {once:false}); }, 100);
+  };
+
+
   window.renderStatsTabChart = renderStatsTabChart;
 
   window.switchChartMetric = function(metric, btn) {
@@ -4465,7 +4868,10 @@
   };
 
   // ── DEBUFF HUD ──
-  const _activeDebuffs = new Map(); // effect → expiry timestamp
+  const _activeDebuffs = new Map(); // debuffs ON the player
+  const _activeBuffs   = new Map(); // buffs benefiting the player
+  // Effects that show as BUFFS (player is being helped, not hindered)
+  const BUFF_EFFECTS = new Set(['WARD','ANCHOR','BARRIER','HEAL','BLESS','INSPIRE','HASTE','DODGE','SURGE','CLEANSE','REFLECT','TAUNT']);
   // Debuff colour priorities for portrait ring
   const DEBUFF_RING_PRIORITY = ['SILENCE','WEAKEN','POISON','BURN','HEX','BLIND','WITHER','CORRODE'];
 
@@ -4485,29 +4891,40 @@
   };
 
   function updateDebuffHUD(effect, apply) {
-    const el = document.getElementById('hud-debuffs');
-    if (!el) return;
-    if (apply) {
-      _activeDebuffs.set(effect, Date.now() + 12000);
-    } else {
-      _activeDebuffs.delete(effect);
+    const key = effect ? effect.split(' ')[0].toUpperCase() : '';
+    const isBuff = BUFF_EFFECTS.has(key);
+    const map = isBuff ? _activeBuffs : _activeDebuffs;
+
+    if (apply && key) {
+      map.set(effect, Date.now() + 12000);
+    } else if (key) {
+      map.delete(effect);
     }
-    _activeDebuffs.forEach((exp, k) => { if (Date.now() > exp) _activeDebuffs.delete(k); });
-    el.innerHTML = [..._activeDebuffs.keys()].map(e => {
-      const key = e.split(' ')[0].toUpperCase();
-      const c = EFFECT_COLORS[key] || '#D4A64B';
-      const desc = EFFECT_DESCRIPTIONS[key] || key;
-      return `<div
-        style="font-family:'Press Start 2P',monospace;font-size:9px;padding:5px 9px;border-radius:3px;background:${c}22;border:1px solid ${c}66;color:${c};animation:debuffPulse 1.5s ease-in-out infinite;cursor:help;position:relative;"
-        onmouseenter="(()=>{const t=this.querySelector('.debuff-tip');if(!t)return;const r=this.getBoundingClientRect();t.style.display='block';t.style.left=(r.left+r.width/2-t.offsetWidth/2)+'px';t.style.top=(r.top-t.offsetHeight-8)+'px';})()"
-        onmouseleave="this.querySelector('.debuff-tip').style.display='none'">
-        ${key.slice(0,5)}
-        <div class="debuff-tip" style="display:none;position:fixed;background:rgba(8,6,18,0.97);border:1px solid ${c}66;border-radius:6px;padding:6px 8px;white-space:nowrap;z-index:9999;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.7);">
-          <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:${c};margin-bottom:3px;">${key}</div>
-          <div style="font-family:'Crimson Text',serif;font-size:12px;color:#CCC5DB;max-width:200px;white-space:normal;line-height:1.4;">${desc}</div>
-        </div>
-      </div>`;
-    }).join('');
+    // Expire old entries
+    [_activeDebuffs, _activeBuffs].forEach(m => m.forEach((exp, k) => { if (Date.now() > exp) m.delete(k); }));
+
+    function renderPills(map, elId, isBuffList) {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      el.innerHTML = [...map.keys()].map(e => {
+        const k = e.split(' ')[0].toUpperCase();
+        const c = isBuffList ? (EFFECT_COLORS[k] || '#44cc88') : (EFFECT_COLORS[k] || '#ff4466');
+        const desc = EFFECT_DESCRIPTIONS[k] || k;
+        const prefix = isBuffList ? '▲ ' : '▼ ';
+        return `<div
+          style="font-family:'Press Start 2P',monospace;font-size:8px;padding:4px 7px;border-radius:3px;background:${c}22;border:1px solid ${c}66;color:${c};animation:debuffPulse 1.5s ease-in-out infinite;cursor:help;position:relative;"
+          onmouseenter="(()=>{const t=this.querySelector('.debuff-tip');if(!t)return;const r=this.getBoundingClientRect();t.style.display='block';t.style.left=(r.left+r.width/2-t.offsetWidth/2)+'px';t.style.top=(r.top-t.offsetHeight-8)+'px';})()"
+          onmouseleave="this.querySelector('.debuff-tip').style.display='none'">
+          ${k.slice(0,5)}
+          <div class="debuff-tip" style="display:none;position:fixed;background:rgba(8,6,18,0.97);border:1px solid ${c}66;border-radius:6px;padding:6px 8px;white-space:nowrap;z-index:9999;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,0.7);">
+            <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:${c};margin-bottom:2px;">${k} ${isBuffList ? '(BUFF)' : '(DEBUFF)'}</div>
+            <div style="font-family:'Crimson Text',serif;font-size:12px;color:#CCC5DB;max-width:200px;white-space:normal;line-height:1.4;">${desc}</div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+    renderPills(_activeDebuffs, 'hud-debuffs', false);
+    renderPills(_activeBuffs,   'hud-buffs',   true);
     // Animate the portrait ring with the highest priority active debuff colour
     const ring = document.getElementById('hud-effect-ring');
     if (ring) {
@@ -4777,7 +5194,7 @@
   }
 
   // ── BACK BUTTON ──
-  document.getElementById('btn-back')?.addEventListener('click', closeArena);
+  document.getElementById('btn-back')?.addEventListener('click', () => window.closeArena?.());
 
   // ── NERM ──
   const NERM_COMMENTS = {
@@ -4908,7 +5325,7 @@
     return clampToDiamond(raw.x, raw.y, cx, cy, 0.85);
   }
 
-  function closeArena() {
+  function _pixiArenaClose() {
     dismissKOOverlay(); // clear any active KO state when leaving arena
     if (state._nermInterval) { clearInterval(state._nermInterval); state._nermInterval = null; }
     document.getElementById('arena-view').style.display = 'none';
@@ -5118,12 +5535,14 @@
         // ── Z-SORT — lower on screen renders in front ─────────────────────
         nine.container.zIndex = Math.round(nine.container.y);
 
-        // ── HARD CLAMP to polygon ─────────────────────────────────────────
+        // ── SOFT CLAMP to polygon — lerp not snap to prevent teleport ────────
         const poly = getActiveCanvasPoly();
         if (poly && !isInsidePolygon(nine.container.x, nine.container.y, poly)) {
           const clamped = clampToPolygon(nine.container.x, nine.container.y, poly);
-          nine.container.x = clamped.x;
-          nine.container.y = clamped.y;
+          // Lerp at 15%/frame — smooth drift back in, no hard jump
+          nine.container.x += (clamped.x - nine.container.x) * 0.18;
+          nine.container.y += (clamped.y - nine.container.y) * 0.18;
+          // Redirect target so they stop walking into the wall
           if (nine.targetX !== undefined) { nine.targetX = clamped.x; nine.targetY = clamped.y; }
         }
       });
@@ -5797,40 +6216,42 @@
 
   function showFloatingText(x, y, text, color = 0xff4466, size = 12) {
     if (!state.arenaApp) return;
+    const app = state.arenaApp;
+    // Arc direction: always away from centre-screen so numbers spread outward
+    const cx = app.screen.width / 2;
+    const arcDir = x < cx ? -1 : 1; // left side arcs left, right side arcs right
+    // Big damage numbers launch far to the side with lots of space
+    const isBig = size >= 14 || typeof text === 'string' && (text.startsWith('+') || parseInt(text) > 50 || text.includes('KO'));
+    const arcX   = arcDir * (isBig ? 80 + Math.random()*60 : 45 + Math.random()*35);
+    const arcY   = isBig ? 70 + Math.random()*30 : 45 + Math.random()*20;
+    const frames = isBig ? 180 : 140; // big numbers stay longer
+    const fontSize = isBig ? Math.max(size, 14) : size;
+
     const style = new PIXI.TextStyle({
-      fontFamily: "'Press Start 2P', monospace", fontSize: size, fill: color, fontWeight: '700',
-      dropShadow: true, dropShadowColor: 0x000000, dropShadowDistance: 2, dropShadowBlur: 2,
-      stroke: 0x000000, strokeThickness: 3,
+      fontFamily: "'Press Start 2P', monospace", fontSize: fontSize, fill: color, fontWeight: '700',
+      dropShadow: true, dropShadowColor: 0x000000, dropShadowDistance: 2, dropShadowBlur: 3,
+      stroke: 0x000000, strokeThickness: 4,
     });
     const t = new PIXI.Text(text, style);
     t.anchor.set(0.5);
-    const arcDir = (Math.random() > 0.5 ? 1 : -1);
-    const arcAmount = 20 + Math.random() * 25;
-    t.x = x + (Math.random() - 0.5) * 16;
-    t.y = y - 20;
-    t.zIndex = 100;
-    state.arenaApp.stage.addChild(t);
+    t.x = x; t.y = y - 10; t.zIndex = 110;
+    app.stage.addChild(t);
 
     let frame = 0;
-    const totalFrames = 120;
-    const startX = t.x;
-    const startY = t.y;
-    const startScale = 1.4;
+    const startX = t.x, startY = t.y;
     const ticker = () => {
       frame++;
-      const p = frame / totalFrames;
-      // Arc: rise up + curve sideways using sine
-      t.y = startY - p * 40;
-      t.x = startX + Math.sin(p * Math.PI) * arcAmount * arcDir;
-      t.alpha = p < 0.4 ? 1 : Math.max(0, 1 - (p - 0.4) / 0.6);
-      const scale = startScale - (startScale - 0.7) * p;
-      t.scale.set(scale, scale);
-      if (frame >= totalFrames) {
-        state.arenaApp.ticker.remove(ticker);
-        state.arenaApp.stage.removeChild(t);
-      }
+      const p = frame / frames;
+      const ease = p < 0.5 ? 2*p*p : 1 - Math.pow(-2*p+2,2)/2;
+      // Bezier arc: shoot sideways and up, then drift down slightly
+      t.x = startX + arcX * ease;
+      t.y = startY - arcY * Math.sin(p * Math.PI) + p * 20;
+      t.alpha = p < 0.35 ? 1 : Math.max(0, 1 - (p - 0.35) / 0.65);
+      const sc = p < 0.1 ? (1 + p * 4) : Math.max(0.6, 1.4 - p * 0.8);
+      t.scale.set(sc);
+      if (frame >= frames) { app.ticker.remove(ticker); app.stage.removeChild(t); }
     };
-    state.arenaApp.ticker.add(ticker);
+    app.ticker.add(ticker);
   }
 
   // ═══════════════════════════════════════════
@@ -8248,6 +8669,28 @@
 
   // ── Expose PIXI/animation functions to window ──
   // Main logic IIFE calls these; they live here in the PIXI IIFE
+  // Export PIXI-side close for main IIFE to call
+  window._pixiClose = function() {
+    if (state._nermInterval) { clearInterval(state._nermInterval); state._nermInterval = null; }
+    if (state._ambientParticles) {
+      state._ambientParticles.forEach(p => { if (p.gfx?.parent) p.gfx.parent.removeChild(p.gfx); });
+      state._ambientParticles = null;
+    }
+    if (state._ambientTicker && state.arenaApp) {
+      state.arenaApp.ticker.remove(state._ambientTicker);
+      state._ambientTicker = null;
+    }
+    if (state.arenaApp) {
+      try { state.arenaApp.destroy(true); } catch(e) {}
+      state.arenaApp = null;
+    }
+    state.nines.clear();
+    state._guildAngles = {};
+    state._guildCounts = {};
+    if (typeof stopCountdown === 'function') stopCountdown();
+    if (typeof hideCardSlots === 'function') hideCardSlots();
+  };
+
   const _pixi = {
     initPixiArena, addNineSprite, removeNineSprite, updateNineHP, updateStatusRings,
     showFloatingText, spawnParticles, shakeSprite, shakeCamera, screenFlash,
@@ -8261,4 +8704,24 @@
 
 </script>
 </body>
-</html>
+</html
+    /* #2 Deploy card grid */
+    .deploy-grid-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important; }
+    .deploy-grid-card.selected { transform: translateY(-1px); }
+
+    /* #10 Slideshow animation */
+    @keyframes ssSlide { from { opacity:0; transform:translateX(8px); } to { opacity:1; transform:translateX(0); } }
+
+    /* #7 Round end panel slide from right */
+    @keyframes panelSlideIn { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
+
+    /* #6 buff/debuff bar */
+    #hud-buffs .debuff-tip, #hud-debuffs .debuff-tip { z-index:9999; }
+
+    /* #15 Stats tab */
+    #stats-round-avgs > div:hover { background: rgba(255,255,255,0.05) !important; }
+
+    /* Slideshow dots */
+    #ss-dots > div { transition: background 0.2s; }
+
+>
