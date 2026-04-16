@@ -3991,7 +3991,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({}),
+        body: JSON.stringify({ player_id: S.playerId }),
       });
       const data = await res.json();
       if (data.success) {

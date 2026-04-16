@@ -514,6 +514,47 @@ router.post('/unequip-card', async (req, res) => {
 // GET /api/zones/:zoneId/deployments
 // List all Nines deployed on a zone with their loadouts
 // ═══════════════════════════════════════════
+router.get('/leaderboard/season', async (req, res) => {
+  try {
+    const limit  = Math.min(parseInt(req.query.limit) || 10, 50);
+    const player_id = req.query.player_id || null;
+
+    // Top N players
+    const { data: rows, error } = await supabaseAdmin
+      .from('players')
+      .select('id, handle, username, season_points')
+      .order('season_points', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    // Own rank (if player_id provided)
+    let my_rank = null, my_points = null;
+    if (player_id) {
+      const { data: mine } = await supabaseAdmin
+        .from('players')
+        .select('season_points')
+        .eq('id', player_id)
+        .single();
+      if (mine) {
+        my_points = mine.season_points || 0;
+        // Count players with more points
+        const { count } = await supabaseAdmin
+          .from('players')
+          .select('id', { count: 'exact', head: true })
+          .gt('season_points', my_points);
+        my_rank = (count || 0) + 1;
+      }
+    }
+
+    res.json({ rows: rows || [], my_rank, my_points });
+  } catch (err) {
+    console.error('Leaderboard error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
 router.get('/:zoneId/deployments', async (req, res) => {
   try {
     const zoneId = parseInt(req.params.zoneId);
@@ -818,6 +859,8 @@ router.post('/:zoneId/force-reload', async (req, res) => {
 // GET /api/zones/:zoneId — single zone
 // MUST be last to avoid catching other routes
 // ═══════════════════════════════════════════
+
+
 router.get('/:zoneId', async (req, res) => {
   try {
     const zoneId = parseInt(req.params.zoneId);
@@ -1003,11 +1046,11 @@ router.post('/midnight-reset', async (req, res) => {
 });
 
 // ── POST /api/zones/:zoneId/rejoin — player clicks rejoin after KO ────
-router.post('/:zoneId/rejoin', requireAuth, async (req, res) => {
+router.post('/:zoneId/rejoin', async (req, res) => {
   try {
     const { zoneId } = req.params;
-    const playerId = req.user?.id;
-    if (!playerId) { res.status(401).json({ error: 'Not authenticated' }); return; }
+    const playerId = req.body?.player_id;
+    if (!playerId) { res.status(400).json({ error: 'player_id required' }); return; }
 
     // Find the player's active deployment on this zone
     const { data: dep, error } = await supabaseAdmin
@@ -1046,44 +1089,5 @@ router.post('/:zoneId/rejoin', requireAuth, async (req, res) => {
 });
 
 // ── GET /api/leaderboard/season — top N players by season_points ──────
-router.get('/leaderboard/season', async (req, res) => {
-  try {
-    const limit  = Math.min(parseInt(req.query.limit) || 10, 50);
-    const player_id = req.query.player_id || null;
-
-    // Top N players
-    const { data: rows, error } = await supabaseAdmin
-      .from('players')
-      .select('id, handle, username, season_points')
-      .order('season_points', { ascending: false })
-      .limit(limit);
-
-    if (error) throw error;
-
-    // Own rank (if player_id provided)
-    let my_rank = null, my_points = null;
-    if (player_id) {
-      const { data: mine } = await supabaseAdmin
-        .from('players')
-        .select('season_points')
-        .eq('id', player_id)
-        .single();
-      if (mine) {
-        my_points = mine.season_points || 0;
-        // Count players with more points
-        const { count } = await supabaseAdmin
-          .from('players')
-          .select('id', { count: 'exact', head: true })
-          .gt('season_points', my_points);
-        my_rank = (count || 0) + 1;
-      }
-    }
-
-    res.json({ rows: rows || [], my_rank, my_points });
-  } catch (err) {
-    console.error('Leaderboard error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
 
 module.exports = router;
