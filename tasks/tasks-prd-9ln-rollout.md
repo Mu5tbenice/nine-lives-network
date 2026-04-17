@@ -1,0 +1,197 @@
+# Tasks — 9LN Canonical PRD Rollout
+
+Organized by the §5.5 phasing in `tasks/prd-9ln-product.md`. Each §9 item is tagged → FPRD (needs its own feature PRD + larger workstream) or → cleanup (single-PR scope). Phase tags reflect the PRD's own dispatch.
+
+**How to read this file:**
+- Parent tasks are work units, each landing in its own branch + PR.
+- Phase 1 items are the critical path — nothing downstream ships until these close.
+- Parents marked "Ongoing" can run in parallel with any phase; they don't block the critical path.
+- Sub-tasks are implementation-ready. Check each off with `[x]` as it completes.
+
+---
+
+## Relevant Files
+
+### Code that will be modified
+
+- `server/services/combatEngine.js` — RPC-to-pointsService migration (§9.1), `handleKO` fix (§9.2), `SESSION_MS` (§9.3), `ROUND_MS` references (§9.4), zoneBonusCache (§9.19 downstream). Heaviest single file in this rollout.
+- `server/services/pointsService.js` — the canonical `addPoints()` entry point everything should route through. New test coverage added in 1.9.
+- `server/services/scheduler.js` — nightly cron owner; line 80 is the HTTP self-call to be replaced (§9.19).
+- `server/routes/zones.js` — owns `writeNightlyPresence` (line 1014) and the parallel `/api/leaderboard/season` endpoint (line 1091) that needs to be retargeted or removed.
+- `server/routes/leaderboards.js` — all reads must land on `players.seasonal_points`; verify none reference `season_points` after migration.
+- `server/index.js` — stale "V6 wave combat" log at line 306 (§9.5), missing `mana.js` require at line 53 (§9.6), inline arena socket namespace.
+- `server/routes/admin.js` — broken `combatEngineV2` require at line 644 (§9.6); decide fate of three dependent endpoints.
+- `server/services/chronicleEngine.js` — existing length-based rubric at lines 170–187 (grounds FPRD 6.2).
+
+### Database artifacts
+
+- `database/schema.sql` — currently 5 bytes of corruption; target of the full Supabase dump in 3.1.
+- New migration files under `database/migrations/` (or wherever convention dictates — verify during 1.1):
+  - Drop `increment_season_points(bigint, integer)` overload.
+  - Backfill `season_points` into `seasonal_points`.
+  - Drop the `season_points` column.
+
+### PRDs to author (all under `tasks/`)
+
+- `tasks/prd-scoring-unification.md` (1.1)
+- `tasks/prd-guild-uniqueness.md` (6.1)
+- `tasks/prd-chronicle-quality-rubric.md` (6.2)
+- `tasks/prd-leaderboard-subviews.md` (6.3)
+- `tasks/prd-point-award-toasts.md` (6.4)
+- `tasks/prd-post-l10-leveling.md` (7.1)
+- `tasks/prd-items-system.md` (7.2)
+- `tasks/prd-token-economy-ops.md` (7.3)
+- `tasks/prd-nft-genesis-s2.md` (7.4)
+- `tasks/prd-season-rollover.md` (7.5)
+- `tasks/prd-testing-infrastructure.md` (8.1 — scheduled, authored later)
+
+### Test files (to be created — Jest is configured but empty today, §9.13)
+
+- `server/services/pointsService.test.js` — unit tests for the canonical entry point (1.9).
+- `server/services/combatEngine.test.js` — smoke test for boot + tick loop (2.7).
+- Future: one test file colocated with each service/route as it's touched.
+
+### Notes
+
+- Each parent task gets its own feature branch and PR. Branch prefixes: `fix/` for bug fixes, `feat/` for new functionality, `docs/` for PRDs, `chore/` for cleanup.
+- Use `npx jest [optional/path/to/test/file]` to run tests. Running without a path executes all tests.
+- `§9.x` references throughout point to the corresponding entry in the PRD's Known Issues ledger.
+- Supabase changes: prefer the MCP's `apply_migration` for DDL; it creates a migration file under `supabase/migrations/` and applies it in one step. Plain SQL via `execute_sql` is for reads and ad-hoc verification only.
+
+---
+
+## Instructions for Completing Tasks
+
+**IMPORTANT:** As you complete each task, you must check it off in this markdown file by changing `- [ ]` to `- [x]`. Update the file after completing each sub-task, not just after completing an entire parent task.
+
+---
+
+## Tasks
+
+- [ ] 0.0 Kickoff — branch strategy & PR cadence for the full rollout (est: S)
+  - [ ] 0.1 Confirm branch-prefix convention per task type: `fix/` (1.0, 2.0, 3.0, 4.0), `chore/` (5.0), `docs/` (6.x, 7.x, 8.x).
+  - [ ] 0.2 Confirm PR ordering — Phase 1 parents can run in parallel (different files), but 1.0 and 2.0 both touch `combatEngine.js` so sequence them 1.0 → 2.0 to avoid merge pain. 3.0, 4.0, and 5.0 are independent.
+  - [ ] 0.3 Commit message convention — match existing repo style (observed in recent commits): lowercase type prefix, em-dash separator, terse subject under 70 chars, detailed body.
+  - [ ] 0.4 Decide whether to open all Phase 1 PRs as draft-first or ready-for-review. Recommend draft-first so stakeholder can preview before combat-engine changes go live.
+
+- [ ] 0.5 PRD update convention (est: S — one-time setup)
+  - [ ] 0.5.1 Establish: every PR that resolves a §9 PRD entry MUST update the PRD in the same commit (mark entry as 'Resolved YYYY-MM-DD in PR #X' rather than deleting).
+  - [ ] 0.5.2 Establish: every PR that introduces a new known issue MUST add a §9 entry (numbered next available).
+  - [ ] 0.5.3 Update `CLAUDE.md` to enforce this convention for future Claude Code sessions.
+  - [ ] 0.5.4 Apply the convention retroactively to PRs already merged today (#125, #126, #127, #128, #129, #130) — most don't have §9 entries to resolve, but future audits should be able to trace history.
+
+### Phase 1 — Scoring Foundations (critical path)
+
+- [ ] 1.0 Scoring pipeline unification (§9.1 + §9.2 → FPRD, bundled) (est: L)
+  - [ ] 1.1 Author `tasks/prd-scoring-unification.md` using `tasks/create-prd.md` template. Cover: why unify, migration order, backfill stakeholder review, rollback plan, verification checklist.
+  - [ ] 1.2 Via Supabase MCP `apply_migration`, drop the `increment_season_points(bigint, integer)` RPC overload. The `(integer, integer)` plpgsql overload becomes the only signature; it already writes `seasonal_points` + `lifetime_points`. Verify with `pg_get_functiondef` after.
+  - [ ] 1.3 Migrate `server/services/combatEngine.js:653` — replace `supabaseAdmin.rpc('increment_season_points', ...)` with `pointsService.addPoints(n.playerId, pts, source, description)` where `source` is `'zone_survive'`, `'zone_control'`, or `'zone_flip'` depending on the point component.
+  - [ ] 1.4 Fix `handleKO(nine, zoneId, all)` at `server/services/combatEngine.js:393`. Derive killer as `const killerId = nine._lastHitById ?? nine._dotAppliedById;` and `const killerName = nine._lastHitBy ?? nine._dotAppliedBy;`. Replace the undefined-variable broadcast at line 398.
+  - [ ] 1.5 Route the KO reward through `pointsService.addPoints(killerId, 10, 'zone_ko', \`KO'd @${ko'dName} on ${zoneName}\`)`. Remove the RPC call at line 411.
+  - [ ] 1.6 Write a one-time backfill migration (separate PR, stakeholder-gated): `UPDATE players SET seasonal_points = seasonal_points + season_points WHERE season_points > 0;` — review top-10 affected rows with stakeholder first. Log the diff to `point_log` with `source='migration_season_backfill'` so the audit trail is complete.
+  - [ ] 1.7 After 1.6 ships and is verified, drop the `players.season_points` column via migration.
+  - [ ] 1.8 Retarget or remove `/api/leaderboard/season` at `server/routes/zones.js:1091`. If retained, point it at `seasonal_points` with a time-bounded filter once seasons exist; otherwise remove and grep `public/` for any client-side callers.
+  - [ ] 1.9 Create `server/services/pointsService.test.js`. Tests: `addPoints` increments both columns, inserts one `point_log` row, handles negative amounts (decay path), handles unknown `playerId` gracefully. Use a throwaway Supabase branch via MCP `create_branch` for isolation.
+  - [ ] 1.10 Manual QA — local dev or Supabase branch isolation:
+    - a. Start `npm run dev` locally; deploy a test Nine to a zone via the live UI (using the Twitter OAuth dance against production Supabase via the local server).
+    - b. Trigger a KO event manually (admin endpoint or by playing).
+    - c. Verify in Supabase via MCP: (i) `point_log` has a row with `source='zone_ko'` and the correct `player_id`; (ii) `players.seasonal_points` incremented by 10; (iii) `players.lifetime_points` incremented by 10; (iv) `players.season_points` unchanged (zero new writes).
+    - d. Wait for round end; verify survive (+5), control (+8), and any flip (+15) points appear in `point_log` with correct sources and on `seasonal_points`.
+    - e. If any verification fails, do NOT promote 1.11 — fix and re-test.
+  - [ ] 1.11 Update PRD §9.1 and §9.2 entries to "resolved" once 1.10 passes.
+  - [ ] 1.12 Regression guard: write a simple weekly health check (cron or manual-runnable script) that queries `point_log` source distribution. Alert if any row appears with `source` matching the deprecated patterns (writes to `season_points`, direct `UPDATE` bypassing `pointsService`). Any non-zero count means unification has regressed.
+    - Implementation: add to `scripts/health/scoring-pipeline-check.js`
+    - Schedule via `services/scheduler.js` — Sunday 03:00 UTC
+    - Output to console + optionally Telegram (via existing Nerm channel)
+  - [ ] 1.13 Phase 1 release moment:
+    - Update `README.md` changelog with Phase 1 summary
+    - Tweet from `@9LVNetwork` acknowledging the scoring fix (drafting suggestion: *"Behind the scenes: every KO and round-end point now lands correctly. If your leaderboard rank shifted, that's why — actual play is now what counts."*)
+    - Verify production deployment via Replit republish
+    - Mark Phase 1 'Done' in PRD §5.5
+
+- [ ] 2.0 Combat engine code hygiene (§9.3 + §9.4 + §9.5 → cleanup cluster) (est: M)
+  - [ ] 2.1 Change `SESSION_MS` at `server/services/combatEngine.js:17` from `1 * 60 * 60 * 1000` to `2 * 60 * 60 * 1000` — matches PRD §4.8.5.
+  - [ ] 2.2 Remove the `roundMs: ROUND_MS` field from the `arena:round_start` broadcast at `server/services/combatEngine.js:727`. Rounds have no fixed length; clients should count elapsed time.
+  - [ ] 2.3 Remove the `getRoundMs: () => ROUND_MS` export at `server/services/combatEngine.js:894`.
+  - [ ] 2.4 Grep the repo for any caller of `getRoundMs` — update or remove callers. Same for client-side listeners of `roundMs` in `arena:round_start` — verify nothing breaks.
+  - [ ] 2.5 Delete the stale `"⚔️ Combat engine started — V6 wave combat, 30s buffer"` log at `server/index.js:306`. Keep only the truthful V3 log that the engine itself emits.
+  - [ ] 2.6 Boot the server locally, confirm log output shows V3 only (no "V6 wave combat" line).
+  - [ ] 2.7 Add `server/services/combatEngine.test.js` — at minimum a smoke test that the module loads without throwing and that `startCombatEngine` is a function. Regression guard against future `ReferenceError`s.
+
+- [ ] 3.0 Missing-file resolution (§9.6 → cleanup) (est: M)
+  - [ ] 3.1 Dump the live Supabase schema to `database/schema.sql`. Use `pg_dump --schema-only --no-owner --no-acl` against the project, or via the Supabase dashboard's schema export. Overwrite the current 5-byte corrupted file. Commit with a note that this is machine-generated; manual edits should happen in migration files, not here.
+  - [ ] 3.2 Decide fate of `server/routes/mana.js` (required at `server/index.js:53`, does not exist). If mana logic lives distributed across existing routes/services, remove the require and grep any clients hitting `/api/mana/*`. If the route is needed, create a minimal stub that delegates to existing services.
+  - [ ] 3.3 Decide fate of `server/services/combatEngineV2.js` (required at `server/routes/admin.js:644`, does not exist). Options: (a) remove the require + the three dependent admin endpoints at `admin.js:651-686`, (b) repoint them at `combatEngine.js` if the surface overlaps. Prefer (a) — do not build a V2 engine (PRD §5.8 explicit non-goal).
+  - [ ] 3.4 Add a `/api/health` endpoint that reports the list of `require()` calls that silently failed at startup (the graceful-degradation pattern from §7.2). Each failed require returns `{ path, error }`. Critical for future drift detection.
+  - [ ] 3.5 Verify: boot → curl `/api/health` → confirm zero failed requires after 3.2 and 3.3 are merged.
+
+- [ ] 4.0 Nightly zone-identity cron fix + diagnostic (§9.19 → Phase 1 critical) (est: L — stakeholder diagnostic bump)
+  - [ ] 4.1 **DIAGNOSTIC FIRST.** Via Supabase MCP, query `zones` table and `zone_control.updated_at` for the past 7 nights. Check whether `branded_guild` and `dominant_house` have been updating daily. Command sketch: `SELECT id, branded_guild, dominant_house, updated_at FROM zones ORDER BY updated_at DESC;`
+  - [ ] 4.2 If stale: document how many zones + how many days. Estimate affected rounds (the in-combat `zoneBonusCache` at `combatEngine.js:97-100` would have been applying pre-stale-date bonuses). Surface to stakeholder.
+  - [ ] 4.3 Refactor `server/services/scheduler.js:80`. Replace `fetch('http://localhost:${PORT||5000}/api/zones/recalculate-identities')` with a direct `require('../routes/zones').writeNightlyPresence()` call — or extract `writeNightlyPresence` to a shared service if the route file shouldn't be reached into.
+  - [ ] 4.4 Remove the HTTP self-call pattern entirely from scheduler.js — same-process work should be a direct function call. Grep for any other `fetch('http://localhost:...')` inside the scheduler and fix similarly.
+  - [ ] 4.5 Add a log line after the direct call that reports how many zones were updated: `[${ts()}] 🌙 Zone identity recalc complete — N zones updated`.
+  - [ ] 4.6 Verify the next midnight UTC run updates all 27 zones by re-running the diagnostic query from 4.1.
+  - [ ] 4.7 Update PRD §9.19 to "resolved" after 4.6 passes.
+
+### Ongoing — runs parallel to any phase; does not block critical path
+
+**Dependencies within §5.0:** 5.1 → 5.5 (`seed-narratives.js` fate). 5.3 → 5.7 (arena-engine V5 deletion follows arena-sockets decision). 5.8 → 5.9 (Drizzle removal follows React scaffold removal). All others are independent and can run in any order.
+
+- [ ] 5.0 Cleanup sweep — orphans, dead code, repo spillage (§9.7–§9.12) (est: L)
+  - [ ] 5.1 Decide fate of `zone_deployments.damage_dealt`, `heals_done`, `kos_dealt`, `points_earned` columns (§9.7). Default: drop them via migration. Alternative: wire them up in `combatEngine.js` during the 1.x work so per-session stats appear on the profile page.
+  - [ ] 5.2 Per-file triage of orphaned routes (§9.8): `arena.js`, `chronicle.js`, `drop-tickets.js`, `leveling.js`, `raids.js`, `stats.js`. For each orphaned route file, grep `public/**/*.{html,js}` AND `client/**/*` for API path references. If any caller exists, do NOT delete — either mount the route or remove the caller. Log decision per route in commit message.
+  - [ ] 5.3 Per-file triage of orphaned services (§9.8): `House-zones.js`, `arena-sockets.js` (duplicate of inlined `index.js:204-270`), `cardDurability.js`, `livesReset.js`, `nerm-hooks-v2.js`, `nineStats.js`, `seed-narratives.js` duplicate. Default: delete. Move `nermBot.js.bak` out of git entirely.
+  - [ ] 5.4 Delete shell-accident files at repo root (§9.9): `collection`, `dont`, `glass cannon` (with space), `workspace`, `const { data: cardSlots } = await supabase`, `sedufYWHw`. All empty or junk.
+  - [ ] 5.5 Move one-off scripts from repo root to `scripts/archive/` (§9.9): `fix-card-refs.py`, `nuke-old-cards.py`, `patch-game-modes-v4.py`, `patch-packs.sh`. Delete the duplicate root-level `seed-narratives.js` (the one under `server/services/` is the live path, also being evaluated in 5.3).
+  - [ ] 5.6 Verify faction name drift (§9.10): query live `houses` table via MCP, compare against PRD §4.3 canonical names (Stormrage/Smoulders/etc.). If matching, delete the legacy table in `README.md`. If mismatched, open a separate migration PRD — do not silently rename rows.
+  - [ ] 5.7 Arena-engine V5 decision (§9.11). Inspect `server/services/arena-engine.js` and confirm it's unreachable (no startup require, and `arena-sockets.js` that would load it is itself orphaned per 5.3). If confirmed dead, delete the file as part of the same sweep that handles 5.3.
+  - [ ] 5.8 React scaffold `/client/` decision (§9.12). Default: delete the directory + update `package.json` to remove React-only dependencies (`react`, `react-dom`, `@vitejs/plugin-react`, `drizzle-kit`, shadcn UI pieces). If retained, a dedicated migration PRD is required before any work starts.
+  - [ ] 5.9 Remove `drizzle.config.ts` and `shared/schema.ts` (the placeholder `users` table) if 5.8 deletes the React scaffold — Drizzle has no game-table coverage (§7.4).
+
+### Phase 2 — Player Onboarding & Visible Feedback (FPRDs)
+
+- [ ] 6.0 Phase 2 feature PRDs — author + schedule (est: L — 4 FPRDs)
+  - [ ] 6.1 Write `tasks/prd-guild-uniqueness.md` (§9.15). Cover: canonicalization algorithm (casefold + strip zero-width + trim), allow-list vs claim-flow decision, migration for existing `players.guild_tag` rows, rollout order.
+  - [ ] 6.2 Write `tasks/prd-chronicle-quality-rubric.md` (§9.18). Cover: replace length heuristic at `chronicleEngine.js:170-187`; options include LLM-graded rubric (via existing Anthropic integration) or moderator-reviewable flags; rollout / backtest plan against historical replies.
+  - [ ] 6.3 Write `tasks/prd-leaderboard-subviews.md`. Cover: daily / seasonal / zone / guild drill-down views, query performance targets (500ms p50), cache strategy, URL scheme.
+  - [ ] 6.4 Write `tasks/prd-point-award-toasts.md`. Cover: Socket.io broadcast on `point_log` insert (use Supabase realtime or a post-insert trigger), toast UI pattern, rate-limiting for burst events like round-end payouts.
+  - [ ] 6.5 FPRD execution order — name the order explicitly:
+    1. **6.4 (point award toasts)** — depends on Phase 1 `point_log` accuracy; ship immediately after Phase 1 closes for instant visible feedback.
+    2. **6.1 (guild uniqueness)** — gates community growth; impersonation prevention is a credibility issue once player count grows.
+    3. **6.2 (chronicle quality rubric)** — improves Chronicle scoring fairness; lower urgency until reply volume justifies semantic scoring cost.
+    4. **6.3 (leaderboard sub-views)** — polish; least urgent.
+
+    Each FPRD spawns its own `tasks-prd-<n>.md` after approval.
+  - [ ] 6.6 Manual verification that satisfies Phase 2 "Done when" criteria (PRD §5.5): new-player path under 60s; leaderboards under 500ms p50; KO +10 row visible in personal history before next round.
+
+### Phase 3 — Hardcore Community Foundations (FPRDs)
+
+- [ ] 7.0 Phase 3 feature PRDs — author + schedule (est: L — 5 FPRDs + legal coordination)
+  - [ ] 7.1 Write `tasks/prd-post-l10-leveling.md` (§9.16). Cover: hard cap vs soft cap vs rollover design, stakeholder decision, XP curve beyond L10 if applicable, UI updates.
+  - [ ] 7.2 Write `tasks/prd-items-system.md`. Cover: full stat range (5–20 per stat confirmed in PRD §4.14), drop source per rarity, crafting path, trade-offs between Weapon/Outfit/Hat slot focus, no-sharpness invariant.
+  - [ ] 7.3 Write `tasks/prd-token-economy-ops.md` (§9.17). Cover: claim cadence (manual vs scheduled), eligibility gates, ratio-adjustment governance, anti-Sybil baseline (Twitter account age? Chronicle activity threshold?), audit trail columns.
+  - [ ] 7.4 Write `tasks/prd-nft-genesis-s2.md`. Cover: 2,500 Genesis scope, allocation method (mint, airdrop, earn), gameplay effects (PRD §1 says Season 2+ but no specifics), Solana integration plan.
+  - [ ] 7.5 Write `tasks/prd-season-rollover.md`. Cover: snapshot mechanics (freeze leaderboard, backfill to a `season_snapshots` table), `seasonal_points` reset logic, `lifetime_points` preservation, season-end reward computation, cutoff timing, communication plan.
+  - [ ] 7.6 Pre-launch legal consult for token claim flow (7.3). Before token claim ships, consult a lawyer with experience in:
+    - Securities classification of `$9LV` under applicable jurisdictions (US, EU, Spencer's jurisdiction).
+    - Anti-Sybil / KYC requirements for token distribution.
+    - Consumer protection on point→token conversion ratio changes.
+
+    This is an external service cost. Budget and schedule before 7.3 implementation begins, not after.
+  - [ ] 7.7 Order the 5 FPRDs by stakeholder value; likely items (7.2) and post-L10 (7.1) are the near-term player-facing wins, NFT Genesis (7.4) is Season 2 gating, season rollover (7.5) is infrastructure that must exist before seasonal resets.
+
+### Deferred / Tracked
+
+- [ ] 8.0 Deferred-but-tracked items (est: S)
+  - [ ] 8.1 Author `tasks/prd-testing-infrastructure.md` (§9.13) — after Phase 1 closes. Cover: Jest configuration standards, where tests live (colocated), coverage targets, CI integration, initial suite scope (pointsService, combatEngine smoke, key routes).
+  - [ ] 8.2 Set a calendar reminder for 2026-10-17 (six months out) to review `zone_control_history` row growth vs PRD §7.7's ~96k rows/year projection. If on track, author a retention PRD.
+  - [ ] 8.3 Confirm PRD §7.7 already captures the storage-growth plan adequately; if not, expand with concrete rollup criteria (e.g., "archive rows older than 90 days to `zone_control_history_archive` table").
+  - [ ] 8.4 Quarterly PRD review — 2026-07-17 — verify §9 resolutions are accurately reflected and close any ledger entries that are now done.
+
+- [ ] 8.5 Establish lint + formatter baseline (est: M)
+  - [ ] 8.5.1 Add `.prettierrc`, `.eslintrc.cjs` with sensible vanilla-JS + Express defaults.
+  - [ ] 8.5.2 Add `npm run lint` and `npm run format` scripts to `package.json`.
+  - [ ] 8.5.3 Run formatter once across the whole repo as a single "apply formatter" PR (no logic changes).
+  - [ ] 8.5.4 Document lint conventions in `CLAUDE.md`.
+  - [ ] 8.5.5 Decide CI integration (probably defer until §8.1 testing infrastructure).
