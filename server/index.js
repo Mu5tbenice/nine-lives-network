@@ -303,7 +303,6 @@ app.get('/api/combat/next-snapshot', (req, res) => {
 // ── START COMBAT ENGINE ──
 if (combatEngine && combatEngine.startCombatEngine) {
   combatEngine.startCombatEngine();
-  console.log("⚔️ Combat engine started — V3 round-based, 200ms ticks, last guild standing");
 }
 // Health check
 app.get("/api/health", (req, res) => {
