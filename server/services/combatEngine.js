@@ -885,7 +885,7 @@ function startCombatEngine(){
       catch(e){ console.error(`❌ Zone ${id}:`,e.message); }
     }
   },TICK_MS);
-  console.log('✅ Combat engine V3 started — round-based combat, 200ms ticks, 3min rounds');
+  console.log('✅ Combat engine V3 started — round-based, last guild standing or 5-min cap, 200ms ticks');
 }
 function stopCombatEngine(){ clearInterval(_tickInt); _tickInt=null; }
 
