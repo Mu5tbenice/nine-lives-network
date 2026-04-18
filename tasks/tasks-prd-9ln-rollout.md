@@ -74,11 +74,11 @@ Organized by the §5.5 phasing in `tasks/prd-9ln-product.md`. Each §9 item is t
   - [ ] 0.3 Commit message convention — match existing repo style (observed in recent commits): lowercase type prefix, em-dash separator, terse subject under 70 chars, detailed body.
   - [ ] 0.4 Decide whether to open all Phase 1 PRs as draft-first or ready-for-review. Recommend draft-first so stakeholder can preview before combat-engine changes go live.
 
-- [ ] 0.5 PRD update convention (est: S — one-time setup)
-  - [ ] 0.5.1 Establish: every PR that resolves a §9 PRD entry MUST update the PRD in the same commit (mark entry as 'Resolved YYYY-MM-DD in PR #X' rather than deleting).
-  - [ ] 0.5.2 Establish: every PR that introduces a new known issue MUST add a §9 entry (numbered next available).
-  - [ ] 0.5.3 Update `CLAUDE.md` to enforce this convention for future Claude Code sessions.
-  - [ ] 0.5.4 Apply the convention retroactively to PRs already merged today (#125, #126, #127, #128, #129, #130) — most don't have §9 entries to resolve, but future audits should be able to trace history.
+- [x] 0.5 PRD update convention (est: S — one-time setup)
+  - [x] 0.5.1 Establish: every PR that resolves a §9 PRD entry MUST update the PRD in the same commit (mark entry as 'Resolved YYYY-MM-DD in PR #X' rather than deleting).
+  - [x] 0.5.2 Establish: every PR that introduces a new known issue MUST add a §9 entry (numbered next available).
+  - [x] 0.5.3 Update `CLAUDE.md` to enforce this convention for future Claude Code sessions.
+  - [x] 0.5.4 Apply the convention retroactively to PRs already merged today (#125, #126, #127, #128, #129, #130) — §9.5 (PRs #126 + #128), §9.9 (PRs #126 + #127) fully resolved; §9.6 (PR #125, schema.sql only) and §9.8 (PR #127, .bak only) partially resolved. #129 (PRD creation), #130 (working tree cleanup) didn't have §9 entries to resolve.
 
 ### Phase 1 — Scoring Foundations (critical path)
 
