@@ -1,9 +1,9 @@
 /**
  * ARENA ENGINE — Nine Lives Network V5
- * 
+ *
  * Server-side combat engine for zone battles.
  * Runs rounds within cycles, emits events via Socket.io.
- * 
+ *
  * CYCLE (5 minutes) = 3-4 ROUNDS (~60-90 sec each)
  * Between rounds: 50% HP heal, clear temp effects
  * Between cycles: full heal, sharpness degrades, points awarded
@@ -14,68 +14,83 @@
 // ============================================
 const EFFECT_VALUES = {
   // Attack
-  BURN:     { damage_per_cycle: 2 },
-  CHAIN:    { targets: 2 },
-  CRIT:     { chance: 0.25, multiplier: 2 }, /** Execute an attack from attacker to target */
-  SURGE:    { atk_bonus: 0.5, extra_sharpness_cost: 1 },
-  PIERCE:   { ignores: ['WARD', 'BARRIER'] },
+  BURN: { damage_per_cycle: 2 },
+  CHAIN: { targets: 2 },
+  CRIT: {
+    chance: 0.25,
+    multiplier: 2,
+  } /** Execute an attack from attacker to target */,
+  SURGE: { atk_bonus: 0.5, extra_sharpness_cost: 1 },
+  PIERCE: { ignores: ['WARD', 'BARRIER'] },
 
   // Defense
-  HEAL:     { base_heal: 3 },
-  WARD:     { type: 'binary' },
-  ANCHOR:   { type: 'binary', min_hp: 1 },
-  THORNS:   { reflect_damage: 2 },
-  BARRIER:  { absorb_total: 5 },
+  HEAL: { base_heal: 3 },
+  WARD: { type: 'binary' },
+  ANCHOR: { type: 'binary', min_hp: 1 },
+  THORNS: { reflect_damage: 2 },
+  BARRIER: { absorb_total: 5 },
 
   // Control
-  SILENCE:  { type: 'binary' },
-  HEX:      { atk_reduction: 2 },
-  WEAKEN:   { damage_multiplier: 0.5 },
-  DRAIN:    { min: 2, max: 4 },
-  SIPHON:   { hp_per_enemy: 1 },
-  SLOW:     { spd_reduction: 3 },
-  TETHER:   { damage_share: 0.5 },
-  MARK:     { damage_increase: 0.25 },
+  SILENCE: { type: 'binary' },
+  HEX: { atk_reduction: 2 },
+  WEAKEN: { damage_multiplier: 0.5 },
+  DRAIN: { min: 2, max: 4 },
+  SIPHON: { hp_per_enemy: 1 },
+  SLOW: { spd_reduction: 3 },
+  TETHER: { damage_share: 0.5 },
+  MARK: { damage_increase: 0.25 },
 
   // Tempo
-  HASTE:    { spd_bonus: 3 },
-  SWIFT:    { deploy_multiplier: 2 },
-  DODGE:    { chance: 0.3 },
-  PHASE:    { skip_cycle: true, next_cycle_bonus: 0.5 },
-  STEALTH:  { duration_cycles: 1 },
+  HASTE: { spd_bonus: 3 },
+  SWIFT: { deploy_multiplier: 2 },
+  DODGE: { chance: 0.3 },
+  PHASE: { skip_cycle: true, next_cycle_bonus: 0.5 },
+  STEALTH: { duration_cycles: 1 },
 
   // Attrition
-  POISON:   { damage_per_cycle: 2, max_stacks: 3 },
-  CORRODE:  { max_hp_reduction: 1 },
-  INFECT:   { spread_value: 2 },
+  POISON: { damage_per_cycle: 2, max_stacks: 3 },
+  CORRODE: { max_hp_reduction: 1 },
+  INFECT: { spread_value: 2 },
 
   // Team
-  AMPLIFY:  { effect_bonus: 0.5 },
-  INSPIRE:  { atk_bonus_allies: 1 },
-  BLESS:    { heal_allies: 2 },
-  TAUNT:    { type: 'binary' },
-  SHATTER:  { on_ko_damage: 3 },
-  REFLECT:  { type: 'binary' },
+  AMPLIFY: { effect_bonus: 0.5 },
+  INSPIRE: { atk_bonus_allies: 1 },
+  BLESS: { heal_allies: 2 },
+  TAUNT: { type: 'binary' },
+  SHATTER: { on_ko_damage: 3 },
+  REFLECT: { type: 'binary' },
 
   // Utility
-  CLEANSE:  { removes: ['BURN','POISON','CORRODE','WEAKEN','HEX','SLOW','SILENCE','TETHER','MARK'] },
+  CLEANSE: {
+    removes: [
+      'BURN',
+      'POISON',
+      'CORRODE',
+      'WEAKEN',
+      'HEX',
+      'SLOW',
+      'SILENCE',
+      'TETHER',
+      'MARK',
+    ],
+  },
   LEECH_FIELD: { hp_per_enemy_per_cycle: 1 },
-  OVERCHARGE:  { trigger_count: 2, extra_sharpness_cost: 1 },
+  OVERCHARGE: { trigger_count: 2, extra_sharpness_cost: 1 },
 };
 
 // ============================================
 // HOUSE BASE STATS
 // ============================================
 const HOUSE_STATS = {
-  smoulders:   { atk: 6, hp: 12, spd: 5, def: 0, luck: 1 },
-  darktide:    { atk: 4, hp: 16, spd: 4, def: 1, luck: 1 },
-  stonebark:   { atk: 2, hp: 24, spd: 2, def: 3, luck: 0 },
-  ashenvale:   { atk: 3, hp: 14, spd: 8, def: 0, luck: 2 },
-  stormrage:   { atk: 7, hp: 10, spd: 6, def: 0, luck: 2 },
+  smoulders: { atk: 6, hp: 12, spd: 5, def: 0, luck: 1 },
+  darktide: { atk: 4, hp: 16, spd: 4, def: 1, luck: 1 },
+  stonebark: { atk: 2, hp: 24, spd: 2, def: 3, luck: 0 },
+  ashenvale: { atk: 3, hp: 14, spd: 8, def: 0, luck: 2 },
+  stormrage: { atk: 7, hp: 10, spd: 6, def: 0, luck: 2 },
   nighthollow: { atk: 4, hp: 13, spd: 7, def: 0, luck: 3 },
   dawnbringer: { atk: 3, hp: 18, spd: 3, def: 2, luck: 0 },
-  manastorm:   { atk: 5, hp: 14, spd: 5, def: 1, luck: 1 },
-  plaguemire:  { atk: 3, hp: 15, spd: 4, def: 2, luck: 1 },
+  manastorm: { atk: 5, hp: 14, spd: 5, def: 1, luck: 1 },
+  plaguemire: { atk: 3, hp: 15, spd: 4, def: 2, luck: 1 },
 };
 
 // ============================================
@@ -84,7 +99,7 @@ const HOUSE_STATS = {
 
 /** Get sharpness modifier (0.5 to 1.0) */
 function getSharpnessModifier(sharpness) {
-  return 0.5 + (sharpness / 200);
+  return 0.5 + sharpness / 200;
 }
 
 /** Get attack cooldown in seconds based on SPD */
@@ -127,13 +142,13 @@ function scaleEffectValue(baseValue, sharpness, isOwnHouse, isAlliedHouse) {
 // ============================================
 class ArenaNine {
   constructor(data) {
-    this.id = data.id;                     // player_id or nine_id
-    this.name = data.name;                 // display name
-    this.house = data.house;               // house key
-    this.guild_id = data.guild_id || null;  // guild or null (Lone Wolf)
+    this.id = data.id; // player_id or nine_id
+    this.name = data.name; // display name
+    this.house = data.house; // house key
+    this.guild_id = data.guild_id || null; // guild or null (Lone Wolf)
     this.guild_name = data.guild_name || 'Lone Wolf';
-    this.items = data.items || {};          // equipped items
-    this.cards = data.cards || [];          // 3-card loadout [{spell data + sharpness}]
+    this.items = data.items || {}; // equipped items
+    this.cards = data.cards || []; // 3-card loadout [{spell data + sharpness}]
     this.isFirstDeploy = data.isFirstDeploy || false; // for SWIFT
 
     // Calculate combat stats from house base + cards
@@ -145,7 +160,11 @@ class ArenaNine {
     this.base_luck = base.luck;
 
     // Add card stats (scaled by sharpness)
-    let card_atk = 0, card_hp = 0, card_spd = 0, card_def = 0, card_luck = 0;
+    let card_atk = 0,
+      card_hp = 0,
+      card_spd = 0,
+      card_def = 0,
+      card_luck = 0;
     for (const card of this.cards) {
       const mod = getSharpnessModifier(card.sharpness || 100);
       card_atk += Math.round((card.atk || 0) * mod);
@@ -177,7 +196,7 @@ class ArenaNine {
     this.position = { x: 0, y: 0 };
 
     // Active effects / status
-    this.effects = {};       // { BURN: { value: 2, stacks: 1 }, POISON: { value: 2, stacks: 2 }, ... }
+    this.effects = {}; // { BURN: { value: 2, stacks: 1 }, POISON: { value: 2, stacks: 2 }, ... }
     this.has_ward = false;
     this.has_anchor = false;
     this.has_stealth = false;
@@ -239,7 +258,9 @@ class ArenaNine {
 
     // MARK increases incoming damage
     if (this.is_marked && !options.isEffectDamage) {
-      finalDamage = Math.round(finalDamage * (1 + EFFECT_VALUES.MARK.damage_increase));
+      finalDamage = Math.round(
+        finalDamage * (1 + EFFECT_VALUES.MARK.damage_increase),
+      );
     }
 
     // DEF reduces auto-attack damage (not effect damage)
@@ -249,9 +270,13 @@ class ArenaNine {
 
     // DODGE check (for auto-attacks only)
     if (!options.isEffectDamage && !options.cantDodge) {
-      const dodgeChance = EFFECT_VALUES.DODGE.chance + (this.total_luck * 0.01);
+      const dodgeChance = EFFECT_VALUES.DODGE.chance + this.total_luck * 0.01;
       if (this.effects.DODGE && roll(dodgeChance)) {
-        events.push({ type: 'dodge', nine_id: this.id, attacker_id: source?.id });
+        events.push({
+          type: 'dodge',
+          nine_id: this.id,
+          attacker_id: source?.id,
+        });
         return events;
       }
     }
@@ -269,7 +294,11 @@ class ArenaNine {
       this.barrier_hp -= absorbed;
       finalDamage -= absorbed;
       if (this.barrier_hp <= 0) {
-        events.push({ type: 'effect', nine_id: this.id, effect_type: 'BARRIER_BREAK' });
+        events.push({
+          type: 'effect',
+          nine_id: this.id,
+          effect_type: 'BARRIER_BREAK',
+        });
       }
       if (finalDamage <= 0) return events;
     }
@@ -277,8 +306,16 @@ class ArenaNine {
     // REFLECT bounces back full damage
     if (this.has_reflect && !options.isEffectDamage && source) {
       this.has_reflect = false;
-      events.push({ type: 'effect', nine_id: this.id, effect_type: 'REFLECT', target_id: source.id });
-      const reflectEvents = source.takeDamage(amount, this, { isEffectDamage: true, cantDodge: true });
+      events.push({
+        type: 'effect',
+        nine_id: this.id,
+        effect_type: 'REFLECT',
+        target_id: source.id,
+      });
+      const reflectEvents = source.takeDamage(amount, this, {
+        isEffectDamage: true,
+        cantDodge: true,
+      });
       return [...events, ...reflectEvents];
     }
 
@@ -296,17 +333,38 @@ class ArenaNine {
     });
 
     // TETHER shares damage
-    if (this.tether_target && this.tether_target.alive && !options.isTetherDamage) {
-      const sharedDamage = Math.round(finalDamage * EFFECT_VALUES.TETHER.damage_share);
-      const tetherEvents = this.tether_target.takeDamage(sharedDamage, null, { isEffectDamage: true, isTetherDamage: true });
-      events.push({ type: 'effect', effect_type: 'TETHER_SHARE', source_id: this.id, target_id: this.tether_target.id, amount: sharedDamage });
+    if (
+      this.tether_target &&
+      this.tether_target.alive &&
+      !options.isTetherDamage
+    ) {
+      const sharedDamage = Math.round(
+        finalDamage * EFFECT_VALUES.TETHER.damage_share,
+      );
+      const tetherEvents = this.tether_target.takeDamage(sharedDamage, null, {
+        isEffectDamage: true,
+        isTetherDamage: true,
+      });
+      events.push({
+        type: 'effect',
+        effect_type: 'TETHER_SHARE',
+        source_id: this.id,
+        target_id: this.tether_target.id,
+        amount: sharedDamage,
+      });
       events.push(...tetherEvents);
     }
 
     // THORNS reflects damage to attacker
     if (this.effects.THORNS && source && !options.isEffectDamage) {
       const thornsDmg = EFFECT_VALUES.THORNS.reflect_damage;
-      events.push({ type: 'effect', effect_type: 'THORNS', source_id: this.id, target_id: source.id, amount: thornsDmg });
+      events.push({
+        type: 'effect',
+        effect_type: 'THORNS',
+        source_id: this.id,
+        target_id: source.id,
+        amount: thornsDmg,
+      });
       source.current_hp -= thornsDmg;
       source.damage_taken += thornsDmg;
     }
@@ -315,7 +373,11 @@ class ArenaNine {
     if (this.current_hp <= 0 && this.has_anchor) {
       this.current_hp = 1;
       this.has_anchor = false; // consumed
-      events.push({ type: 'effect', nine_id: this.id, effect_type: 'ANCHOR_SAVE' });
+      events.push({
+        type: 'effect',
+        nine_id: this.id,
+        effect_type: 'ANCHOR_SAVE',
+      });
     }
 
     // KO check
@@ -336,7 +398,14 @@ class ArenaNine {
     this.current_hp = Math.min(this.max_hp, this.current_hp + amount);
     const healed = this.current_hp - before;
     if (healed > 0) {
-      return [{ type: 'heal', nine_id: this.id, amount: healed, new_hp: this.current_hp }];
+      return [
+        {
+          type: 'heal',
+          nine_id: this.id,
+          amount: healed,
+          new_hp: this.current_hp,
+        },
+      ];
     }
     return [];
   }
@@ -362,7 +431,9 @@ class ArenaNine {
 
     // Clear temp numeric effects but keep persistent ones
     const persistent = ['POISON', 'CORRODE'];
-    const tempEffects = Object.keys(this.effects).filter(e => !persistent.includes(e));
+    const tempEffects = Object.keys(this.effects).filter(
+      (e) => !persistent.includes(e),
+    );
     for (const e of tempEffects) {
       delete this.effects[e];
     }
@@ -394,22 +465,22 @@ class ArenaNine {
 class Arena {
   constructor(zoneId, io) {
     this.zoneId = zoneId;
-    this.io = io;                    // Socket.io instance
-    this.room = `zone_${zoneId}`;    // Socket.io room name
+    this.io = io; // Socket.io instance
+    this.room = `zone_${zoneId}`; // Socket.io room name
 
-    this.nines = new Map();          // id → ArenaNine
+    this.nines = new Map(); // id → ArenaNine
     this.round = 0;
     this.cycle = 0;
-    this.roundTimer = 0;             // seconds elapsed in current round
-    this.cycleTimer = 0;             // seconds elapsed in current cycle
+    this.roundTimer = 0; // seconds elapsed in current round
+    this.cycleTimer = 0; // seconds elapsed in current cycle
     this.isRunning = false;
     this.tickInterval = null;
 
     // Config
-    this.ROUND_DURATION = 90;        // seconds per round
-    this.CYCLE_DURATION = 300;       // seconds per cycle (5 min)
-    this.ROUNDS_PER_CYCLE = 4;       // max rounds per cycle
-    this.TICK_RATE = 1000;           // ms between ticks (1 second)
+    this.ROUND_DURATION = 90; // seconds per round
+    this.CYCLE_DURATION = 300; // seconds per cycle (5 min)
+    this.ROUNDS_PER_CYCLE = 4; // max rounds per cycle
+    this.TICK_RATE = 1000; // ms between ticks (1 second)
     this.SUPPORT_PULSE_INTERVAL = 10; // seconds between support card pulses
   }
 
@@ -428,10 +499,20 @@ class Arena {
       guild: nine.guild_name,
       guild_id: nine.guild_id,
       house: nine.house,
-      cards: nine.cards.map(c => ({ name: c.name, type: c.spell_type, effects: c.bonus_effects })),
+      cards: nine.cards.map((c) => ({
+        name: c.name,
+        type: c.spell_type,
+        effects: c.bonus_effects,
+      })),
       items: nine.items,
       position: nine.position,
-      stats: { atk: nine.total_atk, hp: nine.total_hp, spd: nine.total_spd, def: nine.total_def, luck: nine.total_luck },
+      stats: {
+        atk: nine.total_atk,
+        hp: nine.total_hp,
+        spd: nine.total_spd,
+        def: nine.total_def,
+        luck: nine.total_luck,
+      },
     });
 
     // Start engine if this is the first Nine
@@ -456,7 +537,9 @@ class Arena {
   /** Get spawn position for a guild (cluster guilds together) */
   getSpawnPosition(guildId) {
     // Simple isometric positioning — spread guilds around arena edges
-    const guildNines = [...this.nines.values()].filter(n => n.guild_id === guildId);
+    const guildNines = [...this.nines.values()].filter(
+      (n) => n.guild_id === guildId,
+    );
     const guildIndex = this.getGuildIndex(guildId);
     const angleBase = (guildIndex / this.getGuildCount()) * Math.PI * 2;
     const radius = 200;
@@ -470,13 +553,17 @@ class Arena {
 
   /** Get unique guild count */
   getGuildCount() {
-    const guilds = new Set([...this.nines.values()].map(n => n.guild_id || n.id));
+    const guilds = new Set(
+      [...this.nines.values()].map((n) => n.guild_id || n.id),
+    );
     return Math.max(guilds.size, 1);
   }
 
   /** Get a consistent index for a guild */
   getGuildIndex(guildId) {
-    const guilds = [...new Set([...this.nines.values()].map(n => n.guild_id || n.id))];
+    const guilds = [
+      ...new Set([...this.nines.values()].map((n) => n.guild_id || n.id)),
+    ];
     return guilds.indexOf(guildId || 'lone');
   }
 
@@ -549,7 +636,7 @@ class Arena {
     const events = [];
 
     // Get alive Nines
-    const alive = [...this.nines.values()].filter(n => n.alive);
+    const alive = [...this.nines.values()].filter((n) => n.alive);
     if (alive.length < 2) {
       this.endRound();
       return;
@@ -594,7 +681,9 @@ class Arena {
     } else {
       // Check if all but one guild is wiped
       const aliveGuilds = new Set(
-        [...this.nines.values()].filter(n => n.alive).map(n => n.guild_id || n.id)
+        [...this.nines.values()]
+          .filter((n) => n.alive)
+          .map((n) => n.guild_id || n.id),
       );
       if (aliveGuilds.size <= 1) {
         this.endRound();
@@ -613,7 +702,10 @@ class Arena {
     // Check STEALTH — can't target stealthed Nines
     if (target.has_stealth) {
       // Find next nearest non-stealthed enemy
-      const altTarget = this.findNearestEnemy(attacker, aliveNines.filter(n => !n.has_stealth));
+      const altTarget = this.findNearestEnemy(
+        attacker,
+        aliveNines.filter((n) => !n.has_stealth),
+      );
       if (!altTarget) return events;
       return this.executeAttack(attacker, altTarget);
     }
@@ -627,16 +719,19 @@ class Arena {
     let atk = attacker.total_atk;
 
     // Pick a card for this attack (round-robin through loadout)
-    attacker._cardIndex = ((attacker._cardIndex || 0) + 1) % Math.max(attacker.cards.length, 1);
+    attacker._cardIndex =
+      ((attacker._cardIndex || 0) + 1) % Math.max(attacker.cards.length, 1);
     const activeCard = attacker.cards[attacker._cardIndex] || null;
     const cardName = activeCard?.name || 'Auto Attack';
     const cardType = activeCard?.spell_type || 'attack';
     const cardEffects = activeCard?.bonus_effects || [];
 
     // Helper: check if active card has a given effect tag
-    const cardHas = (tag) => cardEffects.some(e => e.tag && e.tag.split(' ')[0] === tag);
+    const cardHas = (tag) =>
+      cardEffects.some((e) => e.tag && e.tag.split(' ')[0] === tag);
     // Also check persistent runtime effects (WARD, BARRIER etc applied at round start)
-    const hasEffect = (tag) => cardHas(tag) || this.nineHasEffect(attacker, tag);
+    const hasEffect = (tag) =>
+      cardHas(tag) || this.nineHasEffect(attacker, tag);
 
     // PHASE bonus from last round
     if (attacker.phase_bonus_next) {
@@ -655,7 +750,7 @@ class Arena {
     }
 
     // CRIT check
-    const critChance = EFFECT_VALUES.CRIT.chance + (attacker.total_luck * 0.01);
+    const critChance = EFFECT_VALUES.CRIT.chance + attacker.total_luck * 0.01;
     let isCrit = false;
     if (hasEffect('CRIT') && !attacker.is_silenced && roll(critChance)) {
       atk = Math.round(atk * EFFECT_VALUES.CRIT.multiplier);
@@ -689,14 +784,20 @@ class Arena {
 
     // CHAIN — hit a second target
     if (hasEffect('CHAIN') && !attacker.is_silenced) {
-      const aliveEnemies = [...this.nines.values()].filter(n =>
-        n.alive && n.id !== attacker.id && n.id !== target.id && !attacker.isAlly(n)
+      const aliveEnemies = [...this.nines.values()].filter(
+        (n) =>
+          n.alive &&
+          n.id !== attacker.id &&
+          n.id !== target.id &&
+          !attacker.isAlly(n),
       );
       if (aliveEnemies.length > 0) {
         const chainTarget = this.findNearest(target, aliveEnemies);
         if (chainTarget) {
           const chainDmg = Math.round(atk * 0.75); // chain does 75% damage
-          const chainEvents = chainTarget.takeDamage(chainDmg, attacker, { isPierce });
+          const chainEvents = chainTarget.takeDamage(chainDmg, attacker, {
+            isPierce,
+          });
           events.push({
             type: 'effect',
             effect_type: 'CHAIN',
@@ -711,43 +812,85 @@ class Arena {
 
     // ON-HIT CARD EFFECTS — check active card's effects directly
     if (!attacker.is_silenced && cardEffects.length > 0) {
-      const hasEffect = (tag) => cardEffects.some(e => e.tag && e.tag.split(' ')[0] === tag);
+      const hasEffect = (tag) =>
+        cardEffects.some((e) => e.tag && e.tag.split(' ')[0] === tag);
 
       // BURN — apply on hit
       if (hasEffect('BURN')) {
-        this.applyStackingEffect(target, 'BURN', EFFECT_VALUES.BURN.damage_per_cycle);
-        events.push({ type: 'effect', effect_type: 'BURN_APPLY', target_id: target.id, stacks: target.effects.BURN?.stacks || 1 });
+        this.applyStackingEffect(
+          target,
+          'BURN',
+          EFFECT_VALUES.BURN.damage_per_cycle,
+        );
+        events.push({
+          type: 'effect',
+          effect_type: 'BURN_APPLY',
+          target_id: target.id,
+          stacks: target.effects.BURN?.stacks || 1,
+        });
       }
 
       // POISON — apply on hit
       if (hasEffect('POISON')) {
-        this.applyStackingEffect(target, 'POISON', EFFECT_VALUES.POISON.damage_per_cycle);
-        events.push({ type: 'effect', effect_type: 'POISON_APPLY', target_id: target.id, stacks: target.effects.POISON?.stacks || 1 });
+        this.applyStackingEffect(
+          target,
+          'POISON',
+          EFFECT_VALUES.POISON.damage_per_cycle,
+        );
+        events.push({
+          type: 'effect',
+          effect_type: 'POISON_APPLY',
+          target_id: target.id,
+          stacks: target.effects.POISON?.stacks || 1,
+        });
       }
 
       // DRAIN — steal HP
       if (hasEffect('DRAIN')) {
-        const drainAmount = randInt(EFFECT_VALUES.DRAIN.min, EFFECT_VALUES.DRAIN.max);
+        const drainAmount = randInt(
+          EFFECT_VALUES.DRAIN.min,
+          EFFECT_VALUES.DRAIN.max,
+        );
         target.current_hp = Math.max(0, target.current_hp - drainAmount);
         const healEvents = attacker.heal(drainAmount);
-        events.push({ type: 'effect', effect_type: 'DRAIN', from: attacker.id, to: target.id, amount: drainAmount });
+        events.push({
+          type: 'effect',
+          effect_type: 'DRAIN',
+          from: attacker.id,
+          to: target.id,
+          amount: drainAmount,
+        });
         events.push(...healEvents);
       }
 
       // SIPHON — steal HP from all enemies
       if (hasEffect('SIPHON')) {
         let totalSiphoned = 0;
-        for (const enemy of [...this.nines.values()].filter(n => n.alive && n.id !== attacker.id && !attacker.isAlly(n))) {
-          enemy.current_hp = Math.max(0, enemy.current_hp - EFFECT_VALUES.SIPHON.hp_per_enemy);
+        for (const enemy of [...this.nines.values()].filter(
+          (n) => n.alive && n.id !== attacker.id && !attacker.isAlly(n),
+        )) {
+          enemy.current_hp = Math.max(
+            0,
+            enemy.current_hp - EFFECT_VALUES.SIPHON.hp_per_enemy,
+          );
           totalSiphoned += EFFECT_VALUES.SIPHON.hp_per_enemy;
         }
         attacker.heal(totalSiphoned);
-        events.push({ type: 'effect', effect_type: 'SIPHON', nine_id: attacker.id, total: totalSiphoned });
+        events.push({
+          type: 'effect',
+          effect_type: 'SIPHON',
+          nine_id: attacker.id,
+          total: totalSiphoned,
+        });
       }
 
       // OVERCHARGE — visual trigger
       if (hasEffect('OVERCHARGE')) {
-        events.push({ type: 'effect', effect_type: 'OVERCHARGE', nine_id: attacker.id });
+        events.push({
+          type: 'effect',
+          effect_type: 'OVERCHARGE',
+          nine_id: attacker.id,
+        });
       }
     }
 
@@ -757,12 +900,16 @@ class Arena {
   /** Find nearest enemy to a Nine */
   findNearestEnemy(nine, aliveNines) {
     // Check TAUNT first — if anyone is taunting, must target them
-    const taunters = aliveNines.filter(n => n.has_taunt && n.id !== nine.id && !nine.isAlly(n));
+    const taunters = aliveNines.filter(
+      (n) => n.has_taunt && n.id !== nine.id && !nine.isAlly(n),
+    );
     if (taunters.length > 0) {
       return this.findNearest(nine, taunters);
     }
 
-    const enemies = aliveNines.filter(n => n.id !== nine.id && !nine.isAlly(n));
+    const enemies = aliveNines.filter(
+      (n) => n.id !== nine.id && !nine.isAlly(n),
+    );
     return this.findNearest(nine, enemies);
   }
 
@@ -798,7 +945,10 @@ class Arena {
       nine.effects[effectName] = { value: baseValue, stacks: 1 };
     } else if (nine.effects[effectName].stacks < 3) {
       nine.effects[effectName].stacks += 1;
-      const newValue = getStackedValue(baseValue, nine.effects[effectName].stacks - 1);
+      const newValue = getStackedValue(
+        baseValue,
+        nine.effects[effectName].stacks - 1,
+      );
       nine.effects[effectName].value += newValue;
     }
     // else: capped at 3, do nothing
@@ -809,7 +959,7 @@ class Arena {
   /** Apply effects that trigger at the start of a round */
   applyRoundStartEffects() {
     const events = [];
-    const alive = [...this.nines.values()].filter(n => n.alive);
+    const alive = [...this.nines.values()].filter((n) => n.alive);
 
     for (const nine of alive) {
       if (nine.is_silenced) continue; // SILENCE blocks effect activation
@@ -820,36 +970,71 @@ class Arena {
         switch (effect.tag) {
           case 'WARD':
             nine.has_ward = true;
-            events.push({ type: 'effect', effect_type: 'WARD', nine_id: nine.id });
+            events.push({
+              type: 'effect',
+              effect_type: 'WARD',
+              nine_id: nine.id,
+            });
             break;
           case 'ANCHOR':
             nine.has_anchor = true;
-            events.push({ type: 'effect', effect_type: 'ANCHOR', nine_id: nine.id });
+            events.push({
+              type: 'effect',
+              effect_type: 'ANCHOR',
+              nine_id: nine.id,
+            });
             break;
           case 'BARRIER':
             nine.barrier_hp = EFFECT_VALUES.BARRIER.absorb_total;
-            events.push({ type: 'effect', effect_type: 'BARRIER', nine_id: nine.id, value: nine.barrier_hp });
+            events.push({
+              type: 'effect',
+              effect_type: 'BARRIER',
+              nine_id: nine.id,
+              value: nine.barrier_hp,
+            });
             break;
           case 'STEALTH':
             nine.has_stealth = true;
-            events.push({ type: 'effect', effect_type: 'STEALTH', nine_id: nine.id });
+            events.push({
+              type: 'effect',
+              effect_type: 'STEALTH',
+              nine_id: nine.id,
+            });
             break;
           case 'TAUNT':
             nine.has_taunt = true;
-            events.push({ type: 'effect', effect_type: 'TAUNT', nine_id: nine.id });
+            events.push({
+              type: 'effect',
+              effect_type: 'TAUNT',
+              nine_id: nine.id,
+            });
             break;
           case 'REFLECT':
             nine.has_reflect = true;
-            events.push({ type: 'effect', effect_type: 'REFLECT', nine_id: nine.id });
+            events.push({
+              type: 'effect',
+              effect_type: 'REFLECT',
+              nine_id: nine.id,
+            });
             break;
           case 'HASTE':
-            nine.attack_cooldown = getAttackCooldown(nine.total_spd + EFFECT_VALUES.HASTE.spd_bonus);
-            events.push({ type: 'effect', effect_type: 'HASTE', nine_id: nine.id });
+            nine.attack_cooldown = getAttackCooldown(
+              nine.total_spd + EFFECT_VALUES.HASTE.spd_bonus,
+            );
+            events.push({
+              type: 'effect',
+              effect_type: 'HASTE',
+              nine_id: nine.id,
+            });
             break;
           case 'PHASE':
             nine.is_phased = true;
             nine.phase_bonus_next = true;
-            events.push({ type: 'effect', effect_type: 'PHASE', nine_id: nine.id });
+            events.push({
+              type: 'effect',
+              effect_type: 'PHASE',
+              nine_id: nine.id,
+            });
             break;
           case 'DODGE':
             nine.effects.DODGE = { active: true };
@@ -858,7 +1043,11 @@ class Arena {
             if (nine.isFirstDeploy) {
               nine.swift_active = true;
               nine.isFirstDeploy = false;
-              events.push({ type: 'effect', effect_type: 'SWIFT', nine_id: nine.id });
+              events.push({
+                type: 'effect',
+                effect_type: 'SWIFT',
+                nine_id: nine.id,
+              });
             }
             break;
           case 'CLEANSE':
@@ -868,7 +1057,12 @@ class Arena {
             nine.is_marked = false;
             nine.tether_target = null;
             if (removed.length > 0) {
-              events.push({ type: 'effect', effect_type: 'CLEANSE', nine_id: nine.id, removed });
+              events.push({
+                type: 'effect',
+                effect_type: 'CLEANSE',
+                nine_id: nine.id,
+                removed,
+              });
             }
             break;
           case 'SILENCE': {
@@ -876,16 +1070,29 @@ class Arena {
             const target = this.findNearestEnemy(nine, alive);
             if (target) {
               target.is_silenced = true;
-              events.push({ type: 'effect', effect_type: 'SILENCE', source_id: nine.id, target_id: target.id });
+              events.push({
+                type: 'effect',
+                effect_type: 'SILENCE',
+                source_id: nine.id,
+                target_id: target.id,
+              });
             }
             break;
           }
           case 'HEX': {
             const target = this.findNearestEnemy(nine, alive);
             if (target) {
-              target.total_atk = Math.max(0, target.total_atk - EFFECT_VALUES.HEX.atk_reduction);
+              target.total_atk = Math.max(
+                0,
+                target.total_atk - EFFECT_VALUES.HEX.atk_reduction,
+              );
               target.effects.HEX = true;
-              events.push({ type: 'effect', effect_type: 'HEX', source_id: nine.id, target_id: target.id });
+              events.push({
+                type: 'effect',
+                effect_type: 'HEX',
+                source_id: nine.id,
+                target_id: target.id,
+              });
             }
             break;
           }
@@ -893,15 +1100,30 @@ class Arena {
             const target = this.findNearestEnemy(nine, alive);
             if (target) {
               target.effects.WEAKEN = true;
-              events.push({ type: 'effect', effect_type: 'WEAKEN', source_id: nine.id, target_id: target.id });
+              events.push({
+                type: 'effect',
+                effect_type: 'WEAKEN',
+                source_id: nine.id,
+                target_id: target.id,
+              });
             }
             break;
           }
           case 'SLOW': {
             const target = this.findNearestEnemy(nine, alive);
             if (target) {
-              target.attack_cooldown = getAttackCooldown(Math.max(0, target.total_spd - EFFECT_VALUES.SLOW.spd_reduction));
-              events.push({ type: 'effect', effect_type: 'SLOW', source_id: nine.id, target_id: target.id });
+              target.attack_cooldown = getAttackCooldown(
+                Math.max(
+                  0,
+                  target.total_spd - EFFECT_VALUES.SLOW.spd_reduction,
+                ),
+              );
+              events.push({
+                type: 'effect',
+                effect_type: 'SLOW',
+                source_id: nine.id,
+                target_id: target.id,
+              });
             }
             break;
           }
@@ -909,7 +1131,12 @@ class Arena {
             const target = this.findNearestEnemy(nine, alive);
             if (target) {
               target.is_marked = true;
-              events.push({ type: 'effect', effect_type: 'MARK', source_id: nine.id, target_id: target.id });
+              events.push({
+                type: 'effect',
+                effect_type: 'MARK',
+                source_id: nine.id,
+                target_id: target.id,
+              });
             }
             break;
           }
@@ -917,7 +1144,12 @@ class Arena {
             const target = this.findNearestEnemy(nine, alive);
             if (target) {
               nine.tether_target = target;
-              events.push({ type: 'effect', effect_type: 'TETHER', source_id: nine.id, target_id: target.id });
+              events.push({
+                type: 'effect',
+                effect_type: 'TETHER',
+                source_id: nine.id,
+                target_id: target.id,
+              });
             }
             break;
           }
@@ -928,10 +1160,15 @@ class Arena {
     // AMPLIFY — boosts next ally's effect (applied after all start effects)
     for (const nine of alive) {
       if (this.nineHasEffect(nine, 'AMPLIFY') && !nine.is_silenced) {
-        const allies = alive.filter(n => n.id !== nine.id && nine.isAlly(n));
+        const allies = alive.filter((n) => n.id !== nine.id && nine.isAlly(n));
         if (allies.length > 0) {
           // TODO: mark one ally as amplified (next effect +50%)
-          events.push({ type: 'effect', effect_type: 'AMPLIFY', source_id: nine.id, target_id: allies[0].id });
+          events.push({
+            type: 'effect',
+            effect_type: 'AMPLIFY',
+            source_id: nine.id,
+            target_id: allies[0].id,
+          });
         }
       }
     }
@@ -956,19 +1193,29 @@ class Arena {
 
       // INSPIRE allies (+1 ATK)
       if (this.nineHasEffect(nine, 'INSPIRE')) {
-        const allies = alive.filter(n => n.id !== nine.id && nine.isAlly(n));
+        const allies = alive.filter((n) => n.id !== nine.id && nine.isAlly(n));
         for (const ally of allies) {
           ally.total_atk += EFFECT_VALUES.INSPIRE.atk_bonus_allies;
-          events.push({ type: 'effect', effect_type: 'INSPIRE', source_id: nine.id, target_id: ally.id });
+          events.push({
+            type: 'effect',
+            effect_type: 'INSPIRE',
+            source_id: nine.id,
+            target_id: ally.id,
+          });
         }
       }
 
       // BLESS allies (+2 HP heal)
       if (this.nineHasEffect(nine, 'BLESS')) {
-        const allies = alive.filter(n => n.id !== nine.id && nine.isAlly(n));
+        const allies = alive.filter((n) => n.id !== nine.id && nine.isAlly(n));
         for (const ally of allies) {
           const healEvents = ally.heal(EFFECT_VALUES.BLESS.heal_allies);
-          events.push({ type: 'effect', effect_type: 'BLESS', source_id: nine.id, target_id: ally.id });
+          events.push({
+            type: 'effect',
+            effect_type: 'BLESS',
+            source_id: nine.id,
+            target_id: ally.id,
+          });
           events.push(...healEvents);
         }
       }
@@ -976,13 +1223,23 @@ class Arena {
       // LEECH FIELD — steal 1 HP from every enemy per pulse
       if (this.nineHasEffect(nine, 'LEECH_FIELD')) {
         let totalLeeched = 0;
-        const enemies = alive.filter(n => n.id !== nine.id && !nine.isAlly(n));
+        const enemies = alive.filter(
+          (n) => n.id !== nine.id && !nine.isAlly(n),
+        );
         for (const enemy of enemies) {
-          enemy.current_hp = Math.max(0, enemy.current_hp - EFFECT_VALUES.LEECH_FIELD.hp_per_enemy_per_cycle);
+          enemy.current_hp = Math.max(
+            0,
+            enemy.current_hp - EFFECT_VALUES.LEECH_FIELD.hp_per_enemy_per_cycle,
+          );
           totalLeeched += EFFECT_VALUES.LEECH_FIELD.hp_per_enemy_per_cycle;
         }
         nine.heal(totalLeeched);
-        events.push({ type: 'effect', effect_type: 'LEECH_FIELD', nine_id: nine.id, total: totalLeeched });
+        events.push({
+          type: 'effect',
+          effect_type: 'LEECH_FIELD',
+          nine_id: nine.id,
+          total: totalLeeched,
+        });
       }
     }
 
@@ -997,24 +1254,46 @@ class Arena {
       // BURN tick
       if (nine.effects.BURN) {
         const burnDmg = nine.effects.BURN.value;
-        const dmgEvents = nine.takeDamage(burnDmg, null, { isEffectDamage: true });
-        events.push({ type: 'effect', effect_type: 'BURN_TICK', nine_id: nine.id, damage: burnDmg });
+        const dmgEvents = nine.takeDamage(burnDmg, null, {
+          isEffectDamage: true,
+        });
+        events.push({
+          type: 'effect',
+          effect_type: 'BURN_TICK',
+          nine_id: nine.id,
+          damage: burnDmg,
+        });
         events.push(...dmgEvents);
       }
 
       // POISON tick
       if (nine.effects.POISON) {
         const poisonDmg = nine.effects.POISON.value;
-        const dmgEvents = nine.takeDamage(poisonDmg, null, { isEffectDamage: true });
-        events.push({ type: 'effect', effect_type: 'POISON_TICK', nine_id: nine.id, damage: poisonDmg });
+        const dmgEvents = nine.takeDamage(poisonDmg, null, {
+          isEffectDamage: true,
+        });
+        events.push({
+          type: 'effect',
+          effect_type: 'POISON_TICK',
+          nine_id: nine.id,
+          damage: poisonDmg,
+        });
         events.push(...dmgEvents);
       }
 
       // CORRODE — reduce max HP
       if (nine.effects.CORRODE) {
-        nine.max_hp = Math.max(1, nine.max_hp - EFFECT_VALUES.CORRODE.max_hp_reduction);
+        nine.max_hp = Math.max(
+          1,
+          nine.max_hp - EFFECT_VALUES.CORRODE.max_hp_reduction,
+        );
         if (nine.current_hp > nine.max_hp) nine.current_hp = nine.max_hp;
-        events.push({ type: 'effect', effect_type: 'CORRODE_TICK', nine_id: nine.id, new_max_hp: nine.max_hp });
+        events.push({
+          type: 'effect',
+          effect_type: 'CORRODE_TICK',
+          nine_id: nine.id,
+          new_max_hp: nine.max_hp,
+        });
       }
     }
 
@@ -1023,7 +1302,9 @@ class Arena {
 
   /** Process KO effects (SHATTER, INFECT) */
   processKOEffects() {
-    const justDied = [...this.nines.values()].filter(n => !n.alive && n.current_hp <= 0);
+    const justDied = [...this.nines.values()].filter(
+      (n) => !n.alive && n.current_hp <= 0,
+    );
 
     for (const dead of justDied) {
       // Mark as processed (set HP to -1 so we don't re-trigger)
@@ -1031,27 +1312,52 @@ class Arena {
 
       // SHATTER — splash damage on KO
       if (this.nineHasEffect(dead, 'SHATTER')) {
-        const alive = [...this.nines.values()].filter(n => n.alive && !dead.isAlly(n));
+        const alive = [...this.nines.values()].filter(
+          (n) => n.alive && !dead.isAlly(n),
+        );
         for (const enemy of alive) {
-          const dmgEvents = enemy.takeDamage(EFFECT_VALUES.SHATTER.on_ko_damage, dead, { isEffectDamage: true });
+          const dmgEvents = enemy.takeDamage(
+            EFFECT_VALUES.SHATTER.on_ko_damage,
+            dead,
+            { isEffectDamage: true },
+          );
           this.emit('arena:events', {
             tick: this.roundTimer,
             events: [
-              { type: 'effect', effect_type: 'SHATTER', source_id: dead.id, target_id: enemy.id, damage: EFFECT_VALUES.SHATTER.on_ko_damage },
-              ...dmgEvents
-            ]
+              {
+                type: 'effect',
+                effect_type: 'SHATTER',
+                source_id: dead.id,
+                target_id: enemy.id,
+                damage: EFFECT_VALUES.SHATTER.on_ko_damage,
+              },
+              ...dmgEvents,
+            ],
           });
         }
       }
 
       // INFECT — spread POISON on KO
       if (this.nineHasEffect(dead, 'INFECT')) {
-        const alive = [...this.nines.values()].filter(n => n.alive && !dead.isAlly(n));
+        const alive = [...this.nines.values()].filter(
+          (n) => n.alive && !dead.isAlly(n),
+        );
         for (const enemy of alive) {
-          this.applyStackingEffect(enemy, 'POISON', EFFECT_VALUES.INFECT.spread_value);
+          this.applyStackingEffect(
+            enemy,
+            'POISON',
+            EFFECT_VALUES.INFECT.spread_value,
+          );
           this.emit('arena:events', {
             tick: this.roundTimer,
-            events: [{ type: 'effect', effect_type: 'INFECT', source_id: dead.id, target_id: enemy.id }]
+            events: [
+              {
+                type: 'effect',
+                effect_type: 'INFECT',
+                source_id: dead.id,
+                target_id: enemy.id,
+              },
+            ],
           });
         }
       }
@@ -1077,7 +1383,10 @@ class Arena {
     let winnerGuild = null;
     let maxHP = 0;
     for (const [guild, hp] of Object.entries(guildHP)) {
-      if (hp > maxHP) { maxHP = hp; winnerGuild = guild; }
+      if (hp > maxHP) {
+        maxHP = hp;
+        winnerGuild = guild;
+      }
     }
 
     // Track rounds survived
@@ -1089,12 +1398,15 @@ class Arena {
       round_number: this.round,
       winner_guild: winnerGuild,
       guild_scores: guildHP,
-      survivors: this.getNinesSnapshot().filter(n => n.alive),
+      survivors: this.getNinesSnapshot().filter((n) => n.alive),
       duration: this.roundTimer,
     });
 
     // Check if cycle should end
-    if (this.round >= this.ROUNDS_PER_CYCLE || this.cycleTimer >= this.CYCLE_DURATION) {
+    if (
+      this.round >= this.ROUNDS_PER_CYCLE ||
+      this.cycleTimer >= this.CYCLE_DURATION
+    ) {
       setTimeout(() => this.endCycle(), 3000); // 3 sec pause before cycle end
     } else {
       // Between-round heal and reset
@@ -1103,11 +1415,13 @@ class Arena {
       }
 
       this.emit('arena:round_heal', {
-        nines: [...this.nines.values()].filter(n => n.alive).map(n => ({
-          id: n.id,
-          hp_before: n.current_hp, // already healed at this point but good for display
-          hp_after: n.current_hp,
-        }))
+        nines: [...this.nines.values()]
+          .filter((n) => n.alive)
+          .map((n) => ({
+            id: n.id,
+            hp_before: n.current_hp, // already healed at this point but good for display
+            hp_after: n.current_hp,
+          })),
       });
 
       // 5 second pause then start next round
@@ -1131,13 +1445,27 @@ class Arena {
         card.sharpness = Math.max(0, (card.sharpness || 100) - 1);
 
         // SURGE extra sharpness cost
-        if (nine.cards.some(c => c.bonus_effects?.some(e => e.tag.startsWith('SURGE')))) {
-          card.sharpness = Math.max(0, card.sharpness - EFFECT_VALUES.SURGE.extra_sharpness_cost);
+        if (
+          nine.cards.some((c) =>
+            c.bonus_effects?.some((e) => e.tag.startsWith('SURGE')),
+          )
+        ) {
+          card.sharpness = Math.max(
+            0,
+            card.sharpness - EFFECT_VALUES.SURGE.extra_sharpness_cost,
+          );
         }
 
         // OVERCHARGE extra sharpness cost
-        if (nine.cards.some(c => c.bonus_effects?.some(e => e.tag.startsWith('OVERCHARGE')))) {
-          card.sharpness = Math.max(0, card.sharpness - EFFECT_VALUES.OVERCHARGE.extra_sharpness_cost);
+        if (
+          nine.cards.some((c) =>
+            c.bonus_effects?.some((e) => e.tag.startsWith('OVERCHARGE')),
+          )
+        ) {
+          card.sharpness = Math.max(
+            0,
+            card.sharpness - EFFECT_VALUES.OVERCHARGE.extra_sharpness_cost,
+          );
         }
 
         sharpnessChanges.push({
@@ -1189,7 +1517,7 @@ class Arena {
           damage_taken: nine.damage_taken,
           kills: nine.kills,
           rounds_survived: nine.rounds_survived,
-        }
+        },
       });
 
       // Reset per-cycle stats
@@ -1212,7 +1540,7 @@ class Arena {
 
   /** Get a snapshot of all Nines for sending to clients */
   getNinesSnapshot() {
-    return [...this.nines.values()].map(n => ({
+    return [...this.nines.values()].map((n) => ({
       id: n.id,
       name: n.name,
       house: n.house,

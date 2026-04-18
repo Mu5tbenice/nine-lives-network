@@ -14,7 +14,12 @@
 const fs = require('fs');
 const path = require('path');
 
-const filePath = path.join(__dirname, 'server', 'services', 'narrativeEngine.js');
+const filePath = path.join(
+  __dirname,
+  'server',
+  'services',
+  'narrativeEngine.js',
+);
 
 let content = fs.readFileSync(filePath, 'utf8');
 
@@ -73,7 +78,9 @@ if (content.includes('increment_player_points')) {
   console.log('ℹ️ awardPoints already patched');
 } else {
   console.log('⚠️ Could not find exact awardPoints function to replace.');
-  console.log('   Manually replace the awardPoints function (around line 301) with:');
+  console.log(
+    '   Manually replace the awardPoints function (around line 301) with:',
+  );
   console.log('');
   console.log(newFn);
 }

@@ -3,16 +3,16 @@
 
 const supabase = require('../config/supabase');
 
-const MANA_CAP = 10;         // Max mana a player can hold
-const REGEN_AMOUNT = 1;      // Mana gained per hour
+const MANA_CAP = 10; // Max mana a player can hold
+const REGEN_AMOUNT = 1; // Mana gained per hour
 const REGEN_INTERVAL_MS = 60 * 60 * 1000; // 1 hour in milliseconds
 
 // Social earn amounts
 const EARN_METHODS = {
-  retweet: 1,       // RT the daily objective
-  mini_game: 1,     // Complete a mini-game
-  quest: 1,         // Complete a daily quest
-  streak_bonus: 2,  // 7-day login streak
+  retweet: 1, // RT the daily objective
+  mini_game: 1, // Complete a mini-game
+  quest: 1, // Complete a daily quest
+  streak_bonus: 2, // 7-day login streak
 };
 
 /**
@@ -47,7 +47,10 @@ async function regenMana() {
 
     const maxMana = player.max_mana || MANA_CAP;
     const currentMana = player.mana || 0;
-    const manaToAdd = Math.min(hoursElapsed * REGEN_AMOUNT, maxMana - currentMana);
+    const manaToAdd = Math.min(
+      hoursElapsed * REGEN_AMOUNT,
+      maxMana - currentMana,
+    );
 
     if (manaToAdd <= 0) continue;
 
@@ -108,7 +111,9 @@ async function earnMana(playerId, method) {
     return { success: false, error: 'Failed to update mana' };
   }
 
-  console.log(`Player ${playerId} earned ${amount} mana (${method}): ${player.mana} → ${newMana}`);
+  console.log(
+    `Player ${playerId} earned ${amount} mana (${method}): ${player.mana} → ${newMana}`,
+  );
 
   return {
     success: true,
@@ -136,7 +141,10 @@ async function getManaInfo(playerId) {
   const now = new Date();
   const lastRegen = new Date(player.last_mana_regen || now);
   const msElapsed = now.getTime() - lastRegen.getTime();
-  const msUntilNext = Math.max(0, REGEN_INTERVAL_MS - (msElapsed % REGEN_INTERVAL_MS));
+  const msUntilNext = Math.max(
+    0,
+    REGEN_INTERVAL_MS - (msElapsed % REGEN_INTERVAL_MS),
+  );
 
   const minutesUntilNext = Math.ceil(msUntilNext / 60000);
 
@@ -164,7 +172,12 @@ async function spendMana(playerId, amount) {
   }
 
   if (player.mana < amount) {
-    return { success: false, error: 'Not enough mana', current: player.mana, needed: amount };
+    return {
+      success: false,
+      error: 'Not enough mana',
+      current: player.mana,
+      needed: amount,
+    };
   }
 
   const newMana = player.mana - amount;

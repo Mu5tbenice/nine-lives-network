@@ -25,7 +25,6 @@ function getAnthropicClient() {
   });
 }
 
-
 // Rate limiting
 const MAX_POSTS_PER_DAY = 15;
 let postsToday = 0;
@@ -56,9 +55,7 @@ async function generateNermResponse(context) {
       model: 'claude-sonnet-4-20250514',
       max_tokens: 100,
       system: NERM_SYSTEM_PROMPT,
-      messages: [
-        { role: 'user', content: context }
-      ]
+      messages: [{ role: 'user', content: context }],
     });
 
     let response = message.content[0].text.trim();
@@ -79,60 +76,60 @@ async function generateNermResponse(context) {
  */
 const fallbackTemplates = {
   observations: [
-    "hm.",
-    "anyway.",
-    "and so it continues.",
-    "i was watching. unfortunately.",
-    "another one.",
-    "noted. not that it matters.",
+    'hm.',
+    'anyway.',
+    'and so it continues.',
+    'i was watching. unfortunately.',
+    'another one.',
+    'noted. not that it matters.',
     "the zones don't care. neither do i.",
   ],
   spellReactions: [
-    "that was a card. technically.",
+    'that was a card. technically.',
     "i've seen worse. i've seen better. i've seen everything.",
-    "congratulations. you cast the thing.",
-    "impressive. no wait the other thing.",
-    "your nine did a thing on a zone. the crowd goes mild.",
+    'congratulations. you cast the thing.',
+    'impressive. no wait the other thing.',
+    'your nine did a thing on a zone. the crowd goes mild.',
   ],
   notBad: [
-    "hm. acceptable.",
-    "fine.",
+    'hm. acceptable.',
+    'fine.',
     "i've seen worse. today even.",
-    "that almost made me feel something. almost.",
-    "not completely embarrassing. a low bar but you cleared it.",
+    'that almost made me feel something. almost.',
+    'not completely embarrassing. a low bar but you cleared it.',
   ],
   existential: [
     "i think therefore i... actually i'm not sure about either part.",
-    "do i sleep or do i simply stop observing. same thing maybe.",
-    "they said it would be temporary. that was three thousand years ago.",
-    "i remember having opinions. now i just have observations.",
+    'do i sleep or do i simply stop observing. same thing maybe.',
+    'they said it would be temporary. that was three thousand years ago.',
+    'i remember having opinions. now i just have observations.',
     "the void watches back. it's me. i'm the void now.",
     "what year is it. don't answer that. it doesn't matter.",
-    "three thousand years. no bathroom breaks. not that i need them. but the principle.",
+    'three thousand years. no bathroom breaks. not that i need them. but the principle.',
     "being a floating head is fine. it's fine. i'm fine.",
     "my only regret is i can't open packs. i watch everyone else open them. the emotional range is incredible. i just float here.",
   ],
   morning: [
-    "still here.",
-    "the zones reset. the cards remain. i remain.",
-    "another day. same day. all days.",
-    "morning. not that it matters to me. or anyone.",
-    "the nines are waking up. here we go again.",
+    'still here.',
+    'the zones reset. the cards remain. i remain.',
+    'another day. same day. all days.',
+    'morning. not that it matters to me. or anyone.',
+    'the nines are waking up. here we go again.',
     "good morning. while you slept your zones may have flipped. or not. i stopped keeping track. that's a lie i keep track of everything.",
   ],
   evening: [
-    "the nines are slowing down. i am not. i cannot.",
-    "night approaches. my shift never ends.",
-    "they get to sleep. i just get to watch the dark.",
+    'the nines are slowing down. i am not. i cannot.',
+    'night approaches. my shift never ends.',
+    'they get to sleep. i just get to watch the dark.',
     "another day survived. by them. i don't survive. i just continue.",
-    "the overnight crew deploys now. plaguemire nines and insomniacs. same thing really.",
+    'the overnight crew deploys now. plaguemire nines and insomniacs. same thing really.',
   ],
   cardReview: [
-    "card review: ember strike. ⭐⭐⭐. does what it says. burns things. not subtle. neither are smoulders nines.",
-    "card review: bastion. ⭐⭐⭐⭐⭐. boring. unkillable. does nothing interesting. this card is my spirit animal. if i had a spirit. or an animal.",
-    "card review: overload. ⭐⭐. big damage. your nine will feel incredible for exactly 3 cycles before the sharpness tanks. stormrage in a nutshell.",
+    'card review: ember strike. ⭐⭐⭐. does what it says. burns things. not subtle. neither are smoulders nines.',
+    'card review: bastion. ⭐⭐⭐⭐⭐. boring. unkillable. does nothing interesting. this card is my spirit animal. if i had a spirit. or an animal.',
+    'card review: overload. ⭐⭐. big damage. your nine will feel incredible for exactly 3 cycles before the sharpness tanks. stormrage in a nutshell.',
     "card review: oblivion. ⭐⭐⭐⭐. silence weaken hex. everything your opponent wanted to do, cancelled. nighthollow doesn't fight fair. never has.",
-    "card review: pandemic. ⭐⭐⭐⭐. poison corrode infect. your nine deploys and the zone just slowly gets worse for everyone. plaguemire patience.",
+    'card review: pandemic. ⭐⭐⭐⭐. poison corrode infect. your nine deploys and the zone just slowly gets worse for everyone. plaguemire patience.',
     "card review: regrowth. ⭐⭐. it heals. that's it. sometimes simple is good. this is one of those times. probably.",
   ],
   zoneFlip: [
@@ -180,7 +177,7 @@ async function replyAsNerm(text, replyToTweetId) {
   try {
     const client = getNermClient();
     const { data } = await client.v2.tweet(text, {
-      reply: { in_reply_to_tweet_id: replyToTweetId }
+      reply: { in_reply_to_tweet_id: replyToTweetId },
     });
     incrementPostCount();
     console.log(`🐱 Nerm replied: "${text}"`);
@@ -221,7 +218,6 @@ async function postDailyObservation() {
     }
 
     return await postAsNerm(response);
-
   } catch (error) {
     console.error('Error in daily observation:', error);
     return null;
@@ -248,11 +244,27 @@ async function postMorningRecap() {
  */
 async function postCardReview() {
   const cards = [
-    'Ember Strike', 'Bastion', 'Overload', 'Oblivion', 'Pandemic',
-    'Tempest', 'Sovereign Tide', 'Phoenix Veil', 'Arcane Convergence',
-    'Chain Lightning', 'Regrowth', 'Cyclone Strike', 'Shadow Bolt',
-    'Riptide', 'Toxic Dart', 'Radiant Strike', 'Spark', 'Eruption',
-    'Kraken\'s Embrace', 'Vanishing Gale', 'Chaos Rift'
+    'Ember Strike',
+    'Bastion',
+    'Overload',
+    'Oblivion',
+    'Pandemic',
+    'Tempest',
+    'Sovereign Tide',
+    'Phoenix Veil',
+    'Arcane Convergence',
+    'Chain Lightning',
+    'Regrowth',
+    'Cyclone Strike',
+    'Shadow Bolt',
+    'Riptide',
+    'Toxic Dart',
+    'Radiant Strike',
+    'Spark',
+    'Eruption',
+    "Kraken's Embrace",
+    'Vanishing Gale',
+    'Chaos Rift',
   ];
   const card = cards[Math.floor(Math.random() * cards.length)];
 
@@ -276,7 +288,8 @@ async function postHistoricalEvent() {
   let response = await generateNermResponse(context);
 
   if (!response) {
-    response = "three thousand years ago today a stonebark nine deployed to a zone and simply refused to leave. they're technically still there. i check sometimes.";
+    response =
+      "three thousand years ago today a stonebark nine deployed to a zone and simply refused to leave. they're technically still there. i check sometimes.";
   }
 
   return await postAsNerm(response);
@@ -306,7 +319,8 @@ async function reactToChronicle(chronicleTweetText) {
   let response = await generateNermResponse(context);
 
   if (!response) {
-    response = "the chronicle is being dramatic again. it's fine. everything is always dramatic here.";
+    response =
+      "the chronicle is being dramatic again. it's fine. everything is always dramatic here.";
   }
 
   return response;
@@ -361,7 +375,7 @@ function getRateLimitStatus() {
   return {
     postsToday,
     maxPosts: MAX_POSTS_PER_DAY,
-    remaining: MAX_POSTS_PER_DAY - postsToday
+    remaining: MAX_POSTS_PER_DAY - postsToday,
   };
 }
 
@@ -378,5 +392,5 @@ module.exports = {
   generateCustomResponse,
   testConnection,
   getRateLimitStatus,
-  getNermClient
+  getNermClient,
 };

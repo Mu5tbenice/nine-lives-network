@@ -18,7 +18,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
 // ══════════════════════════════════════════════════════════════
@@ -255,7 +255,6 @@ NOT LIVE YET: $9LV token on solana (planned), the nines NFTs (season 2+). never 
 
 HOW TO JOIN: 9lv.net. connect twitter. pick a house.`;
 
-
 // ══════════════════════════════════════════════════════════════
 // HELPER: GET LIVE GAME STATE
 // Used to inject real numbers into context for chronicle/scheduler
@@ -270,22 +269,36 @@ async function getGameState() {
     const total = (deployments || []).length;
     const guildCounts = {};
     const houseCounts = {};
-    (deployments || []).forEach(d => {
-      if (d.guild_tag) guildCounts[d.guild_tag] = (guildCounts[d.guild_tag] || 0) + 1;
+    (deployments || []).forEach((d) => {
+      if (d.guild_tag)
+        guildCounts[d.guild_tag] = (guildCounts[d.guild_tag] || 0) + 1;
       const sid = d.player?.school_id;
       if (sid) houseCounts[sid] = (houseCounts[sid] || 0) + 1;
     });
 
     const { data: zones } = await supabase
-      .from('zones').select('controlling_guild').eq('is_active', true);
-    const controlled = (zones || []).filter(z => z.controlling_guild).length;
+      .from('zones')
+      .select('controlling_guild')
+      .eq('is_active', true);
+    const controlled = (zones || []).filter((z) => z.controlling_guild).length;
 
-    const HOUSES = {1:'smoulders',2:'darktide',3:'stonebark',4:'ashenvale',5:'stormrage',
-                   6:'nighthollow',7:'dawnbringer',8:'manastorm',9:'plaguemire'};
-    const topGuild = Object.entries(guildCounts).sort((a,b) => b[1]-a[1])[0];
-    const topHouseId = Object.entries(houseCounts).sort((a,b) => b[1]-a[1])[0];
+    const HOUSES = {
+      1: 'smoulders',
+      2: 'darktide',
+      3: 'stonebark',
+      4: 'ashenvale',
+      5: 'stormrage',
+      6: 'nighthollow',
+      7: 'dawnbringer',
+      8: 'manastorm',
+      9: 'plaguemire',
+    };
+    const topGuild = Object.entries(guildCounts).sort((a, b) => b[1] - a[1])[0];
+    const topHouseId = Object.entries(houseCounts).sort(
+      (a, b) => b[1] - a[1],
+    )[0];
 
-    return `[LIVE: ${total} nines deployed. ${controlled}/${(zones||[]).length} zones controlled. leading guild: ${topGuild ? topGuild[0]+' ('+topGuild[1]+')' : 'none'}. most active house: ${topHouseId ? HOUSES[topHouseId[0]] : 'none'}.]`;
+    return `[LIVE: ${total} nines deployed. ${controlled}/${(zones || []).length} zones controlled. leading guild: ${topGuild ? topGuild[0] + ' (' + topGuild[1] + ')' : 'none'}. most active house: ${topHouseId ? HOUSES[topHouseId[0]] : 'none'}.]`;
   } catch {
     return '[LIVE: combat ongoing. data unavailable.]';
   }
@@ -297,16 +310,30 @@ async function getGameState() {
 async function getPlayerContext(twitterHandle) {
   if (!twitterHandle) return '';
   try {
-    const HOUSES = {1:'smoulders',2:'darktide',3:'stonebark',4:'ashenvale',5:'stormrage',
-                   6:'nighthollow',7:'dawnbringer',8:'manastorm',9:'plaguemire'};
+    const HOUSES = {
+      1: 'smoulders',
+      2: 'darktide',
+      3: 'stonebark',
+      4: 'ashenvale',
+      5: 'stormrage',
+      6: 'nighthollow',
+      7: 'dawnbringer',
+      8: 'manastorm',
+      9: 'plaguemire',
+    };
     const { data: p } = await supabase
       .from('players')
-      .select('twitter_handle, school_id, guild_tag, seasonal_points, streak, duel_wins, duel_losses')
-      .ilike('twitter_handle', twitterHandle).single();
+      .select(
+        'twitter_handle, school_id, guild_tag, seasonal_points, streak, duel_wins, duel_losses',
+      )
+      .ilike('twitter_handle', twitterHandle)
+      .single();
 
     if (!p) return `[${twitterHandle}: not registered.]`;
-    return `[PLAYER @${p.twitter_handle}: ${HOUSES[p.school_id]||'?'} / guild: ${p.guild_tag||'lone wolf'} / ${p.seasonal_points||0}pts / ${p.streak||0}-day streak / ${p.duel_wins||0}W ${p.duel_losses||0}L]`;
-  } catch { return ''; }
+    return `[PLAYER @${p.twitter_handle}: ${HOUSES[p.school_id] || '?'} / guild: ${p.guild_tag || 'lone wolf'} / ${p.seasonal_points || 0}pts / ${p.streak || 0}-day streak / ${p.duel_wins || 0}W ${p.duel_losses || 0}L]`;
+  } catch {
+    return '';
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -316,13 +343,17 @@ async function getPlayerContext(twitterHandle) {
 // ══════════════════════════════════════════════════════════════
 async function askNerm(userMessage, platform = 'twitter', extras = {}) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return "nerm's api key is missing. sentenced to silence on two fronts now.";
+  if (!apiKey)
+    return "nerm's api key is missing. sentenced to silence on two fronts now.";
 
   try {
     const gameCtx = await getGameState();
-    const playerCtx = extras.twitterHandle ? await getPlayerContext(extras.twitterHandle) : '';
+    const playerCtx = extras.twitterHandle
+      ? await getPlayerContext(extras.twitterHandle)
+      : '';
 
-    const systemFull = NERM_SYSTEM_PROMPT +
+    const systemFull =
+      NERM_SYSTEM_PROMPT +
       `\n\n${gameCtx}` +
       (playerCtx ? `\n${playerCtx}` : '') +
       `\n\n[platform: ${platform === 'twitter' ? 'twitter — max 280 chars, one thought, make it land.' : 'telegram — can go longer, still be economical.'}]`;
@@ -346,12 +377,11 @@ async function askNerm(userMessage, platform = 'twitter', extras = {}) {
     const reply = data.content?.[0]?.text?.trim();
     if (!reply) throw new Error('empty response');
     return reply;
-
   } catch (err) {
     console.error('[nermBrain] error:', err.message);
     return platform === 'twitter'
-      ? "nerm encountered an error. the sentence adapts."
-      : "something broke. give me a second.";
+      ? 'nerm encountered an error. the sentence adapts.'
+      : 'something broke. give me a second.';
   }
 }
 
@@ -365,8 +395,15 @@ async function generateCustomResponse(prompt, options = {}) {
 // rate a chronicle reply
 async function rateChronicleReply(replyText, twitterHandle) {
   const playerCtx = twitterHandle ? await getPlayerContext(twitterHandle) : '';
-  const len = (replyText||'').length;
-  const quality = len < 20 ? 'minimal' : len < 60 ? 'brief' : len < 120 ? 'decent' : 'detailed and in-character';
+  const len = (replyText || '').length;
+  const quality =
+    len < 20
+      ? 'minimal'
+      : len < 60
+        ? 'brief'
+        : len < 120
+          ? 'decent'
+          : 'detailed and in-character';
 
   const prompt = `@${twitterHandle} replied to the chronicle with: "${replyText}"
 ${playerCtx}

@@ -1,0 +1,17 @@
+node_modules/
+dist/
+
+# Not linted in this baseline (scope restrictions — see 8.5 task in tasks-prd-9ln-rollout.md)
+client/
+public/
+
+# Historical / archived content
+docs/archive/
+scripts/archive/
+
+# Frontend tooling configs — written as ES modules for the Vite ecosystem,
+# incompatible with CommonJS-default parser. Not live server code.
+postcss.config.js
+vite.config.ts
+tailwind.config.ts
+drizzle.config.ts

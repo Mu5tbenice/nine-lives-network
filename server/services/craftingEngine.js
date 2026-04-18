@@ -18,12 +18,18 @@ const { createClient } = require('@supabase/supabase-js');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
 // Rarity progression
 const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
-const CHARGES_BY_RARITY = { common: 5, uncommon: 8, rare: 12, epic: 18, legendary: 30 };
+const CHARGES_BY_RARITY = {
+  common: 5,
+  uncommon: 8,
+  rare: 12,
+  epic: 18,
+  legendary: 30,
+};
 
 // ═══════════════════════════════════════════
 // FUSE: 3 cards of same rarity → 1 of next rarity
@@ -43,12 +49,15 @@ async function fuseCards(playerId, cardIds) {
     .eq('player_id', playerId);
 
   if (error || !cards || cards.length !== 3) {
-    return { success: false, error: 'Could not find all 3 cards in your collection' };
+    return {
+      success: false,
+      error: 'Could not find all 3 cards in your collection',
+    };
   }
 
   // Check all same rarity
   const rarity = cards[0].rarity;
-  if (!cards.every(c => c.rarity === rarity)) {
+  if (!cards.every((c) => c.rarity === rarity)) {
     return { success: false, error: 'All 3 cards must be the same rarity' };
   }
 
@@ -62,7 +71,10 @@ async function fuseCards(playerId, cardIds) {
       .single();
 
     if (activeSlot) {
-      return { success: false, error: `Card "${card.spell_name}" is deployed on a zone. Remove it first.` };
+      return {
+        success: false,
+        error: `Card "${card.spell_name}" is deployed on a zone. Remove it first.`,
+      };
     }
   }
 
@@ -137,11 +149,16 @@ async function fuseCards(playerId, cardIds) {
         result_rarity: newRarity,
         result_spell: spell.name,
       },
-    }).catch(() => {});
+    })
+    .catch(() => {});
 
   return {
     success: true,
-    consumed: cards.map(c => ({ id: c.id, name: c.spell_name, rarity: c.rarity })),
+    consumed: cards.map((c) => ({
+      id: c.id,
+      name: c.spell_name,
+      rarity: c.rarity,
+    })),
     new_card: {
       id: newCard.id,
       name: spell.name,
@@ -164,7 +181,10 @@ async function fuseCards(playerId, cardIds) {
 // ═══════════════════════════════════════════
 async function rechargeCard(playerId, targetCardId, fuelCardIds) {
   if (!targetCardId || !fuelCardIds || fuelCardIds.length === 0) {
-    return { success: false, error: 'Target card and at least 1 fuel card required' };
+    return {
+      success: false,
+      error: 'Target card and at least 1 fuel card required',
+    };
   }
 
   if (fuelCardIds.includes(targetCardId)) {
@@ -205,7 +225,10 @@ async function rechargeCard(playerId, targetCardId, fuelCardIds) {
       .single();
 
     if (activeSlot) {
-      return { success: false, error: `Fuel card "${fuel.spell_name}" is deployed. Remove it first.` };
+      return {
+        success: false,
+        error: `Fuel card "${fuel.spell_name}" is deployed. Remove it first.`,
+      };
     }
   }
 
@@ -214,7 +237,7 @@ async function rechargeCard(playerId, targetCardId, fuelCardIds) {
   const targetRarityIndex = RARITY_ORDER.indexOf(target.rarity);
 
   // Option A: 3+ commons = full recharge
-  const commonFuel = fuelCards.filter(f => f.rarity === 'common');
+  const commonFuel = fuelCards.filter((f) => f.rarity === 'common');
   if (commonFuel.length >= 3) {
     rechargeAmount = target.max_charges;
   } else {
@@ -238,11 +261,17 @@ async function rechargeCard(playerId, targetCardId, fuelCardIds) {
   }
 
   if (rechargeAmount === 0) {
-    return { success: false, error: 'Fuel cards are not sufficient for recharging' };
+    return {
+      success: false,
+      error: 'Fuel cards are not sufficient for recharging',
+    };
   }
 
   // Cap at max charges
-  const newCharges = Math.min(target.max_charges, target.current_charges + rechargeAmount);
+  const newCharges = Math.min(
+    target.max_charges,
+    target.current_charges + rechargeAmount,
+  );
 
   // Delete fuel cards
   const { error: deleteErr } = await supabaseAdmin
@@ -278,7 +307,8 @@ async function rechargeCard(playerId, targetCardId, fuelCardIds) {
         charges_after: newCharges,
         full_recharge: newCharges === target.max_charges,
       },
-    }).catch(() => {});
+    })
+    .catch(() => {});
 
   return {
     success: true,
@@ -289,7 +319,11 @@ async function rechargeCard(playerId, targetCardId, fuelCardIds) {
       charges_after: newCharges,
       max_charges: target.max_charges,
     },
-    fuel_consumed: fuelCards.map(f => ({ id: f.id, name: f.spell_name, rarity: f.rarity })),
+    fuel_consumed: fuelCards.map((f) => ({
+      id: f.id,
+      name: f.spell_name,
+      rarity: f.rarity,
+    })),
     message: `Recharged ${target.spell_name}! ${target.current_charges} → ${newCharges}/${target.max_charges} charges`,
   };
 }
@@ -339,14 +373,16 @@ async function getCanRecharge(playerId) {
   // Get exhausted or low-charge cards
   const { data: needsRecharge } = await supabase
     .from('player_cards')
-    .select('id, spell_name, rarity, current_charges, max_charges, is_exhausted')
+    .select(
+      'id, spell_name, rarity, current_charges, max_charges, is_exhausted',
+    )
     .eq('player_id', playerId)
     .lt('current_charges', supabase.raw ? undefined : 999)
     .order('current_charges');
 
   // Filter to actually low cards
-  const lowCards = (needsRecharge || []).filter(c =>
-    c.current_charges < c.max_charges
+  const lowCards = (needsRecharge || []).filter(
+    (c) => c.current_charges < c.max_charges,
   );
 
   // Get potential fuel (any cards not deployed)

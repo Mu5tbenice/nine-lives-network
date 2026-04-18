@@ -1,9 +1,9 @@
 /**
  * seed-narratives.js
- * 
+ *
  * Run this ONCE in Replit Shell after creating the narratives table:
  *   node seed-narratives.js
- * 
+ *
  * Reads your narratives.js file and inserts all 40 stories into Supabase.
  * Safe to run multiple times — uses upsert so it won't create duplicates.
  */
@@ -26,7 +26,12 @@ async function seed() {
       tweet_2_prompt: n.tweet_2_prompt,
       tweet_3_prompt: n.tweet_3_prompt,
       tweet_4_prompt: n.tweet_4_prompt,
-      images: n.images || [`${n.id}.1.png`, `${n.id}.2.png`, `${n.id}.3.png`, `${n.id}.4.png`],
+      images: n.images || [
+        `${n.id}.1.png`,
+        `${n.id}.2.png`,
+        `${n.id}.3.png`,
+        `${n.id}.4.png`,
+      ],
     };
 
     const { error } = await supabase
@@ -61,7 +66,7 @@ async function seed() {
   process.exit(0);
 }
 
-seed().catch(err => {
+seed().catch((err) => {
   console.error('Fatal error:', err);
   process.exit(1);
 });

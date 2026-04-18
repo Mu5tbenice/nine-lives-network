@@ -10,11 +10,11 @@ async function resetAllLives() {
 
     const { data, error } = await supabase
       .from('players')
-      .update({ 
+      .update({
         lives: 3,
-        lives_last_reset: new Date().toISOString()
+        lives_last_reset: new Date().toISOString(),
       })
-      .lt('lives', 3);  // Only update players who need it
+      .lt('lives', 3); // Only update players who need it
 
     if (error) {
       console.error('❌ Failed to reset lives:', error);
@@ -38,9 +38,9 @@ async function expirePendingDuels() {
 
     const { data, error } = await supabase
       .from('duels')
-      .update({ 
+      .update({
         status: 'expired',
-        resolved_at: new Date().toISOString()
+        resolved_at: new Date().toISOString(),
       })
       .eq('status', 'pending')
       .lt('expires_at', new Date().toISOString());
@@ -60,5 +60,5 @@ async function expirePendingDuels() {
 
 module.exports = {
   resetAllLives,
-  expirePendingDuels
+  expirePendingDuels,
 };

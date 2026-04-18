@@ -6,7 +6,10 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "keywords": [
     "game",
@@ -43,7 +46,9 @@
     "vite": "^7.3.1"
   },
   "devDependencies": {
+    "eslint": "^8.57.1",
     "jest": "^30.2.0",
-    "nodemon": "^3.1.11"
+    "nodemon": "^3.1.11",
+    "prettier": "^3.8.3"
   }
 }

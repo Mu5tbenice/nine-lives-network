@@ -14,11 +14,11 @@ const CHARGES_BY_RARITY = {
 
 // Rarity stat bonuses (applied on top of base ATK/HP)
 const RARITY_BONUSES = {
-  common:    { atk: 0, hp: 0 },
-  uncommon:  { atk: 1, hp: 0 },  // +1 to ATK
-  rare:      { atk: 1, hp: 1 },  // +1 to both
-  epic:      { atk: 2, hp: 2 },  // +2 to both
-  legendary: { atk: 3, hp: 3 },  // +3 to both
+  common: { atk: 0, hp: 0 },
+  uncommon: { atk: 1, hp: 0 }, // +1 to ATK
+  rare: { atk: 1, hp: 1 }, // +1 to both
+  epic: { atk: 2, hp: 2 }, // +2 to both
+  legendary: { atk: 3, hp: 3 }, // +3 to both
 };
 
 /**
@@ -128,9 +128,14 @@ async function rechargeCard(targetCardId, fuelCardIds) {
   }
 
   // Make sure all fuel cards belong to same player as target
-  const allSamePlayer = fuelCards.every(f => f.player_id === target.player_id);
+  const allSamePlayer = fuelCards.every(
+    (f) => f.player_id === target.player_id,
+  );
   if (!allSamePlayer) {
-    return { success: false, error: 'All cards must belong to the same player' };
+    return {
+      success: false,
+      error: 'All cards must belong to the same player',
+    };
   }
 
   // Make sure target is not one of the fuel cards
@@ -142,7 +147,7 @@ async function rechargeCard(targetCardId, fuelCardIds) {
   let valid = false;
 
   // Method 1: 3 Common cards
-  if (fuelCards.length === 3 && fuelCards.every(f => f.rarity === 'common')) {
+  if (fuelCards.length === 3 && fuelCards.every((f) => f.rarity === 'common')) {
     valid = true;
   }
 
@@ -193,7 +198,9 @@ async function rechargeCard(targetCardId, fuelCardIds) {
     charges_after: target.max_charges,
   });
 
-  console.log(`Card ${targetCardId} recharged: ${target.current_charges} → ${target.max_charges}`);
+  console.log(
+    `Card ${targetCardId} recharged: ${target.current_charges} → ${target.max_charges}`,
+  );
 
   return {
     success: true,

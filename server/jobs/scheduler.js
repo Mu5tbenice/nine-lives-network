@@ -8,12 +8,16 @@ function initScheduler() {
   console.log('Initializing scheduler...');
 
   // Daily objective at 8 AM UTC
-  cron.schedule('0 8 * * *', async () => {
-    console.log('[CRON] Running 8 AM daily objective...');
-    await postDailyObjective();
-  }, {
-    timezone: 'UTC'
-  });
+  cron.schedule(
+    '0 8 * * *',
+    async () => {
+      console.log('[CRON] Running 8 AM daily objective...');
+      await postDailyObjective();
+    },
+    {
+      timezone: 'UTC',
+    },
+  );
 
   // Also run at startup if no objective exists for today
   checkAndPostObjective();

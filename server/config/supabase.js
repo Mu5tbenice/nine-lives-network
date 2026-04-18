@@ -6,7 +6,9 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('❌ Missing Supabase credentials!');
-  console.error('Make sure SUPABASE_URL and SUPABASE_ANON_KEY are set in your environment.');
+  console.error(
+    'Make sure SUPABASE_URL and SUPABASE_ANON_KEY are set in your environment.',
+  );
   process.exit(1);
 }
 
@@ -14,17 +16,19 @@ if (!supabaseUrl || !supabaseAnonKey) {
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Admin client (bypasses RLS - for server-side writes)
-const supabaseAdmin = supabaseServiceKey 
+const supabaseAdmin = supabaseServiceKey
   ? createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         autoRefreshToken: false,
-        persistSession: false
-      }
+        persistSession: false,
+      },
     })
   : supabase; // Fallback to regular client if no service key
 
 if (!supabaseServiceKey) {
-  console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY not set - using anon key for admin operations');
+  console.warn(
+    '⚠️ SUPABASE_SERVICE_ROLE_KEY not set - using anon key for admin operations',
+  );
 }
 
 module.exports = supabase;

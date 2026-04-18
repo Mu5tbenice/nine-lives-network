@@ -5,18 +5,26 @@ const supabase = require('../config/supabase');
 
 // V3: Nine creation on registration
 let nineSystem = null;
-try { nineSystem = require('../services/nineSystem'); } catch (e) { console.log('⚠️ nineSystem not loaded'); }
+try {
+  nineSystem = require('../services/nineSystem');
+} catch (e) {
+  console.log('⚠️ nineSystem not loaded');
+}
 
 // Pack system — for granting welcome packs on registration
 let packSystem = null;
-try { packSystem = require('../services/packSystem'); } catch (e) { console.log('⚠️ packSystem not loaded'); }
+try {
+  packSystem = require('../services/packSystem');
+} catch (e) {
+  console.log('⚠️ packSystem not loaded');
+}
 
 // Store OAuth states temporarily (in production, use Redis or database)
 const oauthStates = new Map();
 
 // Callback URL for Twitter OAuth - USE YOUR PUBLISHED APP URL
-const CALLBACK_URL = process.env.TWITTER_CALLBACK_URL 
-|| 'https://9lv.net/auth/twitter/callback';
+const CALLBACK_URL =
+  process.env.TWITTER_CALLBACK_URL || 'https://9lv.net/auth/twitter/callback';
 
 /**
  * GET /auth/twitter
@@ -26,13 +34,13 @@ router.get('/twitter', async (req, res) => {
   try {
     const { url, codeVerifier, state } = authClient.generateOAuth2AuthLink(
       CALLBACK_URL,
-      { scope: ['tweet.read', 'users.read'] }
+      { scope: ['tweet.read', 'users.read'] },
     );
 
     // Store the codeVerifier for later use
     oauthStates.set(state, {
       codeVerifier,
-      createdAt: Date.now()
+      createdAt: Date.now(),
     });
 
     // Clean up old states (older than 10 minutes)
@@ -61,13 +69,13 @@ router.get('/twitter-mobile', async (req, res) => {
   try {
     const { url, codeVerifier, state } = authClient.generateOAuth2AuthLink(
       CALLBACK_URL,
-      { scope: ['tweet.read', 'users.read'] }
+      { scope: ['tweet.read', 'users.read'] },
     );
 
     // Store the codeVerifier for later use
     oauthStates.set(state, {
       codeVerifier,
-      createdAt: Date.now()
+      createdAt: Date.now(),
     });
 
     // Clean up old states (older than 10 minutes)
@@ -155,7 +163,11 @@ router.get('/twitter/callback', async (req, res) => {
   try {
     const { code, state, error } = req.query;
 
-    console.log('Callback received:', { code: code?.substring(0,10), state: state?.substring(0,10), error });
+    console.log('Callback received:', {
+      code: code?.substring(0, 10),
+      state: state?.substring(0, 10),
+      error,
+    });
 
     // Check for Twitter error
     if (error) {
@@ -165,7 +177,12 @@ router.get('/twitter/callback', async (req, res) => {
 
     // Verify state exists
     const storedState = oauthStates.get(state);
-    console.log('Stored states:', oauthStates.size, 'Looking for:', state?.substring(0,10));
+    console.log(
+      'Stored states:',
+      oauthStates.size,
+      'Looking for:',
+      state?.substring(0, 10),
+    );
 
     if (!storedState) {
       console.log('State not found!');
@@ -191,7 +208,12 @@ router.get('/twitter/callback', async (req, res) => {
 
     // Get user info
     const { data: twitterUser } = await userClient.v2.me({
-      'user.fields': ['created_at', 'public_metrics', 'description', 'profile_image_url']
+      'user.fields': [
+        'created_at',
+        'public_metrics',
+        'description',
+        'profile_image_url',
+      ],
     });
 
     console.log('Got user:', twitterUser.username, twitterUser.id);
@@ -203,12 +225,17 @@ router.get('/twitter/callback', async (req, res) => {
       .eq('twitter_id', twitterUser.id)
       .single();
 
-    console.log('Existing player check:', existingPlayer ? 'Found' : 'Not found');
+    console.log(
+      'Existing player check:',
+      existingPlayer ? 'Found' : 'Not found',
+    );
 
     if (existingPlayer) {
       // Calculate login streak
       const now = new Date();
-      const lastLogin = existingPlayer.last_login ? new Date(existingPlayer.last_login) : null;
+      const lastLogin = existingPlayer.last_login
+        ? new Date(existingPlayer.last_login)
+        : null;
       let newStreak = existingPlayer.streak || 0;
 
       if (!lastLogin) {
@@ -234,8 +261,13 @@ router.get('/twitter/callback', async (req, res) => {
         .update({ last_login: now.toISOString(), streak: newStreak })
         .eq('id', existingPlayer.id);
 
-      console.log(`Streak updated: ${newStreak} days for player ${existingPlayer.id}`);
-      console.log('Redirecting to dashboard with player_id:', existingPlayer.id);
+      console.log(
+        `Streak updated: ${newStreak} days for player ${existingPlayer.id}`,
+      );
+      console.log(
+        'Redirecting to dashboard with player_id:',
+        existingPlayer.id,
+      );
       return res.redirect(`/dashboard.html?player_id=${existingPlayer.id}`);
     }
 
@@ -252,18 +284,18 @@ router.get('/twitter/callback', async (req, res) => {
     const params = new URLSearchParams({
       twitter_id: twitterUser.id,
       twitter_handle: twitterUser.username,
-      profile_image: twitterUser.profile_image_url?.replace('_normal', '_400x400') || '',
+      profile_image:
+        twitterUser.profile_image_url?.replace('_normal', '_400x400') || '',
       access_token: accessToken,
       refresh_token: refreshToken || '',
-      bio: twitterUser.description || "",
+      bio: twitterUser.description || '',
       followers: String(twitterUser.public_metrics?.followers_count || 0),
       following: String(twitterUser.public_metrics?.following_count || 0),
-      step: 'choose_school'
+      step: 'choose_school',
     });
 
     console.log('Redirecting to school selection for:', twitterUser.username);
     res.redirect(`/register.html?${params.toString()}`);
-
   } catch (error) {
     console.error('Error in Twitter callback:', error.message);
     console.error('Full error:', error);
@@ -278,7 +310,14 @@ router.get('/twitter/callback', async (req, res) => {
 router.post('/complete-registration', express.json(), async (req, res) => {
   try {
     // V3: Accept both community_tag (old frontend) and guild_tag (new frontend)
-    const { twitter_id, twitter_handle, school_id, community_tag, guild_tag, profile_image } = req.body;
+    const {
+      twitter_id,
+      twitter_handle,
+      school_id,
+      community_tag,
+      guild_tag,
+      profile_image,
+    } = req.body;
     const playerGuildTag = guild_tag || community_tag || null;
 
     // Validate required fields
@@ -310,14 +349,14 @@ router.post('/complete-registration', express.json(), async (req, res) => {
         twitter_id,
         twitter_handle,
         school_id: parseInt(school_id),
-        guild_tag: playerGuildTag,  // V3: renamed from community_tag
+        guild_tag: playerGuildTag, // V3: renamed from community_tag
         profile_image: profile_image || null,
         mana: 3,
-        max_mana: 10,                // V3: new column
-        last_mana_regen: new Date().toISOString(),  // V3: new column
+        max_mana: 10, // V3: new column
+        last_mana_regen: new Date().toISOString(), // V3: new column
         lifetime_points: 0,
         seasonal_points: 0,
-        is_active: true
+        is_active: true,
       })
       .select()
       .single();
@@ -332,7 +371,11 @@ router.post('/complete-registration', express.json(), async (req, res) => {
     // ========================================
     try {
       if (nineSystem) {
-        await nineSystem.createNine(player.id, parseInt(school_id), twitter_handle);
+        await nineSystem.createNine(
+          player.id,
+          parseInt(school_id),
+          twitter_handle,
+        );
         console.log(`⚔️ Nine created for @${twitter_handle}`);
       }
     } catch (nineError) {
@@ -352,15 +395,18 @@ router.post('/complete-registration', express.json(), async (req, res) => {
         .eq('is_active', true);
 
       if (starters && starters.length > 0) {
-        const rows = starters.map(item => ({
+        const rows = starters.map((item) => ({
           player_id: player.id,
           item_id: item.id,
           source: 'starter',
         }));
-        await supabase
-          .from('player_items')
-          .upsert(rows, { onConflict: 'player_id,item_id', ignoreDuplicates: true });
-        console.log(`🎒 ${starters.length} starter items granted to @${twitter_handle}`);
+        await supabase.from('player_items').upsert(rows, {
+          onConflict: 'player_id,item_id',
+          ignoreDuplicates: true,
+        });
+        console.log(
+          `🎒 ${starters.length} starter items granted to @${twitter_handle}`,
+        );
       }
     } catch (itemError) {
       console.error('🎒 Starter items grant failed:', itemError.message);
@@ -396,7 +442,6 @@ router.post('/complete-registration', express.json(), async (req, res) => {
     // ========================================
 
     res.json({ success: true, player });
-
   } catch (error) {
     console.error('Error completing registration:', error);
     res.status(500).json({ error: 'Registration failed' });
@@ -407,13 +452,17 @@ router.post('/complete-registration', express.json(), async (req, res) => {
  * GET /auth/check
  * Check if a Twitter user is already registered
  */
-router.get("/house-counts", async (req, res) => {
+router.get('/house-counts', async (req, res) => {
   try {
-    const { data } = await supabase.from("players").select("school_id");
+    const { data } = await supabase.from('players').select('school_id');
     var counts = {};
-    (data || []).forEach(p => { if(p.school_id) counts[p.school_id] = (counts[p.school_id] || 0) + 1; });
+    (data || []).forEach((p) => {
+      if (p.school_id) counts[p.school_id] = (counts[p.school_id] || 0) + 1;
+    });
     res.json(counts);
-  } catch (e) { res.json({}); }
+  } catch (e) {
+    res.json({});
+  }
 });
 router.get('/check/:twitter_id', async (req, res) => {
   try {

@@ -15,7 +15,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
 // Also need the regular client for reads
@@ -23,9 +23,17 @@ const supabase = require('../config/supabase');
 
 // V5: Drop Ticket integration — earn tickets when Chronicle awards points
 let dropTicketEngine = null;
-try { dropTicketEngine = require('./dropTicketEngine'); } catch (e) { /* not loaded yet */ }
+try {
+  dropTicketEngine = require('./dropTicketEngine');
+} catch (e) {
+  /* not loaded yet */
+}
 
-const CHRONICLE_SOURCES = ['chronicle_reply', 'chronicle_named', 'chronicle_wildcard'];
+const CHRONICLE_SOURCES = [
+  'chronicle_reply',
+  'chronicle_named',
+  'chronicle_wildcard',
+];
 
 /**
  * Add points to a player. This is the ONLY function that should
@@ -54,7 +62,10 @@ async function addPoints(playerId, amount, source, description) {
       .single();
 
     if (fetchErr || !player) {
-      console.error(`[Points] Player ${playerId} not found:`, fetchErr?.message);
+      console.error(
+        `[Points] Player ${playerId} not found:`,
+        fetchErr?.message,
+      );
       return { success: false, error: 'Player not found' };
     }
 
@@ -71,20 +82,21 @@ async function addPoints(playerId, amount, source, description) {
       .eq('id', playerId);
 
     if (updateErr) {
-      console.error(`[Points] Update failed for ${playerId}:`, updateErr.message);
+      console.error(
+        `[Points] Update failed for ${playerId}:`,
+        updateErr.message,
+      );
       return { success: false, error: updateErr.message };
     }
 
     // Step 3: Log it (non-blocking — don't fail if table doesn't exist yet)
     try {
-      await supabaseAdmin
-        .from('point_log')
-        .insert({
-          player_id: playerId,
-          amount: amount,
-          source: source,
-          description: description || null,
-        });
+      await supabaseAdmin.from('point_log').insert({
+        player_id: playerId,
+        amount: amount,
+        source: source,
+        description: description || null,
+      });
     } catch (logErr) {
       // point_log table might not exist yet — that's OK
     }
@@ -98,8 +110,11 @@ async function addPoints(playerId, amount, source, description) {
       }
     }
 
-    return { success: true, new_seasonal: newSeasonal, new_lifetime: newLifetime };
-
+    return {
+      success: true,
+      new_seasonal: newSeasonal,
+      new_lifetime: newLifetime,
+    };
   } catch (err) {
     console.error(`[Points] Error for player ${playerId}:`, err.message);
     return { success: false, error: err.message };

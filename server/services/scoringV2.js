@@ -8,32 +8,38 @@ const supabase = require('../config/supabase');
 
 // ── RARITY MULTIPLIERS ──
 const RARITY_MULT = {
-  common:    { points: 1.0, power: 1.0 },
-  uncommon:  { points: 1.25, power: 1.1 },
-  rare:      { points: 1.5, power: 1.25 },
-  epic:      { points: 2.0, power: 1.5 },
+  common: { points: 1.0, power: 1.0 },
+  uncommon: { points: 1.25, power: 1.1 },
+  rare: { points: 1.5, power: 1.25 },
+  epic: { points: 2.0, power: 1.5 },
   legendary: { points: 3.0, power: 2.0 },
 };
 
 // ── HOUSE ALLIANCES ──
 const ALLIANCES = {
-  1: 5,   // Smoulders ↔ Stormrage
+  1: 5, // Smoulders ↔ Stormrage
   5: 1,
-  2: 6,   // Darktide ↔ Nighthollow
+  2: 6, // Darktide ↔ Nighthollow
   6: 2,
-  3: 4,   // Stonebark ↔ Ashenvale
+  3: 4, // Stonebark ↔ Ashenvale
   4: 3,
-  7: 8,   // Dawnbringer ↔ Manastorm
+  7: 8, // Dawnbringer ↔ Manastorm
   8: 7,
   9: null, // Plaguemire = wildcard
 };
 
 // House slugs to IDs (for matching spell.house string to player school_id)
 const HOUSE_SLUG_TO_ID = {
-  'smoulders': 1, 'darktide': 2, 'stonebark': 3,
-  'ashenvale': 4, 'stormrage': 5, 'nighthollow': 6,
-  'dawnbringer': 7, 'manastorm': 8, 'plaguemire': 9,
-  'universal': 0,
+  smoulders: 1,
+  darktide: 2,
+  stonebark: 3,
+  ashenvale: 4,
+  stormrage: 5,
+  nighthollow: 6,
+  dawnbringer: 7,
+  manastorm: 8,
+  plaguemire: 9,
+  universal: 0,
 };
 
 // ── CALCULATE TERRITORY CAST SCORE ──
@@ -43,7 +49,7 @@ function calculateTerritoryCast(card, playerSchoolId, zoneId, effectResult) {
   const basePoints = 10;
 
   // Base influence power (attack = 10, defend = 8)
-  const isAttack = (card.type === 'attack');
+  const isAttack = card.type === 'attack';
   const basePower = isAttack ? 10 : 8;
 
   // Rarity multiplier
@@ -64,18 +70,19 @@ function calculateTerritoryCast(card, playerSchoolId, zoneId, effectResult) {
   let triggeredCount = 0;
   if (effectResult && effectResult.effectsApplied) {
     triggeredCount = effectResult.effectsApplied.filter(
-      e => e.status === 'APPLIED'
+      (e) => e.status === 'APPLIED',
     ).length;
   }
   const effectTriggerBonus = triggeredCount * 3;
 
   // Calculate totals
   const totalPoints = Math.round(
-    (basePoints * rarityMult * affinityMult) + effectBonus + effectTriggerBonus
+    basePoints * rarityMult * affinityMult + effectBonus + effectTriggerBonus,
   );
 
   const totalPower = Math.round(
-    (basePower * rarityPowerMult * affinityMult * effectPowerMod) + extraInfluence
+    basePower * rarityPowerMult * affinityMult * effectPowerMod +
+      extraInfluence,
   );
 
   return {
@@ -125,7 +132,7 @@ async function checkCombos(zoneId, playerSchoolId, gameDay) {
 
     // ── HOUSE RESONANCE: 3+ from same house on same zone ──
     const bySchool = {};
-    actions.forEach(a => {
+    actions.forEach((a) => {
       bySchool[a.school_id] = (bySchool[a.school_id] || 0) + 1;
     });
 
@@ -151,7 +158,6 @@ async function checkCombos(zoneId, playerSchoolId, gameDay) {
 
     // ── COMMUNITY RALLY: 3+ same community on same zone ──
     // (Would need community_tag join — skip for now, add later)
-
   } catch (err) {
     console.error('checkCombos error:', err.message);
   }

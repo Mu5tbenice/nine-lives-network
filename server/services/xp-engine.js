@@ -3,7 +3,7 @@
  * Handles XP calculation, level-up logic, and zone unlock gating.
  */
 
-const supabaseAdmin = require("../config/supabase");
+const supabaseAdmin = require('../config/supabase');
 
 // ═══════════════════════════════════════
 // XP CURVE — Total XP needed to REACH each level
@@ -59,7 +59,14 @@ const ZONE_UNLOCKS = {
 // ITEM SLOTS — All open from level 1
 // Trinket slots (future) will be level-gated
 // ═══════════════════════════════════════
-const ITEM_SLOTS = ["weapon", "outfit", "headwear", "expression", "fur", "familiar"];
+const ITEM_SLOTS = [
+  'weapon',
+  'outfit',
+  'headwear',
+  'expression',
+  'fur',
+  'familiar',
+];
 const ITEM_SLOT_UNLOCKS = {}; // Reserved for future trinket slots
 
 // ═══════════════════════════════════════
@@ -123,7 +130,7 @@ function getMaxZones(level) {
  * Get unlocked item slots at a given level (all open from level 1)
  */
 function getUnlockedSlots(level) {
-  return ITEM_SLOTS.map(function(slot) {
+  return ITEM_SLOTS.map(function (slot) {
     return { slot, unlockedAt: 1 };
   });
 }
@@ -137,13 +144,15 @@ function getUnlocks(level) {
 
   // Find next zone unlock
   let nextUnlock = null;
-  const zoneLevels = Object.keys(ZONE_UNLOCKS).map(Number).sort((a, b) => a - b);
+  const zoneLevels = Object.keys(ZONE_UNLOCKS)
+    .map(Number)
+    .sort((a, b) => a - b);
 
   for (const ul of zoneLevels) {
     if (ul > level) {
       nextUnlock = {
         level: ul,
-        type: "zone_slot",
+        type: 'zone_slot',
         description: `Zone slot ${ZONE_UNLOCKS[ul]} unlocked`,
       };
       break;
@@ -164,27 +173,30 @@ function getUnlocks(level) {
  * @param {string} source - what action gave the XP (for logging)
  * @returns {{ newXP, newLevel, previousLevel, leveledUp, unlocksGained }}
  */
-async function addXP(playerId, amount, source = "unknown") {
+async function addXP(playerId, amount, source = 'unknown') {
   if (!playerId || amount <= 0) return null;
 
   try {
     // Get current XP/level
     let { data: row, error } = await supabaseAdmin
-      .from("player_levels")
-      .select("xp, level")
-      .eq("player_id", playerId)
+      .from('player_levels')
+      .select('xp, level')
+      .eq('player_id', playerId)
       .single();
 
     // If no row exists, create one
     if (!row) {
       const { data: newRow, error: insertErr } = await supabaseAdmin
-        .from("player_levels")
+        .from('player_levels')
         .insert({ player_id: playerId, xp: 0, level: 1 })
-        .select("xp, level")
+        .select('xp, level')
         .single();
 
       if (insertErr) {
-        console.error("[XP] Failed to create player_levels row:", insertErr.message);
+        console.error(
+          '[XP] Failed to create player_levels row:',
+          insertErr.message,
+        );
         return null;
       }
       row = newRow;
@@ -197,16 +209,16 @@ async function addXP(playerId, amount, source = "unknown") {
 
     // Update database
     const { error: updateErr } = await supabaseAdmin
-      .from("player_levels")
+      .from('player_levels')
       .update({
         xp: newXP,
         level: newLevel,
         updated_at: new Date().toISOString(),
       })
-      .eq("player_id", playerId);
+      .eq('player_id', playerId);
 
     if (updateErr) {
-      console.error("[XP] Failed to update:", updateErr.message);
+      console.error('[XP] Failed to update:', updateErr.message);
       return null;
     }
 
@@ -216,7 +228,7 @@ async function addXP(playerId, amount, source = "unknown") {
       for (let l = previousLevel + 1; l <= newLevel; l++) {
         if (ZONE_UNLOCKS[l]) {
           unlocksGained.push({
-            type: "zone_slot",
+            type: 'zone_slot',
             level: l,
             description: `Zone slot ${ZONE_UNLOCKS[l]} unlocked!`,
           });
@@ -224,7 +236,7 @@ async function addXP(playerId, amount, source = "unknown") {
       }
 
       console.log(
-        `[XP] ${playerId} leveled up! ${previousLevel} → ${newLevel} (+${amount} XP from ${source})`
+        `[XP] ${playerId} leveled up! ${previousLevel} → ${newLevel} (+${amount} XP from ${source})`,
       );
 
       // V5: Award a random item on level-up
@@ -237,10 +249,19 @@ async function addXP(playerId, amount, source = "unknown") {
         else if (roll < 96) rarity = 'epic';
         else rarity = 'legendary';
 
-        const { data: candidates } = await supabaseAdmin.from('items').select('id, name, rarity, slot').eq('rarity', rarity).eq('is_active', true);
+        const { data: candidates } = await supabaseAdmin
+          .from('items')
+          .select('id, name, rarity, slot')
+          .eq('rarity', rarity)
+          .eq('is_active', true);
         if (candidates && candidates.length > 0) {
-          const item = candidates[Math.floor(Math.random() * candidates.length)];
-          await supabaseAdmin.from('player_items').insert({ player_id: playerId, item_id: item.id, source: 'level_up' });
+          const item =
+            candidates[Math.floor(Math.random() * candidates.length)];
+          await supabaseAdmin.from('player_items').insert({
+            player_id: playerId,
+            item_id: item.id,
+            source: 'level_up',
+          });
           unlocksGained.push({
             type: 'item_drop',
             item: item,
@@ -260,7 +281,7 @@ async function addXP(playerId, amount, source = "unknown") {
       unlocksGained,
     };
   } catch (err) {
-    console.error("[XP] addXP error:", err.message);
+    console.error('[XP] addXP error:', err.message);
     return null;
   }
 }

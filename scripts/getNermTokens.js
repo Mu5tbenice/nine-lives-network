@@ -1,6 +1,6 @@
 /**
  * One-time script to get OAuth tokens for @9LV_Nerm
- * 
+ *
  * Run this script, then:
  * 1. Open the URL it prints
  * 2. Log in as @9LV_Nerm
@@ -23,7 +23,9 @@ async function getNermTokens() {
 
   try {
     // Generate auth link (PIN-based for simplicity)
-    const authLink = await client.generateAuthLink('oob', { linkMode: 'authorize' });
+    const authLink = await client.generateAuthLink('oob', {
+      linkMode: 'authorize',
+    });
 
     console.log('\n========================================');
     console.log('STEP 1: Open this URL in your browser:');
@@ -44,7 +46,11 @@ async function getNermTokens() {
     rl.question('Enter the PIN: ', async (pin) => {
       try {
         // Exchange PIN for access tokens
-        const { client: loggedClient, accessToken, accessSecret } = await client.login(pin.trim());
+        const {
+          client: loggedClient,
+          accessToken,
+          accessSecret,
+        } = await client.login(pin.trim());
 
         // Verify it worked
         const { data: user } = await loggedClient.v2.me();
@@ -56,7 +62,6 @@ async function getNermTokens() {
         console.log(`NERM_ACCESS_TOKEN=${accessToken}`);
         console.log(`NERM_ACCESS_SECRET=${accessSecret}`);
         console.log('\n========================================\n');
-
       } catch (error) {
         console.error('Error:', error.message);
       }
@@ -64,7 +69,6 @@ async function getNermTokens() {
       rl.close();
       process.exit(0);
     });
-
   } catch (error) {
     console.error('Error generating auth link:', error.message);
     process.exit(1);

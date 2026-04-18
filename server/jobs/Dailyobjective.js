@@ -69,12 +69,15 @@ Reply to this tweet to cast your spell!
     // Save to daily_objectives table
     const { error: insertError } = await supabase
       .from('daily_objectives')
-      .upsert({
-        zone_id: zone.id,
-        tweet_id: tweetId,
-        tweet_url: tweetUrl,
-        game_day: new Date().toISOString().split('T')[0]
-      }, { onConflict: 'game_day' });
+      .upsert(
+        {
+          zone_id: zone.id,
+          tweet_id: tweetId,
+          tweet_url: tweetUrl,
+          game_day: new Date().toISOString().split('T')[0],
+        },
+        { onConflict: 'game_day' },
+      );
 
     if (insertError) {
       console.error('Failed to save daily objective:', insertError);
@@ -82,7 +85,6 @@ Reply to this tweet to cast your spell!
 
     console.log(`Daily objective set: ${zone.name} (ID: ${zone.id})`);
     return { success: true, zone, tweetId, tweetUrl };
-
   } catch (error) {
     console.error('Daily objective job failed:', error);
     return { success: false, error: error.message };

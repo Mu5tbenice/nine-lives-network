@@ -23,55 +23,55 @@ const { createClient } = require('@supabase/supabase-js');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
 // ── In-memory state ──
-const activeDuels = new Map();       // duel_id → duel state
+const activeDuels = new Map(); // duel_id → duel state
 const pendingChallenges = new Map(); // challenge_id → challenge info
-const playerSockets = new Map();     // player_id → socket
+const playerSockets = new Map(); // player_id → socket
 
 // ── CONSTANTS ──
-const ROUND_TIMEOUT_MS = 30000;      // 30 seconds per round
-const CHALLENGE_EXPIRE_MS = 120000;  // 2 minutes to accept
-const MAX_ROUNDS = 10;               // safety cap (most duels end in 3-6)
+const ROUND_TIMEOUT_MS = 30000; // 30 seconds per round
+const CHALLENGE_EXPIRE_MS = 120000; // 2 minutes to accept
+const MAX_ROUNDS = 10; // safety cap (most duels end in 3-6)
 
 // ── EFFECT LOGIC FOR DUELS ──
 // Simplified from zone combat — no persistent ticks, just per-round
 const DUEL_EFFECTS = {
   // Damage effects (hit opponent)
-  BURN:    { damage: 3, message: 'burned' },
-  POISON:  { damage: 2, message: 'poisoned' },
-  DRAIN:   { damage: 2, selfHeal: 2, message: 'drained' },
-  SIPHON:  { damage: 1, selfHeal: 1, message: 'siphoned' },
-  LEECH:   { damage: 2, selfHeal: 1, message: 'leeched' },
-  DOOM:    { damage: 5, message: 'doomed' },
+  BURN: { damage: 3, message: 'burned' },
+  POISON: { damage: 2, message: 'poisoned' },
+  DRAIN: { damage: 2, selfHeal: 2, message: 'drained' },
+  SIPHON: { damage: 1, selfHeal: 1, message: 'siphoned' },
+  LEECH: { damage: 2, selfHeal: 1, message: 'leeched' },
+  DOOM: { damage: 5, message: 'doomed' },
 
   // Healing effects (help yourself)
-  HEAL:    { selfHeal: 3, message: 'healed' },
-  BLESS:   { selfHeal: 2, atkBoost: 1, message: 'blessed' },
+  HEAL: { selfHeal: 3, message: 'healed' },
+  BLESS: { selfHeal: 2, atkBoost: 1, message: 'blessed' },
   INSPIRE: { selfHeal: 2, message: 'inspired' },
   CLEANSE: { selfHeal: 1, removeDebuffs: true, message: 'cleansed' },
 
   // Offensive debuffs (weaken opponent)
   SILENCE: { oppEffectsBlocked: true, message: 'silenced' },
-  HEX:     { oppAtkReduce: 2, message: 'hexed' },
-  WEAKEN:  { oppAtkReduce: 3, message: 'weakened' },
-  FEAR:    { oppAtkReduce: 4, message: 'feared' },
-  STUN:    { oppSkipAttack: true, message: 'stunned' },
+  HEX: { oppAtkReduce: 2, message: 'hexed' },
+  WEAKEN: { oppAtkReduce: 3, message: 'weakened' },
+  FEAR: { oppAtkReduce: 4, message: 'feared' },
+  STUN: { oppSkipAttack: true, message: 'stunned' },
 
   // Defensive buffs (protect yourself)
-  WARD:    { shield: 3, message: 'warded' },
+  WARD: { shield: 3, message: 'warded' },
   BARRIER: { shield: 5, message: 'barriered' },
-  ANCHOR:  { damageReduce: 2, message: 'anchored' },
-  THORNS:  { reflect: 2, message: 'thorned' },
+  ANCHOR: { damageReduce: 2, message: 'anchored' },
+  THORNS: { reflect: 2, message: 'thorned' },
   REFLECT: { reflectPct: 50, message: 'reflecting' },
 
   // Offensive buffs (boost yourself)
   AMPLIFY: { atkBoost: 2, message: 'amplified' },
-  SURGE:   { atkBoost: 3, message: 'surging' },
-  CRIT:    { critChance: 50, message: 'crit ready' },
-  HASTE:   { extraAttack: true, message: 'hasted' },
+  SURGE: { atkBoost: 3, message: 'surging' },
+  CRIT: { critChance: 50, message: 'crit ready' },
+  HASTE: { extraAttack: true, message: 'hasted' },
 };
 
 // ═══════════════════════════════════════════
@@ -129,7 +129,8 @@ async function createChallenge(challengerId, opponentId) {
 
   if (!p1 || !p2) return { success: false, error: 'Player not found' };
 
-  const challengeId = 'ch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+  const challengeId =
+    'ch_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
 
   const challenge = {
     id: challengeId,
@@ -164,8 +165,10 @@ async function createChallenge(challengerId, opponentId) {
 // ═══════════════════════════════════════════
 async function acceptChallenge(challengeId, acceptingPlayerId) {
   const challenge = pendingChallenges.get(challengeId);
-  if (!challenge) return { success: false, error: 'Challenge not found or expired' };
-  if (challenge.opponent.id != acceptingPlayerId) return { success: false, error: 'Not your challenge' };
+  if (!challenge)
+    return { success: false, error: 'Challenge not found or expired' };
+  if (challenge.opponent.id != acceptingPlayerId)
+    return { success: false, error: 'Not your challenge' };
   if (Date.now() > challenge.expires_at) {
     pendingChallenges.delete(challengeId);
     return { success: false, error: 'Challenge expired' };
@@ -186,9 +189,11 @@ async function acceptChallenge(challengeId, acceptingPlayerId) {
     .eq('player_id', challenge.opponent.id)
     .single();
 
-  if (!nine1 || !nine2) return { success: false, error: 'Both players need a Nine to duel' };
+  if (!nine1 || !nine2)
+    return { success: false, error: 'Both players need a Nine to duel' };
 
-  const duelId = 'duel_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+  const duelId =
+    'duel_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
 
   const duel = {
     id: duelId,
@@ -235,13 +240,21 @@ async function acceptChallenge(challengeId, acceptingPlayerId) {
   emitToPlayer(duel.p1.id, 'duel:start', {
     ...startData,
     your_nine: { hp: duel.p1.hp, atk: duel.p1.atk, spd: duel.p1.spd },
-    opponent: { handle: duel.p2.handle, school_id: duel.p2.school_id, hp: duel.p2.hp },
+    opponent: {
+      handle: duel.p2.handle,
+      school_id: duel.p2.school_id,
+      hp: duel.p2.hp,
+    },
   });
 
   emitToPlayer(duel.p2.id, 'duel:start', {
     ...startData,
     your_nine: { hp: duel.p2.hp, atk: duel.p2.atk, spd: duel.p2.spd },
-    opponent: { handle: duel.p1.handle, school_id: duel.p1.school_id, hp: duel.p1.hp },
+    opponent: {
+      handle: duel.p1.handle,
+      school_id: duel.p1.school_id,
+      hp: duel.p1.hp,
+    },
   });
 
   // Start round timer
@@ -255,9 +268,12 @@ async function acceptChallenge(challengeId, acceptingPlayerId) {
 // ═══════════════════════════════════════════
 function declineChallenge(challengeId, playerId) {
   const ch = pendingChallenges.get(challengeId);
-  if (!ch || ch.opponent.id != playerId) return { success: false, error: 'Not found' };
+  if (!ch || ch.opponent.id != playerId)
+    return { success: false, error: 'Not found' };
   pendingChallenges.delete(challengeId);
-  emitToPlayer(ch.challenger.id, 'duel:declined', { challenge_id: challengeId });
+  emitToPlayer(ch.challenger.id, 'duel:declined', {
+    challenge_id: challengeId,
+  });
   return { success: true };
 }
 
@@ -267,7 +283,8 @@ function declineChallenge(challengeId, playerId) {
 async function submitCard(duelId, playerId, cardId) {
   const duel = activeDuels.get(duelId);
   if (!duel) return { success: false, error: 'Duel not found' };
-  if (duel.status !== 'active') return { success: false, error: 'Duel is over' };
+  if (duel.status !== 'active')
+    return { success: false, error: 'Duel is over' };
 
   const isP1 = duel.p1.id == playerId;
   const isP2 = duel.p2.id == playerId;
@@ -275,7 +292,8 @@ async function submitCard(duelId, playerId, cardId) {
 
   const player = isP1 ? duel.p1 : duel.p2;
 
-  if (player.card) return { success: false, error: 'Already submitted this round' };
+  if (player.card)
+    return { success: false, error: 'Already submitted this round' };
 
   // Check card wasn't used in a previous round
   if (player.usedCards.includes(cardId)) {
@@ -296,9 +314,13 @@ async function submitCard(duelId, playerId, cardId) {
   let effects = [];
   try {
     if (card.spell_effects) {
-      effects = Array.isArray(card.spell_effects) ? card.spell_effects : JSON.parse(card.spell_effects);
+      effects = Array.isArray(card.spell_effects)
+        ? card.spell_effects
+        : JSON.parse(card.spell_effects);
     }
-  } catch (e) { effects = []; }
+  } catch (e) {
+    effects = [];
+  }
 
   player.card = {
     card_id: card.id,
@@ -344,27 +366,58 @@ async function resolveRound(duelId) {
   const c2 = p2.card;
 
   // If someone didn't submit (timeout), they play with base stats only
-  if (!c1) p1.card = { name: 'No card', atk: 0, hp: 0, effects: [], type: 'none', rarity: 'common', house: 'universal' };
-  if (!c2) p2.card = { name: 'No card', atk: 0, hp: 0, effects: [], type: 'none', rarity: 'common', house: 'universal' };
+  if (!c1)
+    p1.card = {
+      name: 'No card',
+      atk: 0,
+      hp: 0,
+      effects: [],
+      type: 'none',
+      rarity: 'common',
+      house: 'universal',
+    };
+  if (!c2)
+    p2.card = {
+      name: 'No card',
+      atk: 0,
+      hp: 0,
+      effects: [],
+      type: 'none',
+      rarity: 'common',
+      house: 'universal',
+    };
 
   const roundLog = [];
 
   // Track modifiers for this round
-  let p1AtkMod = 0, p2AtkMod = 0;
-  let p1Shield = 0, p2Shield = 0;
-  let p1DmgReduce = 0, p2DmgReduce = 0;
-  let p1Reflect = 0, p2Reflect = 0;
-  let p1SkipAtk = false, p2SkipAtk = false;
-  let p1EffectsBlocked = false, p2EffectsBlocked = false;
-  let p1ExtraAtk = false, p2ExtraAtk = false;
-  let p1BonusDmg = 0, p2BonusDmg = 0;
-  let p1Healing = 0, p2Healing = 0;
+  let p1AtkMod = 0,
+    p2AtkMod = 0;
+  let p1Shield = 0,
+    p2Shield = 0;
+  let p1DmgReduce = 0,
+    p2DmgReduce = 0;
+  let p1Reflect = 0,
+    p2Reflect = 0;
+  let p1SkipAtk = false,
+    p2SkipAtk = false;
+  let p1EffectsBlocked = false,
+    p2EffectsBlocked = false;
+  let p1ExtraAtk = false,
+    p2ExtraAtk = false;
+  let p1BonusDmg = 0,
+    p2BonusDmg = 0;
+  let p1Healing = 0,
+    p2Healing = 0;
 
   // ── Determine speed order (higher SPD resolves effects first) ──
   const p1First = p1.spd >= p2.spd; // ties go to P1
 
-  const first = p1First ? { p: p1, opp: p2, tag: 'p1' } : { p: p2, opp: p1, tag: 'p2' };
-  const second = p1First ? { p: p2, opp: p1, tag: 'p2' } : { p: p1, opp: p2, tag: 'p1' };
+  const first = p1First
+    ? { p: p1, opp: p2, tag: 'p1' }
+    : { p: p2, opp: p1, tag: 'p2' };
+  const second = p1First
+    ? { p: p2, opp: p1, tag: 'p2' }
+    : { p: p1, opp: p2, tag: 'p1' };
 
   // ── Process effects in speed order ──
   for (const turn of [first, second]) {
@@ -377,7 +430,7 @@ async function resolveRound(duelId) {
       continue;
     }
 
-    for (const effectName of (myCard.effects || [])) {
+    for (const effectName of myCard.effects || []) {
       const effect = DUEL_EFFECTS[effectName];
       if (!effect) continue;
 
@@ -385,28 +438,36 @@ async function resolveRound(duelId) {
       if (effect.damage) {
         if (isP1Turn) p2BonusDmg += effect.damage;
         else p1BonusDmg += effect.damage;
-        roundLog.push(`${turn.p.handle}'s ${effectName} deals ${effect.damage} damage!`);
+        roundLog.push(
+          `${turn.p.handle}'s ${effectName} deals ${effect.damage} damage!`,
+        );
       }
 
       // Self heal
       if (effect.selfHeal) {
         if (isP1Turn) p1Healing += effect.selfHeal;
         else p2Healing += effect.selfHeal;
-        roundLog.push(`${turn.p.handle} ${effect.message} for ${effect.selfHeal} HP`);
+        roundLog.push(
+          `${turn.p.handle} ${effect.message} for ${effect.selfHeal} HP`,
+        );
       }
 
       // ATK boost
       if (effect.atkBoost) {
         if (isP1Turn) p1AtkMod += effect.atkBoost;
         else p2AtkMod += effect.atkBoost;
-        roundLog.push(`${turn.p.handle} ${effect.message}! +${effect.atkBoost} ATK`);
+        roundLog.push(
+          `${turn.p.handle} ${effect.message}! +${effect.atkBoost} ATK`,
+        );
       }
 
       // Shield
       if (effect.shield) {
         if (isP1Turn) p1Shield += effect.shield;
         else p2Shield += effect.shield;
-        roundLog.push(`${turn.p.handle} ${effect.message}! Absorbs ${effect.shield} damage`);
+        roundLog.push(
+          `${turn.p.handle} ${effect.message}! Absorbs ${effect.shield} damage`,
+        );
       }
 
       // Damage reduction
@@ -421,7 +482,8 @@ async function resolveRound(duelId) {
         else p2Reflect += effect.reflect;
       }
       if (effect.reflectPct) {
-        if (isP1Turn) p1Reflect += 999; // flag for % based
+        if (isP1Turn)
+          p1Reflect += 999; // flag for % based
         else p2Reflect += 999;
       }
 
@@ -434,7 +496,9 @@ async function resolveRound(duelId) {
       if (effect.oppAtkReduce) {
         if (isP1Turn) p2AtkMod -= effect.oppAtkReduce;
         else p1AtkMod -= effect.oppAtkReduce;
-        roundLog.push(`${turn.opp.handle} was ${effect.message}! -${effect.oppAtkReduce} ATK`);
+        roundLog.push(
+          `${turn.opp.handle} was ${effect.message}! -${effect.oppAtkReduce} ATK`,
+        );
       }
       if (effect.oppSkipAttack) {
         if (isP1Turn) p2SkipAtk = true;
@@ -460,7 +524,7 @@ async function resolveRound(duelId) {
   // ── Apply attacks ──
   // P1 attacks P2
   if (!p1SkipAtk) {
-    let p1TotalAtk = Math.max(0, (p1.atk + p1.card.atk + p1AtkMod));
+    let p1TotalAtk = Math.max(0, p1.atk + p1.card.atk + p1AtkMod);
     let p1Dmg = Math.max(0, p1TotalAtk - p2DmgReduce);
 
     // Shield absorb
@@ -478,7 +542,9 @@ async function resolveRound(duelId) {
     }
 
     p2.hp = Math.max(0, p2.hp - p1Dmg);
-    roundLog.push(`${p1.handle} hits ${p2.handle} for ${p1Dmg} damage (${p2.hp} HP left)`);
+    roundLog.push(
+      `${p1.handle} hits ${p2.handle} for ${p1Dmg} damage (${p2.hp} HP left)`,
+    );
 
     // HASTE extra attack
     if (p1ExtraAtk) {
@@ -492,7 +558,7 @@ async function resolveRound(duelId) {
 
   // P2 attacks P1
   if (!p2SkipAtk) {
-    let p2TotalAtk = Math.max(0, (p2.atk + p2.card.atk + p2AtkMod));
+    let p2TotalAtk = Math.max(0, p2.atk + p2.card.atk + p2AtkMod);
     let p2Dmg = Math.max(0, p2TotalAtk - p1DmgReduce);
 
     if (p1Shield > 0) {
@@ -508,7 +574,9 @@ async function resolveRound(duelId) {
     }
 
     p1.hp = Math.max(0, p1.hp - p2Dmg);
-    roundLog.push(`${p2.handle} hits ${p1.handle} for ${p2Dmg} damage (${p1.hp} HP left)`);
+    roundLog.push(
+      `${p2.handle} hits ${p1.handle} for ${p2Dmg} damage (${p1.hp} HP left)`,
+    );
 
     if (p2ExtraAtk) {
       const bonusHit = Math.floor(p2TotalAtk * 0.5);
@@ -530,8 +598,18 @@ async function resolveRound(duelId) {
   // ── Record round ──
   const roundResult = {
     round: duel.current_round,
-    p1_card: { name: p1.card.name, atk: p1.card.atk, rarity: p1.card.rarity, effects: p1.card.effects },
-    p2_card: { name: p2.card.name, atk: p2.card.atk, rarity: p2.card.rarity, effects: p2.card.effects },
+    p1_card: {
+      name: p1.card.name,
+      atk: p1.card.atk,
+      rarity: p1.card.rarity,
+      effects: p1.card.effects,
+    },
+    p2_card: {
+      name: p2.card.name,
+      atk: p2.card.atk,
+      rarity: p2.card.rarity,
+      effects: p2.card.effects,
+    },
     p1_hp_after: p1.hp,
     p2_hp_after: p2.hp,
     log: roundLog,
@@ -652,18 +730,16 @@ function startRoundTimer(duelId) {
 // ═══════════════════════════════════════════
 async function saveDuelResult(duel) {
   try {
-    await supabaseAdmin
-      .from('duel_history')
-      .insert({
-        player1_id: duel.p1.id,
-        player2_id: duel.p2.id,
-        winner_id: duel.winner === 'draw' ? null : duel.winner,
-        is_draw: duel.winner === 'draw',
-        rounds_played: duel.rounds.length,
-        round_data: duel.rounds,
-        p1_hp_final: duel.p1.hp,
-        p2_hp_final: duel.p2.hp,
-      });
+    await supabaseAdmin.from('duel_history').insert({
+      player1_id: duel.p1.id,
+      player2_id: duel.p2.id,
+      winner_id: duel.winner === 'draw' ? null : duel.winner,
+      is_draw: duel.winner === 'draw',
+      rounds_played: duel.rounds.length,
+      round_data: duel.rounds,
+      p1_hp_final: duel.p1.hp,
+      p2_hp_final: duel.p2.hp,
+    });
   } catch (err) {
     console.error('[Duel] Save error:', err.message);
   }

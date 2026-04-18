@@ -26,7 +26,9 @@ router.post('/challenge', async (req, res) => {
   try {
     const { challenger_id, opponent_id } = req.body;
     if (!challenger_id || !opponent_id) {
-      return res.status(400).json({ error: 'challenger_id and opponent_id required' });
+      return res
+        .status(400)
+        .json({ error: 'challenger_id and opponent_id required' });
     }
     const result = await duelEngine.createChallenge(challenger_id, opponent_id);
     res.json(result);
@@ -42,7 +44,9 @@ router.post('/accept', async (req, res) => {
   try {
     const { challenge_id, player_id } = req.body;
     if (!challenge_id || !player_id) {
-      return res.status(400).json({ error: 'challenge_id and player_id required' });
+      return res
+        .status(400)
+        .json({ error: 'challenge_id and player_id required' });
     }
     const result = await duelEngine.acceptChallenge(challenge_id, player_id);
     res.json(result);
@@ -71,15 +75,23 @@ router.post('/submit-card', async (req, res) => {
   try {
     const { duel_id, player_id, card_id } = req.body;
     if (!duel_id || !player_id || !card_id) {
-      return res.status(400).json({ error: 'duel_id, player_id, and card_id required' });
+      return res
+        .status(400)
+        .json({ error: 'duel_id, player_id, and card_id required' });
     }
     const result = await duelEngine.submitCard(duel_id, player_id, card_id);
 
     // V5: Award XP when duel completes
     if (result && result.winner_id) {
-      await addXP(result.winner_id, XP_REWARDS.duel_win, 'duel_win').catch(() => {});
-      const loserId = result.winner_id === result.challenger_id ? result.opponent_id : result.challenger_id;
-      if (loserId) await addXP(loserId, XP_REWARDS.duel_lose, 'duel_lose').catch(() => {});
+      await addXP(result.winner_id, XP_REWARDS.duel_win, 'duel_win').catch(
+        () => {},
+      );
+      const loserId =
+        result.winner_id === result.challenger_id
+          ? result.opponent_id
+          : result.challenger_id;
+      if (loserId)
+        await addXP(loserId, XP_REWARDS.duel_lose, 'duel_lose').catch(() => {});
     }
 
     res.json(result);
@@ -102,7 +114,9 @@ router.get('/active/:playerId', (req, res) => {
 // ── GET /api/duels/pending/:playerId ──
 router.get('/pending/:playerId', (req, res) => {
   try {
-    const challenges = duelEngine.getPendingChallenges(parseInt(req.params.playerId));
+    const challenges = duelEngine.getPendingChallenges(
+      parseInt(req.params.playerId),
+    );
     res.json({ challenges });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -113,7 +127,10 @@ router.get('/pending/:playerId', (req, res) => {
 router.get('/history/:playerId', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
-    const history = await duelEngine.getDuelHistory(parseInt(req.params.playerId), limit);
+    const history = await duelEngine.getDuelHistory(
+      parseInt(req.params.playerId),
+      limit,
+    );
     res.json({ history });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -138,7 +155,11 @@ function setupDuelSockets(io) {
     // Player submits a card via socket (alternative to REST)
     socket.on('duel:submit_card', async (data) => {
       if (data && data.duel_id && data.player_id && data.card_id) {
-        const result = await duelEngine.submitCard(data.duel_id, data.player_id, data.card_id);
+        const result = await duelEngine.submitCard(
+          data.duel_id,
+          data.player_id,
+          data.card_id,
+        );
         socket.emit('duel:card_submitted', result);
       }
     });
@@ -146,7 +167,10 @@ function setupDuelSockets(io) {
     // Challenge via socket
     socket.on('duel:challenge', async (data) => {
       if (data && data.challenger_id && data.opponent_id) {
-        const result = await duelEngine.createChallenge(data.challenger_id, data.opponent_id);
+        const result = await duelEngine.createChallenge(
+          data.challenger_id,
+          data.opponent_id,
+        );
         socket.emit('duel:challenge_sent', result);
       }
     });
@@ -154,7 +178,10 @@ function setupDuelSockets(io) {
     // Accept via socket
     socket.on('duel:accept', async (data) => {
       if (data && data.challenge_id && data.player_id) {
-        const result = await duelEngine.acceptChallenge(data.challenge_id, data.player_id);
+        const result = await duelEngine.acceptChallenge(
+          data.challenge_id,
+          data.player_id,
+        );
         socket.emit('duel:accepted', result);
       }
     });
@@ -162,7 +189,10 @@ function setupDuelSockets(io) {
     // Decline via socket
     socket.on('duel:decline', (data) => {
       if (data && data.challenge_id && data.player_id) {
-        const result = duelEngine.declineChallenge(data.challenge_id, data.player_id);
+        const result = duelEngine.declineChallenge(
+          data.challenge_id,
+          data.player_id,
+        );
         socket.emit('duel:declined_ack', result);
       }
     });

@@ -20,12 +20,20 @@ async function dropItem(playerId, source) {
     else if (roll < 98) rarity = 'epic';
     else rarity = 'legendary';
 
-    const { data: candidates } = await supabase.from('items').select('id, name, rarity, slot').eq('rarity', rarity).eq('is_active', true);
+    const { data: candidates } = await supabase
+      .from('items')
+      .select('id, name, rarity, slot')
+      .eq('rarity', rarity)
+      .eq('is_active', true);
     if (!candidates || candidates.length === 0) return null;
     const item = candidates[Math.floor(Math.random() * candidates.length)];
-    await supabase.from('player_items').insert({ player_id: parseInt(playerId), item_id: item.id, source });
+    await supabase
+      .from('player_items')
+      .insert({ player_id: parseInt(playerId), item_id: item.id, source });
     return item;
-  } catch (e) { return null; }
+  } catch (e) {
+    return null;
+  }
 }
 
 // POST /api/gauntlet/start — Start a run (1 mana)
@@ -33,7 +41,8 @@ async function dropItem(playerId, source) {
 router.post('/start', async (req, res) => {
   try {
     const { player_id } = req.body;
-    if (!player_id) return res.status(400).json({ error: 'player_id required' });
+    if (!player_id)
+      return res.status(400).json({ error: 'player_id required' });
     const result = await gauntletEngine.startRun(player_id);
     res.json(result);
   } catch (err) {
@@ -48,13 +57,19 @@ router.post('/fight', async (req, res) => {
   try {
     const { run_id, player_id, card_id } = req.body;
     if (!run_id || !player_id || !card_id) {
-      return res.status(400).json({ error: 'run_id, player_id, and card_id required' });
+      return res
+        .status(400)
+        .json({ error: 'run_id, player_id, and card_id required' });
     }
     const result = await gauntletEngine.fightFloor(run_id, player_id, card_id);
 
     // V5: Award XP for clearing a floor
     if (result && result.victory) {
-      await addXP(parseInt(player_id), XP_REWARDS.gauntlet_floor, 'gauntlet_floor').catch(() => {});
+      await addXP(
+        parseInt(player_id),
+        XP_REWARDS.gauntlet_floor,
+        'gauntlet_floor',
+      ).catch(() => {});
 
       // V5: Item drops at milestone floors (10% chance at floor 5, 25% at 10, 50% at 15+)
       const floor = result.floor || result.current_floor || 0;
@@ -64,7 +79,10 @@ router.post('/fight', async (req, res) => {
       else if (floor >= 5) dropChance = 0.1;
 
       if (dropChance > 0 && Math.random() < dropChance) {
-        const droppedItem = await dropItem(player_id, 'gauntlet_floor_' + floor);
+        const droppedItem = await dropItem(
+          player_id,
+          'gauntlet_floor_' + floor,
+        );
         if (droppedItem) result.item_drop = droppedItem;
       }
     }
@@ -79,7 +97,9 @@ router.post('/fight', async (req, res) => {
 // GET /api/gauntlet/active/:playerId — Current run status
 router.get('/active/:playerId', async (req, res) => {
   try {
-    const run = await gauntletEngine.getActiveRun(parseInt(req.params.playerId));
+    const run = await gauntletEngine.getActiveRun(
+      parseInt(req.params.playerId),
+    );
     res.json({ active: !!run && run.status === 'active', run: run || null });
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -90,7 +110,10 @@ router.get('/active/:playerId', async (req, res) => {
 router.get('/history/:playerId', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
-    const history = await gauntletEngine.getHistory(parseInt(req.params.playerId), limit);
+    const history = await gauntletEngine.getHistory(
+      parseInt(req.params.playerId),
+      limit,
+    );
     res.json(history);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });

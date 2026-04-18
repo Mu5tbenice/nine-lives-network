@@ -1,10 +1,10 @@
 /**
  * NERM ENGINE — Nine Lives Network V5
- * 
+ *
  * Nerm is a sarcastic floating cat head who commentates
  * on arena battles. Watches combat events and generates
  * one-liners emitted as chat bubbles.
- * 
+ *
  * Rate limited: max 1 comment every 8 seconds.
  */
 
@@ -13,45 +13,44 @@
 // ============================================
 
 const TEMPLATES = {
-
   // --- KILLS ---
   ko: [
-    "{killer} just sent {victim} to the shadow realm. No coming back from that.",
-    "And {victim} is DOWN. {killer} shows zero mercy.",
-    "{killer} deleted {victim}. That was personal.",
-    "Rest in peace, {victim}. {killer} said no.",
-    "{victim} has been removed from the conversation by {killer}.",
+    '{killer} just sent {victim} to the shadow realm. No coming back from that.',
+    'And {victim} is DOWN. {killer} shows zero mercy.',
+    '{killer} deleted {victim}. That was personal.',
+    'Rest in peace, {victim}. {killer} said no.',
+    '{victim} has been removed from the conversation by {killer}.',
     "That's a wrap for {victim}. {killer} didn't even flinch.",
   ],
 
   // --- CRITS ---
   crit: [
     "OH. {attacker} just CRIT {target}. That's gonna leave a mark.",
-    "{attacker} rolled the big numbers. {target} felt every single one.",
-    "CRITICAL HIT from {attacker}! {target} is questioning their life choices.",
-    "The LUCK gods smiled on {attacker}. {target}? Not so much.",
+    '{attacker} rolled the big numbers. {target} felt every single one.',
+    'CRITICAL HIT from {attacker}! {target} is questioning their life choices.',
+    'The LUCK gods smiled on {attacker}. {target}? Not so much.',
     "{attacker} said 'watch this' and absolutely obliterated {target}.",
   ],
 
   // --- KILL STREAKS ---
   killStreak: [
-    "{killer} is on a RAMPAGE. Someone stop this cat.",
-    "Three kills for {killer}. This is getting embarrassing for everyone else.",
-    "{killer} is farming KOs at this point. Genuinely unfair.",
-    "Is anyone going to do something about {killer}? No? Okay then.",
+    '{killer} is on a RAMPAGE. Someone stop this cat.',
+    'Three kills for {killer}. This is getting embarrassing for everyone else.',
+    '{killer} is farming KOs at this point. Genuinely unfair.',
+    'Is anyone going to do something about {killer}? No? Okay then.',
   ],
 
   // --- ANCHOR SAVES ---
   anchorSave: [
     "{nine} survives with 1 HP. That's not skill, that's ANCHOR.",
-    "1 HP. ONE. {nine} refuses to die and honestly? Annoying.",
-    "{nine} clings to life with 1 HP. The cockroach of Nethara.",
-    "ANCHOR saves {nine} at 1 HP. That card is doing WORK.",
+    '1 HP. ONE. {nine} refuses to die and honestly? Annoying.',
+    '{nine} clings to life with 1 HP. The cockroach of Nethara.',
+    'ANCHOR saves {nine} at 1 HP. That card is doing WORK.',
   ],
 
   // --- SHATTER ---
   shatter: [
-    "{nine} died and took half the arena with them. Respect.",
+    '{nine} died and took half the arena with them. Respect.',
     "SHATTER goes off! {nine} said 'if I'm going down, you're coming with me.'",
     "{nine} explodes on death. That's the most useful they've been all round.",
   ],
@@ -64,107 +63,107 @@ const TEMPLATES = {
 
   // --- SILENCE ---
   silence: [
-    "{target} has been SILENCED. All those fancy effects? Gone.",
+    '{target} has been SILENCED. All those fancy effects? Gone.',
     "SILENCE on {target}. {source} said 'no abilities for you.'",
-    "{target} is silenced. Just a cat with stats now. Sad.",
+    '{target} is silenced. Just a cat with stats now. Sad.',
   ],
 
   // --- REFLECT ---
   reflect: [
     "{nine} said 'no u' and REFLECTED that attack. Beautiful.",
-    "REFLECT! {attacker} just hit themselves. Comedy.",
+    'REFLECT! {attacker} just hit themselves. Comedy.',
     "{nine}'s REFLECT sends it right back. {attacker} played themselves.",
   ],
 
   // --- DODGE ---
   dodge: [
     "{nine} DODGED. Can't hit what you can't catch.",
-    "Miss! {nine} is built different.",
+    'Miss! {nine} is built different.',
     "{attacker} swung at air. {nine} wasn't there.",
   ],
 
   // --- POISON STACKS ---
   poisonMax: [
     "{nine} has 3 stacks of POISON. That's the maximum. That's death.",
-    "Full POISON stacks on {nine}. Plaguemire sends their regards.",
-    "{nine} is melting. Three poison stacks will do that.",
+    'Full POISON stacks on {nine}. Plaguemire sends their regards.',
+    '{nine} is melting. Three poison stacks will do that.',
   ],
 
   // --- INFECT SPREAD ---
   infect: [
-    "INFECT triggers! {source} died but the POISON lives on. In everyone.",
+    'INFECT triggers! {source} died but the POISON lives on. In everyone.',
     "{source}'s death spreads POISON to the whole arena. Even from the grave.",
   ],
 
   // --- DRAIN / VAMPIRE ---
   drain: [
     "{attacker} just DRAINED {target}. Stealing health like it's nothing.",
-    "DRAIN from {attacker}. Taking HP and giving nothing back.",
+    'DRAIN from {attacker}. Taking HP and giving nothing back.',
   ],
 
   // --- LONE WOLF ---
   loneWolfKill: [
     "{killer} doesn't need a guild. Apparently.",
-    "Lone Wolf {killer} out here solo carrying. Bold move.",
-    "{killer} fights alone and wins alone. Guild recruitment just got harder.",
+    'Lone Wolf {killer} out here solo carrying. Bold move.',
+    '{killer} fights alone and wins alone. Guild recruitment just got harder.',
   ],
 
   // --- ROUND START ---
   roundStart: [
     "Round {round}. Let's see who's still standing.",
-    "Round {round} begins. The survivors are getting desperate.",
-    "Round {round}. Fresh round, same chaos.",
-    "Here we go again. Round {round}.",
+    'Round {round} begins. The survivors are getting desperate.',
+    'Round {round}. Fresh round, same chaos.',
+    'Here we go again. Round {round}.',
     "Round {round}. Some of you won't make it. That's just math.",
   ],
 
   // --- ROUND END ---
   roundWin: [
-    "{guild} takes Round {round}. Dominant.",
+    '{guild} takes Round {round}. Dominant.',
     "Round {round} goes to {guild}. Surprised? I'm not.",
-    "{guild} wins Round {round}. The other guilds should be embarrassed.",
+    '{guild} wins Round {round}. The other guilds should be embarrassed.',
   ],
 
   // --- CLOSE ROUND (tight HP difference) ---
   closeRound: [
-    "That was CLOSE. {guild} barely scraped that round.",
-    "Round {round} decided by a hair. {guild} survives. Barely.",
+    'That was CLOSE. {guild} barely scraped that round.',
+    'Round {round} decided by a hair. {guild} survives. Barely.',
     "If that round was any closer it'd be a tie. {guild} takes it.",
   ],
 
   // --- CYCLE END ---
   cycleEnd: [
-    "{guild} controls {zone}. For now.",
-    "Cycle over. {guild} holds {zone}. See you in 5 minutes.",
-    "{zone} belongs to {guild}. Everyone else? Try harder.",
+    '{guild} controls {zone}. For now.',
+    'Cycle over. {guild} holds {zone}. See you in 5 minutes.',
+    '{zone} belongs to {guild}. Everyone else? Try harder.',
   ],
 
   // --- NO CONTEST (one guild dominates) ---
   domination: [
-    "{guild} is running this zone unopposed. Where IS everyone?",
+    '{guild} is running this zone unopposed. Where IS everyone?',
     "This isn't a battle, it's a {guild} victory lap.",
-    "{guild} owns this zone. The rest of you are just visiting.",
+    '{guild} owns this zone. The rest of you are just visiting.',
   ],
 
   // --- GENERIC HYPE ---
   hype: [
-    "This zone is CHAOS and I am HERE for it.",
-    "Twenty cats in a pit throwing spells. This is peak Nethara.",
+    'This zone is CHAOS and I am HERE for it.',
+    'Twenty cats in a pit throwing spells. This is peak Nethara.',
     "If you're not watching {zone} right now, you're missing out.",
-    "The damage numbers flying around right now are OBSCENE.",
+    'The damage numbers flying around right now are OBSCENE.',
   ],
 
   // --- SUPPORT PLAYS ---
   support: [
-    "{nine} just BLESSED the whole squad. Wholesome AND tactical.",
+    '{nine} just BLESSED the whole squad. Wholesome AND tactical.',
     "INSPIRE from {nine}. The guild's ATK just went up. You're welcome.",
-    "{nine} out here healing teammates. The real MVP.",
+    '{nine} out here healing teammates. The real MVP.',
   ],
 
   // --- TAUNT ---
   taunt: [
     "{nine} activates TAUNT. 'Come at me.' Brave or stupid? Yes.",
-    "TAUNT from {nine}. Every enemy is now forced to fight them. Bold.",
+    'TAUNT from {nine}. Every enemy is now forced to fight them. Bold.',
   ],
 
   // --- CORRODE ---
@@ -175,7 +174,7 @@ const TEMPLATES = {
 
   // --- CHAIN ---
   chain: [
-    "CHAIN hit! {attacker} hit {target1} AND {target2}. Two for one.",
+    'CHAIN hit! {attacker} hit {target1} AND {target2}. Two for one.',
     "{attacker}'s attack bounces to {target2}. CHAIN doesn't play fair.",
   ],
 };
@@ -187,8 +186,8 @@ const TEMPLATES = {
 class NermEngine {
   constructor() {
     this.lastCommentTime = 0;
-    this.MIN_INTERVAL = 8000;  // 8 seconds between comments
-    this.killCounts = {};       // track kills per Nine for streak detection
+    this.MIN_INTERVAL = 8000; // 8 seconds between comments
+    this.killCounts = {}; // track kills per Nine for streak detection
     this.roundStartCommented = false;
   }
 
@@ -235,7 +234,8 @@ class NermEngine {
     if (!killer || !victim) return null;
 
     // Track kill streaks
-    this.killCounts[event.killer_id] = (this.killCounts[event.killer_id] || 0) + 1;
+    this.killCounts[event.killer_id] =
+      (this.killCounts[event.killer_id] || 0) + 1;
 
     // Kill streak (3+)
     if (this.killCounts[event.killer_id] >= 3) {
@@ -274,7 +274,9 @@ class NermEngine {
   onEffect(event, state) {
     switch (event.effect_type) {
       case 'ANCHOR_SAVE':
-        return this.pick(TEMPLATES.anchorSave, { nine: this.getName(event.nine_id, state) });
+        return this.pick(TEMPLATES.anchorSave, {
+          nine: this.getName(event.nine_id, state),
+        });
 
       case 'REFLECT':
         return this.pick(TEMPLATES.reflect, {
@@ -290,13 +292,17 @@ class NermEngine {
 
       case 'POISON_APPLY': {
         if (event.stacks >= 3) {
-          return this.pick(TEMPLATES.poisonMax, { nine: this.getName(event.target_id, state) });
+          return this.pick(TEMPLATES.poisonMax, {
+            nine: this.getName(event.target_id, state),
+          });
         }
         return null;
       }
 
       case 'INFECT':
-        return this.pick(TEMPLATES.infect, { source: this.getName(event.source_id, state) });
+        return this.pick(TEMPLATES.infect, {
+          source: this.getName(event.source_id, state),
+        });
 
       case 'DRAIN':
         return this.pick(TEMPLATES.drain, {
@@ -305,10 +311,14 @@ class NermEngine {
         });
 
       case 'TAUNT':
-        return this.pick(TEMPLATES.taunt, { nine: this.getName(event.nine_id, state) });
+        return this.pick(TEMPLATES.taunt, {
+          nine: this.getName(event.nine_id, state),
+        });
 
       case 'CORRODE_TICK':
-        return this.pick(TEMPLATES.corrode, { nine: this.getName(event.nine_id, state) });
+        return this.pick(TEMPLATES.corrode, {
+          nine: this.getName(event.nine_id, state),
+        });
 
       case 'CHAIN':
         return this.pick(TEMPLATES.chain, {
@@ -319,7 +329,9 @@ class NermEngine {
 
       case 'BLESS':
       case 'INSPIRE':
-        return this.pick(TEMPLATES.support, { nine: this.getName(event.source_id, state) });
+        return this.pick(TEMPLATES.support, {
+          nine: this.getName(event.source_id, state),
+        });
 
       default:
         return null;
@@ -347,12 +359,18 @@ class NermEngine {
   onRoundEnd(roundNumber, winnerGuild, wasClose) {
     if (wasClose) {
       return {
-        message: this.pick(TEMPLATES.closeRound, { guild: winnerGuild, round: roundNumber }),
+        message: this.pick(TEMPLATES.closeRound, {
+          guild: winnerGuild,
+          round: roundNumber,
+        }),
         tone: 'excited',
       };
     }
     return {
-      message: this.pick(TEMPLATES.roundWin, { guild: winnerGuild, round: roundNumber }),
+      message: this.pick(TEMPLATES.roundWin, {
+        guild: winnerGuild,
+        round: roundNumber,
+      }),
       tone: 'snarky',
     };
   }
@@ -360,7 +378,10 @@ class NermEngine {
   /** Generate cycle end comment */
   onCycleEnd(winnerGuild, zoneName) {
     return {
-      message: this.pick(TEMPLATES.cycleEnd, { guild: winnerGuild, zone: zoneName }),
+      message: this.pick(TEMPLATES.cycleEnd, {
+        guild: winnerGuild,
+        zone: zoneName,
+      }),
       tone: 'narrator',
     };
   }
@@ -388,14 +409,14 @@ class NermEngine {
   /** Get a Nine's display name from arena state */
   getName(nineId, state) {
     if (!state || !nineId) return null;
-    const nine = state.find(n => n.id === nineId);
+    const nine = state.find((n) => n.id === nineId);
     return nine ? nine.name : null;
   }
 
   /** Get a Nine object from arena state */
   getNine(nineId, state) {
     if (!state || !nineId) return null;
-    return state.find(n => n.id === nineId);
+    return state.find((n) => n.id === nineId);
   }
 }
 

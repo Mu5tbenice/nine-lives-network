@@ -1,6 +1,12 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Server, Zap, Shield, Code } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Server, Zap, Shield, Code } from 'lucide-react';
 
 export default function Home() {
   return (
@@ -10,11 +16,18 @@ export default function Home() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-6">
             <Server className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-4xl font-bold tracking-tight mb-4" data-testid="text-title">
+          <h1
+            className="text-4xl font-bold tracking-tight mb-4"
+            data-testid="text-title"
+          >
             Node.js Express Server
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto" data-testid="text-description">
-            Your full-stack application is ready. Built with Express, React, and TypeScript.
+          <p
+            className="text-lg text-muted-foreground max-w-2xl mx-auto"
+            data-testid="text-description"
+          >
+            Your full-stack application is ready. Built with Express, React, and
+            TypeScript.
           </p>
         </div>
 
@@ -26,7 +39,8 @@ export default function Home() {
               </div>
               <CardTitle className="text-lg">Fast & Modern</CardTitle>
               <CardDescription>
-                Powered by Vite for lightning-fast development with hot module replacement.
+                Powered by Vite for lightning-fast development with hot module
+                replacement.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -38,7 +52,8 @@ export default function Home() {
               </div>
               <CardTitle className="text-lg">Type Safe</CardTitle>
               <CardDescription>
-                Full TypeScript support across frontend and backend for reliable code.
+                Full TypeScript support across frontend and backend for reliable
+                code.
               </CardDescription>
             </CardHeader>
           </Card>

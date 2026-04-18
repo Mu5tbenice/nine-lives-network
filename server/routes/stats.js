@@ -27,7 +27,6 @@ router.get('/:playerId', async (req, res) => {
 
     const stats = await calculateBaseStats(playerId);
     res.json({ success: true, stats });
-
   } catch (err) {
     console.error('Stats calc error:', err.message);
     res.status(500).json({ error: err.message });
@@ -48,7 +47,6 @@ router.get('/:playerId/zone/:zoneId', async (req, res) => {
 
     const stats = await calculateNineStats(playerId, parseInt(zoneId));
     res.json({ success: true, stats });
-
   } catch (err) {
     console.error('Zone stats calc error:', err.message);
     res.status(500).json({ error: err.message });
@@ -105,12 +103,14 @@ router.post('/preview', async (req, res) => {
     if (card_ids && card_ids.length > 0) {
       const { data: cards } = await supabase
         .from('player_spells')
-        .select('id, sharpness, spells(name, base_atk, base_hp, base_spd, base_def, base_luck)')
+        .select(
+          'id, sharpness, spells(name, base_atk, base_hp, base_spd, base_def, base_luck)',
+        )
         .in('id', card_ids.slice(0, 3)); // Max 3 cards
 
       if (cards) {
         const { applySharpness } = require('../services/statCalculation');
-        cards.forEach(card => {
+        cards.forEach((card) => {
           const s = card.spells;
           if (!s) return;
           const sharp = card.sharpness != null ? card.sharpness : 100;
@@ -134,35 +134,49 @@ router.post('/preview', async (req, res) => {
     // Add equipped items (read from player_nines.equipped_* columns)
     const { data: nine } = await supabase
       .from('player_nines')
-      .select('equipped_fur, equipped_expression, equipped_headwear, equipped_outfit, equipped_weapon, equipped_familiar, equipped_trinket_1, equipped_trinket_2')
+      .select(
+        'equipped_fur, equipped_expression, equipped_headwear, equipped_outfit, equipped_weapon, equipped_familiar, equipped_trinket_1, equipped_trinket_2',
+      )
       .eq('player_id', player_id)
       .single();
 
     const itemBreakdown = [];
     if (nine) {
       const slugs = [
-        nine.equipped_fur, nine.equipped_expression, nine.equipped_headwear,
-        nine.equipped_outfit, nine.equipped_weapon, nine.equipped_familiar,
-        nine.equipped_trinket_1, nine.equipped_trinket_2
-      ].filter(Boolean).filter(s => s !== 'none');
+        nine.equipped_fur,
+        nine.equipped_expression,
+        nine.equipped_headwear,
+        nine.equipped_outfit,
+        nine.equipped_weapon,
+        nine.equipped_familiar,
+        nine.equipped_trinket_1,
+        nine.equipped_trinket_2,
+      ]
+        .filter(Boolean)
+        .filter((s) => s !== 'none');
 
       if (slugs.length > 0) {
         const { data: items } = await supabase
           .from('items')
-          .select('name, slug, slot, bonus_atk, bonus_hp, bonus_spd, bonus_def, bonus_luck')
+          .select(
+            'name, slug, slot, bonus_atk, bonus_hp, bonus_spd, bonus_def, bonus_luck',
+          )
           .in('slug', slugs);
 
         if (items) {
-          items.forEach(item => {
+          items.forEach((item) => {
             totals.atk += item.bonus_atk || 0;
             totals.hp += item.bonus_hp || 0;
             totals.spd += item.bonus_spd || 0;
             totals.def += item.bonus_def || 0;
             totals.luck += item.bonus_luck || 0;
             itemBreakdown.push({
-              name: item.name, slot: item.slot,
-              atk: item.bonus_atk || 0, hp: item.bonus_hp || 0,
-              spd: item.bonus_spd || 0, def: item.bonus_def || 0,
+              name: item.name,
+              slot: item.slot,
+              atk: item.bonus_atk || 0,
+              hp: item.bonus_hp || 0,
+              spd: item.bonus_spd || 0,
+              def: item.bonus_def || 0,
               luck: item.bonus_luck || 0,
             });
           });
@@ -180,13 +194,19 @@ router.post('/preview', async (req, res) => {
         attackInterval: Math.round(attackInterval * 100) / 100,
         critChance: Math.min(100, totals.luck),
         breakdown: {
-          house: { name: house.name, atk: house.atk, hp: house.hp, spd: house.spd, def: house.def, luck: house.luck },
+          house: {
+            name: house.name,
+            atk: house.atk,
+            hp: house.hp,
+            spd: house.spd,
+            def: house.def,
+            luck: house.luck,
+          },
           cards: cardBreakdown,
           items: itemBreakdown,
         },
       },
     });
-
   } catch (err) {
     console.error('Preview stats error:', err.message);
     res.status(500).json({ error: err.message });

@@ -22,32 +22,39 @@ const { addPoints } = require('./pointsService');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
 // Optional: pack system for bonus packs
 let packSystem = null;
-try { packSystem = require('./packSystem'); } catch (e) {}
+try {
+  packSystem = require('./packSystem');
+} catch (e) {}
 
 // ── GAUNTLET POINTS (from Game Design V4, Section 19) ──
 const GAUNTLET_POINTS = {
-  PER_FLOOR: 3,           // +3 per floor cleared
+  PER_FLOOR: 3, // +3 per floor cleared
   BEAT_PERSONAL_BEST: 10, // +10 for beating personal best
-  FLOOR_5_MILESTONE: 5,   // +5 at floor 5
+  FLOOR_5_MILESTONE: 5, // +5 at floor 5
   FLOOR_10_MILESTONE: 15, // +15 at floor 10
   FLOOR_15_MILESTONE: 30, // +30 at floor 15
-  FIRST_RUN_OF_DAY: 5,    // +5 first run (always true since 1/day)
+  FIRST_RUN_OF_DAY: 5, // +5 first run (always true since 1/day)
 };
 
 // ── REWARD MILESTONES (mana + packs) ──
 const FLOOR_REWARDS = {
-  5:  { mana: 1, message: '💧 Mana refunded! Entry fee paid back.' },
+  5: { mana: 1, message: '💧 Mana refunded! Entry fee paid back.' },
   10: { mana: 1, pack: true, message: '🎁 Bonus pack + 1 mana!' },
   15: { mana: 2, pack: true, message: '👑 GRAND PRIZE: 2 mana + bonus pack!' },
 };
 
 // ── Award rewards for clearing a floor ──
-async function processRewards(playerId, floorCleared, isFirstRun, previousBest) {
+async function processRewards(
+  playerId,
+  floorCleared,
+  isFirstRun,
+  previousBest,
+) {
   const rewards = { mana: 0, pack: false, seasonPoints: 0, messages: [] };
 
   // Per-floor season points: +3
@@ -57,25 +64,35 @@ async function processRewards(playerId, floorCleared, isFirstRun, previousBest) 
   // First run of day bonus: +5
   if (isFirstRun) {
     rewards.seasonPoints += GAUNTLET_POINTS.FIRST_RUN_OF_DAY;
-    rewards.messages.push(`+${GAUNTLET_POINTS.FIRST_RUN_OF_DAY} first run bonus`);
+    rewards.messages.push(
+      `+${GAUNTLET_POINTS.FIRST_RUN_OF_DAY} first run bonus`,
+    );
   }
 
   // Beat personal best: +10
   if (floorCleared > (previousBest || 0)) {
     rewards.seasonPoints += GAUNTLET_POINTS.BEAT_PERSONAL_BEST;
-    rewards.messages.push(`+${GAUNTLET_POINTS.BEAT_PERSONAL_BEST} new personal best!`);
+    rewards.messages.push(
+      `+${GAUNTLET_POINTS.BEAT_PERSONAL_BEST} new personal best!`,
+    );
   }
 
   // Floor milestones
   if (floorCleared === 5) {
     rewards.seasonPoints += GAUNTLET_POINTS.FLOOR_5_MILESTONE;
-    rewards.messages.push(`+${GAUNTLET_POINTS.FLOOR_5_MILESTONE} floor 5 milestone`);
+    rewards.messages.push(
+      `+${GAUNTLET_POINTS.FLOOR_5_MILESTONE} floor 5 milestone`,
+    );
   } else if (floorCleared === 10) {
     rewards.seasonPoints += GAUNTLET_POINTS.FLOOR_10_MILESTONE;
-    rewards.messages.push(`+${GAUNTLET_POINTS.FLOOR_10_MILESTONE} floor 10 milestone`);
+    rewards.messages.push(
+      `+${GAUNTLET_POINTS.FLOOR_10_MILESTONE} floor 10 milestone`,
+    );
   } else if (floorCleared >= 15) {
     rewards.seasonPoints += GAUNTLET_POINTS.FLOOR_15_MILESTONE;
-    rewards.messages.push(`+${GAUNTLET_POINTS.FLOOR_15_MILESTONE} floor 15 milestone`);
+    rewards.messages.push(
+      `+${GAUNTLET_POINTS.FLOOR_15_MILESTONE} floor 15 milestone`,
+    );
   }
 
   // Mana milestone reward
@@ -111,7 +128,7 @@ async function processRewards(playerId, floorCleared, isFirstRun, previousBest) 
       playerId,
       rewards.seasonPoints,
       'gauntlet_floor',
-      `Gauntlet floor ${floorCleared} cleared (+${rewards.seasonPoints} pts)`
+      `Gauntlet floor ${floorCleared} cleared (+${rewards.seasonPoints} pts)`,
     );
   }
 
@@ -120,62 +137,62 @@ async function processRewards(playerId, floorCleared, isFirstRun, previousBest) 
 
 // ── AI ENEMY TEMPLATES ──
 const ENEMY_TEMPLATES = [
-  { name: 'Stray Kitten',        type: 'basic',    emoji: '🐱' },
-  { name: 'Alley Scratcher',     type: 'basic',    emoji: '😼' },
-  { name: 'Shadow Pouncer',      type: 'fast',     emoji: '🌑' },
-  { name: 'Feral Howler',        type: 'attack',   emoji: '🐺' },
-  { name: 'Ember Imp',           type: 'burn',     emoji: '🔥' },
-  { name: 'Voidling',            type: 'drain',    emoji: '👻' },
-  { name: 'Thornbeast',          type: 'thorns',   emoji: '🌿' },
-  { name: 'Hex Wraith',          type: 'hex',      emoji: '💀' },
-  { name: 'Plague Crawler',      type: 'poison',   emoji: '🐛' },
-  { name: 'Storm Elemental',     type: 'fast',     emoji: '⚡' },
-  { name: 'Bone Colossus',       type: 'tank',     emoji: '🦴' },
-  { name: 'Nether Drake',        type: 'burn',     emoji: '🐉' },
-  { name: 'Abyssal Lurker',      type: 'drain',    emoji: '🕳️' },
-  { name: 'Doom Herald',         type: 'hex',      emoji: '☠️' },
-  { name: 'The Veilbreaker',     type: 'boss',     emoji: '👑' },
+  { name: 'Stray Kitten', type: 'basic', emoji: '🐱' },
+  { name: 'Alley Scratcher', type: 'basic', emoji: '😼' },
+  { name: 'Shadow Pouncer', type: 'fast', emoji: '🌑' },
+  { name: 'Feral Howler', type: 'attack', emoji: '🐺' },
+  { name: 'Ember Imp', type: 'burn', emoji: '🔥' },
+  { name: 'Voidling', type: 'drain', emoji: '👻' },
+  { name: 'Thornbeast', type: 'thorns', emoji: '🌿' },
+  { name: 'Hex Wraith', type: 'hex', emoji: '💀' },
+  { name: 'Plague Crawler', type: 'poison', emoji: '🐛' },
+  { name: 'Storm Elemental', type: 'fast', emoji: '⚡' },
+  { name: 'Bone Colossus', type: 'tank', emoji: '🦴' },
+  { name: 'Nether Drake', type: 'burn', emoji: '🐉' },
+  { name: 'Abyssal Lurker', type: 'drain', emoji: '🕳️' },
+  { name: 'Doom Herald', type: 'hex', emoji: '☠️' },
+  { name: 'The Veilbreaker', type: 'boss', emoji: '👑' },
 ];
 
 const AI_EFFECTS = {
-  basic:   [],
-  fast:    ['HASTE'],
-  attack:  ['SURGE'],
-  burn:    ['BURN'],
-  drain:   ['DRAIN'],
-  thorns:  ['THORNS'],
-  hex:     ['HEX', 'WEAKEN'],
-  poison:  ['POISON'],
-  tank:    ['WARD', 'ANCHOR'],
-  boss:    ['BURN', 'SILENCE', 'SURGE'],
+  basic: [],
+  fast: ['HASTE'],
+  attack: ['SURGE'],
+  burn: ['BURN'],
+  drain: ['DRAIN'],
+  thorns: ['THORNS'],
+  hex: ['HEX', 'WEAKEN'],
+  poison: ['POISON'],
+  tank: ['WARD', 'ANCHOR'],
+  boss: ['BURN', 'SILENCE', 'SURGE'],
 };
 
 // ── EFFECT LOGIC ──
 const EFFECTS = {
-  BURN:    { damage: 3 },
-  POISON:  { damage: 2 },
-  DRAIN:   { damage: 2, selfHeal: 2 },
-  SIPHON:  { damage: 1, selfHeal: 1 },
-  LEECH:   { damage: 2, selfHeal: 1 },
-  DOOM:    { damage: 5 },
-  HEAL:    { selfHeal: 3 },
-  BLESS:   { selfHeal: 2, atkBoost: 1 },
+  BURN: { damage: 3 },
+  POISON: { damage: 2 },
+  DRAIN: { damage: 2, selfHeal: 2 },
+  SIPHON: { damage: 1, selfHeal: 1 },
+  LEECH: { damage: 2, selfHeal: 1 },
+  DOOM: { damage: 5 },
+  HEAL: { selfHeal: 3 },
+  BLESS: { selfHeal: 2, atkBoost: 1 },
   INSPIRE: { selfHeal: 2 },
   CLEANSE: { selfHeal: 1 },
   SILENCE: { oppEffectsBlocked: true },
-  HEX:     { oppAtkReduce: 2 },
-  WEAKEN:  { oppAtkReduce: 3 },
-  FEAR:    { oppAtkReduce: 4 },
-  STUN:    { oppSkipAttack: true },
-  WARD:    { shield: 3 },
+  HEX: { oppAtkReduce: 2 },
+  WEAKEN: { oppAtkReduce: 3 },
+  FEAR: { oppAtkReduce: 4 },
+  STUN: { oppSkipAttack: true },
+  WARD: { shield: 3 },
   BARRIER: { shield: 5 },
-  ANCHOR:  { damageReduce: 2 },
-  THORNS:  { reflect: 2 },
+  ANCHOR: { damageReduce: 2 },
+  THORNS: { reflect: 2 },
   REFLECT: { reflectPct: 50 },
   AMPLIFY: { atkBoost: 2 },
-  SURGE:   { atkBoost: 3 },
-  CRIT:    { critChance: 50 },
-  HASTE:   { extraAttack: true },
+  SURGE: { atkBoost: 3 },
+  CRIT: { critChance: 50 },
+  HASTE: { extraAttack: true },
 };
 
 // ═══════════════════════════════════════════
@@ -193,7 +210,10 @@ function generateAI(floorNumber) {
     name: template.name,
     emoji: template.emoji,
     type: template.type,
-    atk, hp, maxHp: hp, spd,
+    atk,
+    hp,
+    maxHp: hp,
+    spd,
     effects: AI_EFFECTS[template.type] || [],
     floor: floorNumber,
   };
@@ -214,13 +234,24 @@ async function startRun(playerId) {
 
   if (existingRun) {
     if (existingRun.status === 'active') {
-      return { success: false, error: 'You already have an active run today. Keep fighting!', run_id: existingRun.id };
+      return {
+        success: false,
+        error: 'You already have an active run today. Keep fighting!',
+        run_id: existingRun.id,
+      };
     }
-    return { success: false, error: 'You already did your gauntlet run today. Come back tomorrow!' };
+    return {
+      success: false,
+      error: 'You already did your gauntlet run today. Come back tomorrow!',
+    };
   }
 
   const nine = await getNine(playerId);
-  if (!nine) return { success: false, error: 'No Nine found — complete registration first' };
+  if (!nine)
+    return {
+      success: false,
+      error: 'No Nine found — complete registration first',
+    };
 
   const manaResult = await spendMana(playerId, 1);
   if (!manaResult.success) return { success: false, error: manaResult.error };
@@ -253,7 +284,12 @@ async function startRun(playerId) {
     success: true,
     run_id: run.id,
     floor: 1,
-    nine: { hp: nine.base_hp, maxHp: nine.base_hp, atk: nine.base_atk, spd: nine.base_spd },
+    nine: {
+      hp: nine.base_hp,
+      maxHp: nine.base_hp,
+      atk: nine.base_atk,
+      spd: nine.base_spd,
+    },
     enemy,
     mana_remaining: manaResult.mana,
   };
@@ -300,9 +336,13 @@ async function fightFloor(runId, playerId, cardId) {
   let cardEffects = [];
   try {
     if (card.spell_effects) {
-      cardEffects = Array.isArray(card.spell_effects) ? card.spell_effects : JSON.parse(card.spell_effects);
+      cardEffects = Array.isArray(card.spell_effects)
+        ? card.spell_effects
+        : JSON.parse(card.spell_effects);
     }
-  } catch (e) { cardEffects = []; }
+  } catch (e) {
+    cardEffects = [];
+  }
 
   // Generate enemy
   const enemy = generateAI(run.current_floor);
@@ -321,9 +361,15 @@ async function fightFloor(runId, playerId, cardId) {
   const log = [];
 
   // ── Modifiers ──
-  let pShield = 0, pDmgReduce = 0, pReflect = 0, pExtraAtk = false;
-  let eShield = 0, eDmgReduce = 0, eReflect = 0;
-  let pSkipAtk = false, eSkipAtk = false;
+  let pShield = 0,
+    pDmgReduce = 0,
+    pReflect = 0,
+    pExtraAtk = false;
+  let eShield = 0,
+    eDmgReduce = 0,
+    eReflect = 0;
+  let pSkipAtk = false,
+    eSkipAtk = false;
   let eEffectsBlocked = false;
 
   // ── Player effects ──
@@ -331,15 +377,36 @@ async function fightFloor(runId, playerId, cardId) {
     const e = EFFECTS[eff];
     if (!e) continue;
 
-    if (e.damage) { eHp = Math.max(0, eHp - e.damage); log.push(`Your ${eff} deals ${e.damage}!`); }
-    if (e.selfHeal) { pHp = Math.min(pMaxHp, pHp + e.selfHeal); log.push(`You heal ${e.selfHeal} HP!`); }
-    if (e.atkBoost) { pAtk += e.atkBoost; log.push(`+${e.atkBoost} ATK!`); }
-    if (e.shield) { pShield += e.shield; log.push(`Shield: ${e.shield}`); }
+    if (e.damage) {
+      eHp = Math.max(0, eHp - e.damage);
+      log.push(`Your ${eff} deals ${e.damage}!`);
+    }
+    if (e.selfHeal) {
+      pHp = Math.min(pMaxHp, pHp + e.selfHeal);
+      log.push(`You heal ${e.selfHeal} HP!`);
+    }
+    if (e.atkBoost) {
+      pAtk += e.atkBoost;
+      log.push(`+${e.atkBoost} ATK!`);
+    }
+    if (e.shield) {
+      pShield += e.shield;
+      log.push(`Shield: ${e.shield}`);
+    }
     if (e.damageReduce) pDmgReduce += e.damageReduce;
     if (e.reflect) pReflect += e.reflect;
-    if (e.oppEffectsBlocked) { eEffectsBlocked = true; log.push('Enemy SILENCED!'); }
-    if (e.oppAtkReduce) { eAtk = Math.max(1, eAtk - e.oppAtkReduce); log.push(`Enemy -${e.oppAtkReduce} ATK`); }
-    if (e.oppSkipAttack) { eSkipAtk = true; log.push('Enemy STUNNED!'); }
+    if (e.oppEffectsBlocked) {
+      eEffectsBlocked = true;
+      log.push('Enemy SILENCED!');
+    }
+    if (e.oppAtkReduce) {
+      eAtk = Math.max(1, eAtk - e.oppAtkReduce);
+      log.push(`Enemy -${e.oppAtkReduce} ATK`);
+    }
+    if (e.oppSkipAttack) {
+      eSkipAtk = true;
+      log.push('Enemy STUNNED!');
+    }
     if (e.extraAttack) pExtraAtk = true;
     if (e.critChance && Math.random() * 100 < e.critChance) {
       pAtk = Math.floor(pAtk * 1.5);
@@ -355,7 +422,11 @@ async function fightFloor(runId, playerId, cardId) {
 
       if (e.damage) {
         let dmg = e.damage;
-        if (pShield > 0) { const abs = Math.min(pShield, dmg); dmg -= abs; pShield -= abs; }
+        if (pShield > 0) {
+          const abs = Math.min(pShield, dmg);
+          dmg -= abs;
+          pShield -= abs;
+        }
         pHp = Math.max(0, pHp - dmg);
         log.push(`${enemy.name}'s ${eff} deals ${dmg}!`);
       }
@@ -364,8 +435,14 @@ async function fightFloor(runId, playerId, cardId) {
       if (e.shield) eShield += e.shield;
       if (e.damageReduce) eDmgReduce += e.damageReduce;
       if (e.reflect) eReflect += e.reflect;
-      if (e.oppAtkReduce) { pAtk = Math.max(1, pAtk - e.oppAtkReduce); log.push(`Your ATK -${e.oppAtkReduce}`); }
-      if (e.oppSkipAttack) { pSkipAtk = true; log.push('You were STUNNED!'); }
+      if (e.oppAtkReduce) {
+        pAtk = Math.max(1, pAtk - e.oppAtkReduce);
+        log.push(`Your ATK -${e.oppAtkReduce}`);
+      }
+      if (e.oppSkipAttack) {
+        pSkipAtk = true;
+        log.push('You were STUNNED!');
+      }
     }
   }
 
@@ -373,10 +450,20 @@ async function fightFloor(runId, playerId, cardId) {
   const playerFirst = pSpd >= eSpd;
 
   function playerAttacks() {
-    if (pSkipAtk) { log.push('You are STUNNED!'); return; }
+    if (pSkipAtk) {
+      log.push('You are STUNNED!');
+      return;
+    }
     let dmg = Math.max(0, pAtk - eDmgReduce);
-    if (eShield > 0) { const abs = Math.min(eShield, dmg); dmg -= abs; eShield -= abs; }
-    if (eReflect > 0) { pHp = Math.max(0, pHp - eReflect); log.push(`Thorns reflect ${eReflect}!`); }
+    if (eShield > 0) {
+      const abs = Math.min(eShield, dmg);
+      dmg -= abs;
+      eShield -= abs;
+    }
+    if (eReflect > 0) {
+      pHp = Math.max(0, pHp - eReflect);
+      log.push(`Thorns reflect ${eReflect}!`);
+    }
     eHp = Math.max(0, eHp - dmg);
     log.push(`You hit for ${dmg}! (Enemy: ${eHp} HP)`);
     if (pExtraAtk && eHp > 0) {
@@ -387,10 +474,19 @@ async function fightFloor(runId, playerId, cardId) {
   }
 
   function enemyAttacks() {
-    if (eSkipAtk) { log.push(`${enemy.name} is STUNNED!`); return; }
+    if (eSkipAtk) {
+      log.push(`${enemy.name} is STUNNED!`);
+      return;
+    }
     let dmg = Math.max(0, eAtk - pDmgReduce);
-    if (pShield > 0) { const abs = Math.min(pShield, dmg); dmg -= abs; pShield -= abs; }
-    if (pReflect > 0) { eHp = Math.max(0, eHp - pReflect); }
+    if (pShield > 0) {
+      const abs = Math.min(pShield, dmg);
+      dmg -= abs;
+      pShield -= abs;
+    }
+    if (pReflect > 0) {
+      eHp = Math.max(0, eHp - pReflect);
+    }
     pHp = Math.max(0, pHp - dmg);
     log.push(`${enemy.name} hits for ${dmg}! (You: ${pHp} HP)`);
   }
@@ -406,7 +502,12 @@ async function fightFloor(runId, playerId, cardId) {
   // ── Build result ──
   const floorResult = {
     floor: run.current_floor,
-    enemy: { name: enemy.name, emoji: enemy.emoji, atk: enemy.atk, hp: enemy.hp },
+    enemy: {
+      name: enemy.name,
+      emoji: enemy.emoji,
+      atk: enemy.atk,
+      hp: enemy.hp,
+    },
     card_used: card.spell_name || card.spell?.name || 'Unknown',
     player_hp_before: run.nine_hp,
     player_hp_after: pHp,
@@ -457,7 +558,12 @@ async function fightFloor(runId, playerId, cardId) {
 
     // Floor 15 = final boss victory
     if (run.current_floor >= 15) {
-      const rewards = await processRewards(playerId, 15, isFirstRun, previousBest);
+      const rewards = await processRewards(
+        playerId,
+        15,
+        isFirstRun,
+        previousBest,
+      );
 
       await supabaseAdmin
         .from('gauntlet_runs')
@@ -481,7 +587,12 @@ async function fightFloor(runId, playerId, cardId) {
 
     const nextFloor = run.current_floor + 1;
     const nextEnemy = generateAI(nextFloor);
-    const rewards = await processRewards(playerId, run.current_floor, isFirstRun && run.current_floor === 1, previousBest);
+    const rewards = await processRewards(
+      playerId,
+      run.current_floor,
+      isFirstRun && run.current_floor === 1,
+      previousBest,
+    );
 
     await supabaseAdmin
       .from('gauntlet_runs')
@@ -507,7 +618,12 @@ async function fightFloor(runId, playerId, cardId) {
   }
 
   // Both alive = stalemate (shouldn't happen often)
-  return { success: true, result: 'draw', floor_result: floorResult, message: 'Stalemate!' };
+  return {
+    success: true,
+    result: 'draw',
+    floor_result: floorResult,
+    message: 'Stalemate!',
+  };
 }
 
 // ═══════════════════════════════════════════

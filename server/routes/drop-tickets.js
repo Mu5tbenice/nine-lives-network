@@ -26,7 +26,11 @@ try {
  */
 router.get('/:playerId', async (req, res) => {
   try {
-    if (!dropEngine) return res.json({ today: { tickets_earned: 0, max_tickets: 6 }, yesterday: null });
+    if (!dropEngine)
+      return res.json({
+        today: { tickets_earned: 0, max_tickets: 6 },
+        yesterday: null,
+      });
 
     const playerId = parseInt(req.params.playerId);
     if (!playerId) return res.status(400).json({ error: 'Invalid player ID' });
@@ -46,7 +50,8 @@ router.get('/:playerId', async (req, res) => {
  */
 router.post('/earn', async (req, res) => {
   try {
-    if (!dropEngine) return res.json({ success: false, error: 'Drop tickets unavailable' });
+    if (!dropEngine)
+      return res.json({ success: false, error: 'Drop tickets unavailable' });
 
     const { player_id, source } = req.body;
     if (!player_id) return res.status(400).json({ error: 'Missing player_id' });
@@ -66,10 +71,12 @@ router.post('/earn', async (req, res) => {
  */
 router.post('/use-kit', async (req, res) => {
   try {
-    if (!dropEngine) return res.json({ success: false, error: 'Drop tickets unavailable' });
+    if (!dropEngine)
+      return res.json({ success: false, error: 'Drop tickets unavailable' });
 
     const { player_id, card_id } = req.body;
-    if (!player_id || !card_id) return res.status(400).json({ error: 'Missing player_id or card_id' });
+    if (!player_id || !card_id)
+      return res.status(400).json({ error: 'Missing player_id or card_id' });
 
     const result = await dropEngine.useSharpeningKit(player_id, card_id);
     res.json(result);
@@ -85,7 +92,8 @@ router.post('/use-kit', async (req, res) => {
  */
 router.post('/process', async (req, res) => {
   try {
-    if (!dropEngine) return res.json({ success: false, error: 'Drop tickets unavailable' });
+    if (!dropEngine)
+      return res.json({ success: false, error: 'Drop tickets unavailable' });
 
     const result = await dropEngine.processAllTickets();
     res.json({ success: true, ...result });

@@ -2,12 +2,19 @@ const { TwitterApi } = require('twitter-api-v2');
 const { createClient } = require('@supabase/supabase-js');
 const Anthropic = require('@anthropic-ai/sdk');
 const supabase = require('../config/supabase');
-const { houses, getRandomNarrative, getNarrativeById, getNermHook, buildEscalation, buildResolution } = require('./narratives');
+const {
+  houses,
+  getRandomNarrative,
+  getNarrativeById,
+  getNermHook,
+  buildEscalation,
+  buildResolution,
+} = require('./narratives');
 
 // Admin client for writes (using service role to bypass RLS)
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
 // Create client for @9LVNetwork
@@ -37,7 +44,7 @@ const firstBloodBonuses = {
   2: { points: 15, title: '⚔️ Swift Strike!' },
   3: { points: 10, title: '🗡️ Quick Draw!' },
   4: { points: 7, title: '💨 Fast Cast!' },
-  5: { points: 5, title: '⚡ Early Bird!' }
+  5: { points: 5, title: '⚡ Early Bird!' },
 };
 
 // ============================================
@@ -69,7 +76,9 @@ async function postMorningSituation() {
     recentNarrativeIds.push(todaysNarrative.id);
     if (recentNarrativeIds.length > 5) recentNarrativeIds.shift();
 
-    console.log(`📖 Today's narrative: ${todaysNarrative.title} (${todaysNarrative.id})`);
+    console.log(
+      `📖 Today's narrative: ${todaysNarrative.title} (${todaysNarrative.id})`,
+    );
 
     // Build the tweet
     let tweet = `📍 ${todaysNarrative.title}\n\n`;
@@ -83,7 +92,8 @@ async function postMorningSituation() {
     if (tweet.length > 280) {
       // Shorten the narrative text to fit
       const maxNarrativeLen = 280 - todaysNarrative.morning.prompt.length - 80;
-      const shortText = todaysNarrative.morning.text.substring(0, maxNarrativeLen) + '...';
+      const shortText =
+        todaysNarrative.morning.text.substring(0, maxNarrativeLen) + '...';
       tweet = `📍 ${todaysNarrative.title}\n\n`;
       tweet += `${shortText}\n\n`;
       tweet += `${todaysNarrative.morning.prompt}\n\n`;
@@ -100,7 +110,7 @@ async function postMorningSituation() {
       .update({
         objective_tweet_id: data.id,
         objective_posted_at: new Date().toISOString(),
-        narrative_title: todaysNarrative.title
+        narrative_title: todaysNarrative.title,
       })
       .eq('id', zone.id);
 
@@ -110,17 +120,19 @@ async function postMorningSituation() {
       const nermHook = getNermHook(todaysNarrative.id, 'morning');
       if (nermHook) {
         // Small delay so it looks natural
-        setTimeout(async () => {
-          await nermBot.replyAsNerm(nermHook, data.id);
-          console.log(`🐱 Nerm commented on the situation`);
-        }, 30000 + Math.random() * 60000); // 30-90 seconds later
+        setTimeout(
+          async () => {
+            await nermBot.replyAsNerm(nermHook, data.id);
+            console.log(`🐱 Nerm commented on the situation`);
+          },
+          30000 + Math.random() * 60000,
+        ); // 30-90 seconds later
       }
     } catch (nermError) {
       console.log('Nerm comment skipped:', nermError.message);
     }
 
     return data;
-
   } catch (error) {
     console.error('Error posting morning situation:', error);
     return null;
@@ -157,7 +169,7 @@ async function postEscalation() {
       .gte('created_at', today.toISOString());
 
     // Get player data for house counts
-    const playerIds = [...new Set(todaysCasts?.map(c => c.player_id) || [])];
+    const playerIds = [...new Set(todaysCasts?.map((c) => c.player_id) || [])];
     let houseCounts = {};
     let totalWizards = 0;
 
@@ -167,7 +179,7 @@ async function postEscalation() {
         .select('id, school_id')
         .in('id', playerIds);
 
-      players?.forEach(p => {
+      players?.forEach((p) => {
         const house = houses[p.school_id];
         if (house) {
           houseCounts[p.school_id] = (houseCounts[p.school_id] || 0) + 1;
@@ -183,10 +195,12 @@ async function postEscalation() {
 
     let houseStats = '';
     if (sortedHouses.length > 0) {
-      houseStats = sortedHouses.map(([id, count]) => {
-        const h = houses[parseInt(id)];
-        return `${h.short}: ${count}`;
-      }).join(' | ');
+      houseStats = sortedHouses
+        .map(([id, count]) => {
+          const h = houses[parseInt(id)];
+          return `${h.short}: ${count}`;
+        })
+        .join(' | ');
     }
 
     // Get top reply (placeholder - we'll use escalation template)
@@ -224,16 +238,18 @@ async function postEscalation() {
       const nermBot = require('./nermBot');
       const nermHook = getNermHook(narrative.id, 'escalation');
       if (nermHook) {
-        setTimeout(async () => {
-          await nermBot.replyAsNerm(nermHook, data.id);
-        }, 30000 + Math.random() * 60000);
+        setTimeout(
+          async () => {
+            await nermBot.replyAsNerm(nermHook, data.id);
+          },
+          30000 + Math.random() * 60000,
+        );
       }
     } catch (e) {
       console.log('Nerm escalation comment skipped');
     }
 
     return data;
-
   } catch (error) {
     console.error('Error posting escalation:', error);
     return null;
@@ -269,7 +285,7 @@ async function postResolution() {
       .gte('created_at', today.toISOString());
 
     // Calculate winner
-    const playerIds = [...new Set(todaysCasts?.map(c => c.player_id) || [])];
+    const playerIds = [...new Set(todaysCasts?.map((c) => c.player_id) || [])];
     const schoolPoints = {};
 
     if (playerIds.length > 0) {
@@ -278,10 +294,11 @@ async function postResolution() {
         .select('id, school_id')
         .in('id', playerIds);
 
-      todaysCasts?.forEach(cast => {
-        const player = players?.find(p => p.id === cast.player_id);
+      todaysCasts?.forEach((cast) => {
+        const player = players?.find((p) => p.id === cast.player_id);
         if (player) {
-          schoolPoints[player.school_id] = (schoolPoints[player.school_id] || 0) + cast.points_earned;
+          schoolPoints[player.school_id] =
+            (schoolPoints[player.school_id] || 0) + cast.points_earned;
         }
       });
     }
@@ -296,7 +313,9 @@ async function postResolution() {
       }
     });
 
-    const winnerHouse = winnerSchoolId ? houses[winnerSchoolId]?.name : 'No house';
+    const winnerHouse = winnerSchoolId
+      ? houses[winnerSchoolId]?.name
+      : 'No house';
 
     // Build resolution from narrative
     const resolutionText = buildResolution(narrative, { winnerHouse });
@@ -351,7 +370,7 @@ async function postResolution() {
       .update({
         is_current_objective: false,
         objective_tweet_id: null,
-        objective_posted_at: null
+        objective_posted_at: null,
       })
       .eq('id', zone.id);
 
@@ -360,9 +379,12 @@ async function postResolution() {
       const nermBot = require('./nermBot');
       const nermHook = getNermHook(narrative.id, 'resolution');
       if (nermHook) {
-        setTimeout(async () => {
-          await nermBot.postAsNerm(nermHook);
-        }, 60000 + Math.random() * 120000); // 1-3 min after results
+        setTimeout(
+          async () => {
+            await nermBot.postAsNerm(nermHook);
+          },
+          60000 + Math.random() * 120000,
+        ); // 1-3 min after results
       }
     } catch (e) {
       console.log('Nerm resolution comment skipped');
@@ -372,7 +394,6 @@ async function postResolution() {
     todaysNarrative = null;
 
     return data;
-
   } catch (error) {
     console.error('Error posting resolution:', error);
     return null;
@@ -441,18 +462,18 @@ async function checkFirstBlood(playerId, schoolId, zoneId) {
       return { position: 1, points: 25, title: '🩸 First Blood!' };
     }
 
-    const playerIds = todaysCasts.map(c => c.player_id);
+    const playerIds = todaysCasts.map((c) => c.player_id);
     const { data: players } = await supabase
       .from('players')
       .select('id, school_id')
       .in('id', playerIds);
 
-    const schoolCasts = todaysCasts.filter(cast => {
-      const player = players?.find(p => p.id === cast.player_id);
+    const schoolCasts = todaysCasts.filter((cast) => {
+      const player = players?.find((p) => p.id === cast.player_id);
       return player?.school_id === schoolId;
     });
 
-    const alreadyCast = schoolCasts.some(c => c.player_id === playerId);
+    const alreadyCast = schoolCasts.some((c) => c.player_id === playerId);
     if (alreadyCast) return null;
 
     const position = schoolCasts.length + 1;
@@ -460,7 +481,6 @@ async function checkFirstBlood(playerId, schoolId, zoneId) {
 
     const bonus = firstBloodBonuses[position];
     return { position, points: bonus.points, title: bonus.title };
-
   } catch (error) {
     console.error('Error checking first blood:', error);
     return null;
@@ -490,24 +510,31 @@ async function processSpellCasts() {
     let mentions;
     try {
       const searchResult = await client.v2.search(searchQuery, {
-        'tweet.fields': ['created_at', 'author_id', 'conversation_id', 'in_reply_to_user_id'],
+        'tweet.fields': [
+          'created_at',
+          'author_id',
+          'conversation_id',
+          'in_reply_to_user_id',
+        ],
         'user.fields': ['username'],
-        'expansions': ['author_id'],
-        max_results: 100
+        expansions: ['author_id'],
+        max_results: 100,
       });
       mentions = searchResult;
     } catch (searchError) {
       console.log('Search failed, trying mentions timeline...');
-      mentions = await client.v2.userMentionTimeline(
-        '2015058106443513856',
-        {
-          'tweet.fields': ['created_at', 'author_id', 'conversation_id', 'in_reply_to_user_id'],
-          'user.fields': ['username'],
-          'expansions': ['author_id'],
-          max_results: 100,
-          since_id: zone.last_processed_tweet_id || undefined
-        }
-      );
+      mentions = await client.v2.userMentionTimeline('2015058106443513856', {
+        'tweet.fields': [
+          'created_at',
+          'author_id',
+          'conversation_id',
+          'in_reply_to_user_id',
+        ],
+        'user.fields': ['username'],
+        expansions: ['author_id'],
+        max_results: 100,
+        since_id: zone.last_processed_tweet_id || undefined,
+      });
     }
 
     if (!mentions || !mentions.data || !mentions.data.data) {
@@ -516,13 +543,14 @@ async function processSpellCasts() {
     }
 
     const tweets = mentions.data.data || mentions.data;
-    const users = mentions.includes?.users || mentions.data.includes?.users || [];
+    const users =
+      mentions.includes?.users || mentions.data.includes?.users || [];
 
     const processedCasts = [];
     let nermNoticeCount = 0;
 
     for (const tweet of tweets) {
-      const user = users.find(u => u.id === tweet.author_id);
+      const user = users.find((u) => u.id === tweet.author_id);
       if (!user) continue;
 
       const { data: player } = await supabase
@@ -559,7 +587,9 @@ async function processSpellCasts() {
         .single();
 
       if (alreadyCast) {
-        console.log(`Player @${user.username} already cast on this bounty today`);
+        console.log(
+          `Player @${user.username} already cast on this bounty today`,
+        );
         continue;
       }
 
@@ -575,18 +605,30 @@ async function processSpellCasts() {
       }
 
       const spell = parseSpell(tweet.text, player.school_id);
-      const { points: basePoints, breakdown } = calculatePoints(spell, zone, player);
+      const { points: basePoints, breakdown } = calculatePoints(
+        spell,
+        zone,
+        player,
+      );
       let finalPoints = basePoints;
 
       // First blood check
       let firstBlood = null;
-      const firstBloodResult = await checkFirstBlood(player.id, player.school_id, zone.id);
+      const firstBloodResult = await checkFirstBlood(
+        player.id,
+        player.school_id,
+        zone.id,
+      );
       if (firstBloodResult) {
         finalPoints += firstBloodResult.points;
-        breakdown.push(`${firstBloodResult.title}: +${firstBloodResult.points}`);
+        breakdown.push(
+          `${firstBloodResult.title}: +${firstBloodResult.points}`,
+        );
         firstBlood = firstBloodResult;
         const houseName = houses[player.school_id]?.name || 'Unknown';
-        console.log(`🩸 First Blood #${firstBloodResult.position} for ${houseName}: @${user.username} (+${firstBloodResult.points})`);
+        console.log(
+          `🩸 First Blood #${firstBloodResult.position} for ${houseName}: @${user.username} (+${firstBloodResult.points})`,
+        );
       }
 
       // Nerm notice (10% chance, max 3 per processing cycle)
@@ -609,7 +651,7 @@ async function processSpellCasts() {
           mana_cost: spell.mana_cost,
           points_earned: finalPoints,
           school_position: firstBlood?.position || null,
-          first_blood_bonus: firstBlood?.points || 0
+          first_blood_bonus: firstBlood?.points || 0,
         })
         .select()
         .single();
@@ -626,7 +668,7 @@ async function processSpellCasts() {
           mana: player.mana - spell.mana_cost,
           last_cast_at: new Date().toISOString(),
           seasonal_points: (player.seasonal_points || 0) + finalPoints,
-          lifetime_points: (player.lifetime_points || 0) + finalPoints
+          lifetime_points: (player.lifetime_points || 0) + finalPoints,
         })
         .eq('id', player.id);
 
@@ -643,10 +685,12 @@ async function processSpellCasts() {
         firstBlood,
         isCreative: spell.isCreative,
         tweet_id: tweet.id,
-        schoolName: houseName
+        schoolName: houseName,
       });
 
-      console.log(`✨ Cast processed: @${user.username} cast ${spell.name} for ${finalPoints} points`);
+      console.log(
+        `✨ Cast processed: @${user.username} cast ${spell.name} for ${finalPoints} points`,
+      );
     }
 
     // Update last processed tweet
@@ -660,7 +704,6 @@ async function processSpellCasts() {
 
     console.log(`Processed ${processedCasts.length} casts`);
     return processedCasts;
-
   } catch (error) {
     console.error('Error processing spell casts:', error);
     return [];
@@ -675,15 +718,96 @@ function parseSpell(text, schoolId) {
 
   // Updated with House names for flair detection
   const schoolSpells = {
-    1: ['ember bolt', 'flame shield', 'inferno', 'fire', 'burn', 'blaze', 'smoulders', 'smolder'],
-    2: ['tidal wave', 'ice barrier', 'tsunami', 'water', 'freeze', 'flood', 'darktide', 'tide'],
-    3: ['rock throw', 'stone wall', 'earthquake', 'earth', 'boulder', 'quake', 'ironbark', 'bark'],
-    4: ['wind slash', 'air shield', 'cyclone', 'air', 'gust', 'breeze', 'ashenvale', 'ashen'],
-    5: ['lightning bolt', 'static field', 'thunderstorm', 'lightning', 'thunder', 'shock', 'stormrage', 'storm'],
-    6: ['shadow strike', 'dark veil', 'void blast', 'shadow', 'darkness', 'void', 'nighthollow', 'hollow'],
-    7: ['light beam', 'holy shield', 'radiant burst', 'light', 'radiant', 'holy', 'dawnbringer', 'dawn'],
-    8: ['arcane missile', 'mana shield', 'arcane explosion', 'arcane', 'magic', 'mystic', 'manastorm', 'mana'],
-    9: ['chaos bolt', 'wild magic', 'catastrophe', 'chaos', 'wild', 'random', 'plaguemire', 'plague'],
+    1: [
+      'ember bolt',
+      'flame shield',
+      'inferno',
+      'fire',
+      'burn',
+      'blaze',
+      'smoulders',
+      'smolder',
+    ],
+    2: [
+      'tidal wave',
+      'ice barrier',
+      'tsunami',
+      'water',
+      'freeze',
+      'flood',
+      'darktide',
+      'tide',
+    ],
+    3: [
+      'rock throw',
+      'stone wall',
+      'earthquake',
+      'earth',
+      'boulder',
+      'quake',
+      'ironbark',
+      'bark',
+    ],
+    4: [
+      'wind slash',
+      'air shield',
+      'cyclone',
+      'air',
+      'gust',
+      'breeze',
+      'ashenvale',
+      'ashen',
+    ],
+    5: [
+      'lightning bolt',
+      'static field',
+      'thunderstorm',
+      'lightning',
+      'thunder',
+      'shock',
+      'stormrage',
+      'storm',
+    ],
+    6: [
+      'shadow strike',
+      'dark veil',
+      'void blast',
+      'shadow',
+      'darkness',
+      'void',
+      'nighthollow',
+      'hollow',
+    ],
+    7: [
+      'light beam',
+      'holy shield',
+      'radiant burst',
+      'light',
+      'radiant',
+      'holy',
+      'dawnbringer',
+      'dawn',
+    ],
+    8: [
+      'arcane missile',
+      'mana shield',
+      'arcane explosion',
+      'arcane',
+      'magic',
+      'mystic',
+      'manastorm',
+      'mana',
+    ],
+    9: [
+      'chaos bolt',
+      'wild magic',
+      'catastrophe',
+      'chaos',
+      'wild',
+      'random',
+      'plaguemire',
+      'plague',
+    ],
   };
 
   const spells = schoolSpells[schoolId] || [];
@@ -699,7 +823,7 @@ function parseSpell(text, schoolId) {
     }
   }
 
-  const wordCount = text.split(/\s+/).filter(w => w.length > 0).length;
+  const wordCount = text.split(/\s+/).filter((w) => w.length > 0).length;
 
   return {
     name: spellName,
@@ -707,7 +831,7 @@ function parseSpell(text, schoolId) {
     type: 'offensive',
     hasSchoolFlair,
     wordCount,
-    isCreative: wordCount >= 10
+    isCreative: wordCount >= 10,
   };
 }
 
@@ -763,23 +887,23 @@ async function updateZoneControl(zoneId, schoolId, points) {
       .single();
 
     if (existing) {
-      const newPercentage = Math.min(100, existing.control_percentage + (points / 10));
+      const newPercentage = Math.min(
+        100,
+        existing.control_percentage + points / 10,
+      );
       await supabaseAdmin
         .from('zone_control')
         .update({ control_percentage: newPercentage })
         .eq('id', existing.id);
     } else {
-      await supabaseAdmin
-        .from('zone_control')
-        .insert({
-          zone_id: zoneId,
-          school_id: schoolId,
-          control_percentage: points / 10
-        });
+      await supabaseAdmin.from('zone_control').insert({
+        zone_id: zoneId,
+        school_id: schoolId,
+        control_percentage: points / 10,
+      });
     }
 
     await normalizeZoneControl(zoneId);
-
   } catch (error) {
     console.error('Error updating zone control:', error);
   }
@@ -826,7 +950,6 @@ async function setDailyObjective(zoneId) {
 
     console.log(`Set new objective: zone ${zoneId}`);
     return true;
-
   } catch (error) {
     console.error('Error setting objective:', error);
     return false;
@@ -848,9 +971,9 @@ async function rotateObjective() {
       return false;
     }
 
-    const randomZone = neutralZones[Math.floor(Math.random() * neutralZones.length)];
+    const randomZone =
+      neutralZones[Math.floor(Math.random() * neutralZones.length)];
     return await setDailyObjective(randomZone.id);
-
   } catch (error) {
     console.error('Error rotating objective:', error);
     return false;
