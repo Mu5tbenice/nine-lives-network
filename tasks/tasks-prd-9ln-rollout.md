@@ -109,14 +109,14 @@ Organized by the §5.5 phasing in `tasks/prd-9ln-product.md`. Each §9 item is t
     - Verify production deployment via Replit republish
     - Mark Phase 1 'Done' in PRD §5.5
 
-- [ ] 2.0 Combat engine code hygiene (§9.3 + §9.4 + §9.5 → cleanup cluster) (est: M)
-  - [ ] 2.1 Change `SESSION_MS` at `server/services/combatEngine.js:17` from `1 * 60 * 60 * 1000` to `2 * 60 * 60 * 1000` — matches PRD §4.8.5.
-  - [ ] 2.2 Remove the `roundMs: ROUND_MS` field from the `arena:round_start` broadcast at `server/services/combatEngine.js:727`. Rounds have no fixed length; clients should count elapsed time.
-  - [ ] 2.3 Remove the `getRoundMs: () => ROUND_MS` export at `server/services/combatEngine.js:894`.
-  - [ ] 2.4 Grep the repo for any caller of `getRoundMs` — update or remove callers. Same for client-side listeners of `roundMs` in `arena:round_start` — verify nothing breaks.
-  - [ ] 2.5 Delete the stale `"⚔️ Combat engine started — V6 wave combat, 30s buffer"` log at `server/index.js:306`. Keep only the truthful V3 log that the engine itself emits.
-  - [ ] 2.6 Boot the server locally, confirm log output shows V3 only (no "V6 wave combat" line).
-  - [ ] 2.7 Add `server/services/combatEngine.test.js` — at minimum a smoke test that the module loads without throwing and that `startCombatEngine` is a function. Regression guard against future `ReferenceError`s.
+- [x] 2.0 Combat engine code hygiene (§9.3 + §9.4 + §9.5 → cleanup cluster) (est: S — re-estimated after §9.5 struck)
+  - [x] 2.1 Change `SESSION_MS` at `server/services/combatEngine.js:17` from `1 * 60 * 60 * 1000` to `2 * 60 * 60 * 1000` — matches PRD §4.8.5.
+  - [x] 2.2 Remove the `roundMs: ROUND_MS` field from the `arena:round_start` broadcast at `server/services/combatEngine.js:727`. Rounds have no fixed length; clients should count elapsed time.
+  - [x] 2.3 Remove the `getRoundMs: () => ROUND_MS` export at `server/services/combatEngine.js:894`.
+  - [x] 2.4 Grep the repo for any caller of `getRoundMs` — update or remove callers. Same for client-side listeners of `roundMs` in `arena:round_start` — verify nothing breaks. *Verified zero consumers in `server/` and `public/`.*
+  - [x] 2.5 ~~Delete the stale `"⚔️ Combat engine started — V6 wave combat, 30s buffer"` log at `server/index.js:306`.~~ **Struck — already resolved retroactively in PRs #126 + #128 per §9.5.**
+  - [x] 2.6 ~~Boot the server locally, confirm log output shows V3 only (no "V6 wave combat" line).~~ **Struck — verification of §9.5 already done at PRD §9.5 markup time on 2026-04-18.**
+  - [x] 2.7 ~~Add `server/services/combatEngine.test.js` smoke test.~~ **Dropped from this PR — defer all test infrastructure decisions (runner, layout, config) to Task 8.1.** Regression confirmed via `node -e "require('./server/services/combatEngine.js')"` exit 0.
 
 - [ ] 3.0 Missing-file resolution (§9.6 → cleanup) (est: M)
   - [ ] 3.1 Dump the live Supabase schema to `database/schema.sql`. Use `pg_dump --schema-only --no-owner --no-acl` against the project, or via the Supabase dashboard's schema export. Overwrite the current 5-byte corrupted file. Commit with a note that this is machine-generated; manual edits should happen in migration files, not here.

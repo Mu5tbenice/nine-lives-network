@@ -14,7 +14,7 @@ const supabaseAdmin = createClient(
 const TICK_MS        = 200;   // 200ms ticks — 5 server updates/sec
 const ROUND_CAP_MS   = 5 * 60 * 1000;    // 5 min hard cap — rounds end early on last guild standing
 const INTERMISSION_MS = 25 * 1000;       // 25s between rounds
-const SESSION_MS     = 1 * 60 * 60 * 1000; // 1hr session timer before auto-withdraw
+const SESSION_MS     = 2 * 60 * 60 * 1000; // 2hr session timer before auto-withdraw (PRD §4.8.5)
 const SPD_FLOOR     = 5.5;   // card cycle floor (effects stay deliberate)
 const ATK_FLOOR     = 2.5;   // auto-attack floor (constant visual activity)
 const CORRODE_CD    = 5.0;  // 5 second cooldown — time-based, tick-rate independent
@@ -724,7 +724,6 @@ function startRound(zoneId, zs, all) {
   broadcast(zoneId, 'arena:round_start', {
     zoneId,
     roundNumber: zs.roundNumber,
-    roundMs: ROUND_MS,
     nines: all.map(n=>({id:n.deploymentId,playerId:n.playerId,hp:n.hp,maxHp:n.maxHp,guildTag:n.guildTag,houseKey:n.houseKey})),
   });
 
@@ -891,7 +890,6 @@ function stopCombatEngine(){ clearInterval(_tickInt); _tickInt=null; }
 
 module.exports={
   startCombatEngine,stopCombatEngine,
-  getRoundMs:()=>ROUND_MS,
   getIntermissionMs:()=>INTERMISSION_MS,
   loadDeploymentIntoEngine,
   rejoinRound,
