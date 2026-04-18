@@ -753,6 +753,8 @@ This PRD is not a roadmap — it describes the end state. But the work to close 
 
 This section is the **live bug ledger** the PRD carries. Each item is tied to a code location and should be resolved by a dedicated follow-up feature PRD (marked `→ FPRD`) or a one-liner cleanup PR (marked `→ cleanup`). Nothing here is acceptable in a shipped product long-term; all of it is currently live.
 
+**Maintenance convention.** Every PR that resolves an entry below appends a bold `**Resolved YYYY-MM-DD in PR #X.**` line to that entry rather than deleting it. Every PR that discovers a new issue adds a new entry at the next available number. See `CLAUDE.md` → "PRD discipline" for the mechanics, including the `PR #?` bootstrap pattern for self-referencing the current PR.
+
 ### 9.1 Scoring column split — `seasonal_points` vs `season_points` → FPRD
 
 **Symptom.** Combat engine awards round-end points via `supabaseAdmin.rpc('increment_season_points', { p_player_id, p_pts })` at `server/services/combatEngine.js:653`. PostgREST resolves the `p_pts` parameter name to the `(bigint, integer)` overload of the RPC, which writes to `players.season_points`. The leaderboard at `server/routes/leaderboards.js:17` orders by `players.seasonal_points`. The two are different columns.
@@ -787,6 +789,8 @@ This section is the **live bug ledger** the PRD carries. Each item is tied to a 
 
 **Resolution:** Delete the line. Per §5.7, "V6 wave combat" is not a thing.
 
+**Resolved 2026-04-17 in PRs #126 + #128** (retroactive — these merged before the PRD was written). `server/index.js:306` is now a clean `combatEngine.startCombatEngine()` call block with no V6 log line. Verified 2026-04-18.
+
 ### 9.6 Missing files referenced by live code → cleanup
 
 - `server/routes/mana.js` — required at `server/index.js:53`, does not exist. `/api/mana` is silently disabled.
@@ -794,6 +798,8 @@ This section is the **live bug ledger** the PRD carries. Each item is tied to a 
 - `database/schema.sql` — 5 bytes containing `s.sql\n`. The primary schema file is effectively absent; a clean clone cannot reproduce the DB locally.
 
 **Resolution:** Either build the missing artifacts (for schema.sql — dump the live Supabase schema into the file) or remove their require/reference sites.
+
+**Partially resolved 2026-04-17 in PR #125** (retroactive — pre-PRD). `database/schema.sql` now contains a 941-line generated dump (timestamp `2026-04-17T12:47:50Z`), and `scripts/dump-schema.js` was added so future refreshes are reproducible. **Still open:** `server/routes/mana.js` and `server/services/combatEngineV2.js` missing-require sites — targeted by Task 3.0 in `tasks-prd-9ln-rollout.md`.
 
 ### 9.7 Dead per-deployment stat columns → cleanup (or FPRD if surfaced)
 
@@ -808,6 +814,8 @@ Services on disk but never required: `House-zones.js`, `arena-sockets.js` (despi
 
 **Resolution:** Decide per-file whether to wire or delete. Default to delete — anything not surfacing in code is costing attention.
 
+**Partially resolved 2026-04-17 in PR #127** (retroactive — pre-PRD). `server/services/nermBot.js.bak` has been removed from the repo. **Still open:** all 6 orphaned routes and 7 remaining orphaned services — targeted by Task 5.0 (Cleanup sweep) in `tasks-prd-9ln-rollout.md`.
+
 ### 9.9 Shell-accident files in repo root → cleanup
 
 Empty files: `collection`, `dont`, `glass cannon` (with space), `workspace`, `const { data: cardSlots } = await supabase`.
@@ -815,6 +823,8 @@ Misnamed files: `sedufYWHw` (a 271-byte copy of `.replit`).
 One-off scripts at root (should move to `scripts/` or delete after migration): `fix-card-refs.py`, `fix-narrative-points.js`, `nuke-old-cards.py`, `patch-game-modes-v4.py`, `patch-packs.sh`, `seed-narratives.js`.
 
 **Resolution:** Delete.
+
+**Resolved 2026-04-17 in PRs #126 + #127** (retroactive — pre-PRD). PR #126 deleted the empty shell-accident files and `sedufYWHw`. PR #127 moved the one-off migration scripts to `scripts/archive/migrations/` and deleted `card-v4-reference.jsx`. *Note:* this class of file re-accumulates through shell accidents (today's session surfaced a new batch — see the next cleanup sweep).
 
 ### 9.10 Faction name drift in seed data → verify
 

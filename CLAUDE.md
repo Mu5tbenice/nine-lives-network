@@ -64,6 +64,24 @@ Two separate Twitter app credential sets drive two accounts:
 
 Anthropic Claude (`ANTHROPIC_API_KEY`) is also used for flavor text generation on game events. A `node-telegram-bot-api` integration for Nerm exists in `services/nerm-telegram.js`.
 
+## PRD discipline
+
+`tasks/prd-9ln-product.md` is the canonical product source of truth (see its Appendix C for the supersession list). Two rules govern any PR that touches §9 (the live bug ledger):
+
+1. **Resolving a §9 entry.** A PR that closes a Known Issue in §9 MUST update that entry in the same PR by appending a bold line: `**Resolved YYYY-MM-DD in PR #X.**`. Do not delete the entry — preserve history so future audits can trace what was fixed, when, and in which PR. If the fix is partial, use `**Partially resolved YYYY-MM-DD in PR #X**` and describe what remains open.
+
+2. **Introducing a new Known Issue.** A PR that discovers a new bug, drift, or gap MUST add a §9 entry numbered to the next available slot (currently §9.20+). Follow the existing format: Symptom, Effect/Severity, Resolution plan.
+
+### Bootstrap mechanic — `PR #?` placeholder
+
+The PR number is not assigned until after `gh pr create` runs. For PRs that resolve a §9 entry with a self-reference, the workflow is:
+
+1. First commit applies the Resolved marker with a `PR #?` placeholder.
+2. Push branch, open draft PR, capture the assigned PR number.
+3. Final bookkeeping commit on the same PR replaces `PR #?` with the real number. Commit title: `docs: resolve PR number references to #X`. Merge after this commit lands.
+
+This placeholder-then-resolve pattern is the only supported way to self-reference the current PR. Retroactive markers (citing previously-merged PRs) use the real number directly — no placeholder needed.
+
 ## Game domain references
 
 The single source of truth for game design is **`9LN_GAME_BIBLE.md`** (repo root, unversioned filename — always current). It describes Combat V4 (round-based, last guild standing, time-based DOT) and Zone V2. Consult it before changing game rules, stats, or effect logic.
