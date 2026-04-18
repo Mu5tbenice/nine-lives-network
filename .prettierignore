@@ -1,0 +1,32 @@
+# Dependencies and build output
+node_modules/
+dist/
+
+# Generated / auto-managed
+database/schema.sql
+package-lock.json
+
+# Historical / archived content
+docs/archive/
+
+# All markdown — ambient md formatting (em-dashes, tables) not formatted in this PR
+*.md
+
+# Task 8.5 scope restriction — public/ formatting deferred to a future PR
+public/
+
+# Explicit ignores
+.replit
+.mcp.json
+*.yml
+*.yaml
+docs/whitepaper-v1.pdf
+public/assets/
+
+# Binary assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.pdf
+*.ico
