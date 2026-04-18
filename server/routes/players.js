@@ -13,7 +13,8 @@ router.get('/:id', async (req, res) => {
 
     const { data: player, error } = await supabase
       .from('players')
-      .select(`
+      .select(
+        `
         id,
         twitter_handle,
         twitter_id,
@@ -30,7 +31,8 @@ router.get('/:id', async (req, res) => {
         last_cast_at,
         is_active,
         streak
-      `)
+      `,
+      )
       .eq('id', id)
       .single();
 
@@ -117,12 +119,16 @@ router.get('/:id/stats', async (req, res) => {
       lives: player.lives !== null ? player.lives : 3,
       duel_wins: player.duel_wins || 0,
       duel_losses: player.duel_losses || 0,
-      duel_win_rate: player.duel_wins + player.duel_losses > 0 
-        ? Math.round((player.duel_wins / (player.duel_wins + player.duel_losses)) * 100) 
-        : 0,
+      duel_win_rate:
+        player.duel_wins + player.duel_losses > 0
+          ? Math.round(
+              (player.duel_wins / (player.duel_wins + player.duel_losses)) *
+                100,
+            )
+          : 0,
       total_casts: castCount || 0,
       total_territory_actions: actionCount || 0,
-      member_since: player.created_at
+      member_since: player.created_at,
     });
   } catch (error) {
     console.error('Error fetching player stats:', error);
@@ -166,7 +172,8 @@ router.get('/by-twitter/:twitter_id', async (req, res) => {
  */
 router.post('/complete-registration', async (req, res) => {
   try {
-    const { twitter_id, twitter_handle, school_id, guild_tag, profile_image } = req.body;
+    const { twitter_id, twitter_handle, school_id, guild_tag, profile_image } =
+      req.body;
 
     if (!twitter_id || !twitter_handle || !school_id) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -180,7 +187,9 @@ router.post('/complete-registration', async (req, res) => {
       .single();
 
     if (existing) {
-      return res.status(400).json({ error: 'Player already registered', player_id: existing.id });
+      return res
+        .status(400)
+        .json({ error: 'Player already registered', player_id: existing.id });
     }
 
     // Create new player with default lives
@@ -198,7 +207,7 @@ router.post('/complete-registration', async (req, res) => {
         lifetime_points: 0,
         duel_wins: 0,
         duel_losses: 0,
-        is_active: true
+        is_active: true,
       })
       .select()
       .single();
@@ -247,12 +256,12 @@ router.post('/update-guild', async (req, res) => {
 
     // Also update any active zone deployments with new tag
     // (so combat engine uses the right faction)
-    const newDeployTag = cleanTag || ('@' + (data.twitter_handle || 'lone_wolf'));
+    const newDeployTag = cleanTag || '@' + (data.twitter_handle || 'lone_wolf');
     await supabaseAdmin
       .from('zone_deployments')
-      .update({ 
+      .update({
         guild_tag: newDeployTag,
-        is_mercenary: !cleanTag 
+        is_mercenary: !cleanTag,
       })
       .eq('player_id', player_id)
       .eq('is_active', true);
@@ -261,7 +270,9 @@ router.post('/update-guild', async (req, res) => {
       success: true,
       guild_tag: cleanTag,
       is_lone_wolf: !cleanTag,
-      message: cleanTag ? `Guild set to ${cleanTag}` : 'Gone Lone Wolf! 1.5x ATK in zones.',
+      message: cleanTag
+        ? `Guild set to ${cleanTag}`
+        : 'Gone Lone Wolf! 1.5x ATK in zones.',
     });
   } catch (err) {
     console.error('Update guild error:', err);

@@ -23,6 +23,10 @@ public/
 docs/whitepaper-v1.pdf
 public/assets/
 
+# IDE / tooling state managed outside this repo
+.config/
+.upm/
+
 # Binary assets
 *.png
 *.jpg

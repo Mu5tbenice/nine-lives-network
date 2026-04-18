@@ -18,8 +18,12 @@
  * ═══════════════════════════════════════════════════════
  */
 
-const supabase = require("../config/supabase");
-const { narratives, getRandomNarrative, getNarrativeById } = require("./narratives");
+const supabase = require('../config/supabase');
+const {
+  narratives,
+  getRandomNarrative,
+  getNarrativeById,
+} = require('./narratives');
 const { addPoints: centralAddPoints } = require('./pointsService');
 
 // ════════════════════════════════════
@@ -27,43 +31,50 @@ const { addPoints: centralAddPoints } = require('./pointsService');
 // ════════════════════════════════════
 
 const HOUSES = {
-  1: "Smoulders", 2: "Darktide", 3: "Stonebark", 4: "Ashenvale",
-  5: "Stormrage", 6: "Nighthollow", 7: "Dawnbringer", 8: "Manastorm", 9: "Plaguemire"
+  1: 'Smoulders',
+  2: 'Darktide',
+  3: 'Stonebark',
+  4: 'Ashenvale',
+  5: 'Stormrage',
+  6: 'Nighthollow',
+  7: 'Dawnbringer',
+  8: 'Manastorm',
+  9: 'Plaguemire',
 };
 
 const HOUSE_KEYWORDS = {
-  1: ["fire", "burn", "flame", "ash", "ember", "smoulder"],
-  2: ["tide", "deep", "ocean", "drown", "wave", "abyss"],
-  3: ["stone", "root", "earth", "bark", "grow", "ancient"],
-  4: ["wind", "gust", "storm", "breeze", "sky", "swift"],
-  5: ["lightning", "thunder", "bolt", "spark", "storm", "shock"],
-  6: ["shadow", "night", "void", "dark", "moon", "dusk"],
-  7: ["light", "dawn", "sun", "radiant", "holy", "blessing"],
-  8: ["mana", "arcane", "crystal", "rift", "spell", "warp"],
-  9: ["plague", "poison", "rot", "decay", "toxic", "spore"]
+  1: ['fire', 'burn', 'flame', 'ash', 'ember', 'smoulder'],
+  2: ['tide', 'deep', 'ocean', 'drown', 'wave', 'abyss'],
+  3: ['stone', 'root', 'earth', 'bark', 'grow', 'ancient'],
+  4: ['wind', 'gust', 'storm', 'breeze', 'sky', 'swift'],
+  5: ['lightning', 'thunder', 'bolt', 'spark', 'storm', 'shock'],
+  6: ['shadow', 'night', 'void', 'dark', 'moon', 'dusk'],
+  7: ['light', 'dawn', 'sun', 'radiant', 'holy', 'blessing'],
+  8: ['mana', 'arcane', 'crystal', 'rift', 'spell', 'warp'],
+  9: ['plague', 'poison', 'rot', 'decay', 'toxic', 'spore'],
 };
 
 // V4 Scoring from game design doc
 const POINTS = {
-  REPLY_BASE: 15,        // Showed up in character
-  REPLY_QUALITY: 25,     // 10+ words, in-character (replaces base)
-  REPLY_DETAILED: 35,    // 30+ words, strong narrative (replaces lower)
-  HOUSE_FLAIR: 5,        // Stacks on top — used house keywords
-  NAMED_IN_STORY: 20,    // Bot wove you into the narrative
+  REPLY_BASE: 15, // Showed up in character
+  REPLY_QUALITY: 25, // 10+ words, in-character (replaces base)
+  REPLY_DETAILED: 35, // 30+ words, strong narrative (replaces lower)
+  HOUSE_FLAIR: 5, // Stacks on top — used house keywords
+  NAMED_IN_STORY: 20, // Bot wove you into the narrative
   // Act 4 wildcard bonuses
   HEROIC_VICTORY: 30,
   UNDERDOG_TRIUMPH: 50,
   CHAOS_ENDING: 20,
   BETRAYAL_ARC: 40,
-  MYSTERIOUS_OUTCOME: 30
+  MYSTERIOUS_OUTCOME: 30,
 };
 
 const WILDCARD_ENDINGS = [
-  "heroic_victory",    // Dominant house/guild gets bonus
-  "underdog_triumph",  // Smallest group that showed up gets bigger bonus
-  "chaos_ending",      // Everyone gets points, nobody "wins"
-  "betrayal_arc",      // One house gets bonus, framed as betrayal
-  "mysterious_outcome" // Random participating house gets bonus
+  'heroic_victory', // Dominant house/guild gets bonus
+  'underdog_triumph', // Smallest group that showed up gets bigger bonus
+  'chaos_ending', // Everyone gets points, nobody "wins"
+  'betrayal_arc', // One house gets bonus, framed as betrayal
+  'mysterious_outcome', // Random participating house gets bonus
 ];
 
 // ════════════════════════════════════
@@ -74,12 +85,12 @@ const WILDCARD_ENDINGS = [
  * Get or create today's chronicle raid record.
  */
 async function getTodayRaid() {
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split('T')[0];
 
   const { data: existing } = await supabase
-    .from("narrative_raids")
-    .select("*")
-    .eq("raid_date", today)
+    .from('narrative_raids')
+    .select('*')
+    .eq('raid_date', today)
     .single();
 
   if (existing) return existing;
@@ -89,20 +100,20 @@ async function getTodayRaid() {
   twentyDaysAgo.setDate(twentyDaysAgo.getDate() - 20);
 
   const { data: recentRaids } = await supabase
-    .from("narrative_raids")
-    .select("narrative_id")
-    .gte("raid_date", twentyDaysAgo.toISOString().split("T")[0]);
+    .from('narrative_raids')
+    .select('narrative_id')
+    .gte('raid_date', twentyDaysAgo.toISOString().split('T')[0]);
 
-  const usedIds = (recentRaids || []).map(r => r.narrative_id);
+  const usedIds = (recentRaids || []).map((r) => r.narrative_id);
   const narrative = getRandomNarrative(usedIds);
 
   const { data: newRaid, error } = await supabase
-    .from("narrative_raids")
+    .from('narrative_raids')
     .insert({
       raid_date: today,
       narrative_id: narrative.id,
       narrative_title: narrative.title,
-      status: "pending",
+      status: 'pending',
       tweet_1_id: null,
       tweet_2_id: null,
       tweet_3_id: null,
@@ -112,8 +123,8 @@ async function getTodayRaid() {
       act_3_text: null,
       act_4_text: null,
       standings: {},
-      replies: [],          // All scored replies [{player_id, handle, house_id, text, score, act, named}]
-      named_players: [],    // Handles that got woven into the story
+      replies: [], // All scored replies [{player_id, handle, house_id, text, score, act, named}]
+      named_players: [], // Handles that got woven into the story
       ending_type: null,
       winner_community: null,
       winner_count: 0,
@@ -125,7 +136,7 @@ async function getTodayRaid() {
     .single();
 
   if (error) {
-    console.error("[Chronicle] Error creating raid:", error);
+    console.error('[Chronicle] Error creating raid:', error);
     return null;
   }
 
@@ -138,13 +149,13 @@ async function getTodayRaid() {
  */
 async function updateRaid(raidId, updates) {
   const { data, error } = await supabase
-    .from("narrative_raids")
+    .from('narrative_raids')
     .update(updates)
-    .eq("id", raidId)
+    .eq('id', raidId)
     .select()
     .single();
 
-  if (error) console.error("[Chronicle] Update error:", error);
+  if (error) console.error('[Chronicle] Update error:', error);
   return data;
 }
 
@@ -158,28 +169,37 @@ async function updateRaid(raidId, updates) {
  */
 async function scrapeAndScore(raid) {
   // Collect all tweet IDs to scrape
-  const tweetIds = [raid.tweet_1_id, raid.tweet_2_id, raid.tweet_3_id, raid.tweet_4_id].filter(Boolean);
-  if (tweetIds.length === 0) return { standings: raid.standings || {}, replies: raid.replies || [] };
+  const tweetIds = [
+    raid.tweet_1_id,
+    raid.tweet_2_id,
+    raid.tweet_3_id,
+    raid.tweet_4_id,
+  ].filter(Boolean);
+  if (tweetIds.length === 0)
+    return { standings: raid.standings || {}, replies: raid.replies || [] };
 
   try {
-    const { mainClient } = require("../config/twitter");
+    const { mainClient } = require('../config/twitter');
 
     // Get all registered players
     const { data: players } = await supabase
-      .from("players")
-      .select("id, twitter_id, twitter_handle, community_tag, guild_tag, school_id");
+      .from('players')
+      .select(
+        'id, twitter_id, twitter_handle, community_tag, guild_tag, school_id',
+      );
 
     const playerByTwitterId = {};
     const playerByHandle = {};
     for (const p of players || []) {
       if (p.twitter_id) playerByTwitterId[p.twitter_id] = p;
-      if (p.twitter_handle) playerByHandle[p.twitter_handle.toLowerCase().replace("@", "")] = p;
+      if (p.twitter_handle)
+        playerByHandle[p.twitter_handle.toLowerCase().replace('@', '')] = p;
     }
 
     // Deep clone existing data
     const standings = JSON.parse(JSON.stringify(raid.standings || {}));
     const existingReplies = raid.replies || [];
-    const seenPlayerIds = new Set(existingReplies.map(r => r.player_id));
+    const seenPlayerIds = new Set(existingReplies.map((r) => r.player_id));
     const newReplies = [];
 
     // Scrape each tweet's replies
@@ -188,9 +208,9 @@ async function scrapeAndScore(raid) {
         const query = `conversation_id:${tweetId} is:reply`;
         const response = await mainClient.v2.search(query, {
           max_results: 100,
-          "tweet.fields": ["author_id", "created_at", "text"],
-          "user.fields": ["username"],
-          expansions: ["author_id"],
+          'tweet.fields': ['author_id', 'created_at', 'text'],
+          'user.fields': ['username'],
+          expansions: ['author_id'],
         });
 
         if (!response.data?.data) continue;
@@ -203,7 +223,8 @@ async function scrapeAndScore(raid) {
         for (const reply of replies) {
           const authorId = reply.author_id;
           const authorHandle = userMap[authorId]?.toLowerCase();
-          const player = playerByTwitterId[authorId] || playerByHandle[authorHandle];
+          const player =
+            playerByTwitterId[authorId] || playerByHandle[authorHandle];
 
           if (!player) continue; // Unregistered — skip
           if (seenPlayerIds.has(player.id)) continue; // Already scored
@@ -214,10 +235,10 @@ async function scrapeAndScore(raid) {
 
           const replyRecord = {
             player_id: player.id,
-            handle: player.twitter_handle?.replace("@", "") || authorHandle,
+            handle: player.twitter_handle?.replace('@', '') || authorHandle,
             house_id: player.school_id,
-            house_name: HOUSES[player.school_id] || "Unknown",
-            text: reply.text?.substring(0, 280) || "",
+            house_name: HOUSES[player.school_id] || 'Unknown',
+            text: reply.text?.substring(0, 280) || '',
             score: score.total,
             breakdown: score,
             act: actNum,
@@ -229,10 +250,14 @@ async function scrapeAndScore(raid) {
           seenPlayerIds.add(player.id);
 
           // Award points
-          await awardPoints(player.id, score.total, "chronicle_reply");
+          await awardPoints(player.id, score.total, 'chronicle_reply');
 
           // Update community standings
-          const community = (player.guild_tag || player.community_tag || "").toUpperCase();
+          const community = (
+            player.guild_tag ||
+            player.community_tag ||
+            ''
+          ).toUpperCase();
           if (community) {
             if (!standings[community]) {
               standings[community] = { unique: 0, users: [], player_ids: [] };
@@ -248,19 +273,24 @@ async function scrapeAndScore(raid) {
         // Rate limit: wait between tweet scrapes
         await sleep(1500);
       } catch (err) {
-        console.error(`[Chronicle] Scrape error for tweet ${tweetId}:`, err.message);
+        console.error(
+          `[Chronicle] Scrape error for tweet ${tweetId}:`,
+          err.message,
+        );
       }
     }
 
     const allReplies = [...existingReplies, ...newReplies];
 
     if (newReplies.length > 0) {
-      console.log(`[Chronicle] Scored ${newReplies.length} new replies (${allReplies.length} total)`);
+      console.log(
+        `[Chronicle] Scored ${newReplies.length} new replies (${allReplies.length} total)`,
+      );
     }
 
     return { standings, replies: allReplies };
   } catch (error) {
-    console.error("[Chronicle] Scrape error:", error.message);
+    console.error('[Chronicle] Scrape error:', error.message);
     return { standings: raid.standings || {}, replies: raid.replies || [] };
   }
 }
@@ -269,7 +299,7 @@ async function scrapeAndScore(raid) {
  * Score a single reply based on V4 quality tiers.
  */
 function scoreReply(text, houseId) {
-  const words = (text || "").trim().split(/\s+/).length;
+  const words = (text || '').trim().split(/\s+/).length;
   let base = POINTS.REPLY_BASE;
 
   // Quality tiers (replace, not stack)
@@ -281,9 +311,9 @@ function scoreReply(text, houseId) {
 
   // House flair bonus (stacks)
   let flair = 0;
-  const lower = (text || "").toLowerCase();
+  const lower = (text || '').toLowerCase();
   const keywords = HOUSE_KEYWORDS[houseId] || [];
-  if (keywords.some(kw => lower.includes(kw))) {
+  if (keywords.some((kw) => lower.includes(kw))) {
     flair = POINTS.HOUSE_FLAIR;
   }
 
@@ -292,7 +322,7 @@ function scoreReply(text, houseId) {
     flair,
     named: 0, // Added later when AI names them
     total: base + flair,
-    words
+    words,
   };
 }
 
@@ -300,7 +330,12 @@ function scoreReply(text, houseId) {
  * Award points to a player.
  */
 async function awardPoints(playerId, points, source) {
-  await centralAddPoints(playerId, points, source || 'chronicle', 'Chronicle points');
+  await centralAddPoints(
+    playerId,
+    points,
+    source || 'chronicle',
+    'Chronicle points',
+  );
 }
 
 // ════════════════════════════════════
@@ -322,41 +357,50 @@ async function generateActText(narrative, actNum, raid, replies) {
   }
 
   // Build context from player replies
-  const actReplies = replies.filter(r => r.act < actNum); // Replies from PREVIOUS acts
-  const topReplies = actReplies
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 8); // Top 8 replies by quality
+  const actReplies = replies.filter((r) => r.act < actNum); // Replies from PREVIOUS acts
+  const topReplies = actReplies.sort((a, b) => b.score - a.score).slice(0, 8); // Top 8 replies by quality
 
   // Build the standings scoreboard
   const standings = raid.standings || {};
   const sorted = getSortedCommunities(standings);
-  const scoreboard = sorted.slice(0, 5).map((c, i) => {
-    const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "▪️";
-    return `${medal} ${c.tag}: ${c.unique} raider${c.unique === 1 ? "" : "s"}`;
-  }).join("\n");
+  const scoreboard = sorted
+    .slice(0, 5)
+    .map((c, i) => {
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '▪️';
+      return `${medal} ${c.tag}: ${c.unique} raider${c.unique === 1 ? '' : 's'}`;
+    })
+    .join('\n');
 
   // Build player reply excerpts for the AI
-  let playerContext = "";
+  let playerContext = '';
   if (topReplies.length > 0) {
-    playerContext = "\n\nPlayer replies to weave into the story (use their @handles):\n";
-    topReplies.forEach(r => {
+    playerContext =
+      '\n\nPlayer replies to weave into the story (use their @handles):\n';
+    topReplies.forEach((r) => {
       playerContext += `- @${r.handle} (${r.house_name}): "${r.text.substring(0, 150)}"\n`;
     });
-    playerContext += "\nPick 2-5 of these players to NAME in the story. Reference what they said or did.";
+    playerContext +=
+      '\nPick 2-5 of these players to NAME in the story. Reference what they said or did.';
   }
 
   // Wildcard ending context for Act 4
-  let endingContext = "";
+  let endingContext = '';
   if (actNum === 4) {
-    const ending = WILDCARD_ENDINGS[Math.floor(Math.random() * WILDCARD_ENDINGS.length)];
+    const ending =
+      WILDCARD_ENDINGS[Math.floor(Math.random() * WILDCARD_ENDINGS.length)];
     raid._ending_type = ending; // Store for later
 
     const endingInstructions = {
-      heroic_victory: "The dominant community/house wins decisively. Frame it as an earned victory.",
-      underdog_triumph: "The SMALLEST community that showed up gets the glory. The underdogs win. The big groups are stunned.",
-      chaos_ending: "Nobody wins cleanly. Everything went sideways. All participants get recognition. Chaos reigns.",
-      betrayal_arc: "One house/community betrayed the others at the last moment. Frame it dramatically. They seized victory through cunning.",
-      mysterious_outcome: "A random participating group gets the bonus for reasons nobody fully understands. Something strange happened. The outcome is... unexpected."
+      heroic_victory:
+        'The dominant community/house wins decisively. Frame it as an earned victory.',
+      underdog_triumph:
+        'The SMALLEST community that showed up gets the glory. The underdogs win. The big groups are stunned.',
+      chaos_ending:
+        'Nobody wins cleanly. Everything went sideways. All participants get recognition. Chaos reigns.',
+      betrayal_arc:
+        'One house/community betrayed the others at the last moment. Frame it dramatically. They seized victory through cunning.',
+      mysterious_outcome:
+        'A random participating group gets the bonus for reasons nobody fully understands. Something strange happened. The outcome is... unexpected.',
     };
 
     endingContext = `\n\nIMPORTANT — This is the FINAL act. Use this ending type: "${ending}"\n${endingInstructions[ending]}\nAnnounce results dramatically.`;
@@ -380,25 +424,25 @@ PROMPT FOR THIS ACT:
 ${promptTemplate}
 
 CURRENT SCOREBOARD:
-${scoreboard || "No raiders yet"}
+${scoreboard || 'No raiders yet'}
 ${playerContext}${endingContext}
 
 Write the tweet for Act ${actNum}. Story section first, then scoreboard. Total must be under 280 characters if possible, but can go up to 400 for Act 4 resolution. Do NOT include hashtags.`;
 
   try {
-    const Anthropic = require("@anthropic-ai/sdk");
+    const Anthropic = require('@anthropic-ai/sdk');
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
     const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: 'claude-sonnet-4-20250514',
       max_tokens: 500,
       system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }]
+      messages: [{ role: 'user', content: userPrompt }],
     });
 
     const text = response.content[0]?.text;
     if (!text) {
-      console.error("[Chronicle] Empty AI response");
+      console.error('[Chronicle] Empty AI response');
       return null;
     }
 
@@ -410,10 +454,12 @@ Write the tweet for Act ${actNum}. Story section first, then scoreboard. Total m
       }
     }
 
-    console.log(`[Chronicle] Act ${actNum} generated (${text.length} chars), named ${namedHandles.length} players`);
+    console.log(
+      `[Chronicle] Act ${actNum} generated (${text.length} chars), named ${namedHandles.length} players`,
+    );
     return { text, namedHandles };
   } catch (err) {
-    console.error("[Chronicle] AI generation error:", err.message);
+    console.error('[Chronicle] AI generation error:', err.message);
     return null;
   }
 }
@@ -423,14 +469,20 @@ Write the tweet for Act ${actNum}. Story section first, then scoreboard. Total m
  */
 async function awardNamedBonus(replies, namedHandles) {
   for (const handle of namedHandles) {
-    const reply = replies.find(r => r.handle === handle);
+    const reply = replies.find((r) => r.handle === handle);
     if (reply && !reply.named) {
       reply.named = true;
       reply.score += POINTS.NAMED_IN_STORY;
       reply.breakdown.named = POINTS.NAMED_IN_STORY;
       reply.breakdown.total += POINTS.NAMED_IN_STORY;
-      await awardPoints(reply.player_id, POINTS.NAMED_IN_STORY, "chronicle_named");
-      console.log(`[Chronicle] +${POINTS.NAMED_IN_STORY} pts to @${handle} (named in story)`);
+      await awardPoints(
+        reply.player_id,
+        POINTS.NAMED_IN_STORY,
+        'chronicle_named',
+      );
+      console.log(
+        `[Chronicle] +${POINTS.NAMED_IN_STORY} pts to @${handle} (named in story)`,
+      );
     }
   }
 }
@@ -440,14 +492,14 @@ async function awardNamedBonus(replies, namedHandles) {
  */
 async function awardWildcardBonus(endingType, replies, standings) {
   const sorted = getSortedCommunities(standings);
-  const allParticipantIds = replies.map(r => r.player_id);
+  const allParticipantIds = replies.map((r) => r.player_id);
 
   let bonusAmount = 0;
   let recipientIds = [];
-  let description = "";
+  let description = '';
 
   switch (endingType) {
-    case "heroic_victory":
+    case 'heroic_victory':
       bonusAmount = POINTS.HEROIC_VICTORY;
       if (sorted.length > 0) {
         recipientIds = sorted[0].player_ids || [];
@@ -455,7 +507,7 @@ async function awardWildcardBonus(endingType, replies, standings) {
       }
       break;
 
-    case "underdog_triumph":
+    case 'underdog_triumph':
       bonusAmount = POINTS.UNDERDOG_TRIUMPH;
       if (sorted.length > 0) {
         const smallest = sorted[sorted.length - 1]; // Smallest group
@@ -464,23 +516,24 @@ async function awardWildcardBonus(endingType, replies, standings) {
       }
       break;
 
-    case "chaos_ending":
+    case 'chaos_ending':
       bonusAmount = POINTS.CHAOS_ENDING;
       recipientIds = allParticipantIds;
-      description = "Chaos Ending — all participants";
+      description = 'Chaos Ending — all participants';
       break;
 
-    case "betrayal_arc":
+    case 'betrayal_arc':
       bonusAmount = POINTS.BETRAYAL_ARC;
       if (sorted.length > 1) {
         // Pick a random community that's NOT #1
-        const betrayer = sorted[1 + Math.floor(Math.random() * (sorted.length - 1))];
+        const betrayer =
+          sorted[1 + Math.floor(Math.random() * (sorted.length - 1))];
         recipientIds = betrayer.player_ids || [];
         description = `Betrayal Arc — ${betrayer.tag} seized victory`;
       }
       break;
 
-    case "mysterious_outcome":
+    case 'mysterious_outcome':
       bonusAmount = POINTS.MYSTERIOUS_OUTCOME;
       if (sorted.length > 0) {
         const random = sorted[Math.floor(Math.random() * sorted.length)];
@@ -493,11 +546,18 @@ async function awardWildcardBonus(endingType, replies, standings) {
   // Award the bonus
   const uniqueIds = [...new Set(recipientIds)];
   for (const pid of uniqueIds) {
-    await awardPoints(pid, bonusAmount, "chronicle_wildcard");
+    await awardPoints(pid, bonusAmount, 'chronicle_wildcard');
   }
 
-  console.log(`[Chronicle] Wildcard "${endingType}": +${bonusAmount} to ${uniqueIds.length} players (${description})`);
-  return { endingType, bonusAmount, recipientCount: uniqueIds.length, description };
+  console.log(
+    `[Chronicle] Wildcard "${endingType}": +${bonusAmount} to ${uniqueIds.length} players (${description})`,
+  );
+  return {
+    endingType,
+    bonusAmount,
+    recipientCount: uniqueIds.length,
+    description,
+  };
 }
 
 // ════════════════════════════════════
@@ -517,14 +577,19 @@ function getSortedCommunities(standings) {
 
 function buildScoreboard(standings) {
   const sorted = getSortedCommunities(standings);
-  if (sorted.length === 0) return "No raiders yet — be the first! 🐱";
-  return sorted.slice(0, 5).map((c, i) => {
-    const medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "▪️";
-    return `${medal} ${c.tag}: ${c.unique} raider${c.unique === 1 ? "" : "s"}`;
-  }).join("\n");
+  if (sorted.length === 0) return 'No raiders yet — be the first! 🐱';
+  return sorted
+    .slice(0, 5)
+    .map((c, i) => {
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '▪️';
+      return `${medal} ${c.tag}: ${c.unique} raider${c.unique === 1 ? '' : 's'}`;
+    })
+    .join('\n');
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 // ════════════════════════════════════
 // MAIN ACTIONS (called by scheduler)
@@ -535,23 +600,26 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
  * Posts pre-written hook from narratives.js.
  */
 async function postAct1() {
-  console.log("[Chronicle] ═══ ACT 1: THE CALL ═══");
+  console.log('[Chronicle] ═══ ACT 1: THE CALL ═══');
 
   try {
     const raid = await getTodayRaid();
     if (!raid) return;
-    if (raid.tweet_1_id) { console.log("[Chronicle] Act 1 already posted"); return; }
+    if (raid.tweet_1_id) {
+      console.log('[Chronicle] Act 1 already posted');
+      return;
+    }
 
     const narrative = getNarrativeById(raid.narrative_id);
     if (!narrative) {
-      console.error("[Chronicle] Narrative not found:", raid.narrative_id);
+      console.error('[Chronicle] Narrative not found:', raid.narrative_id);
       return;
     }
 
     // Use the pre-written tweet_1
     const tweetText = narrative.tweet_1;
 
-    const { mainClient } = require("../config/twitter");
+    const { mainClient } = require('../config/twitter');
     const tweet = await mainClient.v2.tweet(tweetText);
     const tweetId = tweet.data.id;
 
@@ -560,10 +628,10 @@ async function postAct1() {
     await updateRaid(raid.id, {
       tweet_1_id: tweetId,
       act_1_text: tweetText,
-      status: "active",
+      status: 'active',
     });
   } catch (error) {
-    console.error("[Chronicle] Act 1 error:", error.message);
+    console.error('[Chronicle] Act 1 error:', error.message);
   }
 }
 
@@ -572,12 +640,18 @@ async function postAct1() {
  * Scrapes replies, generates AI continuation naming players.
  */
 async function postAct2() {
-  console.log("[Chronicle] ═══ ACT 2: THE MARCH ═══");
+  console.log('[Chronicle] ═══ ACT 2: THE MARCH ═══');
 
   try {
     const raid = await getTodayRaid();
-    if (!raid || !raid.tweet_1_id) { console.log("[Chronicle] No active raid"); return; }
-    if (raid.tweet_2_id) { console.log("[Chronicle] Act 2 already posted"); return; }
+    if (!raid || !raid.tweet_1_id) {
+      console.log('[Chronicle] No active raid');
+      return;
+    }
+    if (raid.tweet_2_id) {
+      console.log('[Chronicle] Act 2 already posted');
+      return;
+    }
 
     // Scrape and score all replies so far
     const { standings, replies } = await scrapeAndScore(raid);
@@ -588,7 +662,12 @@ async function postAct2() {
 
     // Generate Act 2 with AI
     const raidWithStandings = { ...raid, standings, replies };
-    const result = await generateActText(narrative, 2, raidWithStandings, replies);
+    const result = await generateActText(
+      narrative,
+      2,
+      raidWithStandings,
+      replies,
+    );
 
     let tweetText;
     if (result) {
@@ -602,12 +681,15 @@ async function postAct2() {
     }
 
     // Post as reply to Act 1
-    const { mainClient } = require("../config/twitter");
+    const { mainClient } = require('../config/twitter');
     const tweet = await mainClient.v2.tweet(tweetText, {
       reply: { in_reply_to_tweet_id: raid.tweet_1_id },
     });
 
-    const allNamedPlayers = [...(raid.named_players || []), ...(result?.namedHandles || [])];
+    const allNamedPlayers = [
+      ...(raid.named_players || []),
+      ...(result?.namedHandles || []),
+    ];
 
     await updateRaid(raid.id, {
       tweet_2_id: tweet.data.id,
@@ -617,9 +699,9 @@ async function postAct2() {
       named_players: [...new Set(allNamedPlayers)],
     });
 
-    console.log("[Chronicle] Act 2 posted");
+    console.log('[Chronicle] Act 2 posted');
   } catch (error) {
-    console.error("[Chronicle] Act 2 error:", error.message);
+    console.error('[Chronicle] Act 2 error:', error.message);
   }
 }
 
@@ -628,19 +710,27 @@ async function postAct2() {
  * Escalation with more players named.
  */
 async function postAct3() {
-  console.log("[Chronicle] ═══ ACT 3: THE STORM ═══");
+  console.log('[Chronicle] ═══ ACT 3: THE STORM ═══');
 
   try {
     const raid = await getTodayRaid();
     if (!raid || !raid.tweet_1_id) return;
-    if (raid.tweet_3_id) { console.log("[Chronicle] Act 3 already posted"); return; }
+    if (raid.tweet_3_id) {
+      console.log('[Chronicle] Act 3 already posted');
+      return;
+    }
 
     const { standings, replies } = await scrapeAndScore(raid);
     const narrative = getNarrativeById(raid.narrative_id);
     if (!narrative) return;
 
     const raidWithStandings = { ...raid, standings, replies };
-    const result = await generateActText(narrative, 3, raidWithStandings, replies);
+    const result = await generateActText(
+      narrative,
+      3,
+      raidWithStandings,
+      replies,
+    );
 
     let tweetText;
     if (result) {
@@ -651,12 +741,15 @@ async function postAct3() {
       tweetText = `The stakes rise...\n\n📊 RAID STANDINGS:\n${scoreboard}\n\n⏰ LAST CALL — final count at 8PM UTC! ⚔️`;
     }
 
-    const { mainClient } = require("../config/twitter");
+    const { mainClient } = require('../config/twitter');
     const tweet = await mainClient.v2.tweet(tweetText, {
       reply: { in_reply_to_tweet_id: raid.tweet_1_id },
     });
 
-    const allNamedPlayers = [...(raid.named_players || []), ...(result?.namedHandles || [])];
+    const allNamedPlayers = [
+      ...(raid.named_players || []),
+      ...(result?.namedHandles || []),
+    ];
 
     await updateRaid(raid.id, {
       tweet_3_id: tweet.data.id,
@@ -664,12 +757,12 @@ async function postAct3() {
       standings,
       replies,
       named_players: [...new Set(allNamedPlayers)],
-      status: "scoring",
+      status: 'scoring',
     });
 
-    console.log("[Chronicle] Act 3 posted");
+    console.log('[Chronicle] Act 3 posted');
   } catch (error) {
-    console.error("[Chronicle] Act 3 error:", error.message);
+    console.error('[Chronicle] Act 3 error:', error.message);
   }
 }
 
@@ -678,12 +771,15 @@ async function postAct3() {
  * Wildcard ending, final scores, resolution.
  */
 async function postAct4() {
-  console.log("[Chronicle] ═══ ACT 4: THE RECKONING ═══");
+  console.log('[Chronicle] ═══ ACT 4: THE RECKONING ═══');
 
   try {
     const raid = await getTodayRaid();
     if (!raid || !raid.tweet_1_id) return;
-    if (raid.tweet_4_id) { console.log("[Chronicle] Act 4 already posted"); return; }
+    if (raid.tweet_4_id) {
+      console.log('[Chronicle] Act 4 already posted');
+      return;
+    }
 
     // Final scrape
     const { standings, replies } = await scrapeAndScore(raid);
@@ -692,10 +788,15 @@ async function postAct4() {
 
     // Generate Act 4 with wildcard ending
     const raidWithStandings = { ...raid, standings, replies };
-    const result = await generateActText(narrative, 4, raidWithStandings, replies);
+    const result = await generateActText(
+      narrative,
+      4,
+      raidWithStandings,
+      replies,
+    );
 
     // Get the ending type (set during generation)
-    const endingType = raidWithStandings._ending_type || "chaos_ending";
+    const endingType = raidWithStandings._ending_type || 'chaos_ending';
 
     let tweetText;
     if (result) {
@@ -711,7 +812,11 @@ async function postAct4() {
     }
 
     // Award wildcard bonus
-    const wildcardResult = await awardWildcardBonus(endingType, replies, standings);
+    const wildcardResult = await awardWildcardBonus(
+      endingType,
+      replies,
+      standings,
+    );
 
     // Determine winner + MVP
     const sorted = getSortedCommunities(standings);
@@ -723,12 +828,15 @@ async function postAct4() {
     const mvp = replies.sort((a, b) => b.score - a.score)[0];
 
     // Post
-    const { mainClient } = require("../config/twitter");
+    const { mainClient } = require('../config/twitter');
     const tweet = await mainClient.v2.tweet(tweetText, {
       reply: { in_reply_to_tweet_id: raid.tweet_1_id },
     });
 
-    const allNamedPlayers = [...(raid.named_players || []), ...(result?.namedHandles || [])];
+    const allNamedPlayers = [
+      ...(raid.named_players || []),
+      ...(result?.namedHandles || []),
+    ];
 
     await updateRaid(raid.id, {
       tweet_4_id: tweet.data.id,
@@ -742,12 +850,14 @@ async function postAct4() {
       mvp_player_id: mvp?.player_id || null,
       mvp_twitter_handle: mvp?.handle || null,
       total_raiders: totalRaiders,
-      status: "complete",
+      status: 'complete',
     });
 
-    console.log(`[Chronicle] Act 4 posted. Winner: ${winnerCommunity} (${winnerCount}). Ending: ${endingType}`);
+    console.log(
+      `[Chronicle] Act 4 posted. Winner: ${winnerCommunity} (${winnerCount}). Ending: ${endingType}`,
+    );
   } catch (error) {
-    console.error("[Chronicle] Act 4 error:", error.message);
+    console.error('[Chronicle] Act 4 error:', error.message);
   }
 }
 
@@ -758,17 +868,22 @@ async function postAct4() {
 async function periodicScrape() {
   try {
     const raid = await getTodayRaid();
-    if (!raid || !raid.tweet_1_id || raid.status === "complete") return;
+    if (!raid || !raid.tweet_1_id || raid.status === 'complete') return;
 
     const { standings, replies } = await scrapeAndScore(raid);
     await updateRaid(raid.id, { standings, replies });
 
-    const total = Object.values(standings).reduce((sum, c) => sum + (c.unique || 0), 0);
+    const total = Object.values(standings).reduce(
+      (sum, c) => sum + (c.unique || 0),
+      0,
+    );
     if (total > 0) {
-      console.log(`[Chronicle] Scrape: ${total} unique raiders, ${replies.length} scored replies`);
+      console.log(
+        `[Chronicle] Scrape: ${total} unique raiders, ${replies.length} scored replies`,
+      );
     }
   } catch (error) {
-    console.error("[Chronicle] Periodic scrape error:", error.message);
+    console.error('[Chronicle] Periodic scrape error:', error.message);
   }
 }
 
@@ -781,12 +896,12 @@ async function periodicScrape() {
  * Returns act texts, statuses, player participation, etc.
  */
 async function getTodayChronicle(playerId) {
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split('T')[0];
 
   const { data: raid } = await supabase
-    .from("narrative_raids")
-    .select("*")
-    .eq("raid_date", today)
+    .from('narrative_raids')
+    .select('*')
+    .eq('raid_date', today)
     .single();
 
   if (!raid) {
@@ -805,33 +920,45 @@ async function getTodayChronicle(playerId) {
   const acts = [
     {
       num: 1,
-      name: "The Call",
-      time: "08:00 UTC",
-      status: raid.tweet_1_id ? "complete" : "upcoming",
+      name: 'The Call',
+      time: '08:00 UTC',
+      status: raid.tweet_1_id ? 'complete' : 'upcoming',
       tweet_id: raid.tweet_1_id,
       text: raid.act_1_text,
     },
     {
       num: 2,
-      name: "The March",
-      time: "12:00 UTC",
-      status: raid.tweet_2_id ? "complete" : (raid.tweet_1_id ? "active" : "upcoming"),
+      name: 'The March',
+      time: '12:00 UTC',
+      status: raid.tweet_2_id
+        ? 'complete'
+        : raid.tweet_1_id
+          ? 'active'
+          : 'upcoming',
       tweet_id: raid.tweet_2_id,
       text: raid.act_2_text,
     },
     {
       num: 3,
-      name: "The Storm",
-      time: "16:00 UTC",
-      status: raid.tweet_3_id ? "complete" : (raid.tweet_2_id ? "active" : "upcoming"),
+      name: 'The Storm',
+      time: '16:00 UTC',
+      status: raid.tweet_3_id
+        ? 'complete'
+        : raid.tweet_2_id
+          ? 'active'
+          : 'upcoming',
       tweet_id: raid.tweet_3_id,
       text: raid.act_3_text,
     },
     {
       num: 4,
-      name: "The Reckoning",
-      time: "20:00 UTC",
-      status: raid.tweet_4_id ? "complete" : (raid.tweet_3_id ? "active" : "upcoming"),
+      name: 'The Reckoning',
+      time: '20:00 UTC',
+      status: raid.tweet_4_id
+        ? 'complete'
+        : raid.tweet_3_id
+          ? 'active'
+          : 'upcoming',
       tweet_id: raid.tweet_4_id,
       text: raid.act_4_text,
     },
@@ -846,19 +973,21 @@ async function getTodayChronicle(playerId) {
 
   if (playerId) {
     const pid = parseInt(playerId);
-    const playerReply = replies.find(r => r.player_id === pid);
+    const playerReply = replies.find((r) => r.player_id === pid);
     if (playerReply) {
       playerParticipated = true;
       playerScore = playerReply.score;
     }
     const { data: playerData } = await supabase
-      .from("players")
-      .select("twitter_handle")
-      .eq("id", pid)
+      .from('players')
+      .select('twitter_handle')
+      .eq('id', pid)
       .single();
     if (playerData) {
-      const handle = (playerData.twitter_handle || "").replace("@", "").toLowerCase();
-      playerNamed = namedPlayers.some(h => h.toLowerCase() === handle);
+      const handle = (playerData.twitter_handle || '')
+        .replace('@', '')
+        .toLowerCase();
+      playerNamed = namedPlayers.some((h) => h.toLowerCase() === handle);
     }
   }
 
@@ -867,7 +996,12 @@ async function getTodayChronicle(playerId) {
     title: raid.narrative_title,
     acts,
     standings: raid.standings || {},
-    total_raiders: raid.total_raiders || Object.values(raid.standings || {}).reduce((s, c) => s + (c.unique || 0), 0),
+    total_raiders:
+      raid.total_raiders ||
+      Object.values(raid.standings || {}).reduce(
+        (s, c) => s + (c.unique || 0),
+        0,
+      ),
     player_participated: playerParticipated,
     player_named: playerNamed,
     player_score: playerScore,
@@ -884,10 +1018,12 @@ async function getTodayChronicle(playerId) {
  */
 async function getChronicleHistory(limit = 7) {
   const { data } = await supabase
-    .from("narrative_raids")
-    .select("raid_date, narrative_title, ending_type, winner_community, winner_count, total_raiders, mvp_twitter_handle, status")
-    .eq("status", "complete")
-    .order("raid_date", { ascending: false })
+    .from('narrative_raids')
+    .select(
+      'raid_date, narrative_title, ending_type, winner_community, winner_count, total_raiders, mvp_twitter_handle, status',
+    )
+    .eq('status', 'complete')
+    .order('raid_date', { ascending: false })
     .limit(limit);
 
   return data || [];
@@ -899,10 +1035,10 @@ async function getChronicleHistory(limit = 7) {
 
 module.exports = {
   // Scheduler actions (called by cron)
-  postAct1,       // was postOpening
-  postAct2,       // was postMidDay
-  postAct3,       // was postLastCall
-  postAct4,       // was postResolution
+  postAct1, // was postOpening
+  postAct2, // was postMidDay
+  postAct3, // was postLastCall
+  postAct4, // was postResolution
   periodicScrape,
 
   // API helpers (called by routes)

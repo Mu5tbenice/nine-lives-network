@@ -15,7 +15,6 @@ const { applySharpness } = require('./statCalculation');
 // The combat engine reads this to know how to process each effect.
 
 const EFFECTS = {
-
   // ══════════ ATTACK (5) ══════════
   BURN: {
     category: 'attack',
@@ -23,7 +22,7 @@ const EFFECTS = {
     stackable: true,
     maxStacks: 3,
     binary: false,
-    targeting: 'attack-target',       // applied to whoever you auto-attacked
+    targeting: 'attack-target', // applied to whoever you auto-attacked
     description: 'Extra fire damage per attack',
   },
   CHAIN: {
@@ -31,7 +30,7 @@ const EFFECTS = {
     trigger: 'on-attack',
     stackable: false,
     binary: true,
-    targeting: 'attack-target-plus-random',  // hit target + 1 random extra enemy
+    targeting: 'attack-target-plus-random', // hit target + 1 random extra enemy
     description: 'Auto-attack hits 2 enemies',
   },
   EXECUTE: {
@@ -92,7 +91,7 @@ const EFFECTS = {
     maxStacks: 3,
     binary: false,
     baseValue: 15,
-    targeting: 'attacker-reflect',    // whoever hits you takes damage back
+    targeting: 'attacker-reflect', // whoever hits you takes damage back
     description: 'Reflect 15 damage to attacker per hit taken',
   },
   BARRIER: {
@@ -119,7 +118,7 @@ const EFFECTS = {
     stackable: true,
     maxStacks: 3,
     binary: false,
-    baseValue: 10,                    // -10 ATK per stack
+    baseValue: 10, // -10 ATK per stack
     targeting: 'attack-target',
     description: '-10 ATK per stack, stacks x3 (-30 max)',
   },
@@ -144,7 +143,7 @@ const EFFECTS = {
     trigger: 'on-ko',
     stackable: false,
     binary: false,
-    targeting: 'zone-any-enemy-ko',   // triggers on any enemy death on zone
+    targeting: 'zone-any-enemy-ko', // triggers on any enemy death on zone
     description: "Heal 15% of dead enemy's max HP",
   },
   SLOW: {
@@ -153,7 +152,7 @@ const EFFECTS = {
     stackable: true,
     maxStacks: 3,
     binary: false,
-    baseValue: 15,                    // -15 SPD per stack
+    baseValue: 15, // -15 SPD per stack
     targeting: 'attack-target',
     description: '-15 SPD for 10 seconds',
   },
@@ -181,7 +180,7 @@ const EFFECTS = {
     stackable: true,
     maxStacks: 3,
     binary: false,
-    baseValue: 10,                    // +10 SPD
+    baseValue: 10, // +10 SPD
     targeting: 'self',
     description: '+10 SPD for 10 seconds',
   },
@@ -191,15 +190,16 @@ const EFFECTS = {
     stackable: false,
     binary: true,
     targeting: 'self',
-    description: 'All card effects trigger at 2x strength for first 10s after deploy',
+    description:
+      'All card effects trigger at 2x strength for first 10s after deploy',
   },
   DODGE: {
     category: 'tempo',
     trigger: 'passive-cooldown',
     stackable: false,
     binary: true,
-    cooldown: 10,                     // 10s cooldown between triggers
-    duration: 3,                      // 3s invulnerable after taking a hit
+    cooldown: 10, // 10s cooldown between triggers
+    duration: 3, // 3s invulnerable after taking a hit
     targeting: 'self',
     description: '100% evasion for 3s after hit. 10s cooldown.',
   },
@@ -208,9 +208,10 @@ const EFFECTS = {
     trigger: 'on-attack',
     stackable: false,
     binary: true,
-    duration: 3,                      // 3s untargetable after attack
+    duration: 3, // 3s untargetable after attack
     targeting: 'self',
-    description: 'After attacking, untargetable for 3s. Cannot attack while phased.',
+    description:
+      'After attacking, untargetable for 3s. Cannot attack while phased.',
   },
   STEALTH: {
     category: 'tempo',
@@ -228,9 +229,9 @@ const EFFECTS = {
     stackable: true,
     maxStacks: 3,
     binary: false,
-    baseValue: 3,                     // +3 damage per 3s for 12s
-    dotInterval: 3,                   // ticks every 3 seconds
-    dotDuration: 12,                  // lasts 12 seconds
+    baseValue: 3, // +3 damage per 3s for 12s
+    dotInterval: 3, // ticks every 3 seconds
+    dotDuration: 12, // lasts 12 seconds
     targeting: 'attack-target',
     description: '+3 damage per 3s for 12s, stacks x3',
   },
@@ -239,18 +240,19 @@ const EFFECTS = {
     trigger: 'passive',
     stackable: false,
     binary: false,
-    baseValue: 1,                     // -1 max HP per 10s
-    auraInterval: 10,                 // ticks every 10 seconds
+    baseValue: 1, // -1 max HP per 10s
+    auraInterval: 10, // ticks every 10 seconds
     targeting: 'all-enemies',
-    description: '-1 max HP to all enemies every 10s. Permanent until midnight.',
+    description:
+      '-1 max HP to all enemies every 10s. Permanent until midnight.',
   },
   INFECT: {
     category: 'attrition',
     trigger: 'on-ko',
     stackable: false,
     binary: false,
-    targeting: 'all-enemies',         // on self KO, spread POISON to all enemies
-    description: 'When KO\'d, all enemies get POISON',
+    targeting: 'all-enemies', // on self KO, spread POISON to all enemies
+    description: "When KO'd, all enemies get POISON",
   },
 
   // ══════════ TEAM (6) ══════════
@@ -260,7 +262,7 @@ const EFFECTS = {
     stackable: false,
     binary: true,
     targeting: 'next-ally-attack',
-    description: "Next ally to attack gets +50% effect strength",
+    description: 'Next ally to attack gets +50% effect strength',
   },
   INSPIRE: {
     category: 'team',
@@ -268,7 +270,7 @@ const EFFECTS = {
     stackable: true,
     maxStacks: 3,
     binary: false,
-    baseValue: 3,                     // +3 ATK and +3 SPD
+    baseValue: 3, // +3 ATK and +3 SPD
     targeting: 'all-allies',
     description: 'All allies on zone gain +3 ATK and +3 SPD',
   },
@@ -278,7 +280,7 @@ const EFFECTS = {
     stackable: true,
     maxStacks: 3,
     binary: false,
-    baseValue: 5,                     // +5 HP
+    baseValue: 5, // +5 HP
     targeting: 'three-lowest-hp-allies',
     description: 'Heal the 3 lowest HP allies per attack',
   },
@@ -287,7 +289,7 @@ const EFFECTS = {
     trigger: 'timed',
     stackable: false,
     binary: true,
-    targeting: 'self',                // applied to self, forces enemies to hit you
+    targeting: 'self', // applied to self, forces enemies to hit you
     description: 'All enemies must attack this Nine',
   },
   SHATTER: {
@@ -295,7 +297,7 @@ const EFFECTS = {
     trigger: 'on-ko',
     stackable: false,
     binary: false,
-    targeting: 'all-enemies',         // on self KO, damage all enemies
+    targeting: 'all-enemies', // on self KO, damage all enemies
     description: 'On death, deal 10% of your max HP as damage to all enemies',
   },
   REFLECT: {
@@ -303,8 +305,9 @@ const EFFECTS = {
     trigger: 'timed',
     stackable: false,
     binary: true,
-    targeting: 'self',                // bounces next hit back
-    description: 'Next incoming hit bounces back at full damage, consumed on trigger',
+    targeting: 'self', // bounces next hit back
+    description:
+      'Next incoming hit bounces back at full damage, consumed on trigger',
   },
 
   // ══════════ UTILITY (2) ══════════
@@ -314,7 +317,16 @@ const EFFECTS = {
     stackable: false,
     binary: true,
     targeting: 'self',
-    debuffsCleared: ['BURN', 'POISON', 'HEX', 'WEAKEN', 'SLOW', 'SILENCE', 'TETHER', 'MARK'],
+    debuffsCleared: [
+      'BURN',
+      'POISON',
+      'HEX',
+      'WEAKEN',
+      'SLOW',
+      'SILENCE',
+      'TETHER',
+      'MARK',
+    ],
     description: 'Remove all debuffs from self on attack',
   },
   OVERCHARGE: {
@@ -323,7 +335,8 @@ const EFFECTS = {
     stackable: false,
     binary: true,
     targeting: 'self',
-    description: 'All card effects fire 2x per attack. -2% sharpness per snapshot instead of -1%.',
+    description:
+      'All card effects fire 2x per attack. -2% sharpness per snapshot instead of -1%.',
   },
 
   // ══════════ WILD (4) ══════════
@@ -332,41 +345,44 @@ const EFFECTS = {
     trigger: 'passive-cooldown',
     stackable: false,
     binary: true,
-    cooldown: 10,                     // 10s cooldown
-    maxBounces: 2,                    // max 2 bounces (MIRROR vs MIRROR)
+    cooldown: 10, // 10s cooldown
+    maxBounces: 2, // max 2 bounces (MIRROR vs MIRROR)
     targeting: 'attacker-reflect',
-    description: 'When hit by an effect, copy that effect back to attacker. 10s cooldown.',
+    description:
+      'When hit by an effect, copy that effect back to attacker. 10s cooldown.',
   },
   PARASITE: {
     category: 'wild',
     trigger: 'on-attack',
     stackable: false,
     binary: false,
-    baseValue: 3,                     // +3 HP per host attack
-    targeting: 'attack-target',       // attaches to your target
-    description: 'Attach to target. Heal 3 HP every time host attacks. Removed by CLEANSE.',
+    baseValue: 3, // +3 HP per host attack
+    targeting: 'attack-target', // attaches to your target
+    description:
+      'Attach to target. Heal 3 HP every time host attacks. Removed by CLEANSE.',
   },
   RESURRECT: {
     category: 'wild',
     trigger: 'on-ko',
     stackable: false,
     binary: true,
-    cooldown: 300,                    // 5 minute cooldown
-    revivePercent: 30,                // revive at 30% HP
+    cooldown: 300, // 5 minute cooldown
+    revivePercent: 30, // revive at 30% HP
     targeting: 'self',
-    description: 'On KO, revive at 30% HP. 5-min cooldown. Skips zone cooldown.',
+    description:
+      'On KO, revive at 30% HP. 5-min cooldown. Skips zone cooldown.',
   },
   GRAVITY: {
     category: 'wild',
     trigger: 'deploy',
     stackable: false,
     binary: true,
-    damageReduction: 0.5,             // 50% reduced incoming damage
-    targeting: 'all-enemies',         // all enemies hit you once
-    description: 'On deploy, all enemies hit you once. Incoming damage reduced 50%.',
+    damageReduction: 0.5, // 50% reduced incoming damage
+    targeting: 'all-enemies', // all enemies hit you once
+    description:
+      'On deploy, all enemies hit you once. Incoming damage reduced 50%.',
   },
 };
-
 
 // ─── RARITY → TIMED EFFECT DURATION ────────────────────
 // Source: Effects V2 — Stacking Rules section
@@ -383,14 +399,13 @@ function getTimedDuration(rarity) {
   return RARITY_DURATIONS[rarity] || 10;
 }
 
-
 // ─── STACKING DIMINISHING RETURNS ──────────────────────
 // 1st stack: 100%, 2nd: 75%, 3rd: 50%, cap: 3
 
 function getStackMultiplier(stackNumber) {
   if (stackNumber <= 1) return 1.0;
   if (stackNumber === 2) return 0.75;
-  if (stackNumber === 3) return 0.50;
+  if (stackNumber === 3) return 0.5;
   return 0; // over cap
 }
 
@@ -400,18 +415,33 @@ function calculateStackedValue(baseValue, currentStacks) {
   return Math.floor(baseValue * getStackMultiplier(nextStack));
 }
 
-
 // ─── DEBUFF CLASSIFICATION ─────────────────────────────
 
 const DEBUFFS = new Set([
-  'BURN', 'POISON', 'HEX', 'WEAKEN', 'SLOW',
-  'SILENCE', 'TETHER', 'MARK', 'CORRODE',
+  'BURN',
+  'POISON',
+  'HEX',
+  'WEAKEN',
+  'SLOW',
+  'SILENCE',
+  'TETHER',
+  'MARK',
+  'CORRODE',
 ]);
 
 const BUFFS = new Set([
-  'WARD', 'ANCHOR', 'HASTE', 'STEALTH', 'TAUNT',
-  'REFLECT', 'INSPIRE', 'SWIFT', 'DODGE', 'PHASE',
-  'BARRIER', 'AMPLIFY',
+  'WARD',
+  'ANCHOR',
+  'HASTE',
+  'STEALTH',
+  'TAUNT',
+  'REFLECT',
+  'INSPIRE',
+  'SWIFT',
+  'DODGE',
+  'PHASE',
+  'BARRIER',
+  'AMPLIFY',
 ]);
 
 function isDebuff(effectName) {
@@ -421,7 +451,6 @@ function isDebuff(effectName) {
 function isBuff(effectName) {
   return BUFFS.has(effectName);
 }
-
 
 // ─── ACTIVE EFFECT TRACKER ─────────────────────────────
 // In-memory tracker for all active effects on all Nines.
@@ -441,13 +470,13 @@ function isBuff(effectName) {
 
 class EffectTracker {
   constructor() {
-    this.activeEffects = new Map();   // nineId → ActiveEffect[]
-    this.cooldowns = new Map();       // nineId:effectName → expiresAt
-    this.parasiteLinks = new Map();   // nineId → hostNineId
-    this.tetherLinks = new Map();     // nineId → linkedNineId
-    this.amplifyReady = new Map();    // nineId → { multiplier, expiresAt }
-    this.corrodeTimers = new Map();   // nineId → lastTickAt
-    this.barrierHP = new Map();       // nineId → remaining barrier HP
+    this.activeEffects = new Map(); // nineId → ActiveEffect[]
+    this.cooldowns = new Map(); // nineId:effectName → expiresAt
+    this.parasiteLinks = new Map(); // nineId → hostNineId
+    this.tetherLinks = new Map(); // nineId → linkedNineId
+    this.amplifyReady = new Map(); // nineId → { multiplier, expiresAt }
+    this.corrodeTimers = new Map(); // nineId → lastTickAt
+    this.barrierHP = new Map(); // nineId → remaining barrier HP
   }
 
   // Get all active effects on a Nine
@@ -458,19 +487,21 @@ class EffectTracker {
   // Check if a Nine has a specific active effect
   hasEffect(nineId, effectName) {
     const effects = this.getEffects(nineId);
-    return effects.some(e => e.effect === effectName && !e.consumed);
+    return effects.some((e) => e.effect === effectName && !e.consumed);
   }
 
   // Count stacks of a numeric effect
   getStacks(nineId, effectName) {
     const effects = this.getEffects(nineId);
-    return effects.filter(e => e.effect === effectName && !e.consumed).length;
+    return effects.filter((e) => e.effect === effectName && !e.consumed).length;
   }
 
   // Get total value of a stacked effect (with diminishing returns already applied)
   getStackedValue(nineId, effectName) {
     const effects = this.getEffects(nineId);
-    const matching = effects.filter(e => e.effect === effectName && !e.consumed);
+    const matching = effects.filter(
+      (e) => e.effect === effectName && !e.consumed,
+    );
     return matching.reduce((sum, e) => sum + (e.value || 0), 0);
   }
 
@@ -486,7 +517,9 @@ class EffectTracker {
 
     // Binary effects: don't stack, just refresh duration
     if (def.binary && !def.stackable) {
-      const existing = effects.find(e => e.effect === effectName && !e.consumed);
+      const existing = effects.find(
+        (e) => e.effect === effectName && !e.consumed,
+      );
       if (existing) {
         // Refresh duration for timed effects
         if (def.trigger === 'timed' || def.trigger === 'deploy') {
@@ -545,11 +578,11 @@ class EffectTracker {
     for (const [nineId, effects] of this.activeEffects) {
       this.activeEffects.set(
         nineId,
-        effects.filter(e => {
+        effects.filter((e) => {
           if (e.consumed) return false;
           if (e.expiresAt && e.expiresAt <= now) return false;
           return true;
-        })
+        }),
       );
     }
   }
@@ -567,7 +600,7 @@ class EffectTracker {
     for (const [targetId, effects] of this.activeEffects) {
       this.activeEffects.set(
         targetId,
-        effects.filter(e => e.sourceNineId !== nineId)
+        effects.filter((e) => e.sourceNineId !== nineId),
       );
     }
 
@@ -616,13 +649,12 @@ class EffectTracker {
       this.barrierHP.set(nineId, 0);
       // Remove barrier effect
       const effects = this.getEffects(nineId);
-      const barrier = effects.find(e => e.effect === 'BARRIER');
+      const barrier = effects.find((e) => e.effect === 'BARRIER');
       if (barrier) barrier.consumed = true;
       return damage - remaining; // overflow damage
     }
   }
 }
-
 
 // ─── EFFECT RESOLVER ───────────────────────────────────
 // Called by the combat engine when a Nine attacks.
@@ -654,7 +686,7 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
   }
 
   // Check OVERCHARGE — effects fire twice
-  const hasOvercharge = attackerEffects.some(e => e.name === 'OVERCHARGE');
+  const hasOvercharge = attackerEffects.some((e) => e.name === 'OVERCHARGE');
   const fireCount = hasOvercharge ? 2 : 1;
 
   // Check SWIFT — 2x effect values in first 10s after deploy
@@ -685,12 +717,20 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
       // Only process on-attack effects here
       if (def.trigger !== 'on-attack') continue;
 
-      const effectValue = Math.floor((cardEffect.value || def.baseValue || 0) * effectMultiplier);
+      const effectValue = Math.floor(
+        (cardEffect.value || def.baseValue || 0) * effectMultiplier,
+      );
 
       switch (cardEffect.name) {
-
         case 'BURN': {
-          tracker.applyEffect(target.id, 'BURN', attacker.id, effectValue, cardEffect.rarity, now);
+          tracker.applyEffect(
+            target.id,
+            'BURN',
+            attacker.id,
+            effectValue,
+            cardEffect.rarity,
+            now,
+          );
           events.push({
             type: 'effect_apply',
             source: attacker.id,
@@ -704,9 +744,12 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
 
         case 'CHAIN': {
           // Find a second random enemy (not the primary target)
-          const otherEnemies = zoneState.enemies.filter(e => e.id !== target.id && e.hp > 0);
+          const otherEnemies = zoneState.enemies.filter(
+            (e) => e.id !== target.id && e.hp > 0,
+          );
           if (otherEnemies.length > 0) {
-            const chainTarget = otherEnemies[Math.floor(Math.random() * otherEnemies.length)];
+            const chainTarget =
+              otherEnemies[Math.floor(Math.random() * otherEnemies.length)];
             events.push({
               type: 'effect_trigger',
               source: attacker.id,
@@ -746,7 +789,9 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
 
         case 'HEAL': {
           // Find lowest HP ally (including self)
-          const allies = [attacker, ...zoneState.allies].filter(a => a.hp > 0);
+          const allies = [attacker, ...zoneState.allies].filter(
+            (a) => a.hp > 0,
+          );
           allies.sort((a, b) => a.hp - b.hp);
           const healTarget = allies[0];
           if (healTarget) {
@@ -776,7 +821,14 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
         }
 
         case 'POISON': {
-          tracker.applyEffect(target.id, 'POISON', attacker.id, effectValue, cardEffect.rarity, now);
+          tracker.applyEffect(
+            target.id,
+            'POISON',
+            attacker.id,
+            effectValue,
+            cardEffect.rarity,
+            now,
+          );
           events.push({
             type: 'effect_apply',
             source: attacker.id,
@@ -790,11 +842,18 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
 
         case 'SILENCE': {
           // Target highest ATK enemy
-          const enemies = [...zoneState.enemies].filter(e => e.hp > 0);
+          const enemies = [...zoneState.enemies].filter((e) => e.hp > 0);
           enemies.sort((a, b) => (b.stats?.atk || 0) - (a.stats?.atk || 0));
           const silenceTarget = enemies[0];
           if (silenceTarget) {
-            tracker.applyEffect(silenceTarget.id, 'SILENCE', attacker.id, 0, cardEffect.rarity, now);
+            tracker.applyEffect(
+              silenceTarget.id,
+              'SILENCE',
+              attacker.id,
+              0,
+              cardEffect.rarity,
+              now,
+            );
             events.push({
               type: 'effect_apply',
               source: attacker.id,
@@ -807,7 +866,14 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
         }
 
         case 'HEX': {
-          tracker.applyEffect(target.id, 'HEX', attacker.id, effectValue, cardEffect.rarity, now);
+          tracker.applyEffect(
+            target.id,
+            'HEX',
+            attacker.id,
+            effectValue,
+            cardEffect.rarity,
+            now,
+          );
           events.push({
             type: 'effect_apply',
             source: attacker.id,
@@ -820,7 +886,14 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
         }
 
         case 'WEAKEN': {
-          tracker.applyEffect(target.id, 'WEAKEN', attacker.id, 0, cardEffect.rarity, now);
+          tracker.applyEffect(
+            target.id,
+            'WEAKEN',
+            attacker.id,
+            0,
+            cardEffect.rarity,
+            now,
+          );
           events.push({
             type: 'effect_apply',
             source: attacker.id,
@@ -832,7 +905,14 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
         }
 
         case 'SLOW': {
-          tracker.applyEffect(target.id, 'SLOW', attacker.id, effectValue, cardEffect.rarity, now);
+          tracker.applyEffect(
+            target.id,
+            'SLOW',
+            attacker.id,
+            effectValue,
+            cardEffect.rarity,
+            now,
+          );
           events.push({
             type: 'effect_apply',
             source: attacker.id,
@@ -845,7 +925,14 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
         }
 
         case 'TETHER': {
-          tracker.applyEffect(target.id, 'TETHER', attacker.id, 0, cardEffect.rarity, now);
+          tracker.applyEffect(
+            target.id,
+            'TETHER',
+            attacker.id,
+            0,
+            cardEffect.rarity,
+            now,
+          );
           tracker.tetherLinks.set(attacker.id, target.id);
           events.push({
             type: 'effect_apply',
@@ -859,11 +946,18 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
 
         case 'MARK': {
           // Target highest HP enemy
-          const enemies = [...zoneState.enemies].filter(e => e.hp > 0);
+          const enemies = [...zoneState.enemies].filter((e) => e.hp > 0);
           enemies.sort((a, b) => b.hp - a.hp);
           const markTarget = enemies[0];
           if (markTarget) {
-            tracker.applyEffect(markTarget.id, 'MARK', attacker.id, 0, cardEffect.rarity, now);
+            tracker.applyEffect(
+              markTarget.id,
+              'MARK',
+              attacker.id,
+              0,
+              cardEffect.rarity,
+              now,
+            );
             events.push({
               type: 'effect_apply',
               source: attacker.id,
@@ -876,7 +970,14 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
         }
 
         case 'HASTE': {
-          tracker.applyEffect(attacker.id, 'HASTE', attacker.id, effectValue, cardEffect.rarity, now);
+          tracker.applyEffect(
+            attacker.id,
+            'HASTE',
+            attacker.id,
+            effectValue,
+            cardEffect.rarity,
+            now,
+          );
           events.push({
             type: 'effect_apply',
             source: attacker.id,
@@ -890,10 +991,12 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
 
         case 'BLESS': {
           // 3 lowest HP allies
-          const allies = [...zoneState.allies, attacker].filter(a => a.hp > 0);
+          const allies = [...zoneState.allies, attacker].filter(
+            (a) => a.hp > 0,
+          );
           allies.sort((a, b) => a.hp - b.hp);
           const blessTargets = allies.slice(0, 3);
-          blessTargets.forEach(bt => {
+          blessTargets.forEach((bt) => {
             events.push({
               type: 'effect_heal',
               source: attacker.id,
@@ -907,7 +1010,14 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
         }
 
         case 'INSPIRE': {
-          tracker.applyEffect(attacker.id, 'INSPIRE', attacker.id, effectValue, cardEffect.rarity, now);
+          tracker.applyEffect(
+            attacker.id,
+            'INSPIRE',
+            attacker.id,
+            effectValue,
+            cardEffect.rarity,
+            now,
+          );
           events.push({
             type: 'effect_apply',
             source: attacker.id,
@@ -921,10 +1031,12 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
         case 'AMPLIFY': {
           // Set the amplify buff for the next ally to attack
           // Combat engine checks tracker.amplifyReady when an ally attacks
-          const allies = zoneState.allies.filter(a => a.hp > 0 && a.id !== attacker.id);
+          const allies = zoneState.allies.filter(
+            (a) => a.hp > 0 && a.id !== attacker.id,
+          );
           if (allies.length > 0) {
             // Mark all allies as potential amplify targets — first to attack gets it
-            allies.forEach(ally => {
+            allies.forEach((ally) => {
               tracker.amplifyReady.set(ally.id, {
                 multiplier: 1.5,
                 expiresAt: now + 10000, // 10s window
@@ -944,10 +1056,10 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
         case 'CLEANSE': {
           const cleared = [];
           const debuffsToRemove = EFFECTS.CLEANSE.debuffsCleared;
-          debuffsToRemove.forEach(debuff => {
+          debuffsToRemove.forEach((debuff) => {
             if (tracker.hasEffect(attacker.id, debuff)) {
               const effects = tracker.getEffects(attacker.id);
-              effects.forEach(e => {
+              effects.forEach((e) => {
                 if (e.effect === debuff) e.consumed = true;
               });
               cleared.push(debuff);
@@ -985,7 +1097,14 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
 
         case 'PHASE': {
           // After attacking, enter phase (untargetable 3s, can't attack)
-          tracker.applyEffect(attacker.id, 'PHASE', attacker.id, 0, cardEffect.rarity, now);
+          tracker.applyEffect(
+            attacker.id,
+            'PHASE',
+            attacker.id,
+            0,
+            cardEffect.rarity,
+            now,
+          );
           events.push({
             type: 'effect_trigger',
             source: attacker.id,
@@ -1004,9 +1123,20 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
     if (!def || def.trigger !== 'timed') continue;
 
     // These self-buffs refresh on each attack
-    if (['WARD', 'ANCHOR', 'STEALTH', 'TAUNT', 'REFLECT'].includes(cardEffect.name)) {
+    if (
+      ['WARD', 'ANCHOR', 'STEALTH', 'TAUNT', 'REFLECT'].includes(
+        cardEffect.name,
+      )
+    ) {
       if (!tracker.hasEffect(attacker.id, cardEffect.name)) {
-        tracker.applyEffect(attacker.id, cardEffect.name, attacker.id, 0, cardEffect.rarity, now);
+        tracker.applyEffect(
+          attacker.id,
+          cardEffect.name,
+          attacker.id,
+          0,
+          cardEffect.rarity,
+          now,
+        );
         events.push({
           type: 'effect_apply',
           source: attacker.id,
@@ -1021,7 +1151,6 @@ function resolveAttackEffects(attacker, target, zoneState, tracker, now) {
   return events;
 }
 
-
 /**
  * Resolve effects when a Nine is knocked out
  * Handles: FEAST, INFECT, SHATTER, RESURRECT
@@ -1031,23 +1160,32 @@ function resolveKOEffects(knockedOutNine, killer, zoneState, tracker, now) {
   const koEffects = getEquippedEffects(knockedOutNine);
 
   // SHATTER — deal 10% max HP to all enemies
-  if (koEffects.some(e => e.name === 'SHATTER')) {
-    const damage = Math.floor((knockedOutNine.maxHp || knockedOutNine.stats.hp) * 0.10);
+  if (koEffects.some((e) => e.name === 'SHATTER')) {
+    const damage = Math.floor(
+      (knockedOutNine.maxHp || knockedOutNine.stats.hp) * 0.1,
+    );
     events.push({
       type: 'effect_aoe_damage',
       source: knockedOutNine.id,
       effect: 'SHATTER',
       value: damage,
-      targets: zoneState.enemies.filter(e => e.hp > 0).map(e => e.id),
+      targets: zoneState.enemies.filter((e) => e.hp > 0).map((e) => e.id),
       message: `SHATTER — ${damage} damage to all enemies`,
     });
   }
 
   // INFECT — spread POISON to all enemies
-  if (koEffects.some(e => e.name === 'INFECT')) {
-    const enemies = zoneState.enemies.filter(e => e.hp > 0);
-    enemies.forEach(enemy => {
-      tracker.applyEffect(enemy.id, 'POISON', knockedOutNine.id, 3, 'rare', now);
+  if (koEffects.some((e) => e.name === 'INFECT')) {
+    const enemies = zoneState.enemies.filter((e) => e.hp > 0);
+    enemies.forEach((enemy) => {
+      tracker.applyEffect(
+        enemy.id,
+        'POISON',
+        knockedOutNine.id,
+        3,
+        'rare',
+        now,
+      );
     });
     events.push({
       type: 'effect_aoe_apply',
@@ -1058,9 +1196,11 @@ function resolveKOEffects(knockedOutNine, killer, zoneState, tracker, now) {
   }
 
   // RESURRECT — revive at 30% HP
-  if (koEffects.some(e => e.name === 'RESURRECT')) {
+  if (koEffects.some((e) => e.name === 'RESURRECT')) {
     if (!tracker.isOnCooldown(knockedOutNine.id, 'RESURRECT', now)) {
-      const reviveHp = Math.floor((knockedOutNine.maxHp || knockedOutNine.stats.hp) * 0.30);
+      const reviveHp = Math.floor(
+        (knockedOutNine.maxHp || knockedOutNine.stats.hp) * 0.3,
+      );
       tracker.setCooldown(knockedOutNine.id, 'RESURRECT', 300, now); // 5 min cooldown
       events.push({
         type: 'effect_resurrect',
@@ -1076,8 +1216,10 @@ function resolveKOEffects(knockedOutNine, killer, zoneState, tracker, now) {
   for (const enemy of zoneState.enemies) {
     if (enemy.hp <= 0) continue;
     const enemyEffects = getEquippedEffects(enemy);
-    if (enemyEffects.some(e => e.name === 'FEAST')) {
-      const healAmount = Math.floor((knockedOutNine.maxHp || knockedOutNine.stats.hp) * 0.15);
+    if (enemyEffects.some((e) => e.name === 'FEAST')) {
+      const healAmount = Math.floor(
+        (knockedOutNine.maxHp || knockedOutNine.stats.hp) * 0.15,
+      );
       events.push({
         type: 'effect_heal',
         source: enemy.id,
@@ -1092,7 +1234,6 @@ function resolveKOEffects(knockedOutNine, killer, zoneState, tracker, now) {
   return events;
 }
 
-
 /**
  * Resolve deploy effects (SWIFT, GRAVITY)
  */
@@ -1101,8 +1242,15 @@ function resolveDeployEffects(deployedNine, zoneState, tracker, now) {
   const nineEffects = getEquippedEffects(deployedNine);
 
   // SWIFT — 2x effects for first 10s
-  if (nineEffects.some(e => e.name === 'SWIFT')) {
-    tracker.applyEffect(deployedNine.id, 'SWIFT', deployedNine.id, 0, 'rare', now);
+  if (nineEffects.some((e) => e.name === 'SWIFT')) {
+    tracker.applyEffect(
+      deployedNine.id,
+      'SWIFT',
+      deployedNine.id,
+      0,
+      'rare',
+      now,
+    );
     events.push({
       type: 'effect_apply',
       source: deployedNine.id,
@@ -1112,8 +1260,8 @@ function resolveDeployEffects(deployedNine, zoneState, tracker, now) {
   }
 
   // GRAVITY — all enemies hit you once at 50% damage
-  if (nineEffects.some(e => e.name === 'GRAVITY')) {
-    const enemies = zoneState.enemies.filter(e => e.hp > 0);
+  if (nineEffects.some((e) => e.name === 'GRAVITY')) {
+    const enemies = zoneState.enemies.filter((e) => e.hp > 0);
     events.push({
       type: 'effect_gravity',
       source: deployedNine.id,
@@ -1125,15 +1273,21 @@ function resolveDeployEffects(deployedNine, zoneState, tracker, now) {
   }
 
   // Initialize BARRIER if equipped
-  const barrierEffect = nineEffects.find(e => e.name === 'BARRIER');
+  const barrierEffect = nineEffects.find((e) => e.name === 'BARRIER');
   if (barrierEffect) {
     tracker.initBarrier(deployedNine.id, barrierEffect.value || 40);
-    tracker.applyEffect(deployedNine.id, 'BARRIER', deployedNine.id, barrierEffect.value || 40, barrierEffect.rarity, now);
+    tracker.applyEffect(
+      deployedNine.id,
+      'BARRIER',
+      deployedNine.id,
+      barrierEffect.value || 40,
+      barrierEffect.rarity,
+      now,
+    );
   }
 
   return events;
 }
-
 
 // ─── DAMAGE MODIFIERS ──────────────────────────────────
 // Called by combat engine to modify damage before applying
@@ -1144,7 +1298,14 @@ function resolveDeployEffects(deployedNine, zoneState, tracker, now) {
  *
  * @returns {object} { finalDamage, reflected, events, blocked, anchored }
  */
-function getIncomingDamageModifiers(targetId, attackerId, baseDamage, hasPierce, tracker, now) {
+function getIncomingDamageModifiers(
+  targetId,
+  attackerId,
+  baseDamage,
+  hasPierce,
+  tracker,
+  now,
+) {
   let damage = baseDamage;
   let reflected = 0;
   const events = [];
@@ -1153,28 +1314,66 @@ function getIncomingDamageModifiers(targetId, attackerId, baseDamage, hasPierce,
 
   // DODGE — 100% evasion for 3s
   if (tracker.hasEffect(targetId, 'DODGE')) {
-    events.push({ type: 'effect_trigger', target: targetId, effect: 'DODGE', message: 'DODGE — evaded!' });
-    return { finalDamage: 0, reflected: 0, events, blocked: true, anchored: false };
+    events.push({
+      type: 'effect_trigger',
+      target: targetId,
+      effect: 'DODGE',
+      message: 'DODGE — evaded!',
+    });
+    return {
+      finalDamage: 0,
+      reflected: 0,
+      events,
+      blocked: true,
+      anchored: false,
+    };
   }
 
   // WARD — block 1 hit (unless PIERCE)
   if (!hasPierce && tracker.hasEffect(targetId, 'WARD')) {
-    const wardEffect = tracker.getEffects(targetId).find(e => e.effect === 'WARD' && !e.consumed);
+    const wardEffect = tracker
+      .getEffects(targetId)
+      .find((e) => e.effect === 'WARD' && !e.consumed);
     if (wardEffect) {
       wardEffect.consumed = true;
-      events.push({ type: 'effect_trigger', target: targetId, effect: 'WARD', message: 'WARD — blocked!' });
-      return { finalDamage: 0, reflected: 0, events, blocked: true, anchored: false };
+      events.push({
+        type: 'effect_trigger',
+        target: targetId,
+        effect: 'WARD',
+        message: 'WARD — blocked!',
+      });
+      return {
+        finalDamage: 0,
+        reflected: 0,
+        events,
+        blocked: true,
+        anchored: false,
+      };
     }
   }
 
   // REFLECT — bounce full damage back (unless PIERCE)
   if (!hasPierce && tracker.hasEffect(targetId, 'REFLECT')) {
-    const reflectEffect = tracker.getEffects(targetId).find(e => e.effect === 'REFLECT' && !e.consumed);
+    const reflectEffect = tracker
+      .getEffects(targetId)
+      .find((e) => e.effect === 'REFLECT' && !e.consumed);
     if (reflectEffect) {
       reflectEffect.consumed = true;
       reflected = damage;
-      events.push({ type: 'effect_trigger', target: targetId, effect: 'REFLECT', value: damage, message: `REFLECT — ${damage} bounced back` });
-      return { finalDamage: 0, reflected, events, blocked: true, anchored: false };
+      events.push({
+        type: 'effect_trigger',
+        target: targetId,
+        effect: 'REFLECT',
+        value: damage,
+        message: `REFLECT — ${damage} bounced back`,
+      });
+      return {
+        finalDamage: 0,
+        reflected,
+        events,
+        blocked: true,
+        anchored: false,
+      };
     }
   }
 
@@ -1182,7 +1381,13 @@ function getIncomingDamageModifiers(targetId, attackerId, baseDamage, hasPierce,
   if (!hasPierce) {
     damage = tracker.damageBarrier(targetId, damage);
     if (damage < baseDamage) {
-      events.push({ type: 'effect_trigger', target: targetId, effect: 'BARRIER', value: baseDamage - damage, message: `BARRIER absorbed ${baseDamage - damage}` });
+      events.push({
+        type: 'effect_trigger',
+        target: targetId,
+        effect: 'BARRIER',
+        value: baseDamage - damage,
+        message: `BARRIER absorbed ${baseDamage - damage}`,
+      });
     }
   }
 
@@ -1190,7 +1395,13 @@ function getIncomingDamageModifiers(targetId, attackerId, baseDamage, hasPierce,
   if (tracker.hasEffect(targetId, 'MARK')) {
     const bonus = Math.floor(damage * 0.25);
     damage += bonus;
-    events.push({ type: 'effect_trigger', target: targetId, effect: 'MARK', value: bonus, message: `MARK — +${bonus} bonus damage` });
+    events.push({
+      type: 'effect_trigger',
+      target: targetId,
+      effect: 'MARK',
+      value: bonus,
+      message: `MARK — +${bonus} bonus damage`,
+    });
   }
 
   // SURGE on target — +25% damage taken
@@ -1204,33 +1415,61 @@ function getIncomingDamageModifiers(targetId, attackerId, baseDamage, hasPierce,
   if (tetheredTo) {
     const splitDamage = Math.floor(damage / 2);
     damage = splitDamage;
-    events.push({ type: 'effect_trigger', target: targetId, effect: 'TETHER', value: splitDamage, message: `TETHER — ${splitDamage} shared with linked Nine` });
+    events.push({
+      type: 'effect_trigger',
+      target: targetId,
+      effect: 'TETHER',
+      value: splitDamage,
+      message: `TETHER — ${splitDamage} shared with linked Nine`,
+    });
   }
 
   // THORNS — reflect flat damage back to attacker
   const thornsValue = tracker.getStackedValue(targetId, 'THORNS');
   if (thornsValue > 0) {
     reflected += thornsValue;
-    events.push({ type: 'effect_trigger', target: targetId, effect: 'THORNS', value: thornsValue, message: `THORNS — ${thornsValue} reflected` });
+    events.push({
+      type: 'effect_trigger',
+      target: targetId,
+      effect: 'THORNS',
+      value: thornsValue,
+      message: `THORNS — ${thornsValue} reflected`,
+    });
   }
 
   // MIRROR — copy effect back (passive cooldown)
-  if (tracker.hasEffect(targetId, 'MIRROR') && !tracker.isOnCooldown(targetId, 'MIRROR', now)) {
+  if (
+    tracker.hasEffect(targetId, 'MIRROR') &&
+    !tracker.isOnCooldown(targetId, 'MIRROR', now)
+  ) {
     tracker.setCooldown(targetId, 'MIRROR', 10, now);
-    events.push({ type: 'effect_trigger', target: targetId, effect: 'MIRROR', message: 'MIRROR — copying effects back' });
+    events.push({
+      type: 'effect_trigger',
+      target: targetId,
+      effect: 'MIRROR',
+      message: 'MIRROR — copying effects back',
+    });
   }
 
   // DODGE trigger — after taking a hit, gain 3s invulnerability (if DODGE is equipped but not active)
   const nineEffects = getEquippedEffects({ id: targetId }); // simplified — combat engine provides full data
-  if (nineEffects.some && nineEffects.some(e => e.name === 'DODGE') && !tracker.isOnCooldown(targetId, 'DODGE', now)) {
+  if (
+    nineEffects.some &&
+    nineEffects.some((e) => e.name === 'DODGE') &&
+    !tracker.isOnCooldown(targetId, 'DODGE', now)
+  ) {
     tracker.applyEffect(targetId, 'DODGE', targetId, 0, 'rare', now);
     tracker.setCooldown(targetId, 'DODGE', 10, now);
-    events.push({ type: 'effect_apply', target: targetId, effect: 'DODGE', message: 'DODGE — 3s evasion activated' });
+    events.push({
+      type: 'effect_apply',
+      target: targetId,
+      effect: 'DODGE',
+      message: 'DODGE — 3s evasion activated',
+    });
   }
 
   return { finalDamage: damage, reflected, events, blocked, anchored };
 }
-
 
 // ─── STAT MODIFIERS FROM ACTIVE EFFECTS ────────────────
 // Called by combat engine to adjust stats before attack calculation
@@ -1276,7 +1515,6 @@ function getActiveStatModifiers(nineId, tracker) {
   return mods;
 }
 
-
 // ─── HELPERS ───────────────────────────────────────────
 
 /**
@@ -1298,7 +1536,11 @@ function getEquippedEffects(nine) {
 
     // Parse if it's a string
     if (typeof bonusEffects === 'string') {
-      try { bonusEffects = JSON.parse(bonusEffects); } catch (e) { bonusEffects = []; }
+      try {
+        bonusEffects = JSON.parse(bonusEffects);
+      } catch (e) {
+        bonusEffects = [];
+      }
     }
 
     for (const be of bonusEffects) {
@@ -1325,7 +1567,6 @@ function getEquippedEffects(nine) {
 
   return effects;
 }
-
 
 // ─── EXPORTS ───────────────────────────────────────────
 

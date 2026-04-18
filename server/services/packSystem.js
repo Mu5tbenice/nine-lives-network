@@ -11,15 +11,21 @@ const supabaseAdmin = require('../config/supabaseAdmin');
 
 // ── RARITY CONFIG ──
 const RARITIES = {
-  common:    { weight: 55, pointMult: 1.0,  infMult: 1.0  },
-  uncommon:  { weight: 25, pointMult: 1.25, infMult: 1.1  },
-  rare:      { weight: 12, pointMult: 1.5,  infMult: 1.25 },
-  epic:      { weight: 6,  pointMult: 2.0,  infMult: 1.5  },
-  legendary: { weight: 2,  pointMult: 3.0,  infMult: 2.0  },
+  common: { weight: 55, pointMult: 1.0, infMult: 1.0 },
+  uncommon: { weight: 25, pointMult: 1.25, infMult: 1.1 },
+  rare: { weight: 12, pointMult: 1.5, infMult: 1.25 },
+  epic: { weight: 6, pointMult: 2.0, infMult: 1.5 },
+  legendary: { weight: 2, pointMult: 3.0, infMult: 2.0 },
 };
 
 // V5: Default rarity weights (used when spell has no rarity_weights column)
-const DEFAULT_RARITY_WEIGHTS = { common: 55, uncommon: 25, rare: 12, epic: 6, legendary: 2 };
+const DEFAULT_RARITY_WEIGHTS = {
+  common: 55,
+  uncommon: 25,
+  rare: 12,
+  epic: 6,
+  legendary: 2,
+};
 
 // V5: Durability charges by rarity (kept from V3)
 const CHARGES_BY_RARITY = {
@@ -32,10 +38,10 @@ const CHARGES_BY_RARITY = {
 
 // Rarity stat bonuses (applied on top of base stats)
 const RARITY_BONUSES = {
-  common:    { atk: 0, hp: 0 },
-  uncommon:  { atk: 1, hp: 0 },
-  rare:      { atk: 1, hp: 1 },
-  epic:      { atk: 2, hp: 2 },
+  common: { atk: 0, hp: 0 },
+  uncommon: { atk: 1, hp: 0 },
+  rare: { atk: 1, hp: 1 },
+  epic: { atk: 2, hp: 2 },
   legendary: { atk: 3, hp: 3 },
 };
 
@@ -56,9 +62,10 @@ const ALLIANCES = {
 function parseRarityWeights(spell) {
   if (!spell || !spell.rarity_weights) return DEFAULT_RARITY_WEIGHTS;
   try {
-    const w = typeof spell.rarity_weights === 'string'
-      ? JSON.parse(spell.rarity_weights)
-      : spell.rarity_weights;
+    const w =
+      typeof spell.rarity_weights === 'string'
+        ? JSON.parse(spell.rarity_weights)
+        : spell.rarity_weights;
     return w || DEFAULT_RARITY_WEIGHTS;
   } catch {
     return DEFAULT_RARITY_WEIGHTS;
@@ -69,13 +76,19 @@ function parseRarityWeights(spell) {
 function isBasicSpell(spell) {
   const weights = parseRarityWeights(spell);
   // Basic spells only have { common: 100 }
-  return weights.common === 100 && !weights.uncommon && !weights.rare && !weights.epic && !weights.legendary;
+  return (
+    weights.common === 100 &&
+    !weights.uncommon &&
+    !weights.rare &&
+    !weights.epic &&
+    !weights.legendary
+  );
 }
 
 // ── HELPER: Split spells into basics and non-basics ──
 function splitSpellPool(allSpells) {
-  const basics = allSpells.filter(s => isBasicSpell(s));
-  const nonBasics = allSpells.filter(s => !isBasicSpell(s));
+  const basics = allSpells.filter((s) => isBasicSpell(s));
+  const nonBasics = allSpells.filter((s) => !isBasicSpell(s));
   return { basics, nonBasics };
 }
 
@@ -128,7 +141,12 @@ function getAffinityMultiplier(playerHouse, spellHouse) {
 // ═══════════════════════════════════════════════════════
 
 // ── GRANT A PACK TO A PLAYER ──
-async function grantPack(playerId, packType = 'daily', source = 'daily_login', packData = null) {
+async function grantPack(
+  playerId,
+  packType = 'daily',
+  source = 'daily_login',
+  packData = null,
+) {
   try {
     const { data, error } = await supabaseAdmin
       .from('pack_inventory')
@@ -169,7 +187,11 @@ async function grantDailyPack(playerId) {
       .limit(1);
 
     if (existing && existing.length > 0) {
-      return { success: false, error: 'Already received daily pack today', already_granted: true };
+      return {
+        success: false,
+        error: 'Already received daily pack today',
+        already_granted: true,
+      };
     }
 
     return await grantPack(playerId, 'daily', 'daily_login');
@@ -225,7 +247,7 @@ async function getPackInventory(playerId) {
 async function getPackInventorySummary(playerId) {
   const packs = await getPackInventory(playerId);
   const summary = {};
-  packs.forEach(p => {
+  packs.forEach((p) => {
     if (!summary[p.pack_type]) {
       summary[p.pack_type] = { count: 0, packs: [] };
     }
@@ -261,7 +283,12 @@ async function openPackFromInventory(playerId, packInventoryId) {
     }
 
     const { basics, nonBasics } = splitSpellPool(allSpells);
-    const cards = generateCardsForPackType(pack.pack_type, pack.pack_data, basics, nonBasics);
+    const cards = generateCardsForPackType(
+      pack.pack_type,
+      pack.pack_data,
+      basics,
+      nonBasics,
+    );
 
     await supabase
       .from('pack_inventory')
@@ -280,7 +307,7 @@ async function openPackFromInventory(playerId, packInventoryId) {
       .select()
       .single();
 
-    const collectionCards = cards.map(c => ({
+    const collectionCards = cards.map((c) => ({
       player_id: playerId,
       spell_id: c.spell_id,
       spell_name: c.name,
@@ -294,12 +321,22 @@ async function openPackFromInventory(playerId, packInventoryId) {
       is_exhausted: false,
     }));
 
-    const { error: insertErr } = await supabaseAdmin.from('player_cards').insert(collectionCards);
+    const { error: insertErr } = await supabaseAdmin
+      .from('player_cards')
+      .insert(collectionCards);
     if (insertErr) {
-      console.error('[PackSystem] player_cards insert error (openPackFromInventory):', insertErr);
+      console.error(
+        '[PackSystem] player_cards insert error (openPackFromInventory):',
+        insertErr,
+      );
       console.error('[PackSystem] detail:', JSON.stringify(insertErr));
     } else {
-      console.log('[PackSystem] openPackFromInventory saved:', collectionCards.length, 'cards for player', playerId);
+      console.log(
+        '[PackSystem] openPackFromInventory saved:',
+        collectionCards.length,
+        'cards for player',
+        playerId,
+      );
     }
 
     return {
@@ -323,8 +360,8 @@ function generateCardsForPackType(packType, packData, basics, nonBasics) {
   const safeNonBasics = nonBasics.length > 0 ? nonBasics : basics;
 
   // FIX: filter basics by type then pick RANDOMLY — no more same card every time
-  const attackBasics = basics.filter(s => s.spell_type === 'attack');
-  const defendBasics = basics.filter(s => s.spell_type === 'defend');
+  const attackBasics = basics.filter((s) => s.spell_type === 'attack');
+  const defendBasics = basics.filter((s) => s.spell_type === 'defend');
 
   switch (packType) {
     case 'daily': {
@@ -339,9 +376,10 @@ function generateCardsForPackType(packType, packData, basics, nonBasics) {
     case 'boss': {
       for (let i = 0; i < 5; i++) {
         const spell = pickRandom(safeNonBasics);
-        const rarity = i === 0
-          ? rollRarityGuaranteed(guaranteedRarity || 'rare')
-          : rollRarity(spell);
+        const rarity =
+          i === 0
+            ? rollRarityGuaranteed(guaranteedRarity || 'rare')
+            : rollRarity(spell);
         cards.push(buildCard(spell, rarity));
       }
       break;
@@ -350,9 +388,10 @@ function generateCardsForPackType(packType, packData, basics, nonBasics) {
     case 'event': {
       for (let i = 0; i < 5; i++) {
         const spell = pickRandom(safeNonBasics);
-        const rarity = i === 0
-          ? rollRarityGuaranteed(guaranteedRarity || 'rare')
-          : rollRarity(spell);
+        const rarity =
+          i === 0
+            ? rollRarityGuaranteed(guaranteedRarity || 'rare')
+            : rollRarity(spell);
         cards.push(buildCard(spell, rarity));
       }
       break;
@@ -361,9 +400,10 @@ function generateCardsForPackType(packType, packData, basics, nonBasics) {
     case 'seasonal': {
       for (let i = 0; i < 5; i++) {
         const spell = pickRandom(safeNonBasics);
-        const rarity = i === 0
-          ? rollRarityGuaranteed(guaranteedRarity || 'epic')
-          : rollRarity(spell);
+        const rarity =
+          i === 0
+            ? rollRarityGuaranteed(guaranteedRarity || 'epic')
+            : rollRarity(spell);
         cards.push(buildCard(spell, rarity));
       }
       break;
@@ -373,7 +413,8 @@ function generateCardsForPackType(packType, packData, basics, nonBasics) {
       // Welcome pack: 5 random cards, with 1 guaranteed uncommon or better
       for (let i = 0; i < 5; i++) {
         const spell = pickRandom(safeNonBasics);
-        const rarity = i === 0 ? rollRarityGuaranteed('uncommon') : rollRarity(spell);
+        const rarity =
+          i === 0 ? rollRarityGuaranteed('uncommon') : rollRarity(spell);
         cards.push(buildCard(spell, rarity));
       }
       break;
@@ -399,9 +440,10 @@ function buildCard(spell, rarity) {
   const bonus = RARITY_BONUSES[rarity] || { atk: 0, hp: 0 };
   let effects = [];
   try {
-    effects = typeof spell.bonus_effects === 'string'
-      ? JSON.parse(spell.bonus_effects)
-      : (spell.bonus_effects || []);
+    effects =
+      typeof spell.bonus_effects === 'string'
+        ? JSON.parse(spell.bonus_effects)
+        : spell.bonus_effects || [];
   } catch (e) {
     effects = [];
   }
@@ -461,8 +503,11 @@ async function generateDailyPack(playerId) {
 
           if (!alreadySaved || alreadySaved.length === 0) {
             // Cards missing — re-insert them now
-            console.log('[PackSystem] Repair: re-inserting missing player_cards for player', playerId);
-            const repairCards = existingCards.map(c => ({
+            console.log(
+              '[PackSystem] Repair: re-inserting missing player_cards for player',
+              playerId,
+            );
+            const repairCards = existingCards.map((c) => ({
               player_id: playerId,
               spell_id: c.spell_id,
               spell_name: c.name,
@@ -475,15 +520,28 @@ async function generateDailyPack(playerId) {
               sharpness: 100,
               is_exhausted: false,
             }));
-            const { error: repairErr } = await supabaseAdmin.from('player_cards').insert(repairCards);
-            if (repairErr) console.error('[PackSystem] Repair insert error:', repairErr);
-            else console.log('[PackSystem] Repair: inserted', repairCards.length, 'cards for player', playerId);
+            const { error: repairErr } = await supabaseAdmin
+              .from('player_cards')
+              .insert(repairCards);
+            if (repairErr)
+              console.error('[PackSystem] Repair insert error:', repairErr);
+            else
+              console.log(
+                '[PackSystem] Repair: inserted',
+                repairCards.length,
+                'cards for player',
+                playerId,
+              );
           }
         }
       } catch (repairEx) {
         console.error('[PackSystem] Repair check error:', repairEx);
       }
-      return { success: false, error: 'Already opened today\'s pack', pack: existing };
+      return {
+        success: false,
+        error: "Already opened today's pack",
+        pack: existing,
+      };
     }
 
     const { data: allSpells, error: spellErr } = await supabase
@@ -516,18 +574,19 @@ async function generateDailyPack(playerId) {
     }
 
     const handCards = cards.map((c, i) => ({ ...c, index: i, used: false }));
-    await supabase
-      .from('daily_hands')
-      .upsert({
+    await supabase.from('daily_hands').upsert(
+      {
         player_id: playerId,
         game_day: today,
         cards: handCards,
-      }, { onConflict: 'player_id,game_day' });
+      },
+      { onConflict: 'player_id,game_day' },
+    );
 
     // Insert into player_cards — columns must match table exactly
-    const collectionCards = cards.map(c => ({
+    const collectionCards = cards.map((c) => ({
       player_id: playerId,
-      spell_id:  c.spell_id,
+      spell_id: c.spell_id,
       spell_name: c.name,
       spell_house: c.house,
       spell_type: c.type,
@@ -539,12 +598,25 @@ async function generateDailyPack(playerId) {
       is_exhausted: false,
     }));
 
-    const { error: insertErr } = await supabaseAdmin.from('player_cards').insert(collectionCards);
+    const { error: insertErr } = await supabaseAdmin
+      .from('player_cards')
+      .insert(collectionCards);
     if (insertErr) {
-      console.error('[PackSystem] player_cards insert error (generateDailyPack):', insertErr);
-      console.error('[PackSystem] insert error detail:', JSON.stringify(insertErr));
+      console.error(
+        '[PackSystem] player_cards insert error (generateDailyPack):',
+        insertErr,
+      );
+      console.error(
+        '[PackSystem] insert error detail:',
+        JSON.stringify(insertErr),
+      );
     } else {
-      console.log('[PackSystem] player_cards saved:', collectionCards.length, 'cards for player', playerId);
+      console.log(
+        '[PackSystem] player_cards saved:',
+        collectionCards.length,
+        'cards for player',
+        playerId,
+      );
     }
 
     return { success: true, pack: pack, cards: cards };
@@ -581,7 +653,7 @@ async function useCardFromHand(playerId, cardIndex) {
   }
 
   cards[cardIndex].used = true;
-  const allUsed = cards.every(c => c.used);
+  const allUsed = cards.every((c) => c.used);
 
   await supabase
     .from('daily_hands')
@@ -595,7 +667,9 @@ async function useCardFromHand(playerId, cardIndex) {
 async function getCollection(playerId, filters = {}) {
   let query = supabaseAdmin
     .from('player_cards')
-    .select('*, spell:spell_id(name, house, spell_type, base_atk, base_hp, base_spd, base_def, base_luck, effect_1, base_effect, bonus_effects, flavor_text, image_url)')
+    .select(
+      '*, spell:spell_id(name, house, spell_type, base_atk, base_hp, base_spd, base_def, base_luck, effect_1, base_effect, bonus_effects, flavor_text, image_url)',
+    )
     .eq('player_id', playerId)
     .order('acquired_at', { ascending: false });
 
@@ -615,17 +689,24 @@ async function getCollectionStats(playerId) {
     total: cards.length,
     byRarity: { common: 0, uncommon: 0, rare: 0, epic: 0, legendary: 0 },
     byHouse: {},
-    byType: { attack: 0, defend: 0, support: 0, utility: 0, debuff: 0, control: 0 },
+    byType: {
+      attack: 0,
+      defend: 0,
+      support: 0,
+      utility: 0,
+      debuff: 0,
+      control: 0,
+    },
     exhausted: 0,
     totalCharges: 0,
   };
 
-  cards.forEach(c => {
+  cards.forEach((c) => {
     if (stats.byRarity[c.rarity] !== undefined) stats.byRarity[c.rarity]++;
     stats.byHouse[c.spell_house] = (stats.byHouse[c.spell_house] || 0) + 1;
     if (stats.byType[c.spell_type] !== undefined) stats.byType[c.spell_type]++;
     if (c.is_exhausted) stats.exhausted++;
-    stats.totalCharges += (c.current_charges || 0);
+    stats.totalCharges += c.current_charges || 0;
   });
 
   return stats;
@@ -651,12 +732,13 @@ async function processUpgrades() {
   const rarityOrder = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
 
   for (const hand of eligible) {
-    const upgradeable = hand.cards.filter(c => c.rarity !== 'legendary');
+    const upgradeable = hand.cards.filter((c) => c.rarity !== 'legendary');
     if (upgradeable.length === 0) continue;
 
     const target = upgradeable[Math.floor(Math.random() * upgradeable.length)];
     const currentIdx = rarityOrder.indexOf(target.rarity);
-    const newRarity = rarityOrder[Math.min(currentIdx + 1, rarityOrder.length - 1)];
+    const newRarity =
+      rarityOrder[Math.min(currentIdx + 1, rarityOrder.length - 1)];
     const newMaxCharges = CHARGES_BY_RARITY[newRarity] || 5;
 
     await supabaseAdmin

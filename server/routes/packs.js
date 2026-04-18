@@ -18,7 +18,7 @@ router.get('/inventory/:player_id', async (req, res) => {
     const playerId = parseInt(req.params.player_id);
     const packs = await packSystem.getPackInventory(playerId);
     const summary = {};
-    packs.forEach(p => {
+    packs.forEach((p) => {
       if (!summary[p.pack_type]) {
         summary[p.pack_type] = { count: 0, packs: [] };
       }
@@ -48,7 +48,8 @@ router.get('/inventory/:player_id', async (req, res) => {
 router.post('/claim-daily', async (req, res) => {
   try {
     const { player_id } = req.body || {};
-    if (!player_id) return res.status(400).json({ error: 'player_id required' });
+    if (!player_id)
+      return res.status(400).json({ error: 'player_id required' });
 
     const result = await packSystem.grantDailyPack(player_id);
     if (!result.success) {
@@ -77,10 +78,15 @@ router.post('/inventory/open', async (req, res) => {
   try {
     const { player_id, pack_inventory_id } = req.body || {};
     if (!player_id || !pack_inventory_id) {
-      return res.status(400).json({ error: 'player_id and pack_inventory_id required' });
+      return res
+        .status(400)
+        .json({ error: 'player_id and pack_inventory_id required' });
     }
 
-    const result = await packSystem.openPackFromInventory(player_id, pack_inventory_id);
+    const result = await packSystem.openPackFromInventory(
+      player_id,
+      pack_inventory_id,
+    );
     if (!result.success) {
       return res.status(400).json({ error: result.error });
     }
@@ -103,13 +109,14 @@ router.post('/inventory/open', async (req, res) => {
 router.post('/grant', async (req, res) => {
   try {
     const { player_id, pack_type, source, pack_data } = req.body || {};
-    if (!player_id) return res.status(400).json({ error: 'player_id required' });
+    if (!player_id)
+      return res.status(400).json({ error: 'player_id required' });
 
     const result = await packSystem.grantPack(
       player_id,
       pack_type || 'reward',
       source || 'admin_grant',
-      pack_data || null
+      pack_data || null,
     );
 
     if (!result.success) {
@@ -133,7 +140,8 @@ router.post('/grant', async (req, res) => {
 router.post('/open', async (req, res) => {
   try {
     const { player_id } = req.body || {};
-    if (!player_id) return res.status(400).json({ error: 'player_id required' });
+    if (!player_id)
+      return res.status(400).json({ error: 'player_id required' });
 
     const result = await packSystem.generateDailyPack(player_id);
     if (!result.success && result.pack) {
@@ -165,7 +173,11 @@ router.get('/hand/:player_id', async (req, res) => {
   try {
     const hand = await packSystem.getTodaysHand(req.params.player_id);
     if (!hand) {
-      return res.json({ success: true, hand: null, message: 'No pack opened today' });
+      return res.json({
+        success: true,
+        hand: null,
+        message: 'No pack opened today',
+      });
     }
     return res.json({ success: true, hand });
   } catch (err) {

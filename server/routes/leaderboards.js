@@ -12,7 +12,9 @@ router.get('/players', async (req, res) => {
 
     const { data: players, error } = await supabase
       .from('players')
-      .select('id, twitter_handle, school_id, guild_tag, profile_image, seasonal_points, lifetime_points, duel_wins, duel_losses, streak')
+      .select(
+        'id, twitter_handle, school_id, guild_tag, profile_image, seasonal_points, lifetime_points, duel_wins, duel_losses, streak',
+      )
       .eq('is_active', true)
       .order('seasonal_points', { ascending: false })
       .limit(limit);
@@ -46,16 +48,22 @@ router.get('/schools', async (req, res) => {
     }
 
     const schoolStats = {};
-    (players || []).forEach(player => {
+    (players || []).forEach((player) => {
       if (!player.school_id) return;
       if (!schoolStats[player.school_id]) {
-        schoolStats[player.school_id] = { school_id: player.school_id, total_points: 0, member_count: 0 };
+        schoolStats[player.school_id] = {
+          school_id: player.school_id,
+          total_points: 0,
+          member_count: 0,
+        };
       }
       schoolStats[player.school_id].total_points += player.seasonal_points || 0;
       schoolStats[player.school_id].member_count += 1;
     });
 
-    const sorted = Object.values(schoolStats).sort((a, b) => b.total_points - a.total_points);
+    const sorted = Object.values(schoolStats).sort(
+      (a, b) => b.total_points - a.total_points,
+    );
     res.json(sorted);
   } catch (error) {
     console.error('Error in schools leaderboard:', error);
@@ -73,7 +81,9 @@ router.get('/duels', async (req, res) => {
 
     const { data: players, error } = await supabase
       .from('players')
-      .select('id, twitter_handle, school_id, guild_tag, profile_image, duel_wins, duel_losses')
+      .select(
+        'id, twitter_handle, school_id, guild_tag, profile_image, duel_wins, duel_losses',
+      )
       .eq('is_active', true);
 
     if (error) {
@@ -83,14 +93,19 @@ router.get('/duels', async (req, res) => {
 
     // Filter players with at least 1 duel, sort by wins then win rate
     const qualified = (players || [])
-      .filter(p => (p.duel_wins || 0) + (p.duel_losses || 0) >= 1)
-      .map(p => ({
+      .filter((p) => (p.duel_wins || 0) + (p.duel_losses || 0) >= 1)
+      .map((p) => ({
         ...p,
         total_duels: (p.duel_wins || 0) + (p.duel_losses || 0),
-        win_rate: Math.round(((p.duel_wins || 0) / ((p.duel_wins || 0) + (p.duel_losses || 0) || 1)) * 100)
+        win_rate: Math.round(
+          ((p.duel_wins || 0) /
+            ((p.duel_wins || 0) + (p.duel_losses || 0) || 1)) *
+            100,
+        ),
       }))
       .sort((a, b) => {
-        if (b.duel_wins !== a.duel_wins) return (b.duel_wins || 0) - (a.duel_wins || 0);
+        if (b.duel_wins !== a.duel_wins)
+          return (b.duel_wins || 0) - (a.duel_wins || 0);
         return b.win_rate - a.win_rate;
       })
       .slice(0, limit);
@@ -120,17 +135,23 @@ router.get('/guilds', async (req, res) => {
     }
 
     const guildStats = {};
-    (players || []).forEach(player => {
+    (players || []).forEach((player) => {
       if (!player.guild_tag) return;
       const tag = player.guild_tag.toUpperCase();
       if (!guildStats[tag]) {
-        guildStats[tag] = { guild_tag: player.guild_tag, total_points: 0, member_count: 0 };
+        guildStats[tag] = {
+          guild_tag: player.guild_tag,
+          total_points: 0,
+          member_count: 0,
+        };
       }
       guildStats[tag].total_points += player.seasonal_points || 0;
       guildStats[tag].member_count += 1;
     });
 
-    const sorted = Object.values(guildStats).sort((a, b) => b.total_points - a.total_points).slice(0, 50);
+    const sorted = Object.values(guildStats)
+      .sort((a, b) => b.total_points - a.total_points)
+      .slice(0, 50);
     res.json(sorted);
   } catch (error) {
     console.error('Error in guilds leaderboard:', error);
@@ -157,10 +178,18 @@ router.get('/clashes', async (req, res) => {
 
     // Build round-robin standings from completed matches
     const standings = {};
-    (clashes || []).forEach(c => {
+    (clashes || []).forEach((c) => {
       if (c.status !== 'complete') return;
-      [c.guild_a, c.guild_b].forEach(g => {
-        if (!standings[g]) standings[g] = { name: g, color: g === c.guild_a ? c.color_a : c.color_b, w: 0, l: 0, pts: 0, total_scored: 0 };
+      [c.guild_a, c.guild_b].forEach((g) => {
+        if (!standings[g])
+          standings[g] = {
+            name: g,
+            color: g === c.guild_a ? c.color_a : c.color_b,
+            w: 0,
+            l: 0,
+            pts: 0,
+            total_scored: 0,
+          };
       });
       if (c.score_a > c.score_b) {
         standings[c.guild_a].w += 1;
@@ -181,12 +210,13 @@ router.get('/clashes', async (req, res) => {
       if (c.color_b) standings[c.guild_b].color = c.color_b;
     });
 
-    const sortedStandings = Object.values(standings)
-      .sort((a, b) => b.pts - a.pts || b.total_scored - a.total_scored);
+    const sortedStandings = Object.values(standings).sort(
+      (a, b) => b.pts - a.pts || b.total_scored - a.total_scored,
+    );
 
     res.json({
       matches: clashes || [],
-      standings: sortedStandings
+      standings: sortedStandings,
     });
   } catch (error) {
     console.error('Error in clashes:', error);
@@ -214,18 +244,24 @@ router.get('/history', async (req, res) => {
 
     const dayData = {};
     if (actions) {
-      actions.forEach(a => {
+      actions.forEach((a) => {
         if (!a.game_day) return;
-        if (!dayData[a.game_day]) dayData[a.game_day] = { houses: {}, guilds: {} };
+        if (!dayData[a.game_day])
+          dayData[a.game_day] = { houses: {}, guilds: {} };
 
         if (a.school_id) {
-          if (!dayData[a.game_day].houses[a.school_id]) dayData[a.game_day].houses[a.school_id] = 0;
+          if (!dayData[a.game_day].houses[a.school_id])
+            dayData[a.game_day].houses[a.school_id] = 0;
           dayData[a.game_day].houses[a.school_id] += 8;
         }
 
-        const tag = a.player && a.player.guild_tag ? a.player.guild_tag.toUpperCase() : null;
+        const tag =
+          a.player && a.player.guild_tag
+            ? a.player.guild_tag.toUpperCase()
+            : null;
         if (tag) {
-          if (!dayData[a.game_day].guilds[tag]) dayData[a.game_day].guilds[tag] = 0;
+          if (!dayData[a.game_day].guilds[tag])
+            dayData[a.game_day].guilds[tag] = 0;
           dayData[a.game_day].guilds[tag] += 8;
         }
       });
@@ -234,7 +270,11 @@ router.get('/history', async (req, res) => {
     const history = Object.keys(dayData)
       .sort()
       .slice(-days)
-      .map(day => ({ date: day, houses: dayData[day].houses, guilds: dayData[day].guilds }));
+      .map((day) => ({
+        date: day,
+        houses: dayData[day].houses,
+        guilds: dayData[day].guilds,
+      }));
 
     res.json(history);
   } catch (error) {
@@ -267,7 +307,8 @@ router.get('/player/:id/rank', async (req, res) => {
       .eq('is_active', true)
       .order('seasonal_points', { ascending: false });
 
-    const individualRank = (allPlayers || []).findIndex(p => p.id === parseInt(id)) + 1;
+    const individualRank =
+      (allPlayers || []).findIndex((p) => p.id === parseInt(id)) + 1;
 
     res.json({ individual: individualRank || null });
   } catch (error) {

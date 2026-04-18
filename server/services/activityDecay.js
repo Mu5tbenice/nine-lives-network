@@ -33,7 +33,9 @@ async function processActivityDecay() {
     let deactivated = 0;
 
     for (const player of players) {
-      const lastCast = player.last_cast_at ? new Date(player.last_cast_at) : null;
+      const lastCast = player.last_cast_at
+        ? new Date(player.last_cast_at)
+        : null;
 
       // Skip players who have never cast (new players get grace period)
       if (!lastCast) continue;
@@ -54,20 +56,23 @@ async function processActivityDecay() {
         if (penalty > 0) {
           await supabase
             .from('players')
-            .update({ 
-              seasonal_points: (player.seasonal_points || 0) - penalty 
+            .update({
+              seasonal_points: (player.seasonal_points || 0) - penalty,
             })
             .eq('id', player.id);
 
-          console.log(`📉 @${player.twitter_handle} -${penalty} points (3+ days inactive)`);
+          console.log(
+            `📉 @${player.twitter_handle} -${penalty} points (3+ days inactive)`,
+          );
           penalties++;
         }
       }
     }
 
-    console.log(`✅ Activity decay complete: ${penalties} penalties, ${deactivated} deactivated`);
+    console.log(
+      `✅ Activity decay complete: ${penalties} penalties, ${deactivated} deactivated`,
+    );
     return { processed: players.length, penalties, deactivated };
-
   } catch (error) {
     console.error('Error in activity decay:', error);
     return { processed: 0, penalties: 0, deactivated: 0, error };
@@ -115,5 +120,5 @@ async function getInactivePlayers() {
 module.exports = {
   processActivityDecay,
   reactivatePlayer,
-  getInactivePlayers
+  getInactivePlayers,
 };

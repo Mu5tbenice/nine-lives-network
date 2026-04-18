@@ -15,7 +15,7 @@ const { addPoints } = require('../services/pointsService');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
 // ── QUEST POOL ──────────────────────────────────────────
@@ -33,9 +33,9 @@ const QUEST_POOL = [
         .select('zone_id')
         .eq('player_id', playerId)
         .gte('created_at', todayStart);
-      const unique = new Set((data || []).map(d => d.zone_id));
+      const unique = new Set((data || []).map((d) => d.zone_id));
       return unique.size >= 2;
-    }
+    },
   },
   {
     id: 'survive_three_snapshots',
@@ -44,7 +44,9 @@ const QUEST_POOL = [
     icon: '⏱️',
     points: 30,
     check: async (playerId, todayStart) => {
-      const fortyfiveMinsAgo = new Date(Date.now() - 45 * 60 * 1000).toISOString();
+      const fortyfiveMinsAgo = new Date(
+        Date.now() - 45 * 60 * 1000,
+      ).toISOString();
       const { data } = await supabase
         .from('zone_deployments')
         .select('id')
@@ -53,7 +55,7 @@ const QUEST_POOL = [
         .lte('created_at', fortyfiveMinsAgo)
         .limit(1);
       return !!(data && data.length > 0);
-    }
+    },
   },
   {
     id: 'deploy_and_stay',
@@ -71,7 +73,7 @@ const QUEST_POOL = [
         .lte('created_at', oneHourAgo)
         .limit(1);
       return !!(data && data.length > 0);
-    }
+    },
   },
   {
     id: 'deploy_zone',
@@ -87,7 +89,7 @@ const QUEST_POOL = [
         .gte('created_at', todayStart)
         .limit(1);
       return !!(data && data.length > 0);
-    }
+    },
   },
   {
     id: 'guild_flip',
@@ -108,14 +110,14 @@ const QUEST_POOL = [
         .eq('player_id', playerId)
         .gte('created_at', todayStart);
       if (!deploys || deploys.length === 0) return false;
-      const zoneIds = deploys.map(d => d.zone_id);
+      const zoneIds = deploys.map((d) => d.zone_id);
       const { data: zones } = await supabase
         .from('zones')
         .select('id, controlling_guild_tag')
         .in('id', zoneIds)
         .eq('controlling_guild_tag', player.guild_tag);
       return !!(zones && zones.length > 0);
-    }
+    },
   },
 
   // Collection
@@ -135,7 +137,7 @@ const QUEST_POOL = [
         .gte('created_at', todayStart)
         .limit(1);
       return !!(data && data.length > 0);
-    }
+    },
   },
   {
     id: 'open_two_packs',
@@ -151,7 +153,7 @@ const QUEST_POOL = [
         .eq('player_id', playerId)
         .gte('created_at', todayStart);
       return (data || []).length >= 10;
-    }
+    },
   },
   {
     id: 'open_rare',
@@ -167,11 +169,11 @@ const QUEST_POOL = [
         .gte('created_at', todayStart);
       if (!data) return false;
       const rarityOrder = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
-      return data.some(c => {
+      return data.some((c) => {
         const r = c.spell?.rarity;
         return r && rarityOrder.indexOf(r) >= 2;
       });
-    }
+    },
   },
   {
     id: 'open_epic',
@@ -187,11 +189,11 @@ const QUEST_POOL = [
         .gte('created_at', todayStart);
       if (!data) return false;
       const rarityOrder = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
-      return data.some(c => {
+      return data.some((c) => {
         const r = c.spell?.rarity;
         return r && rarityOrder.indexOf(r) >= 3;
       });
-    }
+    },
   },
 
   // Spellbook / Loadout
@@ -219,7 +221,7 @@ const QUEST_POOL = [
         if ((slots || []).length >= 3) return true;
       }
       return false;
-    }
+    },
   },
   {
     id: 'two_house_loadout',
@@ -241,18 +243,18 @@ const QUEST_POOL = [
           .select('card_id')
           .eq('deployment_id', dep.id)
           .eq('is_active', true);
-        const cardIds = (slots || []).map(s => s.card_id).filter(Boolean);
+        const cardIds = (slots || []).map((s) => s.card_id).filter(Boolean);
         if (cardIds.length < 2) continue;
         const { data: cards } = await supabase
           .from('spells')
           .select('school_id')
           .in('id', cardIds);
         if (!cards) continue;
-        const houses = new Set(cards.map(c => c.school_id).filter(Boolean));
+        const houses = new Set(cards.map((c) => c.school_id).filter(Boolean));
         if (houses.size >= 2) return true;
       }
       return false;
-    }
+    },
   },
   {
     id: 'change_loadout',
@@ -269,15 +271,15 @@ const QUEST_POOL = [
         .gte('updated_at', todayStart)
         .limit(1);
       return !!(data && data.length > 0);
-    }
+    },
   },
 ];
 
 // ── WEEKLY REWARD TIERS ─────────────────────────────────
 const WEEKLY_TIERS = [
-  { tier: 1, questsNeeded: 3,  points: 50,  packBonus: 0, label: '3 Quests' },
-  { tier: 2, questsNeeded: 5,  points: 100, packBonus: 0, label: '5 Quests' },
-  { tier: 3, questsNeeded: 7,  points: 200, packBonus: 1, label: '7 Quests' },
+  { tier: 1, questsNeeded: 3, points: 50, packBonus: 0, label: '3 Quests' },
+  { tier: 2, questsNeeded: 5, points: 100, packBonus: 0, label: '5 Quests' },
+  { tier: 3, questsNeeded: 7, points: 200, packBonus: 1, label: '7 Quests' },
   { tier: 4, questsNeeded: 10, points: 300, packBonus: 2, label: '10 Quests' },
 ];
 
@@ -306,7 +308,7 @@ function pickDailyQuests(playerId, dateStr) {
   const shuffled = [...QUEST_POOL].sort((a, b) => {
     const ha = Math.sin(seed * a.id.length) * 10000;
     const hb = Math.sin(seed * b.id.length) * 10000;
-    return (ha - Math.floor(ha)) - (hb - Math.floor(hb));
+    return ha - Math.floor(ha) - (hb - Math.floor(hb));
   });
   return shuffled.slice(0, 3);
 }
@@ -328,21 +330,22 @@ router.get('/daily/:playerId', async (req, res) => {
       .eq('quest_date', todayDate);
 
     const existingMap = {};
-    (existing || []).forEach(r => { existingMap[r.quest_id] = r; });
+    (existing || []).forEach((r) => {
+      existingMap[r.quest_id] = r;
+    });
 
     const quests = [];
 
     for (const q of todayQuests) {
       const record = existingMap[q.id];
-      let complete = !!(record?.completed);
+      let complete = !!record?.completed;
 
       if (!complete) {
         try {
           complete = await q.check(playerId, todayStart);
           if (complete) {
-            await supabaseAdmin
-              .from('player_quests')
-              .upsert({
+            await supabaseAdmin.from('player_quests').upsert(
+              {
                 player_id: playerId,
                 quest_id: q.id,
                 quest_name: q.name,
@@ -351,16 +354,30 @@ router.get('/daily/:playerId', async (req, res) => {
                 completed: true,
                 reward_points: q.points,
                 reward_claimed: false,
-              }, { onConflict: 'player_id,quest_id,quest_date' });
+              },
+              { onConflict: 'player_id,quest_id,quest_date' },
+            );
 
-            await addPoints(playerId, q.points, 'quest_complete', `Quest completed: ${q.name}`);
+            await addPoints(
+              playerId,
+              q.points,
+              'quest_complete',
+              `Quest completed: ${q.name}`,
+            );
           }
         } catch (e) {
           console.error(`[Quests] Check failed for ${q.id}:`, e.message);
         }
       }
 
-      quests.push({ id: q.id, name: q.name, desc: q.desc, icon: q.icon, points: q.points, complete });
+      quests.push({
+        id: q.id,
+        name: q.name,
+        desc: q.desc,
+        icon: q.icon,
+        points: q.points,
+        complete,
+      });
     }
 
     const { data: weekCompletions } = await supabaseAdmin
@@ -378,16 +395,15 @@ router.get('/daily/:playerId', async (req, res) => {
       .eq('player_id', playerId)
       .eq('week_start', weekStart);
 
-    const claimedTierNums = (claimedTiers || []).map(t => t.tier);
+    const claimedTierNums = (claimedTiers || []).map((t) => t.tier);
 
-    const weeklyTiers = WEEKLY_TIERS.map(t => ({
+    const weeklyTiers = WEEKLY_TIERS.map((t) => ({
       ...t,
       reached: weeklyCount >= t.questsNeeded,
       claimed: claimedTierNums.includes(t.tier),
     }));
 
     res.json({ quests, weeklyCount, weeklyTiers, weekStart });
-
   } catch (err) {
     console.error('[Quests] Error:', err.message);
     res.status(500).json({ error: 'Failed to load quests' });
@@ -401,7 +417,7 @@ router.post('/weekly-claim/:playerId', async (req, res) => {
   const weekStart = getWeekStart();
 
   try {
-    const tierDef = WEEKLY_TIERS.find(t => t.tier === tier);
+    const tierDef = WEEKLY_TIERS.find((t) => t.tier === tier);
     if (!tierDef) return res.status(400).json({ error: 'Invalid tier' });
 
     const { data: weekCompletions } = await supabaseAdmin
@@ -413,7 +429,9 @@ router.post('/weekly-claim/:playerId', async (req, res) => {
 
     const weeklyCount = (weekCompletions || []).length;
     if (weeklyCount < tierDef.questsNeeded) {
-      return res.status(400).json({ error: 'Not enough quests completed this week' });
+      return res
+        .status(400)
+        .json({ error: 'Not enough quests completed this week' });
     }
 
     const { data: alreadyClaimed } = await supabaseAdmin
@@ -424,7 +442,8 @@ router.post('/weekly-claim/:playerId', async (req, res) => {
       .eq('tier', tier)
       .single();
 
-    if (alreadyClaimed) return res.status(400).json({ error: 'Already claimed this tier' });
+    if (alreadyClaimed)
+      return res.status(400).json({ error: 'Already claimed this tier' });
 
     await supabaseAdmin.from('player_weekly_rewards').insert({
       player_id: playerId,
@@ -433,7 +452,12 @@ router.post('/weekly-claim/:playerId', async (req, res) => {
     });
 
     if (tierDef.points > 0) {
-      await addPoints(playerId, tierDef.points, 'weekly_quest_tier', `Weekly tier ${tier} reward (${tierDef.label})`);
+      await addPoints(
+        playerId,
+        tierDef.points,
+        'weekly_quest_tier',
+        `Weekly tier ${tier} reward (${tierDef.label})`,
+      );
     }
 
     if (tierDef.packBonus > 0) {
@@ -452,7 +476,6 @@ router.post('/weekly-claim/:playerId', async (req, res) => {
       packs_awarded: tierDef.packBonus,
       message: `Tier ${tier} claimed! +${tierDef.points} points${tierDef.packBonus > 0 ? ` + ${tierDef.packBonus} bonus pack(s)` : ''}`,
     });
-
   } catch (err) {
     console.error('[Quests] Weekly claim error:', err.message);
     res.status(500).json({ error: 'Failed to claim reward' });

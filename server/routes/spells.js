@@ -18,7 +18,7 @@ const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
 function requireAdmin(req, res, next) {
@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
     if (error) throw error;
 
     // Fix image URLs — convert filenames to full Supabase Storage URLs
-    const fixed = (data || []).map(spell => {
+    const fixed = (data || []).map((spell) => {
       if (spell.image_url && spell.image_url.indexOf('http') !== 0) {
         const { data: urlData } = supabase.storage
           .from('spell-images')
@@ -76,8 +76,13 @@ router.get('/rotation/:house', async (req, res) => {
     if (hErr) throw hErr;
 
     const today = new Date();
-    let seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-    function rng(s) { return ((s * 1103515245 + 12345) & 0x7fffffff); }
+    let seed =
+      today.getFullYear() * 10000 +
+      (today.getMonth() + 1) * 100 +
+      today.getDate();
+    function rng(s) {
+      return (s * 1103515245 + 12345) & 0x7fffffff;
+    }
 
     const pool = [...(houseSpells || [])];
     const picked = [];
@@ -90,7 +95,7 @@ router.get('/rotation/:house', async (req, res) => {
 
     // Fix image URLs for all spell arrays
     function fixImageUrls(spells) {
-      return (spells || []).map(spell => {
+      return (spells || []).map((spell) => {
         if (spell.image_url && spell.image_url.indexOf('http') !== 0) {
           const { data: urlData } = supabase.storage
             .from('spell-images')
@@ -104,7 +109,7 @@ router.get('/rotation/:house', async (req, res) => {
     res.json({
       always: fixImageUrls(universals),
       rotation: fixImageUrls(picked),
-      all_house_spells: fixImageUrls(houseSpells)
+      all_house_spells: fixImageUrls(houseSpells),
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
@@ -114,8 +119,24 @@ router.get('/rotation/:house', async (req, res) => {
 // POST /api/spells
 router.post('/', requireAdmin, async (req, res) => {
   try {
-    const { name, slug, house, spell_type, base_effect, bonus_effects, flavor_text, motto, is_active, image_url } = req.body;
-    const finalSlug = slug || (name || 'spell').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const {
+      name,
+      slug,
+      house,
+      spell_type,
+      base_effect,
+      bonus_effects,
+      flavor_text,
+      motto,
+      is_active,
+      image_url,
+    } = req.body;
+    const finalSlug =
+      slug ||
+      (name || 'spell')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
 
     const { data, error } = await supabase
       .from('spells')
@@ -129,7 +150,7 @@ router.post('/', requireAdmin, async (req, res) => {
         flavor_text: flavor_text || null,
         motto: motto || null,
         is_active: is_active !== false,
-        image_url: image_url || null
+        image_url: image_url || null,
       })
       .select()
       .single();
@@ -145,13 +166,34 @@ router.post('/', requireAdmin, async (req, res) => {
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const updates = {};
-    const allowed = ['name', 'slug', 'house', 'spell_type', 'base_effect', 'bonus_effects', 'flavor_text', 'motto', 'is_active', 'image_url', 'in_pack_pool', 'base_atk', 'base_hp', 'base_spd', 'base_def', 'base_luck', 'rarity_weights'];
-    allowed.forEach(key => {
+    const allowed = [
+      'name',
+      'slug',
+      'house',
+      'spell_type',
+      'base_effect',
+      'bonus_effects',
+      'flavor_text',
+      'motto',
+      'is_active',
+      'image_url',
+      'in_pack_pool',
+      'base_atk',
+      'base_hp',
+      'base_spd',
+      'base_def',
+      'base_luck',
+      'rarity_weights',
+    ];
+    allowed.forEach((key) => {
       if (req.body[key] !== undefined) updates[key] = req.body[key];
     });
 
     if (updates.name && !updates.slug) {
-      updates.slug = updates.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      updates.slug = updates.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '');
     }
 
     const { data, error } = await supabase

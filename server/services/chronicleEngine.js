@@ -16,29 +16,35 @@ const { addPoints } = require('./pointsService');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
 // ── HOUSE MAP ────────────────────────────────────────────────
 const HOUSE_NAMES = {
-  1: 'Smoulders 🔥', 2: 'Darktide 🌊', 3: 'Stonebark 🌿',
-  4: 'Ashenvale 💨', 5: 'Stormrage ⚡', 6: 'Nighthollow 🌙',
-  7: 'Dawnbringer ☀️', 8: 'Manastorm 🔮', 9: 'Plaguemire ☠️',
+  1: 'Smoulders 🔥',
+  2: 'Darktide 🌊',
+  3: 'Stonebark 🌿',
+  4: 'Ashenvale 💨',
+  5: 'Stormrage ⚡',
+  6: 'Nighthollow 🌙',
+  7: 'Dawnbringer ☀️',
+  8: 'Manastorm 🔮',
+  9: 'Plaguemire ☠️',
 };
 
 // ── SCORING ──────────────────────────────────────────────────
 const SCORE = {
-  BASE:    { points: 15, xp: 5 },
-  QUALITY: { points: 25, xp: 5 },  // 50+ chars
-  DETAIL:  { points: 35, xp: 5 },  // 120+ chars
+  BASE: { points: 15, xp: 5 },
+  QUALITY: { points: 25, xp: 5 }, // 50+ chars
+  DETAIL: { points: 35, xp: 5 }, // 120+ chars
   HOUSE_FLAIR: { points: 5, xp: 0 },
-  NAMED:   { points: 20, xp: 10 },
+  NAMED: { points: 20, xp: 10 },
   ENDING: {
-    heroic_victory:    { points: 30 },
-    underdog_triumph:  { points: 50 },
-    chaos_ending:      { points: 20 },
-    betrayal_arc:      { points: 40 },
-    mysterious_outcome:{ points: 30 },
+    heroic_victory: { points: 30 },
+    underdog_triumph: { points: 50 },
+    chaos_ending: { points: 20 },
+    betrayal_arc: { points: 40 },
+    mysterious_outcome: { points: 30 },
   },
 };
 
@@ -53,7 +59,9 @@ const DROP_TICKET_SOURCES = {
 async function twitterApiGet(endpoint, params = {}) {
   const bearerToken = process.env.TWITTER_BEARER_TOKEN;
   if (!bearerToken) {
-    console.warn('[Chronicle] No TWITTER_BEARER_TOKEN — reply scanning disabled');
+    console.warn(
+      '[Chronicle] No TWITTER_BEARER_TOKEN — reply scanning disabled',
+    );
     return null;
   }
   const url = new URL(`https://api.twitter.com/2/${endpoint}`);
@@ -62,7 +70,10 @@ async function twitterApiGet(endpoint, params = {}) {
     headers: { Authorization: `Bearer ${bearerToken}` },
   });
   if (!res.ok) {
-    console.error(`[Chronicle] Twitter API error ${res.status}:`, await res.text());
+    console.error(
+      `[Chronicle] Twitter API error ${res.status}:`,
+      await res.text(),
+    );
     return null;
   }
   return res.json();
@@ -83,11 +94,13 @@ async function getGameState() {
     const guildCounts = {};
     const houseCounts = {};
     const twitterHandles = [];
-    (deployments || []).forEach(d => {
-      if (d.guild_tag) guildCounts[d.guild_tag] = (guildCounts[d.guild_tag] || 0) + 1;
+    (deployments || []).forEach((d) => {
+      if (d.guild_tag)
+        guildCounts[d.guild_tag] = (guildCounts[d.guild_tag] || 0) + 1;
       const sid = d.player?.school_id;
       if (sid) houseCounts[sid] = (houseCounts[sid] || 0) + 1;
-      if (d.player?.twitter_handle) twitterHandles.push(d.player.twitter_handle);
+      if (d.player?.twitter_handle)
+        twitterHandles.push(d.player.twitter_handle);
     });
 
     // Zone control (most recent snapshot data)
@@ -96,28 +109,41 @@ async function getGameState() {
       .select('name, controlling_guild')
       .eq('is_active', true);
 
-    const controlledZones = (zones || []).filter(z => z.controlling_guild);
+    const controlledZones = (zones || []).filter((z) => z.controlling_guild);
     const controlByGuild = {};
-    controlledZones.forEach(z => {
+    controlledZones.forEach((z) => {
       if (z.controlling_guild) {
-        controlByGuild[z.controlling_guild] = (controlByGuild[z.controlling_guild] || 0) + 1;
+        controlByGuild[z.controlling_guild] =
+          (controlByGuild[z.controlling_guild] || 0) + 1;
       }
     });
 
     // Top guild by zone control
-    const topGuild = Object.entries(controlByGuild).sort((a, b) => b[1] - a[1])[0];
+    const topGuild = Object.entries(controlByGuild).sort(
+      (a, b) => b[1] - a[1],
+    )[0];
     // Top guild by deployed nines
-    const mostDeployedGuild = Object.entries(guildCounts).sort((a, b) => b[1] - a[1])[0];
+    const mostDeployedGuild = Object.entries(guildCounts).sort(
+      (a, b) => b[1] - a[1],
+    )[0];
     // Top house by deployed nines
-    const topHouseId = Object.entries(houseCounts).sort((a, b) => b[1] - a[1])[0];
-    const topHouseName = topHouseId ? (HOUSE_NAMES[topHouseId[0]] || 'Unknown') : 'Unknown';
+    const topHouseId = Object.entries(houseCounts).sort(
+      (a, b) => b[1] - a[1],
+    )[0];
+    const topHouseName = topHouseId
+      ? HOUSE_NAMES[topHouseId[0]] || 'Unknown'
+      : 'Unknown';
 
     return {
       totalNines,
       totalZones: (zones || []).length,
       controlledZones: controlledZones.length,
-      topGuildByZones: topGuild ? `${topGuild[0]} (${topGuild[1]} zones)` : 'None yet',
-      topGuildByNines: mostDeployedGuild ? `${mostDeployedGuild[0]} (${mostDeployedGuild[1]} Nines)` : 'None yet',
+      topGuildByZones: topGuild
+        ? `${topGuild[0]} (${topGuild[1]} zones)`
+        : 'None yet',
+      topGuildByNines: mostDeployedGuild
+        ? `${mostDeployedGuild[0]} (${mostDeployedGuild[1]} Nines)`
+        : 'None yet',
       topHouse: topHouseName,
       guildCounts,
       houseCounts,
@@ -126,9 +152,15 @@ async function getGameState() {
   } catch (err) {
     console.error('[Chronicle] Failed to get game state:', err.message);
     return {
-      totalNines: 0, totalZones: 9, controlledZones: 0,
-      topGuildByZones: 'None yet', topGuildByNines: 'None yet',
-      topHouse: 'Unknown', guildCounts: {}, houseCounts: {}, activeTwitterHandles: [],
+      totalNines: 0,
+      totalZones: 9,
+      controlledZones: 0,
+      topGuildByZones: 'None yet',
+      topGuildByNines: 'None yet',
+      topHouse: 'Unknown',
+      guildCounts: {},
+      houseCounts: {},
+      activeTwitterHandles: [],
     };
   }
 }
@@ -150,9 +182,11 @@ async function scanReplies(tweetId) {
     if (!data || !data.data) return [];
 
     const userMap = {};
-    (data.includes?.users || []).forEach(u => { userMap[u.id] = u.username; });
+    (data.includes?.users || []).forEach((u) => {
+      userMap[u.id] = u.username;
+    });
 
-    return data.data.map(t => ({
+    return data.data.map((t) => ({
       twitter_handle: userMap[t.author_id] || 'unknown',
       twitter_id: t.author_id,
       tweet_id: t.id,
@@ -174,9 +208,18 @@ function scoreReply(text) {
   else if (len >= 50) score = SCORE.QUALITY;
 
   // House flair bonus — mentions a house name
-  const houseWords = ['smoulders', 'darktide', 'stonebark', 'ashenvale', 'stormrage',
-                      'nighthollow', 'dawnbringer', 'manastorm', 'plaguemire'];
-  const hasHouseFlair = houseWords.some(h => text.toLowerCase().includes(h));
+  const houseWords = [
+    'smoulders',
+    'darktide',
+    'stonebark',
+    'ashenvale',
+    'stormrage',
+    'nighthollow',
+    'dawnbringer',
+    'manastorm',
+    'plaguemire',
+  ];
+  const hasHouseFlair = houseWords.some((h) => text.toLowerCase().includes(h));
 
   return {
     points: score.points + (hasHouseFlair ? SCORE.HOUSE_FLAIR.points : 0),
@@ -190,8 +233,12 @@ function scoreReply(text) {
 async function awardReplyPoints(playerId, scoring, actNum, raidDate) {
   try {
     // Add points
-    await addPoints(playerId, scoring.points, 'chronicle_reply',
-      `Chronicle Act ${actNum} reply (${scoring.tier})`);
+    await addPoints(
+      playerId,
+      scoring.points,
+      'chronicle_reply',
+      `Chronicle Act ${actNum} reply (${scoring.tier})`,
+    );
 
     // Award drop ticket (max 4 per day from Chronicle)
     // Schema: ticket_date, tickets_earned (daily count), rolled, results (jsonb)
@@ -213,12 +260,15 @@ async function awardReplyPoints(playerId, scoring, actNum, raidDate) {
       });
     } else if ((existingRow.tickets_earned || 0) < 4) {
       // Increment, max 4 from Chronicle
-      await supabaseAdmin.from('drop_tickets')
+      await supabaseAdmin
+        .from('drop_tickets')
         .update({ tickets_earned: existingRow.tickets_earned + 1 })
         .eq('id', existingRow.id);
     }
 
-    console.log(`[Chronicle] Awarded ${scoring.points}pts + Drop Ticket to player ${playerId}`);
+    console.log(
+      `[Chronicle] Awarded ${scoring.points}pts + Drop Ticket to player ${playerId}`,
+    );
   } catch (err) {
     console.error('[Chronicle] Award failed for player', playerId, err.message);
   }
@@ -268,15 +318,18 @@ async function processReplies(prevTweetId, actNum, raidDate) {
       await awardReplyPoints(player.id, scoring, actNum - 1, raidDate);
 
       // Record participant
-      await supabaseAdmin.from('chronicle_participants').insert({
-        player_id: player.id,
-        raid_date: raidDate,
-        act_num: actNum - 1,
-        reply_tweet_id: reply.tweet_id,
-        points_awarded: scoring.points,
-        quality_tier: scoring.tier,
-        named_in_story: false,
-      }).catch(() => {});
+      await supabaseAdmin
+        .from('chronicle_participants')
+        .insert({
+          player_id: player.id,
+          raid_date: raidDate,
+          act_num: actNum - 1,
+          reply_tweet_id: reply.tweet_id,
+          points_awarded: scoring.points,
+          quality_tier: scoring.tier,
+          named_in_story: false,
+        })
+        .catch(() => {});
     }
 
     // Add to "candidates to name in story" (top 2 by engagement)
@@ -296,22 +349,34 @@ async function processReplies(prevTweetId, actNum, raidDate) {
   // Mark top named handles as named_in_story and award bonus points
   for (const candidate of namedHandles.slice(0, 2)) {
     if (candidate.player) {
-      await addPoints(candidate.player.id, SCORE.NAMED.points, 'chronicle_named',
-        `Named in Chronicle Act ${actNum}`);
-      await supabaseAdmin.from('chronicle_participants')
+      await addPoints(
+        candidate.player.id,
+        SCORE.NAMED.points,
+        'chronicle_named',
+        `Named in Chronicle Act ${actNum}`,
+      );
+      await supabaseAdmin
+        .from('chronicle_participants')
         .update({ named_in_story: true })
         .eq('reply_tweet_id', candidate.handle); // best-effort
     }
   }
 
   return {
-    namedHandles: namedHandles.slice(0, 2).map(c => '@' + c.handle),
+    namedHandles: namedHandles.slice(0, 2).map((c) => '@' + c.handle),
     participantCount,
   };
 }
 
 // ── GENERATE ACT TEXT WITH CLAUDE ────────────────────────────
-async function generateActText(actNum, actName, gameState, namedHandles, raidTitle, endingType) {
+async function generateActText(
+  actNum,
+  actName,
+  gameState,
+  namedHandles,
+  raidTitle,
+  endingType,
+) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     console.warn('[Chronicle] No ANTHROPIC_API_KEY — using fallback text');
@@ -319,16 +384,22 @@ async function generateActText(actNum, actName, gameState, namedHandles, raidTit
   }
 
   const HOUSE_LIST = Object.values(HOUSE_NAMES).join(', ');
-  const topRepliers = namedHandles.length > 0
-    ? `The following real players replied to the previous act and should be woven into the narrative (mention them by @handle): ${namedHandles.join(', ')}`
-    : 'No specific players to name this act.';
+  const topRepliers =
+    namedHandles.length > 0
+      ? `The following real players replied to the previous act and should be woven into the narrative (mention them by @handle): ${namedHandles.join(', ')}`
+      : 'No specific players to name this act.';
 
   const ENDING_PROMPTS = {
-    heroic_victory:    'End triumphantly — the dominant force wins gloriously. Poetic and epic.',
-    underdog_triumph:  'End with a shocking upset — the smallest faction claims victory. Hopeful.',
-    chaos_ending:      'End in glorious chaos — nobody wins, everyone is implicated.',
-    betrayal_arc:      'End with betrayal — someone switched sides at the last moment.',
-    mysterious_outcome:'End mysteriously — a third force appears, outcome unclear.',
+    heroic_victory:
+      'End triumphantly — the dominant force wins gloriously. Poetic and epic.',
+    underdog_triumph:
+      'End with a shocking upset — the smallest faction claims victory. Hopeful.',
+    chaos_ending:
+      'End in glorious chaos — nobody wins, everyone is implicated.',
+    betrayal_arc:
+      'End with betrayal — someone switched sides at the last moment.',
+    mysterious_outcome:
+      'End mysteriously — a third force appears, outcome unclear.',
   };
 
   const actInstructions = {
@@ -338,12 +409,15 @@ async function generateActText(actNum, actName, gameState, namedHandles, raidTit
     4: `Act 4 (THE RECKONING): ${endingType ? ENDING_PROMPTS[endingType] : 'Resolve the story dramatically.'} Name the winners. Give final standings. Under 280 chars.`,
   };
 
-  const standingsBlock = actNum >= 2 ? `
+  const standingsBlock =
+    actNum >= 2
+      ? `
 NETHARA STANDINGS (use this data):
 ⚔️ ${gameState.totalNines} Nines deployed across ${gameState.totalZones} zones
 🏴 Leading guild: ${gameState.topGuildByZones}
 🔥 Most active house: ${gameState.topHouse}
-🗡️ Raiders count: ${gameState.totalNines}` : '';
+🗡️ Raiders count: ${gameState.totalNines}`
+      : '';
 
   const prompt = `You are writing THE CHRONICLE — the daily narrative for Nine Lives Network, a web3 card battle game set in Nethara.
 
@@ -395,7 +469,10 @@ Write Act ${actNum} now:`;
 
 // ── FALLBACK ACT TEXT (no API key / Claude error) ─────────────
 function fallbackActText(actNum, actName, gameState, namedHandles, raidTitle) {
-  const named = namedHandles.length > 0 ? `${namedHandles.join(' and ')} step forward. ` : '';
+  const named =
+    namedHandles.length > 0
+      ? `${namedHandles.join(' and ')} step forward. `
+      : '';
   const templates = {
     1: `🗡️ ${raidTitle}\n\nThe nine houses of Nethara stir. ${gameState.totalNines} Nines hold the field across ${gameState.totalZones} contested zones. The ${gameState.topHouse} push hard.\n\nThe story begins.\n\n⚔️ Reply as your Nine!`,
     2: `${named}The march across Nethara's zones continues. ${gameState.topGuildByNines} leads the charge.\n\n⚔️ ${gameState.totalNines} Nines active\n🏴 ${gameState.topGuildByZones} holds the most territory\n\n⚔️ Reply as your Nine!`,
@@ -419,7 +496,7 @@ function pickEndingType(gameState) {
   const r = Math.random();
   if (r < 0.35) return 'heroic_victory';
   if (r < 0.55) return 'chaos_ending';
-  if (r < 0.70) return 'betrayal_arc';
+  if (r < 0.7) return 'betrayal_arc';
   if (r < 0.85) return 'underdog_triumph';
   return 'mysterious_outcome';
 }
@@ -471,7 +548,9 @@ async function fireAct(actNum, postTweet) {
         const result = await processReplies(prevAct.tweet_id, actNum, raidDate);
         namedHandles = result.namedHandles;
         participantCount = result.participantCount;
-        console.log(`[Chronicle] Act ${actNum - 1} had ${participantCount} participants, naming: ${namedHandles.join(', ')}`);
+        console.log(
+          `[Chronicle] Act ${actNum - 1} had ${participantCount} participants, naming: ${namedHandles.join(', ')}`,
+        );
       }
     }
 
@@ -481,7 +560,8 @@ async function fireAct(actNum, postTweet) {
     // Generate act text
     const actText = await generateActText(
       actNum,
-      actRecord?.act_name || ['', 'The Call', 'The March', 'The Storm', 'The Reckoning'][actNum],
+      actRecord?.act_name ||
+        ['', 'The Call', 'The March', 'The Storm', 'The Reckoning'][actNum],
       gameState,
       namedHandles,
       raid.narrative_title || 'Chronicles of Nethara',
@@ -507,18 +587,21 @@ async function fireAct(actNum, postTweet) {
     console.log(`[Chronicle] Act ${actNum} posted. Tweet ID: ${tweetId}`);
 
     // Save tweet ID + generated text back to chronicle_acts
-    await supabaseAdmin
-      .from('chronicle_acts')
-      .upsert({
+    await supabaseAdmin.from('chronicle_acts').upsert(
+      {
         raid_date: raidDate,
         act_num: actNum,
-        act_name: ['', 'The Call', 'The March', 'The Storm', 'The Reckoning'][actNum],
+        act_name: ['', 'The Call', 'The March', 'The Storm', 'The Reckoning'][
+          actNum
+        ],
         tweet_id: tweetId,
         tweet_text: actText,
         status: 'complete',
         participant_count: participantCount,
         named_handles: namedHandles.join(','),
-      }, { onConflict: 'raid_date,act_num' });
+      },
+      { onConflict: 'raid_date,act_num' },
+    );
 
     // For Act 4: update raid with ending type and process final scoring
     if (actNum === 4 && endingType) {
@@ -534,7 +617,6 @@ async function fireAct(actNum, postTweet) {
     }
 
     return { tweetId, actText, namedHandles, participantCount };
-
   } catch (err) {
     console.error(`[Chronicle] fireAct ${actNum} error:`, err.message);
     throw err;
@@ -553,12 +635,18 @@ async function processAct4Bonuses(raidDate, endingType, gameState) {
 
   if (!participants || participants.length === 0) return;
 
-  const playerIds = [...new Set(participants.map(p => p.player_id))];
-  console.log(`[Chronicle] Awarding Act 4 ${endingType} bonus (${bonus}pts) to ${playerIds.length} players`);
+  const playerIds = [...new Set(participants.map((p) => p.player_id))];
+  console.log(
+    `[Chronicle] Awarding Act 4 ${endingType} bonus (${bonus}pts) to ${playerIds.length} players`,
+  );
 
   for (const pid of playerIds) {
-    await addPoints(pid, bonus, 'chronicle_ending',
-      `Chronicle ending bonus: ${endingType} (+${bonus}pts)`).catch(() => {});
+    await addPoints(
+      pid,
+      bonus,
+      'chronicle_ending',
+      `Chronicle ending bonus: ${endingType} (+${bonus}pts)`,
+    ).catch(() => {});
   }
 }
 

@@ -1,9 +1,9 @@
 /**
  * ARENA ROUTES — Nine Lives Network V5
- * 
+ *
  * API endpoints for arena deploy/withdraw/status.
  * The ArenaManager is injected from index.js.
- * 
+ *
  * Usage in server/index.js:
  *   const arenaRoutes = require('./routes/arena');
  *   arenaRoutes.setArenaManager(arenaManager);
@@ -31,7 +31,8 @@ function setSupabase(client) {
 router.get('/status/:zoneId', (req, res) => {
   try {
     const zoneId = parseInt(req.params.zoneId);
-    if (!arenaManager) return res.status(500).json({ error: 'Arena not initialized' });
+    if (!arenaManager)
+      return res.status(500).json({ error: 'Arena not initialized' });
 
     const status = arenaManager.getStatus(zoneId);
     res.json(status);
@@ -47,7 +48,8 @@ router.get('/status/:zoneId', (req, res) => {
 // ============================================
 router.get('/active', (req, res) => {
   try {
-    if (!arenaManager) return res.status(500).json({ error: 'Arena not initialized' });
+    if (!arenaManager)
+      return res.status(500).json({ error: 'Arena not initialized' });
 
     const active = arenaManager.getAllActive();
     res.json({ arenas: active });
@@ -60,7 +62,7 @@ router.get('/active', (req, res) => {
 // ============================================
 // POST /api/arena/deploy
 // Deploy a Nine to a zone with a 3-card loadout
-// 
+//
 // Body: { player_id, zone_id, card_ids: [id, id, id] }
 // ============================================
 router.post('/deploy', async (req, res) => {
@@ -68,11 +70,15 @@ router.post('/deploy', async (req, res) => {
     const { player_id, zone_id, card_ids } = req.body;
 
     if (!player_id || !zone_id || !card_ids || card_ids.length !== 3) {
-      return res.status(400).json({ error: 'Need player_id, zone_id, and exactly 3 card_ids' });
+      return res
+        .status(400)
+        .json({ error: 'Need player_id, zone_id, and exactly 3 card_ids' });
     }
 
-    if (!arenaManager) return res.status(500).json({ error: 'Arena not initialized' });
-    if (!supabase) return res.status(500).json({ error: 'Database not initialized' });
+    if (!arenaManager)
+      return res.status(500).json({ error: 'Arena not initialized' });
+    if (!supabase)
+      return res.status(500).json({ error: 'Database not initialized' });
 
     // 1. Get player data
     const { data: player, error: playerErr } = await supabase
@@ -99,7 +105,7 @@ router.post('/deploy', async (req, res) => {
 
     if (deployedZones >= maxZones) {
       return res.status(400).json({
-        error: `Max ${maxZones} zone deployments (level ${player.level}). Withdraw from a zone first.`
+        error: `Max ${maxZones} zone deployments (level ${player.level}). Withdraw from a zone first.`,
       });
     }
 
@@ -114,11 +120,12 @@ router.post('/deploy', async (req, res) => {
       if (zId === zone_id) continue;
       const nine = arena.nines.get(player_id);
       if (nine) {
-        const deployedCardIds = nine.cards.map(c => c.id);
-        const overlap = card_ids.filter(id => deployedCardIds.includes(id));
+        const deployedCardIds = nine.cards.map((c) => c.id);
+        const overlap = card_ids.filter((id) => deployedCardIds.includes(id));
         if (overlap.length > 0) {
           return res.status(400).json({
-            error: 'One or more cards are deployed on another zone. Withdraw first.'
+            error:
+              'One or more cards are deployed on another zone. Withdraw first.',
           });
         }
       }
@@ -127,19 +134,23 @@ router.post('/deploy', async (req, res) => {
     // 5. Get card data from database
     const { data: cards, error: cardErr } = await supabase
       .from('player_cards')
-      .select(`
+      .select(
+        `
         id, spell_id, sharpness,
         spells (
           id, name, house, spell_type, rarity,
           base_atk, base_hp, base_spd, base_def, base_luck,
           base_effect, bonus_effects, flavor_text, image_url
         )
-      `)
+      `,
+      )
       .in('id', card_ids)
       .eq('player_id', player_id);
 
     if (cardErr || !cards || cards.length !== 3) {
-      return res.status(400).json({ error: 'Could not find all 3 cards in your collection' });
+      return res
+        .status(400)
+        .json({ error: 'Could not find all 3 cards in your collection' });
     }
 
     // 6. Get guild data
@@ -166,7 +177,7 @@ router.post('/deploy', async (req, res) => {
       .eq('equipped', true);
 
     // 8. Format card data for arena engine
-    const formattedCards = cards.map(pc => ({
+    const formattedCards = cards.map((pc) => ({
       id: pc.id,
       name: pc.spells.name,
       house: pc.spells.house,
@@ -195,15 +206,15 @@ router.post('/deploy', async (req, res) => {
     const nine = arenaManager.deployNine(zone_id, nineData);
 
     // 10. Record deployment in database
-    await supabase
-      .from('zone_deployments')
-      .upsert({
-        player_id,
-        zone_id,
-        card_ids,
-        deployed_at: new Date().toISOString(),
-        config_locked_until: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24h lock
-      });
+    await supabase.from('zone_deployments').upsert({
+      player_id,
+      zone_id,
+      card_ids,
+      deployed_at: new Date().toISOString(),
+      config_locked_until: new Date(
+        Date.now() + 24 * 60 * 60 * 1000,
+      ).toISOString(), // 24h lock
+    });
 
     res.json({
       success: true,
@@ -218,10 +229,11 @@ router.post('/deploy', async (req, res) => {
           luck: nine.total_luck,
         },
         position: nine.position,
-        config_locked_until: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-      }
+        config_locked_until: new Date(
+          Date.now() + 24 * 60 * 60 * 1000,
+        ).toISOString(),
+      },
     });
-
   } catch (err) {
     console.error('Arena deploy error:', err);
     res.status(500).json({ error: 'Failed to deploy' });
@@ -231,7 +243,7 @@ router.post('/deploy', async (req, res) => {
 // ============================================
 // POST /api/arena/withdraw
 // Withdraw a Nine from a zone
-// 
+//
 // Body: { player_id, zone_id }
 // ============================================
 router.post('/withdraw', async (req, res) => {
@@ -242,7 +254,8 @@ router.post('/withdraw', async (req, res) => {
       return res.status(400).json({ error: 'Need player_id and zone_id' });
     }
 
-    if (!arenaManager) return res.status(500).json({ error: 'Arena not initialized' });
+    if (!arenaManager)
+      return res.status(500).json({ error: 'Arena not initialized' });
 
     // Withdraw from arena
     arenaManager.withdrawNine(zone_id, player_id);
@@ -257,7 +270,6 @@ router.post('/withdraw', async (req, res) => {
     }
 
     res.json({ success: true, message: `Withdrawn from zone ${zone_id}` });
-
   } catch (err) {
     console.error('Arena withdraw error:', err);
     res.status(500).json({ error: 'Failed to withdraw' });
@@ -271,7 +283,8 @@ router.post('/withdraw', async (req, res) => {
 router.get('/deployments/:playerId', (req, res) => {
   try {
     const playerId = req.params.playerId;
-    if (!arenaManager) return res.status(500).json({ error: 'Arena not initialized' });
+    if (!arenaManager)
+      return res.status(500).json({ error: 'Arena not initialized' });
 
     const deployments = [];
     for (const [zoneId, arena] of arenaManager.arenas) {
@@ -286,7 +299,7 @@ router.get('/deployments/:playerId', (req, res) => {
             def: nine.total_def,
             luck: nine.total_luck,
           },
-          cards: nine.cards.map(c => ({
+          cards: nine.cards.map((c) => ({
             name: c.name,
             sharpness: c.sharpness,
           })),
@@ -298,7 +311,6 @@ router.get('/deployments/:playerId', (req, res) => {
     }
 
     res.json({ deployments });
-
   } catch (err) {
     console.error('Arena deployments error:', err);
     res.status(500).json({ error: 'Failed to get deployments' });

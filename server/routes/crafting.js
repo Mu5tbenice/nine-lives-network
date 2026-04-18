@@ -12,7 +12,8 @@ const craftingEngine = require('../services/craftingEngine');
 router.post('/fuse', async (req, res) => {
   try {
     const { player_id, card_ids } = req.body;
-    if (!player_id || !card_ids) return res.status(400).json({ error: 'player_id and card_ids required' });
+    if (!player_id || !card_ids)
+      return res.status(400).json({ error: 'player_id and card_ids required' });
     const result = await craftingEngine.fuseCards(player_id, card_ids);
     res.json(result);
   } catch (err) {
@@ -27,9 +28,15 @@ router.post('/recharge', async (req, res) => {
   try {
     const { player_id, target_card_id, fuel_card_ids } = req.body;
     if (!player_id || !target_card_id || !fuel_card_ids) {
-      return res.status(400).json({ error: 'player_id, target_card_id, and fuel_card_ids required' });
+      return res.status(400).json({
+        error: 'player_id, target_card_id, and fuel_card_ids required',
+      });
     }
-    const result = await craftingEngine.rechargeCard(player_id, target_card_id, fuel_card_ids);
+    const result = await craftingEngine.rechargeCard(
+      player_id,
+      target_card_id,
+      fuel_card_ids,
+    );
     res.json(result);
   } catch (err) {
     console.error('Recharge error:', err);
@@ -40,7 +47,9 @@ router.post('/recharge', async (req, res) => {
 // GET /api/crafting/fuseable/:playerId — What can be fused
 router.get('/fuseable/:playerId', async (req, res) => {
   try {
-    const result = await craftingEngine.getCanFuse(parseInt(req.params.playerId));
+    const result = await craftingEngine.getCanFuse(
+      parseInt(req.params.playerId),
+    );
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });
@@ -50,7 +59,9 @@ router.get('/fuseable/:playerId', async (req, res) => {
 // GET /api/crafting/rechargeable/:playerId — What needs recharging
 router.get('/rechargeable/:playerId', async (req, res) => {
   try {
-    const result = await craftingEngine.getCanRecharge(parseInt(req.params.playerId));
+    const result = await craftingEngine.getCanRecharge(
+      parseInt(req.params.playerId),
+    );
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });

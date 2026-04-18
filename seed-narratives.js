@@ -15,7 +15,12 @@ async function seed() {
       tweet_2_prompt: n.tweet_2_prompt,
       tweet_3_prompt: n.tweet_3_prompt,
       tweet_4_prompt: n.tweet_4_prompt,
-      images: n.images || [`${n.id}.1.png`, `${n.id}.2.png`, `${n.id}.3.png`, `${n.id}.4.png`],
+      images: n.images || [
+        `${n.id}.1.png`,
+        `${n.id}.2.png`,
+        `${n.id}.3.png`,
+        `${n.id}.4.png`,
+      ],
     };
 
     const { error } = await supabase
@@ -39,4 +44,7 @@ async function seed() {
   process.exit(0);
 }
 
-seed().catch(err => { console.error('Fatal:', err); process.exit(1); });
+seed().catch((err) => {
+  console.error('Fatal:', err);
+  process.exit(1);
+});

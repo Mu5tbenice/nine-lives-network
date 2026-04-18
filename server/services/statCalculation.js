@@ -31,7 +31,10 @@ function calculateAttackInterval(totalSpd) {
  */
 function calculateDamage(attackerAtk, defenderDef) {
   if (attackerAtk + defenderDef <= 0) return 1;
-  return Math.max(1, Math.floor((attackerAtk * attackerAtk) / (attackerAtk + defenderDef)));
+  return Math.max(
+    1,
+    Math.floor((attackerAtk * attackerAtk) / (attackerAtk + defenderDef)),
+  );
 }
 
 /**
@@ -42,7 +45,7 @@ function calculateDamage(attackerAtk, defenderDef) {
  * @returns {boolean} true if crit
  */
 function rollCrit(totalLuck) {
-  return Math.random() < (totalLuck / 100);
+  return Math.random() < totalLuck / 100;
 }
 
 // ─── SHARPNESS ─────────────────────────────────────────
@@ -73,7 +76,6 @@ function applySharpness(baseStat, sharpness) {
  * @returns {object} { atk, hp, spd, def, luck, breakdown, attackInterval, cards, items }
  */
 async function calculateNineStats(playerId, zoneId) {
-
   // ── 1. Get the player's Nine and house ──
   const { data: player, error: playerErr } = await supabase
     .from('players')
@@ -106,7 +108,13 @@ async function calculateNineStats(playerId, zoneId) {
 
   // Track breakdown for UI display
   const breakdown = {
-    house: { atk: house.atk, hp: house.hp, spd: house.spd, def: house.def, luck: house.luck },
+    house: {
+      atk: house.atk,
+      hp: house.hp,
+      spd: house.spd,
+      def: house.def,
+      luck: house.luck,
+    },
     cards: [],
     items: [],
   };
@@ -134,19 +142,21 @@ async function calculateNineStats(playerId, zoneId) {
         .order('slot_number');
 
       if (slots && slots.length > 0) {
-        const cardIds = slots.map(s => s.card_id).filter(Boolean);
+        const cardIds = slots.map((s) => s.card_id).filter(Boolean);
 
         if (cardIds.length > 0) {
           // Get the actual card instances from player_spells (inventory)
           const { data: cards } = await supabase
             .from('player_spells')
-            .select('id, spell_id, sharpness, spells(id, name, house, spell_type, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects, stat_pattern)')
+            .select(
+              'id, spell_id, sharpness, spells(id, name, house, spell_type, base_atk, base_hp, base_spd, base_def, base_luck, bonus_effects, stat_pattern)',
+            )
             .in('id', cardIds);
 
           if (cards) {
             cardDetails = cards;
 
-            cards.forEach(card => {
+            cards.forEach((card) => {
               const spell = card.spells;
               if (!spell) return;
 
@@ -184,29 +194,40 @@ async function calculateNineStats(playerId, zoneId) {
   // Items are stored as slugs in player_nines.equipped_* columns (set by builder)
   const { data: nine, error: nineErr } = await supabase
     .from('player_nines')
-    .select('equipped_fur, equipped_expression, equipped_headwear, equipped_outfit, equipped_weapon, equipped_familiar, equipped_trinket_1, equipped_trinket_2')
+    .select(
+      'equipped_fur, equipped_expression, equipped_headwear, equipped_outfit, equipped_weapon, equipped_familiar, equipped_trinket_1, equipped_trinket_2',
+    )
     .eq('player_id', playerId)
     .single();
 
   let equippedItems = [];
   if (nine && !nineErr) {
     const slugs = [
-      nine.equipped_fur, nine.equipped_expression, nine.equipped_headwear,
-      nine.equipped_outfit, nine.equipped_weapon, nine.equipped_familiar,
-      nine.equipped_trinket_1, nine.equipped_trinket_2
-    ].filter(Boolean).filter(s => s !== 'none');
+      nine.equipped_fur,
+      nine.equipped_expression,
+      nine.equipped_headwear,
+      nine.equipped_outfit,
+      nine.equipped_weapon,
+      nine.equipped_familiar,
+      nine.equipped_trinket_1,
+      nine.equipped_trinket_2,
+    ]
+      .filter(Boolean)
+      .filter((s) => s !== 'none');
 
     if (slugs.length > 0) {
       const { data: items } = await supabase
         .from('items')
-        .select('id, name, slug, slot, rarity, bonus_atk, bonus_hp, bonus_spd, bonus_def, bonus_luck')
+        .select(
+          'id, name, slug, slot, rarity, bonus_atk, bonus_hp, bonus_spd, bonus_def, bonus_luck',
+        )
         .in('slug', slugs);
       equippedItems = items || [];
     }
   }
 
   if (equippedItems.length > 0) {
-    equippedItems.forEach(item => {
+    equippedItems.forEach((item) => {
       if (!item) return;
 
       const itemStats = {
@@ -258,7 +279,6 @@ async function calculateNineStats(playerId, zoneId) {
   };
 }
 
-
 /**
  * Quick version: calculate stats without zone cards (for profile display)
  * Just house + items
@@ -268,7 +288,6 @@ async function calculateNineStats(playerId, zoneId) {
 async function calculateBaseStats(playerId) {
   return calculateNineStats(playerId, null);
 }
-
 
 // ─── EXPORTS ───────────────────────────────────────────
 

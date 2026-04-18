@@ -22,22 +22,22 @@ const { supabaseAdmin } = require('../config/supabase');
 const MAX_TICKETS_PER_DAY = 6;
 
 const DROP_TABLE = [
-  { type: 'nothing',        weight: 35, label: 'Nothing' },
-  { type: 'bonus_card',     weight: 30, label: 'Bonus Card' },
+  { type: 'nothing', weight: 35, label: 'Nothing' },
+  { type: 'bonus_card', weight: 30, label: 'Bonus Card' },
   { type: 'sharpening_kit', weight: 15, label: 'Sharpening Kit' },
-  { type: 'item_fragment',  weight: 10, label: 'Item Fragment' },
-  { type: 'rare_card',      weight: 7,  label: 'Rare+ Card' },
-  { type: 'epic_card',      weight: 3,  label: 'Epic+ Card' },
+  { type: 'item_fragment', weight: 10, label: 'Item Fragment' },
+  { type: 'rare_card', weight: 7, label: 'Rare+ Card' },
+  { type: 'epic_card', weight: 3, label: 'Epic+ Card' },
 ];
 
 const TOTAL_WEIGHT = DROP_TABLE.reduce((sum, d) => sum + d.weight, 0);
 
 // Rarity weights for bonus cards
 const CARD_RARITY_WEIGHTS = [
-  { rarity: 'common',    weight: 40 },
-  { rarity: 'uncommon',  weight: 30 },
-  { rarity: 'rare',      weight: 20 },
-  { rarity: 'epic',      weight: 8 },
+  { rarity: 'common', weight: 40 },
+  { rarity: 'uncommon', weight: 30 },
+  { rarity: 'rare', weight: 20 },
+  { rarity: 'epic', weight: 8 },
   { rarity: 'legendary', weight: 2 },
 ];
 
@@ -50,7 +50,7 @@ const RARITY_TOTAL = CARD_RARITY_WEIGHTS.reduce((sum, r) => sum + r.weight, 0);
 /**
  * Earn a drop ticket for a player today.
  * Called when: Chronicle reply scored, RT detected, daily login.
- * 
+ *
  * @param {number} playerId
  * @param {string} source - 'chronicle_reply', 'chronicle_rt', 'daily_login'
  * @returns {object} { success, tickets_today, maxed_out }
@@ -110,7 +110,11 @@ async function earnTicket(playerId, source) {
 
     // Check if already at max
     if (ticket.tickets_earned >= MAX_TICKETS_PER_DAY) {
-      return { success: true, tickets_today: ticket.tickets_earned, maxed_out: true };
+      return {
+        success: true,
+        tickets_today: ticket.tickets_earned,
+        maxed_out: true,
+      };
     }
 
     // Increment
@@ -160,10 +164,12 @@ async function getTicketStatus(playerId) {
       max_tickets: MAX_TICKETS_PER_DAY,
       rolled: todayData?.rolled || false,
     },
-    yesterday: yesterdayData?.rolled ? {
-      tickets_rolled: yesterdayData.tickets_earned,
-      results: yesterdayData.results || [],
-    } : null,
+    yesterday: yesterdayData?.rolled
+      ? {
+          tickets_rolled: yesterdayData.tickets_earned,
+          results: yesterdayData.results || [],
+        }
+      : null,
   };
 }
 
@@ -201,7 +207,10 @@ async function processAllTickets() {
 
   for (const ticket of tickets) {
     try {
-      const results = await rollTickets(ticket.player_id, ticket.tickets_earned);
+      const results = await rollTickets(
+        ticket.player_id,
+        ticket.tickets_earned,
+      );
 
       // Mark as rolled
       await supabaseAdmin
@@ -219,11 +228,16 @@ async function processAllTickets() {
 
       totalProcessed++;
     } catch (err) {
-      console.error(`[DropTickets] Roll error for player ${ticket.player_id}:`, err.message);
+      console.error(
+        `[DropTickets] Roll error for player ${ticket.player_id}:`,
+        err.message,
+      );
     }
   }
 
-  console.log(`[DropTickets] Processed ${totalProcessed} players: ${totalRewards.cards} cards, ${totalRewards.kits} kits, ${totalRewards.fragments} frags, ${totalRewards.nothing} nothing`);
+  console.log(
+    `[DropTickets] Processed ${totalProcessed} players: ${totalRewards.cards} cards, ${totalRewards.kits} kits, ${totalRewards.fragments} frags, ${totalRewards.nothing} nothing`,
+  );
   return { processed: totalProcessed, rewards: totalRewards };
 }
 
@@ -260,7 +274,11 @@ function rollDrop() {
 async function awardDrop(playerId, drop) {
   switch (drop.type) {
     case 'nothing':
-      return { type: 'nothing', label: 'Nothing', detail: 'Better luck tomorrow!' };
+      return {
+        type: 'nothing',
+        label: 'Nothing',
+        detail: 'Better luck tomorrow!',
+      };
 
     case 'bonus_card':
       return await awardRandomCard(playerId, 'any');
@@ -295,7 +313,11 @@ async function awardRandomCard(playerId, tier) {
       .limit(100);
 
     if (!spells || spells.length === 0) {
-      return { type: 'bonus_card', label: 'Bonus Card', detail: 'No spells available' };
+      return {
+        type: 'bonus_card',
+        label: 'Bonus Card',
+        detail: 'No spells available',
+      };
     }
 
     const spell = spells[Math.floor(Math.random() * spells.length)];
@@ -314,7 +336,10 @@ async function awardRandomCard(playerId, tier) {
       let roll = Math.random() * RARITY_TOTAL;
       for (const entry of CARD_RARITY_WEIGHTS) {
         roll -= entry.weight;
-        if (roll <= 0) { rarity = entry.rarity; break; }
+        if (roll <= 0) {
+          rarity = entry.rarity;
+          break;
+        }
       }
       if (!rarity) rarity = 'common';
     }
@@ -335,12 +360,25 @@ async function awardRandomCard(playerId, tier) {
 
     if (insertErr) {
       console.error('[DropTickets] Card insert error:', insertErr.message);
-      return { type: 'bonus_card', label: 'Bonus Card', detail: 'Award failed' };
+      return {
+        type: 'bonus_card',
+        label: 'Bonus Card',
+        detail: 'Award failed',
+      };
     }
 
-    const labelMap = { any: 'Bonus Card', rare_plus: 'Rare+ Card', epic_plus: 'Epic+ Card' };
+    const labelMap = {
+      any: 'Bonus Card',
+      rare_plus: 'Rare+ Card',
+      epic_plus: 'Epic+ Card',
+    };
     return {
-      type: tier === 'epic_plus' ? 'epic_card' : tier === 'rare_plus' ? 'rare_card' : 'bonus_card',
+      type:
+        tier === 'epic_plus'
+          ? 'epic_card'
+          : tier === 'rare_plus'
+            ? 'rare_card'
+            : 'bonus_card',
       label: labelMap[tier] || 'Bonus Card',
       detail: `${rarity.charAt(0).toUpperCase() + rarity.slice(1)} ${spell.name}`,
       rarity,
@@ -357,29 +395,39 @@ async function awardRandomCard(playerId, tier) {
  */
 async function awardSharpeningKit(playerId) {
   try {
-    await supabaseAdmin.rpc('increment_column', {
-      table_name: 'player_levels',
-      column_name: 'sharpening_kits',
-      row_id: playerId,
-      amount: 1,
-    }).catch(async () => {
-      // Fallback if RPC doesn't exist
-      const { data } = await supabaseAdmin
-        .from('player_levels')
-        .select('sharpening_kits')
-        .eq('player_id', playerId)
-        .single();
+    await supabaseAdmin
+      .rpc('increment_column', {
+        table_name: 'player_levels',
+        column_name: 'sharpening_kits',
+        row_id: playerId,
+        amount: 1,
+      })
+      .catch(async () => {
+        // Fallback if RPC doesn't exist
+        const { data } = await supabaseAdmin
+          .from('player_levels')
+          .select('sharpening_kits')
+          .eq('player_id', playerId)
+          .single();
 
-      await supabaseAdmin
-        .from('player_levels')
-        .update({ sharpening_kits: (data?.sharpening_kits || 0) + 1 })
-        .eq('player_id', playerId);
-    });
+        await supabaseAdmin
+          .from('player_levels')
+          .update({ sharpening_kits: (data?.sharpening_kits || 0) + 1 })
+          .eq('player_id', playerId);
+      });
 
-    return { type: 'sharpening_kit', label: 'Sharpening Kit', detail: 'Restores 50% sharpness on any card' };
+    return {
+      type: 'sharpening_kit',
+      label: 'Sharpening Kit',
+      detail: 'Restores 50% sharpness on any card',
+    };
   } catch (err) {
     console.error('[DropTickets] Kit error:', err.message);
-    return { type: 'sharpening_kit', label: 'Sharpening Kit', detail: 'Award failed' };
+    return {
+      type: 'sharpening_kit',
+      label: 'Sharpening Kit',
+      detail: 'Award failed',
+    };
   }
 }
 
@@ -428,7 +476,11 @@ async function awardItemFragment(playerId) {
     }
   } catch (err) {
     console.error('[DropTickets] Fragment error:', err.message);
-    return { type: 'item_fragment', label: 'Item Fragment', detail: 'Award failed' };
+    return {
+      type: 'item_fragment',
+      label: 'Item Fragment',
+      detail: 'Award failed',
+    };
   }
 }
 
@@ -446,13 +498,11 @@ async function awardRandomItem(playerId) {
 
     const item = items[Math.floor(Math.random() * items.length)];
 
-    await supabaseAdmin
-      .from('player_items')
-      .insert({
-        player_id: playerId,
-        item_id: item.id,
-        equipped: false,
-      });
+    await supabaseAdmin.from('player_items').insert({
+      player_id: playerId,
+      item_id: item.id,
+      equipped: false,
+    });
 
     return item;
   } catch (err) {
@@ -510,7 +560,11 @@ async function useSharpeningKit(playerId, cardId) {
       .update({ sharpening_kits: levelData.sharpening_kits - 1 })
       .eq('player_id', playerId);
 
-    return { success: true, new_sharpness: newSharpness, kits_remaining: levelData.sharpening_kits - 1 };
+    return {
+      success: true,
+      new_sharpness: newSharpness,
+      kits_remaining: levelData.sharpening_kits - 1,
+    };
   } catch (err) {
     console.error('[DropTickets] useSharpeningKit error:', err.message);
     return { success: false, error: err.message };

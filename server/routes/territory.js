@@ -9,7 +9,7 @@ const scoringV2 = require('../services/scoringV2');
 // Admin client for writes
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
 // ═══════════════════════════════════════════
@@ -30,8 +30,14 @@ router.post('/action', async (req, res) => {
     }
 
     // If no card_id AND no card_index AND no valid action_type, reject
-    if (card_id === undefined && card_index === undefined && !['attack', 'defend'].includes(action_type)) {
-      return res.status(400).json({ error: 'Need card_id, action_type (attack/defend), or card_index' });
+    if (
+      card_id === undefined &&
+      card_index === undefined &&
+      !['attack', 'defend'].includes(action_type)
+    ) {
+      return res.status(400).json({
+        error: 'Need card_id, action_type (attack/defend), or card_index',
+      });
     }
 
     // Get player
@@ -46,7 +52,9 @@ router.post('/action', async (req, res) => {
     }
 
     if (player.mana < 1) {
-      return res.status(400).json({ error: 'Not enough mana', mana_remaining: 0 });
+      return res
+        .status(400)
+        .json({ error: 'Not enough mana', mana_remaining: 0 });
     }
 
     // Get zone
@@ -71,7 +79,9 @@ router.post('/action', async (req, res) => {
       .single();
 
     if (existingAction) {
-      return res.status(400).json({ error: 'Already acted on this zone today' });
+      return res
+        .status(400)
+        .json({ error: 'Already acted on this zone today' });
     }
 
     // ─── DETERMINE CARD ───
@@ -87,12 +97,16 @@ router.post('/action', async (req, res) => {
         .single();
 
       if (cardErr || !playerCard) {
-        return res.status(400).json({ error: 'Card not found or already used' });
+        return res
+          .status(400)
+          .json({ error: 'Card not found or already used' });
       }
 
       // V3: Check if card is exhausted
       if (playerCard.is_exhausted) {
-        return res.status(400).json({ error: 'Card is exhausted — recharge it first' });
+        return res
+          .status(400)
+          .json({ error: 'Card is exhausted — recharge it first' });
       }
 
       card = {
@@ -107,7 +121,10 @@ router.post('/action', async (req, res) => {
       };
     } else if (card_index !== undefined && card_index !== null) {
       // ── LEGACY: Card from daily hand (backward compat) ──
-      const handResult = await packSystem.useCardFromHand(player_id, parseInt(card_index));
+      const handResult = await packSystem.useCardFromHand(
+        player_id,
+        parseInt(card_index),
+      );
       if (!handResult.success) {
         return res.status(400).json({ error: handResult.error });
       }
@@ -129,7 +146,11 @@ router.post('/action', async (req, res) => {
     const manaCost = card.cost || 1;
     if (player.mana < manaCost) {
       return res.status(400).json({
-        error: 'Not enough mana. Card costs ' + manaCost + ' MP, you have ' + player.mana,
+        error:
+          'Not enough mana. Card costs ' +
+          manaCost +
+          ' MP, you have ' +
+          player.mana,
         mana_remaining: player.mana,
       });
     }
@@ -145,7 +166,10 @@ router.post('/action', async (req, res) => {
 
     try {
       effectResult = await effectEngine.processEffects(
-        card, zone_id, player_id, player.school_id
+        card,
+        zone_id,
+        player_id,
+        player.school_id,
       );
     } catch (effErr) {
       console.error('Effect processing error (continuing):', effErr.message);
@@ -153,7 +177,10 @@ router.post('/action', async (req, res) => {
 
     // ─── CALCULATE SCORE ───
     const scoreResult = await scoringV2.calculateTerritoryCast(
-      card, player.school_id, zone_id, effectResult
+      card,
+      player.school_id,
+      zone_id,
+      effectResult,
     );
 
     // Zone multipliers
@@ -165,7 +192,10 @@ router.post('/action', async (req, res) => {
     const finalPower = Math.round(scoreResult.totalPower * multiplier);
 
     // ─── DEDUCT MANA (minus any HASTE refund) ───
-    const actualManaCost = Math.max(0, manaCost - (effectResult.manaRefund || 0));
+    const actualManaCost = Math.max(
+      0,
+      manaCost - (effectResult.manaRefund || 0),
+    );
     const newMana = player.mana - actualManaCost;
 
     // Deduct mana
@@ -182,7 +212,7 @@ router.post('/action', async (req, res) => {
       action_type: card.type || action_type || 'attack',
       power_contributed: finalPower,
       source: 'website',
-      guild_tag: player.guild_tag || null,  // V3: renamed from community_tag
+      guild_tag: player.guild_tag || null, // V3: renamed from community_tag
       game_day: today,
       points_earned: finalPoints,
     };
@@ -207,7 +237,10 @@ router.post('/action', async (req, res) => {
 
     if (actionError) {
       // Refund mana on failure
-      await supabaseAdmin.from('players').update({ mana: player.mana }).eq('id', player_id);
+      await supabaseAdmin
+        .from('players')
+        .update({ mana: player.mana })
+        .eq('id', player_id);
       console.error('Territory action insert error:', actionError);
       return res.status(500).json({ error: 'Failed to record action' });
     }
@@ -242,8 +275,10 @@ router.post('/action', async (req, res) => {
       await supabaseAdmin
         .from('players')
         .update({
-          seasonal_points: (player.seasonal_points || 0) + finalPoints + allManaBonus,
-          lifetime_points: (player.lifetime_points || 0) + finalPoints + allManaBonus,
+          seasonal_points:
+            (player.seasonal_points || 0) + finalPoints + allManaBonus,
+          lifetime_points:
+            (player.lifetime_points || 0) + finalPoints + allManaBonus,
         })
         .eq('id', player_id);
 
@@ -254,26 +289,43 @@ router.post('/action', async (req, res) => {
           .update({ all_mana_spent: true })
           .eq('player_id', player_id)
           .eq('game_day', today);
-      } catch (e) { /* daily_hands might not exist yet */ }
+      } catch (e) {
+        /* daily_hands might not exist yet */
+      }
     }
 
     // ─── UPDATE ZONE INFLUENCE ───
-    await updateZoneInfluence(zone_id, player.school_id, card.type || action_type || 'attack', player.guild_tag);
+    await updateZoneInfluence(
+      zone_id,
+      player.school_id,
+      card.type || action_type || 'attack',
+      player.guild_tag,
+    );
 
     // ─── CHECK COMBOS ───
     let combos = [];
     try {
       combos = await scoringV2.checkCombos(zone_id, player.school_id, today);
-    } catch (e) { /* non-critical */ }
+    } catch (e) {
+      /* non-critical */
+    }
 
     // ─── BUILD MESSAGE ───
     let message = card.name + ' cast! +' + totalPointsAwarded + ' pts';
     if (card.rarity && card.rarity !== 'common') {
-      message = card.rarity.charAt(0).toUpperCase() + card.rarity.slice(1) + ' ' + message;
+      message =
+        card.rarity.charAt(0).toUpperCase() +
+        card.rarity.slice(1) +
+        ' ' +
+        message;
     }
-    var appliedEffects = effectResult.effectsApplied.filter(function(e) { return e.status === 'APPLIED'; });
-    if (appliedEffects.length > 0) message += ' — ' + appliedEffects.length + ' effect(s)!';
-    if (allManaBonus > 0) message += ' 🔥 All mana bonus +' + allManaBonus + '!';
+    var appliedEffects = effectResult.effectsApplied.filter(function (e) {
+      return e.status === 'APPLIED';
+    });
+    if (appliedEffects.length > 0)
+      message += ' — ' + appliedEffects.length + ' effect(s)!';
+    if (allManaBonus > 0)
+      message += ' 🔥 All mana bonus +' + allManaBonus + '!';
     if (combos.length > 0) message += ' ✨ ' + combos[0].label + '!';
 
     // ─── RESPOND ───
@@ -307,7 +359,6 @@ router.post('/action', async (req, res) => {
       combos: combos,
       influence_power: finalPower,
     });
-
   } catch (error) {
     console.error('Territory action error:', error.message, error.stack);
     res.status(500).json({ error: 'Server error: ' + error.message });
@@ -336,14 +387,13 @@ router.get('/actions/today', async (req, res) => {
 
     var byZone = {};
     if (actions) {
-      actions.forEach(function(a) {
+      actions.forEach(function (a) {
         if (!byZone[a.zone_id]) byZone[a.zone_id] = [];
         byZone[a.zone_id].push(a);
       });
     }
 
     res.json(byZone);
-
   } catch (error) {
     console.error('Territory actions error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -371,27 +421,30 @@ router.get('/influence', async (req, res) => {
 
     var zones = {};
     if (actions) {
-      actions.forEach(function(a) {
+      actions.forEach(function (a) {
         if (!zones[a.zone_id]) zones[a.zone_id] = {};
         if (!zones[a.zone_id][a.school_id]) zones[a.zone_id][a.school_id] = 0;
-        zones[a.zone_id][a.school_id] += (a.action_type === 'attack' ? 2 : 1);
+        zones[a.zone_id][a.school_id] += a.action_type === 'attack' ? 2 : 1;
       });
     }
 
     var result = {};
-    Object.keys(zones).forEach(function(zoneId) {
+    Object.keys(zones).forEach(function (zoneId) {
       var schools = zones[zoneId];
       var total = 0;
-      Object.values(schools).forEach(function(v) { total += v; });
+      Object.values(schools).forEach(function (v) {
+        total += v;
+      });
 
       result[zoneId] = {};
-      Object.keys(schools).forEach(function(schoolId) {
-        result[zoneId][schoolId] = Math.round((schools[schoolId] / total) * 100);
+      Object.keys(schools).forEach(function (schoolId) {
+        result[zoneId][schoolId] = Math.round(
+          (schools[schoolId] / total) * 100,
+        );
       });
     });
 
     res.json(result);
-
   } catch (error) {
     console.error('Influence error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -430,16 +483,19 @@ router.get('/zone/:id', async (req, res) => {
     var influence = {};
     var totalPower = 0;
     if (actions) {
-      actions.forEach(function(a) {
+      actions.forEach(function (a) {
         if (!influence[a.school_id]) influence[a.school_id] = 0;
-        influence[a.school_id] += (a.action_type === 'attack' ? 2 : 1);
-        totalPower += (a.action_type === 'attack' ? 2 : 1);
+        influence[a.school_id] += a.action_type === 'attack' ? 2 : 1;
+        totalPower += a.action_type === 'attack' ? 2 : 1;
       });
     }
 
     var influencePct = {};
-    Object.keys(influence).forEach(function(schoolId) {
-      influencePct[schoolId] = totalPower > 0 ? Math.round((influence[schoolId] / totalPower) * 100) : 0;
+    Object.keys(influence).forEach(function (schoolId) {
+      influencePct[schoolId] =
+        totalPower > 0
+          ? Math.round((influence[schoolId] / totalPower) * 100)
+          : 0;
     });
 
     res.json({
@@ -447,9 +503,8 @@ router.get('/zone/:id', async (req, res) => {
       actions: actions || [],
       influence: influencePct,
       total_actions: (actions || []).length,
-      total_power: totalPower
+      total_power: totalPower,
     });
-
   } catch (error) {
     console.error('Zone detail error:', error);
     res.status(500).json({ error: 'Server error' });
@@ -477,13 +532,11 @@ async function updateZoneInfluence(zoneId, schoolId, actionType, guildTag) {
         .update({ control_percentage: existing.control_percentage + power })
         .eq('id', existing.id);
     } else {
-      await supabaseAdmin
-        .from('zone_control')
-        .insert({
-          zone_id: zoneId,
-          school_id: schoolId,
-          control_percentage: power
-        });
+      await supabaseAdmin.from('zone_control').insert({
+        zone_id: zoneId,
+        school_id: schoolId,
+        control_percentage: power,
+      });
     }
     // Also update guild influence (V3: renamed from community)
     if (guildTag) {
@@ -498,16 +551,17 @@ async function updateZoneInfluence(zoneId, schoolId, actionType, guildTag) {
         if (existingGuild) {
           await supabaseAdmin
             .from('zone_guild_control')
-            .update({ control_percentage: existingGuild.control_percentage + power, updated_at: new Date().toISOString() })
+            .update({
+              control_percentage: existingGuild.control_percentage + power,
+              updated_at: new Date().toISOString(),
+            })
             .eq('id', existingGuild.id);
         } else {
-          await supabaseAdmin
-            .from('zone_guild_control')
-            .insert({
-              zone_id: zoneId,
-              guild_tag: guildTag,
-              control_percentage: power
-            });
+          await supabaseAdmin.from('zone_guild_control').insert({
+            zone_id: zoneId,
+            guild_tag: guildTag,
+            control_percentage: power,
+          });
         }
       } catch (commErr) {
         console.error('Guild influence update error:', commErr.message);

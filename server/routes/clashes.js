@@ -49,11 +49,11 @@ router.post('/', requireAdmin, async (req, res) => {
     const { data, error } = await supabase
       .from('community_clashes')
       .insert({
-        team_a: team_a,   // { tag, color, points }
-        team_b: team_b,   // { tag, color, points }
+        team_a: team_a, // { tag, color, points }
+        team_b: team_b, // { tag, color, points }
         zone_id: zone_id || null,
         ends_at: ends_at || null,
-        is_active: true
+        is_active: true,
       })
       .select()
       .single();
@@ -70,7 +70,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
     const id = parseInt(req.params.id);
     const updates = {};
     const allowed = ['team_a', 'team_b', 'zone_id', 'ends_at', 'is_active'];
-    allowed.forEach(field => {
+    allowed.forEach((field) => {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
     });
     const { data, error } = await supabase

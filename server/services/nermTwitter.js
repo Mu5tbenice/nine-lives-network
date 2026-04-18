@@ -10,12 +10,16 @@
 // 5. Runs on a 30-min poll (Replit-safe, no webhooks needed)
 // ═══════════════════════════════════════════════════════════════
 
-const { askNerm, rateChronicleReply, getPlayerContext } = require('./nermBrain');
+const {
+  askNerm,
+  rateChronicleReply,
+  getPlayerContext,
+} = require('./nermBrain');
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
 // Twitter API v2 credentials from env
@@ -46,16 +50,24 @@ function getTwitterClient() {
       oauth_version: '1.0',
     };
     const allParams = { ...params, ...oauthParams };
-    const paramStr = Object.keys(allParams).sort()
-      .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(allParams[k])}`)
+    const paramStr = Object.keys(allParams)
+      .sort()
+      .map(
+        (k) => `${encodeURIComponent(k)}=${encodeURIComponent(allParams[k])}`,
+      )
       .join('&');
     const base = `${method}&${encodeURIComponent(url)}&${encodeURIComponent(paramStr)}`;
     const sigKey = `${encodeURIComponent(TWITTER_API_SECRET)}&${encodeURIComponent(TWITTER_ACCESS_SECRET)}`;
     const sig = crypto.createHmac('sha1', sigKey).update(base).digest('base64');
     oauthParams.oauth_signature = sig;
-    const header = 'OAuth ' + Object.keys(oauthParams)
-      .map(k => `${encodeURIComponent(k)}="${encodeURIComponent(oauthParams[k])}"`)
-      .join(', ');
+    const header =
+      'OAuth ' +
+      Object.keys(oauthParams)
+        .map(
+          (k) =>
+            `${encodeURIComponent(k)}="${encodeURIComponent(oauthParams[k])}"`,
+        )
+        .join(', ');
     return header;
   }
 
@@ -86,7 +98,7 @@ function getTwitterClient() {
       method: 'POST',
       headers: { Authorization: auth, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-    }).catch(e => console.warn('[Nerm Twitter] Like failed:', e.message));
+    }).catch((e) => console.warn('[Nerm Twitter] Like failed:', e.message));
   }
 
   async function searchRecent(query, params = {}) {
@@ -94,7 +106,10 @@ function getTwitterClient() {
     if (!bearer) return null;
     const url = new URL('https://api.twitter.com/2/tweets/search/recent');
     url.searchParams.set('query', query);
-    url.searchParams.set('tweet.fields', 'author_id,text,public_metrics,conversation_id,created_at');
+    url.searchParams.set(
+      'tweet.fields',
+      'author_id,text,public_metrics,conversation_id,created_at',
+    );
     url.searchParams.set('user.fields', 'username');
     url.searchParams.set('expansions', 'author_id');
     url.searchParams.set('max_results', '20');
@@ -122,11 +137,17 @@ async function hasSeen(tweetId) {
 }
 
 async function markSeen(tweetId, type = 'mention') {
-  await supabaseAdmin.from('nerm_seen_tweets').upsert({
-    tweet_id: tweetId,
-    seen_at: new Date().toISOString(),
-    type,
-  }, { onConflict: 'tweet_id' }).catch(() => {});
+  await supabaseAdmin
+    .from('nerm_seen_tweets')
+    .upsert(
+      {
+        tweet_id: tweetId,
+        seen_at: new Date().toISOString(),
+        type,
+      },
+      { onConflict: 'tweet_id' },
+    )
+    .catch(() => {});
 }
 
 // ── GET TODAY'S CHRONICLE TWEET IDS ──────────────────────────
@@ -168,7 +189,9 @@ async function handleChronicleReply(tweet, twitterHandle, client) {
   // Post it
   await client.postTweet(nermReply, tweet.tweet_id);
   await markSeen(tweet.tweet_id + '_nerm', 'replied');
-  console.log(`[Nerm Twitter] Replied to @${twitterHandle}: "${nermReply.slice(0, 60)}..."`);
+  console.log(
+    `[Nerm Twitter] Replied to @${twitterHandle}: "${nermReply.slice(0, 60)}..."`,
+  );
 }
 
 // ── HANDLE A DIRECT MENTION ───────────────────────────────────
@@ -190,7 +213,7 @@ async function handleMention(tweet, twitterHandle, client) {
   const nermReply = await askNerm(
     `@${twitterHandle} mentioned you on Twitter and said: "${cleanText}". Reply as Nerm in ≤240 chars. Be in-character.`,
     'twitter',
-    { twitterHandle }
+    { twitterHandle },
   );
 
   if (!nermReply) return;
@@ -207,18 +230,22 @@ async function scanAndRespondToChronicle(client) {
 
   for (const act of chronicleIds) {
     if (!act.tweet_id) continue;
-    const data = await client.searchRecent(
-      `conversation_id:${act.tweet_id} -from:9LVNetwork -from:9LV_Nerm`
-    ).catch(() => null);
+    const data = await client
+      .searchRecent(
+        `conversation_id:${act.tweet_id} -from:9LVNetwork -from:9LV_Nerm`,
+      )
+      .catch(() => null);
 
     if (!data?.data) continue;
 
     const userMap = {};
-    (data.includes?.users || []).forEach(u => { userMap[u.id] = u.username; });
+    (data.includes?.users || []).forEach((u) => {
+      userMap[u.id] = u.username;
+    });
 
     // Sort by engagement to pick best replies first
     const replies = data.data
-      .map(t => ({
+      .map((t) => ({
         tweet_id: t.id,
         text: t.text,
         author_id: t.author_id,
@@ -226,7 +253,10 @@ async function scanAndRespondToChronicle(client) {
         reply_count: t.public_metrics?.reply_count || 0,
         handle: userMap[t.author_id] || 'unknown',
       }))
-      .sort((a, b) => (b.like_count + b.reply_count * 2) - (a.like_count + a.reply_count * 2));
+      .sort(
+        (a, b) =>
+          b.like_count + b.reply_count * 2 - (a.like_count + a.reply_count * 2),
+      );
 
     // Reply to top 3 per act max (rate limit safety)
     let repliedCount = 0;
@@ -237,26 +267,30 @@ async function scanAndRespondToChronicle(client) {
       await handleChronicleReply(reply, reply.handle, client);
       repliedCount++;
       // Pause between replies to avoid rate limits
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise((r) => setTimeout(r, 2000));
     }
   }
 }
 
 // ── SCAN DIRECT MENTIONS ──────────────────────────────────────
 async function scanMentions(client) {
-  const data = await client.searchRecent(
-    '@9LVNetwork OR @9LV_Nerm -is:retweet -from:9LVNetwork -from:9LV_Nerm'
-  ).catch(() => null);
+  const data = await client
+    .searchRecent(
+      '@9LVNetwork OR @9LV_Nerm -is:retweet -from:9LVNetwork -from:9LV_Nerm',
+    )
+    .catch(() => null);
 
   if (!data?.data) return;
 
   const userMap = {};
-  (data.includes?.users || []).forEach(u => { userMap[u.id] = u.username; });
+  (data.includes?.users || []).forEach((u) => {
+    userMap[u.id] = u.username;
+  });
 
   for (const tweet of data.data) {
     const handle = userMap[tweet.author_id] || 'unknown';
     await handleMention(tweet, handle, client);
-    await new Promise(r => setTimeout(r, 1500));
+    await new Promise((r) => setTimeout(r, 1500));
   }
 }
 
@@ -279,16 +313,20 @@ async function awardRTTicket(twitterHandle, raidDate) {
     .single();
 
   if (!existing) {
-    await supabaseAdmin.from('drop_tickets').insert({
-      player_id: player.id,
-      ticket_date: raidDate,
-      tickets_earned: 1,
-      rolled: false,
-      results: null,
-    }).catch(() => {});
+    await supabaseAdmin
+      .from('drop_tickets')
+      .insert({
+        player_id: player.id,
+        ticket_date: raidDate,
+        tickets_earned: 1,
+        rolled: false,
+        results: null,
+      })
+      .catch(() => {});
   } else if ((existing.tickets_earned || 0) < 6) {
     // Max 6 tickets/day total (4 Chronicle + 1 RT + 1 login)
-    await supabaseAdmin.from('drop_tickets')
+    await supabaseAdmin
+      .from('drop_tickets')
       .update({ tickets_earned: existing.tickets_earned + 1 })
       .eq('id', existing.id)
       .catch(() => {});

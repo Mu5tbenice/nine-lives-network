@@ -4,9 +4,9 @@
  * GET /api/levels/:playerId/unlocks — what's unlocked at current level
  */
 
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const supabaseAdmin = require("../config/supabase");
+const supabaseAdmin = require('../config/supabase');
 const {
   getLevel,
   getXPForLevel,
@@ -14,33 +14,33 @@ const {
   getUnlocks,
   XP_CURVE,
   MAX_LEVEL,
-} = require("../services/xp-engine");
+} = require('../services/xp-engine');
 
 // ═══════════════════════════════════════
 // GET /api/levels/:playerId
 // Returns: xp, level, xp to next level, progress %
 // ═══════════════════════════════════════
-router.get("/:playerId", async (req, res) => {
+router.get('/:playerId', async (req, res) => {
   try {
     const playerId = parseInt(req.params.playerId);
-    if (!playerId) return res.status(400).json({ error: "Invalid player ID" });
+    if (!playerId) return res.status(400).json({ error: 'Invalid player ID' });
 
     let { data: row, error } = await supabaseAdmin
-      .from("player_levels")
-      .select("xp, level")
-      .eq("player_id", playerId)
+      .from('player_levels')
+      .select('xp, level')
+      .eq('player_id', playerId)
       .single();
 
     // If no row, create one (new player)
     if (!row) {
       const { data: newRow, error: insertErr } = await supabaseAdmin
-        .from("player_levels")
+        .from('player_levels')
         .insert({ player_id: playerId, xp: 0, level: 1 })
-        .select("xp, level")
+        .select('xp, level')
         .single();
 
       if (insertErr) {
-        return res.status(500).json({ error: "Failed to create level data" });
+        return res.status(500).json({ error: 'Failed to create level data' });
       }
       row = newRow;
     }
@@ -73,8 +73,8 @@ router.get("/:playerId", async (req, res) => {
       max_zones: getMaxZones(currentLevel),
     });
   } catch (err) {
-    console.error("[Leveling] GET error:", err.message);
-    res.status(500).json({ error: "Server error" });
+    console.error('[Leveling] GET error:', err.message);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
@@ -82,15 +82,15 @@ router.get("/:playerId", async (req, res) => {
 // GET /api/levels/:playerId/unlocks
 // Returns: unlocked zones, item slots, next unlock
 // ═══════════════════════════════════════
-router.get("/:playerId/unlocks", async (req, res) => {
+router.get('/:playerId/unlocks', async (req, res) => {
   try {
     const playerId = parseInt(req.params.playerId);
-    if (!playerId) return res.status(400).json({ error: "Invalid player ID" });
+    if (!playerId) return res.status(400).json({ error: 'Invalid player ID' });
 
     let { data: row } = await supabaseAdmin
-      .from("player_levels")
-      .select("level")
-      .eq("player_id", playerId)
+      .from('player_levels')
+      .select('level')
+      .eq('player_id', playerId)
       .single();
 
     const level = row?.level || 1;
@@ -102,8 +102,8 @@ router.get("/:playerId/unlocks", async (req, res) => {
       ...unlocks,
     });
   } catch (err) {
-    console.error("[Leveling] Unlocks error:", err.message);
-    res.status(500).json({ error: "Server error" });
+    console.error('[Leveling] Unlocks error:', err.message);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════
-// server/routes/sortingHat.js  
+// server/routes/sortingHat.js
 // Nerm judges your Twitter and picks your house
 // ═══════════════════════════════════════════
 const express = require('express');
@@ -7,15 +7,60 @@ const router = express.Router();
 const Anthropic = require('@anthropic-ai/sdk');
 
 const HOUSES = {
-  1: { name: 'Smoulders', icon: '🔥', element: 'Fire', trait: 'aggression, chaos, passion' },
-  2: { name: 'Darktide', icon: '🌊', element: 'Water', trait: 'strategy, depth, patience' },
-  3: { name: 'Stonebark', icon: '🌿', element: 'Nature', trait: 'resilience, growth, stubbornness' },
-  4: { name: 'Ashenvale', icon: '💨', element: 'Wind', trait: 'speed, wit, unpredictability' },
-  5: { name: 'Stormrage', icon: '⚡', element: 'Lightning', trait: 'boldness, intensity, main character energy' },
-  6: { name: 'Nighthollow', icon: '🌙', element: 'Shadow', trait: 'cunning, secrecy, dark humor' },
-  7: { name: 'Dawnbringer', icon: '☀️', element: 'Light', trait: 'optimism, community, hype' },
-  8: { name: 'Manastorm', icon: '🔮', element: 'Arcane', trait: 'intellect, analysis, nerdiness' },
-  9: { name: 'Plaguemire', icon: '☠️', element: 'Poison', trait: 'chaos, memes, toxicity as art form' },
+  1: {
+    name: 'Smoulders',
+    icon: '🔥',
+    element: 'Fire',
+    trait: 'aggression, chaos, passion',
+  },
+  2: {
+    name: 'Darktide',
+    icon: '🌊',
+    element: 'Water',
+    trait: 'strategy, depth, patience',
+  },
+  3: {
+    name: 'Stonebark',
+    icon: '🌿',
+    element: 'Nature',
+    trait: 'resilience, growth, stubbornness',
+  },
+  4: {
+    name: 'Ashenvale',
+    icon: '💨',
+    element: 'Wind',
+    trait: 'speed, wit, unpredictability',
+  },
+  5: {
+    name: 'Stormrage',
+    icon: '⚡',
+    element: 'Lightning',
+    trait: 'boldness, intensity, main character energy',
+  },
+  6: {
+    name: 'Nighthollow',
+    icon: '🌙',
+    element: 'Shadow',
+    trait: 'cunning, secrecy, dark humor',
+  },
+  7: {
+    name: 'Dawnbringer',
+    icon: '☀️',
+    element: 'Light',
+    trait: 'optimism, community, hype',
+  },
+  8: {
+    name: 'Manastorm',
+    icon: '🔮',
+    element: 'Arcane',
+    trait: 'intellect, analysis, nerdiness',
+  },
+  9: {
+    name: 'Plaguemire',
+    icon: '☠️',
+    element: 'Poison',
+    trait: 'chaos, memes, toxicity as art form',
+  },
 };
 
 function getAnthropicClient() {
@@ -35,9 +80,11 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'twitter_handle required' });
     }
 
-    const houseList = Object.entries(HOUSES).map(([id, h]) => 
-      `${id}. ${h.name} (${h.icon} ${h.element}) - ${h.trait}`
-    ).join('\n');
+    const houseList = Object.entries(HOUSES)
+      .map(
+        ([id, h]) => `${id}. ${h.name} (${h.icon} ${h.element}) - ${h.trait}`,
+      )
+      .join('\n');
 
     const anthropic = getAnthropicClient();
 
@@ -61,16 +108,18 @@ ${houseList}
 
 Respond in this exact JSON format only, no other text:
 {"roast": "your 2-3 sentence deadpan roast here", "house_id": NUMBER, "house_reason": "one short sentence why this house"}`,
-      messages: [{
-        role: 'user',
-        content: `New arrival. Judge them.
+      messages: [
+        {
+          role: 'user',
+          content: `New arrival. Judge them.
 
 Handle: @${twitter_handle}
 Bio: ${bio || '(no bio. somehow even lazier than me.)'}
 Followers: ${followers || 'unknown'}
 Following: ${following || 'unknown'}
-Ratio: ${followers && following ? (followers / Math.max(following, 1)).toFixed(1) : 'unknown'}`
-      }]
+Ratio: ${followers && following ? (followers / Math.max(following, 1)).toFixed(1) : 'unknown'}`,
+        },
+      ],
     });
 
     let text = message.content[0].text.trim();
@@ -86,9 +135,10 @@ Ratio: ${followers && following ? (followers / Math.max(following, 1)).toFixed(1
     } catch (parseErr) {
       console.error('Nerm JSON parse error:', parseErr.message, 'Raw:', text);
       result = {
-        roast: "i looked at your profile. i wish i hadn't. but here we are, both suffering.",
+        roast:
+          "i looked at your profile. i wish i hadn't. but here we are, both suffering.",
         house_id: Math.floor(Math.random() * 9) + 1,
-        house_reason: "i stopped caring halfway through. this one felt right."
+        house_reason: 'i stopped caring halfway through. this one felt right.',
       };
     }
 
@@ -103,14 +153,14 @@ Ratio: ${followers && following ? (followers / Math.max(following, 1)).toFixed(1
       house_icon: house.icon,
       house_element: house.element,
     });
-
   } catch (err) {
     console.error('Sorting hat error:', err);
 
     const fallbackHouse = Math.floor(Math.random() * 9) + 1;
     const house = HOUSES[fallbackHouse];
     res.json({
-      roast: "i tried to read your profile but my eternal suffering got in the way. happens sometimes.",
+      roast:
+        'i tried to read your profile but my eternal suffering got in the way. happens sometimes.',
       house_reason: "i guessed. sue me. oh wait, i'm a floating cat head.",
       house_id: fallbackHouse,
       house_name: house.name,

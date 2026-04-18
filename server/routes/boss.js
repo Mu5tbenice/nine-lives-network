@@ -20,12 +20,20 @@ async function dropItem(playerId, source) {
     else if (roll < 96) rarity = 'epic';
     else rarity = 'legendary';
 
-    const { data: candidates } = await supabase.from('items').select('id, name, rarity, slot').eq('rarity', rarity).eq('is_active', true);
+    const { data: candidates } = await supabase
+      .from('items')
+      .select('id, name, rarity, slot')
+      .eq('rarity', rarity)
+      .eq('is_active', true);
     if (!candidates || candidates.length === 0) return null;
     const item = candidates[Math.floor(Math.random() * candidates.length)];
-    await supabase.from('player_items').insert({ player_id: parseInt(playerId), item_id: item.id, source });
+    await supabase
+      .from('player_items')
+      .insert({ player_id: parseInt(playerId), item_id: item.id, source });
     return item;
-  } catch (e) { return null; }
+  } catch (e) {
+    return null;
+  }
 }
 
 // GET /api/boss/status — Current boss HP, phase, top contributors
@@ -44,12 +52,17 @@ router.get('/status', async (req, res) => {
 router.post('/deploy', async (req, res) => {
   try {
     const { player_id, card_id } = req.body;
-    if (!player_id) return res.status(400).json({ error: 'player_id required' });
+    if (!player_id)
+      return res.status(400).json({ error: 'player_id required' });
     const result = await bossEngine.deployToBoss(player_id, card_id);
 
     // V5: Award XP for boss participation
     if (result && !result.error) {
-      await addXP(parseInt(player_id), XP_REWARDS.boss_cycle, 'boss_deploy').catch(() => {});
+      await addXP(
+        parseInt(player_id),
+        XP_REWARDS.boss_cycle,
+        'boss_deploy',
+      ).catch(() => {});
 
       // V5: 15% chance of item drop per boss participation
       if (Math.random() < 0.15) {
@@ -70,7 +83,8 @@ router.post('/deploy', async (req, res) => {
 router.post('/swap-card', async (req, res) => {
   try {
     const { player_id, card_id } = req.body;
-    if (!player_id || !card_id) return res.status(400).json({ error: 'player_id and card_id required' });
+    if (!player_id || !card_id)
+      return res.status(400).json({ error: 'player_id and card_id required' });
     const result = await bossEngine.swapCard(player_id, card_id);
     res.json(result);
   } catch (err) {
@@ -82,7 +96,9 @@ router.post('/swap-card', async (req, res) => {
 // GET /api/boss/contributions/:playerId — Player's damage dealt
 router.get('/contributions/:playerId', async (req, res) => {
   try {
-    const result = await bossEngine.getPlayerContribution(parseInt(req.params.playerId));
+    const result = await bossEngine.getPlayerContribution(
+      parseInt(req.params.playerId),
+    );
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: 'Server error' });

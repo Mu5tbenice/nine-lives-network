@@ -52,7 +52,9 @@ async function createNine(playerId, houseId, name = null) {
     throw error;
   }
 
-  console.log(`Created Nine for player ${playerId}: ${house.name} (ATK ${house.atk} / HP ${house.hp} / SPD ${house.spd} / DEF ${house.def} / LUCK ${house.luck})`);
+  console.log(
+    `Created Nine for player ${playerId}: ${house.name} (ATK ${house.atk} / HP ${house.hp} / SPD ${house.spd} / DEF ${house.def} / LUCK ${house.luck})`,
+  );
   return data;
 }
 
@@ -144,12 +146,13 @@ async function midnightResetAllNines() {
     return;
   }
 
-  const { data: houses } = await supabase
-    .from('houses')
-    .select('id, hp');
+  const { data: houses } = await supabase.from('houses').select('id, hp');
 
   const houseHpMap = {};
-  if (houses) houses.forEach(h => { houseHpMap[h.id] = h.hp; });
+  if (houses)
+    houses.forEach((h) => {
+      houseHpMap[h.id] = h.hp;
+    });
 
   for (const nine of nines) {
     const fullHp = houseHpMap[nine.house_id] || 100;

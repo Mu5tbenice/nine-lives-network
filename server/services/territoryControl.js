@@ -10,14 +10,13 @@ const effectEngine = require('./effectEngine');
 
 const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
 const MANA_CAP = 7;
 const ZONE_CAPTURE_BONUS = 15;
 const ZONE_HELD_BONUS = 5;
 const DECAY_PERCENT = 40; // 40% decay overnight
-
 
 // ═══════════════════════════════════
 // MIDNIGHT BANKING (main entry point)
@@ -71,13 +70,11 @@ async function midnightBanking() {
     console.log('════════════════════════════════════\n');
 
     return { success: true, processed: results.length, results };
-
   } catch (error) {
     console.error('MIDNIGHT BANKING ERROR:', error);
     return { success: false, error: error.message };
   }
 }
-
 
 // ═══════════════════════════════════
 // STEP 1: SNAPSHOT INFLUENCE
@@ -109,7 +106,6 @@ async function snapshotInfluence(gameDay) {
   }
 }
 
-
 // ═══════════════════════════════════
 // STEP 2: PROCESS ZONE FLAGS
 // Apply POISON, CORRODE at end of day
@@ -130,7 +126,14 @@ async function processZoneFlags(gameDay) {
         const leader = await getLeadingHouse(zoneId, gameDay);
         if (leader) {
           await reduceInfluence(zoneId, leader.school_id, pct);
-          console.log('  Zone ' + zoneId + ': POISON -' + pct + '% from house ' + leader.school_id);
+          console.log(
+            '  Zone ' +
+              zoneId +
+              ': POISON -' +
+              pct +
+              '% from house ' +
+              leader.school_id,
+          );
         }
       }
 
@@ -138,14 +141,15 @@ async function processZoneFlags(gameDay) {
       if (flags.corrode) {
         const pct = flags.corrode.pct || 3;
         await reduceAllInfluence(zoneId, pct);
-        console.log('  Zone ' + zoneId + ': CORRODE -' + pct + '% from all houses');
+        console.log(
+          '  Zone ' + zoneId + ': CORRODE -' + pct + '% from all houses',
+        );
       }
     }
   } catch (e) {
     console.error('  processZoneFlags error:', e.message);
   }
 }
-
 
 // ═══════════════════════════════════
 // STEP 3: DETERMINE WINNERS + FLIP
@@ -192,9 +196,25 @@ async function processZoneWinners(gameDay) {
           .eq('id', parseInt(zoneId));
 
         if (isFlip) {
-          console.log('  Zone ' + zoneId + ': FLIPPED to house ' + winnerId + ' (' + highestPct + '%)');
+          console.log(
+            '  Zone ' +
+              zoneId +
+              ': FLIPPED to house ' +
+              winnerId +
+              ' (' +
+              highestPct +
+              '%)',
+          );
         } else {
-          console.log('  Zone ' + zoneId + ': HELD by house ' + winnerId + ' (day ' + daysHeld + ')');
+          console.log(
+            '  Zone ' +
+              zoneId +
+              ': HELD by house ' +
+              winnerId +
+              ' (day ' +
+              daysHeld +
+              ')',
+          );
         }
 
         results.push({
@@ -214,7 +234,6 @@ async function processZoneWinners(gameDay) {
   return results;
 }
 
-
 // ═══════════════════════════════════
 // STEP 4: AWARD BONUSES
 // ═══════════════════════════════════
@@ -233,7 +252,7 @@ async function awardBonuses(results, gameDay) {
       if (!actions || actions.length === 0) continue;
 
       // Unique player IDs
-      const playerIds = [...new Set(actions.map(a => a.player_id))];
+      const playerIds = [...new Set(actions.map((a) => a.player_id))];
 
       for (const pid of playerIds) {
         // Zone capture bonus
@@ -261,13 +280,20 @@ async function awardBonuses(results, gameDay) {
         }
       }
 
-      console.log('  Zone ' + r.zone_id + ': +' + ZONE_CAPTURE_BONUS + ' pts to ' + playerIds.length + ' players');
+      console.log(
+        '  Zone ' +
+          r.zone_id +
+          ': +' +
+          ZONE_CAPTURE_BONUS +
+          ' pts to ' +
+          playerIds.length +
+          ' players',
+      );
     }
   } catch (e) {
     console.error('  awardBonuses error:', e.message);
   }
 }
-
 
 // ═══════════════════════════════════
 // STEP 5: APPLY DECAY
@@ -276,27 +302,36 @@ async function awardBonuses(results, gameDay) {
 
 async function applyDecay() {
   try {
-    const { data: controls } = await supabase
-      .from('zone_control')
-      .select('*');
+    const { data: controls } = await supabase.from('zone_control').select('*');
 
     if (!controls || controls.length === 0) return;
 
     let updated = 0;
     for (const c of controls) {
-      const decayed = Math.round(c.control_percentage * (1 - DECAY_PERCENT / 100));
+      const decayed = Math.round(
+        c.control_percentage * (1 - DECAY_PERCENT / 100),
+      );
       if (decayed <= 0) {
         await supabaseAdmin.from('zone_control').delete().eq('id', c.id);
       } else {
         await supabaseAdmin
           .from('zone_control')
-          .update({ control_percentage: decayed, updated_at: new Date().toISOString() })
+          .update({
+            control_percentage: decayed,
+            updated_at: new Date().toISOString(),
+          })
           .eq('id', c.id);
       }
       updated++;
     }
 
-    console.log('  Decayed ' + updated + ' zone_control entries by ' + DECAY_PERCENT + '%');
+    console.log(
+      '  Decayed ' +
+        updated +
+        ' zone_control entries by ' +
+        DECAY_PERCENT +
+        '%',
+    );
 
     // Also decay community influence
     const { data: commControls } = await supabase
@@ -306,24 +341,37 @@ async function applyDecay() {
     let commUpdated = 0;
     if (commControls) {
       for (const c of commControls) {
-        const decayed = Math.round(c.control_percentage * (1 - DECAY_PERCENT / 100));
+        const decayed = Math.round(
+          c.control_percentage * (1 - DECAY_PERCENT / 100),
+        );
         if (decayed <= 0) {
-          await supabaseAdmin.from('zone_community_control').delete().eq('id', c.id);
+          await supabaseAdmin
+            .from('zone_community_control')
+            .delete()
+            .eq('id', c.id);
         } else {
           await supabaseAdmin
             .from('zone_community_control')
-            .update({ control_percentage: decayed, updated_at: new Date().toISOString() })
+            .update({
+              control_percentage: decayed,
+              updated_at: new Date().toISOString(),
+            })
             .eq('id', c.id);
         }
         commUpdated++;
       }
     }
-    console.log('  Decayed ' + commUpdated + ' community_control entries by ' + DECAY_PERCENT + '%');
+    console.log(
+      '  Decayed ' +
+        commUpdated +
+        ' community_control entries by ' +
+        DECAY_PERCENT +
+        '%',
+    );
   } catch (e) {
     console.error('  applyDecay error:', e.message);
   }
 }
-
 
 // ═══════════════════════════════════
 // STEP 6: RESET DAILY STATE
@@ -344,7 +392,13 @@ async function resetDaily() {
       .eq('is_active', true)
       .select('id');
 
-    console.log('  Reset mana to ' + MANA_CAP + ' for ' + (manaResult ? manaResult.length : 0) + ' players');
+    console.log(
+      '  Reset mana to ' +
+        MANA_CAP +
+        ' for ' +
+        (manaResult ? manaResult.length : 0) +
+        ' players',
+    );
 
     // Update streaks
     // Players who acted yesterday: increment streak
@@ -353,7 +407,9 @@ async function resetDaily() {
       .select('player_id')
       .eq('game_day', yesterdayStr);
 
-    const activeIds = activePlayers ? [...new Set(activePlayers.map(a => a.player_id))] : [];
+    const activeIds = activePlayers
+      ? [...new Set(activePlayers.map((a) => a.player_id))]
+      : [];
 
     if (activeIds.length > 0) {
       for (const pid of activeIds) {
@@ -369,7 +425,9 @@ async function resetDaily() {
             .eq('id', pid);
         }
       }
-      console.log('  Incremented streak for ' + activeIds.length + ' active players');
+      console.log(
+        '  Incremented streak for ' + activeIds.length + ' active players',
+      );
     }
 
     // Players who did NOT act yesterday: reset streak to 0
@@ -388,12 +446,10 @@ async function resetDaily() {
       .eq('is_current_objective', true);
 
     console.log('  Cleared daily objective');
-
   } catch (e) {
     console.error('  resetDaily error:', e.message);
   }
 }
-
 
 // ═══════════════════════════════════
 // HELPERS
@@ -413,7 +469,7 @@ async function getAllZoneInfluence(gameDay) {
     if (!actions) return result;
 
     // Aggregate
-    actions.forEach(a => {
+    actions.forEach((a) => {
       if (!result[a.zone_id]) result[a.zone_id] = {};
       if (!result[a.zone_id][a.school_id]) {
         result[a.zone_id][a.school_id] = { power: 0, count: 0 };
@@ -429,9 +485,10 @@ async function getAllZoneInfluence(gameDay) {
       let total = 0;
       for (const s of Object.values(result[zoneId])) total += s.power;
       for (const schoolId of Object.keys(result[zoneId])) {
-        result[zoneId][schoolId].percentage = total > 0
-          ? Math.round((result[zoneId][schoolId].power / total) * 100)
-          : 0;
+        result[zoneId][schoolId].percentage =
+          total > 0
+            ? Math.round((result[zoneId][schoolId].power / total) * 100)
+            : 0;
       }
     }
   } catch (e) {
@@ -475,7 +532,9 @@ async function reduceInfluence(zoneId, schoolId, pct) {
         .update({ control_percentage: reduced })
         .eq('id', data.id);
     }
-  } catch (e) { /* non-critical */ }
+  } catch (e) {
+    /* non-critical */
+  }
 }
 
 // Reduce influence for all houses on a zone
@@ -495,7 +554,9 @@ async function reduceAllInfluence(zoneId, pct) {
           .eq('id', row.id);
       }
     }
-  } catch (e) { /* non-critical */ }
+  } catch (e) {
+    /* non-critical */
+  }
 }
 
 // Update zone control for a single zone (called by route every 5 min)
@@ -511,17 +572,15 @@ async function updateZoneControlTable(zoneId) {
 
     // Upsert each school's influence
     for (const [schoolId, data] of Object.entries(zoneInf)) {
-      await supabaseAdmin
-        .from('zone_control')
-        .upsert(
-          {
-            zone_id: zoneId,
-            school_id: parseInt(schoolId),
-            control_percentage: data.percentage,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'zone_id,school_id' }
-        );
+      await supabaseAdmin.from('zone_control').upsert(
+        {
+          zone_id: zoneId,
+          school_id: parseInt(schoolId),
+          control_percentage: data.percentage,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'zone_id,school_id' },
+      );
     }
 
     return { updated: true };
@@ -542,7 +601,7 @@ async function updateAllZoneControl() {
 
     if (!actions) return 0;
 
-    const zoneIds = [...new Set(actions.map(a => a.zone_id))];
+    const zoneIds = [...new Set(actions.map((a) => a.zone_id))];
     let updated = 0;
 
     for (const zoneId of zoneIds) {
@@ -595,14 +654,13 @@ async function setRandomObjective() {
       .update({ is_current_objective: true })
       .eq('id', pick.id);
 
-    console.log('[Objective] Set zone ' + pick.id + ' as today\'s objective');
+    console.log('[Objective] Set zone ' + pick.id + " as today's objective");
     return pick.id;
   } catch (e) {
     console.error('setRandomObjective error:', e.message);
     return null;
   }
 }
-
 
 module.exports = {
   midnightBanking,

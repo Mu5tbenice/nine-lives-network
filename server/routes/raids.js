@@ -1,6 +1,6 @@
 /**
  * raids.js — API routes for Narrative Raid data
- * 
+ *
  * INSTRUCTIONS FOR SPENCER:
  * 1. Save this file to server/routes/raids.js
  * 2. In server/index.js, add:
@@ -30,7 +30,7 @@ router.get('/today', async (req, res) => {
     const communities = Object.entries(standings)
       .map(([tag, data]) => ({
         tag,
-        unique_raiders: data.unique || 0
+        unique_raiders: data.unique || 0,
       }))
       .sort((a, b) => b.unique_raiders - a.unique_raiders);
 
@@ -44,11 +44,10 @@ router.get('/today', async (req, res) => {
       winner: raid.winner_community,
       winner_count: raid.winner_count,
       mvp: raid.mvp_twitter_handle,
-      tweet_url: raid.tweet_1_id 
+      tweet_url: raid.tweet_1_id
         ? `https://twitter.com/9LVNetwork/status/${raid.tweet_1_id}`
-        : null
+        : null,
     });
-
   } catch (error) {
     console.error('[Raids API] Error:', error.message);
     res.status(500).json({ error: 'Failed to fetch raid data' });
@@ -64,17 +63,16 @@ router.get('/history', async (req, res) => {
     const limit = Math.min(parseInt(req.query.limit) || 7, 30);
     const history = await narrativeEngine.getRaidHistory(limit);
 
-    const formatted = history.map(raid => ({
+    const formatted = history.map((raid) => ({
       date: raid.raid_date,
       title: raid.narrative_title,
       winner: raid.winner_community,
       winner_count: raid.winner_count,
       total_raiders: raid.total_raiders,
-      mvp: raid.mvp_twitter_handle
+      mvp: raid.mvp_twitter_handle,
     }));
 
     res.json(formatted);
-
   } catch (error) {
     console.error('[Raids API] History error:', error.message);
     res.status(500).json({ error: 'Failed to fetch raid history' });
@@ -95,7 +93,7 @@ router.get('/leaderboard', async (req, res) => {
 
     // Aggregate wins per community
     const communityWins = {};
-    for (const raid of (raids || [])) {
+    for (const raid of raids || []) {
       const tag = raid.winner_community;
       if (!communityWins[tag]) {
         communityWins[tag] = { tag, wins: 0, total_raiders: 0 };
@@ -104,11 +102,11 @@ router.get('/leaderboard', async (req, res) => {
       communityWins[tag].total_raiders += raid.total_raiders || 0;
     }
 
-    const leaderboard = Object.values(communityWins)
-      .sort((a, b) => b.wins - a.wins);
+    const leaderboard = Object.values(communityWins).sort(
+      (a, b) => b.wins - a.wins,
+    );
 
     res.json(leaderboard);
-
   } catch (error) {
     console.error('[Raids API] Leaderboard error:', error.message);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
