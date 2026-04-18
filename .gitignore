@@ -51,3 +51,10 @@ temp/
 public/assets/images/wizard-cat.mp4
 .local/
 .local/
+
+# Replit cache — never commit (learned from zi7dPhBt accident)
+.cache/
+.replit_cache/
+
+# Windows/Zone.Identifier files (WSL artifact)
+*:Zone.Identifier
