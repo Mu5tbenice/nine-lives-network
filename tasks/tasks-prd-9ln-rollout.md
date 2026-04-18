@@ -118,12 +118,12 @@ Organized by the §5.5 phasing in `tasks/prd-9ln-product.md`. Each §9 item is t
   - [x] 2.6 ~~Boot the server locally, confirm log output shows V3 only (no "V6 wave combat" line).~~ **Struck — verification of §9.5 already done at PRD §9.5 markup time on 2026-04-18.**
   - [x] 2.7 ~~Add `server/services/combatEngine.test.js` smoke test.~~ **Dropped from this PR — defer all test infrastructure decisions (runner, layout, config) to Task 8.1.** Regression confirmed via `node -e "require('./server/services/combatEngine.js')"` exit 0.
 
-- [ ] 3.0 Missing-file resolution (§9.6 → cleanup) (est: M)
-  - [ ] 3.1 Dump the live Supabase schema to `database/schema.sql`. Use `pg_dump --schema-only --no-owner --no-acl` against the project, or via the Supabase dashboard's schema export. Overwrite the current 5-byte corrupted file. Commit with a note that this is machine-generated; manual edits should happen in migration files, not here.
-  - [ ] 3.2 Decide fate of `server/routes/mana.js` (required at `server/index.js:53`, does not exist). If mana logic lives distributed across existing routes/services, remove the require and grep any clients hitting `/api/mana/*`. If the route is needed, create a minimal stub that delegates to existing services.
-  - [ ] 3.3 Decide fate of `server/services/combatEngineV2.js` (required at `server/routes/admin.js:644`, does not exist). Options: (a) remove the require + the three dependent admin endpoints at `admin.js:651-686`, (b) repoint them at `combatEngine.js` if the surface overlaps. Prefer (a) — do not build a V2 engine (PRD §5.8 explicit non-goal).
-  - [ ] 3.4 Add a `/api/health` endpoint that reports the list of `require()` calls that silently failed at startup (the graceful-degradation pattern from §7.2). Each failed require returns `{ path, error }`. Critical for future drift detection.
-  - [ ] 3.5 Verify: boot → curl `/api/health` → confirm zero failed requires after 3.2 and 3.3 are merged.
+- [x] 3.0 Missing-file resolution (§9.6 → cleanup) (est: S — re-estimated after 3.1 struck, 3.4/3.5 deferred)
+  - [x] 3.1 ~~Dump the live Supabase schema to `database/schema.sql`.~~ **Struck — pre-done retroactively in PR #125 per §9.6 audit.**
+  - [x] 3.2 Decide fate of `server/routes/mana.js`. *Deleted the require block at `server/index.js:52-58` per PRD §5.9 non-goal. Grep verified zero consumers of `/api/mana/*` in `server/` or `public/`.*
+  - [x] 3.3 Decide fate of `server/services/combatEngineV2.js`. *Deleted the require + 3 dependent admin endpoints at `server/routes/admin.js:639-687` per PRD §5.8 non-goal. V2-specific concepts (15-min snapshots, `forceSnapshot`, `reloadZone`) don't map to current V3/V4 engine — re-pointing would be a semantic translation not in §9.6 scope.*
+  - [x] 3.4 ~~Add a `/api/health` endpoint that reports failed requires.~~ **Deferred to Task 8.6 (boot-time observability).** This is a new concern, not a §9.6 resolution — deserves its own task + plan + estimate.
+  - [x] 3.5 ~~Verify: boot → curl `/api/health` → confirm zero failed requires.~~ **Deferred with 3.4 to Task 8.6.** This PR verified via `node --check` on both modified files (both pass) + grep confirming zero `combatEngineV2` or `/api/mana` references anywhere in `server/` or `public/`.
 
 - [ ] 4.0 Nightly zone-identity cron fix + diagnostic (§9.19 → Phase 1 critical) (est: L — stakeholder diagnostic bump)
   - [ ] 4.1 **DIAGNOSTIC FIRST.** Via Supabase MCP, query `zones` table and `zone_control.updated_at` for the past 7 nights. Check whether `branded_guild` and `dominant_house` have been updating daily. Command sketch: `SELECT id, branded_guild, dominant_house, updated_at FROM zones ORDER BY updated_at DESC;`
@@ -195,3 +195,15 @@ Organized by the §5.5 phasing in `tasks/prd-9ln-product.md`. Each §9 item is t
   - [ ] 8.5.3 Run formatter once across the whole repo as a single "apply formatter" PR (no logic changes).
   - [ ] 8.5.4 Document lint conventions in `CLAUDE.md`.
   - [ ] 8.5.5 Decide CI integration (probably defer until §8.1 testing infrastructure).
+
+- [ ] 8.6 Boot-time observability — `/api/health` with `failed_requires` reporting (est: S–M)
+
+  **Context.** Surfaced out of Task 3.0 (PR #?). Originally planned as 3.4 but deferred because it's a new observability concern, not a §9.6 resolution. PRD §7.2 already names it as a "planned follow-up" — this task lands it.
+
+  **Scope from 2026-04-18 investigation.** `server/index.js` has **22** `try { require(...) } catch (e) { ... }` sites for optional routes/engines. `server/services/scheduler.js` has **15** similar sites for scheduled jobs. Both files use the graceful-degradation pattern per PRD §7.2, so both must be covered.
+
+  - [ ] 8.6.1 Add module-level `bootFailures` array at top of `server/index.js`.
+  - [ ] 8.6.2 Update every existing `try { require(...) } catch (e) { ... }` site in `server/index.js` (22 sites) and `server/services/scheduler.js` (15 sites) to push `{ module, error: e.message }` into `bootFailures` on failure. Consider extracting a shared helper if the pattern proves noisy.
+  - [ ] 8.6.3 Extend the existing `/api/health` endpoint at `server/index.js:308` (currently returns `{ status, timestamp }`) to include `failed_requires: bootFailures` in the JSON response.
+  - [ ] 8.6.4 Smoke-verify: boot the server, `curl localhost:$PORT/api/health`, assert `failed_requires: []` (post-Task 3.0 state). Optionally introduce a deliberate missing-require test (temporary rename of an optional file) to confirm it surfaces in the response, then restore.
+  - [ ] 8.6.5 Update PRD §7.2 ("Caveat of this pattern") to reference the landed endpoint instead of the "planned follow-up" phrasing.

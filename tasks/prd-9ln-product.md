@@ -803,7 +803,9 @@ This section is the **live bug ledger** the PRD carries. Each item is tied to a 
 
 **Resolution:** Either build the missing artifacts (for schema.sql — dump the live Supabase schema into the file) or remove their require/reference sites.
 
-**Partially resolved 2026-04-17 in PR #125** (retroactive — pre-PRD). `database/schema.sql` now contains a 941-line generated dump (timestamp `2026-04-17T12:47:50Z`), and `scripts/dump-schema.js` was added so future refreshes are reproducible. **Still open:** `server/routes/mana.js` and `server/services/combatEngineV2.js` missing-require sites — targeted by Task 3.0 in `tasks-prd-9ln-rollout.md`.
+**Partially resolved 2026-04-17 in PR #125** (retroactive — pre-PRD). `database/schema.sql` now contains a 941-line generated dump (timestamp `2026-04-17T12:47:50Z`), and `scripts/dump-schema.js` was added so future refreshes are reproducible.
+
+**Resolved 2026-04-18 in PR #?.** The two remaining missing-require sites have been removed: `server/index.js` no longer requires `./routes/mana.js` (per PRD §5.9 non-goal), and `server/routes/admin.js` no longer requires `../services/combatEngineV2` nor exposes the three dependent admin endpoints (per PRD §5.8 non-goal). The boot-time observability work originally scoped as 3.4 — a `/api/health` endpoint that reports failed requires — was deferred to a new Task 8.6 since it's a separate concern from §9.6 resolution.
 
 ### 9.7 Dead per-deployment stat columns → cleanup (or FPRD if surfaced)
 
