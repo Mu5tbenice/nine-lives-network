@@ -50,14 +50,6 @@ try {
 }
 
 try {
-  const manaRoutes = require('./routes/mana');
-  app.use('/api/mana', manaRoutes);
-  console.log("✅ Mana routes loaded");
-} catch (e) {
-  console.error("❌ Failed to load mana routes:", e.message);
-}
-
-try {
   const craftingRoutes = require('./routes/crafting');
   app.use('/api/crafting', craftingRoutes);
   console.log("✅ Crafting routes loaded");
