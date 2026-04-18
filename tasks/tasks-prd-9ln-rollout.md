@@ -198,7 +198,7 @@ Organized by the §5.5 phasing in `tasks/prd-9ln-product.md`. Each §9 item is t
 
 - [ ] 8.6 Boot-time observability — `/api/health` with `failed_requires` reporting (est: S–M)
 
-  **Context.** Surfaced out of Task 3.0 (PR #?). Originally planned as 3.4 but deferred because it's a new observability concern, not a §9.6 resolution. PRD §7.2 already names it as a "planned follow-up" — this task lands it.
+  **Context.** Surfaced out of Task 3.0 (PR #137). Originally planned as 3.4 but deferred because it's a new observability concern, not a §9.6 resolution. PRD §7.2 already names it as a "planned follow-up" — this task lands it.
 
   **Scope from 2026-04-18 investigation.** `server/index.js` has **22** `try { require(...) } catch (e) { ... }` sites for optional routes/engines. `server/services/scheduler.js` has **15** similar sites for scheduled jobs. Both files use the graceful-degradation pattern per PRD §7.2, so both must be covered.
 
