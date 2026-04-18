@@ -777,11 +777,15 @@ This section is the **live bug ledger** the PRD carries. Each item is tied to a 
 
 **Resolution:** Change constant to `2 * 60 * 60 * 1000`.
 
+**Resolved 2026-04-18 in PR #?.** Constant updated to `2 * 60 * 60 * 1000` with inline reference to PRD §4.8.5.
+
 ### 9.4 `ROUND_MS` undefined → cleanup
 
 **Symptom.** `server/services/combatEngine.js:727` and `:894` reference `ROUND_MS`, which is not declared. Rounds have no fixed length, so these references are conceptually wrong, not just a typo.
 
 **Resolution:** Remove the `roundMs: ROUND_MS` field from the `arena:round_start` broadcast and from the `getRoundMs` export. Clients should display elapsed time, not a fixed round length.
+
+**Resolved 2026-04-18 in PR #?.** Both references removed. Pre-verified zero consumers of `getRoundMs()` and zero client-side listeners for the `roundMs` field anywhere in `server/` or `public/`.
 
 ### 9.5 Stale "V6 wave combat" boot log → cleanup
 
