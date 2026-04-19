@@ -141,9 +141,9 @@ damage_dealt, heals_done, kos_dealt, points_earned
 ```
 Per-deployment stat columns exist (`damage_dealt`, `heals_done`, `kos_dealt`, `points_earned`) but nothing in `combatEngine.js` writes to them.
 
-**`zone_control`** (line 697-704) — `zone_id, controlling_guild, snapshot_hp, dominant_house, updated_at`. Upserted on round end.
+**`zone_control`** (line 697-704) — `zone_id, controlling_guild, updated_at`. Upserted on round end. *(`snapshot_hp` and `dominant_house` are deprecated V1 columns still present in the schema; drop pending in PR #145b. Task 4.5 Q4 made `zones` authoritative for `dominant_house`.)*
 
-**`zone_control_history`** (line 706-715) — `zone_id, controlling_guild, snapshot_hp, round_number, snapped_at`. Insert on round end.
+**`zone_control_history`** (line 706-715) — `zone_id, controlling_guild, dominant_house, branded_guild, round_number, snapped_at`. Insert on round end. *(`snapshot_hp` is a deprecated V1 column still present; drop pending in PR #145b.)*
 
 There is **no** `knockouts` / `kos` / `battles` table. KO history is not retained anywhere except the live broadcast.
 
