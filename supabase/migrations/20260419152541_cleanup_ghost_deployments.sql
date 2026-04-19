@@ -1,5 +1,5 @@
 -- Cleanup ghost zone_deployments left behind by the §9.2 handleKO bug.
--- Context: §9.23 root-cause fix in PR #?. Before this fix, handleKO at
+-- Context: §9.23 root-cause fix in PR #147. Before this fix, handleKO at
 -- server/services/combatEngine.js:781 threw ReferenceError before its
 -- DB-state update at L844-854 could mark KO'd deployments as inactive.
 -- Result: rows with is_active=true and current_hp=0 — the "ghost

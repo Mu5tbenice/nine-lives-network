@@ -763,7 +763,7 @@ This section is the **live bug ledger** the PRD carries. Each item is tied to a 
 
 **Resolution plan:** (1) Drop the `(bigint, integer)` RPC overload; (2) migrate combat engine to `pointsService.addPoints`; (3) one-time backfill of `season_points` into `seasonal_points` (with stakeholder review — some values are historically valid arena earnings); (4) drop the `season_points` column; (5) retarget the `/api/leaderboard/season` endpoint at `seasonal_points` or remove it.
 
-**Partially resolved 2026-04-20 in PR #?.** KO-slice (+10 pts on kill) migrated to `pointsService.addPoints` in PR #? as part of §9.2 / §9.23 handleKO fix. Survive/control/flip paths in `endRound` still use the broken `increment_season_points` RPC — remain open under §9.1.
+**Partially resolved 2026-04-20 in PR #147.** KO-slice (+10 pts on kill) migrated to `pointsService.addPoints` in PR #147 as part of §9.2 / §9.23 handleKO fix. Survive/control/flip paths in `endRound` still use the broken `increment_season_points` RPC — remain open under §9.1.
 
 ### 9.2 `handleKO` ReferenceError → FPRD (bundled with 9.1)
 
@@ -773,7 +773,7 @@ This section is the **live bug ledger** the PRD carries. Each item is tied to a 
 
 **Resolution plan:** Derive killer as `nine._lastHitById ?? nine._dotAppliedById`, route the +10 reward through `pointsService.addPoints(killerId, 10, 'zone_ko', …)`.
 
-**Resolved 2026-04-20 in PR #?.** Applied the prescribed recipe verbatim. `handleKO` now derives `killerId = nine._lastHitById ?? nine._dotAppliedById ?? null` and `killerName = nine._lastHitBy ?? nine._dotAppliedBy ?? null` at the top of the function and uses those locals in the `combat:ko` broadcast and the points award. KO reward now goes through `pointsService.addPoints(killerId, 10, 'zone_ko', …)` (also closes §9.1 KO-slice). Discovery chain: §9.2 (original 2026-04-17 filing) → §9.23 (symptom investigation 2026-04-20 during Task 4.0 PR #143 smoke test, when ghost sprites + non-ending rounds surfaced) → PR #?. Cleanup migration in the same PR retires 1 ghost `zone_deployments` row that accumulated before the fix.
+**Resolved 2026-04-20 in PR #147.** Applied the prescribed recipe verbatim. `handleKO` now derives `killerId = nine._lastHitById ?? nine._dotAppliedById ?? null` and `killerName = nine._lastHitBy ?? nine._dotAppliedBy ?? null` at the top of the function and uses those locals in the `combat:ko` broadcast and the points award. KO reward now goes through `pointsService.addPoints(killerId, 10, 'zone_ko', …)` (also closes §9.1 KO-slice). Discovery chain: §9.2 (original 2026-04-17 filing) → §9.23 (symptom investigation 2026-04-20 during Task 4.0 PR #143 smoke test, when ghost sprites + non-ending rounds surfaced) → PR #147. Cleanup migration in the same PR retires 1 ghost `zone_deployments` row that accumulated before the fix.
 
 ### 9.3 `SESSION_MS` is half the spec → cleanup
 
@@ -966,7 +966,7 @@ Per stakeholder confirmation (2026-04-19), `snapshot_hp` is a scrapped V1 mechan
 
 **Resolution plan:** Separate investigation. Needs a code trace of the tick loop's round-end detection (setInterval at `combatEngine.js:1509-1521`), server log inspection during a reproduction, and MCP verification that the `zone_control_history` insert actually runs. Do NOT attempt a fix in PR #144.
 
-**Resolved 2026-04-20 in PR #?.** Investigation completed; symptom cluster (rounds not ending, lingering KO sprites, ghost `zone_deployments` rows) traced to a single root cause: PRD §9.2's long-standing `handleKO` ReferenceError (undefined `killerName` / `killerId` identifiers). The throw on every KO prevented `zs.nines.delete(...)`, `anyKO = true`, the `combat:ko` broadcast, and the `zone_deployments.is_active = false` update from running. The 5-min cap WAS firing correctly (verified via `zone_control_history` — 21 rows in 2h, every ~5:25); only the last-guild-standing path was dead. Fixed in this PR by closing §9.2; cleanup migration retires the 1 ghost row that accumulated. §9.23 was a downstream symptom of §9.2 — not an independent bug.
+**Resolved 2026-04-20 in PR #147.** Investigation completed; symptom cluster (rounds not ending, lingering KO sprites, ghost `zone_deployments` rows) traced to a single root cause: PRD §9.2's long-standing `handleKO` ReferenceError (undefined `killerName` / `killerId` identifiers). The throw on every KO prevented `zs.nines.delete(...)`, `anyKO = true`, the `combat:ko` broadcast, and the `zone_deployments.is_active = false` update from running. The 5-min cap WAS firing correctly (verified via `zone_control_history` — 21 rows in 2h, every ~5:25); only the last-guild-standing path was dead. Fixed in this PR by closing §9.2; cleanup migration retires the 1 ghost row that accumulated. §9.23 was a downstream symptom of §9.2 — not an independent bug.
 
 ---
 
