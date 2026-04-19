@@ -805,10 +805,11 @@ router.get('/', async (req, res) => {
       .order('id');
     if (error) return res.status(500).json({ error: error.message });
 
-    // Merge in live zone_control data (dominant_house + controlling_guild)
+    // Merge in live zone_control data (controlling_guild only; zones is
+    // authoritative for dominant_house per Task 4.5 Q4).
     const { data: control } = await supabaseAdmin
       .from('zone_control')
-      .select('zone_id, controlling_guild, dominant_house');
+      .select('zone_id, controlling_guild');
 
     const controlMap = {};
     (control || []).forEach((c) => {
@@ -830,10 +831,7 @@ router.get('/', async (req, res) => {
       ...z,
       controlling_guild:
         controlMap[z.id]?.controlling_guild || z.controlling_guild || null,
-      // Q4: zones table is authoritative for dominant_house; zone_control
-      // only used as fallback until its dominant_house column is dropped in PR #145.
-      dominant_house:
-        z.dominant_house || controlMap[z.id]?.dominant_house || null,
+      dominant_house: z.dominant_house || null,
       house_bonus_label:
         z.house_bonus_label ||
         (z.dominant_house
