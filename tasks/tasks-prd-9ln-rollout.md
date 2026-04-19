@@ -125,14 +125,22 @@ Organized by the §5.5 phasing in `tasks/prd-9ln-product.md`. Each §9 item is t
   - [x] 3.4 ~~Add a `/api/health` endpoint that reports failed requires.~~ **Deferred to Task 8.6 (boot-time observability).** This is a new concern, not a §9.6 resolution — deserves its own task + plan + estimate.
   - [x] 3.5 ~~Verify: boot → curl `/api/health` → confirm zero failed requires.~~ **Deferred with 3.4 to Task 8.6.** This PR verified via `node --check` on both modified files (both pass) + grep confirming zero `combatEngineV2` or `/api/mana` references anywhere in `server/` or `public/`.
 
-- [ ] 4.0 Nightly zone-identity cron fix + diagnostic (§9.19 → Phase 1 critical) (est: L — stakeholder diagnostic bump)
-  - [ ] 4.1 **DIAGNOSTIC FIRST.** Via Supabase MCP, query `zones` table and `zone_control.updated_at` for the past 7 nights. Check whether `branded_guild` and `dominant_house` have been updating daily. Command sketch: `SELECT id, branded_guild, dominant_house, updated_at FROM zones ORDER BY updated_at DESC;`
-  - [ ] 4.2 If stale: document how many zones + how many days. Estimate affected rounds (the in-combat `zoneBonusCache` at `combatEngine.js:97-100` would have been applying pre-stale-date bonuses). Surface to stakeholder.
-  - [ ] 4.3 Refactor `server/services/scheduler.js:80`. Replace `fetch('http://localhost:${PORT||5000}/api/zones/recalculate-identities')` with a direct `require('../routes/zones').writeNightlyPresence()` call — or extract `writeNightlyPresence` to a shared service if the route file shouldn't be reached into.
-  - [ ] 4.4 Remove the HTTP self-call pattern entirely from scheduler.js — same-process work should be a direct function call. Grep for any other `fetch('http://localhost:...')` inside the scheduler and fix similarly.
-  - [ ] 4.5 Add a log line after the direct call that reports how many zones were updated: `[${ts()}] 🌙 Zone identity recalc complete — N zones updated`.
-  - [ ] 4.6 Verify the next midnight UTC run updates all 27 zones by re-running the diagnostic query from 4.1.
-  - [ ] 4.7 Update PRD §9.19 to "resolved" after 4.6 passes.
+- [ ] 4.0 Nightly zone-identity cron fix + diagnostic (§9.19 → Phase 1 critical) **(BLOCKED — design decisions required, see `docs/design/zone-identity-v4.md`)** (est: L — stakeholder diagnostic bump)
+  - [x] 4.1 ~~**DIAGNOSTIC FIRST.** Via Supabase MCP, query `zones` table and `zone_control.updated_at` for the past 7 nights. Check whether `branded_guild` and `dominant_house` have been updating daily. Command sketch: `SELECT id, branded_guild, dominant_house, updated_at FROM zones ORDER BY updated_at DESC;`~~ **Diagnostic complete 2026-04-19 in PR #141. Fix scope is now dependent on design decisions — see Task 4.5 and `docs/design/zone-identity-v4.md`.** The diagnostic disproved the PORT-mismatch hypothesis; the real issues are an incomplete round-end writer, a split source of truth, and undefined V4 semantics. Findings captured in PRD §9.19 (reframed) and §9.20–9.22 (new).
+  - [x] 4.2 ~~If stale: document how many zones + how many days. Estimate affected rounds (the in-combat `zoneBonusCache` at `combatEngine.js:97-100` would have been applying pre-stale-date bonuses). Surface to stakeholder.~~ **Superseded 2026-04-19 in PR #141.** Diagnostic showed the cron fires correctly; impact is NULL aggregation, not missed-cron staleness. Scope reframed in PRD §9.19.
+  - [x] 4.3 ~~Refactor `server/services/scheduler.js:80`. Replace `fetch('http://localhost:${PORT||5000}/api/zones/recalculate-identities')` with a direct `require('../routes/zones').writeNightlyPresence()` call — or extract `writeNightlyPresence` to a shared service if the route file shouldn't be reached into.~~ **Superseded 2026-04-19 in PR #141.** The self-call is not the defect. May still be desirable as a code-hygiene cleanup but is not on the Task 4.0 critical path.
+  - [x] 4.4 ~~Remove the HTTP self-call pattern entirely from scheduler.js — same-process work should be a direct function call. Grep for any other `fetch('http://localhost:...')` inside the scheduler and fix similarly.~~ **Superseded 2026-04-19 in PR #141** — same rationale as 4.3.
+  - [x] 4.5 ~~Add a log line after the direct call that reports how many zones were updated: `[${ts()}] 🌙 Zone identity recalc complete — N zones updated`.~~ **Superseded 2026-04-19 in PR #141.** The recalc endpoint already logs this via its `console.log` at `server/routes/zones.js:1154`.
+  - [x] 4.6 ~~Verify the next midnight UTC run updates all 27 zones by re-running the diagnostic query from 4.1.~~ **Superseded 2026-04-19 in PR #141.** Zone count is 9 in V4 (not 27 V1). Verification step will be re-scoped once the design doc resolves.
+  - [x] 4.7 ~~Update PRD §9.19 to "resolved" after 4.6 passes.~~ **Superseded 2026-04-19 in PR #141** — §9.19 is now BLOCKED rather than resolvable via this task's original plan.
+
+- [ ] 4.5 Zone identity V4 design decisions — resolve the open questions in `docs/design/zone-identity-v4.md`. Prerequisite for Task 4.0 fix. Owner: user. Est: M — design work, not coding.
+  - [ ] 4.5.1 User answers Q1 (per-round `dominant_house` semantics) inline in the design doc.
+  - [ ] 4.5.2 User answers Q2 (per-day aggregation rule) inline in the design doc.
+  - [ ] 4.5.3 User answers Q4 (source of truth — `zone_control` vs `zones`) inline in the design doc.
+  - [ ] 4.5.4 User answers Q5 (`snapshot_hp` drop — default proposal accept/reject) inline in the design doc.
+  - [ ] 4.5.5 Q3 (`branded_guild` display) may be deferred — not gating combat bonuses. Mark deferred if skipped.
+  - [ ] 4.5.6 Once Q1/Q2/Q4/Q5 are answered, unblock Task 4.0 and scope its new sub-tasks against the decisions.
 
 ### Ongoing — runs parallel to any phase; does not block critical path
 
