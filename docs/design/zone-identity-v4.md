@@ -133,7 +133,7 @@ Decision: [LEFT BLANK]
 
 Default proposal: drop both columns + remove the vestigial SELECT at `server/routes/zones.js:1041-1042` in the same cleanup PR that consolidates the source of truth (Q4).
 
-Decision: [LEFT BLANK — default proposal stands unless user dissents]
+Decision: [LEFT BLANK]
 
 ---
 
