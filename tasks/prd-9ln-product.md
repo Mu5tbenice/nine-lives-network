@@ -1080,7 +1080,7 @@ Deferred until evidence of user-visible impact OR an independent refactor motiva
 
 **Resolution plan:** Delete both `showKOOverlay()` call sites. Leave the function definition and `#ko-overlay` markup dormant in place — removable in a later cleanup pass but out of scope for this fix. The round-end rejoin prompt (`_showRejoinPrompt`) becomes the sole post-KO UX.
 
-**Resolved 2026-04-19 in PR #?.** Both call sites of `showKOOverlay()` removed (primary `combat:ko` handler and V2 `processArenaEvent` branch). Function definition and overlay HTML left intact as dormant code; bundled with §9.33 which relocated the auto-rejoin trigger out of the popup countdown, and §9.32 which gated the high-frequency broadcast log.
+**Resolved 2026-04-19 in PR #151.** Both call sites of `showKOOverlay()` removed (primary `combat:ko` handler and V2 `processArenaEvent` branch). Function definition and overlay HTML left intact as dormant code; bundled with §9.33 which relocated the auto-rejoin trigger out of the popup countdown, and §9.32 which gated the high-frequency broadcast log.
 
 ### 9.32 `arena:positions` log fires every tick → cleanup
 
@@ -1090,7 +1090,7 @@ Deferred until evidence of user-visible impact OR an independent refactor motiva
 
 **Resolution plan:** Wrap the log in a `process.env.DEBUG_BROADCASTS === '1'` check. Opt-in, no `.env.example` change needed.
 
-**Resolved 2026-04-19 in PR #?.** Gate applied; log only fires when `DEBUG_BROADCASTS=1` is set in the environment. All other `_broadcastToZone` events continue to emit silently (as before).
+**Resolved 2026-04-19 in PR #151.** Gate applied; log only fires when `DEBUG_BROADCASTS=1` is set in the environment. All other `_broadcastToZone` events continue to emit silently (as before).
 
 ### 9.33 Auto-rejoin trigger lives in legacy popup countdown → cleanup
 
@@ -1104,7 +1104,7 @@ Separately, the `checkAutoRedeploy()` function called from the expired popup poi
 
 Add a fallback: `_doRejoin()` returns a boolean; on `false` (silent network throw or server rejection) the round_start handler shows the manual rejoin prompt anyway, so the player is never stranded in the withdrawn state.
 
-**Resolved 2026-04-19 in PR #?.** Trigger relocated to `arena:round_start`; `_doRejoin()` now returns boolean for failure-path fallback; round_end suppresses the manual prompt when auto-rejoin is on. `checkAutoRedeploy()` itself left dormant (still referenced nowhere else after the popup removal) — removable in a later cleanup pass.
+**Resolved 2026-04-19 in PR #151.** Trigger relocated to `arena:round_start`; `_doRejoin()` now returns boolean for failure-path fallback; round_end suppresses the manual prompt when auto-rejoin is on. `checkAutoRedeploy()` itself left dormant (still referenced nowhere else after the popup removal) — removable in a later cleanup pass.
 
 ---
 
