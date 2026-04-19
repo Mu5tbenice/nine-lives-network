@@ -882,15 +882,60 @@ See §7.7. `zone_control_history` at 265 rows/day will be the first table to sho
 
 **Resolution plan:** Replace with a semantic rubric. Options include an LLM-graded rubric (narrative relevance, in-character voice, specificity) via the existing Anthropic integration, or a moderator-reviewable flagging system. Either route is a feature PRD.
 
-### 9.19 PORT default mismatch between `.env.example` and scheduler fallback → Phase 1 critical
+### 9.19 Nightly zone-identity recalc — incomplete writer + undefined V4 semantics → BLOCKED — design decisions required
 
-**Symptom.** `.env.example:25` sets `PORT=3000`. `server/services/scheduler.js:80` self-calls its recalc endpoint via `http://localhost:${process.env.PORT || 5000}/api/zones/recalculate-identities`, falling back to **5000** when `PORT` is unset. If the server binds to 3000 (default) and `PORT` is not exported into the scheduler's environment, the nightly zone identity recalc request 404s silently — meaning `zones.branded_guild` and `zones.dominant_house` stop updating until the next on-demand `fetchZoneSnapshot` call refreshes them.
+**Status.** Blocked pending design decisions. See `docs/design/zone-identity-v4.md`.
 
-**Severity note.** Originally filed as cleanup; promoted to Phase 1 critical because this is player-facing — every zone's house presence bonus (§4.10.2 Layer 3) may be stale, meaning the in-combat `zoneBonusCache` at `combatEngine.js:97-100` is applying yesterday's bonuses (or older). The daily guild branding (Layer 2) has the same exposure.
+**Symptom (reframed 2026-04-19).** The nightly cron fires correctly — `server/services/scheduler.js:150` schedules the midnight banking block, which at lines 163-170 POSTs `http://localhost:${PORT||5000}/api/zones/recalculate-identities`. The recalc endpoint at `server/routes/zones.js:1096-1160` executes and writes to `zones.dominant_house` / `zones.branded_guild` / `zones.house_bonus_label`. The real problems are threefold:
 
-**Diagnostic action required before fix.** Verify whether the nightly recalc has been firing in production. Inspect `zone_control.updated_at` timestamps (and/or the last-modified timestamps on `zones.dominant_house` / `zones.branded_guild` if tracked) for the past 7 nights. If stale — the cron has been broken, and affected rounds need to be assessed. If fresh — the fallback to 5000 has been harmless because something else has been setting `PORT` in the scheduler's environment (likely Replit's runtime), but the latent bug still needs fixing.
+1. **Incomplete round-end writer.** `server/services/combatEngine.js:1226-1239` inserts into `zone_control_history` on every round end but omits `dominant_house`, `branded_guild`, and `snapshot_hp` — so those three columns are persistently NULL/0 across 7,763 rows spanning 30 days (2026-03-19 → 2026-04-18). The nightly recalc then has no source data to aggregate.
+2. **Split source of truth.** The combat engine's zone-bonus cache at `combatEngine.js:127-134` reads `zone_control.dominant_house`. The nightly recalc writes `zones.dominant_house`. Nothing writes `zone_control.dominant_house`. Two tables holding the same semantic field, with the runtime consumer reading from the side nothing updates. See §9.21.
+3. **Undefined V4 semantics.** There is no current spec for what "dominant house" or "branded guild" means in a V4 (9-zone arena) round. Pre-diagnostic code assumed these concepts existed but never defined them. Fixing (1) and (2) requires picking a definition.
 
-**Resolution options:** (a) align the scheduler fallback with `.env.example` (change to 3000), or (b) replace the HTTP self-call with a direct function call into `writeNightlyPresence` — no HTTP hop needed for same-process work. Option (b) is preferred and also eliminates the class of bug entirely.
+**Severity note.** Originally filed (pre-diagnostic) as a PORT-default mismatch causing silent 404s. The 2026-04-19 diagnostic proved the cron fires correctly — the PORT hypothesis was wrong. Reframed to incomplete writer + design gap. The underlying player-facing concern stands: zone presence/branding bonuses in `combatEngine.js` are driven by stale or NULL values, so combat is not honoring any zone-identity mechanic.
+
+**Resolution.** **BLOCKED** on design decisions. See `docs/design/zone-identity-v4.md` for the five open questions (round-level dominant-house definition, daily aggregation rule, branded-guild semantics, single source of truth, `snapshot_hp` deprecation). Once answered, the fix is:
+- Update the round-end writer at `combatEngine.js:1226-1239` to populate the designed fields.
+- Consolidate zone-identity reads/writes onto one table (see §9.21).
+- Drop deprecated V1 mechanics (see §9.22).
+
+**Updated 2026-04-19 in PR #?.** Reframed after full diagnostic via Supabase MCP (zones/zone_control/zone_control_history inspection) + grep audit of writers and readers. Original framing preserved below for history.
+
+**Original filing (PORT default mismatch hypothesis — proven wrong 2026-04-19).** `.env.example:25` sets `PORT=3000`. `server/services/scheduler.js:80` self-calls its recalc endpoint via `http://localhost:${process.env.PORT || 5000}/api/zones/recalculate-identities`, falling back to **5000**. The hypothesis was that if the server bound to 3000 and `PORT` wasn't exported to the scheduler's environment, the request would 404 silently. The diagnostic confirmed the cron does reach the endpoint and the endpoint does run — the real issue is that the endpoint aggregates NULL/0 data because the round-end writer never populates the source columns.
+
+### 9.20 Orphaned `/api/zones/midnight-reset` endpoint → cleanup
+
+**Symptom.** `server/routes/zones.js:1166-1210` defines `router.post('/midnight-reset', ...)` with an in-file comment that it's "Called by a scheduled job (or cron) at midnight UTC." No cron call exists — `server/services/scheduler.js` audit (2026-04-19 Task 4.0 diagnostic) confirmed the only zone-identity cron call is to `/recalculate-identities`, not `/midnight-reset`. The endpoint overlaps in purpose with `/recalculate-identities` (both aggregate `zone_control_history` to set `zones.branded_guild` / `zones.dominant_house`), differing only in aggregation window: `/midnight-reset` uses today's history from 00:00 UTC; `/recalculate-identities` uses the trailing 24h.
+
+**Effect.** Dead code; overlap risks confusion for future maintainers. Low severity on its own but zone-identity-adjacent — should be handled in the same cleanup pass that resolves §9.19.
+
+**Resolution plan:** Delete the endpoint after `docs/design/zone-identity-v4.md` picks a single source of truth. Zone-identity mechanics should have one designated write path.
+
+### 9.21 Split source of truth — `zone_control.dominant_house` vs `zones.dominant_house` → architectural decision
+
+**Symptom.** Two tables hold the same semantic field:
+- `zone_control.dominant_house` — read by `server/services/combatEngine.js:127-134` to build the in-memory `zoneBonusCache` used in live combat.
+- `zones.dominant_house` — written by `server/routes/zones.js:1096-1160` (nightly recalc) and read by `server/routes/zones.js:808-838` (zones list response merge) and `public/nethara-live.html:1845, 1953, 1980, 2031, 3910` (UI display).
+
+No writer populates `zone_control.dominant_house`. Existing populated values in the 8 current rows are stale — the V4 writer at `combatEngine.js:1215-1224` only sets `controlling_guild`, and V1-style writers (`config/twitter.js`, `routes/territory.js`, `services/twitterBot.js`, `services/territoryControl.js`) target `school_id` / `control_percentage` columns that no longer exist in the current schema. Those V1 writers fail silently on every call.
+
+**Effect.** The combat engine applies zone bonuses based on a column nothing updates. The UI reads `zones.dominant_house` (freshly recalculated), but combat uses `zone_control.dominant_house` (frozen). Players can see a mismatch between the displayed house bonus and what actually modifies their stats in-round.
+
+**Resolution plan:** Pick one table as source of truth. See `docs/design/zone-identity-v4.md` Q4. Candidate decisions:
+- **(a)** Make `zone_control.dominant_house` authoritative — update the round-end writer + nightly recalc to write there; frontend reads from the `zones` endpoint's merged response (it already has the fallback).
+- **(b)** Make `zones.dominant_house` authoritative — refactor `combatEngine.js` bonus cache to read from `zones` instead, drop the column from `zone_control`.
+
+### 9.22 `snapshot_hp` column in `zone_control` / `zone_control_history` is deprecated V1 → cleanup
+
+**Symptom.** Both `zone_control.snapshot_hp` and `zone_control_history.snapshot_hp` exist in the schema (integer). The 2026-04-19 Task 4.0 diagnostic confirmed:
+- No live code path writes the column. The current writer at `combatEngine.js:1215-1239` omits it; V1-style writers targeting `school_id` / `control_percentage` cannot be reached (those columns no longer exist).
+- The 8 current rows in `zone_control` have populated `snapshot_hp` values (max=700) — historical values from a code path that no longer exists.
+- `zone_control_history` recent rows all have `snapshot_hp=0` (column omitted from insert, DB default).
+- No live reader outside a single diagnostic SELECT at `server/routes/zones.js:1041-1042`; the selected value is not consumed downstream.
+
+Per stakeholder confirmation (2026-04-19), `snapshot_hp` is a scrapped V1 mechanic — intended as a per-zone HP bar tied to house HP totals, deprecated due to cross-house HP imbalance in V4's 9-house design.
+
+**Resolution plan:** Drop both columns via migration; remove the vestigial SELECT at `server/routes/zones.js:1041-1042`. Execute in the same cleanup pass that resolves §9.19, since the same writer consolidation touches these tables.
 
 ---
 
