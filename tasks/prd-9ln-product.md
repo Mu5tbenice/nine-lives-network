@@ -1072,6 +1072,40 @@ Deferred until evidence of user-visible impact OR an independent refactor motiva
 
 **Status: OPEN.** Opened 2026-04-20 in PR #150 as a documented known issue captured during the §9.28 investigation. Not fixed in the same PR to keep the hotfix scope tight.
 
+### 9.31 Legacy 60s KO popup duplicates round-end rejoin UX → cleanup
+
+**Symptom.** On any KO, the `combat:ko` handler opens a full-screen `#ko-overlay` with a 60-second countdown and a "SAME BUILD / REDEPLOY" button (`public/nethara-live.html:3182-3228`, triggered at line 3580 and mirrored for the V2 event path at line 7543). The overlay's countdown also owned the auto-rejoin trigger at expiry (line 3220-3222). Separately, at round end the server broadcasts `arena:round_end` and the client shows `_showRejoinPrompt` (line 4176) — a second, bottom-centered rejoin UI.
+
+**Effect.** Two rejoin prompts overlap after a KO: the 60s popup dominates the screen first, then the round-end prompt layers on top when the round actually ends. The popup's "REDEPLOY" path hits `POST /api/zones/deploy` (creates a new deployment) while the round-end prompt's "REJOIN" path hits `POST /api/zones/:zoneId/rejoin` (reactivates the existing withdrawn deployment). Different APIs, different server-side state transitions — confusing for players, fragile if both are clicked.
+
+**Resolution plan:** Delete both `showKOOverlay()` call sites. Leave the function definition and `#ko-overlay` markup dormant in place — removable in a later cleanup pass but out of scope for this fix. The round-end rejoin prompt (`_showRejoinPrompt`) becomes the sole post-KO UX.
+
+**Resolved 2026-04-19 in PR #?.** Both call sites of `showKOOverlay()` removed (primary `combat:ko` handler and V2 `processArenaEvent` branch). Function definition and overlay HTML left intact as dormant code; bundled with §9.33 which relocated the auto-rejoin trigger out of the popup countdown, and §9.32 which gated the high-frequency broadcast log.
+
+### 9.32 `arena:positions` log fires every tick → cleanup
+
+**Symptom.** `server/index.js:292-298` logs every `arena:positions` broadcast at info level: `📡 arena:positions → zone_<id>, nines: <n>`. The event fires from the combat engine tick loop (~6 Hz per active zone), so server logs are flooded with one line per zone per ~160 ms under any live combat load.
+
+**Effect.** Steady-state log noise with zero diagnostic value — the line contains no per-Nine detail, no timing, no delta. Obscures useful server-side logs during investigations. Low severity, but uncontroversial cleanup.
+
+**Resolution plan:** Wrap the log in a `process.env.DEBUG_BROADCASTS === '1'` check. Opt-in, no `.env.example` change needed.
+
+**Resolved 2026-04-19 in PR #?.** Gate applied; log only fires when `DEBUG_BROADCASTS=1` is set in the environment. All other `_broadcastToZone` events continue to emit silently (as before).
+
+### 9.33 Auto-rejoin trigger lives in legacy popup countdown → cleanup
+
+**Symptom.** The auto-rejoin trigger at `public/nethara-live.html:3220-3222` fired from inside the legacy 60s KO popup's 1-second countdown interval (`S._koTimer`). When the popup was killed by §9.31, the auto-rejoin mechanism was killed with it.
+
+**Effect.** Post-§9.31, the HUD "AUTO-REJOIN" toggle became a dead setting — flips the flag, saves the expiry, but nothing ever reads it at the right moment. Players who had auto-rejoin turned on would sit in the withdrawn state until they manually clicked the round-end rejoin prompt.
+
+Separately, the `checkAutoRedeploy()` function called from the expired popup pointed at `POST /api/zones/deploy` — the wrong API for the round-rejoin flow. That endpoint creates a *new* `zone_deployments` row while the player's existing deployment is still lingering as `withdrawn`, resulting in a duplicate deployment in the engine state.
+
+**Resolution plan:** Relocate the trigger to the `arena:round_start` socket handler — this is the earliest point at which the server's `combatEngine.rejoinRound()` will accept the call (`nine.withdrawn` is set in `startRound()`, not in `endRound()`). Gate on the existing `S._withdrawnAfterKO` flag (set at round_end when the local player was KO'd) plus the existing `S._autoRedeploy && Date.now() <= S._autoRedeployExpiry` check. Use the existing `window._doRejoin()` (hits the correct `/rejoin` API) rather than `checkAutoRedeploy()`. At round_end, suppress the manual rejoin prompt when auto-rejoin is on and log a "🔄 Auto-rejoining at Round N start..." feed message so the player isn't left wondering during the 25s intermission.
+
+Add a fallback: `_doRejoin()` returns a boolean; on `false` (silent network throw or server rejection) the round_start handler shows the manual rejoin prompt anyway, so the player is never stranded in the withdrawn state.
+
+**Resolved 2026-04-19 in PR #?.** Trigger relocated to `arena:round_start`; `_doRejoin()` now returns boolean for failure-path fallback; round_end suppresses the manual prompt when auto-rejoin is on. `checkAutoRedeploy()` itself left dormant (still referenced nowhere else after the popup removal) — removable in a later cleanup pass.
+
 ---
 
 ## Appendix A — Glossary
