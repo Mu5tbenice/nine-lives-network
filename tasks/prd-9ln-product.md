@@ -1026,7 +1026,7 @@ Reconnects occur on: network blips, device sleep/resume, Socket.io ping timeout 
 
 Note: PR #149 also lands §9.25 and §9.26 which are defensive — §9.26 specifically should mitigate the wandering symptom even if §9.27's root cause is hypothesis 1 (delete failing), because the client will now filter KO'd-state broadcasts out.
 
-**Resolved 2026-04-20 in PR #? via §9.28.** Root cause identified: `resolveId` scope error in the client `combat:ko` handler — not server-side delete failing (Hypothesis 1) and not Socket.io event loss (Hypothesis 2 as originally framed). Handler threw `ReferenceError: resolveId is not defined` on its first line (`const koId = resolveId(data.nineId || data.nine);`) because `resolveId` lives inside IIFE 2 while the handler lives inside IIFE 1, with no window bridge. Every subsequent line of the handler — `animateKO`, the self-KO overlay, the 800ms sprite-removal setTimeout, the waiting-dim Handler 2 — never executed. Spectators saw correct behavior because their sprite cleanup comes from the `arena:positions` cull at `nethara-live.html:3377-3380` (no resolveId needed); self-sprite has no fallback cleanup because that cull explicitly skips self. Fix: add `resolveId` to the `_pixi` window export — see §9.28. Diagnostic logging added in PR #149 remains in place for future KO investigations.
+**Resolved 2026-04-20 in PR #150 via §9.28.** Root cause identified: `resolveId` scope error in the client `combat:ko` handler — not server-side delete failing (Hypothesis 1) and not Socket.io event loss (Hypothesis 2 as originally framed). Handler threw `ReferenceError: resolveId is not defined` on its first line (`const koId = resolveId(data.nineId || data.nine);`) because `resolveId` lives inside IIFE 2 while the handler lives inside IIFE 1, with no window bridge. Every subsequent line of the handler — `animateKO`, the self-KO overlay, the 800ms sprite-removal setTimeout, the waiting-dim Handler 2 — never executed. Spectators saw correct behavior because their sprite cleanup comes from the `arena:positions` cull at `nethara-live.html:3377-3380` (no resolveId needed); self-sprite has no fallback cleanup because that cull explicitly skips self. Fix: add `resolveId` to the `_pixi` window export — see §9.28. Diagnostic logging added in PR #149 remains in place for future KO investigations.
 
 ### 9.28 `resolveId` not exposed across IIFE boundary → cleanup
 
@@ -1041,7 +1041,7 @@ Note: PR #149 also lands §9.25 and §9.26 which are defensive — §9.26 specif
 
 **Resolution plan:** Add `resolveId` to the `_pixi` export block at `public/nethara-live.html:8708-8715`. IIFE 2's `resolveId` uses `state.nines` — `state` is a Proxy reading from `window._S`, which is IIFE 1's `S`. So `state.nines === S.nines`. Calling `window.resolveId` from IIFE 1 operates on the same Map correctly. Bare `resolveId(...)` in IIFE 1 falls through to `window.resolveId` via standard JS scope resolution.
 
-**Resolved 2026-04-20 in PR #?.** Added to `_pixi` export. Also transitively fixes IIFE 1's `getNineName` (which internally calls `resolveId`), which was throwing on every combat-feed render.
+**Resolved 2026-04-20 in PR #150.** Added to `_pixi` export. Also transitively fixes IIFE 1's `getNineName` (which internally calls `resolveId`), which was throwing on every combat-feed render.
 
 See §9.30 for the symmetric cleanup in the other direction (IIFE 2 calls IIFE 1 functions without a window bridge).
 
@@ -1053,7 +1053,7 @@ See §9.30 for the symmetric cleanup in the other direction (IIFE 2 calls IIFE 1
 
 **Resolution plan:** Delete line 3119. Clean up the comment to reflect that the handoff is complete (drop the transitional "now").
 
-**Resolved 2026-04-20 in PR #?.**
+**Resolved 2026-04-20 in PR #150.**
 
 ### 9.30 IIFE 2 calls IIFE 1 functions without window bridge → cleanup (symmetric to §9.28)
 
@@ -1070,7 +1070,7 @@ See §9.30 for the symmetric cleanup in the other direction (IIFE 2 calls IIFE 1
 
 Deferred until evidence of user-visible impact OR an independent refactor motivates the cleanup.
 
-**Status: OPEN.** Opened 2026-04-20 in PR #? as a documented known issue captured during the §9.28 investigation. Not fixed in the same PR to keep the hotfix scope tight.
+**Status: OPEN.** Opened 2026-04-20 in PR #150 as a documented known issue captured during the §9.28 investigation. Not fixed in the same PR to keep the hotfix scope tight.
 
 ---
 
