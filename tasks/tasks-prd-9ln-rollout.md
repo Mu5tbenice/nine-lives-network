@@ -141,13 +141,13 @@ Organized by the §5.5 phasing in `tasks/prd-9ln-product.md`. Each §9 item is t
   - [ ] 4.0.6 Wire minimal guild-tag text rendering on zone cards (no logo yet) per Q3 scope.
   - [ ] 4.0.7 Re-estimate Task 4.0: L → M.
 
-- [x] 4.5 Zone identity V4 design decisions — resolve the open questions in `docs/design/zone-identity-v4.md`. Prerequisite for Task 4.0 fix. Owner: user. Est: M — design work, not coding. **Resolved 2026-04-20 in PR #?. All 5 decisions locked in `docs/design/zone-identity-v4.md`.**
-  - [x] 4.5.1 ~~User answers Q1 (per-round `dominant_house` semantics) inline in the design doc.~~ **Answered 2026-04-20 in PR #?.** Q1: most-deployed house; tiebreak = winning guild's dominant house.
-  - [x] 4.5.2 ~~User answers Q2 (per-day aggregation rule) inline in the design doc.~~ **Answered 2026-04-20 in PR #?.** Q2: house dominant in most rounds; tiebreaks = total deployments, then random.
-  - [x] 4.5.3 ~~User answers Q4 (source of truth — `zone_control` vs `zones`) inline in the design doc.~~ **Answered 2026-04-20 in PR #?.** Q4: `zones` table authoritative; combat engine refactored to read from `zones`; `zone_control.dominant_house` dropped.
-  - [x] 4.5.4 ~~User answers Q5 (`snapshot_hp` drop — default proposal accept/reject) inline in the design doc.~~ **Answered 2026-04-20 in PR #?.** Q5: drop column from both `zone_control` and `zone_control_history`; remove remaining writer references.
-  - [x] 4.5.5 ~~Q3 (`branded_guild` display) may be deferred — not gating combat bonuses. Mark deferred if skipped.~~ **Answered 2026-04-20 in PR #?.** Q3: controlling guild in most rounds; same tiebreak as Q2. Task 4.0 scope = data plumbing + minimal text rendering (guild tag only); logo UI deferred to the new guild-profile-system task (see Task 10.0).
-  - [x] 4.5.6 ~~Once Q1/Q2/Q4/Q5 are answered, unblock Task 4.0 and scope its new sub-tasks against the decisions.~~ **Done 2026-04-20 in PR #?.** Task 4.0 unblocked; new sub-tasks 4.0.1–4.0.7 added under Task 4.0.
+- [x] 4.5 Zone identity V4 design decisions — resolve the open questions in `docs/design/zone-identity-v4.md`. Prerequisite for Task 4.0 fix. Owner: user. Est: M — design work, not coding. **Resolved 2026-04-20 in PR #142. All 5 decisions locked in `docs/design/zone-identity-v4.md`.**
+  - [x] 4.5.1 ~~User answers Q1 (per-round `dominant_house` semantics) inline in the design doc.~~ **Answered 2026-04-20 in PR #142.** Q1: most-deployed house; tiebreak = winning guild's dominant house.
+  - [x] 4.5.2 ~~User answers Q2 (per-day aggregation rule) inline in the design doc.~~ **Answered 2026-04-20 in PR #142.** Q2: house dominant in most rounds; tiebreaks = total deployments, then random.
+  - [x] 4.5.3 ~~User answers Q4 (source of truth — `zone_control` vs `zones`) inline in the design doc.~~ **Answered 2026-04-20 in PR #142.** Q4: `zones` table authoritative; combat engine refactored to read from `zones`; `zone_control.dominant_house` dropped.
+  - [x] 4.5.4 ~~User answers Q5 (`snapshot_hp` drop — default proposal accept/reject) inline in the design doc.~~ **Answered 2026-04-20 in PR #142.** Q5: drop column from both `zone_control` and `zone_control_history`; remove remaining writer references.
+  - [x] 4.5.5 ~~Q3 (`branded_guild` display) may be deferred — not gating combat bonuses. Mark deferred if skipped.~~ **Answered 2026-04-20 in PR #142.** Q3: controlling guild in most rounds; same tiebreak as Q2. Task 4.0 scope = data plumbing + minimal text rendering (guild tag only); logo UI deferred to the new guild-profile-system task (see Task 10.0).
+  - [x] 4.5.6 ~~Once Q1/Q2/Q4/Q5 are answered, unblock Task 4.0 and scope its new sub-tasks against the decisions.~~ **Done 2026-04-20 in PR #142.** Task 4.0 unblocked; new sub-tasks 4.0.1–4.0.7 added under Task 4.0.
 
 ### Ongoing — runs parallel to any phase; does not block critical path
 
