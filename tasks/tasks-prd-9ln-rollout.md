@@ -196,7 +196,7 @@ Organized by the §5.5 phasing in `tasks/prd-9ln-product.md`. Each §9 item is t
   - [x] 8.5.4 Document lint conventions in `CLAUDE.md`. *Documented inline in `.eslintrc.cjs` rule relaxations + PR body. If a CLAUDE.md mention is desired, add in a follow-up docs PR — kept out of this bulk-reformat PR to preserve review focus.*
   - [ ] 8.5.5 Decide CI integration (probably defer until §8.1 testing infrastructure).
 
-- [x] 8.6 Boot-time observability — `/api/health` with `failed_requires` reporting (est: S–M) *Landed in PR #? (2026-04-19). Actual site count on wire-up was 21 + 15 = 36 (rollout text said 22 + 15 = 37); the discrepancy is the Socket.io try/catch being counted differently, not missed coverage.*
+- [x] 8.6 Boot-time observability — `/api/health` with `failed_requires` reporting (est: S–M) *Landed in PR #140 (2026-04-19). Actual site count on wire-up was 21 + 15 = 36 (rollout text said 22 + 15 = 37); the discrepancy is the Socket.io try/catch being counted differently, not missed coverage.*
 
   **Context.** Surfaced out of Task 3.0 (PR #137). Originally planned as 3.4 but deferred because it's a new observability concern, not a §9.6 resolution. PRD §7.2 already names it as a "planned follow-up" — this task lands it.
 
