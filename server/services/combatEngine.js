@@ -1361,7 +1361,8 @@ function startRound(zoneId, zs, all) {
     zoneId,
     roundNumber: zs.roundNumber,
     nines: all.map((n) => ({
-      id: n.deploymentId,
+      id: n.playerId, // align with arena:positions — S.nines on the client is keyed by playerId (§9.25)
+      deploymentId: n.deploymentId,
       playerId: n.playerId,
       hp: n.hp,
       maxHp: n.maxHp,
