@@ -3276,7 +3276,10 @@
       addFeedEvent('Connected to arena', 'system');
       _showArenaLoading('JOINING ZONE...', 60);
     });
-    socket.on('disconnect', () => addFeedEvent('Reconnecting...', 'system'));
+    socket.on('disconnect', () => {
+      addFeedEvent('Reconnecting...', 'system');
+      _firstPositionsTick = true; // reset so the next positions tick after reconnect dismisses the overlay (§9.24 Fix A)
+    });
 
     // Positions tick — single source of truth for who's on the battlefield
     // First tick dismisses loading overlay
@@ -3288,6 +3291,11 @@
         setTimeout(_dismissArenaLoading, 500);
         // Clear any loading timeout since we got real data
         if (window._arenaLoadTimeout) { clearTimeout(window._arenaLoadTimeout); window._arenaLoadTimeout = null; }
+      } else {
+        // Defensive: if the overlay is still visible when positions arrive
+        // (edge case Fix A in the disconnect handler doesn't catch), dismiss it. (§9.24 Fix B)
+        const overlay = document.getElementById('arena-loading');
+        if (overlay && overlay.style.display !== 'none') _dismissArenaLoading();
       }
       if (!data.nines) return;
       const activeIds = new Set(data.nines.map(d => String(d.id)));
