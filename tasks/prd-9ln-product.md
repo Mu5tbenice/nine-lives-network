@@ -903,6 +903,8 @@ See §7.7. `zone_control_history` at 265 rows/day will be the first table to sho
 
 **Partially resolved 2026-04-20 in PR #143.** Round-end writer now populates `dominant_house` and `branded_guild`; recalc aggregation switched to rounds-won. Full resolution pending: (a) combat engine reader switch to `zones` table (PR #144 — Task 4.0.3) and (b) `snapshot_hp` column drop (PR #145 — Task 4.0.4).
 
+**Fully resolved 2026-04-20 in PR #146.** End-to-end zone-identity pipeline for V4 is now live and correct. Resolution chain: PR #141 (diagnostic reframe), PR #143 (round-end writer + recalc aggregation per Q1/Q2), PR #144 (combat reader switch + merge flip + guild-tag UI per Q3/Q4), PR #145 (code cleanup of deprecated column reads — slice "3a"), PR #146 (schema drop via `supabase/migrations/20260419144153_drop_zone_control_deprecated_columns.sql` — slice "3b"). Combat, recalc, and UI all read from `zones` as the single source of truth; deprecated V1 columns are gone.
+
 **Original filing (PORT default mismatch hypothesis — proven wrong 2026-04-19).** `.env.example:25` sets `PORT=3000`. `server/services/scheduler.js:80` self-calls its recalc endpoint via `http://localhost:${process.env.PORT || 5000}/api/zones/recalculate-identities`, falling back to **5000**. The hypothesis was that if the server bound to 3000 and `PORT` wasn't exported to the scheduler's environment, the request would 404 silently. The diagnostic confirmed the cron does reach the endpoint and the endpoint does run — the real issue is that the endpoint aggregates NULL/0 data because the round-end writer never populates the source columns.
 
 ### 9.20 Orphaned `/api/zones/midnight-reset` endpoint → cleanup
@@ -942,6 +944,8 @@ No writer populates `zone_control.dominant_house`. Existing populated values in 
 Per stakeholder confirmation (2026-04-19), `snapshot_hp` is a scrapped V1 mechanic — intended as a per-zone HP bar tied to house HP totals, deprecated due to cross-house HP imbalance in V4's 9-house design.
 
 **Resolution plan:** Drop both columns via migration; remove the vestigial SELECT at `server/routes/zones.js:1041-1042`. Execute in the same cleanup pass that resolves §9.19, since the same writer consolidation touches these tables.
+
+**Resolved 2026-04-20 in PR #146.** Vestigial SELECT removed in PR #145. Columns dropped via `supabase/migrations/20260419144153_drop_zone_control_deprecated_columns.sql` — applied manually through the Supabase dashboard SQL Editor because the Supabase MCP is configured in read-only mode and blocks `apply_migration`. Post-drop schema verified via `execute_sql`: `zone_control` now has `id, zone_id, controlling_guild, updated_at`; `zone_control_history` has `id, zone_id, controlling_guild, dominant_house, branded_guild, snapped_at, round_number`.
 
 ### 9.23 Rounds not ending on production → OPEN (investigation required)
 
