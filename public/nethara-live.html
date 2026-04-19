@@ -8712,6 +8712,7 @@
     engineToScreen, getSpawnPosition,
     fireworkCRIT, fireworkBURN, fireworkPOISON, fireworkCHAIN,
     fireworkSILENCE, fireworkHEAL, fireworkWEAKEN, fireworkDODGE,
+    resolveId, // §9.28: bridge to IIFE 1 socket handlers; state.nines (IIFE 2) === window._S.nines (IIFE 1) via Proxy
   };
   Object.assign(window, _pixi);
 })();
