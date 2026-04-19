@@ -3577,7 +3577,7 @@
         S.isDeployed = false;
         S._recentlyKOd.add(String(S.playerId));
         setTimeout(() => S._recentlyKOd.delete(String(S.playerId)), 65000);
-        showKOOverlay(data.killerName || null);
+        // §9.31: legacy 60s popup suppressed — round-end rejoin prompt handles UX
         document.getElementById('arena-bottom-tray').style.display = 'none';
         recordBuildEnd();
       }
@@ -3667,11 +3667,19 @@
       S._roundEndsAt    = Date.now() + (data.intermissionMs || 25000);
       S._roundStartedAt = null; // reset — will be set on arena:round_start
 
-      // Was this player KO'd during the round? If so, show rejoin prompt
+      // Was this player KO'd during the round? If so, queue a rejoin.
+      // §9.33: if auto-rejoin is on, skip the manual prompt and let
+      // arena:round_start fire the rejoin API (server only accepts rejoin
+      // after it sets nine.withdrawn=true in startRound, not at round_end).
       if (S.isDeployed && S._wasKOdThisRound) {
         S._withdrawnAfterKO = true;
         S._wasKOdThisRound  = false;
-        _showRejoinPrompt(data);
+        const autoOn = S._autoRedeploy && Date.now() <= S._autoRedeployExpiry;
+        if (autoOn) {
+          addFeedEvent(`🔄 Auto-rejoining at Round ${S._roundNumber} start...`, 'system');
+        } else {
+          _showRejoinPrompt(data);
+        }
       }
 
       const winner = data.winner;
@@ -3735,6 +3743,11 @@
 
     // ── ROUND START — full HP reset, all waiting players rejoin ─────────
     socket.on('arena:round_start', (data) => {
+      // §9.33: capture withdrawn-state BEFORE the per-round reset below,
+      // so the auto-rejoin trigger at the end of this handler can still see it
+      const wasWithdrawn = !!S._withdrawnAfterKO;
+      const autoOn = S._autoRedeploy && Date.now() <= S._autoRedeployExpiry;
+
       S._roundState     = 'FIGHTING';
       S._roundNumber    = data.roundNumber || 1;
       S._roundStartedAt = Date.now();
@@ -3768,6 +3781,19 @@
       // Refresh sidebar
       if (typeof renderGuildSidebar === 'function') renderGuildSidebar();
       if (S.isDeployed && S.playerId && S.currentZoneId) loadMyCards(S.currentZoneId);
+
+      // §9.33: auto-rejoin fires here — server has now set nine.withdrawn=true
+      // in startRound, so /rejoin will succeed. Fall back to manual prompt on
+      // failure so silent network throws don't leave the player stuck withdrawn.
+      if (wasWithdrawn && autoOn && typeof window._doRejoin === 'function') {
+        window._doRejoin().then(ok => {
+          if (!ok) {
+            addFeedEvent('⚠️ Auto-rejoin failed — tap prompt to rejoin', 'system');
+            S._withdrawnAfterKO = true; // restore flag so user can manually rejoin
+            _showRejoinPrompt({ roundNumber: (data.roundNumber || 1) - 1 });
+          }
+        });
+      }
     });
 
     // ── KO: mark sprite as waiting ────────────────────────────────────────
@@ -4219,7 +4245,10 @@
   window._dismissRejoinPrompt = _dismissRejoinPrompt;
 
   window._doRejoin = async function() {
-    if (!S.currentZoneId || !S.playerId) return;
+    // §9.33: returns boolean so auto-rejoin callers can surface a fallback
+    // on silent failure paths (network throws). Manual button path doesn't
+    // check the return value — unchanged behavior.
+    if (!S.currentZoneId || !S.playerId) return false;
     const btn = document.getElementById('rejoin-btn');
     if (btn) { btn.textContent = 'REJOINING...'; btn.disabled = true; }
     try {
@@ -4234,12 +4263,15 @@
         _dismissRejoinPrompt();
         S._withdrawnAfterKO = false;
         addFeedEvent('✅ Rejoined — next round starting soon', 'flip');
+        return true;
       } else {
         if (btn) { btn.textContent = '⚔ REJOIN ROUND'; btn.disabled = false; }
         addFeedEvent(`Rejoin failed: ${data.error || 'Try again'}`, 'snapshot');
+        return false;
       }
     } catch(e) {
       if (btn) { btn.textContent = '⚔ REJOIN ROUND'; btn.disabled = false; }
+      return false;
     }
   };
 
@@ -7537,10 +7569,9 @@
           screenFlash(0xff2222, 0.25);
           renderGuildSidebar(); // refresh guild HP totals
         }
-        // If YOUR Nine got KO'd, show KO overlay
+        // §9.31: legacy 60s popup suppressed — round-end rejoin prompt handles UX
         if (koId == state.playerId) {
           state.isDeployed = false;
-          showKOOverlay(ev.sourceName || null);
         }
         break;
       }

@@ -290,7 +290,9 @@ if (io) {
   // Set up global broadcast function so combat engine can send events
   global.__arenaSocket = {
     _broadcastToZone: function (zoneId, event, data) {
-      if (event === 'arena:positions')
+      // §9.32: arena:positions fires every tick (~6 Hz per zone) — gate
+      // the log behind DEBUG_BROADCASTS=1 so steady-state logs aren't flooded
+      if (event === 'arena:positions' && process.env.DEBUG_BROADCASTS === '1')
         console.log(
           `📡 ${event} → zone_${zoneId}, nines: ${data?.nines?.length}`,
         );
