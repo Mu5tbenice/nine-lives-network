@@ -68,7 +68,7 @@ Organized by the §5.5 phasing in `tasks/prd-9ln-product.md`. Each §9 item is t
 
 ## Tasks
 
-- [ ] 0.0 Kickoff — branch strategy & PR cadence for the full rollout (est: S)
+- [x] 0.0 Kickoff — branch strategy & PR cadence for the full rollout (est: S) *Absorbed into PR #132 (Task 0.5). Branching strategy, PR cadence, commit message convention, and review workflow all documented in CLAUDE.md and demonstrated by shipped PRs #125–#138. No separate PR needed.*
   - [ ] 0.1 Confirm branch-prefix convention per task type: `fix/` (1.0, 2.0, 3.0, 4.0), `chore/` (5.0), `docs/` (6.x, 7.x, 8.x).
   - [ ] 0.2 Confirm PR ordering — Phase 1 parents can run in parallel (different files), but 1.0 and 2.0 both touch `combatEngine.js` so sequence them 1.0 → 2.0 to avoid merge pain. 3.0, 4.0, and 5.0 are independent.
   - [ ] 0.3 Commit message convention — match existing repo style (observed in recent commits): lowercase type prefix, em-dash separator, terse subject under 70 chars, detailed body.
@@ -189,7 +189,7 @@ Organized by the §5.5 phasing in `tasks/prd-9ln-product.md`. Each §9 item is t
   - [ ] 8.3 Confirm PRD §7.7 already captures the storage-growth plan adequately; if not, expand with concrete rollup criteria (e.g., "archive rows older than 90 days to `zone_control_history_archive` table").
   - [ ] 8.4 Quarterly PRD review — 2026-07-17 — verify §9 resolutions are accurately reflected and close any ledger entries that are now done.
 
-- [ ] 8.5 Establish lint + formatter baseline (est: M)
+- [x] 8.5 Establish lint + formatter baseline (est: M) *All non-deferred sub-tasks complete in PR #138 (2026-04-19). Sub-task 8.5.5 (CI integration) deliberately deferred — tied to Task 8.1 testing infrastructure decisions.*
   - [x] 8.5.1 Add `.prettierrc`, `.eslintrc.cjs` with sensible vanilla-JS + Express defaults. *Also added `.prettierignore` + `.eslintignore`. `singleQuote: true` chosen to reduce churn vs ambient style. ESLint on `eslint:recommended` + Node env with 4 rules relaxed (no-unused-vars, no-empty, no-inner-declarations, no-case-declarations) — rationale documented in `.eslintrc.cjs` and in the PR body.*
   - [x] 8.5.2 Add `npm run lint`, `npm run format`, and `npm run format:check` scripts to `package.json`.
   - [x] 8.5.3 Run formatter once across the whole repo as a single "apply formatter" commit (no logic changes). *132 files reformatted. `public/**` deferred to a future dedicated PR — inline-JS HTML is higher risk.*
