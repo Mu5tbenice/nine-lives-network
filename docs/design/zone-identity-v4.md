@@ -1,6 +1,6 @@
 # Zone identity V4 — design questions
 
-**Status: OPEN — blocking Task 4.0 fix.**
+**Status: RESOLVED 2026-04-20 — all five decisions locked.**
 
 Owner: user (Spencer). Claude filled in Context + Evidence; decision sections are left blank for the user to resolve.
 
@@ -67,7 +67,9 @@ Options:
 - Pros: tunable.
 - Cons: opaque to players.
 
-Decision: [LEFT BLANK]
+Decision:
+Rule: House with the most Nine deployments in the round.
+Tiebreak: Winning guild's dominant house (where the guild's dominant house is the most-represented house among its round participants).
 
 ## Question 2: What does "dominant house" mean per day?
 
@@ -87,7 +89,10 @@ Options:
 - Pros: dramatic narrative; late-night rounds matter most.
 - Cons: variance-heavy; one fluke round flips a day.
 
-Decision: [LEFT BLANK]
+Decision:
+Rule: House that was dominant in the most rounds during the day.
+Tiebreak 1: House with the most total deployments summed across all rounds that day.
+Tiebreak 2: Random.
 
 ## Question 3: What does "branded_guild" represent and display where?
 
@@ -101,7 +106,11 @@ Questions:
 - If it's meant to confer a bonus to that guild's Nines in that zone, what bonus? The PRD lists it under "cosmetic" only.
 - Semantic question (parallels Q1): "Branded guild" = most wins? most deployments? winning guild of the final round?
 
-Decision: [LEFT BLANK]
+Decision:
+Rule: Guild that was the controlling guild in the most rounds during the day. Same tiebreak structure as Q2 (total deployments, then random).
+Display: Guild logo (manually assigned by Spencer for now, no self-service upload UI until the guild profile system exists) + guild tag text on zone cards.
+Empty state: Zone shows no branding (neutral state) when no guild claimant.
+Scope for Task 4.0: Data plumbing + minimal text rendering (guild tag only). Logo rendering deferred to after the guild profile system lands.
 
 ## Question 4: Source of truth — `zones` table or `zone_control`?
 
@@ -122,7 +131,10 @@ The split described in §9.21 needs to collapse. Pick one:
 - Pros: `zones` is the "dimension" table; placing daily-aggregated identity there matches the mental model (one row per zone, not per round).
 - Cons: combat reads cross a different table than where round events are written.
 
-Decision: [LEFT BLANK]
+Decision:
+zones table is authoritative for dominant_house and branded_guild.
+Combat engine will be refactored to read from zones (not zone_control).
+zone_control.dominant_house column will be deprecated/dropped.
 
 ## Question 5: Remove `snapshot_hp` entirely?
 
@@ -133,7 +145,8 @@ Decision: [LEFT BLANK]
 
 Default proposal: drop both columns + remove the vestigial SELECT at `server/routes/zones.js:1041-1042` in the same cleanup PR that consolidates the source of truth (Q4).
 
-Decision: [LEFT BLANK]
+Decision:
+Drop the column entirely from both zone_control and zone_control_history. Remove any remaining writer references.
 
 ---
 
@@ -142,3 +155,7 @@ Decision: [LEFT BLANK]
 The fix PR needs answers to **Q1, Q2, Q4, Q5** at minimum. Q3 (branded_guild display) can be deferred — it isn't gating combat bonuses, so the fix can populate the column correctly without the UI work landing yet.
 
 Suggested next step: user answers Q1, Q2, Q4, Q5 inline in this file. Claude then drafts the implementation PR against those decisions, closing §9.19–9.22 in one coordinated cleanup pass.
+
+---
+
+Decisions locked. See Task 4.0 for implementation.
