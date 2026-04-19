@@ -901,6 +901,8 @@ See §7.7. `zone_control_history` at 265 rows/day will be the first table to sho
 
 **Updated 2026-04-19 in PR #141.** Reframed after full diagnostic via Supabase MCP (zones/zone_control/zone_control_history inspection) + grep audit of writers and readers. Original framing preserved below for history.
 
+**Partially resolved 2026-04-20 in PR #?.** Round-end writer now populates `dominant_house` and `branded_guild`; recalc aggregation switched to rounds-won. Full resolution pending: (a) combat engine reader switch to `zones` table (PR #144 — Task 4.0.3) and (b) `snapshot_hp` column drop (PR #145 — Task 4.0.4).
+
 **Original filing (PORT default mismatch hypothesis — proven wrong 2026-04-19).** `.env.example:25` sets `PORT=3000`. `server/services/scheduler.js:80` self-calls its recalc endpoint via `http://localhost:${process.env.PORT || 5000}/api/zones/recalculate-identities`, falling back to **5000**. The hypothesis was that if the server bound to 3000 and `PORT` wasn't exported to the scheduler's environment, the request would 404 silently. The diagnostic confirmed the cron does reach the endpoint and the endpoint does run — the real issue is that the endpoint aggregates NULL/0 data because the round-end writer never populates the source columns.
 
 ### 9.20 Orphaned `/api/zones/midnight-reset` endpoint → cleanup
@@ -910,6 +912,8 @@ See §7.7. `zone_control_history` at 265 rows/day will be the first table to sho
 **Effect.** Dead code; overlap risks confusion for future maintainers. Low severity on its own but zone-identity-adjacent — should be handled in the same cleanup pass that resolves §9.19.
 
 **Resolution plan:** Delete the endpoint after `docs/design/zone-identity-v4.md` picks a single source of truth. Zone-identity mechanics should have one designated write path.
+
+**Resolved 2026-04-20 in PR #?.** Endpoint deleted; `/recalculate-identities` is now the sole write path for zone-identity fields per the Task 4.5 Q4 decision. Grep confirmed zero consumers across `server/`, `public/`, `client/` before deletion.
 
 ### 9.21 Split source of truth — `zone_control.dominant_house` vs `zones.dominant_house` → architectural decision
 
