@@ -996,7 +996,7 @@ Reconnects occur on: network blips, device sleep/resume, Socket.io ping timeout 
 
 **Resolution plan:** Align the `arena:round_start` payload's `id` field with `arena:positions` — use `n.playerId`. Simplify the client lookup to `String(n.id)`. Keep `deploymentId` as a separate field on the payload for any future consumer.
 
-**Resolved 2026-04-20 in PR #?.**
+**Resolved 2026-04-20 in PR #149.**
 
 ### 9.26 `arena:positions` missing `waitingForRound` field → cleanup
 
@@ -1006,7 +1006,7 @@ Reconnects occur on: network blips, device sleep/resume, Socket.io ping timeout 
 
 **Resolution plan:** Add `waitingForRound: !!n.waitingForRound` to the `arena:positions` payload. Client filter becomes live.
 
-**Resolved 2026-04-20 in PR #?.**
+**Resolved 2026-04-20 in PR #149.**
 
 ### 9.27 Self-KO'd sprite persists on KO'd player's view → OPEN (diagnostic logging added)
 
@@ -1018,13 +1018,13 @@ Reconnects occur on: network blips, device sleep/resume, Socket.io ping timeout 
 2. `combat:ko` event is not reaching the KO'd player's client (Socket.io reconnect window, event loss) — Handler 1's 800ms `removeNineSprite` setTimeout never schedules.
 3. Compound — both failing at once.
 
-**Diagnostic logging added in PR #?:**
+**Diagnostic logging added in PR #149:**
 - Server: `[KO] zone=X nine=<deploymentId> player=<playerId> delete_start` + `delete_ok` or `delete_failed` with remaining count, around the `zs.nines.delete` call.
 - Client: `[combat:ko] received nineId=X isSelf=<bool> waitingForRound=<bool>` at the top of the `combat:ko` handler.
 
-**Next step:** reproduce the KO on production post-deploy (Replit logs panel open DURING the KO), inspect both server and client logs, narrow the hypothesis per the decision matrix in PR #? description.
+**Next step:** reproduce the KO on production post-deploy (Replit logs panel open DURING the KO), inspect both server and client logs, narrow the hypothesis per the decision matrix in PR #149 description.
 
-Note: PR #? also lands §9.25 and §9.26 which are defensive — §9.26 specifically should mitigate the wandering symptom even if §9.27's root cause is hypothesis 1 (delete failing), because the client will now filter KO'd-state broadcasts out.
+Note: PR #149 also lands §9.25 and §9.26 which are defensive — §9.26 specifically should mitigate the wandering symptom even if §9.27's root cause is hypothesis 1 (delete failing), because the client will now filter KO'd-state broadcasts out.
 
 ---
 
