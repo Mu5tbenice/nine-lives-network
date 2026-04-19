@@ -125,7 +125,7 @@ Organized by the §5.5 phasing in `tasks/prd-9ln-product.md`. Each §9 item is t
   - [x] 3.4 ~~Add a `/api/health` endpoint that reports failed requires.~~ **Deferred to Task 8.6 (boot-time observability).** This is a new concern, not a §9.6 resolution — deserves its own task + plan + estimate.
   - [x] 3.5 ~~Verify: boot → curl `/api/health` → confirm zero failed requires.~~ **Deferred with 3.4 to Task 8.6.** This PR verified via `node --check` on both modified files (both pass) + grep confirming zero `combatEngineV2` or `/api/mana` references anywhere in `server/` or `public/`.
 
-- [ ] 4.0 Nightly zone-identity cron fix + diagnostic (§9.19 → Phase 1 critical) **(unblocked 2026-04-20 by Task 4.5 decisions)** (est: L — stakeholder diagnostic bump; re-estimated M in 4.0.7 after decisions locked)
+- [ ] 4.0 Nightly zone-identity cron fix + diagnostic (§9.19 → Phase 1 critical) **(unblocked 2026-04-20 by Task 4.5 decisions)** (est: M — re-estimated from L after Task 4.5 locked the design)
   - [x] 4.1 ~~**DIAGNOSTIC FIRST.** Via Supabase MCP, query `zones` table and `zone_control.updated_at` for the past 7 nights. Check whether `branded_guild` and `dominant_house` have been updating daily. Command sketch: `SELECT id, branded_guild, dominant_house, updated_at FROM zones ORDER BY updated_at DESC;`~~ **Diagnostic complete 2026-04-19 in PR #141. Fix scope is now dependent on design decisions — see Task 4.5 and `docs/design/zone-identity-v4.md`.** The diagnostic disproved the PORT-mismatch hypothesis; the real issues are an incomplete round-end writer, a split source of truth, and undefined V4 semantics. Findings captured in PRD §9.19 (reframed) and §9.20–9.22 (new).
   - [x] 4.2 ~~If stale: document how many zones + how many days. Estimate affected rounds (the in-combat `zoneBonusCache` at `combatEngine.js:97-100` would have been applying pre-stale-date bonuses). Surface to stakeholder.~~ **Superseded 2026-04-19 in PR #141.** Diagnostic showed the cron fires correctly; impact is NULL aggregation, not missed-cron staleness. Scope reframed in PRD §9.19.
   - [x] 4.3 ~~Refactor `server/services/scheduler.js:80`. Replace `fetch('http://localhost:${PORT||5000}/api/zones/recalculate-identities')` with a direct `require('../routes/zones').writeNightlyPresence()` call — or extract `writeNightlyPresence` to a shared service if the route file shouldn't be reached into.~~ **Superseded 2026-04-19 in PR #141.** The self-call is not the defect. May still be desirable as a code-hygiene cleanup but is not on the Task 4.0 critical path.
@@ -139,7 +139,6 @@ Organized by the §5.5 phasing in `tasks/prd-9ln-product.md`. Each §9 item is t
   - [ ] 4.0.4 Drop `snapshot_hp` column from `zone_control` and `zone_control_history` via migration; remove any remaining writers per Q5.
   - [ ] 4.0.5 Delete orphaned `/midnight-reset` endpoint per §9.20.
   - [ ] 4.0.6 Wire minimal guild-tag text rendering on zone cards (no logo yet) per Q3 scope.
-  - [ ] 4.0.7 Re-estimate Task 4.0: L → M.
 
 - [x] 4.5 Zone identity V4 design decisions — resolve the open questions in `docs/design/zone-identity-v4.md`. Prerequisite for Task 4.0 fix. Owner: user. Est: M — design work, not coding. **Resolved 2026-04-20 in PR #142. All 5 decisions locked in `docs/design/zone-identity-v4.md`.**
   - [x] 4.5.1 ~~User answers Q1 (per-round `dominant_house` semantics) inline in the design doc.~~ **Answered 2026-04-20 in PR #142.** Q1: most-deployed house; tiebreak = winning guild's dominant house.
@@ -180,7 +179,7 @@ Organized by the §5.5 phasing in `tasks/prd-9ln-product.md`. Each §9 item is t
     Each FPRD spawns its own `tasks-prd-<n>.md` after approval.
   - [ ] 6.6 Manual verification that satisfies Phase 2 "Done when" criteria (PRD §5.5): new-player path under 60s; leaderboards under 500ms p50; KO +10 row visible in personal history before next round.
 
-- [ ] 10.0 Guild profile + identity system (est: L — feature work) *Surfaced by Task 4.5 Q3 — the `branded_guild` UX is half-implemented because guilds have no profile system. Prerequisite: none (can parallel Task 4.0 fix). Phase placement: under review by user.*
+- [ ] 10.0 Guild profile + identity system (est: L — feature work) *Surfaced by Task 4.5 Q3 — the `branded_guild` UX is half-implemented because guilds have no profile system. Prerequisite: none (can parallel Task 4.0 fix).*
   - [ ] 10.1 Scope: `guilds` table with name, slug, logo upload, description, ownership, membership model.
   - [ ] 10.2 Scope: UI flows for guild creation, joining, logo upload.
   - [ ] 10.3 Scope: integration with `branded_guild` display in zone cards (replaces the manual-logo-assignment interim from Task 4.0.6).
