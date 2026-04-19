@@ -690,7 +690,7 @@ This PRD is not a roadmap — it describes the end state. But the work to close 
 
 **7.2 Graceful-degradation pattern.** `server/index.js` and `services/scheduler.js` wrap every `require()` in individual `try/catch`. The server is designed to boot even when optional services (Twitter, Telegram, Anthropic, combat engine) fail to load. Every new route/engine MUST follow this pattern.
 
-**Caveat of this pattern:** it hides missing files (e.g., `mana.js`, `combatEngineV2.js`) from boot logs. A startup self-report (list of failed requires exposed via `/api/health`) is a planned follow-up.
+**Caveat of this pattern:** it hides missing files (e.g., `mana.js`, `combatEngineV2.js`) from boot logs. A startup self-report (list of failed requires exposed via `/api/health`) was implemented in PR #140 via a shared `server/services/bootFailures.js` accumulator — `/api/health` now returns `{ status, timestamp, failed_requires: [{ module, error, stack, timestamp }] }`. An empty `failed_requires` array is the healthy state.
 
 **7.3 Server layout (actual, not as README claims).**
 - `server/routes/` — Express routers mounted under `/auth`, `/api/<name>`.

@@ -4,6 +4,7 @@
 // ═══════════════════════════════════════════════════════
 
 const cron = require('node-cron');
+const { captureBootFailure } = require('./bootFailures');
 
 // All imports are optional — scheduler should NEVER crash on missing modules
 let territoryControl = null;
@@ -27,76 +28,91 @@ try {
   territoryControl = require('./territoryControl');
 } catch (e) {
   console.log('⚠️ territoryControl not loaded');
+  captureBootFailure('./services/territoryControl', e);
 }
 try {
   activityDecay = require('./activityDecay');
 } catch (e) {
   console.log('⚠️ activityDecay not loaded');
+  captureBootFailure('./services/activityDecay', e);
 }
 try {
   narrativeEngine = require('./narrativeEngine');
 } catch (e) {
   console.log('⚠️ narrativeEngine not loaded');
+  captureBootFailure('./services/narrativeEngine', e);
 }
 try {
   effectEngine = require('./effectEngine');
 } catch (e) {
   console.log('⚠️ effectEngine not loaded');
+  captureBootFailure('./services/effectEngine', e);
 }
 try {
   packSystem = require('./packSystem');
 } catch (e) {
   console.log('⚠️ packSystem not loaded');
+  captureBootFailure('./services/packSystem', e);
 }
 try {
   supabase = require('../config/supabase');
 } catch (e) {
   console.log('⚠️ supabase not loaded');
+  captureBootFailure('../config/supabase', e);
 }
 try {
   combatEngine = require('./combatEngine');
 } catch (e) {
   console.log('⚠️ combatEngine not loaded');
+  captureBootFailure('./services/combatEngine', e);
 }
 try {
   bossEngine = require('./bossEngine');
 } catch (e) {
   console.log('⚠️ bossEngine not loaded');
+  captureBootFailure('./services/bossEngine', e);
 }
 try {
   nineSystem = require('./nineSystem');
 } catch (e) {
   console.log('⚠️ nineSystem not loaded');
+  captureBootFailure('./services/nineSystem', e);
 }
 try {
   twitterBot = require('./twitterBot');
 } catch (e) {
   console.log('⚠️ twitterBot not loaded');
+  captureBootFailure('./services/twitterBot', e);
 }
 try {
   nermBot = require('./nermBot');
 } catch (e) {
   console.log('⚠️ nermBot not loaded');
+  captureBootFailure('./services/nermBot', e);
 }
 try {
   dropTicketEngine = require('./dropTicketEngine');
 } catch (e) {
   console.log('⚠️ dropTicketEngine not loaded');
+  captureBootFailure('./services/dropTicketEngine', e);
 }
 try {
   chronicleEngine = require('./chronicleEngine');
 } catch (e) {
   console.log('⚠️ chronicleEngine not loaded');
+  captureBootFailure('./services/chronicleEngine', e);
 }
 try {
   nermTwitter = require('./nermTwitter');
 } catch (e) {
   console.log('⚠️ nermTwitter not loaded');
+  captureBootFailure('./services/nermTwitter', e);
 }
 try {
   nermTelegram = require('./nerm-telegram');
 } catch (e) {
   console.log('⚠️ nermTelegram not loaded');
+  captureBootFailure('./services/nerm-telegram', e);
 }
 
 let jobsInitialized = false;
