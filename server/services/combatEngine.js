@@ -1118,6 +1118,7 @@ async function tickZone(zoneId, zs) {
       maxHp: n.maxHp,
       guildTag: n.guildTag,
       houseKey: n.houseKey,
+      waitingForRound: !!n.waitingForRound, // activates client filter at nethara-live.html:3315 (§9.26)
       cardSlot: n.cardIdx % Math.max(1, n.cards.length),
       activeEffect:
         n.cards[n.cardIdx % Math.max(1, n.cards.length)]?.effect_1 || null,
