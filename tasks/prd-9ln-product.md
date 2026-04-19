@@ -1106,6 +1106,20 @@ Add a fallback: `_doRejoin()` returns a boolean; on `false` (silent network thro
 
 **Resolved 2026-04-19 in PR #151.** Trigger relocated to `arena:round_start`; `_doRejoin()` now returns boolean for failure-path fallback; round_end suppresses the manual prompt when auto-rejoin is on. `checkAutoRedeploy()` itself left dormant (still referenced nowhere else after the popup removal) — removable in a later cleanup pass.
 
+### 9.34 `arena:round_end` rejoin guard requires `S.isDeployed` (always false for KO'd player) → cleanup
+
+**Symptom.** The `arena:round_end` socket handler at `public/nethara-live.html:3674` gated its post-KO branch on `if (S.isDeployed && S._wasKOdThisRound)`. Both the manual `_showRejoinPrompt` and the new auto-rejoin trigger from §9.33 lived inside that branch.
+
+`S.isDeployed` is cleared at `nethara-live.html:3577` in the FIRST `combat:ko` socket handler's self-KO branch — fires immediately on KO arrival, well before `arena:round_end` is broadcast. So by round_end time, `S.isDeployed` has been `false` for the entire intermission, the conjunction `false && _wasKOdThisRound` is permanently `false` for the KO'd player, and the rejoin branch never enters.
+
+**Effect.** Post-§9.31 (legacy 60s KO popup removal), no rejoin UX of any kind reached the player after a KO: no manual prompt, no auto-rejoin feed message, no `S._withdrawnAfterKO` set, no auto-rejoin trigger at round_start. Player stayed silently withdrawn.
+
+**Discovery chain.** Pre-existing dead branch — predates PR #151 by an unknown margin. The legacy 60s KO popup at `nethara-live.html:3580` was the user's primary post-KO UI and masked the dead branch entirely; nobody noticed `_showRejoinPrompt` was unreachable because the popup was always front-and-center. PR #151 commit 1 deleted both `showKOOverlay()` call sites per §9.31, making the round_end branch the sole post-KO path. Smoke test on the deployed PR #151 build immediately surfaced the regression: KO'd players received no UI at all. Investigation traced the chain in <30 minutes; one-line fix landed in the same PR cycle.
+
+**Resolution plan:** Drop the `S.isDeployed` clause. `S._wasKOdThisRound` (set at `nethara-live.html:3629` only when the server's `combat:ko` broadcast carries `waitingForRound: true` for this player's id) is precisely "this player was deployed at start of round AND got KO'd this round" — sufficient on its own. Sibling guards in the same handler (survival counter at line 3701, points tally at line 3702) keep their `S.isDeployed` clauses; their semantics are correct.
+
+**Resolved 2026-04-19 in PR #?.** One-line guard change at `nethara-live.html:3674`. The `arena:round_start` auto-rejoin trigger and `_doRejoin` boolean fallback (already shipped in earlier commits of PR #151) become live the moment this guard fires correctly.
+
 ---
 
 ## Appendix A — Glossary
