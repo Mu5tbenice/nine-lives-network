@@ -830,12 +830,14 @@ router.get('/', async (req, res) => {
       ...z,
       controlling_guild:
         controlMap[z.id]?.controlling_guild || z.controlling_guild || null,
+      // Q4: zones table is authoritative for dominant_house; zone_control
+      // only used as fallback until its dominant_house column is dropped in PR #145.
       dominant_house:
-        controlMap[z.id]?.dominant_house || z.dominant_house || null,
+        z.dominant_house || controlMap[z.id]?.dominant_house || null,
       house_bonus_label:
         z.house_bonus_label ||
-        (controlMap[z.id]?.dominant_house
-          ? HOUSE_BONUSES[controlMap[z.id].dominant_house]?.label || null
+        (z.dominant_house
+          ? HOUSE_BONUSES[z.dominant_house]?.label || null
           : null),
       deployment_count: deployCountMap[z.id] || 0, // live fighter count
     }));
