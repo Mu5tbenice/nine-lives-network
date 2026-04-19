@@ -9,6 +9,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
+const pointsService = require('./pointsService');
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────
 const TICK_MS = 200; // 200ms ticks — 5 server updates/sec
@@ -783,12 +784,16 @@ function handleKO(nine, zoneId, all) {
   nine.waitingForRound = true;
   nine._wasKOdThisRound = true;
 
+  // Derive killer per PRD §9.2 — direct hit takes priority, DOT applier as fallback.
+  const killerId = nine._lastHitById ?? nine._dotAppliedById ?? null;
+  const killerName = nine._lastHitBy ?? nine._dotAppliedBy ?? null;
+
   broadcast(zoneId, 'combat:ko', {
     nine: nine.playerName,
     nineId: nine.playerId,
     guildTag: nine.guildTag,
-    killerName: killerName || nine._lastHitBy || null,
-    killerId: killerId || nine._lastHitById || null,
+    killerName,
+    killerId,
     x: nine.x,
     y: nine.y,
     waitingForRound: true,
@@ -852,13 +857,16 @@ function handleKO(nine, zoneId, all) {
     .then(({ error }) => {
       if (error) console.error('❌ KO:', error.message);
     });
-  // Award 25 pts to killer (identified by _lastHitById)
+  // Award +10 pts to killer via the canonical points pipeline (§9.1 KO-slice).
   if (killerId) {
-    supabaseAdmin
-      .rpc('increment_season_points', { p_player_id: killerId, p_pts: 10 })
-      .then(({ error }) => {
-        if (error) console.error('❌ KO pts:', error.message);
-      });
+    pointsService
+      .addPoints(
+        killerId,
+        10,
+        'zone_ko',
+        `KO'd ${nine.playerName} on zone ${zoneId}`,
+      )
+      .catch((err) => console.error('❌ KO pts:', err.message));
   }
 }
 
