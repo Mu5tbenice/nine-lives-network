@@ -3569,6 +3569,8 @@
 
     socket.on('combat:ko', (data) => {
       const koId = resolveId(data.nineId || data.nine);
+      const isSelf = String(koId) === String(S.playerId);
+      console.log(`[combat:ko] received nineId=${koId} isSelf=${isSelf} waitingForRound=${data.waitingForRound}`);
       const killerId = resolveId(data.killerId);
       const sprite = S.nines.get(koId);
       if (sprite) animateKO(sprite);
