@@ -1008,7 +1008,7 @@ Reconnects occur on: network blips, device sleep/resume, Socket.io ping timeout 
 
 **Resolved 2026-04-20 in PR #149.**
 
-### 9.27 Self-KO'd sprite persists on KO'd player's view → OPEN (diagnostic logging added)
+### 9.27 Self-KO'd sprite persists on KO'd player's view → root cause traced to §9.28
 
 **Symptom.** Observed 2026-04-20 post PR #147. Player 1's own sprite stays fully visible, wanders, no KO animation or WAITING dim, HP bar at 0. Player 2 (spectator) sees the KO correctly (sprite removed at round start). Perspective-specific — only the KO'd player's view is broken.
 
@@ -1025,6 +1025,52 @@ Reconnects occur on: network blips, device sleep/resume, Socket.io ping timeout 
 **Next step:** reproduce the KO on production post-deploy (Replit logs panel open DURING the KO), inspect both server and client logs, narrow the hypothesis per the decision matrix in PR #149 description.
 
 Note: PR #149 also lands §9.25 and §9.26 which are defensive — §9.26 specifically should mitigate the wandering symptom even if §9.27's root cause is hypothesis 1 (delete failing), because the client will now filter KO'd-state broadcasts out.
+
+**Resolved 2026-04-20 in PR #? via §9.28.** Root cause identified: `resolveId` scope error in the client `combat:ko` handler — not server-side delete failing (Hypothesis 1) and not Socket.io event loss (Hypothesis 2 as originally framed). Handler threw `ReferenceError: resolveId is not defined` on its first line (`const koId = resolveId(data.nineId || data.nine);`) because `resolveId` lives inside IIFE 2 while the handler lives inside IIFE 1, with no window bridge. Every subsequent line of the handler — `animateKO`, the self-KO overlay, the 800ms sprite-removal setTimeout, the waiting-dim Handler 2 — never executed. Spectators saw correct behavior because their sprite cleanup comes from the `arena:positions` cull at `nethara-live.html:3377-3380` (no resolveId needed); self-sprite has no fallback cleanup because that cull explicitly skips self. Fix: add `resolveId` to the `_pixi` window export — see §9.28. Diagnostic logging added in PR #149 remains in place for future KO investigations.
+
+### 9.28 `resolveId` not exposed across IIFE boundary → cleanup
+
+**Symptom.** Observed 2026-04-20 after PR #149's diagnostic logging prompted user to open DevTools: every socket event that triggers a handler using `resolveId` (`combat:attack`, `combat:effect`, `combat:ko`, `combat:dot`, etc.) throws `ReferenceError: resolveId is not defined` on the handler's first line. Errors flood the browser console at the cadence of combat events (multiple per second during active combat).
+
+**Root cause.** `resolveId` is a function declaration inside IIFE 2 (`public/nethara-live.html:5263-8717`). Socket handlers that call it live inside IIFE 1 (lines 1629-4274). IIFE 2 exports a curated set of functions to `window` via `Object.assign(window, _pixi)` at line 8716, but `resolveId` was not in the `_pixi` export list. IIFE 1 has no local binding and no window fallback, so every bare `resolveId(...)` call from IIFE 1 throws.
+
+**Discovery chain.** Bug has existed since commit `040be39` (major refactor into IIFEs). Dormant because most affected handlers — especially `combat:ko` — rarely fired in production:
+- Pre-PR #147: rounds never ended on KO, so `combat:ko` broadcasts didn't happen. Handler never fired, never threw.
+- Post-PR #147: KOs fire correctly, `combat:ko` broadcasts arrive at the client, handler throws on line 1. **This is the actual root cause of §9.27** — the self-KO'd sprite persists because `combat:ko` handler aborts before reaching `animateKO`, the self-KO branch, the 800ms `removeNineSprite` setTimeout, and the waiting-dim handler.
+- Post-PR #149: diagnostic logging made the console flood observable to the user.
+
+**Resolution plan:** Add `resolveId` to the `_pixi` export block at `public/nethara-live.html:8708-8715`. IIFE 2's `resolveId` uses `state.nines` — `state` is a Proxy reading from `window._S`, which is IIFE 1's `S`. So `state.nines === S.nines`. Calling `window.resolveId` from IIFE 1 operates on the same Map correctly. Bare `resolveId(...)` in IIFE 1 falls through to `window.resolveId` via standard JS scope resolution.
+
+**Resolved 2026-04-20 in PR #?.** Added to `_pixi` export. Also transitively fixes IIFE 1's `getNineName` (which internally calls `resolveId`), which was throwing on every combat-feed render.
+
+See §9.30 for the symmetric cleanup in the other direction (IIFE 2 calls IIFE 1 functions without a window bridge).
+
+### 9.29 Phantom `ml` reference in `toggleAutoRedeploy` → cleanup
+
+**Symptom.** Clicking the HUD auto-rejoin toggle throws `ReferenceError: ml is not defined` at `public/nethara-live.html:3119`. Inside `window.toggleAutoRedeploy`, local variables `t` and `l` are declared via `getElementById`; `ml` is referenced without declaration.
+
+**Root cause.** Leftover from a refactor. The inline comment at line 3118 ("deploy modal auto toggle now handled by `_syncAutoRejoinUI`") indicates the modal-label update migrated to `_syncAutoRejoinUI()` at line 3117, and line 3119 should have been deleted at the same time. `ml` was never declared in this function — `git log -S "const ml"` returns zero matches across repo history.
+
+**Resolution plan:** Delete line 3119. Clean up the comment to reflect that the handoff is complete (drop the transitional "now").
+
+**Resolved 2026-04-20 in PR #?.**
+
+### 9.30 IIFE 2 calls IIFE 1 functions without window bridge → cleanup (symmetric to §9.28)
+
+**Symptom.** `processArenaEvent` inside IIFE 2 (`public/nethara-live.html:7374+`) calls functions that are defined only inside IIFE 1 and not exposed on `window`. Every such call throws `ReferenceError` when the handler is reached. Documented call sites (non-exhaustive):
+- `getNineName` — called at `nethara-live.html:7411, 7412, 7482, 7506, 7528, 7553, 7559, 7565, 7571, 7580, 7588, 7591, 7601, 7611, 7621, 7627, 7648, 7664, 7719, 7740, 7767, 7787, 7804, 7829, 7843, 7862, 7893, 7937, 7968, 7971, 7975, 7982, 8020, 8082` (inside IIFE 2's event handlers). Defined at `nethara-live.html:3780` inside IIFE 1. Not on `window`.
+- `addFeedEvent` — called at multiple IIFE 2 sites inside `processArenaEvent`. Defined in IIFE 1.
+- `trackCombatStat` — same pattern.
+
+**Effect.** `processArenaEvent` in IIFE 2 throws on the first of these calls it reaches. Currently **not user-visible** because the active combat code path uses IIFE 1's socket handlers (`combat:ko`, `combat:attack`, `combat:effect`, `combat:dot`) as primary. `processArenaEvent` is the V2 event processor for legacy or continuous-combat events and is not on the current hot path. Structurally broken nonetheless — any future code path that exercises `processArenaEvent` will trip this bug.
+
+**Resolution plan:** Two options:
+- **(a) Mirror §9.28's fix** — expose the needed IIFE 1 functions (`getNineName`, `addFeedEvent`, `trackCombatStat`, and any others `processArenaEvent` reaches) to `window` via a bridge similar to `_pixi`. Minimal-surface fix.
+- **(b) Refactor `processArenaEvent`** — move it into IIFE 1, or pass the required functions in as arguments, or merge the two IIFEs. Larger-surface but cleaner architecturally.
+
+Deferred until evidence of user-visible impact OR an independent refactor motivates the cleanup.
+
+**Status: OPEN.** Opened 2026-04-20 in PR #? as a documented known issue captured during the §9.28 investigation. Not fixed in the same PR to keep the hotfix scope tight.
 
 ---
 
