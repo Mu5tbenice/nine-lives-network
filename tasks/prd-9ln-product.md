@@ -986,7 +986,7 @@ Reconnects occur on: network blips, device sleep/resume, Socket.io ping timeout 
 - Fix A: reset `_firstPositionsTick = true` in the `socket.on('disconnect', …)` handler so the next positions tick after reconnect re-enters the dismiss path.
 - Fix B: defensive dismissal in `arena:positions` — if the overlay is still visible (inline `display !== 'none'`) when positions arrive, dismiss it regardless of `_firstPositionsTick`. Catches any edge case where Fix A didn't trigger.
 
-**Resolved 2026-04-20 in PR #?.** Both fixes applied. Also expected (but not promised) to resolve the "sprite stays visible" and "round obscured by popup" symptoms from the §9.23 post-fix report — both were hypothesized as overlay side-effects. User will re-verify post-deploy.
+**Resolved 2026-04-20 in PR #148.** Both fixes applied. Also expected (but not promised) to resolve the "sprite stays visible" and "round obscured by popup" symptoms from the §9.23 post-fix report — both were hypothesized as overlay side-effects. User will re-verify post-deploy.
 
 ---
 
