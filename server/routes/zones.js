@@ -1107,28 +1107,69 @@ router.post('/recalculate-identities', async (req, res) => {
       .select('zone_id, dominant_house, branded_guild')
       .gte('snapped_at', since);
 
+    // Tiebreak source: distinct deployment instances in the 24h window,
+    // grouped by zone_id. Row-count per deployment, not per round (strict
+    // per-round sum would need a JSONB house_counts column — out of slice 1).
+    const { data: deps } = await supabaseAdmin
+      .from('zone_deployments')
+      .select('zone_id, guild_tag, player_nines!inner(houses!inner(slug))')
+      .gte('deployed_at', since);
+
+    const depCountsByZone = {};
+    for (const d of deps || []) {
+      const z = d.zone_id;
+      if (!depCountsByZone[z]) depCountsByZone[z] = { houses: {}, guilds: {} };
+      const slug = d.player_nines?.houses?.slug;
+      if (slug)
+        depCountsByZone[z].houses[slug] =
+          (depCountsByZone[z].houses[slug] || 0) + 1;
+      if (d.guild_tag)
+        depCountsByZone[z].guilds[d.guild_tag] =
+          (depCountsByZone[z].guilds[d.guild_tag] || 0) + 1;
+    }
+
+    const pickTopWithTiebreak = (primaryCounts, tiebreakCounts) => {
+      const keys = Object.keys(primaryCounts);
+      if (!keys.length) return null;
+      const maxCount = Math.max(...Object.values(primaryCounts));
+      const top = keys.filter((k) => primaryCounts[k] === maxCount);
+      if (top.length === 1) return top[0];
+      const ranked = top
+        .map((k) => [k, tiebreakCounts[k] || 0])
+        .sort((a, b) => b[1] - a[1]);
+      // If tiebreak 1 (deployment count) resolves, use it; else random.
+      if (ranked[0][1] > (ranked[1]?.[1] || 0)) return ranked[0][0];
+      return top[Math.floor(Math.random() * top.length)];
+    };
+
     let updated = 0;
     for (const zone of allZones || []) {
       const zoneHistory = (history || []).filter((h) => h.zone_id === zone.id);
       if (!zoneHistory.length) continue;
 
-      const houseCounts = {};
-      zoneHistory.forEach((h) => {
+      const houseRoundWins = {};
+      const guildRoundWins = {};
+      for (const h of zoneHistory) {
         if (h.dominant_house)
-          houseCounts[h.dominant_house] =
-            (houseCounts[h.dominant_house] || 0) + 1;
-      });
-      const [dominantHouse] =
-        Object.entries(houseCounts).sort((a, b) => b[1] - a[1])[0] || [];
-
-      const guildCounts = {};
-      zoneHistory.forEach((h) => {
+          houseRoundWins[h.dominant_house] =
+            (houseRoundWins[h.dominant_house] || 0) + 1;
         if (h.branded_guild)
-          guildCounts[h.branded_guild] =
-            (guildCounts[h.branded_guild] || 0) + 1;
-      });
-      const [brandedGuild] =
-        Object.entries(guildCounts).sort((a, b) => b[1] - a[1])[0] || [];
+          guildRoundWins[h.branded_guild] =
+            (guildRoundWins[h.branded_guild] || 0) + 1;
+      }
+
+      const depTiebreak = depCountsByZone[zone.id] || {
+        houses: {},
+        guilds: {},
+      };
+      const dominantHouse = pickTopWithTiebreak(
+        houseRoundWins,
+        depTiebreak.houses,
+      );
+      const brandedGuild = pickTopWithTiebreak(
+        guildRoundWins,
+        depTiebreak.guilds,
+      );
 
       const houseBonus = dominantHouse ? HOUSE_BONUSES[dominantHouse] : null;
 
