@@ -1870,6 +1870,9 @@
           ${zone.controlling_guild
             ? `<span class="zone-guild-leader-pill" style="color:var(--gold);background:rgba(212,166,75,0.12);border-color:rgba(212,166,75,0.35);">🏰 ${zone.controlling_guild}</span>`
             : `<span style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--faint);">Unclaimed</span>`}
+          ${zone.branded_guild
+            ? `<span class="zone-guild-branded-pill" style="color:var(--gold);background:rgba(212,166,75,0.08);border:1px solid rgba(212,166,75,0.25);margin-left:4px;font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 6px;border-radius:3px;">🏷 ${zone.branded_guild}</span>`
+            : ''}
           ${bonusLabel ? `<div class="zone-identity-row"><span class="zone-house-bonus-pill" style="color:${hColor};background:${hColor}18;border:1px solid ${hColor}35">${bonusLabel}</span></div>` : ''}
         </div>
       </div>`;

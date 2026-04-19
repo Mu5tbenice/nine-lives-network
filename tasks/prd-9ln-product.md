@@ -929,6 +929,8 @@ No writer populates `zone_control.dominant_house`. Existing populated values in 
 - **(a)** Make `zone_control.dominant_house` authoritative — update the round-end writer + nightly recalc to write there; frontend reads from the `zones` endpoint's merged response (it already has the fallback).
 - **(b)** Make `zones.dominant_house` authoritative — refactor `combatEngine.js` bonus cache to read from `zones` instead, drop the column from `zone_control`.
 
+**Resolved 2026-04-20 in PR #144.** Chose option (b) per Task 4.5 Q4: `zones.dominant_house` is now authoritative. The combat engine's zone-bonus cache at `server/services/combatEngine.js:124-142` now reads from `zones` instead of `zone_control`. The zones-list merge at `server/routes/zones.js:829-841` flipped to prefer `z.dominant_house` over `controlMap[z.id]?.dominant_house` so the frontend and combat engine see the same authoritative value. The `zone_control.dominant_house` column itself will be dropped in PR #145 (bundled with §9.22's `snapshot_hp` drop to keep all schema migrations in one PR).
+
 ### 9.22 `snapshot_hp` column in `zone_control` / `zone_control_history` is deprecated V1 → cleanup
 
 **Symptom.** Both `zone_control.snapshot_hp` and `zone_control_history.snapshot_hp` exist in the schema (integer). The 2026-04-19 Task 4.0 diagnostic confirmed:
@@ -940,6 +942,21 @@ No writer populates `zone_control.dominant_house`. Existing populated values in 
 Per stakeholder confirmation (2026-04-19), `snapshot_hp` is a scrapped V1 mechanic — intended as a per-zone HP bar tied to house HP totals, deprecated due to cross-house HP imbalance in V4's 9-house design.
 
 **Resolution plan:** Drop both columns via migration; remove the vestigial SELECT at `server/routes/zones.js:1041-1042`. Execute in the same cleanup pass that resolves §9.19, since the same writer consolidation touches these tables.
+
+### 9.23 Rounds not ending on production → OPEN (investigation required)
+
+**Symptom.** Observed 2026-04-20 during PR #143 smoke test: a deployed Nine with HP reaching 0 did not trigger round end. The 5-minute hard cap (`ROUND_CAP_MS` at `server/services/combatEngine.js:14`) also did not appear to fire (user observation — unverified by code trace).
+
+**Effect.** Player-facing. Rounds that don't end can't award round-end points (+5 alive, +8 control, +15 flip at `combatEngine.js:1183-1186`). KO points are unaffected (fire immediately in `handleKO`, not at round end). But without round ending: no new round begins, no intermission, no cinematic round-end broadcast, no `zone_control_history` row written → nightly `/recalculate-identities` has no source data.
+
+**Severity.** High. Gates all non-KO arena scoring and the per-round `dominant_house` writer introduced in PR #143.
+
+**Diagnostic hypotheses (unverified — do not act on without a trace):**
+- `endRound` not invoked because the tick loop's end-of-round detector (last-guild-standing OR `ROUND_CAP_MS` elapsed) has a logic bug.
+- `endRound` is invoked but the persistence path errors silently. The history insert error handler now logs (PR #143 commit 1), so a reproduction should surface DB errors if that's the cause.
+- `_wasKOdThisRound` / `waitingForRound` flag state is inconsistent, blocking the last-guild-standing condition from ever evaluating true.
+
+**Resolution plan:** Separate investigation. Needs a code trace of the tick loop's round-end detection (setInterval at `combatEngine.js:1509-1521`), server log inspection during a reproduction, and MCP verification that the `zone_control_history` insert actually runs. Do NOT attempt a fix in PR #144.
 
 ---
 
