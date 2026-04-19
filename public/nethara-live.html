@@ -3577,7 +3577,7 @@
         S.isDeployed = false;
         S._recentlyKOd.add(String(S.playerId));
         setTimeout(() => S._recentlyKOd.delete(String(S.playerId)), 65000);
-        showKOOverlay(data.killerName || null);
+        // §9.31: legacy 60s popup suppressed — round-end rejoin prompt handles UX
         document.getElementById('arena-bottom-tray').style.display = 'none';
         recordBuildEnd();
       }
@@ -7537,10 +7537,9 @@
           screenFlash(0xff2222, 0.25);
           renderGuildSidebar(); // refresh guild HP totals
         }
-        // If YOUR Nine got KO'd, show KO overlay
+        // §9.31: legacy 60s popup suppressed — round-end rejoin prompt handles UX
         if (koId == state.playerId) {
           state.isDeployed = false;
-          showKOOverlay(ev.sourceName || null);
         }
         break;
       }
