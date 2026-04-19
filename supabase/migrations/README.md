@@ -41,12 +41,12 @@ Non-destructive additive migrations (new tables, new nullable columns) can run a
 
 `apply_migration` will fail with `Cannot apply migration in read-only mode.` In that case, run the migration via the Supabase dashboard SQL Editor instead, then hand-write the migration file in this directory to match what was executed. Use the current UTC timestamp as the filename prefix and open the file with a header comment noting that the migration was applied manually and why. See the 2026-04-20 `drop_zone_control_deprecated_columns` migration for the canonical example of this fallback.
 
-## Worked example — destructive migration pattern (PR #145a / #145b)
+## Worked example — destructive migration pattern (PR #145 / #146)
 
-The canonical two-PR split for destructive migrations (first established by Task 4.0 slice 3):
+The canonical two-PR split for destructive migrations (first established by Task 4.0 slice 3; conceptually "slice 3a" and "slice 3b"):
 
-- **PR #145a** ([`feat/task-4-0-cleanup-deprecated-column-reads`](https://github.com/Mu5tbenice/nine-lives-network/pull/145)) — code cleanup only. Removes all live reads of the soon-to-be-dropped columns. Columns still exist in the schema, so the PR is independently mergeable and deployable with zero runtime risk. Merge, deploy, confirm healthy.
-- **PR #145b** (this PR) — runs the migration. Because the deployed code no longer reads the dropped columns, the drop is invisible at runtime.
+- **PR #145** ([`feat/task-4-0-cleanup-deprecated-column-reads`](https://github.com/Mu5tbenice/nine-lives-network/pull/145)) — code cleanup only. Removes all live reads of the soon-to-be-dropped columns. Columns still exist in the schema, so the PR is independently mergeable and deployable with zero runtime risk. Merge, deploy, confirm healthy.
+- **PR #146** ([`feat/task-4-0-drop-deprecated-columns`](https://github.com/Mu5tbenice/nine-lives-network/pull/146)) — runs the migration. Because the deployed code no longer reads the dropped columns, the drop is invisible at runtime.
 
 Rationale: shipping code cleanup and the migration in a single PR creates a "small but unbounded" production window — the DB change lands immediately on `apply_migration`, but the matching code deploy depends on merge + build + deploy latency. The two-PR split collapses that window to zero.
 
