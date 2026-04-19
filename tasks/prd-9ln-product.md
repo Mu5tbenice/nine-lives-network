@@ -968,6 +968,26 @@ Per stakeholder confirmation (2026-04-19), `snapshot_hp` is a scrapped V1 mechan
 
 **Resolved 2026-04-20 in PR #147.** Investigation completed; symptom cluster (rounds not ending, lingering KO sprites, ghost `zone_deployments` rows) traced to a single root cause: PRD §9.2's long-standing `handleKO` ReferenceError (undefined `killerName` / `killerId` identifiers). The throw on every KO prevented `zs.nines.delete(...)`, `anyKO = true`, the `combat:ko` broadcast, and the `zone_deployments.is_active = false` update from running. The 5-min cap WAS firing correctly (verified via `zone_control_history` — 21 rows in 2h, every ~5:25); only the last-guild-standing path was dead. Fixed in this PR by closing §9.2; cleanup migration retires the 1 ghost row that accumulated. §9.23 was a downstream symptom of §9.2 — not an independent bug.
 
+### 9.24 Stuck arena loading overlay after Socket.io reconnect → cleanup
+
+**Symptom.** Observed 2026-04-20 during the §9.23 post-fix smoke test (PR #147). The `#arena-loading` full-screen overlay appeared on initial arena entry (expected) AND reappeared "after a round or a few minutes" and got stuck (not expected). User-visible effect: arena canvas hidden beneath a 96%-opaque overlay, sprites obscured, round-start transition invisible, bottom tray unreachable.
+
+**Root cause.** `_firstPositionsTick` is a closure-scoped variable declared inside `connectArenaSocket` at `public/nethara-live.html:3283`. It flips to `false` on the first-ever `arena:positions` tick and stays `false` for the lifetime of the handler closure. Socket.io's auto-reconnect reuses the same socket object and handlers without re-calling `connectArenaSocket`, so:
+
+1. `socket.on('connect', …)` at L3274 fires on every reconnect → `_showArenaLoading('JOINING ZONE...', 60)` shows the overlay.
+2. `arena:positions` eventually arrives → `_firstPositionsTick` is already `false` → the dismiss `setTimeout` at L3288 never runs.
+3. The 8s fallback at L2017 is one-shot per `openArena` call — already fired and gone on the initial load.
+
+Reconnects occur on: network blips, device sleep/resume, Socket.io ping timeout (20s default), Replit cold-restarts. Matches the observed "after a round or a few minutes" cadence.
+
+**Pre-existing bug.** The `_firstPositionsTick` closure pattern predates PR #147. Surfaced now because rounds actually end post-fix — users stay in the arena long enough across reconnects to observe the stuck state.
+
+**Resolution plan:** Two complementary fixes in `public/nethara-live.html`:
+- Fix A: reset `_firstPositionsTick = true` in the `socket.on('disconnect', …)` handler so the next positions tick after reconnect re-enters the dismiss path.
+- Fix B: defensive dismissal in `arena:positions` — if the overlay is still visible (inline `display !== 'none'`) when positions arrive, dismiss it regardless of `_firstPositionsTick`. Catches any edge case where Fix A didn't trigger.
+
+**Resolved 2026-04-20 in PR #148.** Both fixes applied. Also expected (but not promised) to resolve the "sprite stays visible" and "round obscured by popup" symptoms from the §9.23 post-fix report — both were hypothesized as overlay side-effects. User will re-verify post-deploy.
+
 ---
 
 ## Appendix A — Glossary
