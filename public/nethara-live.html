@@ -3115,8 +3115,7 @@
     if (t) t.classList.toggle('on', S._autoRedeploy);
     if (l) l.textContent = S._autoRedeploy ? 'AUTO-REJOIN: ON ✓' : 'AUTO-REJOIN';
     if (window._syncAutoRejoinUI) window._syncAutoRejoinUI();
-    // deploy modal auto toggle now handled by _syncAutoRejoinUI
-    if (ml) ml.textContent = S._autoRedeploy ? 'AUTO-REJOIN: ON ✓' : 'AUTO-REJOIN: OFF';
+    // deploy modal auto toggle handled by _syncAutoRejoinUI
   };
   // Sync all auto-rejoin UI elements (HUD toggle + deploy modal toggle)
   window._syncAutoRejoinUI = function() {
