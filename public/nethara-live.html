@@ -3671,7 +3671,10 @@
       // §9.33: if auto-rejoin is on, skip the manual prompt and let
       // arena:round_start fire the rejoin API (server only accepts rejoin
       // after it sets nine.withdrawn=true in startRound, not at round_end).
-      if (S.isDeployed && S._wasKOdThisRound) {
+      // §9.34: do NOT also gate on S.isDeployed — it was zeroed by the
+      // combat:ko handler at line 3577 well before this fires, so any
+      // S.isDeployed clause here is permanently false for KO'd players.
+      if (S._wasKOdThisRound) {
         S._withdrawnAfterKO = true;
         S._wasKOdThisRound  = false;
         const autoOn = S._autoRedeploy && Date.now() <= S._autoRedeployExpiry;
