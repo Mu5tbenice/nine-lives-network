@@ -1118,7 +1118,7 @@ Add a fallback: `_doRejoin()` returns a boolean; on `false` (silent network thro
 
 **Resolution plan:** Drop the `S.isDeployed` clause. `S._wasKOdThisRound` (set at `nethara-live.html:3629` only when the server's `combat:ko` broadcast carries `waitingForRound: true` for this player's id) is precisely "this player was deployed at start of round AND got KO'd this round" — sufficient on its own. Sibling guards in the same handler (survival counter at line 3701, points tally at line 3702) keep their `S.isDeployed` clauses; their semantics are correct.
 
-**Resolved 2026-04-19 in PR #151.** One-line guard change at `nethara-live.html:3674`. The `arena:round_start` auto-rejoin trigger and `_doRejoin` boolean fallback (already shipped in earlier commits of PR #151) become live the moment this guard fires correctly.
+**Resolved 2026-04-19 in PR #152.** One-line guard change at `nethara-live.html:3674`. The `arena:round_start` auto-rejoin trigger and `_doRejoin` boolean fallback (shipped in PR #151) become live the moment this guard fires correctly. Discovery and resolution split across two PRs because §9.34 was caught only after PR #151's deploy; #151 had already merged by the time the regression report arrived.
 
 ---
 
