@@ -1066,7 +1066,11 @@ async function tickZone(zoneId, zs) {
     if (nine.hp <= 0 && !nine.waitingForRound) {
       nine.waitingForRound = true;
       handleKO(nine, zoneId, all);
-      zs.nines.delete(nine.deploymentId);
+      const key = nine.deploymentId;
+      const pid = nine.playerId;
+      console.log(`[KO] zone=${zoneId} nine=${key} player=${pid} delete_start`);
+      const deleted = zs.nines.delete(key);
+      console.log(`[KO] zone=${zoneId} nine=${key} player=${pid} ${deleted ? 'delete_ok' : 'delete_failed'} remaining=${zs.nines.size}`);
       anyKO = true;
     }
   }
@@ -1118,6 +1122,7 @@ async function tickZone(zoneId, zs) {
       maxHp: n.maxHp,
       guildTag: n.guildTag,
       houseKey: n.houseKey,
+      waitingForRound: !!n.waitingForRound, // activates client filter at nethara-live.html:3315 (§9.26)
       cardSlot: n.cardIdx % Math.max(1, n.cards.length),
       activeEffect:
         n.cards[n.cardIdx % Math.max(1, n.cards.length)]?.effect_1 || null,
@@ -1361,7 +1366,8 @@ function startRound(zoneId, zs, all) {
     zoneId,
     roundNumber: zs.roundNumber,
     nines: all.map((n) => ({
-      id: n.deploymentId,
+      id: n.playerId, // align with arena:positions — S.nines on the client is keyed by playerId (§9.25)
+      deploymentId: n.deploymentId,
       playerId: n.playerId,
       hp: n.hp,
       maxHp: n.maxHp,

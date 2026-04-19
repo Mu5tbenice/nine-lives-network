@@ -3569,6 +3569,8 @@
 
     socket.on('combat:ko', (data) => {
       const koId = resolveId(data.nineId || data.nine);
+      const isSelf = String(koId) === String(S.playerId);
+      console.log(`[combat:ko] received nineId=${koId} isSelf=${isSelf} waitingForRound=${data.waitingForRound}`);
       const killerId = resolveId(data.killerId);
       const sprite = S.nines.get(koId);
       if (sprite) animateKO(sprite);
@@ -3744,9 +3746,10 @@
 
       // Update HP bars for all Nines (server reset to full)
       (data.nines || []).forEach(n => {
-        updateNineHP(String(n.deploymentId || n.id), n.hp, n.maxHp);
+        const key = String(n.id); // aligned with arena:positions (playerId) per §9.25
+        updateNineHP(key, n.hp, n.maxHp);
         // Restore waiting sprites to visible
-        const sp = S.nines.get(String(n.deploymentId || n.id));
+        const sp = S.nines.get(key);
         if (sp) {
           sp.container.alpha = 1;
           delete sp._waitingForRound;
