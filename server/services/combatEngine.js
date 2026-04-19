@@ -1162,6 +1162,41 @@ async function endRound(zoneId, zs, all, endReason) {
   const prevWinner = zs._lastRoundWinner || null;
   zs._lastRoundWinner = winner;
 
+  // Per-round dominant house: most-deployed house; tiebreak = winning
+  // guild's dominant house; second tiebreak = random.
+  const houseCounts = {};
+  for (const n of all) {
+    const h = n.houseKey || 'unknown';
+    houseCounts[h] = (houseCounts[h] || 0) + 1;
+  }
+  let dominantHouse = null;
+  if (all.length > 0) {
+    const maxCount = Math.max(...Object.values(houseCounts));
+    const topHouses = Object.entries(houseCounts)
+      .filter(([, c]) => c === maxCount)
+      .map(([h]) => h);
+    if (topHouses.length === 1) {
+      dominantHouse = topHouses[0];
+    } else if (winner) {
+      const winnerHouseCounts = {};
+      for (const n of all) {
+        if (n.guildTag === winner) {
+          const h = n.houseKey || 'unknown';
+          winnerHouseCounts[h] = (winnerHouseCounts[h] || 0) + 1;
+        }
+      }
+      const ranked = topHouses
+        .map((h) => [h, winnerHouseCounts[h] || 0])
+        .sort((a, b) => b[1] - a[1]);
+      dominantHouse =
+        ranked[0][1] > 0
+          ? ranked[0][0]
+          : topHouses[Math.floor(Math.random() * topHouses.length)];
+    } else {
+      dominantHouse = topHouses[Math.floor(Math.random() * topHouses.length)];
+    }
+  }
+
   // Track round wins for daily guild branding
   if (winner) zs.roundWins[winner] = (zs.roundWins[winner] || 0) + 1;
 
@@ -1223,7 +1258,9 @@ async function endRound(zoneId, zs, all, endReason) {
       if (error) console.error('❌ Zone control upsert:', error.message);
     });
 
-  // Append round history
+  // Append round history. branded_guild at round level equals winner
+  // (they're the same concept per round; daily aggregation differentiates).
+  // snapshot_hp omitted — column is deprecated V1 (§9.22), scheduled for drop.
   await supabaseAdmin
     .from('zone_control_history')
     .insert({
@@ -1231,10 +1268,12 @@ async function endRound(zoneId, zs, all, endReason) {
       controlling_guild: winner,
       round_number: zs.roundNumber,
       snapped_at: now,
+      dominant_house: dominantHouse,
+      branded_guild: winner,
     })
     .then(({ error }) => {
       if (error) {
-        /* non-fatal if column missing */
+        console.error('❌ Zone control history insert:', error.message);
       }
     });
 
