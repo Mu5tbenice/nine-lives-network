@@ -1039,7 +1039,7 @@ router.get('/:zoneId/zone-bonus', async (req, res) => {
 
     const { data: history } = await supabaseAdmin
       .from('zone_control_history')
-      .select('dominant_house, branded_guild, snapshot_hp')
+      .select('dominant_house, branded_guild')
       .eq('zone_id', zoneId)
       .gte('snapped_at', since);
 
