@@ -3,6 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const http = require('http');
+const {
+  captureBootFailure,
+  getBootFailures,
+} = require('./services/bootFailures');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -19,6 +23,7 @@ try {
   console.log('✅ Socket.io initialized');
 } catch (e) {
   console.log('⚠️ Socket.io not installed — duels will use REST only');
+  captureBootFailure('socket.io', e);
 }
 
 // Middleware
@@ -40,6 +45,7 @@ try {
   console.log('✅ Auth routes loaded');
 } catch (e) {
   console.error('❌ Failed to load auth routes:', e.message);
+  captureBootFailure('./routes/auth', e);
 }
 
 // V3 routes
@@ -49,6 +55,7 @@ try {
   console.log('✅ Nines routes loaded');
 } catch (e) {
   console.error('❌ Failed to load nines routes:', e.message);
+  captureBootFailure('./routes/nines', e);
 }
 
 try {
@@ -57,6 +64,7 @@ try {
   console.log('✅ Crafting routes loaded');
 } catch (e) {
   console.error('❌ Failed to load crafting routes:', e.message);
+  captureBootFailure('./routes/crafting', e);
 }
 
 try {
@@ -65,6 +73,7 @@ try {
   console.log('✅ Zones routes loaded');
 } catch (e) {
   console.error('❌ Failed to load zones routes:', e.message);
+  captureBootFailure('./routes/zones', e);
 }
 
 try {
@@ -73,6 +82,7 @@ try {
   console.log('✅ Gauntlet routes loaded');
 } catch (e) {
   console.error('❌ Failed to load gauntlet routes:', e.message);
+  captureBootFailure('./routes/gauntlet', e);
 }
 
 try {
@@ -81,6 +91,7 @@ try {
   console.log('✅ Boss routes loaded');
 } catch (e) {
   console.error('❌ Failed to load boss routes:', e.message);
+  captureBootFailure('./routes/boss', e);
 }
 
 try {
@@ -89,6 +100,7 @@ try {
   console.log('✅ Player routes loaded');
 } catch (e) {
   console.error('❌ Failed to load player routes:', e.message);
+  captureBootFailure('./routes/players', e);
 }
 
 try {
@@ -97,6 +109,7 @@ try {
   console.log('✅ Territory routes loaded');
 } catch (e) {
   console.error('❌ Failed to load territory routes:', e.message);
+  captureBootFailure('./routes/territory', e);
 }
 
 try {
@@ -109,6 +122,7 @@ try {
   console.log('✅ Duel routes loaded');
 } catch (e) {
   console.error('❌ Failed to load duel routes:', e.message);
+  captureBootFailure('./routes/duels', e);
 }
 
 try {
@@ -117,6 +131,7 @@ try {
   console.log('✅ Map routes loaded');
 } catch (e) {
   console.error('❌ Failed to load map routes:', e.message);
+  captureBootFailure('./routes/map', e);
 }
 
 try {
@@ -125,6 +140,7 @@ try {
   console.log('✅ Leaderboard routes loaded');
 } catch (e) {
   console.error('❌ Failed to load leaderboard routes:', e.message);
+  captureBootFailure('./routes/leaderboards', e);
 }
 
 try {
@@ -133,6 +149,7 @@ try {
   console.log('✅ Admin routes loaded');
 } catch (e) {
   console.error('❌ Failed to load admin routes:', e.message);
+  captureBootFailure('./routes/admin', e);
 }
 
 try {
@@ -141,6 +158,7 @@ try {
   console.log('✅ Spell routes loaded');
 } catch (e) {
   console.error('❌ Failed to load spell routes:', e.message);
+  captureBootFailure('./routes/spells', e);
 }
 
 try {
@@ -149,6 +167,7 @@ try {
   console.log('✅ Clashes routes loaded');
 } catch (e) {
   console.error('❌ Failed to load clashes routes:', e.message);
+  captureBootFailure('./routes/clashes', e);
 }
 
 try {
@@ -157,6 +176,7 @@ try {
   console.log('✅ Packs routes loaded');
 } catch (e) {
   console.error('❌ Failed to load packs routes:', e.message);
+  captureBootFailure('./routes/packs', e);
 }
 
 // Sorting Hat — FIXED: was accidentally nesting items inside this try block
@@ -166,6 +186,7 @@ try {
   console.log('✅ Sorting Hat routes loaded');
 } catch (e) {
   console.error('❌ Failed to load sorting hat routes:', e.message);
+  captureBootFailure('./routes/sortingHat', e);
 }
 
 // Items — FIXED: now its own try/catch, no longer nested or duplicated
@@ -175,6 +196,7 @@ try {
   console.log('✅ Items routes loaded');
 } catch (e) {
   console.error('❌ Failed to load items routes:', e.message);
+  captureBootFailure('./routes/items', e);
 }
 
 try {
@@ -183,6 +205,7 @@ try {
   console.log('✅ Quest routes loaded');
 } catch (e) {
   console.error('❌ Failed to load quest routes:', e.message);
+  captureBootFailure('./routes/quests', e);
 }
 
 // ── COMBAT ENGINE ──
@@ -192,6 +215,7 @@ try {
   console.log('✅ Combat engine loaded');
 } catch (e) {
   console.error('❌ Failed to load combat engine:', e.message);
+  captureBootFailure('./services/combatEngine', e);
 }
 
 // ── ARENA SOCKET NAMESPACE ──
@@ -324,7 +348,11 @@ if (combatEngine && combatEngine.startCombatEngine) {
 }
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    failed_requires: getBootFailures(),
+  });
 });
 
 // ── STREAK PING ──
@@ -392,6 +420,7 @@ try {
   console.log('✅ Scheduler loaded');
 } catch (e) {
   console.error('❌ Failed to load scheduler:', e.message);
+  captureBootFailure('./services/scheduler', e);
 }
 
 // Serve index.html for root
