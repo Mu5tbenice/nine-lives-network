@@ -929,7 +929,7 @@ No writer populates `zone_control.dominant_house`. Existing populated values in 
 - **(a)** Make `zone_control.dominant_house` authoritative — update the round-end writer + nightly recalc to write there; frontend reads from the `zones` endpoint's merged response (it already has the fallback).
 - **(b)** Make `zones.dominant_house` authoritative — refactor `combatEngine.js` bonus cache to read from `zones` instead, drop the column from `zone_control`.
 
-**Resolved 2026-04-20 in PR #?.** Chose option (b) per Task 4.5 Q4: `zones.dominant_house` is now authoritative. The combat engine's zone-bonus cache at `server/services/combatEngine.js:124-142` now reads from `zones` instead of `zone_control`. The zones-list merge at `server/routes/zones.js:829-841` flipped to prefer `z.dominant_house` over `controlMap[z.id]?.dominant_house` so the frontend and combat engine see the same authoritative value. The `zone_control.dominant_house` column itself will be dropped in PR #145 (bundled with §9.22's `snapshot_hp` drop to keep all schema migrations in one PR).
+**Resolved 2026-04-20 in PR #144.** Chose option (b) per Task 4.5 Q4: `zones.dominant_house` is now authoritative. The combat engine's zone-bonus cache at `server/services/combatEngine.js:124-142` now reads from `zones` instead of `zone_control`. The zones-list merge at `server/routes/zones.js:829-841` flipped to prefer `z.dominant_house` over `controlMap[z.id]?.dominant_house` so the frontend and combat engine see the same authoritative value. The `zone_control.dominant_house` column itself will be dropped in PR #145 (bundled with §9.22's `snapshot_hp` drop to keep all schema migrations in one PR).
 
 ### 9.22 `snapshot_hp` column in `zone_control` / `zone_control_history` is deprecated V1 → cleanup
 
