@@ -988,6 +988,44 @@ Reconnects occur on: network blips, device sleep/resume, Socket.io ping timeout 
 
 **Resolved 2026-04-20 in PR #148.** Both fixes applied. Also expected (but not promised) to resolve the "sprite stays visible" and "round obscured by popup" symptoms from the §9.23 post-fix report — both were hypothesized as overlay side-effects. User will re-verify post-deploy.
 
+### 9.25 `arena:round_start` payload uses `deploymentId` while client expects `playerId` → cleanup
+
+**Symptom.** The `arena:round_start` broadcast at `server/services/combatEngine.js:1363-1370` sends `id: n.deploymentId` in its per-Nine payload. The client handler at `public/nethara-live.html:3746-3750` computes `String(n.deploymentId || n.id)` to look up sprites in `S.nines`. But `S.nines` is keyed by `playerId` (set inside `addNineSprite` via the `arena:positions` handler at L3296, which uses `String(d.id)` where server sends `id = playerId`). So the lookup always misses, and the "restore waiting sprites to visible" loop never runs.
+
+**Effect.** Dimmed sprites (alpha 0.25 + WAITING badge applied by the `combat:ko` waiting handler at `nethara-live.html:3613-3628`) never un-dim at round start. Latent bug — surfaced only when rounds actually end on KO after PR #147, making the un-dim behavior observable.
+
+**Resolution plan:** Align the `arena:round_start` payload's `id` field with `arena:positions` — use `n.playerId`. Simplify the client lookup to `String(n.id)`. Keep `deploymentId` as a separate field on the payload for any future consumer.
+
+**Resolved 2026-04-20 in PR #?.**
+
+### 9.26 `arena:positions` missing `waitingForRound` field → cleanup
+
+**Symptom.** The `arena:positions` payload at `server/services/combatEngine.js:1111-1130` omits `n.waitingForRound` from the per-Nine object. The client's filter at `public/nethara-live.html:3315` (`if (d.hp <= 0 && d.waitingForRound) return;`) was intended to skip position updates for KO'd-but-still-broadcast Nines, but `d.waitingForRound` is always undefined on the client side. Filter is effectively dead code.
+
+**Effect.** If the server's `zs.nines.delete` ever fails to remove a KO'd Nine (see §9.27), or if positions happen to be broadcast during the transient tick where `nine.waitingForRound = true` but `zs.nines.delete` hasn't run yet, the client can't filter that Nine out. Sprite receives position updates, wanders despite HP=0.
+
+**Resolution plan:** Add `waitingForRound: !!n.waitingForRound` to the `arena:positions` payload. Client filter becomes live.
+
+**Resolved 2026-04-20 in PR #?.**
+
+### 9.27 Self-KO'd sprite persists on KO'd player's view → OPEN (diagnostic logging added)
+
+**Symptom.** Observed 2026-04-20 post PR #147. Player 1's own sprite stays fully visible, wanders, no KO animation or WAITING dim, HP bar at 0. Player 2 (spectator) sees the KO correctly (sprite removed at round start). Perspective-specific — only the KO'd player's view is broken.
+
+**Hypothesis space** (per §9.23 investigation, 2026-04-20):
+
+1. `zs.nines.delete(deploymentId)` at `combatEngine.js:1061` is failing or being undone — server continues broadcasting positions for self → client receives them → sprite wanders. Client's positions-cull explicitly skips self (`nethara-live.html:3377-3380`), so no fallback.
+2. `combat:ko` event is not reaching the KO'd player's client (Socket.io reconnect window, event loss) — Handler 1's 800ms `removeNineSprite` setTimeout never schedules.
+3. Compound — both failing at once.
+
+**Diagnostic logging added in PR #?:**
+- Server: `[KO] zone=X nine=<deploymentId> player=<playerId> delete_start` + `delete_ok` or `delete_failed` with remaining count, around the `zs.nines.delete` call.
+- Client: `[combat:ko] received nineId=X isSelf=<bool> waitingForRound=<bool>` at the top of the `combat:ko` handler.
+
+**Next step:** reproduce the KO on production post-deploy (Replit logs panel open DURING the KO), inspect both server and client logs, narrow the hypothesis per the decision matrix in PR #? description.
+
+Note: PR #? also lands §9.25 and §9.26 which are defensive — §9.26 specifically should mitigate the wandering symptom even if §9.27's root cause is hypothesis 1 (delete failing), because the client will now filter KO'd-state broadcasts out.
+
 ---
 
 ## Appendix A — Glossary
