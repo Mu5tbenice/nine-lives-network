@@ -124,13 +124,13 @@ function slotMult(slot, hpPct) {
 async function refreshZoneBonusCache() {
   try {
     const { data } = await supabaseAdmin
-      .from('zone_control')
-      .select('zone_id, dominant_house');
+      .from('zones')
+      .select('id, dominant_house');
     (data || []).forEach((row) => {
       const bonus = row.dominant_house
         ? HOUSE_BONUSES[row.dominant_house]
         : null;
-      zoneBonusCache.set(String(row.zone_id), {
+      zoneBonusCache.set(String(row.id), {
         house: row.dominant_house,
         bonus,
       });
