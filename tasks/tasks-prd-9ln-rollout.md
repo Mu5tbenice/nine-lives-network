@@ -180,6 +180,11 @@ Organized by the §5.5 phasing in `tasks/prd-9ln-product.md`. Each §9 item is t
     Each FPRD spawns its own `tasks-prd-<n>.md` after approval.
   - [ ] 6.6 Manual verification that satisfies Phase 2 "Done when" criteria (PRD §5.5): new-player path under 60s; leaderboards under 500ms p50; KO +10 row visible in personal history before next round.
 
+- [ ] 10.0 Guild profile + identity system (est: L — feature work) *Surfaced by Task 4.5 Q3 — the `branded_guild` UX is half-implemented because guilds have no profile system. Prerequisite: none (can parallel Task 4.0 fix). Phase placement: under review by user.*
+  - [ ] 10.1 Scope: `guilds` table with name, slug, logo upload, description, ownership, membership model.
+  - [ ] 10.2 Scope: UI flows for guild creation, joining, logo upload.
+  - [ ] 10.3 Scope: integration with `branded_guild` display in zone cards (replaces the manual-logo-assignment interim from Task 4.0.6).
+
 ### Phase 3 — Hardcore Community Foundations (FPRDs)
 
 - [ ] 7.0 Phase 3 feature PRDs — author + schedule (est: L — 5 FPRDs + legal coordination)
