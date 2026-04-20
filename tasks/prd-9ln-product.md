@@ -1144,7 +1144,7 @@ One KO reproduction on the deployed build should pinpoint the failure mode. Fix 
 
 **Latent since 2026-04-15.** The rejoin route was added by `da949a1` but never reached production UI — pre-§9.31, the legacy 60s KO popup's auto-redeploy flow went through `/api/zones/deploy` instead. Only when §9.33 wired `_doRejoin()` as the actual post-KO path (PR #151) did the bug become reachable. §9.34 cleared a separate guard that had been masking it further.
 
-**Resolved 2026-04-20 in PR #?.** Fix in `server/routes/zones.js:1214-1264`:
+**Resolved 2026-04-20 in PR #154.** Fix in `server/routes/zones.js:1214-1264`:
 - Drop `.eq('is_active', true)` from the lookup.
 - Add `.order('deployed_at', { ascending: false }).limit(1).maybeSingle()` to target the most-recent deployment and insulate against multi-row ambiguity from historical deploy→withdraw cycles on the same (player, zone).
 - Select `max_hp` in the lookup so the post-rejoin re-activation can set `current_hp` to a concrete value (schema column is `NOT NULL` default 20 — `null` would be rejected).
