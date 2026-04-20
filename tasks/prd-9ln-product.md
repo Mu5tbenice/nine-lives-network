@@ -1151,7 +1151,7 @@ One KO reproduction on the deployed build should pinpoint the failure mode. Fix 
 
 Downstream behavior audit for the map-retention change: combat loop already skips on `(hp<=0 || waitingForRound || withdrawn)` flags (no presence-based reliance); session-timeout and explicit withdraw paths still delete (no memory leak); arena:positions broadcast was already adding `waitingForRound` field per §9.26 so client dimming still works; `endRound`'s `dominant_house`/`housePresence` counts now correctly include KO'd-this-round participants, which matches the participation-based design intent at `combatEngine.js:1178`.
 
-**Confirmed end-to-end on 2026-04-20 smoke test.** Auto-rejoin works: one `combat:ko` per KO, `_wasKOdThisRound=true` at round_end, `POST /api/zones/10/rejoin → 200`, player re-enters round N+1 at full HP. §9.35 diagnostic logs removed in PR #?.
+**Confirmed end-to-end on 2026-04-20 smoke test.** Auto-rejoin works: one `combat:ko` per KO, `_wasKOdThisRound=true` at round_end, `POST /api/zones/10/rejoin → 200`, player re-enters round N+1 at full HP. §9.35 diagnostic logs removed in PR #157.
 
 ### 9.36 KO loop gate re-fires for withdrawn Nines → regression surfaced by §9.35 fix
 
