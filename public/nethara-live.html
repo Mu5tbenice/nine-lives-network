@@ -954,7 +954,12 @@
       #mob-nine-name { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--gold);text-align:center;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.2; }
       #mob-nine-hp-bar { width:100%;height:6px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin:6px 0; }
       #mob-nine-hp-fill { height:100%;background:linear-gradient(90deg,#44cc88,#66eebb);border-radius:3px;transition:width 0.4s;width:100%; }
-      #mob-nine-hp-text { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--green);text-align:center;line-height:1.2; }
+      /* §9.47 HP stacked layout: 14px current on top, 14px /max below (dimmed).
+         Single-line 439/620 at 14px Press 2P would overflow 84px portrait col
+         and clip left edge. Stacking keeps both visible within the 14px floor. */
+      #mob-nine-hp-text { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--green);text-align:center;line-height:1.2;max-width:100%;overflow:hidden;white-space:nowrap; }
+      #mob-nine-hp-text .hp-cur { display:block;color:var(--green); }
+      #mob-nine-hp-text .hp-max { display:block;color:var(--green);opacity:0.5;margin-top:2px;font-size:14px; }
       #mob-debuffs { display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:14px;margin-top:4px; }
 
       /* [ORANGE] Buttons row at bottom of portrait col — 44px+ tap targets.
@@ -1028,10 +1033,11 @@
       #mob-chat-send { background:none;border:none;color:var(--gold);cursor:pointer;padding:10px 14px;font-size:16px; }
       #mob-battle-log { font-size:14px !important;line-height:1.45; }
 
-      /* Auto toggle */
-      #mob-auto-row { display:flex;align-items:center;gap:6px;margin-top:4px;justify-content:center; }
-      #mob-auto-toggle { width:30px;height:16px;background:rgba(255,255,255,0.06);border-radius:8px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0; }
-      #mob-auto-label { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--faint);line-height:1.2; }
+      /* Auto toggle — §9.47 vertical layout so "AUTO" label fits 84px col
+         without wrapping to 3 lines as "AUTO-REJOIN: ON ✓" did. */
+      #mob-auto-row { display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:6px; }
+      #mob-auto-toggle { width:36px;height:18px;background:rgba(255,255,255,0.06);border-radius:10px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0; }
+      #mob-auto-label { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--faint);line-height:1.2;white-space:nowrap; }
 
       /* Top bar — timer + LIVE pill must stay scannable. */
       .arena-top-bar { padding:6px 12px; }
@@ -3227,11 +3233,14 @@
     // HUD bottom-left
     const hudTog = document.getElementById('auto-redeploy-toggle');
     if (hudTog) hudTog.className = on ? 'on' : '';
-    // Mobile
+    // Mobile — §9.47 short labels so text doesn't wrap in the 84px portrait col.
     const mobTog = document.getElementById('mob-auto-toggle');
     if (mobTog) mobTog.style.background = on ? 'rgba(68,204,136,0.15)' : '';
     const mobLbl = document.getElementById('mob-auto-label');
-    if (mobLbl) mobLbl.textContent = on ? 'AUTO-REJOIN: ON ✓' : 'AUTO-REJOIN: OFF';
+    if (mobLbl) {
+      mobLbl.textContent = on ? 'AUTO ✓' : 'AUTO';
+      mobLbl.style.color = on ? '#44cc88' : '';
+    }
     // Deploy modal
     const depTog = document.getElementById('deploy-auto-rejoin-toggle');
     if (depTog) {
@@ -3480,11 +3489,11 @@
             const ltext = document.getElementById('left-hp-text');
             if (lfill) lfill.style.width = pct;
             if (ltext) ltext.textContent = hpTxt;
-            // Mobile
+            // Mobile — stacked current / /max display per §9.47.
             const mfill = document.getElementById('mob-nine-hp-fill');
             const mtext = document.getElementById('mob-nine-hp-text');
             if (mfill) mfill.style.width = pct;
-            if (mtext) mtext.textContent = hpTxt;
+            _setMobileHPText(mtext, d.hp, d.maxHp);
             // Profile image — all three portraits
             const cached = S._deployCache?.[id];
             if (cached?.profile_image) {
@@ -5344,6 +5353,16 @@
     window.switchMobTab('cards');
   }
 
+  // §9.47 HP stacked display: current on top (full green), /max below (dimmed).
+  // Single-line "439/620" at 14px Press 2P overflows the 84px portrait col and
+  // clips at left. Two 3-4 char lines both fit within the col width.
+  function _setMobileHPText(el, hp, maxHp) {
+    if (!el) return;
+    const cur = Math.round(hp);
+    el.innerHTML = `<span class="hp-cur">${cur}</span><span class="hp-max">/${maxHp}</span>`;
+  }
+  window._setMobileHPText = _setMobileHPText;
+
   // Sync mobile portrait + HP from main state
   function syncMobilePortrait() {
     if (window.innerWidth > 640) return;
@@ -5355,13 +5374,13 @@
     if (icon) icon.textContent = HOUSES[hk]?.icon || '🐱';
     if (name && S.playerHandle) name.textContent = '@' + S.playerHandle;
     if (portrait) portrait.style.borderColor = houseColor + '88';
-    // HP
+    // HP — mobile stacked display (§9.47)
     const sprite = S.nines.get(S.playerId);
     const fill = document.getElementById('mob-nine-hp-fill');
     const text = document.getElementById('mob-nine-hp-text');
     if (sprite && fill && text) {
       fill.style.width = `${Math.max(0,(sprite.hp/sprite.maxHp)*100)}%`;
-      text.textContent = `${Math.round(sprite.hp)}/${sprite.maxHp}`;
+      _setMobileHPText(text, sprite.hp, sprite.maxHp);
     }
     // Render Nine layers (equipped_images) — same priority as desktop portrait
     const cached = S._deployCache?.[String(S.playerId)];
