@@ -1353,6 +1353,41 @@ Diagnostic `console.log` retained for one smoke-test cycle per the §9.35/PR #15
 
 **Status: OPEN — FLAG_OFF awaiting playtest.** Close when the flag has been flipped in production and the mechanic has survived a week without regression reports. Separate PR will then update the Game Bible V4 → V5 to document the "deploy window" concept formally.
 
+### 9.47 Mobile visual follow-up — real-phone smoke test of PR #161
+
+**Symptom (user-reported 2026-04-20).** Phone smoke test of PR #161 on an actual Android device (not DevTools) surfaced seven distinct visual issues: (a) deploy modal ATK/HP/SPD/DEF/LCK preview row exceeded viewport width, clipping LCK at the right; (b) arena HUD portrait column too wide at 116px on 393px phone; (c) card slots partially off-screen — slot 3 unreachable because horizontal scroll was the PR #161 choice; (d) `LOADOUT` button truncated to `LOADOU`; (e) `AUTO-REJOIN: ON ✓` label wrapped to 3 vertical lines in the narrow col; (f) `#mob-nine-hp-text` "439/620" clipped at left edge because 7-char Press 2P 14px centered text overflowed the portrait col and cropped both sides; (g) STATS tab showed only the player's own stat bars instead of the fighters leaderboard the desktop sidebar shows — mobile users couldn't see other Nines in the zone. Plus: pre-deploy the mobile HUD rendered with empty portrait + "--/--" placeholders instead of getting out of the way for the JOIN BATTLE CTA. User also retracted the PR #161 client-side 60s countdown extension as misleading UX.
+
+**Root cause.** PR #161 applied the 14px Press Start 2P floor strictly but accepted several layout tradeoffs without phone validation: 200px card slot min-width + horizontal scroll was untested ergonomics; 116px portrait col was defensively wide for 14px button labels; single-line HP at 14px × 7 chars was too tight; `AUTO-REJOIN: ON ✓` at 14px was a 15-char string that couldn't fit any reasonable portrait col width. The pre-deploy HUD visibility was latent — mobile CSS forced `.arena-bottom-tray` to `display: flex !important` regardless of the inline `display: none` that desktop relied on. The 60s countdown was a speculative widening of the deploy window that turned out to be a false promise because round_start is server-driven.
+
+**Resolved 2026-04-20 in PR #162.** Seven visual fixes + two behavior cleanups:
+
+1. **Deploy modal stat row** — `.deploy-stat-val` 16→14px, both `.deploy-stat-key` and `.deploy-stat-val` `letter-spacing: 0`, `.deploy-stat-row` gains `flex-wrap: wrap` + 2px gap as a graceful fallback when 5 stats don't fit single-row, `.deploy-stat` padding tightened to 5px 1px with `flex: 1 1 18%` for a better wrap basis. `.deploy-stats-preview` padding 8px 12px → 6px 8px to claw back horizontal space.
+2. **Portrait column** — `#mob-portrait-col` 116→84px (≤640px), 92→76px (≤390px); padding trimmed to 6px/4px horizontal.
+3. **Card slots** — dropped horizontal scroll, restored `flex: 1 1 0` distribution so all 3 fit; hid `.slot-type`, `.slot-effect-pill`, `.slot-stats-row` on mobile (full details still in desktop HUD / card tap popup); `#mob-card-slots` min-height 120 → 96, max-height 160 → 120.
+4. **Button labels** — `⇄ LOADOUT` → `SWAP`, `WITHDRAW` → `EXIT`. Dropped the unicode arrow prefix from SWAP because adding it pushes text width past 84px col even with minimal padding; `.mob-btn` padding 12px 6px → 12px 4px, `letter-spacing: 0`, `overflow: hidden` as safety.
+5. **Auto-rejoin layout** — `#mob-auto-row` flex-direction row → column (toggle on top, label below). Toggle slightly enlarged 30×16 → 36×18. Mobile-only label text changed in `_syncAutoRejoinUI` from `AUTO-REJOIN: ON ✓ / OFF` to `AUTO ✓ / AUTO`. On-state label tinted green.
+6. **HP text stacked display** — new `_setMobileHPText(el, hp, maxHp)` helper writes `<span.hp-cur>` + `<span.hp-max>` children; current HP full-green, max HP 50% opacity. Two callsites updated (arena:positions self-path + syncMobilePortrait). Both numbers remain visible, both meet 14px floor, neither clips.
+7. **Stats tab leaderboard** — `renderGuildSidebar()` now paints to both `#fighters-list` and `#mob-fighters-list` in a single call. `#mob-tab-stats` rewritten with ROUND/SESSION toggle + HP/DMG/HEAL/KOs sort row + scrollable list, all mirroring desktop. `_setSidebarView` and `_sortFighters` extended to repaint active state on `[data-sb-view]` + `.mob-sb-sort-btn` elements. Desktop `#sb-view-round`/`#sb-view-session` gain `data-sb-view` attributes. `syncMobStats()` removed — the player's own stat bars are no longer duplicated in the stats tab; sprite + HP + debuffs stay in the portrait column as the self-view.
+8. **Pre-deploy HUD hidden** — `body.arena-pre-deploy` class mirrored from `#deploy-cta.style.display` by a single MutationObserver; `@media(max-width:640px) body.arena-pre-deploy .arena-bottom-tray { display: none !important; }` hides the whole mobile HUD when pre-deploy. No per-callsite plumbing — 14+ existing deploy-state toggle sites stay untouched.
+9. **60s countdown extension removed** — `_handleRoundEndAction` no longer calls `overlay._resetCountdown(60)`. The popup runs its server-aligned countdown and dismisses naturally when round_start arrives. The `overlay._resetCountdown` helper stays in place as a harmless future hook. Rejoin timing design moved to §9.48.
+
+Desktop (≥641px) visually unchanged for all nine changes. All CSS scoped to `@media (max-width: 640px)`; all HTML tweaks affect either mobile-only elements or desktop elements where the change is a `data-*` attribute addition with no visual impact.
+
+### 9.48 Round-end rejoin timing needs server-side design
+
+**Symptom.** PR #161 introduced a client-side 60s popup countdown reset on `CHANGE BUILD` click, intended to give the player a longer deploy window between rounds. But the server fires `round_start` on its own schedule (typically 25s intermission), at which point the client popup is force-dismissed. The 60s number was purely cosmetic — the popup would show "NEXT ROUND IN 60s" then vanish at ~25s regardless.
+
+**Effect.** False promise UX — player sees a deadline that the system won't honor. The rollback in §9.47 removes the misleading text but leaves the underlying design question unanswered: does the CHANGE BUILD flow actually need a wider intermission window, and if so, how?
+
+**Design questions (for the separate PR that closes this entry).**
+
+1. **Is the intermission too short in practice?** Default 25s (`INTERMISSION_MS` in `combatEngine.js:17`). Phone-smoke-test observation suggested 25s is tight for opening the deploy modal, scrolling card grid, tapping a new card, tapping DEPLOY. Validate with more smoke tests before acting.
+2. **Who owns intermission length — zone-wide or per-player extension?** If zone-wide, every player benefits from a longer breather (simpler but affects pacing). If per-player, only the player who clicked CHANGE BUILD gets the extension (complex — server has to track per-player deploy windows independent of round_state, which conflicts with the §9.46 deploy-lockout direction).
+3. **Interaction with §9.46 deploy lockout.** If lockout is ON and intermission is 25s, the player has exactly 25s to deploy or they're locked out until next round end. Combined with auto-rejoin on, this could strand a player who intended to deploy a new build.
+4. **What's the signal from the server that "deploy window closes in N seconds"?** Current round_start fires without a heads-up. Options: emit `arena:deploy_window_closing` at T-5s, or include a deploy-window-closes timestamp in `arena:round_end` payload that the client can render accurately.
+
+**Status: OPEN.** Tracked as design debt independent of Task 24.0's scope. Closes when a follow-up PR adds either (a) a tuned intermission length + server-emitted deadline the client can render accurately, or (b) a per-player deploy window extension API with clear interaction rules vs §9.46 lockout, or (c) a deliberate product decision to leave intermission fixed and remove the "CHANGE BUILD" affordance as a redesign.
+
 ---
 
 ## Appendix A — Glossary

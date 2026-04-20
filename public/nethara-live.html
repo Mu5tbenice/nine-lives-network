@@ -928,10 +928,11 @@
         position: relative; overflow: hidden;
       }
       /* [YELLOW] Portrait column — Nine overlapping top.
-         §9.45 widened 90→116 to fit 14px Press Start 2P button labels. */
+         §9.47 trimmed back to 84px after shortening button labels
+         (↻ SWAP / EXIT) so card slots regain ~32px of horizontal space. */
       #mob-portrait-col {
         display: flex; flex-direction: column; align-items: center;
-        width: 116px; flex-shrink: 0; padding: 0 8px 8px;
+        width: 84px; flex-shrink: 0; padding: 0 6px 8px;
         border-right: 1px solid rgba(255,255,255,0.07);
         position: relative;
       }
@@ -953,16 +954,24 @@
       #mob-nine-name { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--gold);text-align:center;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.2; }
       #mob-nine-hp-bar { width:100%;height:6px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin:6px 0; }
       #mob-nine-hp-fill { height:100%;background:linear-gradient(90deg,#44cc88,#66eebb);border-radius:3px;transition:width 0.4s;width:100%; }
-      #mob-nine-hp-text { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--green);text-align:center;line-height:1.2; }
+      /* §9.47 HP stacked layout: 14px current on top, 14px /max below (dimmed).
+         Single-line 439/620 at 14px Press 2P would overflow 84px portrait col
+         and clip left edge. Stacking keeps both visible within the 14px floor. */
+      #mob-nine-hp-text { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--green);text-align:center;line-height:1.2;max-width:100%;overflow:hidden;white-space:nowrap; }
+      #mob-nine-hp-text .hp-cur { display:block;color:var(--green); }
+      #mob-nine-hp-text .hp-max { display:block;color:var(--green);opacity:0.5;margin-top:2px;font-size:14px; }
       #mob-debuffs { display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:14px;margin-top:4px; }
 
-      /* [ORANGE] Buttons row at bottom of portrait col — 44px+ tap targets. */
+      /* [ORANGE] Buttons row at bottom of portrait col — 44px+ tap targets.
+         §9.47 tightened padding + dropped letter-spacing so 4-char "SWAP"/"EXIT"
+         labels fit 84px (≤640px) / 76px (≤390px) portrait col widths. */
       #mob-buttons { display:flex;flex-direction:column;gap:6px;width:100%;margin-top:auto; }
       .mob-btn {
-        font-family:'Press Start 2P',monospace;font-size:14px;padding:12px 6px;
+        font-family:'Press Start 2P',monospace;font-size:14px;padding:12px 4px;
         border-radius:4px;cursor:pointer;width:100%;text-align:center;
         border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);
-        color:var(--faint);line-height:1.2;letter-spacing:0.5px;
+        color:var(--faint);line-height:1.2;letter-spacing:0;
+        overflow:hidden;
       }
       .mob-btn-red { border-color:rgba(255,68,102,0.3);background:rgba(255,68,102,0.06);color:var(--red); }
 
@@ -983,22 +992,26 @@
       #mob-tab-chat   { display:none;flex:1;flex-direction:column;overflow:hidden; }
       #mob-tab-log    { display:none;flex:1;overflow-y:auto;padding:6px 10px; }
 
-      /* Card slots — horizontal scroll; 14px Press Start 2P needs ~200px per slot. */
-      #mob-card-slots { display:flex !important;flex-direction:row;gap:8px;padding:8px 10px;flex:1;align-items:stretch;min-height:120px;max-height:160px;overflow-x:auto !important;overflow-y:hidden;scrollbar-width:thin; }
+      /* Card slots — §9.47: show all 3 without horizontal scroll. Mobile
+         drops slot-type / slot-effect-pill / slot-stats-row so each slot
+         fits flex:1 share (~90px at 393px viewport) with art + name only.
+         Full details still accessible on desktop HUD / via card tap popup. */
+      #mob-card-slots { display:flex !important;flex-direction:row;gap:6px;padding:6px 8px;flex:1;align-items:stretch;min-height:96px;max-height:120px;overflow-x:hidden !important;overflow-y:hidden; }
       .mob-card-slot {
-        flex:0 0 auto !important;width:200px;min-width:200px;border:1px solid rgba(255,255,255,0.1);
+        flex:1 1 0 !important;min-width:0;width:auto;border:1px solid rgba(255,255,255,0.1);
         border-radius:8px;overflow:hidden;display:flex;flex-direction:row;
-        min-height:100px;
+        min-height:80px;
         cursor:pointer;position:relative;
       }
       .mob-card-slot .slot-art { width:38%;flex-shrink:0;overflow:hidden;position:relative;background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center; }
       .mob-card-slot .slot-art-img { position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 35%;opacity:0;transition:opacity 0.3s; }
       .mob-card-slot .slot-art-img.loaded { opacity:1; }
-      .mob-card-slot .slot-info { flex:1;padding:6px 8px;display:flex;flex-direction:column;justify-content:space-between;gap:4px;min-width:0;overflow:hidden; }
+      .mob-card-slot .slot-info { flex:1;padding:6px 6px;display:flex;flex-direction:column;justify-content:center;min-width:0;overflow:hidden; }
       .mob-card-slot .slot-name { font-family:'Cinzel',serif;font-size:14px;font-weight:700;color:var(--bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2; }
-      .mob-card-slot .slot-type { font-family:'Press Start 2P',monospace;font-size:14px;opacity:0.8;line-height:1.2; }
-      .mob-card-slot .slot-effect-pill { font-family:'Press Start 2P',monospace;font-size:14px;padding:3px 6px;border-radius:3px;display:inline-block;line-height:1.2; }
-      .mob-card-slot .slot-stats-row { display:flex;gap:6px;font-family:'Press Start 2P',monospace;font-size:14px;flex-wrap:wrap;line-height:1.2; }
+      /* Art + name only on mobile — the other lines would overflow at flex:1 */
+      .mob-card-slot .slot-type,
+      .mob-card-slot .slot-effect-pill,
+      .mob-card-slot .slot-stats-row { display:none !important; }
       .mob-card-slot.empty { align-items:center;justify-content:center;opacity:0.3;border-style:dashed; }
       .mob-card-slot.empty > span { font-size:14px !important; }
       .mob-card-slot.slot-active { box-shadow:0 0 10px var(--slot-color,var(--gold)); }
@@ -1020,10 +1033,11 @@
       #mob-chat-send { background:none;border:none;color:var(--gold);cursor:pointer;padding:10px 14px;font-size:16px; }
       #mob-battle-log { font-size:14px !important;line-height:1.45; }
 
-      /* Auto toggle */
-      #mob-auto-row { display:flex;align-items:center;gap:6px;margin-top:4px;justify-content:center; }
-      #mob-auto-toggle { width:30px;height:16px;background:rgba(255,255,255,0.06);border-radius:8px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0; }
-      #mob-auto-label { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--faint);line-height:1.2; }
+      /* Auto toggle — §9.47 vertical layout so "AUTO" label fits 84px col
+         without wrapping to 3 lines as "AUTO-REJOIN: ON ✓" did. */
+      #mob-auto-row { display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:6px; }
+      #mob-auto-toggle { width:36px;height:18px;background:rgba(255,255,255,0.06);border-radius:10px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0; }
+      #mob-auto-label { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--faint);line-height:1.2;white-space:nowrap; }
 
       /* Top bar — timer + LIVE pill must stay scannable. */
       .arena-top-bar { padding:6px 12px; }
@@ -1044,8 +1058,13 @@
       .btn-cancel { font-size:14px; }
 
       /* §9.45 deploy modal mobile — Press Start 2P at 14px floor, bigger pills. */
-      .deploy-stat-key { font-size:14px !important; letter-spacing:1px; }
-      .deploy-stat-val { font-size:16px !important; }
+      /* §9.47 stat row: drop letter-spacing, bring val down to 14, allow wrap
+         so 5 stats fit 375-430px viewports without clipping LCK at the right. */
+      .deploy-stats-preview { padding: 6px 8px; }
+      .deploy-stat-row { flex-wrap: wrap; gap: 2px; }
+      .deploy-stat { padding: 5px 1px; min-width: 0; flex: 1 1 18%; }
+      .deploy-stat-key { font-size:14px !important; letter-spacing:0 !important; }
+      .deploy-stat-val { font-size:14px !important; letter-spacing:0 !important; }
       .deploy-selected-slot { height:64px; }
       .deploy-selected-slot .slot-name { font-size:14px !important; }
       .deploy-selected-slot .slot-eff  { font-size:14px !important; }
@@ -1058,12 +1077,18 @@
       /* Hide desktop elements on mobile */
       #arena-tray-tabs { display:none; }
       #arena-tray-body { display:none; }
+
+      /* §9.47 pre-deploy: hide the entire mobile HUD (portrait col + card
+         slots + tabs) so the JOIN BATTLE button + PIXI canvas take the
+         stage. body.arena-pre-deploy is toggled by a MutationObserver on
+         #deploy-cta so all existing deploy-state sites keep working without
+         per-site class plumbing. Canvas stays at 54% per user preference. */
+      body.arena-pre-deploy .arena-bottom-tray { display: none !important; }
     }
 
     @media (max-width: 390px) {
-      #mob-portrait-col { width: 92px; }
+      #mob-portrait-col { width: 76px; padding: 0 4px 8px; }
       #mob-nine-portrait { width: 60px; height: 60px; margin-top: -30px; }
-      .mob-card-slot { width:184px;min-width:184px; }
     }
 
     @media (min-width: 1200px) {
@@ -1169,9 +1194,9 @@
       </div>
       <!-- ROUND / SESSION toggle -->
       <div style="display:flex;gap:0;padding:0 12px 6px;flex-shrink:0;">
-        <button id="sb-view-round" onclick="window._setSidebarView('round')"
+        <button id="sb-view-round" data-sb-view="round" onclick="window._setSidebarView('round')"
           style="font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 10px;border-radius:3px 0 0 3px;cursor:pointer;background:rgba(106,200,216,0.15);border:1px solid rgba(106,200,216,0.4);color:#6ac8d8;">⚡ ROUND <span id="sb-round-timer" style="opacity:0.6;font-size:5px;"></span></button>
-        <button id="sb-view-session" onclick="window._setSidebarView('session')"
+        <button id="sb-view-session" data-sb-view="session" onclick="window._setSidebarView('session')"
           style="font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 10px;border-radius:0 3px 3px 0;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-left:none;color:var(--faint);">📊 SESSION</button>
       </div>
       <div id="fighters-list" style="flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(212,166,75,0.2) transparent;"></div>
@@ -1455,8 +1480,8 @@
         <div id="mob-nine-hp-text" style="color:var(--green);text-align:center;margin-top:4px;">--/--</div>
         <div id="mob-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:14px;margin-top:4px;"></div>
         <div id="mob-buttons">
-          <button class="mob-btn" onclick="openDeployModal()">⇄ LOADOUT</button>
-          <button class="mob-btn mob-btn-red" onclick="withdraw()">WITHDRAW</button>
+          <button class="mob-btn" onclick="openDeployModal()">SWAP</button>
+          <button class="mob-btn mob-btn-red" onclick="withdraw()">EXIT</button>
           <div id="mob-auto-row">
             <div id="mob-auto-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()">
               <div style="position:absolute;top:2px;left:2px;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.3);transition:left 0.2s;"></div>
@@ -1485,9 +1510,22 @@
             <div class="mob-card-slot empty" id="mob-card-slot-2"><span style="font-family:'Press Start 2P',monospace;color:var(--faint)">3</span></div>
           </div>
         </div>
-        <!-- STATS -->
-        <div id="mob-tab-stats" style="display:none;flex:1;overflow-y:auto;padding:8px 10px;">
-          <div id="mob-stats-bars"></div>
+        <!-- STATS — §9.47: leaderboard mirror of desktop right sidebar.
+             View toggle + sort row at top, scrollable fighters list below.
+             Reuses S._sidebarView / S._sidebarSort state so desktop and
+             mobile stay in sync. -->
+        <div id="mob-tab-stats" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+          <div style="display:flex;gap:4px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
+            <button data-sb-view="round"   onclick="window._setSidebarView('round')"   style="flex:1;font-family:'Press Start 2P',monospace;font-size:14px;padding:8px 4px;border-radius:3px;cursor:pointer;background:rgba(106,200,216,0.15);border:1px solid rgba(106,200,216,0.4);color:#6ac8d8;">ROUND</button>
+            <button data-sb-view="session" onclick="window._setSidebarView('session')" style="flex:1;font-family:'Press Start 2P',monospace;font-size:14px;padding:8px 4px;border-radius:3px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:var(--faint);">SESSION</button>
+          </div>
+          <div style="display:flex;gap:3px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;overflow-x:auto;">
+            <button class="mob-sb-sort-btn" data-sort="hp"     onclick="window._sortFighters('hp')"     style="flex:1;font-family:'Press Start 2P',monospace;font-size:14px;padding:6px 4px;border-radius:3px;cursor:pointer;background:rgba(212,166,75,0.12);border:1px solid rgba(212,166,75,0.3);color:var(--gold);">HP</button>
+            <button class="mob-sb-sort-btn" data-sort="damage" onclick="window._sortFighters('damage')" style="flex:1;font-family:'Press Start 2P',monospace;font-size:14px;padding:6px 4px;border-radius:3px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:var(--faint);">DMG</button>
+            <button class="mob-sb-sort-btn" data-sort="heals"  onclick="window._sortFighters('heals')"  style="flex:1;font-family:'Press Start 2P',monospace;font-size:14px;padding:6px 4px;border-radius:3px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:var(--faint);">HEAL</button>
+            <button class="mob-sb-sort-btn" data-sort="kos"    onclick="window._sortFighters('kos')"    style="flex:1;font-family:'Press Start 2P',monospace;font-size:14px;padding:6px 4px;border-radius:3px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:var(--faint);">KOs</button>
+          </div>
+          <div id="mob-fighters-list" style="flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(212,166,75,0.2) transparent;"></div>
         </div>
         <!-- CHAT -->
         <div id="mob-tab-chat" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
@@ -3215,11 +3253,14 @@
     // HUD bottom-left
     const hudTog = document.getElementById('auto-redeploy-toggle');
     if (hudTog) hudTog.className = on ? 'on' : '';
-    // Mobile
+    // Mobile — §9.47 short labels so text doesn't wrap in the 84px portrait col.
     const mobTog = document.getElementById('mob-auto-toggle');
     if (mobTog) mobTog.style.background = on ? 'rgba(68,204,136,0.15)' : '';
     const mobLbl = document.getElementById('mob-auto-label');
-    if (mobLbl) mobLbl.textContent = on ? 'AUTO-REJOIN: ON ✓' : 'AUTO-REJOIN: OFF';
+    if (mobLbl) {
+      mobLbl.textContent = on ? 'AUTO ✓' : 'AUTO';
+      mobLbl.style.color = on ? '#44cc88' : '';
+    }
     // Deploy modal
     const depTog = document.getElementById('deploy-auto-rejoin-toggle');
     if (depTog) {
@@ -3468,11 +3509,11 @@
             const ltext = document.getElementById('left-hp-text');
             if (lfill) lfill.style.width = pct;
             if (ltext) ltext.textContent = hpTxt;
-            // Mobile
+            // Mobile — stacked current / /max display per §9.47.
             const mfill = document.getElementById('mob-nine-hp-fill');
             const mtext = document.getElementById('mob-nine-hp-text');
             if (mfill) mfill.style.width = pct;
-            if (mtext) mtext.textContent = hpTxt;
+            _setMobileHPText(mtext, d.hp, d.maxHp);
             // Profile image — all three portraits
             const cached = S._deployCache?.[id];
             if (cached?.profile_image) {
@@ -4410,14 +4451,16 @@
   // Reads S._autoRedeploy at click time (not at render time — covers the edge
   // case where user flips the HUD toggle between popup render and click).
   window._handleRoundEndAction = function() {
-    const overlay = document.getElementById('round-end-overlay');
     if (S._autoRedeploy) {
-      // Auto-rejoin ON → CHANGE BUILD. Open deploy modal pre-selected with the
-      // current build so user can tweak one card without re-picking all three.
-      // Popup countdown extends to 60s to widen the effective deploy window
-      // (client-side — server intermission is server-side; if round_start
-      // fires before the user confirms, modal stays open per Task 23 spec).
-      if (overlay && overlay._resetCountdown) overlay._resetCountdown(60);
+      // Auto-rejoin ON → CHANGE BUILD. Open deploy modal pre-selected with
+      // the current build so user can tweak one card without re-picking all
+      // three. Popup continues its server-driven countdown and auto-dismisses
+      // when the server fires round_start; modal stays open per Task 23 rule.
+      //
+      // §9.47: removed the client-side countdown extension to 60s — it was a
+      // false promise because the server still fires round_start on its own
+      // schedule (typically 25s). Rejoin timing needs server-side design in
+      // a separate PR (see §9.48).
       openDeployModal({ preselectCurrent: true });
     } else {
       // Auto-rejoin OFF → flip it on, dismiss popup. On round_start the existing
@@ -4691,18 +4734,34 @@
 
   window._setSidebarView = function(view) {
     S._sidebarView = view;
+    const isRound = view === 'round';
+    // Paint active state on every round/session button pair we find, keyed by
+    // the `data-sb-view` attribute + `data-sb-target` so desktop + mobile mirror.
+    document.querySelectorAll('[data-sb-view]').forEach(btn => {
+      const v = btn.dataset.sbView;
+      const active = v === view;
+      if (v === 'round') {
+        btn.style.background = active ? 'rgba(106,200,216,0.15)' : 'rgba(255,255,255,0.03)';
+        btn.style.borderColor = active ? 'rgba(106,200,216,0.4)' : 'rgba(255,255,255,0.08)';
+        btn.style.color = active ? '#6ac8d8' : 'var(--faint)';
+      } else {
+        btn.style.background = active ? 'rgba(212,166,75,0.12)' : 'rgba(255,255,255,0.03)';
+        btn.style.borderColor = active ? 'rgba(212,166,75,0.3)' : 'rgba(255,255,255,0.08)';
+        btn.style.color = active ? 'var(--gold)' : 'var(--faint)';
+      }
+    });
+    // Legacy id-based fallback for any callers still attached to the old IDs.
     const rBtn = document.getElementById('sb-view-round');
     const sBtn = document.getElementById('sb-view-session');
-    if (rBtn) {
-      const isRound = view === 'round';
+    if (rBtn && !rBtn.dataset.sbView) {
       rBtn.style.background = isRound ? 'rgba(106,200,216,0.15)' : 'rgba(255,255,255,0.03)';
       rBtn.style.borderColor = isRound ? 'rgba(106,200,216,0.4)' : 'rgba(255,255,255,0.08)';
       rBtn.style.color = isRound ? '#6ac8d8' : 'var(--faint)';
-      if (sBtn) {
-        sBtn.style.background = !isRound ? 'rgba(212,166,75,0.12)' : 'rgba(255,255,255,0.03)';
-        sBtn.style.borderColor = !isRound ? 'rgba(212,166,75,0.3)' : 'rgba(255,255,255,0.08)';
-        sBtn.style.color = !isRound ? 'var(--gold)' : 'var(--faint)';
-      }
+    }
+    if (sBtn && !sBtn.dataset.sbView) {
+      sBtn.style.background = !isRound ? 'rgba(212,166,75,0.12)' : 'rgba(255,255,255,0.03)';
+      sBtn.style.borderColor = !isRound ? 'rgba(212,166,75,0.3)' : 'rgba(255,255,255,0.08)';
+      sBtn.style.color = !isRound ? 'var(--gold)' : 'var(--faint)';
     }
     renderGuildSidebar();
   };
@@ -4729,7 +4788,9 @@
   S._sidebarSort = 'hp';
   window._sortFighters = function(field) {
     S._sidebarSort = field;
-    document.querySelectorAll('.sb-sort-btn').forEach(b => {
+    // Both desktop (.sb-sort-btn) and mobile (.mob-sb-sort-btn) sort buttons
+    // read data-sort to paint their active state from the shared state.
+    document.querySelectorAll('.sb-sort-btn, .mob-sb-sort-btn').forEach(b => {
       const active = b.dataset.sort === field;
       b.style.background = active ? 'rgba(212,166,75,0.12)' : 'rgba(255,255,255,0.03)';
       b.style.borderColor = active ? 'rgba(212,166,75,0.3)' : 'rgba(255,255,255,0.08)';
@@ -4812,9 +4873,15 @@
   if (!S._survRounds) S._survRounds = 0;
 
   // ── SIDEBAR FIGHTERS ──
+  // §9.47 renderGuildSidebar now paints to BOTH the desktop container
+  // (#fighters-list) and the mobile stats-tab container (#mob-fighters-list)
+  // when it exists. Single source of truth — S._sidebarView + S._sidebarSort
+  // drive both surfaces, so flipping view on desktop and then opening mobile
+  // stats tab shows the same sort.
   function renderGuildSidebar() {
-    const container = document.getElementById('fighters-list');
-    if (!container) return;
+    const desktopEl = document.getElementById('fighters-list');
+    const mobileEl  = document.getElementById('mob-fighters-list');
+    if (!desktopEl && !mobileEl) return;
     const isRound = S._sidebarView === 'round';
     const metrics = isRound ? S._roundMetrics : S.combatMetrics;
     const fighters = [];
@@ -4845,8 +4912,10 @@
         });
       });
     }
+    const emptyHTML = `<div style="padding:14px;font-family:'Crimson Text',serif;font-size:14px;color:rgba(255,255,255,0.25)">${isRound ? 'No action yet this round' : 'No fighters on this zone'}</div>`;
     if (!fighters.length) {
-      container.innerHTML = `<div style="padding:14px;font-family:'Crimson Text',serif;font-size:14px;color:rgba(255,255,255,0.25)">${isRound ? 'No action yet this round' : 'No fighters on this zone'}</div>`;
+      if (desktopEl) desktopEl.innerHTML = emptyHTML;
+      if (mobileEl)  mobileEl.innerHTML  = emptyHTML;
       return;
     }
     const sortField = S._sidebarSort || 'hp';
@@ -4857,7 +4926,7 @@
       if (sortField === 'kos')    return (b.kos||0)    - (a.kos||0);
       return b.hp - a.hp;
     });
-    container.innerHTML = fighters.map((f,i) => {
+    const html = fighters.map((f,i) => {
       const hc = HOUSES[f.house]?.color || '#888';
       const pct = Math.round((f.hp/f.maxHp)*100);
       const hpC = pct > 50 ? '#44cc88' : pct > 25 ? '#ffaa44' : '#ff4466';
@@ -4896,6 +4965,8 @@
         </div>
       </div>`;
     }).join('');
+    if (desktopEl) desktopEl.innerHTML = html;
+    if (mobileEl)  mobileEl.innerHTML  = html;
   }
 
   // ── COMBAT STATS / CHART ──
@@ -5283,34 +5354,14 @@
       const active = panels[i] === tab;
       b.classList.toggle('active', active);
     });
-    if (tab === 'stats') syncMobStats();
+    // §9.47: stats tab is now the leaderboard (fighters list mirror of desktop
+    // right sidebar). renderGuildSidebar paints to #mob-fighters-list when it
+    // exists, and runs on every live update, so one call on tab switch is
+    // enough to populate. View/sort state is shared with desktop.
+    if (tab === 'stats') renderGuildSidebar();
     if (tab === 'chat') syncMobChat();
     if (tab === 'log')  syncMobLog();
   };
-
-  function syncMobStats() {
-    const el = document.getElementById('mob-stats-bars');
-    if (!el) return;
-    // Calculate stats client-side — #your-nine-stats is inside #hud-main which is hidden on mobile
-    const hk = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
-    const base = HOUSE_STATS[hk] || HOUSE_STATS.stormrage;
-    let ca=0,ch=0,cs=0,cd=0,cl=0;
-    S.equippedCards.forEach(c=>{ if(!c)return; ca+=c.base_atk||0; ch+=c.base_hp||0; cs+=c.base_spd||0; cd+=c.base_def||0; cl+=c.base_luck||0; });
-    const MAX = { atk:200, hp:2000, spd:80, def:80, luck:60 };
-    const stats = [
-      { label:'ATK', val:base.atk+ca,  color:'#e85a6a', max:MAX.atk  },
-      { label:'HP',  val:base.hp+ch,   color:'#6acd8a', max:MAX.hp   },
-      { label:'SPD', val:base.spd+cs,  color:'#6ac8d8', max:MAX.spd  },
-      { label:'DEF', val:base.def+cd,  color:'#b088e8', max:MAX.def  },
-      { label:'LCK', val:base.luck+cl, color:'#D4A64B', max:MAX.luck },
-    ];
-    el.innerHTML = stats.map(s => `
-      <div class="hud-stat-bar-wrap">
-        <div class="hud-stat-label" style="color:${s.color}">${s.label}</div>
-        <div class="hud-stat-track"><div class="hud-stat-fill" style="width:${Math.min(100,Math.round((s.val/s.max)*100))}%;background:${s.color}"></div></div>
-        <div class="hud-stat-val" style="color:${s.color}">${s.val}</div>
-      </div>`).join('');
-  }
 
   function syncMobChat() {
     const log = document.getElementById('mob-chat-log');
@@ -5332,6 +5383,35 @@
     window.switchMobTab('cards');
   }
 
+  // §9.47 pre-deploy mobile HUD gating. All existing code paths toggle
+  // #deploy-cta.style.display between 'block' (pre-deploy) and 'none'
+  // (deployed). An observer mirrors that signal to body.arena-pre-deploy;
+  // CSS rule inside the ≤640px media block hides .arena-bottom-tray when
+  // the class is set. Desktop ignores the class entirely.
+  (function _mountPreDeployObserver() {
+    const cta = document.getElementById('deploy-cta');
+    if (!cta) return;
+    const apply = () => {
+      const d = cta.style.display;
+      const visible = d === '' ? false : (d === 'block' || d === 'flex');
+      document.body.classList.toggle('arena-pre-deploy', visible);
+    };
+    apply();
+    try {
+      new MutationObserver(apply).observe(cta, { attributes: true, attributeFilter: ['style'] });
+    } catch (e) { /* legacy browser: body class stays at initial apply() */ }
+  })();
+
+  // §9.47 HP stacked display: current on top (full green), /max below (dimmed).
+  // Single-line "439/620" at 14px Press 2P overflows the 84px portrait col and
+  // clips at left. Two 3-4 char lines both fit within the col width.
+  function _setMobileHPText(el, hp, maxHp) {
+    if (!el) return;
+    const cur = Math.round(hp);
+    el.innerHTML = `<span class="hp-cur">${cur}</span><span class="hp-max">/${maxHp}</span>`;
+  }
+  window._setMobileHPText = _setMobileHPText;
+
   // Sync mobile portrait + HP from main state
   function syncMobilePortrait() {
     if (window.innerWidth > 640) return;
@@ -5343,13 +5423,13 @@
     if (icon) icon.textContent = HOUSES[hk]?.icon || '🐱';
     if (name && S.playerHandle) name.textContent = '@' + S.playerHandle;
     if (portrait) portrait.style.borderColor = houseColor + '88';
-    // HP
+    // HP — mobile stacked display (§9.47)
     const sprite = S.nines.get(S.playerId);
     const fill = document.getElementById('mob-nine-hp-fill');
     const text = document.getElementById('mob-nine-hp-text');
     if (sprite && fill && text) {
       fill.style.width = `${Math.max(0,(sprite.hp/sprite.maxHp)*100)}%`;
-      text.textContent = `${Math.round(sprite.hp)}/${sprite.maxHp}`;
+      _setMobileHPText(text, sprite.hp, sprite.maxHp);
     }
     // Render Nine layers (equipped_images) — same priority as desktop portrait
     const cached = S._deployCache?.[String(S.playerId)];
