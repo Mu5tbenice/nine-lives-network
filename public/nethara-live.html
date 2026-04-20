@@ -2679,10 +2679,15 @@
   }
 
   // ── DEPLOY MODAL ──
-  async function openDeployModal() {
+  // opts.preselectCurrent: seed selectedCards from S.equippedCards so the
+  // modal opens showing the current build (CHANGE BUILD flow from round-end
+  // popup, §9.45). Without this, the user faces empty state and has to
+  // re-pick every card just to tweak one.
+  async function openDeployModal(opts) {
     if (!S.playerId) { alert('Please log in first'); return; }
     const modal = document.getElementById('deploy-modal');
     if (!modal) return;
+    const preselectCurrent = !!(opts && opts.preselectCurrent);
     const zoneName = document.getElementById('deploy-zone-name');
     if (zoneName) zoneName.textContent = S.currentZone?.name || 'Zone';
     S.selectedCards = [];
@@ -2718,7 +2723,28 @@
         };
       });
       S.playerCards = cards;
+      // §9.45 preselect: match equipped cards by player_card_id and seed
+      // selectedCards BEFORE renderCardGrid so grid renders with selection state.
+      if (preselectCurrent && Array.isArray(S.equippedCards) && S.equippedCards.length) {
+        const wanted = S.equippedCards.map(c => c.player_card_id || c.id).filter(Boolean);
+        const seen = new Set();
+        wanted.forEach(pcid => {
+          const idx = cards.findIndex((c, i) => c.player_card_id === pcid && !seen.has(i));
+          if (idx !== -1) { seen.add(idx); S.selectedCards.push({ idx, card: cards[idx] }); }
+        });
+        if (S.selectedCards.length) {
+          if (countEl) countEl.textContent = String(S.selectedCards.length);
+          if (confirmBtn) {
+            const ready = S.selectedCards.length === 3;
+            confirmBtn.disabled = !ready;
+            confirmBtn.textContent = ready
+              ? '⚔️ DEPLOY'
+              : `SELECT ${3 - S.selectedCards.length} MORE`;
+          }
+        }
+      }
       renderCardGrid(cards);
+      if (preselectCurrent && typeof _refreshSelectedRow === 'function') _refreshSelectedRow();
     } catch(e) { console.error('openDeployModal cards:', e); }
   }
 
@@ -4225,10 +4251,22 @@
       animation:roundEndScale 0.22s cubic-bezier(0.34,1.56,0.64,1);
       box-shadow:0 10px 50px rgba(0,0,0,0.7);`;
 
+    // §9.45 single context-aware CTA — read S._autoRedeploy at render time.
+    // - ON  → "CHANGE BUILD" opens deploy modal pre-selected; if user closes
+    //          without changing, auto-rejoin fires on round_start with same build.
+    // - OFF → "ENABLE AUTO-REJOIN" + helper copy; flips toggle, dismisses popup.
+    const autoOn = !!S._autoRedeploy;
+    const ctaLabel = autoOn ? 'CHANGE BUILD' : 'ENABLE AUTO-REJOIN';
+    const helper = autoOn ? '' :
+      `<div style="font-family:'Crimson Text',serif;font-size:13px;color:rgba(204,197,219,0.55);line-height:1.4;text-align:center;padding:0 8px;margin:0 0 8px;">Turn on auto-rejoin to keep fighting with your current build next round — or redeploy manually from the arena.</div>`;
+
     overlay.innerHTML = `
       <style>@keyframes roundEndFade{from{opacity:0}to{opacity:1}}
       @keyframes roundEndScale{from{transform:translate(-50%,-50%) scale(0.9);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
-      @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}</style>
+      @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+      .round-end-cta{width:100%;margin:6px 0 8px;font-family:'Press Start 2P',monospace;font-size:11px;letter-spacing:1.5px;padding:14px 16px;border-radius:4px;cursor:pointer;background:linear-gradient(135deg,#D4A64B,#a8823a);color:#0d0a18;border:none;box-shadow:0 2px 12px rgba(212,166,75,0.3);transition:filter 0.15s;}
+      .round-end-cta:hover{filter:brightness(1.1);}
+      .round-end-cta:active{transform:translateY(1px);}</style>
       <div style="padding:20px 22px;">
 
         <div style="text-align:center;margin-bottom:16px;">
@@ -4269,6 +4307,10 @@
             </div>
           </div>
         </div>
+
+        ${helper}
+        <button class="round-end-cta" onclick="window._handleRoundEndAction()">${ctaLabel}</button>
+
         <div style="text-align:center;padding-top:10px;border-top:1px solid rgba(255,255,255,.07)">
           <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:#6ac8d8" id="round-next-countdown">
             NEXT ROUND IN ${Math.round((data.intermissionMs||25000)/1000)}s
@@ -4278,25 +4320,52 @@
 
     document.body.appendChild(overlay);
 
-    // Countdown inside the overlay
-    let secs = Math.round((data.intermissionMs || 25000) / 1000);
-    const countdownEl = overlay.querySelector('#round-next-countdown');
-    const countInt = setInterval(() => {
-      secs--;
-      if (countdownEl) countdownEl.textContent = `NEXT ROUND IN ${secs}s`;
-      if (secs <= 0) { clearInterval(countInt); _dismissRoundEnd(); }
-    }, 1000);
-    overlay._countInt = countInt;
-
-    // Auto-dismiss safety
-    setTimeout(_dismissRoundEnd, (data.intermissionMs || 25000) + 1000);
+    // Countdown inside the overlay. _extendRoundEndCountdown can restart this
+    // loop at 60s when user clicks CHANGE BUILD (§9.45); server-side round_start
+    // still fires on its own schedule and _dismissRoundEnd clears us.
+    overlay._resetCountdown = function(newSecs) {
+      if (overlay._countInt) { clearInterval(overlay._countInt); overlay._countInt = null; }
+      if (overlay._autoDismissTO) { clearTimeout(overlay._autoDismissTO); overlay._autoDismissTO = null; }
+      let secs = Math.max(1, newSecs|0);
+      const cdEl = overlay.querySelector('#round-next-countdown');
+      if (cdEl) cdEl.textContent = `NEXT ROUND IN ${secs}s`;
+      overlay._countInt = setInterval(() => {
+        secs--;
+        if (cdEl) cdEl.textContent = `NEXT ROUND IN ${secs}s`;
+        if (secs <= 0) { clearInterval(overlay._countInt); overlay._countInt = null; _dismissRoundEnd(); }
+      }, 1000);
+      overlay._autoDismissTO = setTimeout(_dismissRoundEnd, (secs * 1000) + 1000);
+    };
+    overlay._resetCountdown(Math.round((data.intermissionMs || 25000) / 1000));
   }
+
+  // §9.45 — single context-aware CTA on round-end popup.
+  // Reads S._autoRedeploy at click time (not at render time — covers the edge
+  // case where user flips the HUD toggle between popup render and click).
+  window._handleRoundEndAction = function() {
+    const overlay = document.getElementById('round-end-overlay');
+    if (S._autoRedeploy) {
+      // Auto-rejoin ON → CHANGE BUILD. Open deploy modal pre-selected with the
+      // current build so user can tweak one card without re-picking all three.
+      // Popup countdown extends to 60s to widen the effective deploy window
+      // (client-side — server intermission is server-side; if round_start
+      // fires before the user confirms, modal stays open per Task 23 spec).
+      if (overlay && overlay._resetCountdown) overlay._resetCountdown(60);
+      openDeployModal({ preselectCurrent: true });
+    } else {
+      // Auto-rejoin OFF → flip it on, dismiss popup. On round_start the existing
+      // auto-rejoin path fires with the last deployed build.
+      if (typeof window.toggleAutoRedeploy === 'function') window.toggleAutoRedeploy();
+      _dismissRoundEnd();
+    }
+  };
 
   function _dismissRoundEnd() {
     const el = document.getElementById('round-end-overlay');
     const bd = document.getElementById('round-end-backdrop');
     if (el) {
-      if (el._countInt) clearInterval(el._countInt);
+      if (el._countInt) { clearInterval(el._countInt); el._countInt = null; }
+      if (el._autoDismissTO) { clearTimeout(el._autoDismissTO); el._autoDismissTO = null; }
       el.style.opacity = '0';
       el.style.transition = 'opacity 0.3s';
       setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 320);
