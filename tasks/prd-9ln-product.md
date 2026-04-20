@@ -1173,7 +1173,7 @@ Diagnostic logs from PR #153 kept in place for the smoke-test cycle that validat
 | After `startRound` for round N+1 | 0 | false | **true** | ❌ (**withdrawn** — the new check) |
 | After `rejoinRound` | max | false | false | ❌ (hp) |
 
-**Resolved 2026-04-20 in PR #?.** One-line fix at `combatEngine.js:1066`:
+**Resolved 2026-04-20 in PR #156.** One-line fix at `combatEngine.js:1066`:
 ```diff
 -    if (nine.hp <= 0 && !nine.waitingForRound) {
 +    if (nine.hp <= 0 && !nine.waitingForRound && !nine.withdrawn) {
