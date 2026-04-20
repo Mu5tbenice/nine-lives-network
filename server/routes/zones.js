@@ -1210,17 +1210,22 @@ router.post('/:zoneId/rejoin', async (req, res) => {
       return;
     }
 
-    // Find the player's active deployment on this zone
+    // §9.35: find the most-recent deployment for this (player, zone).
+    // Do NOT filter on is_active — the KO path at combatEngine.js:849-859
+    // flips is_active=false synchronously, so any rejoin attempt would
+    // miss its own target row. Ordering + maybeSingle() also insulates
+    // against multi-row ambiguity from historical deploy→withdraw cycles.
     const { data: dep, error } = await supabaseAdmin
       .from('zone_deployments')
-      .select('id, player_id, nine_id, guild_tag')
+      .select('id, player_id, nine_id, guild_tag, max_hp')
       .eq('zone_id', zoneId)
       .eq('player_id', playerId)
-      .eq('is_active', true)
-      .single();
+      .order('deployed_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (error || !dep) {
-      res.status(404).json({ error: 'No active deployment found' });
+      res.status(404).json({ error: 'No deployment found for this zone' });
       return;
     }
 
@@ -1246,6 +1251,18 @@ router.post('/:zoneId/rejoin', async (req, res) => {
       res.status(400).json({ error: 'Cannot rejoin — not in withdrawn state' });
       return;
     }
+
+    // §9.35: re-activate the DB row so its lifecycle flag tracks the
+    // engine state. current_hp is NOT NULL in schema — mirror the engine's
+    // full-HP restore by writing max_hp from the row we just selected.
+    await supabaseAdmin
+      .from('zone_deployments')
+      .update({
+        is_active: true,
+        current_hp: dep.max_hp,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', dep.id);
 
     res.json({ success: true, deploymentId: dep.id, zoneId });
   } catch (err) {
