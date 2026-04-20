@@ -1327,7 +1327,7 @@ Diagnostic `console.log` retained for one smoke-test cycle per the §9.35/PR #15
 
 **Root cause (round-end popup).** The popup shipped without action buttons (see `_showRoundEnd` at `nethara-live.html:4152`) — pure informational overlay with a countdown. Auto-rejoin could only be toggled from the HUD or deploy modal, neither of which was contextually adjacent to the round-end moment. Players who wanted to swap a card faced a round transition with no call-to-action pointing them at the deploy modal.
 
-**Resolved 2026-04-20 in PR #?.** Four coordinated fixes:
+**Resolved 2026-04-20 in PR #161.** Four coordinated fixes:
 
 1. **Nav root-cause fix.** `nav-v2.css` + `nav.js` + `nethara-live.html` now share a single CSS-driven nav height (76px desktop, 56px ≤640px). `nav.js` reads `nav.offsetHeight` at mount + on resize so body padding auto-matches whatever the active media query resolves to. `nethara-live.html` uses `var(--nav-height)` throughout and overrides the var to 56px inside its mobile media block; PIXI canvas sizing reads `getComputedStyle(...).getPropertyValue('--nav-height')` so canvas math follows the active breakpoint. Mobile logo renders at 48px (up from ~48px implied) inside the 56px bar — proportionally larger share of nav chrome. Desktop unchanged: nav stays 76px, logo stays 70px; the fix reveals previously-covered UI (timer + LIVE pill) without changing any layout dimensions.
 
