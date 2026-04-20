@@ -4451,14 +4451,16 @@
   // Reads S._autoRedeploy at click time (not at render time — covers the edge
   // case where user flips the HUD toggle between popup render and click).
   window._handleRoundEndAction = function() {
-    const overlay = document.getElementById('round-end-overlay');
     if (S._autoRedeploy) {
-      // Auto-rejoin ON → CHANGE BUILD. Open deploy modal pre-selected with the
-      // current build so user can tweak one card without re-picking all three.
-      // Popup countdown extends to 60s to widen the effective deploy window
-      // (client-side — server intermission is server-side; if round_start
-      // fires before the user confirms, modal stays open per Task 23 spec).
-      if (overlay && overlay._resetCountdown) overlay._resetCountdown(60);
+      // Auto-rejoin ON → CHANGE BUILD. Open deploy modal pre-selected with
+      // the current build so user can tweak one card without re-picking all
+      // three. Popup continues its server-driven countdown and auto-dismisses
+      // when the server fires round_start; modal stays open per Task 23 rule.
+      //
+      // §9.47: removed the client-side countdown extension to 60s — it was a
+      // false promise because the server still fires round_start on its own
+      // schedule (typically 25s). Rejoin timing needs server-side design in
+      // a separate PR (see §9.48).
       openDeployModal({ preselectCurrent: true });
     } else {
       // Auto-rejoin OFF → flip it on, dismiss popup. On round_start the existing
