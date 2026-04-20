@@ -4112,17 +4112,26 @@
           <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:#6ac8d8">${n} alive</span>
         </div>`).join('');
 
+    // D3: centered over arena — dramatic intermission beat. Backdrop sits
+    // just below the overlay and briefly darkens the arena to sell the pause.
+    const backdrop = document.createElement('div');
+    backdrop.id = 'round-end-backdrop';
+    backdrop.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.4);
+      z-index:8499;animation:roundEndFade 0.2s ease;`;
+    document.body.appendChild(backdrop);
+
     const overlay = document.createElement('div');
     overlay.id = 'round-end-overlay';
-    // Slide in from right — leaves arena + chat visible
-    overlay.style.cssText = `position:fixed;top:var(--nav-height,52px);right:0;width:340px;max-width:90vw;
-      height:auto;max-height:calc(100vh - var(--nav-height,52px));overflow-y:auto;
+    overlay.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+      width:min(480px, 90vw);max-height:calc(100vh - 80px);overflow-y:auto;
       z-index:8500;background:linear-gradient(180deg,#16102a,#0d0a18);
-      border-left:1px solid rgba(212,166,75,0.25);border-bottom:1px solid rgba(212,166,75,0.15);
-      animation:ssSlide 0.35s ease;box-shadow:-4px 0 30px rgba(0,0,0,0.5);`;
+      border:1px solid rgba(212,166,75,0.25);border-radius:6px;
+      animation:roundEndScale 0.22s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow:0 10px 50px rgba(0,0,0,0.7);`;
 
     overlay.innerHTML = `
-      <style>@keyframes fadeInOverlay{from{opacity:0}to{opacity:1}}
+      <style>@keyframes roundEndFade{from{opacity:0}to{opacity:1}}
+      @keyframes roundEndScale{from{transform:translate(-50%,-50%) scale(0.9);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
       @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}</style>
       <div style="padding:20px 22px;">
 
@@ -4189,11 +4198,18 @@
 
   function _dismissRoundEnd() {
     const el = document.getElementById('round-end-overlay');
-    if (!el) return;
-    if (el._countInt) clearInterval(el._countInt);
-    el.style.opacity = '0';
-    el.style.transition = 'opacity 0.3s';
-    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 320);
+    const bd = document.getElementById('round-end-backdrop');
+    if (el) {
+      if (el._countInt) clearInterval(el._countInt);
+      el.style.opacity = '0';
+      el.style.transition = 'opacity 0.3s';
+      setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 320);
+    }
+    if (bd) {
+      bd.style.opacity = '0';
+      bd.style.transition = 'opacity 0.3s';
+      setTimeout(() => { if (bd.parentNode) bd.parentNode.removeChild(bd); }, 320);
+    }
   }
 
   window._showRoundEnd    = _showRoundEnd;
