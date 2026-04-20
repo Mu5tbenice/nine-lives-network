@@ -1044,8 +1044,13 @@
       .btn-cancel { font-size:14px; }
 
       /* §9.45 deploy modal mobile — Press Start 2P at 14px floor, bigger pills. */
-      .deploy-stat-key { font-size:14px !important; letter-spacing:1px; }
-      .deploy-stat-val { font-size:16px !important; }
+      /* §9.47 stat row: drop letter-spacing, bring val down to 14, allow wrap
+         so 5 stats fit 375-430px viewports without clipping LCK at the right. */
+      .deploy-stats-preview { padding: 6px 8px; }
+      .deploy-stat-row { flex-wrap: wrap; gap: 2px; }
+      .deploy-stat { padding: 5px 1px; min-width: 0; flex: 1 1 18%; }
+      .deploy-stat-key { font-size:14px !important; letter-spacing:0 !important; }
+      .deploy-stat-val { font-size:14px !important; letter-spacing:0 !important; }
       .deploy-selected-slot { height:64px; }
       .deploy-selected-slot .slot-name { font-size:14px !important; }
       .deploy-selected-slot .slot-eff  { font-size:14px !important; }
