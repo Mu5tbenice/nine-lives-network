@@ -197,3 +197,12 @@
     display: none !important;
   }
 }
+
+/* Mobile: shorter nav, larger relative logo footprint.
+   nav.js reads nav.offsetHeight at runtime, so body padding
+   auto-matches whatever height CSS resolves to here. */
+@media (max-width: 640px) {
+  .top-nav { height: 56px; }
+  .mobile-menu { top: 56px; }
+  .nav-logo img { height: 48px !important; }
+}

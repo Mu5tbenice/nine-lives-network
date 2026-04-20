@@ -1,5 +1,8 @@
 (function(){
-  var NAV_HEIGHT = 76; // single source of truth — update here if nav height changes
+  // Nav height is driven by CSS (see nav-v2.css: 76px desktop, 56px ≤640px).
+  // We read nav.offsetHeight at runtime so body padding auto-matches whatever
+  // the active media query resolves to — no duplicated constant to drift.
+  var NAV_HEIGHT_FALLBACK = 76;
 
   var NAV_LINKS = [
     { href: '/dashboard.html', label: 'Dashboard' },
@@ -35,6 +38,8 @@
   });
   mobileLinks += '<a href="#" class="logout-btn" onclick="doLogout()" id="mobileLogout" style="display:none;">Logout</a>';
 
+  // Logo height is class-driven via .nav-logo img (see nav-v2.css) so the
+  // mobile media query can shrink it. width:auto + mix-blend + glow stay inline.
   var logoHTML = '<a href="/" class="nav-logo">'
     + '<img '
     + 'src="/assets/images/title-nethara.png" '
@@ -58,8 +63,16 @@
   wrapper.innerHTML = navHTML;
   while (wrapper.firstChild) { body.insertBefore(wrapper.firstChild, firstChild); }
 
-  // Apply padding to every page that has a nav — no CSS import required
-  body.style.paddingTop = NAV_HEIGHT + 'px';
+  // Apply padding to every page that has a nav. Measure the live nav height so
+  // mobile (56px) and desktop (76px) stay in sync automatically — also covers
+  // any future height tweak in nav-v2.css without touching this file.
+  function syncBodyPad() {
+    var nav = document.getElementById('topNav');
+    var h = (nav && nav.offsetHeight) || NAV_HEIGHT_FALLBACK;
+    body.style.paddingTop = h + 'px';
+  }
+  syncBodyPad();
+  window.addEventListener('resize', syncBodyPad);
 
   window.__toggleMobileMenu = function() {
     var h = document.getElementById('hamburger');
