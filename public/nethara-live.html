@@ -3600,22 +3600,45 @@
           if (ko_m) ko_m.ko_this_round = true;
         }
       }
-      setTimeout(() => { removeNineSprite(koId); }, 800); // remove promptly after KO anim
+      // §9.37: keep own sprite on the arena through intermission (dimmed +
+      // WAITING badge from Handler 2) so the player sees exactly where they'll
+      // re-appear on rejoin. Other players' KOs still clean up at 800ms.
+      if (String(koId) !== String(S.playerId)) {
+        setTimeout(() => { removeNineSprite(koId); }, 800);
+      }
       addFeedEvent(`💀 ${data.nine || getNineName(koId)} KO'd!${isMyKill?' <span style="color:#ffaa44">+10 pts</span>':''}`, 'ko');
       // Track KO stat — use killerName to find the right player id
       const kTracked = killerId || (data.killerName ? [...S.nines.entries()].find(([,s])=>s.name===data.killerName)?.[0] : null);
       if (kTracked) trackCombatStat(kTracked, data.killerName || getNineName(kTracked), '', '', 'kos', 1);
     })
-    // ── SESSION EXPIRED — server auto-withdrew this Nine ────────────────
+    // ── SESSION EXPIRED — server auto-withdrew this Nine (§9.38) ────────
     socket.on('arena:session_expired', (data) => {
       if (String(data.nineId) !== String(S.playerId)) return;
+      // Engine + DB already cleaned server-side (combatEngine.js:1045-1052).
+      // Client mirrors: sprite, UI state, pending prompts. Auto-rejoin
+      // flag/expiry intentionally left alone so the player's preference
+      // persists across redeploys — the 1h expiry check handles any drift.
       S.isDeployed = false;
-      addFeedEvent('⏰ Session ended (1 hour) — redeploy to continue', 'snapshot');
-      // Show redeploy prompt
-      const pill = document.getElementById('deploy-status-pill');
-      if (pill) {
-        pill.innerHTML = `<span style="font-family:'Press Start 2P',monospace;font-size:6px;color:#ffaa44;padding:2px 8px;background:rgba(255,170,68,0.1);border:1px solid rgba(255,170,68,0.3);border-radius:3px;">⏰ SESSION ENDED</span>`;
-      }
+      S.equippedCards = [];
+      S.deployedZoneIds.delete(S.currentZoneId);
+
+      // Remove self-sprite (arena:positions cull at line 3386 skips self,
+      // so the explicit removal is required to clear the stage).
+      if (typeof removeNineSprite === 'function') removeNineSprite(String(S.playerId));
+
+      // Dismiss pending post-KO prompt if any (edge: timeout during intermission).
+      if (typeof _dismissRejoinPrompt === 'function') _dismissRejoinPrompt();
+
+      // Hide combat tray, re-show DEPLOY CTA so the player can redeploy.
+      const tray = document.getElementById('arena-bottom-tray');
+      if (tray) tray.style.display = 'none';
+      const cta = document.getElementById('deploy-cta');
+      if (cta) cta.style.display = 'block';
+
+      // Notify (corrected to 2 hours per PRD §4.8.5 — see §9.3 resolution).
+      addFeedEvent('⏰ Session ended (2 hours) — redeploy to continue', 'snapshot');
+
+      // (#deploy-status-pill reference removed — element doesn't exist. See §9.40.)
     });
 
     // ── WAITING STATE: dim sprite + badge when KO'd mid-round ────────────
@@ -3729,13 +3752,18 @@
 
     // ── NINE REJOINED — restore sprite from withdrawn state ─────────────
     socket.on('arena:nine_rejoined', (data) => {
-      const sp = S.nines.get(String(data.deploymentId));
+      // §9.37 companion: sprite map is keyed by playerId per §9.25. Previous
+      // lookup by deploymentId silently missed, leaving WAITING badge and
+      // dimmed alpha stuck after rejoin once the self-sprite started
+      // persisting through intermission.
+      const spriteKey = String(data.playerId ?? data.deploymentId);
+      const sp = S.nines.get(spriteKey);
       if (sp) {
         sp.container.alpha = 1;
         delete sp._waitingForRound;
         delete sp._withdrawn;
         if (sp._waitingBadge) { sp.container.removeChild(sp._waitingBadge); delete sp._waitingBadge; }
-        updateNineHP(String(data.deploymentId), data.hp, data.maxHp);
+        updateNineHP(spriteKey, data.hp, data.maxHp);
       }
       if (String(data.playerId) === String(S.playerId)) {
         _dismissRejoinPrompt();
@@ -3768,6 +3796,9 @@
         if (sp) {
           sp.container.alpha = 1;
           delete sp._waitingForRound;
+          // §9.37 companion: remove WAITING badge here too, since the self-
+          // sprite now persists through intermission with its badge attached.
+          if (sp._waitingBadge) { sp.container.removeChild(sp._waitingBadge); delete sp._waitingBadge; }
         }
       });
 
@@ -4112,17 +4143,26 @@
           <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:#6ac8d8">${n} alive</span>
         </div>`).join('');
 
+    // D3: centered over arena — dramatic intermission beat. Backdrop sits
+    // just below the overlay and briefly darkens the arena to sell the pause.
+    const backdrop = document.createElement('div');
+    backdrop.id = 'round-end-backdrop';
+    backdrop.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.4);
+      z-index:8499;animation:roundEndFade 0.2s ease;`;
+    document.body.appendChild(backdrop);
+
     const overlay = document.createElement('div');
     overlay.id = 'round-end-overlay';
-    // Slide in from right — leaves arena + chat visible
-    overlay.style.cssText = `position:fixed;top:var(--nav-height,52px);right:0;width:340px;max-width:90vw;
-      height:auto;max-height:calc(100vh - var(--nav-height,52px));overflow-y:auto;
+    overlay.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+      width:min(480px, 90vw);max-height:calc(100vh - 80px);overflow-y:auto;
       z-index:8500;background:linear-gradient(180deg,#16102a,#0d0a18);
-      border-left:1px solid rgba(212,166,75,0.25);border-bottom:1px solid rgba(212,166,75,0.15);
-      animation:ssSlide 0.35s ease;box-shadow:-4px 0 30px rgba(0,0,0,0.5);`;
+      border:1px solid rgba(212,166,75,0.25);border-radius:6px;
+      animation:roundEndScale 0.22s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow:0 10px 50px rgba(0,0,0,0.7);`;
 
     overlay.innerHTML = `
-      <style>@keyframes fadeInOverlay{from{opacity:0}to{opacity:1}}
+      <style>@keyframes roundEndFade{from{opacity:0}to{opacity:1}}
+      @keyframes roundEndScale{from{transform:translate(-50%,-50%) scale(0.9);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
       @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}</style>
       <div style="padding:20px 22px;">
 
@@ -4189,11 +4229,18 @@
 
   function _dismissRoundEnd() {
     const el = document.getElementById('round-end-overlay');
-    if (!el) return;
-    if (el._countInt) clearInterval(el._countInt);
-    el.style.opacity = '0';
-    el.style.transition = 'opacity 0.3s';
-    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 320);
+    const bd = document.getElementById('round-end-backdrop');
+    if (el) {
+      if (el._countInt) clearInterval(el._countInt);
+      el.style.opacity = '0';
+      el.style.transition = 'opacity 0.3s';
+      setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 320);
+    }
+    if (bd) {
+      bd.style.opacity = '0';
+      bd.style.transition = 'opacity 0.3s';
+      setTimeout(() => { if (bd.parentNode) bd.parentNode.removeChild(bd); }, 320);
+    }
   }
 
   window._showRoundEnd    = _showRoundEnd;
@@ -4613,10 +4660,12 @@
       const hc = HOUSES[f.house]?.color || '#888';
       const pct = Math.round((f.hp/f.maxHp)*100);
       const hpC = pct > 50 ? '#44cc88' : pct > 25 ? '#ffaa44' : '#ff4466';
-      const m = S.combatMetrics.get(String(f.id)) || {};
-      const dmg = m.damage || 0;
-      const heals = m.heals || 0;
-      const kos = m.kos || 0;
+      // D1: use per-view values from fighters[] (built from S._roundMetrics or
+      // S.combatMetrics per S._sidebarView above). Previous re-fetch from
+      // S.combatMetrics always showed session totals regardless of view.
+      const dmg = f.damage || 0;
+      const heals = f.heals || 0;
+      const kos = f.kos || 0;
       return `<div style="padding:8px 12px;${i<fighters.length-1?'border-bottom:1px solid rgba(255,255,255,0.06)':''};${f.isMe?'background:rgba(212,166,75,0.07);':''}${!f.live?'opacity:0.55;':''}"
         onclick="window._showFighterPopup&&window._showFighterPopup('${f.id}')" style="cursor:pointer;"
                 onmouseenter="window.highlightGuild&&window.highlightGuild('${f.guild}')"
