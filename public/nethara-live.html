@@ -4613,10 +4613,12 @@
       const hc = HOUSES[f.house]?.color || '#888';
       const pct = Math.round((f.hp/f.maxHp)*100);
       const hpC = pct > 50 ? '#44cc88' : pct > 25 ? '#ffaa44' : '#ff4466';
-      const m = S.combatMetrics.get(String(f.id)) || {};
-      const dmg = m.damage || 0;
-      const heals = m.heals || 0;
-      const kos = m.kos || 0;
+      // D1: use per-view values from fighters[] (built from S._roundMetrics or
+      // S.combatMetrics per S._sidebarView above). Previous re-fetch from
+      // S.combatMetrics always showed session totals regardless of view.
+      const dmg = f.damage || 0;
+      const heals = f.heals || 0;
+      const kos = f.kos || 0;
       return `<div style="padding:8px 12px;${i<fighters.length-1?'border-bottom:1px solid rgba(255,255,255,0.06)':''};${f.isMe?'background:rgba(212,166,75,0.07);':''}${!f.live?'opacity:0.55;':''}"
         onclick="window._showFighterPopup&&window._showFighterPopup('${f.id}')" style="cursor:pointer;"
                 onmouseenter="window.highlightGuild&&window.highlightGuild('${f.guild}')"
