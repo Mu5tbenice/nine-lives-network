@@ -3600,7 +3600,12 @@
           if (ko_m) ko_m.ko_this_round = true;
         }
       }
-      setTimeout(() => { removeNineSprite(koId); }, 800); // remove promptly after KO anim
+      // §9.37: keep own sprite on the arena through intermission (dimmed +
+      // WAITING badge from Handler 2) so the player sees exactly where they'll
+      // re-appear on rejoin. Other players' KOs still clean up at 800ms.
+      if (String(koId) !== String(S.playerId)) {
+        setTimeout(() => { removeNineSprite(koId); }, 800);
+      }
       addFeedEvent(`💀 ${data.nine || getNineName(koId)} KO'd!${isMyKill?' <span style="color:#ffaa44">+10 pts</span>':''}`, 'ko');
       // Track KO stat — use killerName to find the right player id
       const kTracked = killerId || (data.killerName ? [...S.nines.entries()].find(([,s])=>s.name===data.killerName)?.[0] : null);
@@ -3729,13 +3734,18 @@
 
     // ── NINE REJOINED — restore sprite from withdrawn state ─────────────
     socket.on('arena:nine_rejoined', (data) => {
-      const sp = S.nines.get(String(data.deploymentId));
+      // §9.37 companion: sprite map is keyed by playerId per §9.25. Previous
+      // lookup by deploymentId silently missed, leaving WAITING badge and
+      // dimmed alpha stuck after rejoin once the self-sprite started
+      // persisting through intermission.
+      const spriteKey = String(data.playerId ?? data.deploymentId);
+      const sp = S.nines.get(spriteKey);
       if (sp) {
         sp.container.alpha = 1;
         delete sp._waitingForRound;
         delete sp._withdrawn;
         if (sp._waitingBadge) { sp.container.removeChild(sp._waitingBadge); delete sp._waitingBadge; }
-        updateNineHP(String(data.deploymentId), data.hp, data.maxHp);
+        updateNineHP(spriteKey, data.hp, data.maxHp);
       }
       if (String(data.playerId) === String(S.playerId)) {
         _dismissRejoinPrompt();
@@ -3768,6 +3778,9 @@
         if (sp) {
           sp.container.alpha = 1;
           delete sp._waitingForRound;
+          // §9.37 companion: remove WAITING badge here too, since the self-
+          // sprite now persists through intermission with its badge attached.
+          if (sp._waitingBadge) { sp.container.removeChild(sp._waitingBadge); delete sp._waitingBadge; }
         }
       });
 
