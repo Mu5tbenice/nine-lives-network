@@ -1359,7 +1359,7 @@ Diagnostic `console.log` retained for one smoke-test cycle per the §9.35/PR #15
 
 **Root cause.** PR #161 applied the 14px Press Start 2P floor strictly but accepted several layout tradeoffs without phone validation: 200px card slot min-width + horizontal scroll was untested ergonomics; 116px portrait col was defensively wide for 14px button labels; single-line HP at 14px × 7 chars was too tight; `AUTO-REJOIN: ON ✓` at 14px was a 15-char string that couldn't fit any reasonable portrait col width. The pre-deploy HUD visibility was latent — mobile CSS forced `.arena-bottom-tray` to `display: flex !important` regardless of the inline `display: none` that desktop relied on. The 60s countdown was a speculative widening of the deploy window that turned out to be a false promise because round_start is server-driven.
 
-**Resolved 2026-04-20 in PR #?.** Seven visual fixes + two behavior cleanups:
+**Resolved 2026-04-20 in PR #162.** Seven visual fixes + two behavior cleanups:
 
 1. **Deploy modal stat row** — `.deploy-stat-val` 16→14px, both `.deploy-stat-key` and `.deploy-stat-val` `letter-spacing: 0`, `.deploy-stat-row` gains `flex-wrap: wrap` + 2px gap as a graceful fallback when 5 stats don't fit single-row, `.deploy-stat` padding tightened to 5px 1px with `flex: 1 1 18%` for a better wrap basis. `.deploy-stats-preview` padding 8px 12px → 6px 8px to claw back horizontal space.
 2. **Portrait column** — `#mob-portrait-col` 116→84px (≤640px), 92→76px (≤390px); padding trimmed to 6px/4px horizontal.
