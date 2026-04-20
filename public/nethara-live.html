@@ -1077,6 +1077,13 @@
       /* Hide desktop elements on mobile */
       #arena-tray-tabs { display:none; }
       #arena-tray-body { display:none; }
+
+      /* §9.47 pre-deploy: hide the entire mobile HUD (portrait col + card
+         slots + tabs) so the JOIN BATTLE button + PIXI canvas take the
+         stage. body.arena-pre-deploy is toggled by a MutationObserver on
+         #deploy-cta so all existing deploy-state sites keep working without
+         per-site class plumbing. Canvas stays at 54% per user preference. */
+      body.arena-pre-deploy .arena-bottom-tray { display: none !important; }
     }
 
     @media (max-width: 390px) {
@@ -5373,6 +5380,25 @@
     if (root) root.style.display = 'flex';
     window.switchMobTab('cards');
   }
+
+  // §9.47 pre-deploy mobile HUD gating. All existing code paths toggle
+  // #deploy-cta.style.display between 'block' (pre-deploy) and 'none'
+  // (deployed). An observer mirrors that signal to body.arena-pre-deploy;
+  // CSS rule inside the ≤640px media block hides .arena-bottom-tray when
+  // the class is set. Desktop ignores the class entirely.
+  (function _mountPreDeployObserver() {
+    const cta = document.getElementById('deploy-cta');
+    if (!cta) return;
+    const apply = () => {
+      const d = cta.style.display;
+      const visible = d === '' ? false : (d === 'block' || d === 'flex');
+      document.body.classList.toggle('arena-pre-deploy', visible);
+    };
+    apply();
+    try {
+      new MutationObserver(apply).observe(cta, { attributes: true, attributeFilter: ['style'] });
+    } catch (e) { /* legacy browser: body class stays at initial apply() */ }
+  })();
 
   // §9.47 HP stacked display: current on top (full green), /max below (dimmed).
   // Single-line "439/620" at 14px Press 2P overflows the 84px portrait col and
