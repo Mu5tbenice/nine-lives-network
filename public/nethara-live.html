@@ -3392,6 +3392,50 @@
 
     socket.on('arena:nine_left', (data) => removeNineSprite(String(data.nine_id)));
 
+    // ── NEW JOINER — populate cache + patch existing sprite if one exists (§9.42) ──
+    // Server broadcasts this from /api/zones/deploy with full equipped_images payload.
+    // Before this handler, the event was dropped on the floor and mid-session joiners
+    // appeared as the cat-silhouette fallback to all other players in the zone.
+    socket.on('arena:nine_joined', (data) => {
+      const id = String(data.nine_id);
+      // §9.42 diagnostic — remove once smoke test confirms the fix
+      console.log('[arena:nine_joined] received:', {
+        id,
+        hasImages: Object.keys(data.equipped_images || {}).length,
+        spriteAlreadyExists: S.nines.has(id),
+      });
+      S._deployCache = S._deployCache || {};
+      S._deployCache[id] = {
+        profile_image: S._deployCache[id]?.profile_image || null,
+        equipped_images: data.equipped_images || {},
+        name: data.player_name || S._deployCache[id]?.name || null,
+      };
+      // If a sprite already exists for this id (arena:positions beat this event),
+      // patch it in-place with the newly-available layers — otherwise the next
+      // arena:positions tick will create it correctly from the populated cache.
+      const sp = S.nines.get(id);
+      if (sp?.spriteGroup && !sp._hasLayers) {
+        const LAYERS = ['fur','outfit','weapon','expression','headwear','familiar'];
+        const imgs = data.equipped_images || {};
+        const hasLayers = LAYERS.some(l => !!imgs[l]);
+        if (hasLayers) {
+          while (sp.spriteGroup.children.length) sp.spriteGroup.removeChildAt(0);
+          LAYERS.forEach((slot, index) => {
+            if (!imgs[slot]) return;
+            try {
+              const tex = PIXI.Texture.from(imgs[slot]);
+              const pxSp = new PIXI.Sprite(tex);
+              pxSp.anchor.set(0.5, 0.75);
+              pxSp.width = SPRITE_SIZE; pxSp.height = SPRITE_SIZE;
+              pxSp.zIndex = index + 1;
+              sp.spriteGroup.addChild(pxSp);
+            } catch(e) {}
+          });
+          sp._hasLayers = true;
+        }
+      }
+    });
+
     // ── ZONE CHAT ──
     socket.on('zone:chat', (data) => {
       const handle  = data.handle  || data.playerHandle || 'Unknown';
