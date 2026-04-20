@@ -1063,7 +1063,11 @@ async function tickZone(zoneId, zs) {
   // Process all deaths this tick, then check if round should end
   let anyKO = false;
   for (const nine of all) {
-    if (nine.hp <= 0 && !nine.waitingForRound) {
+    // §9.36: gate must check withdrawn too — startRound clears
+    // waitingForRound for KO'd Nines (line 1332) while leaving hp=0 and
+    // withdrawn=true, which re-armed this gate every round post-§9.35.
+    // Mirrors the combat loop's own three-field skip at line 986-987.
+    if (nine.hp <= 0 && !nine.waitingForRound && !nine.withdrawn) {
       nine.waitingForRound = true;
       handleKO(nine, zoneId, all);
       // §9.35: keep the KO'd Nine in zs.nines so startRound can flag it
