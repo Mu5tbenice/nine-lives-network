@@ -1212,7 +1212,7 @@ PR #153 diagnostic logs retained for one more smoke-test cycle. Will be removed 
 
 **Root cause.** The `arena:session_expired` handler at `public/nethara-live.html:3610-3619` only set `S.isDeployed = false` and tried to update a `#deploy-status-pill` element that doesn't exist in the DOM (see §9.40). It did not: remove the self-sprite, hide the combat tray, re-show the DEPLOY CTA, dismiss any pending `_showRejoinPrompt`, or correct the feed-message time value (said "1 hour" but `SESSION_MS` is 2 hours per §9.3 resolution).
 
-**Resolved 2026-04-20 in PR #?.** Full handler rewrite at `nethara-live.html:3610`:
+**Resolved 2026-04-20 in PR #158.** Full handler rewrite at `nethara-live.html:3610`:
 - Explicit `removeNineSprite(String(S.playerId))` since the cull skips self.
 - Reset client deploy state: `S.equippedCards = []`, `S.deployedZoneIds.delete(S.currentZoneId)`.
 - Hide `#arena-bottom-tray`, show `#deploy-cta`.
@@ -1230,11 +1230,11 @@ Server path required no change — engine/DB cleanup at `combatEngine.js:1045-10
 
 **Symptom.** Would have left the WAITING badge and `alpha=0.25` dim stuck on the self-sprite after rejoin, had the sprite persisted through intermission.
 
-**Effect.** Unreachable in production pre-§9.37 fix because the self-sprite was removed at 800ms after KO. Fix 3 of PR #? (sprite-retention through intermission, resolves §9.37) is what would have exposed the handler's lookup miss user-visibly.
+**Effect.** Unreachable in production pre-§9.37 fix because the self-sprite was removed at 800ms after KO. Fix 3 of PR #158 (sprite-retention through intermission, resolves §9.37) is what would have exposed the handler's lookup miss user-visibly.
 
 **Root cause.** Handler at `public/nethara-live.html:3748` did `S.nines.get(String(data.deploymentId))` but the sprite map has been keyed by `playerId` since §9.25 (PR #149). The lookup silently returned `undefined` and the `if (sp)` branch didn't run — alpha restoration, badge removal, and HP update all skipped for the self-case.
 
-**Resolved 2026-04-20 in PR #?.** Handler now uses `String(data.playerId ?? data.deploymentId)` for resilience. Fix included in the same commit as §9.37's main change (commit `3c4ce11`), since §9.37's sprite-retention is what would have exposed the bug. Also added matching badge cleanup in the `arena:round_start` survivor-path loop for the brief ~200ms window between round_start and nine_rejoined during which a KO'd-now-rejoining sprite would otherwise show `alpha=1` with a lingering WAITING badge.
+**Resolved 2026-04-20 in PR #158.** Handler now uses `String(data.playerId ?? data.deploymentId)` for resilience. Fix included in the same commit as §9.37's main change (commit `3c4ce11`), since §9.37's sprite-retention is what would have exposed the bug. Also added matching badge cleanup in the `arena:round_start` survivor-path loop for the brief ~200ms window between round_start and nine_rejoined during which a KO'd-now-rejoining sprite would otherwise show `alpha=1` with a lingering WAITING badge.
 
 ### 9.40 Missing `#deploy-status-pill` element — planned HUD affordance never implemented → UX polish
 
