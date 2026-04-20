@@ -15,7 +15,13 @@ const pointsService = require('./pointsService');
 const TICK_MS = 200; // 200ms ticks — 5 server updates/sec
 const ROUND_CAP_MS = 5 * 60 * 1000; // 5 min hard cap — rounds end early on last guild standing
 const INTERMISSION_MS = 25 * 1000; // 25s between rounds
-const SESSION_MS = 2 * 60 * 60 * 1000; // 2hr session timer before auto-withdraw (PRD §4.8.5)
+// 2hr session timer before auto-withdraw (PRD §4.8.5 + §9.3 resolution).
+// SESSION_MS_OVERRIDE_SECONDS env var shortens the timer for smoke-testing
+// the §9.38 session-expired flow without waiting 2hr per attempt. Production
+// leaves the env var unset and gets the canonical 2h value.
+const SESSION_MS = process.env.SESSION_MS_OVERRIDE_SECONDS
+  ? Number(process.env.SESSION_MS_OVERRIDE_SECONDS) * 1000
+  : 2 * 60 * 60 * 1000;
 const SPD_FLOOR = 5.5; // card cycle floor (effects stay deliberate)
 const ATK_FLOOR = 2.5; // auto-attack floor (constant visual activity)
 const CORRODE_CD = 5.0; // 5 second cooldown — time-based, tick-rate independent
