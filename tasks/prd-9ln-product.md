@@ -1151,7 +1151,7 @@ One KO reproduction on the deployed build should pinpoint the failure mode. Fix 
 
 Downstream behavior audit for the map-retention change: combat loop already skips on `(hp<=0 || waitingForRound || withdrawn)` flags (no presence-based reliance); session-timeout and explicit withdraw paths still delete (no memory leak); arena:positions broadcast was already adding `waitingForRound` field per §9.26 so client dimming still works; `endRound`'s `dominant_house`/`housePresence` counts now correctly include KO'd-this-round participants, which matches the participation-based design intent at `combatEngine.js:1178`.
 
-Diagnostic logs from PR #153 kept in place for the smoke-test cycle that validates this second fix end-to-end; removed in the next PR once a successful rejoin (feed message + clean 200 on the rejoin POST) is observed on production.
+**Confirmed end-to-end on 2026-04-20 smoke test.** Auto-rejoin works: one `combat:ko` per KO, `_wasKOdThisRound=true` at round_end, `POST /api/zones/10/rejoin → 200`, player re-enters round N+1 at full HP. §9.35 diagnostic logs removed in PR #?.
 
 ### 9.36 KO loop gate re-fires for withdrawn Nines → regression surfaced by §9.35 fix
 
@@ -1181,6 +1181,26 @@ Diagnostic logs from PR #153 kept in place for the smoke-test cycle that validat
 Mirrors the combat loop's own three-field skip at line 986-987, which was already correct. Also closes the phantom-points farming surface as a side effect.
 
 Not in scope for this PR (flagged for separate consideration): the `waitingForRound = false` clear at `startRound` line 1332 is semantically redundant with `withdrawn = true` from the caller's perspective — could be removed to clean up the state-machine meaning. Deferred to avoid regression risk in other consumers of `waitingForRound`; the gate fix alone closes §9.36.
+
+**Confirmed end-to-end on 2026-04-20 smoke test.** Same run that confirmed §9.35 — KO fires once, gate no longer re-arms, round N+1 runs to normal conclusion, auto-rejoin completes.
+
+### 9.37 KO'd Nine sprite disappears during intermission → polish
+
+**Symptom.** User-observed on the 2026-04-20 smoke test that validated §9.35 + §9.36: between a KO and the round_start rejoin, "the sprite wasn't visible for a few seconds" before re-appearing at full HP in round N+1.
+
+**Root cause (by design, not a bug).** Handler 1 of `combat:ko` at `public/nethara-live.html:3603` schedules `setTimeout(() => { removeNineSprite(koId); }, 800)` — the KO'd sprite is physically removed from the PIXI stage 800ms after the KO animation plays. Handler 2 at line 3622 dims a still-present sprite and adds a WAITING badge for the remainder of the round, but by the time `round_end` and the 25s intermission begin, Handler 1's removal has already fired. The sprite is gone until `arena:nine_rejoined` or `arena:round_start` re-adds it.
+
+**Effect.** Players who know they auto-rejoined still wonder for 25+ seconds "am I still in this zone?" — a small trust-in-the-UI gap. No functional impact: rejoin completes correctly, HP restores, combat resumes.
+
+**Priority: Low.** UX polish, not a correctness issue. Opens cleanly for batching with Task 17.0 (auto-rejoin UX redesign) since both involve rethinking the post-KO visual flow.
+
+**Resolution direction (for the eventual fix).** Two options:
+1. **Keep sprite dimmed + WAITING badge through intermission.** Remove Handler 1's `setTimeout(removeNineSprite)` for the self case (keep it for other-player KOs so sprites clean up). On `arena:round_start` the survivor-path already restores alpha=1 (line 3769-3770); rejoin path would need to follow suit. Low effort, high clarity — player can see exactly where they'll re-appear.
+2. **Show a persistent "YOUR NINE — AUTO-REJOINING…" pill in the HUD during intermission.** Text-only overlay without sprite changes. Works for both auto-rejoin and manual-prompt paths.
+
+Option 1 is stronger because the spatial anchor (sprite position) is more reassuring than a disembodied text pill. Option 2 is a fallback if Option 1 turns out to interact badly with other post-KO cleanup paths. Settle the choice as part of Task 17.0's scope.
+
+**Status: OPEN.** No code change in this cycle.
 
 PR #153 diagnostic logs retained for one more smoke-test cycle. Will be removed in the next PR once a successful rejoin on production is confirmed (expected log pattern: one `[combat:ko]` per KO, not four; `_wasKOdThisRound=true` at round_end; `POST /api/zones/10/rejoin → 200`; `🔄 <name> rejoined zone 10` server log; feed `✅ Rejoined`).
 
