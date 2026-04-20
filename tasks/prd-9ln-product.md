@@ -1204,6 +1204,46 @@ Option 1 is stronger because the spatial anchor (sprite position) is more reassu
 
 PR #153 diagnostic logs retained for one more smoke-test cycle. Will be removed in the next PR once a successful rejoin on production is confirmed (expected log pattern: one `[combat:ko]` per KO, not four; `_wasKOdThisRound=true` at round_end; `POST /api/zones/10/rejoin → 200`; `🔄 <name> rejoined zone 10` server log; feed `✅ Rejoined`).
 
+### 9.38 Session-expired sprite lingers + UX broken → cleanup
+
+**Symptom.** User-observed: after the 2-hour session timer elapses, the player's Nine sprite stays on the arena stage indefinitely. No prominent notification beyond a feed message; no re-affordance to redeploy; the arena bottom combat tray stays visible even though the player is no longer deployed.
+
+**Effect.** Ghost sprite is visible to the expired player (for whom the cull at `nethara-live.html:3386` explicitly skips self-culling). Other players don't see the ghost because the server already stops including the expired Nine in `arena:positions` broadcasts and the client's cull removes non-self sprites not in the active set. So the symptom is self-only — but the affected player has no clear path back into combat without refreshing or navigating away and re-entering the arena.
+
+**Root cause.** The `arena:session_expired` handler at `public/nethara-live.html:3610-3619` only set `S.isDeployed = false` and tried to update a `#deploy-status-pill` element that doesn't exist in the DOM (see §9.40). It did not: remove the self-sprite, hide the combat tray, re-show the DEPLOY CTA, dismiss any pending `_showRejoinPrompt`, or correct the feed-message time value (said "1 hour" but `SESSION_MS` is 2 hours per §9.3 resolution).
+
+**Resolved 2026-04-20 in PR #?.** Full handler rewrite at `nethara-live.html:3610`:
+- Explicit `removeNineSprite(String(S.playerId))` since the cull skips self.
+- Reset client deploy state: `S.equippedCards = []`, `S.deployedZoneIds.delete(S.currentZoneId)`.
+- Hide `#arena-bottom-tray`, show `#deploy-cta`.
+- `_dismissRejoinPrompt()` in case the timeout fires during intermission.
+- Correct feed text to "2 hours" per PRD §4.8.5.
+- Drop the `#deploy-status-pill` reference (element doesn't exist; see §9.40).
+
+Intentionally *not* cleared: `S._autoRedeploy` and `S._autoRedeployExpiry`. Player's auto-rejoin preference persists across redeploys — the expiry check handles any drift naturally. Cleaner UX than forcing them to re-toggle.
+
+Server path required no change — engine/DB cleanup at `combatEngine.js:1045-1052` was already correct.
+
+**Smoke-test tooling also landed:** `SESSION_MS_OVERRIDE_SECONDS` env var at `combatEngine.js:18` shortens the 2h default to an arbitrary seconds value for dev runs. Production leaves it unset. Zero cost when unset; enables testing this UX flow in 2 minutes per attempt instead of 2 hours.
+
+### 9.39 `arena:nine_rejoined` looked up sprite by deploymentId instead of playerId → latent
+
+**Symptom.** Would have left the WAITING badge and `alpha=0.25` dim stuck on the self-sprite after rejoin, had the sprite persisted through intermission.
+
+**Effect.** Unreachable in production pre-§9.37 fix because the self-sprite was removed at 800ms after KO. Fix 3 of PR #? (sprite-retention through intermission, resolves §9.37) is what would have exposed the handler's lookup miss user-visibly.
+
+**Root cause.** Handler at `public/nethara-live.html:3748` did `S.nines.get(String(data.deploymentId))` but the sprite map has been keyed by `playerId` since §9.25 (PR #149). The lookup silently returned `undefined` and the `if (sp)` branch didn't run — alpha restoration, badge removal, and HP update all skipped for the self-case.
+
+**Resolved 2026-04-20 in PR #?.** Handler now uses `String(data.playerId ?? data.deploymentId)` for resilience. Fix included in the same commit as §9.37's main change (commit `3c4ce11`), since §9.37's sprite-retention is what would have exposed the bug. Also added matching badge cleanup in the `arena:round_start` survivor-path loop for the brief ~200ms window between round_start and nine_rejoined during which a KO'd-now-rejoining sprite would otherwise show `alpha=1` with a lingering WAITING badge.
+
+### 9.40 Missing `#deploy-status-pill` element — planned HUD affordance never implemented → UX polish
+
+**Symptom.** The `arena:session_expired` handler tried to update `document.getElementById('deploy-status-pill')` innerHTML, but no such element exists in the DOM (grep confirms zero matches for `id="deploy-status-pill"`). Silent no-op. The intent appears to have been a persistent HUD pill showing deployment status (e.g., "⏰ SESSION ENDED" tag near the deploy CTA).
+
+**Effect.** Session-timeout UX had no persistent visual anchor — only a transient feed event and (pre-§9.38 fix) an un-reset combat tray. §9.38's fix drops the reference entirely and relies on the DEPLOY CTA re-show + feed event for UX. Sufficient for the expired case.
+
+**Status: OPEN.** Low priority, UX polish. Batch with Task 17.0 auto-rejoin UX redesign since that's where deploy-related HUD elements will be revisited. If the Task 17.0 scope settles on wanting a persistent session/deploy-status HUD pill, implement the DOM + CSS + update logic there. Otherwise this §9.40 can close as "no-fix — feed + CTA is sufficient UX" when Task 17.0 ships.
+
 ---
 
 ## Appendix A — Glossary
