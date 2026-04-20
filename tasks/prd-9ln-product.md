@@ -1283,6 +1283,40 @@ Server path required no change — engine/DB cleanup at `combatEngine.js:1045-10
 
 **Supersedes / updates:** §9.3 (2h SESSION_MS resolution superseded — SESSION_MS itself is being deleted), §9.38 (handler implementation correct, trigger semantics shift from 2h-inactivity to 1h-auto-rejoin-cap-hit), §9.40 (pill design needs rethink under the new three-state deploy state machine).
 
+### 9.42 `arena:nine_joined` event dropped on the floor → mid-session joiners show as cat placeholder
+
+**Symptom.** User-observed: players consistently see a plain house-colored cat silhouette instead of a fully-composited layered Nine (fur + outfit + weapon + expression + headwear + familiar). Destroys the first impression for new players — the NFT-style layered art is the game's main visual hook.
+
+**Effect.** Every new deploy into an occupied zone creates a permanent placeholder on every existing occupant's screen. Self-view was unaffected (`confirmDeploy` at `nethara-live.html:2997-3065` runs a self-specific post-deploy patch). Players who were already in the zone at arena-entry of each other were also unaffected (`checkDeployment`'s retroactive patch at `nethara-live.html:2115-2172` covers that case). The specific uncovered case: existing arena occupants' view of a newly-deploying player.
+
+**Root cause — handler missing.** Server broadcasts `arena:nine_joined` from POST `/api/zones/deploy` at `server/routes/zones.js:206-220` with the full `equipped_images` payload. Client had no `socket.on('arena:nine_joined', ...)` handler — grep confirmed zero matches in `public/nethara-live.html`. The socket event arrived, the client silently discarded it. The next `arena:positions` tick created a sprite for the new player with `S._deployCache[id]` still empty, which triggers `addNineSprite`'s tier-3 cat-silhouette fallback at `nethara-live.html:6192`. The early-return at line 6122 (`if (state.nines.has(nine.id)) return;`) locks the fallback in permanently.
+
+**Investigation evidence.** Supabase query confirmed 33 of 34 player_nines rows have `equipped_images` populated (97%), so the data exists server-side. Asset paths on disk (`public/assets/nine/fur/GINGER.png`, etc.) match DB paths exactly, so there's no missing-file or bucket-config issue. The renderer at `addNineSprite:6120` works correctly when fed data. The bug is entirely in the socket-event routing: server sends, client ignores.
+
+**Resolved 2026-04-20 in PR #160.** Added the missing handler to `public/nethara-live.html` near line 3393 (right after `arena:nine_left`). Populates `S._deployCache[nine_id]` with the broadcast's `equipped_images`, preserving any `profile_image` that was cached previously. If a sprite already exists for that id (event race: `arena:positions` beat this event), patches in-place with the newly-available layers — mirroring the patch pattern already used in `checkDeployment` (line 2127) and `confirmDeploy` (line 3024). If no sprite exists yet, the next `arena:positions` tick will create it correctly from the now-populated cache.
+
+Diagnostic `console.log` retained for one smoke-test cycle per the §9.35/PR #153 pattern. Removed in a follow-up PR once production smoke-test confirms the fix.
+
+### 9.43 `equipped_fur` slugs vs `equipped_images` map — data desync → data integrity
+
+**Symptom.** Supabase query surfaces a quiet mismatch: of 34 `player_nines` rows, 15 have the individual slug columns (`equipped_fur`, `equipped_outfit`, `equipped_weapon`, `equipped_expression`, `equipped_headwear`, `equipped_familiar`) populated, but 33 have the `equipped_images` JSONB map populated. Not breaking anything visibly — the renderer reads only `equipped_images` — but two "sources of truth" for the same semantic fact have drifted.
+
+**Effect.** None user-visible. But any future code path that needs to read the slug (e.g., for rarity lookup, set-bonus calculation, item-removal UX) against a row with only the image map populated will misbehave. Also makes auditing / migrations riskier.
+
+**Root cause (likely).** Historical backfill that populated `equipped_images` for all Nines but didn't backfill the individual slug columns — possibly because the image paths were derivable from defaults or a one-time migration, while the individual slugs require knowing the user's actual equipment state at the time.
+
+**Status: OPEN.** Low priority, data integrity. Fix direction: a one-time reverse backfill that parses `equipped_images[slot]` filenames to derive slugs (e.g., `/assets/nine/fur/GINGER.png` → `fur-ginger`). Would need a mapping table from filename → slug since the slug naming convention differs from the UPPERCASE filename convention. Defer until a feature actively needs the slug columns.
+
+### 9.44 Layer-texture load failure silently produces invisible Nine → edge case
+
+**Symptom.** If `PIXI.Texture.from(imgPath)` fires an error event on any of the 6 layer textures during compositing, `addNineSprite:6164` removes that specific layer from the `spriteGroup` but doesn't re-evaluate the three-tier fallback (layers → PFP → cat). If all 6 layers fail to load on the same sprite (e.g., a bad `equipped_images` map with 404 paths, or a storage outage for the `/assets/nine/` directory), the spriteGroup ends up with zero children — the sprite renders as just the ring + shadow + name label with no body at all.
+
+**Effect.** Not currently triggered in production (filesystem paths match DB paths). But any future data corruption, asset-path typo, or CDN misconfiguration in the `/assets/nine/` tree would produce invisible Nines on the arena without any diagnostic signal.
+
+**Root cause.** The fallback tree at `addNineSprite:6154-6192` is evaluated in strictly linear order with no re-entry. `hasAnyImage = true` locks out tier 2 (profile_image) and tier 3 (cat fallback) even if layer textures later fail to load. The `.on('error')` handler removes the failed sprite but doesn't set `hasAnyImage = false` or re-trigger the fallback cascade.
+
+**Status: OPEN.** Low priority, defensive. Fix direction: count successfully-loaded layers in the error handler, and if the count drops to zero, invoke `_drawCatFallback(spriteGroup, hColor)`. Alternatively, subscribe to the texture `.on('loaded')` / `.on('error')` on all 6 layers and make the tier-evaluation reactive. Defer until either a real incident occurs or the rendering path is refactored for other reasons.
+
 ---
 
 ## Appendix A — Glossary
