@@ -1153,6 +1153,37 @@ Downstream behavior audit for the map-retention change: combat loop already skip
 
 Diagnostic logs from PR #153 kept in place for the smoke-test cycle that validates this second fix end-to-end; removed in the next PR once a successful rejoin (feed message + clean 200 on the rejoin POST) is observed on production.
 
+### 9.36 KO loop gate re-fires for withdrawn Nines → regression surfaced by §9.35 fix
+
+**Symptom.** Smoke test on the PR #155 build: `combat:ko` socket event fires 4+ times per Nine, approximately 25 seconds apart (once per round-cycle). `_wasKOdThisRound` stays `false` in every `[round_end:rejoin-check]` diagnostic log. Auto-rejoin never fires. No rejoin `POST` appears in Network tab. First `[combat:ko-handler2]` log shows `mapKeys: Array(2), spriteFound: true`; subsequent ones show `mapKeys: Array(1), spriteFound: false` — the client sprite is removed 800ms after the first KO (per `nethara-live.html:3603` setTimeout), so all re-fired `combat:ko` events land on a missing sprite and Handler 2's `if (!sp) return` bails before setting the flag.
+
+**Effect.** Auto-rejoin is unreachable (its prerequisite `_wasKOdThisRound=true` never persists long enough to be read at `round_end`). Round N+1 frequently ends instantly via `last_standing` because the re-KO'd Nine is excluded from the `alive` filter (hp=0) and the remaining guild count drops to one on the first tick — visible to all zone participants as "round ended 1 second after it started." Additionally: `handleKO`'s +10 killer-reward at `combatEngine.js:848-871` fires on every re-KO via the stale `nine._lastHitById` from the original kill. The original killer accumulates free points every round-cycle until session timeout. Small point-farming surface but a real leaderboard-integrity concern.
+
+**Root cause.** The KO gate at `combatEngine.js:1066` checked only two fields: `if (nine.hp <= 0 && !nine.waitingForRound)`. `startRound` at line 1325-1334 clears `waitingForRound=false` for KO'd Nines while leaving `hp=0` and `withdrawn=true`. Next combat tick re-evaluates the two-field gate → TRUE → `handleKO` re-fires → `combat:ko` re-broadcasts → `anyKO=true` → `last-guild-standing` check at line 1093-1111 evaluates → if applicable, `endRound('last_standing')` on tick 1 of the round → 25s intermission → `startRound` clears `waitingForRound` again → loop.
+
+**Why it wasn't visible pre-§9.35.** Before PR #155, the KO handler called `zs.nines.delete(key)` at KO time. The tick loop `for (const nine of all)` built `all` from `Array.from(zs.nines.values())` (line 876), so the deleted Nine was invisible to subsequent ticks. The gate was architecturally unreachable for any Nine after first KO. §9.35's map retention (intentional, required for `rejoinRound` to work) made the Nine visible to the loop again, exposing the latent gate bug.
+
+**State machine (post-fix).**
+
+| Stage | `hp` | `waitingForRound` | `withdrawn` | Gate passes? |
+|---|---|---|---|---|
+| Alive | >0 | false | false | ❌ (hp) |
+| Just KO'd (first time) | 0 | false→true | false | ✅ once, then ❌ (waitingForRound) |
+| Intermission | 0 | true | false | ❌ (waitingForRound) |
+| After `startRound` for round N+1 | 0 | false | **true** | ❌ (**withdrawn** — the new check) |
+| After `rejoinRound` | max | false | false | ❌ (hp) |
+
+**Resolved 2026-04-20 in PR #?.** One-line fix at `combatEngine.js:1066`:
+```diff
+-    if (nine.hp <= 0 && !nine.waitingForRound) {
++    if (nine.hp <= 0 && !nine.waitingForRound && !nine.withdrawn) {
+```
+Mirrors the combat loop's own three-field skip at line 986-987, which was already correct. Also closes the phantom-points farming surface as a side effect.
+
+Not in scope for this PR (flagged for separate consideration): the `waitingForRound = false` clear at `startRound` line 1332 is semantically redundant with `withdrawn = true` from the caller's perspective — could be removed to clean up the state-machine meaning. Deferred to avoid regression risk in other consumers of `waitingForRound`; the gate fix alone closes §9.36.
+
+PR #153 diagnostic logs retained for one more smoke-test cycle. Will be removed in the next PR once a successful rejoin on production is confirmed (expected log pattern: one `[combat:ko]` per KO, not four; `_wasKOdThisRound=true` at round_end; `POST /api/zones/10/rejoin → 200`; `🔄 <name> rejoined zone 10` server log; feed `✅ Rejoined`).
+
 ---
 
 ## Appendix A — Glossary
