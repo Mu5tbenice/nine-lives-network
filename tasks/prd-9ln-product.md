@@ -1120,6 +1120,22 @@ Add a fallback: `_doRejoin()` returns a boolean; on `false` (silent network thro
 
 **Resolved 2026-04-19 in PR #152.** One-line guard change at `nethara-live.html:3674`. The `arena:round_start` auto-rejoin trigger and `_doRejoin` boolean fallback (shipped in PR #151) become live the moment this guard fires correctly. Discovery and resolution split across two PRs because §9.34 was caught only after PR #151's deploy; #151 had already merged by the time the regression report arrived.
 
+### 9.35 Auto-rejoin doesn't fire despite toggle ON post-§9.34 → investigation
+
+**Symptom.** Smoke test on the PR #151 + #152 build with auto-rejoin toggled ON pre-deploy (via the deploy modal): KO'd player sits through `round_end` intermission and stays withdrawn when round 2 begins. No `🔄 Auto-rejoining at Round N start...` feed message fires. Handler 1 of `combat:ko` logs cleanly (`[combat:ko] received nineId=45 isSelf=true waitingForRound=true`), so the server event is arriving and the first handler runs.
+
+**Effect.** The auto-rejoin feature is effectively dead end-to-end — §9.34's fix unblocked the guard, but the guard's preconditions aren't being satisfied. Players who opt into auto-rejoin still have to manually rejoin. Severity: moderate — no data loss, but a core QoL feature advertised in the deploy modal does not work.
+
+**Initial hypothesis (not yet confirmed).** The second `combat:ko` socket handler at `public/nethara-live.html:3622` — the one that actually sets `S._wasKOdThisRound = true` — is silently early-returning on `if (!sp) return;` when `S.nines.get(resolveId(dataKo.nineId))` misses. Handler 1's console log does NOT prove Handler 2 ran to completion; Handler 1's self-branch fires regardless of sprite-map presence.
+
+Ruled out by the same investigation: (a) deploy-modal toggle only flipping the boolean without `_autoRedeployExpiry` — both fields are set by the shared `window.toggleAutoRedeploy` function (nethara-live.html:3110-3112, deploy modal onclick at 1615); (b) stray clears of `_wasKOdThisRound` between set (3629) and check (3679) — only sites are the set, the post-use clear in round_end, and the round_start reset at 3776.
+
+**Resolution plan:** Ship diagnostic logs at two points under the `§9.35 diagnostic` comment marker:
+1. Handler 2 entry (`nethara-live.html:3624`, after the `waitingForRound` gate) — dump `rawNineId`, `playerId`, `resolvedKey`, `spriteFound`, first 5 `mapKeys`, `selfMatch`.
+2. `arena:round_end` rejoin guard (`nethara-live.html:3676`, before `if (S._wasKOdThisRound)`) — dump `_wasKOdThisRound`, `_autoRedeploy`, `_autoRedeployExpiry`, `now`, `expiredOrOff`.
+
+One KO reproduction on the deployed build should pinpoint the failure mode. Fix follows in a separate PR; diagnostic logs removed at that time (or kept if they prove durably useful).
+
 ---
 
 ## Appendix A — Glossary

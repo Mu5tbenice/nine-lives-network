@@ -3621,6 +3621,15 @@
     // ── WAITING STATE: dim sprite + badge when KO'd mid-round ────────────
     socket.on('combat:ko', (dataKo) => {
       if (!dataKo.waitingForRound) return; // old events without this flag
+      // §9.35 diagnostic — remove once root cause is confirmed
+      console.log('[combat:ko-handler2]', {
+        rawNineId: dataKo.nineId,
+        playerId: S.playerId,
+        resolvedKey: resolveId(dataKo.nineId),
+        spriteFound: S.nines.has(resolveId(dataKo.nineId)),
+        mapKeys: [...S.nines.keys()].slice(0, 5),
+        selfMatch: String(dataKo.nineId) === String(S.playerId),
+      });
       const sp = S.nines.get(resolveId(dataKo.nineId));
       if (!sp) return;
       sp._waitingForRound = true;
@@ -3674,6 +3683,14 @@
       // §9.34: do NOT also gate on S.isDeployed — it was zeroed by the
       // combat:ko handler at line 3577 well before this fires, so any
       // S.isDeployed clause here is permanently false for KO'd players.
+      // §9.35 diagnostic — remove once root cause is confirmed
+      console.log('[round_end:rejoin-check]', {
+        _wasKOdThisRound: S._wasKOdThisRound,
+        _autoRedeploy: S._autoRedeploy,
+        _autoRedeployExpiry: S._autoRedeployExpiry,
+        now: Date.now(),
+        expiredOrOff: !S._autoRedeploy || Date.now() > S._autoRedeployExpiry,
+      });
       if (S._wasKOdThisRound) {
         S._withdrawnAfterKO = true;
         S._wasKOdThisRound  = false;
