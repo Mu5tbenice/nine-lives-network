@@ -1136,6 +1136,22 @@ Ruled out by the same investigation: (a) deploy-modal toggle only flipping the b
 
 One KO reproduction on the deployed build should pinpoint the failure mode. Fix follows in a separate PR; diagnostic logs removed at that time (or kept if they prove durably useful).
 
+**Hypothesis chain (as resolved).**
+
+1. *Initial suspicion (disproved by PR #153 diagnostics):* Handler 2 silently early-returning on sprite-map miss. Smoke-test log output was textbook-clean — `spriteFound: true, selfMatch: true, _wasKOdThisRound: true, _autoRedeploy: true, expiredOrOff: false`. Handler 2 fired. The round_end guard entered. `_doRejoin()` fired.
+2. *Second suspicion (disproved by grep):* `/api/zones/:zoneId/rejoin` route doesn't exist. Route is defined at `server/routes/zones.js:1204` and mounted at `/api/zones` in `server/index.js:72`. Added by commit `da949a1` (2026-04-15). Client URL + method + body shape all correct.
+3. *Actual root cause:* The route's own DB lookup at `zones.js:1219` filtered on `.eq('is_active', true)`. `combatEngine.js:849-859` flips `is_active` to `false` synchronously in the KO handler. By the time `arena:round_start` fires and the client calls `_doRejoin`, the deployment row has `is_active=false` for the full intermission window. Query returns no row → route responds `404 "No active deployment found"`. The 404 the user saw was the route's own in-body 404, not Express's default "no such route" 404.
+
+**Latent since 2026-04-15.** The rejoin route was added by `da949a1` but never reached production UI — pre-§9.31, the legacy 60s KO popup's auto-redeploy flow went through `/api/zones/deploy` instead. Only when §9.33 wired `_doRejoin()` as the actual post-KO path (PR #151) did the bug become reachable. §9.34 cleared a separate guard that had been masking it further.
+
+**Resolved 2026-04-20 in PR #?.** Fix in `server/routes/zones.js:1214-1264`:
+- Drop `.eq('is_active', true)` from the lookup.
+- Add `.order('deployed_at', { ascending: false }).limit(1).maybeSingle()` to target the most-recent deployment and insulate against multi-row ambiguity from historical deploy→withdraw cycles on the same (player, zone).
+- Select `max_hp` in the lookup so the post-rejoin re-activation can set `current_hp` to a concrete value (schema column is `NOT NULL` default 20 — `null` would be rejected).
+- After `engine.rejoinRound()` succeeds, flip `is_active=true, current_hp=dep.max_hp, updated_at=now()` so the DB row tracks the engine state.
+
+Diagnostic logs from PR #153 kept in place for the smoke-test cycle that validates this fix; removed in the next PR once end-to-end rejoin is confirmed on production.
+
 ---
 
 ## Appendix A — Glossary
