@@ -55,7 +55,7 @@
       --radius-md: 10px;
       --text-body: #CCC5DB;
       --text-muted: #847C98;
-      --nav-height: 52px;
+      --nav-height: 76px; /* matches nav-v2.css; mobile override below */
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -887,6 +887,7 @@
          - [Right] tabbed content + buttons row
        ═════════════════════════════════════════════════════ */
     @media (max-width: 640px) {
+      :root { --nav-height: 56px; } /* matches nav-v2.css mobile override */
       #arena-view {
         /* display is controlled via JS — do NOT set here or it overrides display:none on load */
         flex-direction: column;
@@ -5528,9 +5529,14 @@
   function initPixiArena() {
     const container = document.getElementById('arena-canvas');
     container.innerHTML = '';
-    const navH = 52;
+    // Read live CSS var so mobile (56px) / desktop (76px) stay in sync with
+    // nav-v2.css — hardcoded 52 here pre-§9.45 was stale and cropped the
+    // arena top bar (timer + LIVE pill) on both viewports.
+    const readNavH = () => parseInt(getComputedStyle(document.documentElement)
+      .getPropertyValue('--nav-height'), 10) || 76;
     const trayH = 230; // desktop HUD tray height
     const isMobile = window.innerWidth <= 640;
+    const navH = readNavH();
 
     // Desktop: subtract tray height so sprites stay above HUD
     // Mobile: canvas is 54% of available height
@@ -5558,13 +5564,15 @@
     drawArenaGround(app);
     setTimeout(() => setRoundPositions(), 500);
 
-    // Handle resize
+    // Handle resize — re-read --nav-height so the canvas math follows the
+    // active media query (56px mobile / 76px desktop).
     window.addEventListener('resize', () => {
       if (!state.arenaApp) return;
       const mob = window.innerWidth <= 640;
+      const liveNavH = readNavH();
       const newH = mob
-        ? Math.round((window.innerHeight - navH) * 0.54)
-        : (window.innerHeight - navH - trayH);
+        ? Math.round((window.innerHeight - liveNavH) * 0.54)
+        : (window.innerHeight - liveNavH - trayH);
       const newW = window.innerWidth - (mob ? 0 : 350);
       state.arenaApp.renderer.resize(newW, newH);
       drawArenaGround(state.arenaApp);
