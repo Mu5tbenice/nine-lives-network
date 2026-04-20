@@ -9,6 +9,9 @@ const supabase = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
 const { getNine, healNine } = require('../services/nineSystem');
 const { addPoints } = require('../services/pointsService');
+const flags = (() => {
+  try { return require('../config/flags'); } catch (e) { return {}; }
+})();
 
 // Lazy-load combatEngine to avoid circular deps — only used for removeDeploymentFromEngine
 function getCombatEngine() {
@@ -44,6 +47,22 @@ router.post('/deploy', async (req, res) => {
 
     if (!player_id || !zone_id) {
       return res.status(400).json({ error: 'player_id and zone_id required' });
+    }
+
+    // §9.46 deploy lockout (feature-flagged, default OFF). When the zone is
+    // in an active round, reject with 423 so the client can show a countdown
+    // to the next intermission. No behavior change with flag false.
+    if (flags.FEATURE_DEPLOY_LOCKOUT) {
+      const engine = getCombatEngine();
+      const zs = engine?.getZoneState ? engine.getZoneState(zone_id) : null;
+      if (zs && zs.roundState === 'FIGHTING') {
+        const msLeft = Math.max(0, (zs.roundEndsAt || 0) - Date.now());
+        return res.status(423).json({
+          error: 'deploy_locked',
+          message: 'Deployment is only allowed during intermission',
+          nextWindowInSeconds: Math.ceil(msLeft / 1000),
+        });
+      }
     }
 
     // Get player's Nine

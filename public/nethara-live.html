@@ -2982,6 +2982,43 @@
   }
   window.closeDeployModal = closeDeployModal;
 
+  // §9.46 deploy lockout (feature-flagged server-side). When server returns
+  // 423 Locked, show a mm:ss countdown on the deploy button and keep it
+  // disabled until the next intermission opens. Client-safe even with flag
+  // off — never fires until the server starts returning 423.
+  let _deployLockoutInt = null;
+  function _showDeployLockout(btn, secs) {
+    const target = btn || document.getElementById('btn-confirm-deploy');
+    if (!target) return;
+    if (_deployLockoutInt) { clearInterval(_deployLockoutInt); _deployLockoutInt = null; }
+    let remaining = Math.max(0, secs|0);
+    const fmt = s => {
+      const m = Math.floor(s / 60), sec = s % 60;
+      return `${m}:${String(sec).padStart(2,'0')}`;
+    };
+    const paint = () => {
+      target.disabled = true;
+      target.textContent = remaining > 0
+        ? `🔒 DEPLOY OPENS IN ${fmt(remaining)}`
+        : 'DEPLOY OPEN — TAP TO TRY AGAIN';
+    };
+    paint();
+    _deployLockoutInt = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(_deployLockoutInt); _deployLockoutInt = null;
+        remaining = 0;
+        paint();
+        target.disabled = S.selectedCards.length !== 3;
+        target.textContent = S.selectedCards.length === 3
+          ? '⚔️ DEPLOY'
+          : `SELECT ${3 - S.selectedCards.length} MORE`;
+      } else {
+        paint();
+      }
+    }, 1000);
+  }
+
   async function confirmDeploy() {
     if (S.selectedCards.length !== 3) return;
     if (!S.playerId || !S.currentZoneId) return;
@@ -3011,6 +3048,14 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ player_id: S.playerId, zone_id: S.currentZoneId, card_ids: cardIds }),
       });
+      // §9.46 deploy lockout: server returns 423 when flag is on AND the zone
+      // is mid-round. Show a countdown to next intermission in the deploy
+      // button; the handler re-enables itself when the window reopens.
+      if (res.status === 423) {
+        const data = await res.json().catch(() => ({}));
+        _showDeployLockout(btn, data.nextWindowInSeconds || 0);
+        return;
+      }
       const data = await res.json();
       if (data.success || data.message) {
         const cards = S.selectedCards.map(s => s.card);
@@ -3202,7 +3247,18 @@
     fetch('/api/zones/deploy', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ player_id: S.playerId, zone_id: S.currentZoneId, card_ids: finalIds }),
-    }).then(r => r.json()).then(data => {
+    }).then(async r => {
+      // §9.46: silent skip when server returns 423. Auto-redeploy will retry
+      // at next round_start via the rejoin path; no modal rescue needed.
+      if (r.status === 423) {
+        const d = await r.json().catch(() => ({}));
+        const secs = Math.max(0, d.nextWindowInSeconds || 0);
+        addFeedEvent(`🔒 Auto-redeploy paused — deploy opens in ${secs}s`, 'system');
+        return null;
+      }
+      return r.json();
+    }).then(data => {
+      if (!data) return;
       if (data.success || data.message) {
         S.isDeployed = true;
         S._sessionStartAt = S._sessionStartAt || Date.now();
@@ -3288,7 +3344,18 @@
       fetch('/api/zones/deploy', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ player_id: S.playerId, zone_id: S.currentZoneId, card_ids: savedIds }),
-      }).then(r => r.json()).then(data => {
+      }).then(async r => {
+        // §9.46: silent skip on 423 (deploy locked). Next intermission opens
+        // the window; rejoin path picks up from there.
+        if (r.status === 423) {
+          const d = await r.json().catch(() => ({}));
+          const secs = Math.max(0, d.nextWindowInSeconds || 0);
+          addFeedEvent(`🔒 Redeploy paused — deploy opens in ${secs}s`, 'system');
+          return null;
+        }
+        return r.json();
+      }).then(data => {
+        if (!data) return;
         if (data.success || data.message) {
           S.isDeployed = true;
           S._koUntil = 0;
