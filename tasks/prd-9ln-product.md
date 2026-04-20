@@ -240,7 +240,13 @@ Floor: 5.5 s. Cards rotate: slot 1 → slot 2 → slot 3 → repeat.
 
 **4.8.4 No mid-round rejoin.** A KO'd Nine sprite dims and shows `WAITING` until the next round. No redeployment to a different zone while waiting.
 
-**4.8.5 Session timer: 2 hours.** After 2 hours continuous deployment the Nine auto-withdraws. Manual reactivation required to continue.
+**4.8.5 Deployment lifecycle — three separate concepts.** Deployment length, auto-rejoin arming, and the "session" sidebar view are semantically distinct and must not be conflated.
+
+- **(a) Manual deploy → stays deployed forever.** Only a KO or an explicit withdraw removes a Nine from a zone. There is no server-side idle/session timeout. The former 2-hour `SESSION_MS` constant is deleted under §9.41's refactor.
+- **(b) Auto-rejoin → 1-hour armed window.** When the player toggles auto-rejoin ON and deploys, a 1-hour window opens from the first auto-deploy moment. Within that window, the client auto-redeploys on every KO's next round_start. At the 1-hour cap the auto-rejoin stops firing; the Nine stays withdrawn until the player manually re-deploys to re-arm a fresh 1-hour window.
+- **(c) Sidebar "session" view → today's combat stats.** The right-side fighter list's SESSION toggle shows per-player cumulative combat stats for the current UTC day (KOs, damage dealt, damage taken, heals). Resets at 00:00 UTC. Distinct from `seasonal_points` (season-scoped, on `players`). Requires a new daily tracking source (see §9.41).
+
+See §9.41 for the implementation refactor that aligns current code with this spec.
 
 **4.8.6 UI timer.** Counts up (rounds have no fixed length). Timer turns gold at 4:00 (approaching the hard cap).
 
@@ -1244,6 +1250,33 @@ Server path required no change — engine/DB cleanup at `combatEngine.js:1045-10
 
 **Status: OPEN.** Low priority, UX polish. Batch with Task 17.0 auto-rejoin UX redesign since that's where deploy-related HUD elements will be revisited. If the Task 17.0 scope settles on wanting a persistent session/deploy-status HUD pill, implement the DOM + CSS + update logic there. Otherwise this §9.40 can close as "no-fix — feed + CTA is sufficient UX" when Task 17.0 ships.
 
+### 9.41 Session timeout semantics refactor — conflated concepts must be separated
+
+**Symptom.** The current implementation conflates three distinct concepts under the word "session" (§4.8.5 rewrite explains the separation). Code, UI, and PRD prose all mix them:
+- `server/services/combatEngine.js:18` defines `SESSION_MS = 2h` as a server-side **inactivity** timeout that auto-withdraws a Nine after 2 hours of continuous deployment.
+- Client `_autoRedeployExpiry = Date.now() + 3600000` (1h) is the **auto-rejoin arming window** but named/placed as if it were a session timer.
+- `public/nethara-live.html` right-side sidebar's SESSION toggle shows `S.combatMetrics` — which grows unbounded for the life of the page session (not "today"), has no reset boundary, and is separate from any deployment lifecycle.
+
+**Effect.**
+- Manual deployers get kicked after 2h despite the design now being "deploy forever, KO or withdraw only" — PR #158's §9.38 fix silently enforces a rule that §4.8.5's new spec rejects.
+- Auto-rejoin players hit the 1h client-side expiry before the 2h server-side kick, so their last hour of "deployment" is really a silent-fail zombie state where the server thinks they're still fighting but the client stopped auto-rejoining.
+- Sidebar SESSION toggle's numbers don't correspond to any player-meaningful window. "Today's KOs" and "this-page-load's KOs" diverge as soon as the player keeps a tab open across midnight UTC.
+
+**Root cause.** `SESSION_MS` was added as a single blunt instrument before the three concepts were recognized as distinct. Each subsequent feature that needed some "session-ish" behavior layered on top of it or around it, creating the conflation.
+
+**Scope (to be split into 3-5 PRs under Task 17.0):**
+1. **Daily combat stats infrastructure.** New `daily_combat_stats` tracking source on server (Supabase table or in-memory with periodic flush, TBD), with 00:00 UTC reset boundary. Client sidebar SESSION view reads from this, not from `S.combatMetrics`. `S.combatMetrics` either becomes the ROUND source only (renamed) or is removed if `S._roundMetrics` covers the need after D1's fix.
+2. **Remove `SESSION_MS` + server-side inactivity timeout.** Delete the constant and the `arena:session_expired` server broadcast path. Keep the client handler dormant for one deploy cycle as backward-compat (remove in a follow-up). Manual deploys now persist until KO or explicit withdraw.
+3. **Sidebar rewrite.** SESSION toggle wired to the new daily source. DAY/SESSION/ROUND sort labels reconsidered for clarity — possibly DAY / LIFETIME / THIS-ROUND.
+4. **Auto-rejoin UX (Task 17.0 original scope).** Flip defaults to auto-rejoin ON, "CHANGE BUILD" becomes primary post-KO affordance, rejoin becomes silent. 1h window messaging throughout.
+5. **Deferred polish.** `#deploy-status-pill` design (§9.40) revisited under the new state machine: DEPLOYED-INDEFINITE / AUTO-REJOINING-Nmin-left / WITHDRAWN.
+
+**Sequencing constraint.** Item 1 (daily_combat_stats) must ship before item 3 (sidebar rewrite). Items 2 and 4 can parallel-ship after item 1 lands. Item 5 is last.
+
+**Status: OPEN.** High priority — current state is actively incorrect per §4.8.5's rewritten spec. Batch with Task 17.0 (rollout task now expanded from M → M-L, 3-5 PRs).
+
+**Supersedes / updates:** §9.3 (2h SESSION_MS resolution superseded — SESSION_MS itself is being deleted), §9.38 (handler implementation correct, trigger semantics shift from 2h-inactivity to 1h-auto-rejoin-cap-hit), §9.40 (pill design needs rethink under the new three-state deploy state machine).
+
 ---
 
 ## Appendix A — Glossary
@@ -1260,7 +1293,7 @@ Definitions of terms used throughout this PRD. Each ≤15 words.
 | **Loadout** | The 3 cards a Nine is fighting with on a given zone. Reconfigurable between rounds. |
 | **Round** | One zone battle. Ends on last-guild-standing or the 5-min hard cap. |
 | **Intermission** | The 25-second pause between rounds. Displays outcome and points awarded. |
-| **Session** | A Nine's continuous deployment on a zone. Auto-withdraws after 2 hours. |
+| **Session** | Ambiguous term post-§9.41 refactor. Three distinct concepts per §4.8.5: (a) **deployment lifespan** — indefinite, KO/withdraw-only; (b) **auto-rejoin window** — 1h from first auto-deploy; (c) **sidebar session view** — today's combat stats, resets at 00:00 UTC. |
 | **KO** | Knockout — a Nine reaching 0 HP. KO'd Nines wait until the next round to rejoin. |
 | **FFA** | Free-for-all — within a zone every guild fights every other guild simultaneously. |
 | **Lone wolf** | A player with `guild_tag = 'lone_wolf'`. No guild bonuses; no compensation bonus either. |
