@@ -1066,11 +1066,13 @@ async function tickZone(zoneId, zs) {
     if (nine.hp <= 0 && !nine.waitingForRound) {
       nine.waitingForRound = true;
       handleKO(nine, zoneId, all);
-      const key = nine.deploymentId;
-      const pid = nine.playerId;
-      console.log(`[KO] zone=${zoneId} nine=${key} player=${pid} delete_start`);
-      const deleted = zs.nines.delete(key);
-      console.log(`[KO] zone=${zoneId} nine=${key} player=${pid} ${deleted ? 'delete_ok' : 'delete_failed'} remaining=${zs.nines.size}`);
+      // §9.35: keep the KO'd Nine in zs.nines so startRound can flag it
+      // withdrawn and rejoinRound can find it later. Combat loop already
+      // skips on flag (hp<=0 || waitingForRound || withdrawn), so retention
+      // is safe; session-timeout and explicit withdraw paths still delete.
+      console.log(
+        `[KO] zone=${zoneId} nine=${nine.deploymentId} player=${nine.playerId} waitingForRound=true size=${zs.nines.size} (§9.35: kept in map)`,
+      );
       anyKO = true;
     }
   }
@@ -1322,8 +1324,10 @@ function startRound(zoneId, zs, all) {
   // Full HP reset for survivors — KO'd Nines become 'withdrawn' (must click rejoin)
   all.forEach((n) => {
     if (n._wasKOdThisRound) {
-      // KO'd last round → withdrawn state. Remove from zone engine until player rejoins.
-      // They are kept in zs.nines for the broadcast but flagged as withdrawn.
+      // KO'd last round → withdrawn state. The Nine stays in zs.nines
+      // (see §9.35 — the KO handler used to delete at KO time, which made
+      // this branch unreachable and rejoinRound unable to find the target).
+      // Combat loop skips on the withdrawn flag; rejoinRound flips it back.
       n.withdrawn = true;
       n.waitingForRound = false; // clear old flag
       return; // don't reset HP or stats yet
