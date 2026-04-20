@@ -789,6 +789,8 @@ This section is the **live bug ledger** the PRD carries. Each item is tied to a 
 
 **Resolved 2026-04-18 in PR #136.** Constant updated to `2 * 60 * 60 * 1000` with inline reference to PRD §4.8.5.
 
+**Superseded 2026-04-20 by §9.41.** §4.8.5's rewrite drops the server-side inactivity timeout entirely; `SESSION_MS` itself is being deleted under §9.41's refactor. This §9.3 entry stays intact as history — the 1h→2h fix was correct against the spec as it existed at the time. The new spec (manual deploys stay indefinitely) makes both the original value AND the §9.3 fix obsolete.
+
 ### 9.4 `ROUND_MS` undefined → cleanup
 
 **Symptom.** `server/services/combatEngine.js:727` and `:894` reference `ROUND_MS`, which is not declared. Rounds have no fixed length, so these references are conceptually wrong, not just a typo.
@@ -1232,6 +1234,8 @@ Server path required no change — engine/DB cleanup at `combatEngine.js:1045-10
 
 **Smoke-test tooling also landed:** `SESSION_MS_OVERRIDE_SECONDS` env var at `combatEngine.js:18` shortens the 2h default to an arbitrary seconds value for dev runs. Production leaves it unset. Zero cost when unset; enables testing this UX flow in 2 minutes per attempt instead of 2 hours.
 
+**Semantics update 2026-04-20 — see §9.41.** The handler implementation shipped in this PR is correct and stays in place. But the trigger semantics shift: under §4.8.5's rewrite there is no 2h-inactivity kick; instead the same handler will fire when the 1h auto-rejoin arming window elapses without a manual re-deploy. No code change required here — the cleanup in the handler (sprite removal, CTA re-show, etc.) is the correct response regardless of which trigger fires it. §9.41 lands the server-side trigger change.
+
 ### 9.39 `arena:nine_rejoined` looked up sprite by deploymentId instead of playerId → latent
 
 **Symptom.** Would have left the WAITING badge and `alpha=0.25` dim stuck on the self-sprite after rejoin, had the sprite persisted through intermission.
@@ -1249,6 +1253,8 @@ Server path required no change — engine/DB cleanup at `combatEngine.js:1045-10
 **Effect.** Session-timeout UX had no persistent visual anchor — only a transient feed event and (pre-§9.38 fix) an un-reset combat tray. §9.38's fix drops the reference entirely and relies on the DEPLOY CTA re-show + feed event for UX. Sufficient for the expired case.
 
 **Status: OPEN.** Low priority, UX polish. Batch with Task 17.0 auto-rejoin UX redesign since that's where deploy-related HUD elements will be revisited. If the Task 17.0 scope settles on wanting a persistent session/deploy-status HUD pill, implement the DOM + CSS + update logic there. Otherwise this §9.40 can close as "no-fix — feed + CTA is sufficient UX" when Task 17.0 ships.
+
+**Scope update 2026-04-20 — see §9.41.** Under §4.8.5's rewritten three-concept model, a deploy-status pill (if we build one) needs to reflect a three-state machine, not a single "session ended" label: **DEPLOYED-INDEFINITE** (manual deploy, no time bound), **AUTO-REJOINING — Nmin left** (countdown to 1h auto-rejoin cap), **WITHDRAWN** (post-KO without auto-rejoin, or post-cap). Design this as part of Task 17.0 item 5 (deferred polish after the core refactor lands).
 
 ### 9.41 Session timeout semantics refactor — conflated concepts must be separated
 
