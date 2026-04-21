@@ -2717,6 +2717,29 @@
   }
 
   // ── DEPLOY MODAL ──
+  // §9.49: #deploy-atk / #deploy-hp / #deploy-spd / #deploy-def / #deploy-luck
+  // in the modal header ship with "--" placeholders and nothing ever wrote to
+  // them. Compute base (HOUSE_STATS) + sum(selected card stats) and paint.
+  function _refreshDeployStats() {
+    const hk = SCHOOL_TO_HOUSE[S.playerHouse] || 'stormrage';
+    const base = HOUSE_STATS[hk] || HOUSE_STATS.stormrage;
+    let atk=0, hp=0, spd=0, def=0, luck=0;
+    (S.selectedCards || []).forEach(s => {
+      const c = s?.card; if (!c) return;
+      atk  += c.base_atk  || 0;
+      hp   += c.base_hp   || 0;
+      spd  += c.base_spd  || 0;
+      def  += c.base_def  || 0;
+      luck += c.base_luck || 0;
+    });
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = String(v); };
+    set('deploy-atk',  base.atk  + atk);
+    set('deploy-hp',   base.hp   + hp);
+    set('deploy-spd',  base.spd  + spd);
+    set('deploy-def',  base.def  + def);
+    set('deploy-luck', base.luck + luck);
+  }
+
   // opts.preselectCurrent: seed selectedCards from S.equippedCards so the
   // modal opens showing the current build (CHANGE BUILD flow from round-end
   // popup, §9.45). Without this, the user faces empty state and has to
@@ -2737,6 +2760,8 @@
     if (typeof _refreshSelectedRow === 'function') _refreshSelectedRow();
     modal.classList.add('open');
     modal.style.display = 'flex';
+    // §9.49: paint baseline stats immediately so the row doesn't flash "--".
+    _refreshDeployStats();
     // Load cards
     try {
       const res = await fetch(`/api/packs/collection/${S.playerId}`);
@@ -2783,6 +2808,8 @@
       }
       renderCardGrid(cards);
       if (preselectCurrent && typeof _refreshSelectedRow === 'function') _refreshSelectedRow();
+      // §9.49: repaint after preselect so card bonuses are reflected.
+      _refreshDeployStats();
     } catch(e) { console.error('openDeployModal cards:', e); }
   }
 
@@ -2948,6 +2975,8 @@
       btn.disabled = S.selectedCards.length !== 3;
       btn.textContent = S.selectedCards.length === 3 ? '⚔️ DEPLOY' : `SELECT ${3 - S.selectedCards.length} MORE`;
     }
+    // §9.49: repaint stat row so the header reflects every selection change.
+    _refreshDeployStats();
   }
   window.toggleCardSelect = toggleCardSelect;
 
