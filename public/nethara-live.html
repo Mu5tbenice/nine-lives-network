@@ -4464,6 +4464,12 @@
       // false promise because the server still fires round_start on its own
       // schedule (typically 25s). Rejoin timing needs server-side design in
       // a separate PR (see §9.48).
+      //
+      // §9.49: dismiss the round-end overlay before opening the deploy modal.
+      // Round-end overlay z-index is 8500 vs. deploy modal's 2000, so without
+      // this dismiss the popup sits on top and blocks all interaction with
+      // the deploy modal the user just asked us to open.
+      _dismissRoundEnd();
       openDeployModal({ preselectCurrent: true });
     } else {
       // Auto-rejoin OFF → flip it on, dismiss popup. On round_start the existing
