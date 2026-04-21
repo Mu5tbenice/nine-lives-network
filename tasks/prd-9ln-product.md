@@ -1425,6 +1425,28 @@ Regression check per commit is code-review only: Claude Code has no browser capa
 
 Combat engine was not regressed during implementation (code-review only — no browser check from Claude Code CLI). Missing migration is soft-tolerated end-to-end: server returns empty, client falls back to localStorage, engine skips upserts after the first 42P01. **Follow-up:** once the migration is confirmed applied, consider migrating to a PL/pgSQL RPC for true atomic additive upsert (the current read-modify-write is single-writer safe but not concurrency-safe).
 
+### 9.51 Mobile deploy modal horizontal overflow — right edge clips top-to-bottom
+
+**Symptom (user-reported 2026-04-21, screenshot `audit/screenshots/2026-04-21-mobile-modal-width/devtools-393x852.png`).** Opening the deploy modal on any mobile viewport (393×852 iPhone 14 in DevTools and on a real Android device) produced a consistent right-edge clip across every row — title close ×, LCK stat, rightmost house filter icon, 3rd selected slot, card-grid right column, AUTO-REJOIN label, and the CANCEL/DEPLOY buttons all cut off equally. User had to horizontally scroll to reach the right half. Reproduces identically in Chrome DevTools device mode and on real hardware, so not device-specific.
+
+**Root cause — latent since PR #161.** Not a PR #163 regression (PR #163's stat-row fix only made the clip more noticeable because the row now shows real numbers instead of `--` placeholders). Three structural gaps compounded:
+
+1. **PR #161 bumped `.deploy-sort-btn`** inside the mobile `@media (max-width: 640px)` block from desktop's `font-size: 5px; padding: 3px 7px` to `font-size: 14px !important; padding: 8px 10px !important` as part of the 14px readability floor. The SORT label jumped to 14px in the same pass. Net effect at 14px Press Start 2P (monospace, ~1em per char): SORT label ~56px + 6 buttons (RARITY ~104, HP ~48, ATK/SPD/DEF/LCK ~64 each) + 4px gaps + 32px parent padding ≈ **~510px total**. Viewport: 393px. Overflow: ~120px.
+2. **`#deploy-sort-bar`** (inline style at `public/nethara-live.html:1666`) had neither `flex-wrap` nor `overflow-x: auto`. Default `nowrap` forced the row to one line regardless of parent width.
+3. **`.deploy-inner`** declared only `max-width: 520px` with no explicit `width` and no `box-sizing: border-box` (`public/nethara-live.html:635-638`). With the wrapper's column flex default `align-items: stretch`, the inner sized up to match the widest child — so the 510px sort bar pushed the inner past the viewport, and every sibling stretched to the new wider inner. That explains why rows that would otherwise fit (stat row with `flex-wrap: wrap`, selected row with `flex: 1` slots, card grid with `minmax` fit-content) all clipped on the right too: they were stretched past viewport by the column-flex-stretch inheritance, not forcing width themselves.
+4. **`.deploy-modal`** at `public/nethara-live.html:629-633` had `overflow-y: auto` but no `overflow-x: hidden` safety net, so the inner's overflow produced a visible horizontal scroll rather than a clipped container.
+
+Only 2 occurrences of `box-sizing: border-box` in the entire file — it's not set globally, so padding is additive to width throughout the modal chain.
+
+**Resolved 2026-04-21 in PR #?.** One commit, 17 lines added inside the existing `@media (max-width: 640px)` block. All rules mobile-scoped; desktop CSS untouched.
+
+- `.deploy-modal { overflow-x: hidden; }` — safety net so any future child that escapes the cap gets clipped, not scrolled.
+- `.deploy-inner { width: 100%; max-width: 100vw; box-sizing: border-box; }` — hard upper bound. The `max-width: 100vw` wins over desktop's `max-width: 520px` via media-query specificity, and `box-sizing: border-box` makes the 12px horizontal padding inclusive.
+- `box-sizing: border-box; max-width: 100%` applied to `.deploy-stats-preview`, `#deploy-sort-bar`, `#deploy-card-grid-wrap`, `.deploy-selected-row` — the four rows whose padding could otherwise combine with `align-items: stretch` to overflow.
+- `#deploy-sort-bar { flex-wrap: wrap; row-gap: 6px; }` — actual root-cause fix. Seven items now wrap onto 2 lines at 393px instead of forcing one 510px line. Adds ~30px vertical footprint on mobile in exchange for zero horizontal overflow.
+
+Regression status: code-review only (Claude Code CLI has no browser capability). Manual browser validation at 393×852 is the reviewer's responsibility before merge. No JS changes, no server changes, no other UI changes bundled in — scope held at pure CSS as requested.
+
 ---
 
 ## Appendix A — Glossary
