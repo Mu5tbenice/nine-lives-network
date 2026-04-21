@@ -1438,7 +1438,7 @@ Combat engine was not regressed during implementation (code-review only — no b
 
 Only 2 occurrences of `box-sizing: border-box` in the entire file — it's not set globally, so padding is additive to width throughout the modal chain.
 
-**Resolved 2026-04-21 in PR #?.** One commit, 17 lines added inside the existing `@media (max-width: 640px)` block. All rules mobile-scoped; desktop CSS untouched.
+**Resolved 2026-04-21 in PR #164.** One commit, 17 lines added inside the existing `@media (max-width: 640px)` block. All rules mobile-scoped; desktop CSS untouched.
 
 - `.deploy-modal { overflow-x: hidden; }` — safety net so any future child that escapes the cap gets clipped, not scrolled.
 - `.deploy-inner { width: 100%; max-width: 100vw; box-sizing: border-box; }` — hard upper bound. The `max-width: 100vw` wins over desktop's `max-width: 520px` via media-query specificity, and `box-sizing: border-box` makes the 12px horizontal padding inclusive.
