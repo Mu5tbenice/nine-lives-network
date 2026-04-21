@@ -959,7 +959,9 @@
          and clip left edge. Stacking keeps both visible within the 14px floor. */
       #mob-nine-hp-text { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--green);text-align:center;line-height:1.2;max-width:100%;overflow:hidden;white-space:nowrap; }
       #mob-nine-hp-text .hp-cur { display:block;color:var(--green); }
-      #mob-nine-hp-text .hp-max { display:block;color:var(--green);opacity:0.5;margin-top:2px;font-size:14px; }
+      /* §9.49: dropped 2px gap so the stacked cur/max clause uses less vertical
+         space — helps the AUTO toggle below become reachable without scrolling. */
+      #mob-nine-hp-text .hp-max { display:block;color:var(--green);opacity:0.5;margin-top:0;font-size:14px; }
       #mob-debuffs { display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:14px;margin-top:4px; }
 
       /* [ORANGE] Buttons row at bottom of portrait col — 44px+ tap targets.
@@ -967,7 +969,11 @@
          labels fit 84px (≤640px) / 76px (≤390px) portrait col widths. */
       #mob-buttons { display:flex;flex-direction:column;gap:6px;width:100%;margin-top:auto; }
       .mob-btn {
-        font-family:'Press Start 2P',monospace;font-size:14px;padding:12px 4px;
+        /* §9.49: padding trimmed from 12px→9px vertical so the 3-button stack
+           leaves enough height for the AUTO toggle to be reachable without a
+           scroll on 393x852 (iPhone 14). 44px tap target still honored via
+           14px font + 9px padding + 1px border = ~42-44px. */
+        font-family:'Press Start 2P',monospace;font-size:14px;padding:9px 4px;
         border-radius:4px;cursor:pointer;width:100%;text-align:center;
         border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);
         color:var(--faint);line-height:1.2;letter-spacing:0;
@@ -1034,8 +1040,11 @@
       #mob-battle-log { font-size:14px !important;line-height:1.45; }
 
       /* Auto toggle — §9.47 vertical layout so "AUTO" label fits 84px col
-         without wrapping to 3 lines as "AUTO-REJOIN: ON ✓" did. */
-      #mob-auto-row { display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:6px; }
+         without wrapping to 3 lines as "AUTO-REJOIN: ON ✓" did.
+         §9.49: switched to row layout so label + toggle share one horizontal
+         line instead of stacking, reclaiming the vertical space needed for
+         the AUTO toggle to be reachable at 393x852 without scrolling. */
+      #mob-auto-row { display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;margin-top:6px; }
       #mob-auto-toggle { width:36px;height:18px;background:rgba(255,255,255,0.06);border-radius:10px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0; }
       #mob-auto-label { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--faint);line-height:1.2;white-space:nowrap; }
 
