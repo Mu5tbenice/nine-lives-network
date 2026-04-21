@@ -1074,9 +1074,12 @@
       .deploy-stat { padding: 5px 1px; min-width: 0; flex: 1 1 18%; }
       .deploy-stat-key { font-size:14px !important; letter-spacing:0 !important; }
       .deploy-stat-val { font-size:14px !important; letter-spacing:0 !important; }
-      .deploy-selected-slot { height:64px; }
-      .deploy-selected-slot .slot-name { font-size:14px !important; }
-      .deploy-selected-slot .slot-eff  { font-size:14px !important; }
+      /* §9.49 mobile: selected row compressed. 64px wasted vertical space
+         above the card grid; 44px still fits name + eff legibly and leaves
+         more room for the grid below. slot-x stays 22x22 for tap target. */
+      .deploy-selected-slot { height:44px; }
+      .deploy-selected-slot .slot-name { font-size:13px !important; }
+      .deploy-selected-slot .slot-eff  { font-size:12px !important; }
       .deploy-cards-label { font-size:14px !important; }
       #deploy-selected-count { font-size:14px !important; }
       .deploy-sort-btn { font-size:14px !important; padding:8px 10px !important; }
