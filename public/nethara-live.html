@@ -1959,6 +1959,11 @@
     S._recentlyKOd.clear();
     S.equippedCards = [];
     S.combatMetrics = new Map();
+    // §9.50 sub-bug (a): reset round metrics on zone change. Previously this
+    // Map persisted across zones, so Zone A's round numbers polluted Zone B's
+    // "THIS ROUND" sidebar view until the next round_end event cleared it.
+    if (S._roundMetrics?.clear) S._roundMetrics.clear();
+    else S._roundMetrics = new Map();
     S.chartData = {};
     // Restore persisted metrics for this zone from today's localStorage snapshot
     try {
@@ -1988,6 +1993,32 @@
     } catch(e) {
       S._sessionPoints = { zone:0, kos:0, snapshots:0, chronicle:0, duels:0 };
       S._snapshotHistory = [];
+    }
+    // §9.50 seed from server (authoritative). If the route is unavailable
+    // (offline, 5xx, table-missing) the localStorage restore above stays in
+    // place as a safety net. Fire-and-forget — combat events continue to
+    // tick client-side maps in real time regardless of fetch latency.
+    if (zone?.id) {
+      fetch(`/api/zones/${zone.id}/metrics`)
+        .then(r => r.ok ? r.json() : null)
+        .then(body => {
+          if (!body || !Array.isArray(body.players) || !body.players.length) return;
+          if (String(S.currentZoneId) !== String(zone.id)) return; // user switched zones mid-flight
+          body.players.forEach(p => {
+            const id = String(p.player_id);
+            const existing = S.combatMetrics.get(id) || {};
+            S.combatMetrics.set(id, {
+              name:   p.name  || existing.name  || '',
+              guild:  p.guild || existing.guild || '',
+              house:  existing.house || '',
+              damage: Math.max(p.damage || 0, existing.damage || 0),
+              heals:  Math.max(p.heals  || 0, existing.heals  || 0),
+              kos:    Math.max(p.kos    || 0, existing.kos    || 0),
+            });
+          });
+          if (typeof renderGuildSidebar === 'function') renderGuildSidebar();
+        })
+        .catch(() => { /* offline — localStorage seed stays in place */ });
     }
     S.isDeployed = false;
     S.isFighting = false;
@@ -2119,6 +2150,22 @@
     // Stop cast bars / timers
     S.isDeployed = false;
     if (S._atkBarFrame) { cancelAnimationFrame(S._atkBarFrame); S._atkBarFrame = null; }
+
+    // §9.50 sub-bug (b): eager localStorage flush before we clear the map.
+    // trackCombatStat's 1500ms throttle means up to 1.5s of final events
+    // can be lost if the user leaves quickly. Write the current map now
+    // and cancel any pending throttled write so we don't overwrite on a
+    // delayed timer firing after state has been reset.
+    if (S.currentZoneId) {
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        const mKey = `9lv_metrics_${S.currentZoneId}_${today}`;
+        const toSave = {};
+        S.combatMetrics.forEach((m, id) => { toSave[id] = m; });
+        localStorage.setItem(mKey, JSON.stringify(toSave));
+      } catch(e) {}
+    }
+    if (S._metersRenderTimer) { clearTimeout(S._metersRenderTimer); S._metersRenderTimer = null; }
 
     // Disconnect socket
     if (S.socket) {

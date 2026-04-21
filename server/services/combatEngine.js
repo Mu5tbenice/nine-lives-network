@@ -152,6 +152,81 @@ function getZoneBonus(zoneId) {
   return zoneBonusCache.get(String(zoneId)) || null;
 }
 
+// ─── PER-ZONE METRICS (§9.50) ─────────────────────────────────────────
+// Accumulate damage/heals/kos deltas on each nine's transient fields
+// (_sessionDmgDelta / _sessionHealsDelta / _sessionKosDelta) as combat
+// resolves. At end of each tickZone, flush non-zero rows as a batched
+// read-modify-write upsert into player_zone_metrics. Single-writer per
+// zone (the tick loop), so no DB-side races. Wrapped in try/catch so
+// combat continues when the migration hasn't been applied — after the
+// first 42P01 we latch _metricsTableMissing to stop retrying until
+// process restart.
+let _metricsTableMissing = false;
+function trackMetric(nine, stat, amount) {
+  if (!nine || !amount) return;
+  if (stat === 'damage')     nine._sessionDmgDelta   = (nine._sessionDmgDelta   || 0) + amount;
+  else if (stat === 'heals') nine._sessionHealsDelta = (nine._sessionHealsDelta || 0) + amount;
+  else if (stat === 'kos')   nine._sessionKosDelta   = (nine._sessionKosDelta   || 0) + amount;
+}
+async function flushZoneMetrics(zoneId, zs) {
+  if (_metricsTableMissing) return;
+  const deltas = [];
+  zs.nines.forEach((n) => {
+    const d = n._sessionDmgDelta | 0;
+    const h = n._sessionHealsDelta | 0;
+    const k = n._sessionKosDelta | 0;
+    if (!d && !h && !k) return;
+    if (!n.playerId) return;
+    deltas.push({ player_id: n.playerId, damage: d, heals: h, kos: k });
+    n._sessionDmgDelta = 0;
+    n._sessionHealsDelta = 0;
+    n._sessionKosDelta = 0;
+  });
+  if (!deltas.length) return;
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const zid = Number(zoneId);
+    const pids = deltas.map((d) => d.player_id);
+    const { data: existing, error: rerr } = await supabaseAdmin
+      .from('player_zone_metrics')
+      .select('player_id,damage,heals,kos')
+      .eq('zone_id', zid)
+      .eq('metric_date', today)
+      .in('player_id', pids);
+    if (rerr) {
+      if (rerr.code === '42P01' || /relation .* does not exist/i.test(rerr.message || '')) {
+        _metricsTableMissing = true;
+        console.warn('[§9.50] player_zone_metrics table missing — run the migration (see PR docs). Skipping metric flush until restart.');
+        return;
+      }
+      console.error('[§9.50 read]', rerr.message);
+      return;
+    }
+    const existingMap = new Map((existing || []).map((r) => [r.player_id, r]));
+    const upserts = deltas.map((r) => {
+      const cur = existingMap.get(r.player_id) || { damage: 0, heals: 0, kos: 0 };
+      return {
+        player_id: r.player_id,
+        zone_id: zid,
+        metric_date: today,
+        damage: (cur.damage || 0) + r.damage,
+        heals:  (cur.heals  || 0) + r.heals,
+        kos:    (cur.kos    || 0) + r.kos,
+        updated_at: new Date().toISOString(),
+      };
+    });
+    const { error: uerr } = await supabaseAdmin
+      .from('player_zone_metrics')
+      .upsert(upserts, { onConflict: 'player_id,zone_id,metric_date' });
+    if (uerr) {
+      if (uerr.code === '42P01') { _metricsTableMissing = true; return; }
+      console.error('[§9.50 upsert]', uerr.message);
+    }
+  } catch (e) {
+    console.error('[§9.50 flush]', e.message);
+  }
+}
+
 // ─── ENGINE STATE ─────────────────────────────────────────────────────
 const zones = new Map();
 let _tickInt = null;
@@ -451,10 +526,10 @@ function applyEffect(caster, target, card, all) {
       {
         const a = pickHealTarget(caster, all);
         const amt = Math.floor(caster.maxHp * 0.07 * amp * hamp);
-        a.hp = Math.min(
-          a.maxHp,
-          a.hp + (a.witherActive > 0 ? Math.floor(amt * 0.5) : amt),
-        );
+        const raw = a.witherActive > 0 ? Math.floor(amt * 0.5) : amt;
+        const before = a.hp;
+        a.hp = Math.min(a.maxHp, a.hp + raw);
+        trackMetric(caster, 'heals', a.hp - before);
       }
       break;
     case 'BLESS':
@@ -468,10 +543,10 @@ function applyEffect(caster, target, card, all) {
               inRange(caster, n, SPELL_RANGE.aoe_self),
           )
           .forEach((a) => {
-            a.hp = Math.min(
-              a.maxHp,
-              a.hp + (a.witherActive > 0 ? Math.floor(amt * 0.5) : amt),
-            );
+            const raw = a.witherActive > 0 ? Math.floor(amt * 0.5) : amt;
+            const before = a.hp;
+            a.hp = Math.min(a.maxHp, a.hp + raw);
+            trackMetric(caster, 'heals', a.hp - before);
           });
       }
       break;
@@ -560,10 +635,13 @@ function applyEffect(caster, target, card, all) {
           const ct = others[Math.floor(Math.random() * others.length)];
           const d = baseDmg(caster.stats.atk, ct.stats.def);
           ct.hp = Math.max(0, ct.hp - d);
+          trackMetric(caster, 'damage', d);
           ct._lastHitBy = caster.playerName;
           ct._lastHitById = caster.playerId;
-          if (ct.hp <= 0)
+          if (ct.hp <= 0) {
             caster._killsThisRound = (caster._killsThisRound || 0) + 1;
+            trackMetric(caster, 'kos', 1);
+          }
           broadcast(caster.zoneId, 'combat:attack', {
             attacker: caster.playerName,
             defender: ct.playerName,
@@ -690,6 +768,8 @@ function resolveAttack(caster, defender, all) {
   if (defender.reflectReady && !caster._pierce) {
     defender.reflectReady = false;
     caster.hp = Math.max(0, caster.hp - dmg);
+    trackMetric(defender, 'damage', dmg);
+    if (caster.hp <= 0) trackMetric(defender, 'kos', 1);
     broadcast(caster.zoneId, 'combat:attack', {
       attacker: defender.playerName,
       defender: caster.playerName,
@@ -727,6 +807,7 @@ function resolveAttack(caster, defender, all) {
     defender.anchorUp = false;
   }
   defender.hp = Math.max(0, defender.hp - dmg);
+  trackMetric(caster, 'damage', dmg);
   // Hit flinch: push defender away from attacker
   if (defender.hp > 0) {
     const _fa = Math.atan2(defender.y - caster.y, defender.x - caster.x);
@@ -745,10 +826,10 @@ function resolveAttack(caster, defender, all) {
     caster.hp = Math.max(0, caster.hp - Math.floor(dmg * 0.18));
   // BURN damage handled in tick loop (like POISON) — removed from here
   if (caster.drainActive && dmg > 0) {
-    caster.hp = Math.min(
-      caster.maxHp,
-      caster.hp + Math.max(1, Math.floor(dmg * 0.2)),
-    );
+    const drain = Math.max(1, Math.floor(dmg * 0.2));
+    const before = caster.hp;
+    caster.hp = Math.min(caster.maxHp, caster.hp + drain);
+    trackMetric(caster, 'heals', caster.hp - before);
     caster.drainActive = false;
   }
   if (caster.hexAmt > 0) caster.hexAmt = Math.max(0, caster.hexAmt - 3);
@@ -760,6 +841,7 @@ function resolveAttack(caster, defender, all) {
     // Track kills for round KO board
     if (defender.hp <= 0 && !defender.waitingForRound) {
       caster._killsThisRound = (caster._killsThisRound || 0) + 1;
+      trackMetric(caster, 'kos', 1);
     }
   }
 
@@ -816,9 +898,13 @@ function handleKO(nine, zoneId, all) {
       )
       .forEach((n) => {
         n.hp = Math.max(0, n.hp - d);
+        trackMetric(nine, 'damage', d);
         n._lastHitBy = nine.playerName;
         n._lastHitById = nine.playerId;
-        if (n.hp <= 0) nine._killsThisRound = (nine._killsThisRound || 0) + 1;
+        if (n.hp <= 0) {
+          nine._killsThisRound = (nine._killsThisRound || 0) + 1;
+          trackMetric(nine, 'kos', 1);
+        }
       });
     broadcast(zoneId, 'combat:effect', {
       effect: 'SHATTER',
@@ -902,6 +988,10 @@ async function tickZone(zoneId, zs) {
       if (!n._poisonNextAt || nowTs >= n._poisonNextAt) {
         const dot = Math.floor(n.maxHp * 0.03 * n.poisonStacks);
         n.hp = Math.max(0, n.hp - dot);
+        if (n._dotAppliedById) {
+          const applier = all.find((x) => x.playerId === n._dotAppliedById);
+          if (applier) trackMetric(applier, 'damage', dot);
+        }
         n._poisonNextAt = nowTs + 1500;
         n._poisonFires = (n._poisonFires || 0) + 1;
         if (n._poisonFires >= 3) {
@@ -932,6 +1022,10 @@ async function tickZone(zoneId, zs) {
       if (!n._burnNextAt || nowTs >= n._burnNextAt) {
         const bdot = n.burnStacks * 6;
         n.hp = Math.max(0, n.hp - bdot);
+        if (n._dotAppliedById) {
+          const applier = all.find((x) => x.playerId === n._dotAppliedById);
+          if (applier) trackMetric(applier, 'damage', bdot);
+        }
         n._burnNextAt = nowTs + 1000;
         n.burnTimer = Math.max(0, n.burnTimer - 1.0); // burn timer in seconds
         if (n.burnTimer <= 0) n.burnStacks = 0;
@@ -1161,6 +1255,13 @@ async function tickZone(zoneId, zs) {
         });
     }
   }
+
+  // §9.50 metrics flush — fire-and-forget so combat latency is unaffected.
+  // Safe-by-default: errors are caught inside flushZoneMetrics and the
+  // table-missing case latches so we don't re-hit a bad state every tick.
+  flushZoneMetrics(zoneId, zs).catch((e) =>
+    console.error('[§9.50 flush outer]', e.message),
+  );
 }
 
 // ─── ROUND END ────────────────────────────────────────────────────────

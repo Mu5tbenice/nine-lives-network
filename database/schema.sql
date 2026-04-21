@@ -539,6 +539,23 @@ CREATE TABLE player_weekly_rewards (
     claimed_at timestamp with time zone DEFAULT now()
 );
 
+-- §9.50 per-zone session metrics. Daily rollover is implicit via metric_date
+-- defaulting to (now() AT TIME ZONE 'UTC')::date — no cron needed.
+-- Writes: combatEngine batches deltas per-tick and calls a read+upsert
+-- sequence (single-writer per zone, so safe without PL/pgSQL). Reads:
+-- /api/zones/:zone_id/metrics. Idempotent migration — safe to re-run.
+CREATE TABLE IF NOT EXISTS player_zone_metrics (
+    player_id integer NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+    zone_id integer NOT NULL REFERENCES zones(id) ON DELETE CASCADE,
+    metric_date date NOT NULL DEFAULT ((now() AT TIME ZONE 'UTC')::date),
+    damage integer NOT NULL DEFAULT 0,
+    heals integer NOT NULL DEFAULT 0,
+    kos integer NOT NULL DEFAULT 0,
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (player_id, zone_id, metric_date)
+);
+CREATE INDEX IF NOT EXISTS idx_pzm_zone_date ON player_zone_metrics(zone_id, metric_date);
+
 CREATE TABLE players (
     id integer NOT NULL,
     twitter_handle character varying NOT NULL,

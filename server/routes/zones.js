@@ -1292,4 +1292,58 @@ router.post('/:zoneId/rejoin', async (req, res) => {
 
 // ── GET /api/leaderboard/season — top N players by season_points ──────
 
+// ═══════════════════════════════════════════════════════════════════════
+// GET /api/zones/:zone_id/metrics  (§9.50)
+// Per-zone session metrics for today (UTC). Returns empty array when the
+// player_zone_metrics table hasn't been migrated yet so the client can
+// fall back to its localStorage cache.
+// ═══════════════════════════════════════════════════════════════════════
+router.get('/:zone_id/metrics', async (req, res) => {
+  try {
+    const zoneId = parseInt(req.params.zone_id, 10);
+    if (!Number.isFinite(zoneId)) return res.status(400).json({ error: 'invalid zone_id' });
+    const today = new Date().toISOString().slice(0, 10);
+
+    const { data: rows, error } = await supabaseAdmin
+      .from('player_zone_metrics')
+      .select('player_id, damage, heals, kos')
+      .eq('zone_id', zoneId)
+      .eq('metric_date', today);
+
+    if (error) {
+      const msg = error.message || '';
+      if (error.code === '42P01' || /relation .* does not exist/i.test(msg) || /player_zone_metrics/.test(msg)) {
+        // Table not migrated yet — soft-empty so client uses localStorage.
+        return res.json({ players: [], note: 'metrics_table_missing' });
+      }
+      console.error('[§9.50 zones/metrics]', msg);
+      return res.status(500).json({ error: msg });
+    }
+
+    const pids = (rows || []).map((r) => r.player_id);
+    const nameMap = new Map();
+    if (pids.length) {
+      const { data: pls } = await supabaseAdmin
+        .from('players')
+        .select('id, twitter_handle, guild_tag')
+        .in('id', pids);
+      (pls || []).forEach((p) => nameMap.set(p.id, p));
+    }
+
+    const players = (rows || []).map((r) => ({
+      player_id: r.player_id,
+      name: nameMap.get(r.player_id)?.twitter_handle || String(r.player_id),
+      guild: nameMap.get(r.player_id)?.guild_tag || '',
+      damage: r.damage || 0,
+      heals: r.heals || 0,
+      kos: r.kos || 0,
+    }));
+
+    res.json({ players });
+  } catch (e) {
+    console.error('[§9.50 zones/metrics]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;
