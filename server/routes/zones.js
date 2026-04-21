@@ -246,9 +246,13 @@ router.post('/deploy', async (req, res) => {
       success: true,
       deployment,
       points_earned: ZONE_POINTS.DEPLOY,
+      // §9.52: dropped the "1.5× ATK bonus active" Lone Wolf copy — that
+      // bonus was removed in the V4 combat rework and never existed in
+      // the live engine (see combatEngine.js buildNineState). Lone Wolf
+      // is now purely the no-guild default, no mechanical advantage.
       message: player?.guild_tag
         ? `Deployed to zone ${zone_id}! Fighting for ${player.guild_tag} (+${ZONE_POINTS.DEPLOY} pts)`
-        : `Lone Wolf deployed! 1.5× ATK bonus active. (+${ZONE_POINTS.DEPLOY} pts)`,
+        : `Lone Wolf deployed to zone ${zone_id}! (+${ZONE_POINTS.DEPLOY} pts)`,
       is_lone_wolf: !player?.guild_tag,
     });
   } catch (err) {
