@@ -1086,6 +1086,23 @@
       #deploy-sort-bar > span { font-size:14px !important; }
       #deploy-auto-rejoin-label { font-size:14px !important; }
 
+      /* §9.51: hard-cap the deploy modal width so no inner row can push
+         past the viewport, and give the sort bar permission to wrap
+         instead of forcing a horizontal overflow. Root cause: PR #161's
+         14px readability floor on .deploy-sort-btn bumped the sort row
+         from ~5px font to 14px + 10px padding, total ~510px at 393px
+         viewport. .deploy-inner had no explicit width (only max-width
+         520px) and no box-sizing:border-box, so the widest child
+         dictated the inner's width; .deploy-modal had no overflow-x
+         clip, so the spill became a horizontal scroll. */
+      .deploy-modal   { overflow-x: hidden; }
+      .deploy-inner   { width: 100%; max-width: 100vw; box-sizing: border-box; }
+      .deploy-stats-preview,
+      #deploy-sort-bar,
+      #deploy-card-grid-wrap,
+      .deploy-selected-row { box-sizing: border-box; max-width: 100%; }
+      #deploy-sort-bar { flex-wrap: wrap; row-gap: 6px; }
+
       /* Hide desktop elements on mobile */
       #arena-tray-tabs { display:none; }
       #arena-tray-body { display:none; }
