@@ -313,17 +313,26 @@ function cardCfg(nine) {
 }
 
 function pickTarget(nine, all) {
-  // TAUNT overrides everything
+  // TAUNT overrides everything. §9.52: true FFA — a taunter pulls every
+  // other nine, including same-guild. Guild tag is cosmetic; hostile
+  // aggro ignores it.
   const taunter = all.find(
-    (n) => n.hp > 0 && n.guildTag !== nine.guildTag && n.tauntActive,
+    (n) =>
+      n.hp > 0 &&
+      n.deploymentId !== nine.deploymentId &&
+      n.tauntActive,
   );
   if (taunter) {
     nine._currentTarget = taunter.deploymentId;
     return taunter;
   }
 
-  // All attacks are ranged — no distance check needed. Any enemy on the zone is valid.
-  const enemies = all.filter((n) => n.hp > 0 && n.guildTag !== nine.guildTag);
+  // All attacks are ranged — no distance check needed. Any other nine on
+  // the zone is a valid target. §9.52: dropped the `guildTag !== …` clause
+  // so guildmates are attackable in true FFA.
+  const enemies = all.filter(
+    (n) => n.hp > 0 && n.deploymentId !== nine.deploymentId,
+  );
   if (!enemies.length) {
     nine._currentTarget = null;
     return null;
@@ -384,7 +393,12 @@ function updateDest(nine, all) {
     return;
   }
 
-  const enemies = all.filter((n) => n.hp > 0 && n.guildTag !== nine.guildTag);
+  // §9.52: hostile-card positioning uses every other nine as a potential
+  // anchor. `allies` stays guild-filtered — it's only read by the
+  // `ally_cluster` (support) movement branch below.
+  const enemies = all.filter(
+    (n) => n.hp > 0 && n.deploymentId !== nine.deploymentId,
+  );
   const allies = all.filter(
     (n) =>
       n.hp > 0 &&
@@ -569,11 +583,13 @@ function applyEffect(caster, target, card, all) {
       caster.tauntActive = true;
       break;
     case 'SILENCE': {
+      // §9.52: hostile. Pulls any other nine within mid range regardless
+      // of guild, highest ATK wins.
       const st = all
         .filter(
           (n) =>
             n.hp > 0 &&
-            n.guildTag !== caster.guildTag &&
+            n.deploymentId !== caster.deploymentId &&
             inRange(caster, n, SPELL_RANGE.mid),
         )
         .reduce((b, n) => (n.stats.atk > b.stats.atk ? n : b), {
@@ -624,10 +640,12 @@ function applyEffect(caster, target, card, all) {
       break;
     case 'CHAIN':
       {
+        // §9.52: hostile bounce. Any nine in range besides the caster
+        // and the primary target is a valid bounce — guildmates included.
         const others = all.filter(
           (n) =>
             n.hp > 0 &&
-            n.guildTag !== caster.guildTag &&
+            n.deploymentId !== caster.deploymentId &&
             n.deploymentId !== target?.deploymentId &&
             inRange(caster, n, SPELL_RANGE.melee * 1.5),
         );
@@ -891,10 +909,14 @@ function handleKO(nine, zoneId, all) {
   // On-death effects
   if (nine.cards.some((c) => c.effect_1 === 'SHATTER')) {
     const d = Math.floor(nine.maxHp * 0.1);
+    // §9.52: hostile on-death AOE — hits any surviving nine within 120px
+    // besides the dead caster. Guild-indiscriminate.
     all
       .filter(
         (n) =>
-          n.hp > 0 && n.guildTag !== nine.guildTag && inRange(nine, n, 120),
+          n.hp > 0 &&
+          n.deploymentId !== nine.deploymentId &&
+          inRange(nine, n, 120),
       )
       .forEach((n) => {
         n.hp = Math.max(0, n.hp - d);
@@ -915,8 +937,10 @@ function handleKO(nine, zoneId, all) {
     });
   }
   if (nine.cards.some((c) => c.effect_1 === 'INFECT')) {
+    // §9.52: hostile on-death plague — poisons every surviving nine on
+    // the zone besides the dead caster, irrespective of guild.
     all
-      .filter((n) => n.hp > 0 && n.guildTag !== nine.guildTag)
+      .filter((n) => n.hp > 0 && n.deploymentId !== nine.deploymentId)
       .forEach((n) => {
         n.poisonStacks = Math.min(3, (n.poisonStacks || 0) + 1);
         n.poisonTimer = Math.max(n.poisonTimer || 0, 12);
@@ -926,11 +950,14 @@ function handleKO(nine, zoneId, all) {
       by: nine.playerName,
     });
   }
+  // §9.52: FEAST is a personal on-KO heal trigger — any surviving nine
+  // holding a FEAST card heals when anyone else dies. Dropped the
+  // guild filter so guildmates' deaths also feed FEAST-holders in FFA.
   all
     .filter(
       (n) =>
         n.hp > 0 &&
-        n.guildTag !== nine.guildTag &&
+        n.deploymentId !== nine.deploymentId &&
         n.cards.some((c) => c.effect_1 === 'FEAST'),
     )
     .forEach(
@@ -1082,7 +1109,11 @@ async function tickZone(zoneId, zs) {
     if (n.hp > 0) stepPos(n);
   });
 
-  // Combat — skip nines waiting for next round
+  // Combat — skip nines waiting for next round. §9.52: FFA gate — combat
+  // proceeds whenever any OTHER live nine shares the zone, regardless of
+  // guild. Previously the predicate required `guildTag !== nine.guildTag`
+  // which stalled the round to hard-cap when the only survivors were all
+  // same-guild.
   for (const nine of all) {
     if (nine.hp <= 0 || nine.waitingForRound || nine.withdrawn) continue;
     const enemies = all.filter(
@@ -1090,7 +1121,7 @@ async function tickZone(zoneId, zs) {
         n.hp > 0 &&
         !n.waitingForRound &&
         !n.withdrawn &&
-        n.guildTag !== nine.guildTag,
+        n.deploymentId !== nine.deploymentId,
     );
     if (!enemies.length) continue;
 
@@ -1592,13 +1623,17 @@ async function loadDeploymentIntoEngine(dep) {
   );
   if (dep.current_hp > 0) state.hp = Math.min(state.maxHp, dep.current_hp);
 
-  // Zone bonus: plaguemire — newly deployed Nine enters with enemies pre-poisoned
-  // We apply 1 POISON stack to all existing enemies on the zone
+  // Zone bonus: plaguemire — newly deployed Nine enters with existing
+  // nines pre-poisoned. §9.52: FFA — poisons every existing live nine on
+  // the zone except the newly-deployed caster itself, guild-indiscriminate.
   if (zoneBonus?.bonus?.key === 'poison_aura') {
     const zs = zones.get(zoneId);
     if (zs) {
       for (const existing of zs.nines.values()) {
-        if (existing.guildTag !== state.guildTag && existing.hp > 0) {
+        if (
+          existing.hp > 0 &&
+          existing.deploymentId !== state.deploymentId
+        ) {
           existing.poisonStacks = Math.min(3, (existing.poisonStacks || 0) + 1);
           if (!existing._poisonNextAt || Date.now() > existing._poisonNextAt)
             existing._poisonNextAt = Date.now() + 1500;

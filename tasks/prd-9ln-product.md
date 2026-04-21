@@ -1447,6 +1447,41 @@ Only 2 occurrences of `box-sizing: border-box` in the entire file — it's not s
 
 Regression status: code-review only (Claude Code CLI has no browser capability). Manual browser validation at 393×852 is the reviewer's responsibility before merge. No JS changes, no server changes, no other UI changes bundled in — scope held at pure CSS as requested.
 
+**Follow-up resolved 2026-04-21 in PR #165.** PR #164's grouped selector omitted `.deploy-house-tabs`, so on mobile the 10-tab row (ALL + 9 houses × 40px + 6px gaps ≈ 454px) still sized itself to content — past `.deploy-inner`'s 100vw cap. Because the flex item's default `min-width: auto` resolved to the content width, the tabs container had no bounded width for `overflow-x: auto` to clip against, and the row clipped at the modal's right edge instead of scrolling as designed. Fix: add `.deploy-house-tabs` to the grouped `max-width: 100%; box-sizing: border-box` selector and include `min-width: 0` in the shared declaration so the container can shrink below its intrinsic content width. `min-width: 0` is a no-op for the other four rows that already don't overflow their content, but required for the tabs row to let `overflow-x: auto` take effect. Desktop untouched.
+
+### 9.52 Combat not true FFA — guildmates skip hostile logic in 10 combat sites
+
+**Symptom.** Per PRD §7 / Effects Reference, combat is meant to be true FFA — guild tags are cosmetic/organizational only, and only support effects (HEAL, BLESS, INSPIRE, and `ally_cluster` support-card positioning) treat guildmates as allies. In practice every hostile site in `server/services/combatEngine.js` filtered by `n.guildTag !== … .guildTag`: auto-attacks, TAUNT aggro, CHAIN secondary bounce, SILENCE, SHATTER/INFECT on-death AOE, FEAST on-KO trigger, plaguemire `poison_aura` on-deploy, hostile-card standoff positioning, and — most severely — the tick-loop fight gate. Net effect: guildmates never attacked each other; a zone that reached a same-guild-only survivor state stalled silently for the remaining 5-minute round cap; TAUNT's aggro-override didn't pull guildmates; CHAIN bounces and on-death AOEs skipped half the battlefield.
+
+Display of the bug was intermittent because mixed-guild rounds masked most of it — the tick-loop stall only manifested after one side "cleaned up" and the survivors happened to share a tag. The stale Lone Wolf copy in the deploy API response (`"1.5× ATK bonus active"`) was a second, latent UI regression: the engine never applied that bonus (removed in V4), but the success message still advertised it to every guildless deploy.
+
+**Root cause.** Every hostile predicate in `combatEngine.js` carried a guild clause copied from an earlier team-vs-team mode that predated V4 FFA. No `isAlly` / `isEnemy` helper exists in the engine — the guild checks were inline and drifted independently as effects were added. The design drift was never surfaced in a single audit, so the fixes accumulated instead of being removed. The V4 FFA decision is recorded in code only via a single comment at `combatEngine.js:257` (`"no lone_wolf ATK bonus — FFA makes it irrelevant"`).
+
+**Resolved 2026-04-21 in PR #165.** Three commits:
+
+1. **`fix(combat): remove guild filters from hostile logic`** — swapped the `n.guildTag !== caster.guildTag` predicate for `n.deploymentId !== caster.deploymentId` at every hostile site so self is excluded but every other nine is a valid target/victim regardless of guild. Sites touched:
+   - `pickTarget` — TAUNT aggro and the auto-attack enemy list
+   - `updateDest` — the `enemies` list for hostile-card standoff (`allies` stays guild-filtered because it's read only by the `ally_cluster` support branch)
+   - `applyEffect/SILENCE` — mid-range highest-ATK target
+   - `applyEffect/CHAIN` — secondary bounce in 1.5× melee range
+   - `handleKO/SHATTER` — 120px on-death AOE
+   - `handleKO/INFECT` — zone-wide on-death poison
+   - `handleKO/FEAST` — on-KO heal for surviving FEAST-card holders
+   - `loadDeploymentIntoEngine` — plaguemire `poison_aura` pre-poison on deploy
+   - `tickZone` main loop — fight gate: was `"another nine with different guild exists"`, now `"another live nine exists"`. This was the most severe latent bug — stalled round to hard cap whenever survivors shared a tag.
+2. **`fix(api): drop stale Lone Wolf 1.5× ATK copy from deploy response`** — `server/routes/zones.js:251` deploy-success message no longer advertises a bonus the engine hasn't applied since V4.
+3. **Docs commit** (this entry).
+
+**Unchanged — correct by design.** Four sites in the engine keep `n.guildTag === caster.guildTag`: `pickHealTarget` (HEAL target selection), BLESS AOE heal, INSPIRE zone-wide buff, and the `ally_cluster` movement branch in `updateDest`. These are the support-side places where guildmates legitimately are allies.
+
+**Unchanged — out of scope.** Round-end guild scoring (`n.guildTag === winner` for +8 control / +15 flip) and the "last guild standing" round-termination rule stay as-is. FFA per-tick combat correctness doesn't require scoring changes; Spencer makes that decision separately. All display/persistence `guildTag` reads (broadcasts, KO events, leaderboard reads, DB upserts, chat tags) also unchanged — `guildTag` remains a valid metadata field.
+
+**Dormant code noted.** `server/services/arena-engine.js` contains an `isAlly()` helper and 20+ guild checks. That engine is never required by `server/index.js` and does not run in production — left untouched. If it's ever revived, its guild logic will need the same FFA audit.
+
+Regression status: code-review only — Claude Code CLI can't spin up a live combat tick loop. Live playtest is the real validation; simulation doesn't cover guild-composition edge cases (e.g., all-same-guild survivors, TAUNT from a guildmate, FEAST chains across guild lines).
+
+**Follow-up.** Optional: introduce an `isAlly(nine, other)` helper to prevent this exact drift from recurring. Currently every support filter inlines `n.guildTag === caster.guildTag && n.deploymentId !== caster.deploymentId`; a named helper would make the design intent self-documenting. Not required for the fix.
+
 ---
 
 ## Appendix A — Glossary
