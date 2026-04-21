@@ -3542,7 +3542,10 @@
       });
 
       updateHpStrip();
-      renderGuildSidebar();
+      // §9.49 HP-live: in-place patch instead of full innerHTML rebuild so
+      // the HP-bar width transition animates. Falls back to full rebuild on
+      // signature change (membership / sort / view).
+      _updateSidebarHpInPlace();
     });
 
     socket.on('arena:nine_left', (data) => removeNineSprite(String(data.nine_id)));
@@ -4913,12 +4916,13 @@
       });
     }
     const emptyHTML = `<div style="padding:14px;font-family:'Crimson Text',serif;font-size:14px;color:rgba(255,255,255,0.25)">${isRound ? 'No action yet this round' : 'No fighters on this zone'}</div>`;
+    const sortField = S._sidebarSort || 'hp';
     if (!fighters.length) {
       if (desktopEl) desktopEl.innerHTML = emptyHTML;
       if (mobileEl)  mobileEl.innerHTML  = emptyHTML;
+      S._sidebarRenderedSig = '::' + sortField + '::' + (isRound ? 'R' : 'S');
       return;
     }
-    const sortField = S._sidebarSort || 'hp';
     fighters.sort((a, b) => {
       if (sortField === 'hp')     return b.hp - a.hp;
       if (sortField === 'damage') return (b.damage||0) - (a.damage||0);
@@ -4936,7 +4940,9 @@
       const dmg = f.damage || 0;
       const heals = f.heals || 0;
       const kos = f.kos || 0;
-      return `<div style="padding:8px 12px;${i<fighters.length-1?'border-bottom:1px solid rgba(255,255,255,0.06)':''};${f.isMe?'background:rgba(212,166,75,0.07);':''}${!f.live?'opacity:0.55;':''}"
+      const dmgTxt = dmg > 999 ? (dmg/1000).toFixed(1)+'k' : String(dmg);
+      const healsTxt = heals > 999 ? (heals/1000).toFixed(1)+'k' : String(heals);
+      return `<div data-fighter-id="${f.id}" style="padding:8px 12px;${i<fighters.length-1?'border-bottom:1px solid rgba(255,255,255,0.06)':''};${f.isMe?'background:rgba(212,166,75,0.07);':''}${!f.live?'opacity:0.55;':''}"
         onclick="window._showFighterPopup&&window._showFighterPopup('${f.id}')" style="cursor:pointer;"
                 onmouseenter="window.highlightGuild&&window.highlightGuild('${f.guild}')"
         onmouseleave="window.resetGuildHighlight&&window.resetGuildHighlight()">
@@ -4944,22 +4950,22 @@
           <div style="width:8px;height:8px;border-radius:50%;background:${hc};box-shadow:0 0 6px ${hc};flex-shrink:0;margin-top:1px;"></div>
           <div style="font-family:'Cinzel',serif;font-size:15px;font-weight:700;color:${f.isMe?'var(--gold)':'var(--bright)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;line-height:1.2;">${f.name}</div>
           ${f.guild && f.guild !== 'lone_wolf' && !f.guild.startsWith('lone_wolf') ?`<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:${hc};opacity:0.7;flex-shrink:0;">[${f.guild}]</div>`:''}
-          <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:${hpC};flex-shrink:0;">${Math.round(f.hp)}</div>
+          <div data-fighter-hp-num style="font-family:'Press Start 2P',monospace;font-size:9px;color:${hpC};flex-shrink:0;">${Math.round(f.hp)}</div>
         </div>
         <div style="height:4px;background:rgba(0,0,0,0.4);border-radius:2px;overflow:hidden;margin-bottom:5px;">
-          <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,${hpC}66,${hpC});border-radius:2px;transition:width 0.4s;"></div>
+          <div data-fighter-hp-bar style="width:${pct}%;height:100%;background:linear-gradient(90deg,${hpC}66,${hpC});border-radius:2px;transition:width 0.4s;"></div>
         </div>
         <div style="display:flex;gap:10px;">
           <div style="display:flex;flex-direction:column;align-items:center;min-width:40px;">
-            <span style="font-family:'Press Start 2P',monospace;font-size:9px;color:#e85a6a;">${dmg > 999 ? (dmg/1000).toFixed(1)+'k' : dmg}</span>
+            <span data-fighter-dmg style="font-family:'Press Start 2P',monospace;font-size:9px;color:#e85a6a;">${dmgTxt}</span>
             <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.3);margin-top:2px;">DMG</span>
           </div>
           <div style="display:flex;flex-direction:column;align-items:center;min-width:40px;">
-            <span style="font-family:'Press Start 2P',monospace;font-size:9px;color:#44cc88;">${heals > 999 ? (heals/1000).toFixed(1)+'k' : heals}</span>
+            <span data-fighter-heals style="font-family:'Press Start 2P',monospace;font-size:9px;color:#44cc88;">${healsTxt}</span>
             <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.3);margin-top:2px;">HEAL</span>
           </div>
           <div style="display:flex;flex-direction:column;align-items:center;min-width:30px;">
-            <span style="font-family:'Press Start 2P',monospace;font-size:9px;color:#ffaa44;">${kos}</span>
+            <span data-fighter-kos style="font-family:'Press Start 2P',monospace;font-size:9px;color:#ffaa44;">${kos}</span>
             <span style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.3);margin-top:2px;">KOs</span>
           </div>
         </div>
@@ -4967,7 +4973,88 @@
     }).join('');
     if (desktopEl) desktopEl.innerHTML = html;
     if (mobileEl)  mobileEl.innerHTML  = html;
+    // §9.49: cache signature so _updateSidebarHpInPlace can tell when a full
+    // rebuild is needed (membership / sort / view change) vs. an in-place patch.
+    S._sidebarRenderedSig = fighters.map(f => f.id).join('|') + '::' + sortField + '::' + (isRound ? 'R' : 'S');
   }
+
+  // §9.49 HP-live: surgical per-tick updates. The full renderGuildSidebar
+  // rebuilds innerHTML from scratch, which destroys DOM nodes every 200ms and
+  // prevents the CSS width transition from animating — bars appear static or
+  // imperceptibly subtle. This helper updates existing nodes in place so the
+  // transition runs. Falls back to a full rebuild when membership, sort field,
+  // or view changes (signature mismatch).
+  function _updateSidebarHpInPlace() {
+    const isRound = S._sidebarView === 'round';
+    const metrics = isRound ? S._roundMetrics : S.combatMetrics;
+    // Compute the same fighter list renderGuildSidebar would produce, in the
+    // same order. If the signature diverges from the last full render, hand
+    // off — we cannot safely patch stale DOM.
+    const fighters = [];
+    const seenIds = new Set();
+    S.nines.forEach((sp, id) => {
+      const m = metrics.get(String(id));
+      const ms = S.combatMetrics.get(String(id));
+      seenIds.add(String(id));
+      fighters.push({
+        id, hp: sp.hp || 0, maxHp: sp.maxHp || 1,
+        damage: m?.damage || 0, heals: m?.heals || 0, kos: m?.kos || 0,
+        live: true,
+      });
+    });
+    if (!isRound) {
+      S.combatMetrics.forEach((m, id) => {
+        if (seenIds.has(String(id))) return;
+        if (!m.name) return;
+        fighters.push({ id, hp: 0, maxHp: 1, damage: m.damage||0, heals: m.heals||0, kos: m.kos||0, live: false });
+      });
+    }
+    const sortField = S._sidebarSort || 'hp';
+    fighters.sort((a, b) => {
+      if (sortField === 'hp')     return b.hp - a.hp;
+      if (sortField === 'damage') return (b.damage||0) - (a.damage||0);
+      if (sortField === 'heals')  return (b.heals||0)  - (a.heals||0);
+      if (sortField === 'kos')    return (b.kos||0)    - (a.kos||0);
+      return b.hp - a.hp;
+    });
+    const sig = fighters.map(f => f.id).join('|') + '::' + sortField + '::' + (isRound ? 'R' : 'S');
+    if (sig !== S._sidebarRenderedSig) {
+      if (typeof console !== 'undefined' && console.debug) {
+        console.debug('[§9.49 HP-live] signature changed → full rebuild', { prev: S._sidebarRenderedSig, next: sig });
+      }
+      renderGuildSidebar();
+      return;
+    }
+    let patched = 0;
+    ['fighters-list','mob-fighters-list'].forEach(containerId => {
+      const root = document.getElementById(containerId);
+      if (!root) return;
+      fighters.forEach(f => {
+        const row = root.querySelector(`[data-fighter-id="${f.id}"]`);
+        if (!row) return;
+        const pct = Math.round((f.hp/f.maxHp)*100);
+        const hpC = pct > 50 ? '#44cc88' : pct > 25 ? '#ffaa44' : '#ff4466';
+        const bar = row.querySelector('[data-fighter-hp-bar]');
+        if (bar) {
+          bar.style.width = pct + '%';
+          bar.style.background = `linear-gradient(90deg,${hpC}66,${hpC})`;
+        }
+        const num = row.querySelector('[data-fighter-hp-num]');
+        if (num) { num.textContent = Math.round(f.hp); num.style.color = hpC; }
+        const dmgEl = row.querySelector('[data-fighter-dmg]');
+        if (dmgEl) dmgEl.textContent = f.damage > 999 ? (f.damage/1000).toFixed(1)+'k' : String(f.damage);
+        const healsEl = row.querySelector('[data-fighter-heals]');
+        if (healsEl) healsEl.textContent = f.heals > 999 ? (f.heals/1000).toFixed(1)+'k' : String(f.heals);
+        const kosEl = row.querySelector('[data-fighter-kos]');
+        if (kosEl) kosEl.textContent = String(f.kos);
+        patched++;
+      });
+    });
+    if (typeof console !== 'undefined' && console.debug) {
+      console.debug('[§9.49 HP-live] in-place patch', { rows: fighters.length, patched });
+    }
+  }
+  window._updateSidebarHpInPlace = _updateSidebarHpInPlace;
 
   // ── COMBAT STATS / CHART ──
   function trackCombatStat(id, name, guild, house, stat, amount) {
