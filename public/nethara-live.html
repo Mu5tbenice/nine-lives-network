@@ -2847,7 +2847,11 @@
         } else {
           const hData = HOUSES[h];
           if (hData?.crest) {
-            btn.innerHTML = `<img src="${hData.crest}" alt="${h}" onerror="this.style.display='none'"><span style="font-size:16px">${hData.icon||'?'}</span>`;
+            // §9.49: emoji fallback span starts hidden. If the crest image
+            // loads, only the image renders. If it 404s, onerror reveals the
+            // emoji and removes the broken image node so we never render both
+            // at once (previous markup left the span visible unconditionally).
+            btn.innerHTML = `<img src="${hData.crest}" alt="${h}" onerror="var s=this.nextElementSibling;if(s)s.style.display='inline-flex';this.remove();"><span style="display:none;font-size:16px">${hData.icon||'?'}</span>`;
           } else {
             btn.innerHTML = `<span>${hData?.icon || '?'}</span>`;
           }
