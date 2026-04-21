@@ -1447,7 +1447,7 @@ Only 2 occurrences of `box-sizing: border-box` in the entire file — it's not s
 
 Regression status: code-review only (Claude Code CLI has no browser capability). Manual browser validation at 393×852 is the reviewer's responsibility before merge. No JS changes, no server changes, no other UI changes bundled in — scope held at pure CSS as requested.
 
-**Follow-up resolved 2026-04-21 in PR #?.** PR #164's grouped selector omitted `.deploy-house-tabs`, so on mobile the 10-tab row (ALL + 9 houses × 40px + 6px gaps ≈ 454px) still sized itself to content — past `.deploy-inner`'s 100vw cap. Because the flex item's default `min-width: auto` resolved to the content width, the tabs container had no bounded width for `overflow-x: auto` to clip against, and the row clipped at the modal's right edge instead of scrolling as designed. Fix: add `.deploy-house-tabs` to the grouped `max-width: 100%; box-sizing: border-box` selector and include `min-width: 0` in the shared declaration so the container can shrink below its intrinsic content width. `min-width: 0` is a no-op for the other four rows that already don't overflow their content, but required for the tabs row to let `overflow-x: auto` take effect. Desktop untouched.
+**Follow-up resolved 2026-04-21 in PR #165.** PR #164's grouped selector omitted `.deploy-house-tabs`, so on mobile the 10-tab row (ALL + 9 houses × 40px + 6px gaps ≈ 454px) still sized itself to content — past `.deploy-inner`'s 100vw cap. Because the flex item's default `min-width: auto` resolved to the content width, the tabs container had no bounded width for `overflow-x: auto` to clip against, and the row clipped at the modal's right edge instead of scrolling as designed. Fix: add `.deploy-house-tabs` to the grouped `max-width: 100%; box-sizing: border-box` selector and include `min-width: 0` in the shared declaration so the container can shrink below its intrinsic content width. `min-width: 0` is a no-op for the other four rows that already don't overflow their content, but required for the tabs row to let `overflow-x: auto` take effect. Desktop untouched.
 
 ### 9.52 Combat not true FFA — guildmates skip hostile logic in 10 combat sites
 
@@ -1457,7 +1457,7 @@ Display of the bug was intermittent because mixed-guild rounds masked most of it
 
 **Root cause.** Every hostile predicate in `combatEngine.js` carried a guild clause copied from an earlier team-vs-team mode that predated V4 FFA. No `isAlly` / `isEnemy` helper exists in the engine — the guild checks were inline and drifted independently as effects were added. The design drift was never surfaced in a single audit, so the fixes accumulated instead of being removed. The V4 FFA decision is recorded in code only via a single comment at `combatEngine.js:257` (`"no lone_wolf ATK bonus — FFA makes it irrelevant"`).
 
-**Resolved 2026-04-21 in PR #?.** Three commits:
+**Resolved 2026-04-21 in PR #165.** Three commits:
 
 1. **`fix(combat): remove guild filters from hostile logic`** — swapped the `n.guildTag !== caster.guildTag` predicate for `n.deploymentId !== caster.deploymentId` at every hostile site so self is excluded but every other nine is a valid target/victim regardless of guild. Sites touched:
    - `pickTarget` — TAUNT aggro and the auto-attack enemy list
