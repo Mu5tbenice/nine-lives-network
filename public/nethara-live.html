@@ -2844,6 +2844,16 @@
   // re-pick every card just to tweak one.
   async function openDeployModal(opts) {
     if (!S.playerId) { alert('Please log in first'); return; }
+    // §9.60: build-change gating — already-deployed players can't rebuild
+    // mid-round. Silent-skip with a feed event; they can keep watching the
+    // spectacle. The §9.46 server guard will 423 any deploy during FIGHTING,
+    // but for NEW players (not yet deployed on this zone) we still open the
+    // modal so they can pick cards — their DEPLOY button shows the existing
+    // lockout countdown from the 423 handler at ~3220.
+    if (S._roundState === 'FIGHTING' && S.isDeployed) {
+      addFeedEvent('🔒 Deploy opens at round end', 'system');
+      return;
+    }
     const modal = document.getElementById('deploy-modal');
     if (!modal) return;
     const preselectCurrent = !!(opts && opts.preselectCurrent);

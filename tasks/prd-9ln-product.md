@@ -1353,6 +1353,8 @@ Diagnostic `console.log` retained for one smoke-test cycle per the §9.35/PR #15
 
 **Status: OPEN — FLAG_OFF awaiting playtest.** Close when the flag has been flipped in production and the mechanic has survived a week without regression reports. Separate PR will then update the Game Bible V4 → V5 to document the "deploy window" concept formally.
 
+**Resolved 2026-04-22 in PR #?.** Flipped `FEATURE_DEPLOY_LOCKOUT: false` → `true` in `server/config/flags.js` as part of the in-arena combat watch loop rework. Server guard at `routes/zones.js:55` now active — mid-round deploys respond 423. Rejoin endpoint (`/api/zones/:zoneId/rejoin`) is not behind the flag, so KO'd players' auto-rejoin + manual rejoin paths continue to work during FIGHTING. Paired with §9.60 (client-side guard) the effect is: already-deployed players can't rebuild mid-round (widget-gated CTA, feed-event silent-skip on openDeployModal); new players entering a zone mid-round can still open the modal and pick cards, and their confirm deploy hits the existing 423 countdown on the deploy button (implemented in the original §9.46 plumbing). Game Bible V4 → V5 update deferred to a separate doc PR.
+
 ### 9.47 Mobile visual follow-up — real-phone smoke test of PR #161
 
 **Symptom (user-reported 2026-04-20).** Phone smoke test of PR #161 on an actual Android device (not DevTools) surfaced seven distinct visual issues: (a) deploy modal ATK/HP/SPD/DEF/LCK preview row exceeded viewport width, clipping LCK at the right; (b) arena HUD portrait column too wide at 116px on 393px phone; (c) card slots partially off-screen — slot 3 unreachable because horizontal scroll was the PR #161 choice; (d) `LOADOUT` button truncated to `LOADOU`; (e) `AUTO-REJOIN: ON ✓` label wrapped to 3 vertical lines in the narrow col; (f) `#mob-nine-hp-text` "439/620" clipped at left edge because 7-char Press 2P 14px centered text overflowed the portrait col and cropped both sides; (g) STATS tab showed only the player's own stat bars instead of the fighters leaderboard the desktop sidebar shows — mobile users couldn't see other Nines in the zone. Plus: pre-deploy the mobile HUD rendered with empty portrait + "--/--" placeholders instead of getting out of the way for the JOIN BATTLE CTA. User also retracted the PR #161 client-side 60s countdown extension as misleading UX.
@@ -1581,6 +1583,23 @@ Interactions preserved: auto-rejoin still fires on `arena:round_start` via the e
 - Coordinated with §9.58: the KO widget moved from `top: 96px` to `bottom: 230px` so it sits above the HUD tray during intermission — round-end modal occupies the top-center slot; KO widget the bottom-center. They're fully visible simultaneously without overlap.
 
 CTA behavior (`_handleRoundEndAction` at `~4560`) is unchanged: auto-rejoin ON → CHANGE BUILD opens the preselected deploy modal; auto-rejoin OFF → the button flips the toggle on. The `§9.45` / `§9.47` / `§9.49` comments in that function still describe the correct invariants.
+
+### 9.60 Client-side deploy-modal gate: silent-skip during FIGHTING for already-deployed players
+
+**Symptom.** With `FEATURE_DEPLOY_LOCKOUT` flipping ON (§9.46 resolved), an already-deployed player clicking the SWAP or LOADOUT button during FIGHTING would see the deploy modal open, pick cards, and only discover the lockout when they hit the 423 countdown on the confirm button. The modal is visually loud (full-screen on mobile), so the UX was "the game tells me I can rebuild, then tells me I can't."
+
+**Resolved 2026-04-22 in PR #?.** Added an early guard in `openDeployModal` at `nethara-live.html:2845`:
+
+```javascript
+if (S._roundState === 'FIGHTING' && S.isDeployed) {
+  addFeedEvent('🔒 Deploy opens at round end', 'system');
+  return;
+}
+```
+
+`S.isDeployed` ensures new players (who haven't yet deployed on this zone) still see the modal so they can pick cards — their confirm flow hits the existing 423 countdown on the button, which is a clearer signal for first-time deployers. Already-deployed players get a lightweight feed event and keep watching the spectacle.
+
+Interactions: the round-end modal's CHANGE BUILD CTA opens `openDeployModal({preselectCurrent: true})` during INTERMISSION, which passes this gate (roundState is not FIGHTING). Auto-rejoin uses `/api/zones/:zoneId/rejoin`, which is not behind the lockout flag, so it's unaffected.
 
 ---
 
