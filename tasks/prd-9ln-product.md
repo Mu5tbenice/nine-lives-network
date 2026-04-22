@@ -1601,6 +1601,29 @@ if (S._roundState === 'FIGHTING' && S.isDeployed) {
 
 Interactions: the round-end modal's CHANGE BUILD CTA opens `openDeployModal({preselectCurrent: true})` during INTERMISSION, which passes this gate (roundState is not FIGHTING). Auto-rejoin uses `/api/zones/:zoneId/rejoin`, which is not behind the lockout flag, so it's unaffected.
 
+### 9.66 Spell projectiles don't linger — first light touch on combat pacing
+
+**Symptom (user-reported 2026-04-22).** Wray's combat-balance feedback: "fights feel a touch fast, with the animations not lingering enough on projectiles mainly to enjoy the chaos." The visual tell: a long-range DOT spell (up to 380 px per Game Bible §10) lands in roughly the same ~833 ms window as a short-range attack spell, because `animateSpellProjectile` used a fixed `FLIGHT_FRAMES = 50`. No distance scaling, so the spectacle is over before the player registers what happened.
+
+**Scope note.** This is a visual-only first touch on combat feel. Mechanical rebalance (damage formula, attack interval, slot bonuses) is a separate scoped review — deliberately not touching Game Bible §9 here. This PR is a sample to see whether slower projectiles alone move the needle on Wray's "enjoy the chaos" bar before we commit to deeper tuning.
+
+**Resolved 2026-04-22 in PR #?.** Replaced the fixed `FLIGHT_FRAMES = 50` at `public/nethara-live.html:8686` with distance-scaled frames mirroring the auto-attack pattern (`animateProjectileFromPos` at `~6916`):
+
+```javascript
+const dxFlight = endX - startX, dyFlight = endY - startY;
+const flightDist = Math.hypot(dxFlight, dyFlight) || 1;
+const FLIGHT_FRAMES = Math.round(Math.max(60, Math.min(110, 40 + flightDist * 0.25)));
+```
+
+At 60 fps this gives:
+- Melee range (~90 px): 62 frames → clamped to **60** (≈1.0 s).
+- Mid-range (~220 px): 95 frames (≈1.6 s).
+- Ranged (~380 px): 135 frames → clamped to **110** (≈1.8 s).
+
+Previous fixed 50 frames was ~0.83 s regardless of distance. New floor is already ~20 % longer than old ceiling, and long-range spells now get more than double the flight time. Trail particles (`frame % 3` cadence) scale with flight length for free since the ticker loop runs longer.
+
+No server or damage changes. Game Bible §9 formulas untouched — this is pure client animation timing. Awaiting Replit feel-check.
+
 ---
 
 ## Appendix A — Glossary

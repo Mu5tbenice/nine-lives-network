@@ -8683,7 +8683,13 @@
 
     // ── Trail particles ──
     const trail = [];
-    const FLIGHT_FRAMES = 50; // slower than auto-attack (was 35)
+    // §9.66: linger pass — scale flight time with travel distance so long-range
+    // spells feel like they travel, and all spells have more weight than the
+    // previous fixed 50-frame (~833ms) treatment. Matches the auto-attack
+    // distance-scaling pattern at `animateProjectileFromPos`.
+    const dxFlight = endX - startX, dyFlight = endY - startY;
+    const flightDist = Math.hypot(dxFlight, dyFlight) || 1;
+    const FLIGHT_FRAMES = Math.round(Math.max(60, Math.min(110, 40 + flightDist * 0.25)));
     let frame = 0;
 
     const ticker = () => {
