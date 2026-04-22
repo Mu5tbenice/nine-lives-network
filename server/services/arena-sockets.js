@@ -67,7 +67,10 @@ function setupArenaSockets(io, supabase) {
       if (data && data.zoneId) socket.leave(`zone_${data.zoneId}`);
     });
 
-    socket.on('chat:send', (data) => {
+    // §9.61: aligned on `zone:chat` (single symmetric name the client uses);
+    // this file is currently orphan (no import path from server/index.js) but
+    // keeping it consistent in case it's wired up later.
+    socket.on('zone:chat', (data) => {
       const zoneId = data.zoneId;
       const message = (data.message || '').trim().substring(0, 120);
       const handle = (data.handle || 'Anon').substring(0, 30);
@@ -75,7 +78,7 @@ function setupArenaSockets(io, supabase) {
       if (!zoneId || !message) return;
       arenaIO
         .to(`zone_${zoneId}`)
-        .emit('chat:message', { handle, guildTag, message, ts: Date.now() });
+        .emit('zone:chat', { handle, guildTag, message, ts: Date.now() });
     });
 
     socket.on('disconnect', () => {

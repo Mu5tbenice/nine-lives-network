@@ -1601,6 +1601,28 @@ if (S._roundState === 'FIGHTING' && S.isDeployed) {
 
 Interactions: the round-end modal's CHANGE BUILD CTA opens `openDeployModal({preselectCurrent: true})` during INTERMISSION, which passes this gate (roundState is not FIGHTING). Auto-rejoin uses `/api/zones/:zoneId/rejoin`, which is not behind the lockout flag, so it's unaffected.
 
+### 9.61 Arena chat broadcast silently broken — client/server event-name mismatch
+
+**Symptom (user-reported 2026-04-22 during PR #170 smoke test).** Typing a message in arena chat shows the message in the sender's feed (optimistic render) but no other browser in the same zone ever receives it. Chat looked alive to the sender; invisible to everyone else.
+
+**Root cause.** Two-way event-name mismatch on the `/arena` socket.io namespace, pre-existing on `main` before PR #170:
+
+- Client emits `zone:chat` (`public/nethara-live.html:5705`) → server's `/arena` handler had no listener for `zone:chat` → inbound messages dropped.
+- Server emits `chat:message` (`server/index.js:276`) → client had no listener for `chat:message` → outbound broadcasts dropped.
+- Server listened for `chat:send` (`server/index.js:264`) → client never emitted that name.
+- Client listened for `zone:chat` (`public/nethara-live.html:3708`) → server never emitted it.
+
+Net effect: every chat send failed silently at the inbound hop; the outbound broadcast path was never reached. Origin is likely a historical rename on one side (probably server-side, splitting the action name into `chat:send` for inbound + `chat:message` for outbound) without updating the other side. Orphan copy in `server/services/arena-sockets.js` (a file not currently imported from `server/index.js`) had the same two-name pattern.
+
+**Resolved 2026-04-22 in PR #?.** Aligned every chat event on a single symmetric name, `zone:chat`:
+
+- `server/index.js:264` — `socket.on('chat:send', …)` → `socket.on('zone:chat', …)`.
+- `server/index.js:276` — `arenaNamespace.to(`zone_${zoneId}`).emit('chat:message', …)` → `…emit('zone:chat', …)`.
+- `server/services/arena-sockets.js:70 + 78` — same rename, even though the file is orphan today, so a future wire-up doesn't re-introduce the drift.
+- Client unchanged — it was already canonical on `zone:chat` for both directions.
+
+No other consumers of the old event names anywhere under `server/`, `public/`, or `client/`. Awaiting two-browser Replit verification.
+
 ---
 
 ## Appendix A — Glossary
