@@ -30,7 +30,7 @@ Entry point: `server/index.js`. Written in `require`/`module.exports` — do not
 
 Layout:
 - `server/routes/` — Express routers, mounted under `/auth` and `/api/<name>` (players, territory, duels, map, leaderboards, admin, spells, clashes, packs, sortingHat, items, quests, zones, gauntlet, boss, crafting, nines, mana, arena, chronicle, drop-tickets, raids, stats, leveling)
-- `server/services/` — all business logic / "engines" (combat, arena, boss, crafting, duel, effect, gauntlet, narrative, nerm*, pack, scoring, territoryControl, xp, scheduler, twitterBot, etc.). Note: README.md and replit.md call this directory `server/engine/` and `server/twitter/` — those directories do NOT exist. Everything is flat under `services/`.
+- `server/services/` — all business logic / "engines" (combat, arena, boss, crafting, duel, effect, gauntlet, narrative, nerm*, pack, scoring, territoryControl, xp, scheduler, twitterBot, etc.). Everything is flat under `services/`; there is no separate `server/engine/` or `server/twitter/` directory despite older drafts of this file suggesting otherwise.
 - `server/config/` — `supabase.js` (anon, respects RLS) and `supabaseAdmin.js` (service role, bypasses RLS). Server-side writes generally use the admin client.
 - `server/jobs/` — a couple of standalone job scripts; recurring cron lives in `services/scheduler.js`.
 
@@ -93,6 +93,6 @@ Other reference docs in the repo root:
 - `EFFECTS_REFERENCE_V5.md` — card effect catalog
 - `spellbook.md` — spell system reference
 - `ADMIN_COMMANDS.md` — operational runbook and cron schedule
-- `replit.md` — deployment-environment notes (its directory names for `server/engine/` and `server/twitter/` are out of date; see Layout above)
+- `replit.md` — deployment-environment notes
 
 Domain vocabulary worth knowing before reading code: **Nine** = a player's character; **house** = class (9 of them, drive base stats); **guild** = faction; **zone** = territory on the map; **Chronicle** = the daily 4-act Twitter narrative; **deployment** = a Nine placed in a zone with a 3-card loadout. House/school names appear in two different naming schemes across the codebase (Ember/Tidal/Stone/... in README vs Stormrage/Smoulders/Stonebark/... in the Game Bible) — the Game Bible names are the current canonical set.
