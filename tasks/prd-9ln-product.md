@@ -1547,6 +1547,24 @@ The top-bar and sidebar clocks now tick together on the same state, and the LIVE
 3. Dropped the safety timeout from 8 s to 3 s at `2105`. Past 3 s the overlay hiding itself is more useful than holding up the Deploy CTA while something upstream is wrong.
 4. No server-side or state changes. The LIVE pill, countdown timer (§9.56), and positions-tick dismiss path (§9.24) are untouched.
 
+### 9.58 Post-KO UX had no mid-round feedback; KO widget redesigned as non-blocking informational overlay
+
+**Symptom (user-reported 2026-04-21, screenshots `audit/screenshots/PR165 Notes/SS4.png` + `SS5.png`).** When a player's Nine was KO'd mid-round, the combat tray hid silently and no on-screen element confirmed what had happened until the round-end modal fired with a separate bottom-center `_showRejoinPrompt` banner. Meanwhile the legacy `#ko-overlay` / `showKOOverlay(killerName)` DOM still lived in `nethara-live.html` (lines 1640–1656, 581–611, 3458) as dead code since commit `2410167` suppressed the `combat:ko` call in §9.31. Net effect: the player learned they'd been KO'd only when the match paused, and the only UX touching killer identity (already in the `combat:ko` payload as `data.killerName`) was a stat-tracker, never player-visible.
+
+**Root cause.** The original §9.31 suppression was correct for the *then*-current widget (blocking, 60-second countdown, pushing immediate redeploy) but left no replacement. The rejoin flow then split across three disjoint UIs: (a) a never-shown KO widget, (b) an ad-hoc bottom-center rejoin prompt created at round-end, (c) the round-end modal that happened to share screen-space with prompt (b). The PR165 Notes wave plan's "reworked KO widget" in the wave plan assumed the widget was still live; exploration surfaced it was dead.
+
+**Resolved 2026-04-22 in PR #?.** Rewired the KO widget as a non-blocking, informational overlay and collapsed the three-surface rejoin flow into one.
+
+- **Combat:ko handler (`~3889`):** re-added `showKOOverlay(data.killerName || null)` for self-KOs, superseding §9.31's suppression. New widget design doesn't block the arena (`pointer-events: none` on the overlay root, `auto` on the widget itself), so the §9.31 concerns no longer apply.
+- **Widget DOM (`1640–1656`):** rebuilt with `💀` skull, `KNOCKED OUT` title, `by {killerName}` subtitle (dynamic via `#ko-killer`), short hint, primary `REJOIN` button (disabled until INTERMISSION), secondary `STAY WITHDRAWN` button. Removed the 60s countdown ring, the expired-message element, and the `pick-cards` link — the first two are obsolete (no deadline), the third is superseded by the round-end modal's CHANGE BUILD CTA.
+- **Widget CSS (`~581–611`):** repositioned from `top: 60px` to `top: 96px` so it floats below the top bar / zone name and above the HUD tray. Added secondary-button styling. Dropped ring-specific rules.
+- **Widget JS (`~3458`):** `showKOOverlay(killerName)` populates the killer span, reads `S._autoRedeploy` to switch between `REJOIN AT ROUND END` / `AUTO-REJOINING…` states, and starts a 500 ms `_updateKOWidgetCTA` interval that flips the CTA enabled when `S._roundState === 'INTERMISSION'` arrives. `dismissKOOverlay()` clears the interval. New `_koRejoinClick` / `_koWithdrawClick` handlers back the two buttons; `_koRejoinClick` reuses the existing `_doRejoin` helper (which calls `/api/zones/:id/rejoin`). `_koWithdrawClick` sets `S._withdrawnAfterKO = true`, dismisses the widget, re-shows the DEPLOY CTA.
+- **Rejoin-prompt cleanup (`~4617–4666`):** deleted `_showRejoinPrompt` + `_dismissRejoinPrompt` + their two window exports. Redirected the four callers (`arena:session_expired`, `arena:round_end` KO branch, `arena:nine_rejoined`, `arena:round_start` auto-rejoin failure fallback) to either `dismissKOOverlay()` or `_updateKOWidgetCTA()`. `_doRejoin` stripped of its `_dismissRejoinPrompt()` call and its `#rejoin-btn` DOM hook — both are the widget's concern now.
+- **Legacy KO-cooldown gate (`confirmDeploy ~3195`):** removed the 60s KO cooldown block (`S._koUntil` check). `_koUntil` and `_koTimer` state fields deleted from the `S` literal (`1829`). Build-change gating (§9.46) is the source of truth for when deploys are allowed.
+- **Dead legacy helper:** deleted `dismissKOAndRejoin` (`~3510`) — only ever called from the removed legacy widget button.
+
+Interactions preserved: auto-rejoin still fires on `arena:round_start` via the existing `_doRejoin` path; on failure the widget's CTA re-enables so the player can retry. Session-expiry dismisses the widget via `dismissKOOverlay()` (replaces the old `_dismissRejoinPrompt` call).
+
 ---
 
 ## Appendix A — Glossary
