@@ -1635,6 +1635,25 @@ Net effect: every chat send failed silently at the inbound hop; the outbound bro
 
 No other consumers of the old event names anywhere under `server/`, `public/`, or `client/`. Awaiting two-browser Replit verification.
 
+### 9.62 Deploy modal house filter tabs still overlap on mobile 393×852
+
+**Symptom (user-reported 2026-04-22 during PR #170 smoke test).** Follow-up on §9.51's fix (PR #164 resolved the main body overflow of the deploy modal at 393×852). The house filter tab row at the top of the modal (`#deploy-house-tabs`) still overlaps itself — tabs run into each other horizontally so adjacent house labels visually collide. Rest of the modal is visible and usable.
+
+**Root cause.** Not yet diagnosed. Likely either a flex layout that allows tabs to overflow without wrapping or scrolling, or fixed per-tab widths summing past the available 393px. Needs a focused investigation during the mobile sizing PR.
+
+**Status: OPEN** — deferred to PR C (mobile sizing pass). Scope: audit `#deploy-house-tabs` CSS, likely add `flex-wrap: wrap` with a tighter tab size or switch to horizontal scroll with a scroll indicator. Validate on real 393×852 hardware.
+
+### 9.63 Sidebar fighter profile popup — can't navigate between profiles, center-viewport position
+
+**Symptom (user-reported 2026-04-22 during PR #170 smoke test).** Clicking a fighter row in the sidebar leaderboard opens a profile popup. Two issues:
+
+1. **Navigation friction.** If another profile is already open, clicking a new fighter row doesn't switch to them — player has to dismiss the current popup first, then click again.
+2. **Position.** Popup renders center-viewport. Wray wants it anchored to the clicked fighter row, "more like a speech bubble or extra window extending from the profile card."
+
+**Root cause.** Not yet diagnosed. The click handler on the fighter row likely ignores new clicks while a popup is visible; the popup CSS likely uses `position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%)` as a default.
+
+**Status: OPEN** — queued for PR B (UI elements pass). Scope: refactor the popup to replace its contents on any fighter click (instead of requiring dismiss-then-click), and reposition to attach visually to the clicked row with a pointer/arrow. Per `feedback_single_cta_surface.md`: if the row opens a popup, the popup is the action surface — no parallel CTAs on the row itself.
+
 ---
 
 ## Appendix A — Glossary
