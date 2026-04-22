@@ -1607,7 +1607,7 @@ Interactions: the round-end modal's CHANGE BUILD CTA opens `openDeployModal({pre
 
 **Scope note.** This is a visual-only first touch on combat feel. Mechanical rebalance (damage formula, attack interval, slot bonuses) is a separate scoped review — deliberately not touching Game Bible §9 here. This PR is a sample to see whether slower projectiles alone move the needle on Wray's "enjoy the chaos" bar before we commit to deeper tuning.
 
-**Resolved 2026-04-22 in PR #?.** Replaced the fixed `FLIGHT_FRAMES = 50` at `public/nethara-live.html:8686` with distance-scaled frames mirroring the auto-attack pattern (`animateProjectileFromPos` at `~6916`):
+**Resolved 2026-04-22 in PR #172.** Replaced the fixed `FLIGHT_FRAMES = 50` at `public/nethara-live.html:8686` with distance-scaled frames mirroring the auto-attack pattern (`animateProjectileFromPos` at `~6916`):
 
 ```javascript
 const dxFlight = endX - startX, dyFlight = endY - startY;
