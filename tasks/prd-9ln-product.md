@@ -1520,6 +1520,20 @@ Surfaced during the canon-cleanup scoping; entered and resolved in the same PR.
 
 Scope held to the one behaviour fix — no copy, positioning, or interaction changes to either modal. The larger KO / round-end UX rework (non-blocking positioning, skull emoji, killer name) is queued as a separate PR in the PR165 Notes wave.
 
+### 9.56 Top-bar arena timer shows 15-min snapshot-cycle countdown instead of round/intermission timer
+
+**Symptom (user-reported 2026-04-21, screenshot `audit/screenshots/PR165 Notes/SS5.png`).** The top-bar timer in the arena header (`#countdown-time` at `nethara-live.html:1208`, next to the LIVE pill) displays the time until the next 15-minute scoring-snapshot boundary (e.g. counts down to the next :00/:15/:30/:45). That value has no relationship to the round the player is watching. The sidebar timer at `#zt-round-timer` (`1459`) already shows the correct round/intermission clock; the top bar was driven by a different, unrelated source.
+
+**Root cause.** `startCountdown()` at `nethara-live.html:5718` ran a 1s interval keyed on `S.cycleEndTime`, a value set by `fetchCycleTiming()` (`5730`) to the next wall-clock 15-minute boundary. Neither field is maintained by the round-state socket handlers (`arena:round_end` at `4007`, `arena:round_start` at `4101`) that drive `S._roundState` / `S._roundStartedAt` / `S._roundEndsAt`. The top-bar ticker and the sidebar round ticker (`4705–4731`) read from entirely different state.
+
+**Resolved 2026-04-22 in PR #?.** Three-part fix in `public/nethara-live.html`:
+
+1. Dropped `cycleEndTime: null,` from the `S` state literal at `1824`.
+2. Deleted `fetchCycleTiming()` (`5730–5735`) entirely — no other callers existed.
+3. Rewrote `startCountdown()` to mirror the sidebar ticker's semantics: during `FIGHTING` render elapsed seconds since `S._roundStartedAt` with the `.fighting` gold class; during `INTERMISSION` render the countdown to `S._roundEndsAt` with the `.urgent` red-pulse class applied at ≤10s. Both branches use the `M:SS` format matching the sidebar.
+
+The top-bar and sidebar clocks now tick together on the same state, and the LIVE pill / `⏱` icon were left untouched. No server changes.
+
 ---
 
 ## Appendix A — Glossary
