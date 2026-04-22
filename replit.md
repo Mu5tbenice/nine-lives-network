@@ -2,7 +2,7 @@
 
 ## Overview
 
-Nine Lives Network is a Twitter-based social-competitive game where players join one of 9 magical schools (houses) and compete for territory control in the fantasy world of Avaloris. Players cast spells by replying to tweets posted by the game bot (@9LVNetwork), earn points, and climb leaderboards. The game features an AI personality bot (@9LV_Nerm) powered by Anthropic's Claude that provides commentary on game events.
+Nine Lives Network is a Twitter-based social-competitive game where players join one of 9 magical schools (houses) and compete for territory control in the fantasy world of Nethara. Players cast spells by replying to tweets posted by the game bot (@9LVNetwork), earn points, and climb leaderboards. The game features an AI personality bot (@9LV_Nerm) powered by Anthropic's Claude that provides commentary on game events.
 
 The project has a dual frontend architecture: a legacy static HTML/CSS/JS frontend served from `/public` (the actual game UI) and a newer React/Vite scaffold under `/client` that currently serves a generic placeholder page. The game logic, Twitter bot automation, and all core functionality live in the Express.js backend.
 

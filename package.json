@@ -1,7 +1,7 @@
 {
   "name": "nine-lives-network",
   "version": "0.1.0",
-  "description": "A social-competitive game on Twitter where wizard cats compete for territory control in the fantasy world of Avaloris",
+  "description": "A social-competitive game on Twitter where wizard cats compete for territory control in the fantasy world of Nethara",
   "main": "server/index.js",
   "scripts": {
     "start": "node server/index.js",

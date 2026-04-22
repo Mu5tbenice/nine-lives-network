@@ -12,9 +12,9 @@ Date: 2026-04-17. Git branch: `main`. Head: `2f2e3fd`.
 
 | Path | What it is |
 |---|---|
-| `README.md` | Public project overview. Out of date — refers to `server/engine/` and `server/twitter/` (don't exist). |
-| `CLAUDE.md` | Guide for Claude Code sessions (just written). |
-| `replit.md` | Replit deployment notes. Same stale directory references as README. |
+| `README.md` | Public project overview. |
+| `CLAUDE.md` | Guide for Claude Code sessions. |
+| `replit.md` | Replit deployment notes. |
 | `9LN_GAME_BIBLE_V3.md` | Design canon. Marked "Combat V3 / Zone V2", last updated March 19 2026. |
 | `EFFECTS_REFERENCE_V5.md` | Card effect catalog, Feb 26 2026. Claims companions `CARD_STATS_V4.md` and `9LV_GAME_DESIGN_V4.md` exist — they don't. |
 | `spellbook.md` | Spell system reference "V2", undated. |
@@ -85,7 +85,6 @@ Note: `server/jobs/scheduler.js` exists AND `server/services/scheduler.js` exist
 - **Game Bible says V3 combat; Effects Ref says V5 effects.** Not necessarily a contradiction (combat model ≠ effect catalog) but a reader has to know that to avoid being misled. Nothing in either document says "effects V5 is the counterpart to combat V3" — you have to infer.
 - **No V6 document exists anywhere.** Yet `server/index.js:306` announces `"Combat engine started — V6 wave combat, 30s buffer"` on boot. See §4.
 - **Naming drift across docs.** `README.md` calls the nine factions "schools" with names like *Ember Covenant*, *Tidal Conclave*. The Game Bible calls them "houses" with names like *Stormrage*, *Smoulders*, *Stonebark*. `ADMIN_COMMANDS.md` uses the README names. The DB-seeded names (`database/seeds/schools.sql`) will determine which is actually live — worth verifying. This is a content conflict, not a version conflict, but it will confuse anyone reading only some of the docs.
-- **README and `replit.md` both describe `server/engine/` and `server/twitter/` directories.** Neither exists. The services are in `server/services/`. `CLAUDE.md` already calls this out.
 
 ### Best guess at what's authoritative
 
@@ -271,7 +270,6 @@ Cleanup candidates, grouped by flavor. Nothing below is "urgent fix" — this is
 - [ ] Stale boot log: `server/index.js:306` claims "V6 wave combat, 30s buffer" — no such engine exists.
 - [ ] `EFFECTS_REFERENCE_V5.md` names `CARD_STATS_V4.md` and `9LV_GAME_DESIGN_V4.md` as companions; neither exists.
 - [ ] No V4 spec of any kind survives; only artifacts (`card-v4-reference.jsx`, `patch-game-modes-v4.py`) remain.
-- [ ] `README.md` and `replit.md` describe `server/engine/` and `server/twitter/` directories that don't exist.
 - [ ] Faction naming is inconsistent across docs: README says *Ember Covenant / Tidal Conclave*, Game Bible says *Stormrage / Smoulders*. The DB seed decides which is live — verify and pick one.
 - [ ] `spellbook.md` is undated; unclear if current.
 

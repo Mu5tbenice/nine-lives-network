@@ -1482,6 +1482,34 @@ Regression status: code-review only — Claude Code CLI can't spin up a live com
 
 **Follow-up.** Optional: introduce an `isAlly(nine, other)` helper to prevent this exact drift from recurring. Currently every support filter inlines `n.guildTag === caster.guildTag && n.deploymentId !== caster.deploymentId`; a named helper would make the design intent self-documenting. Not required for the fix.
 
+### 9.53 Legacy world name "Avaloris" in `replit.md` and `package.json` → canon drift
+
+**Symptom.** Two non-archive, non-PRD files still referenced the deprecated world name "Avaloris" instead of the canonical "Nethara" defined in PRD §4.1:
+
+- `replit.md:5` described the game world as "the fantasy world of Avaloris" in the project overview paragraph.
+- `package.json:4` carried the original project description string that also named "Avaloris."
+
+Silent drift — nothing broke at runtime — but any reader cross-referencing those files against the PRD saw conflicting world names, and the `package.json` description is the value surfaced on npm / Replit metadata consumers.
+
+(Archive files under `docs/_raw-history/` also mention Avaloris; those are intentionally frozen historical artifacts per `feedback_archive_mining_default.md` and are out of scope for canon cleanup.)
+
+**Resolved 2026-04-22 in PR #?.** Single-word substitutions in both files — "Avaloris" → "Nethara." No other edits. Surfaced during the canon-cleanup scoping pass; entered and resolved in the same PR per the add-then-resolve pattern for pre-existing drift.
+
+### 9.54 `CLAUDE.md` and `STATE_OF_THE_CODEBASE.md` misattribute stale directory references
+
+**Symptom.** `CLAUDE.md` lines 33 and 96 claimed that `README.md` and `replit.md` reference non-existent `server/engine/` and `server/twitter/` directories. `STATE_OF_THE_CODEBASE.md` repeated the same claim on lines 15, 17, 88, and 274. Grepping both `README.md` and `replit.md` returned **zero** matches for either directory string — the claim was false. The only actual occurrences of `server/engine` / `server/twitter` in the repo were in `tasks/prd-9ln-product.md:703` (an explicit "those don't exist" note — informational, not drift), `CLAUDE.md` itself, and `STATE_OF_THE_CODEBASE.md`. Net effect: a future reader following the guidance to "fix the stale refs in README / replit.md" would find nothing to fix and waste the lookup.
+
+**Resolved 2026-04-22 in PR #?.** Updated the claims to match reality:
+
+- `CLAUDE.md:33` — removed the "Note: README.md and replit.md call this directory..." sentence; replaced with a cleaner statement that the flat `services/` layout is the only structure.
+- `CLAUDE.md:96` — dropped the incorrect parenthetical from the `replit.md` bullet.
+- `STATE_OF_THE_CODEBASE.md:15` — removed the "Out of date — refers to `server/engine/`..." clause from the README row.
+- `STATE_OF_THE_CODEBASE.md:17` — removed the "Same stale directory references as README" clause from the replit.md row.
+- `STATE_OF_THE_CODEBASE.md:88` — removed the "README and `replit.md` both describe..." bullet entirely.
+- `STATE_OF_THE_CODEBASE.md:274` — removed the matching item from the Versioning/docs open-issues checklist.
+
+Surfaced during the canon-cleanup scoping; entered and resolved in the same PR.
+
 ---
 
 ## Appendix A — Glossary
