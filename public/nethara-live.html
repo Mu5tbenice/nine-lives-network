@@ -4060,6 +4060,11 @@
       const flipTxt = flipped ? ' (FLIP +10)' : '';
       addFeedEvent(`ROUND END — [${winner || 'none'}] controls${flipTxt}`, 'snapshot');
 
+      // §9.55: dismiss the KO overlay before the round-end modal renders so
+      // the two don't stack on top of each other when a KO lands in the final
+      // seconds of a round. Safe no-op if the KO overlay isn't visible.
+      dismissKOOverlay();
+
       // Show cinematic overlay
       _showRoundEnd(data);
 
