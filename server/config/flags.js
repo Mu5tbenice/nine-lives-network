@@ -5,10 +5,12 @@
 // ═══════════════════════════════════════════════════════
 
 module.exports = {
-  // §9.46 deploy lockout — when true, /api/zones/deploy rejects with 423
-  // during an active round (zone roundState === 'FIGHTING'). Deploy is only
-  // allowed during intermission. Client shows a countdown to the next window.
-  // Ships OFF; awaits playtest before flipping. Game Bible V4→V5 change is a
-  // separate PR after the flag validates.
-  FEATURE_DEPLOY_LOCKOUT: false,
+  // §9.46 deploy lockout — /api/zones/deploy rejects with 423 during an
+  // active round (zone roundState === 'FIGHTING'). Deploy is only allowed
+  // during intermission. Client shows a countdown to the next window.
+  // Flipped ON 2026-04-22 as part of the in-arena combat watch loop rework
+  // (see §9.60). The rejoin endpoint (/api/zones/:zoneId/rejoin) is NOT
+  // behind this flag, so KO'd players' auto-rejoin + manual rejoin paths
+  // continue to work during FIGHTING.
+  FEATURE_DEPLOY_LOCKOUT: true,
 };

@@ -297,6 +297,16 @@
     .countdown-time.fighting { color: var(--gold); }
     @keyframes countdownPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
 
+    /* §9.57 arena loading spinner */
+    .arena-spinner {
+      width: 28px; height: 28px;
+      border: 2px solid rgba(212,166,75,0.15);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: arenaSpin 0.9s linear infinite;
+    }
+    @keyframes arenaSpin { to { transform: rotate(360deg); } }
+
     /* ── Guild scoreboard ── */
     .arena-scoreboard { display: none; } /* replaced by sidebar */
     .arena-sb-title, .arena-sb-row, .arena-sb-guild, .arena-sb-wins { display: none; }
@@ -578,37 +588,43 @@
 
     /* Round banner */
     /* ── KO Widget (non-blocking corner) ── */
+    /* §9.58 KO widget: non-blocking informational overlay. Anchored above the
+       HUD tray (§9.59 round-end modal owns the top-center slot so the two
+       don't stack vertically). Chat + tabs + top-bar remain interactive. */
     #ko-overlay {
       display: none; position: absolute;
-      top: 60px; left: 50%; transform: translateX(-50%);
-      z-index: 65; pointer-events: auto;
+      bottom: 230px; left: 50%; transform: translateX(-50%);
+      z-index: 65;
       animation: koWidgetDrop 0.4s cubic-bezier(0.34,1.2,0.64,1);
+      pointer-events: none; /* let clicks pass; .ko-widget re-enables on itself */
     }
     #ko-overlay.visible { display: block; }
-    @keyframes koWidgetDrop { from { transform: translateX(-50%) translateY(-20px); opacity:0; } to { transform: translateX(-50%) translateY(0); opacity:1; } }
+    @keyframes koWidgetDrop { from { transform: translateX(-50%) translateY(20px); opacity:0; } to { transform: translateX(-50%) translateY(0); opacity:1; } }
     .ko-widget {
       background: rgba(10,6,18,0.96); border: 1px solid rgba(232,90,106,0.45);
-      border-radius: 14px; padding: 14px 18px 14px 14px;
+      border-radius: 14px; padding: 14px 18px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.7), 0 0 0 1px rgba(232,90,106,0.15);
       backdrop-filter: blur(12px); display: flex; align-items: center; gap: 12px;
-      min-width: 280px; max-width: 360px;
+      min-width: 280px; max-width: 340px;
+      pointer-events: auto;
     }
-    .ko-skull { font-size: 32px; line-height: 1; flex-shrink: 0;
+    .ko-skull { font-size: 34px; line-height: 1; flex-shrink: 0;
       animation: koSkullPop 0.5s cubic-bezier(0.34,1.56,0.64,1); }
     @keyframes koSkullPop { from { transform: scale(0) rotate(-15deg); opacity:0; } to { transform: scale(1) rotate(0); opacity:1; } }
     .ko-widget-body { flex: 1; min-width: 0; }
-    .ko-title { font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; color: var(--red); letter-spacing: 2px; line-height: 1.1; }
-    .ko-sub { font-family: 'Crimson Text', serif; font-size: 12px; color: var(--muted); font-style: italic; margin-top: 2px; }
+    .ko-title { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; color: var(--red); letter-spacing: 1.5px; line-height: 1.1; }
+    .ko-sub { font-family: 'Crimson Text', serif; font-size: 13px; color: var(--muted); font-style: italic; margin-top: 3px; line-height: 1.25; }
+    .ko-sub .ko-killer { color: #f0a8b3; font-style: normal; font-weight: 600; }
     .ko-hint { font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--faint); letter-spacing: 1px; margin-top: 6px; line-height: 1.7; }
-    .ko-ring { width: 54px; height: 54px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.08); position: relative; flex-shrink: 0; }
-    .ko-ring svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
-    .ko-ring circle { fill: none; stroke: #e85a6a; stroke-width: 2.5; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
-    .ko-ring-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'Press Start 2P', monospace; font-size: 12px; color: #e85a6a; }
-    #ko-rejoin-btn { display: block; margin-top: 8px; width: 100%; padding: 8px; border-radius: 8px; border: none; cursor: pointer; font-family: 'Cinzel', serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; background: linear-gradient(135deg,#D4A64B,#8a6d2f); color: #0a0810; box-shadow: 0 2px 0 #5a4520; animation: koBtnPop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+    #ko-rejoin-btn { display: block; margin-top: 10px; width: 100%; padding: 9px 10px; border-radius: 8px; border: none; cursor: pointer; font-family: 'Cinzel', serif; font-size: 11px; font-weight: 700; letter-spacing: 2px; background: linear-gradient(135deg,#D4A64B,#8a6d2f); color: #0a0810; box-shadow: 0 2px 0 #5a4520; animation: koBtnPop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
     @keyframes koBtnPop { from { transform: scale(0.6); opacity:0; } to { transform: scale(1); opacity:1; } }
-    #ko-rejoin-btn:hover { filter: brightness(1.1); }
-    #ko-rejoin-btn:disabled { opacity: 0.4; cursor: not-allowed; filter: none; }
-    #ko-expired-msg { display: none; margin-top: 6px; font-family: 'Press Start 2P', monospace; font-size: 5px; color: var(--red); letter-spacing: 1px; text-align: center; }
+    #ko-rejoin-btn:hover:not(:disabled) { filter: brightness(1.1); }
+    #ko-rejoin-btn:disabled { opacity: 0.5; cursor: not-allowed; filter: none; background: linear-gradient(135deg,#6a5a3a,#4a3d28); }
+    #ko-withdraw-btn { display: block; margin-top: 6px; width: 100%; padding: 6px 10px; border-radius: 6px; cursor: pointer;
+      font-family: 'Press Start 2P', monospace; font-size: 6px; letter-spacing: 1px;
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.55); }
+    #ko-withdraw-btn:hover { color: rgba(255,255,255,0.85); border-color: rgba(255,255,255,0.2); }
+    #ko-withdraw-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 
     .round-banner {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -1184,12 +1200,12 @@
 <!-- ====== ARENA VIEW ====== -->
 <div id="arena-view">
 
-  <!-- Loading overlay — shown while PIXI initialises and sprites load -->
+  <!-- §9.57 Loading overlay — spinner + phase label. Dropped the progress bar
+       because its 0/35/60/100 checkpoints parked the fill at a visible %
+       between phases, reading as a stall. Spinner + honest phase text. -->
   <div id="arena-loading" style="position:absolute;inset:0;z-index:200;background:rgba(10,6,22,0.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;pointer-events:none;transition:opacity 0.6s;">
     <div style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gold);letter-spacing:4px;">ENTERING NETHARA</div>
-    <div style="width:200px;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;">
-      <div id="arena-loading-bar" style="height:100%;width:0%;background:linear-gradient(90deg,rgba(212,166,75,0.4),var(--gold));border-radius:2px;transition:width 0.4s;"></div>
-    </div>
+    <div class="arena-spinner" aria-hidden="true"></div>
     <div id="arena-loading-text" style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--faint);letter-spacing:1px;">LOADING ARENA...</div>
   </div>
 
@@ -1641,16 +1657,11 @@
     <div class="ko-widget">
       <div class="ko-skull">💀</div>
       <div class="ko-widget-body">
-        <div class="ko-title">K.O.</div>
-        <div class="ko-sub">Your Nine was knocked out.</div>
-        <div class="ko-hint">REJOIN WINDOW CLOSING • WATCH THE FIGHT<br>CHAT AND STATS STILL ACTIVE</div>
-        <button id="ko-rejoin-btn" onclick="dismissKOAndRejoin()">⚔️ REDEPLOY NOW</button>
-        <div id="ko-pick-cards-link" style="display:none;margin-top:6px;font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(212,166,75,0.5);cursor:pointer;text-align:center;" onclick="dismissKOOverlay();openDeployModal();">or pick different cards</div>
-        <div id="ko-expired-msg">WINDOW CLOSED — TOO SLOW</div>
-      </div>
-      <div class="ko-ring">
-        <svg viewBox="0 0 54 54"><circle cx="27" cy="27" r="23" stroke-dasharray="144.5" stroke-dashoffset="0" id="ko-ring-circle"/></svg>
-        <div class="ko-ring-num" id="ko-countdown-num">60</div>
+        <div class="ko-title">KNOCKED OUT</div>
+        <div class="ko-sub">by <span class="ko-killer" id="ko-killer">the arena</span></div>
+        <div class="ko-hint" id="ko-hint">REJOIN WHEN THE ROUND ENDS — WATCH + CHAT STAY LIVE</div>
+        <button id="ko-rejoin-btn" onclick="window._koRejoinClick()" disabled>⚔ REJOIN AT ROUND END</button>
+        <button id="ko-withdraw-btn" onclick="window._koWithdrawClick()">STAY WITHDRAWN</button>
       </div>
     </div>
   </div>
@@ -1815,27 +1826,26 @@
     _autoRedeploy: false, _autoRedeployExpiry: 0,
     _metersTab: 'dmg',
     _chartMetric: 'dmg',
-    _koTimer: null,
-    _koUntil: 0,
+    _koWidgetInt: null,
     _atkBarFrame: null, _atkBarStart: 0, _atkBarInterval: 7000,
     _metersRenderTimer: null,
     selectedCards: [], playerCards: [],
     guildScores: {}, feedEvents: [],
-    cycleEndTime: null, countdownInterval: null,
+    countdownInterval: null,
     snapshotCount: 0, currentCycle: 0,
   };
   window._S = S; // expose to PIXI IIFE — set immediately so Proxy reads work on load
 
   // ── ARENA LOADING OVERLAY ──
-  function _showArenaLoading(msg, pct) {
+  // §9.57: progress bar dropped for a spinner; `pct` retained in the signature
+  // as a harmless no-op so existing call sites (pct=0/35/60/100) keep working.
+  function _showArenaLoading(msg, _pct) {
     const overlay = document.getElementById('arena-loading');
-    const bar     = document.getElementById('arena-loading-bar');
     const text    = document.getElementById('arena-loading-text');
     if (!overlay) return;
     overlay.style.display = 'flex';
     overlay.style.opacity = '1';
     overlay.style.pointerEvents = 'none';
-    if (bar)  bar.style.width  = pct + '%';
     if (text) text.textContent = msg;
   }
   function _dismissArenaLoading() {
@@ -2096,13 +2106,16 @@
     document.getElementById('zone-list-view').style.display = 'none';
     const isMobile = window.innerWidth <= 640;
     document.getElementById('arena-view').style.display = isMobile ? 'flex' : 'block';
-    // #17 Safety timeout — if loading takes > 8s, dismiss and show arena anyway
+    // §9.57 Safety timeout — if loading takes > 3s, dismiss and show arena anyway.
+    // Was 8s; shortened because the overlay's only honest purpose is a brief
+    // gate to the first arena:positions tick; if that hasn't landed by 3s,
+    // something else is wrong and holding the overlay up just hides it.
     if (window._arenaLoadTimeout) clearTimeout(window._arenaLoadTimeout);
     window._arenaLoadTimeout = setTimeout(() => {
       _dismissArenaLoading();
       window._arenaLoadTimeout = null;
       console.warn('Arena loading timeout — forcing dismiss');
-    }, 8000);
+    }, 3000);
     const sidebar = document.getElementById('arena-sidebar');
     if (sidebar) sidebar.style.display = isMobile ? 'none' : 'flex';
 
@@ -2831,6 +2844,16 @@
   // re-pick every card just to tweak one.
   async function openDeployModal(opts) {
     if (!S.playerId) { alert('Please log in first'); return; }
+    // §9.60: build-change gating — already-deployed players can't rebuild
+    // mid-round. Silent-skip with a feed event; they can keep watching the
+    // spectacle. The §9.46 server guard will 423 any deploy during FIGHTING,
+    // but for NEW players (not yet deployed on this zone) we still open the
+    // modal so they can pick cards — their DEPLOY button shows the existing
+    // lockout countdown from the 423 handler at ~3220.
+    if (S._roundState === 'FIGHTING' && S.isDeployed) {
+      addFeedEvent('🔒 Deploy opens at round end', 'system');
+      return;
+    }
     const modal = document.getElementById('deploy-modal');
     if (!modal) return;
     const preselectCurrent = !!(opts && opts.preselectCurrent);
@@ -3178,14 +3201,9 @@
   async function confirmDeploy() {
     if (S.selectedCards.length !== 3) return;
     if (!S.playerId || !S.currentZoneId) return;
-    // Block deploy if KO cooldown still active
-    const koRemaining = Math.ceil((S._koUntil - Date.now()) / 1000);
-    if (koRemaining > 0) {
-      const btn = document.getElementById('btn-confirm-deploy');
-      if (btn) { btn.textContent = `⏳ KO COOLDOWN ${koRemaining}s`; }
-      setTimeout(() => { if (btn && !btn.disabled) btn.textContent = '⚔️ DEPLOY'; }, 2000);
-      return;
-    }
+    // §9.58: legacy 60s KO cooldown gate removed — the new KO widget has no
+    // 60s window, and build-change gating (§9.46) is the source of truth for
+    // when deploys are allowed.
     const btn = document.getElementById('btn-confirm-deploy');
     if (btn) { btn.disabled = true; btn.textContent = 'DEPLOYING...'; }
     const cardIds = S.selectedCards.map(s => s.card.player_card_id || s.card.id);
@@ -3421,7 +3439,6 @@
       if (data.success || data.message) {
         S.isDeployed = true;
         S._sessionStartAt = S._sessionStartAt || Date.now();
-        S._koUntil = 0;
         const restoreCards = cards.length ? cards : (S._lastDeployedCards || []);
         if (restoreCards.length) {
           S.equippedCards = restoreCards;
@@ -3441,101 +3458,76 @@
   }
 
   // ── KO OVERLAY ──
+  // §9.58: non-blocking KO widget. Shows skull + killer name on `combat:ko`;
+  // REJOIN CTA enables when round state flips to INTERMISSION. Replaces the
+  // legacy 60s-ring popup (suppressed in §9.31) and the bottom-center rejoin
+  // prompt (`_showRejoinPrompt`, deleted in this PR).
   function showKOOverlay(killerName) {
     const overlay = document.getElementById('ko-overlay');
-    const numEl = document.getElementById('ko-countdown-num');
-    const circle = document.getElementById('ko-ring-circle');
-    const rejoinBtn = document.getElementById('ko-rejoin-btn');
-    const expiredMsg = document.getElementById('ko-expired-msg');
-    const pickLink = document.getElementById('ko-pick-cards-link');
     if (!overlay) return;
-    // Store KO time so deploy endpoint can be blocked client-side
-    S._koUntil = Date.now() + 60000;
-    // Show "pick cards" link if we have a saved build
-    const hasSavedBuild = S._lastDeployedCardIds?.length > 0;
-    if (rejoinBtn) {
-      rejoinBtn.style.display = 'block';
-      rejoinBtn.disabled = true;
-      rejoinBtn.textContent = hasSavedBuild ? '⚔️ SAME BUILD (60s)' : '⚔️ REDEPLOY (60s)';
+    const killerEl = document.getElementById('ko-killer');
+    if (killerEl) killerEl.textContent = killerName || 'the arena';
+    const hintEl = document.getElementById('ko-hint');
+    const autoOn = !!S._autoRedeploy && Date.now() <= (S._autoRedeployExpiry || 0);
+    if (hintEl) {
+      hintEl.textContent = autoOn
+        ? 'AUTO-REJOIN ON — REJOINING AT ROUND START'
+        : 'REJOIN WHEN THE ROUND ENDS — WATCH + CHAT STAY LIVE';
     }
-    if (pickLink) pickLink.style.display = hasSavedBuild ? 'block' : 'none';
-    if (expiredMsg) expiredMsg.style.display = 'none';
+    const withdrawBtn = document.getElementById('ko-withdraw-btn');
+    if (withdrawBtn) withdrawBtn.disabled = autoOn;
     overlay.classList.add('visible');
-    const circumference = 144.5;
-    let sec = 60;
-    if (S._koTimer) clearInterval(S._koTimer);
-    S._koTimer = setInterval(() => {
-      sec--;
-      if (numEl) numEl.textContent = Math.max(0, sec);
-      if (circle) circle.style.strokeDashoffset = circumference * (1 - sec/60);
-      const hasBuild = S._lastDeployedCardIds?.length > 0;
-      if (rejoinBtn) rejoinBtn.textContent = sec > 0
-        ? (hasBuild ? `⚔️ SAME BUILD (${sec}s)` : `⚔️ REDEPLOY (${sec}s)`)
-        : (hasBuild ? '⚔️ SAME BUILD — REJOIN' : '⚔️ REDEPLOY NOW');
-      if (sec <= 0) {
-        clearInterval(S._koTimer); S._koTimer = null;
-        S._koUntil = 0;
-        // Enable manual rejoin
-        if (rejoinBtn) { rejoinBtn.disabled = false; rejoinBtn.textContent = '⚔️ REDEPLOY NOW'; }
-        if (expiredMsg) expiredMsg.style.display = 'none';
-        if (numEl) numEl.textContent = '!';
-        // Auto-redeploy fires here
-        if (S._autoRedeploy) {
-          checkAutoRedeploy();
-        } else {
-          // Leave overlay open with active REDEPLOY button — don't auto-dismiss
-        }
-      }
-    }, 1000);
+    _updateKOWidgetCTA();
+    if (S._koWidgetInt) clearInterval(S._koWidgetInt);
+    S._koWidgetInt = setInterval(_updateKOWidgetCTA, 500);
+  }
+
+  // Watches round state and updates the widget CTA. Enabled during INTERMISSION,
+  // disabled during FIGHTING. Auto-rejoin path disables both buttons.
+  function _updateKOWidgetCTA() {
+    const overlay = document.getElementById('ko-overlay');
+    if (!overlay || !overlay.classList.contains('visible')) return;
+    const btn = document.getElementById('ko-rejoin-btn');
+    if (!btn) return;
+    const autoOn = !!S._autoRedeploy && Date.now() <= (S._autoRedeployExpiry || 0);
+    if (autoOn) {
+      btn.disabled = true;
+      btn.textContent = '⏳ AUTO-REJOINING…';
+      return;
+    }
+    if (S._roundState === 'INTERMISSION') {
+      btn.disabled = false;
+      btn.textContent = '⚔ REJOIN NEXT ROUND';
+    } else {
+      btn.disabled = true;
+      btn.textContent = '⚔ REJOIN AT ROUND END';
+    }
   }
 
   function dismissKOOverlay() {
     document.getElementById('ko-overlay')?.classList.remove('visible');
-    if (S._koTimer) { clearInterval(S._koTimer); S._koTimer = null; }
+    if (S._koWidgetInt) { clearInterval(S._koWidgetInt); S._koWidgetInt = null; }
   }
-  window.dismissKOAndRejoin = function() {
-    // If we have a saved build, redeploy immediately without modal
-    const savedCards = S._lastDeployedCards;
-    const savedIds   = S._lastDeployedCardIds;
-    if (savedIds?.length && savedCards?.length) {
+
+  window._koRejoinClick = async function() {
+    const btn = document.getElementById('ko-rejoin-btn');
+    if (btn) { btn.disabled = true; btn.textContent = 'REJOINING…'; }
+    const ok = typeof window._doRejoin === 'function' ? await window._doRejoin() : false;
+    if (ok) {
       dismissKOOverlay();
-      addFeedEvent('🔄 Redeploying with same build...', 'system');
-      fetch('/api/zones/deploy', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ player_id: S.playerId, zone_id: S.currentZoneId, card_ids: savedIds }),
-      }).then(async r => {
-        // §9.46: silent skip on 423 (deploy locked). Next intermission opens
-        // the window; rejoin path picks up from there.
-        if (r.status === 423) {
-          const d = await r.json().catch(() => ({}));
-          const secs = Math.max(0, d.nextWindowInSeconds || 0);
-          addFeedEvent(`🔒 Redeploy paused — deploy opens in ${secs}s`, 'system');
-          return null;
-        }
-        return r.json();
-      }).then(data => {
-        if (!data) return;
-        if (data.success || data.message) {
-          S.isDeployed = true;
-          S._koUntil = 0;
-          S._sessionStartAt = S._sessionStartAt || Date.now();
-          S.equippedCards = savedCards;
-          S._lastDeployedCards = savedCards;
-          renderCardSlots(savedCards);
-          document.getElementById('deploy-cta').style.display = 'none';
-          document.getElementById('arena-bottom-tray').style.display = 'flex';
-          addFeedEvent('♻️ Redeployed!', 'join');
-          recordBuildStart();
-        } else {
-          // Server rejected — fall back to modal
-          openDeployModal();
-        }
-      }).catch(() => openDeployModal());
-    } else {
-      // No saved build — must pick cards
-      dismissKOOverlay();
-      openDeployModal();
+    } else if (btn) {
+      // _doRejoin already surfaced a feed event on failure. Let the CTA watcher
+      // re-paint to the current state label on its next tick.
+      _updateKOWidgetCTA();
     }
+  };
+
+  window._koWithdrawClick = function() {
+    S._withdrawnAfterKO = true;
+    dismissKOOverlay();
+    addFeedEvent('You stayed withdrawn — redeploy to rejoin the fight', 'system');
+    const cta = document.getElementById('deploy-cta');
+    if (cta) cta.style.display = 'block';
   };
 
   // ── SOCKET ──
@@ -3897,7 +3889,11 @@
         S.isDeployed = false;
         S._recentlyKOd.add(String(S.playerId));
         setTimeout(() => S._recentlyKOd.delete(String(S.playerId)), 65000);
-        // §9.31: legacy 60s popup suppressed — round-end rejoin prompt handles UX
+        // §9.58: non-blocking KO widget — skull + killer name + rejoin CTA that
+        // activates at round end. Supersedes §9.31's "suppress KO popup" rule;
+        // the new widget doesn't block the arena spectacle, so the reason §9.31
+        // muted the old popup (blocking, 60s fake deadline) no longer applies.
+        showKOOverlay(data.killerName || null);
         document.getElementById('arena-bottom-tray').style.display = 'none';
         recordBuildEnd();
       }
@@ -3946,8 +3942,8 @@
       // so the explicit removal is required to clear the stage).
       if (typeof removeNineSprite === 'function') removeNineSprite(String(S.playerId));
 
-      // Dismiss pending post-KO prompt if any (edge: timeout during intermission).
-      if (typeof _dismissRejoinPrompt === 'function') _dismissRejoinPrompt();
+      // Dismiss pending post-KO widget if any (edge: timeout during intermission).
+      dismissKOOverlay();
 
       // Hide combat tray, re-show DEPLOY CTA so the player can redeploy.
       const tray = document.getElementById('arena-bottom-tray');
@@ -4023,9 +4019,11 @@
         const autoOn = S._autoRedeploy && Date.now() <= S._autoRedeployExpiry;
         if (autoOn) {
           addFeedEvent(`🔄 Auto-rejoining at Round ${S._roundNumber} start...`, 'system');
-        } else {
-          _showRejoinPrompt(data);
         }
+        // §9.58: no separate rejoin prompt — the KO widget (shown on combat:ko)
+        // is still visible and its CTA flips to "REJOIN NEXT ROUND" now that
+        // round state transitioned to INTERMISSION. `_updateKOWidgetCTA` runs
+        // on a 500ms interval so the state flip happens within ms.
       }
 
       const winner = data.winner;
@@ -4091,7 +4089,7 @@
         updateNineHP(spriteKey, data.hp, data.maxHp);
       }
       if (String(data.playerId) === String(S.playerId)) {
-        _dismissRejoinPrompt();
+        dismissKOOverlay();
         S._withdrawnAfterKO = false;
         addFeedEvent('✅ Rejoined the round', 'flip');
       }
@@ -4142,14 +4140,14 @@
       if (S.isDeployed && S.playerId && S.currentZoneId) loadMyCards(S.currentZoneId);
 
       // §9.33: auto-rejoin fires here — server has now set nine.withdrawn=true
-      // in startRound, so /rejoin will succeed. Fall back to manual prompt on
-      // failure so silent network throws don't leave the player stuck withdrawn.
+      // in startRound, so /rejoin will succeed. On failure, leave the KO widget
+      // visible with an enabled REJOIN CTA so the player can retry manually.
       if (wasWithdrawn && autoOn && typeof window._doRejoin === 'function') {
         window._doRejoin().then(ok => {
           if (!ok) {
-            addFeedEvent('⚠️ Auto-rejoin failed — tap prompt to rejoin', 'system');
-            S._withdrawnAfterKO = true; // restore flag so user can manually rejoin
-            _showRejoinPrompt({ roundNumber: (data.roundNumber || 1) - 1 });
+            addFeedEvent('⚠️ Auto-rejoin failed — use the KO widget to retry', 'system');
+            S._withdrawnAfterKO = true;
+            _updateKOWidgetCTA();
           }
         });
       }
@@ -4468,22 +4466,19 @@
           <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:#6ac8d8">${n} alive</span>
         </div>`).join('');
 
-    // D3: centered over arena — dramatic intermission beat. Backdrop sits
-    // just below the overlay and briefly darkens the arena to sell the pause.
-    const backdrop = document.createElement('div');
-    backdrop.id = 'round-end-backdrop';
-    backdrop.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.4);
-      z-index:8499;animation:roundEndFade 0.2s ease;`;
-    document.body.appendChild(backdrop);
-
+    // §9.59: non-blocking round-end. No backdrop (so the arena + chat + tray
+    // stay visible and interactive); top-biased over the arena canvas so the
+    // KO widget (§9.58, bottom-anchored) remains fully visible during
+    // intermission.
     const overlay = document.createElement('div');
     overlay.id = 'round-end-overlay';
-    overlay.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-      width:min(480px, 90vw);max-height:calc(100vh - 80px);overflow-y:auto;
+    overlay.style.cssText = `position:fixed;top:calc(var(--nav-height, 56px) + 48px);left:50%;transform:translateX(-50%);
+      width:min(440px, 92vw);max-height:calc(100vh - 240px);overflow-y:auto;
       z-index:8500;background:linear-gradient(180deg,#16102a,#0d0a18);
       border:1px solid rgba(212,166,75,0.25);border-radius:6px;
-      animation:roundEndScale 0.22s cubic-bezier(0.34,1.56,0.64,1);
-      box-shadow:0 10px 50px rgba(0,0,0,0.7);`;
+      animation:roundEndSlide 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow:0 10px 50px rgba(0,0,0,0.7);
+      pointer-events:auto;`;
 
     // §9.45 single context-aware CTA — read S._autoRedeploy at render time.
     // - ON  → "CHANGE BUILD" opens deploy modal pre-selected; if user closes
@@ -4495,32 +4490,30 @@
       `<div style="font-family:'Crimson Text',serif;font-size:13px;color:rgba(204,197,219,0.55);line-height:1.4;text-align:center;padding:0 8px;margin:0 0 8px;">Turn on auto-rejoin to keep fighting with your current build next round — or redeploy manually from the arena.</div>`;
 
     overlay.innerHTML = `
-      <style>@keyframes roundEndFade{from{opacity:0}to{opacity:1}}
-      @keyframes roundEndScale{from{transform:translate(-50%,-50%) scale(0.9);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
-      @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
-      .round-end-cta{width:100%;margin:6px 0 8px;font-family:'Press Start 2P',monospace;font-size:11px;letter-spacing:1.5px;padding:14px 16px;border-radius:4px;cursor:pointer;background:linear-gradient(135deg,#D4A64B,#a8823a);color:#0d0a18;border:none;box-shadow:0 2px 12px rgba(212,166,75,0.3);transition:filter 0.15s;}
+      <style>@keyframes roundEndSlide{from{transform:translateX(-50%) translateY(-20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+      .round-end-cta{width:100%;margin:4px 0 6px;font-family:'Press Start 2P',monospace;font-size:10px;letter-spacing:1.5px;padding:12px 14px;border-radius:4px;cursor:pointer;background:linear-gradient(135deg,#D4A64B,#a8823a);color:#0d0a18;border:none;box-shadow:0 2px 12px rgba(212,166,75,0.3);transition:filter 0.15s;}
       .round-end-cta:hover{filter:brightness(1.1);}
       .round-end-cta:active{transform:translateY(1px);}</style>
-      <div style="padding:20px 22px;">
+      <div style="padding:14px 18px;">
 
-        <div style="text-align:center;margin-bottom:16px;">
-          <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:rgba(255,255,255,.4);letter-spacing:2px;margin-bottom:4px">
+        <div style="text-align:center;margin-bottom:10px;">
+          <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:rgba(255,255,255,.4);letter-spacing:2px;margin-bottom:3px">
             ROUND ${data.roundNumber || ''} OVER
           </div>
-          <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,.25);margin-bottom:8px">
+          <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,.25);margin-bottom:6px">
             ${data.endReason === 'last_standing' ? 'LAST GUILD STANDING' : 'TIME CAP REACHED'} — ${Math.floor((data.elapsedMs||0)/60000)}:${String(Math.round(((data.elapsedMs||0)%60000)/1000)).padStart(2,'0')} elapsed
           </div>
           ${winner ? `
-          <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#D4A64B;margin-bottom:4px">
+          <div style="font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:#D4A64B;margin-bottom:3px">
             [${winner}]
           </div>
-          <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(212,166,75,.6)">
+          <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(212,166,75,.6)">
             ${flipped ? 'CAPTURED THE ZONE' : 'CONTROLS THE ZONE'}
           </div>` : `
-          <div style="font-family:'Cinzel',serif;font-size:18px;color:rgba(255,255,255,.4)">CONTESTED</div>`}
+          <div style="font-family:'Cinzel',serif;font-size:16px;color:rgba(255,255,255,.4)">CONTESTED</div>`}
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
           <div>
             <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,.35);margin-bottom:6px;letter-spacing:1px">SURVIVORS</div>
             ${guildHTML || '<div style="color:rgba(255,255,255,.3);font-size:11px">All fallen</div>'}
@@ -4532,7 +4525,7 @@
         </div>
 
         <!-- Nerm commentary -->
-        <div style="background:rgba(212,166,75,0.05);border:1px solid rgba(212,166,75,0.12);border-radius:4px;padding:8px 10px;margin-bottom:10px;">
+        <div style="background:rgba(212,166,75,0.05);border:1px solid rgba(212,166,75,0.12);border-radius:4px;padding:6px 10px;margin-bottom:8px;">
           <div style="display:flex;gap:8px;align-items:flex-start;">
             <span style="font-size:18px;flex-shrink:0;">🐱</span>
             <div>
@@ -4545,7 +4538,7 @@
         ${helper}
         <button class="round-end-cta" onclick="window._handleRoundEndAction()">${ctaLabel}</button>
 
-        <div style="text-align:center;padding-top:10px;border-top:1px solid rgba(255,255,255,.07)">
+        <div style="text-align:center;padding-top:8px;border-top:1px solid rgba(255,255,255,.07)">
           <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:#6ac8d8" id="round-next-countdown">
             NEXT ROUND IN ${Math.round((data.intermissionMs||25000)/1000)}s
           </div>
@@ -4603,6 +4596,8 @@
   };
 
   function _dismissRoundEnd() {
+    // §9.59: backdrop removed — round-end modal is non-blocking. Also clean
+    // up any legacy backdrop node that may have been left from a prior session.
     const el = document.getElementById('round-end-overlay');
     const bd = document.getElementById('round-end-backdrop');
     if (el) {
@@ -4612,71 +4607,20 @@
       el.style.transition = 'opacity 0.3s';
       setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 320);
     }
-    if (bd) {
-      bd.style.opacity = '0';
-      bd.style.transition = 'opacity 0.3s';
-      setTimeout(() => { if (bd.parentNode) bd.parentNode.removeChild(bd); }, 320);
-    }
+    if (bd && bd.parentNode) bd.parentNode.removeChild(bd);
   }
 
   window._showRoundEnd    = _showRoundEnd;
   window._dismissRoundEnd = _dismissRoundEnd;
 
-  // ══════════════════════════════════════════════════
-  // REJOIN PROMPT — shown after player is KO'd
-  // ══════════════════════════════════════════════════
-  function _showRejoinPrompt(roundData) {
-    _dismissRejoinPrompt();
-
-    const overlay = document.createElement('div');
-    overlay.id = 'rejoin-prompt-overlay';
-    overlay.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
-      z-index:9000;animation:slideUp 0.3s ease;`;
-
-    overlay.innerHTML = `
-      <div style="background:linear-gradient(180deg,#1a1030,#0d0a18);border:1px solid rgba(232,90,106,0.4);
-        border-radius:6px;padding:16px 20px;text-align:center;min-width:280px;
-        box-shadow:0 0 30px rgba(232,90,106,0.15);">
-        <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:#e85a6a;margin-bottom:8px">
-          YOU WERE KO'D
-        </div>
-        <div style="font-family:'Crimson Text',serif;font-size:13px;color:rgba(255,255,255,.6);margin-bottom:12px">
-          Click rejoin to enter the next round.<br>
-          <span style="color:rgba(255,255,255,.35);font-size:11px">This is your chance to swap cards.</span>
-        </div>
-        <button id="rejoin-btn" onclick="window._doRejoin()" style="
-          font-family:'Press Start 2P',monospace;font-size:8px;
-          padding:10px 20px;border-radius:3px;cursor:pointer;border:none;
-          background:linear-gradient(135deg,#e85a6a,#c94455);color:#fff;
-          box-shadow:0 2px 12px rgba(232,90,106,0.4);width:100%;margin-bottom:8px;">
-          ⚔ REJOIN ROUND ${(roundData?.roundNumber||0)+1}
-        </button>
-        <button onclick="window._dismissRejoinPrompt()" style="
-          font-family:'Press Start 2P',monospace;font-size:6px;
-          padding:6px 14px;border-radius:3px;cursor:pointer;
-          background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
-          color:rgba(255,255,255,.4);width:100%;">
-          STAY WITHDRAWN
-        </button>
-      </div>`;
-
-    document.body.appendChild(overlay);
-  }
-
-  function _dismissRejoinPrompt() {
-    const el = document.getElementById('rejoin-prompt-overlay');
-    if (el && el.parentNode) el.parentNode.removeChild(el);
-  }
-
-  window._dismissRejoinPrompt = _dismissRejoinPrompt;
-
+  // §9.58: `_showRejoinPrompt` / `_dismissRejoinPrompt` removed — the KO widget
+  // (`showKOOverlay` at line 3458) owns the post-KO CTA end-to-end. `_doRejoin`
+  // remains as the shared rejoin-endpoint helper used by both the widget button
+  // and the auto-rejoin path at round_start.
   window._doRejoin = async function() {
     // §9.33: returns boolean so auto-rejoin callers can surface a fallback
-    // on silent failure paths (network throws). Manual button path doesn't
-    // check the return value — unchanged behavior.
+    // on silent failure paths (network throws).
     if (!S.currentZoneId || !S.playerId) return false;
-    const btn = document.getElementById('rejoin-btn');
-    if (btn) { btn.textContent = 'REJOINING...'; btn.disabled = true; }
     try {
       const res = await fetch(`/api/zones/${S.currentZoneId}/rejoin`, {
         method: 'POST',
@@ -4686,17 +4630,13 @@
       });
       const data = await res.json();
       if (data.success) {
-        _dismissRejoinPrompt();
         S._withdrawnAfterKO = false;
         addFeedEvent('✅ Rejoined — next round starting soon', 'flip');
         return true;
-      } else {
-        if (btn) { btn.textContent = '⚔ REJOIN ROUND'; btn.disabled = false; }
-        addFeedEvent(`Rejoin failed: ${data.error || 'Try again'}`, 'snapshot');
-        return false;
       }
+      addFeedEvent(`Rejoin failed: ${data.error || 'Try again'}`, 'snapshot');
+      return false;
     } catch(e) {
-      if (btn) { btn.textContent = '⚔ REJOIN ROUND'; btn.disabled = false; }
       return false;
     }
   };
@@ -5715,23 +5655,29 @@
     }
   }
 
+  // §9.56: top-bar timer mirrors the sidebar round ticker (FIGHTING → elapsed
+  // since round start; INTERMISSION → countdown to next round). Previous
+  // implementation showed the 15-min snapshot-cycle boundary, unrelated to
+  // round pacing.
   function startCountdown() {
     if (S.countdownInterval) clearInterval(S.countdownInterval);
     S.countdownInterval = setInterval(() => {
-      if (!S.cycleEndTime) { fetchCycleTiming(); return; }
-      const remaining = Math.max(0, Math.ceil((S.cycleEndTime - Date.now()) / 1000));
-      const m = Math.floor(remaining/60), s = remaining%60;
       const el = document.getElementById('countdown-time');
-      if (el) el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-      if (remaining === 0) { S.cycleEndTime = null; fetchCycleTiming(); }
+      if (!el) return;
+      if (S._roundState === 'INTERMISSION') {
+        const secLeft = Math.max(0, Math.round((S._roundEndsAt - Date.now()) / 1000));
+        const m = Math.floor(secLeft/60), s = secLeft % 60;
+        el.textContent = `${m}:${String(s).padStart(2,'0')}`;
+        el.classList.remove('fighting');
+        el.classList.toggle('urgent', secLeft <= 10);
+      } else {
+        const elapsed = Math.round((Date.now() - (S._roundStartedAt || Date.now())) / 1000);
+        const m = Math.floor(elapsed/60), s = elapsed % 60;
+        el.textContent = `${m}:${String(s).padStart(2,'0')}`;
+        el.classList.remove('urgent');
+        el.classList.add('fighting');
+      }
     }, 1000);
-  }
-
-  async function fetchCycleTiming() {
-    // Endpoint doesn't exist — derive from server time: snapshots every 15 min on the :00/:15/:30/:45
-    const now = Date.now();
-    const INTERVAL = 15 * 60 * 1000;
-    S.cycleEndTime = Math.ceil(now / INTERVAL) * INTERVAL;
   }
 
   // ── CHAT ──
