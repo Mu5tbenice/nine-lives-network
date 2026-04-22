@@ -261,7 +261,11 @@ if (io) {
     });
 
     // ── ZONE CHAT ──
-    socket.on('chat:send', (data) => {
+    // §9.61: listen + emit `zone:chat` to match the client's event name
+    // (client uses one symmetric name for both directions). Previously
+    // server used `chat:send` inbound + `chat:message` outbound, which the
+    // client didn't know about — chat was silently broken both ways.
+    socket.on('zone:chat', (data) => {
       const zoneId = data.zoneId || data.zone_id;
       if (!zoneId || !data.message) return;
       const safeMsg = String(data.message)
@@ -273,7 +277,7 @@ if (io) {
       const guildTag = String(data.guildTag || '')
         .slice(0, 16)
         .replace(/<[^>]*>/g, '');
-      arenaNamespace.to(`zone_${zoneId}`).emit('chat:message', {
+      arenaNamespace.to(`zone_${zoneId}`).emit('zone:chat', {
         handle,
         guildTag,
         message: safeMsg,

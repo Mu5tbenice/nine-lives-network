@@ -1567,6 +1567,18 @@ The top-bar and sidebar clocks now tick together on the same state, and the LIVE
 
 Interactions preserved: auto-rejoin still fires on `arena:round_start` via the existing `_doRejoin` path; on failure the widget's CTA re-enables so the player can retry. Session-expiry dismisses the widget via `dismissKOOverlay()` (replaces the old `_dismissRejoinPrompt` call).
 
+**Follow-up 2026-04-22 in PR #171.** Smoke test on Replit revealed the §9.55 `dismissKOOverlay()` call inside `arena:round_end` was firing against the newly-revived widget and dismissing it at round-end before its CTA had a chance to flip. User feedback: the accidental behavior was preferable — "better than two buttons for one job." Formalised the simpler single-CTA model by dropping the widget's buttons entirely and letting the round-end modal (§9.59) own post-round action:
+
+- **Widget DOM (`~1640`):** removed `#ko-rejoin-btn` and `#ko-withdraw-btn` elements.
+- **Widget CSS (`~619–627`):** dropped both button rulesets.
+- **Widget JS (`~3458`):** `showKOOverlay` now populates hint text based on `S._autoRedeploy` — `AUTO-REJOIN ON — REJOINING NEXT ROUND` when on, `WATCH THE ROUND — CHAT STAYS LIVE` when off. No more polling interval, no more button state manipulation.
+- **Cleanup:** deleted `_updateKOWidgetCTA` (~20 lines), `_koRejoinClick` / `_koWithdrawClick` window handlers, the `_koWidgetInt` state field + its init at `1821`, and the stale `_updateKOWidgetCTA()` call inside the `arena:round_start` auto-rejoin failure fallback (replaced with a feed-event nudge pointing to CHANGE BUILD / manual deploy).
+- **§9.55 dismiss at round-end** remains the intentional handoff mechanism; widget vanishes when the round-end modal (§9.59) appears.
+
+The widget is now a pure informational notice: skull + `KNOCKED OUT by {killerName}` + single hint line. The round-end modal is the sole source of post-round action. If the player wants to rejoin with same build and auto-rejoin is off, they toggle auto on via the modal's `ENABLE AUTO-REJOIN` CTA; auto-rejoin fires at round_start. If they want to change builds, they click CHANGE BUILD. Doing nothing keeps them withdrawn — same outcome as the deleted STAY WITHDRAWN button.
+
+Captured as a general design principle in the user's auto-memory (`feedback_single_cta_surface.md`): don't duplicate CTAs across widget + modal — pick one surface for the action.
+
 ### 9.59 Round-end modal blocked the arena spectacle
 
 **Symptom (user-reported 2026-04-21, screenshot `audit/screenshots/PR165 Notes/SS3.png`).** When a round ends, the round-end modal (`#round-end-overlay`, z-index 8500) rendered at viewport center with a 40 %-opacity full-viewport backdrop (`#round-end-backdrop`, z-index 8499). The backdrop darkened the arena canvas, and the modal's center position obscured the card tray + chat on mobile. End result: the player couldn't watch the post-round moment (e.g., surviving sprites celebrating) or keep chatting during intermission — the intended "spectacle + chat stay live" loop was gated behind dismissing the modal.
@@ -1600,6 +1612,47 @@ if (S._roundState === 'FIGHTING' && S.isDeployed) {
 `S.isDeployed` ensures new players (who haven't yet deployed on this zone) still see the modal so they can pick cards — their confirm flow hits the existing 423 countdown on the button, which is a clearer signal for first-time deployers. Already-deployed players get a lightweight feed event and keep watching the spectacle.
 
 Interactions: the round-end modal's CHANGE BUILD CTA opens `openDeployModal({preselectCurrent: true})` during INTERMISSION, which passes this gate (roundState is not FIGHTING). Auto-rejoin uses `/api/zones/:zoneId/rejoin`, which is not behind the lockout flag, so it's unaffected.
+
+### 9.61 Arena chat broadcast silently broken — client/server event-name mismatch
+
+**Symptom (user-reported 2026-04-22 during PR #170 smoke test).** Typing a message in arena chat shows the message in the sender's feed (optimistic render) but no other browser in the same zone ever receives it. Chat looked alive to the sender; invisible to everyone else.
+
+**Root cause.** Two-way event-name mismatch on the `/arena` socket.io namespace, pre-existing on `main` before PR #170:
+
+- Client emits `zone:chat` (`public/nethara-live.html:5705`) → server's `/arena` handler had no listener for `zone:chat` → inbound messages dropped.
+- Server emits `chat:message` (`server/index.js:276`) → client had no listener for `chat:message` → outbound broadcasts dropped.
+- Server listened for `chat:send` (`server/index.js:264`) → client never emitted that name.
+- Client listened for `zone:chat` (`public/nethara-live.html:3708`) → server never emitted it.
+
+Net effect: every chat send failed silently at the inbound hop; the outbound broadcast path was never reached. Origin is likely a historical rename on one side (probably server-side, splitting the action name into `chat:send` for inbound + `chat:message` for outbound) without updating the other side. Orphan copy in `server/services/arena-sockets.js` (a file not currently imported from `server/index.js`) had the same two-name pattern.
+
+**Resolved 2026-04-22 in PR #171.** Aligned every chat event on a single symmetric name, `zone:chat`:
+
+- `server/index.js:264` — `socket.on('chat:send', …)` → `socket.on('zone:chat', …)`.
+- `server/index.js:276` — `arenaNamespace.to(`zone_${zoneId}`).emit('chat:message', …)` → `…emit('zone:chat', …)`.
+- `server/services/arena-sockets.js:70 + 78` — same rename, even though the file is orphan today, so a future wire-up doesn't re-introduce the drift.
+- Client unchanged — it was already canonical on `zone:chat` for both directions.
+
+No other consumers of the old event names anywhere under `server/`, `public/`, or `client/`. Awaiting two-browser Replit verification.
+
+### 9.62 Deploy modal house filter tabs still overlap on mobile 393×852
+
+**Symptom (user-reported 2026-04-22 during PR #170 smoke test).** Follow-up on §9.51's fix (PR #164 resolved the main body overflow of the deploy modal at 393×852). The house filter tab row at the top of the modal (`#deploy-house-tabs`) still overlaps itself — tabs run into each other horizontally so adjacent house labels visually collide. Rest of the modal is visible and usable.
+
+**Root cause.** Not yet diagnosed. Likely either a flex layout that allows tabs to overflow without wrapping or scrolling, or fixed per-tab widths summing past the available 393px. Needs a focused investigation during the mobile sizing PR.
+
+**Status: OPEN** — deferred to PR C (mobile sizing pass). Scope: audit `#deploy-house-tabs` CSS, likely add `flex-wrap: wrap` with a tighter tab size or switch to horizontal scroll with a scroll indicator. Validate on real 393×852 hardware.
+
+### 9.63 Sidebar fighter profile popup — can't navigate between profiles, center-viewport position
+
+**Symptom (user-reported 2026-04-22 during PR #170 smoke test).** Clicking a fighter row in the sidebar leaderboard opens a profile popup. Two issues:
+
+1. **Navigation friction.** If another profile is already open, clicking a new fighter row doesn't switch to them — player has to dismiss the current popup first, then click again.
+2. **Position.** Popup renders center-viewport. Wray wants it anchored to the clicked fighter row, "more like a speech bubble or extra window extending from the profile card."
+
+**Root cause.** Not yet diagnosed. The click handler on the fighter row likely ignores new clicks while a popup is visible; the popup CSS likely uses `position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%)` as a default.
+
+**Status: OPEN** — queued for PR B (UI elements pass). Scope: refactor the popup to replace its contents on any fighter click (instead of requiring dismiss-then-click), and reposition to attach visually to the clicked row with a pointer/arrow. Per `feedback_single_cta_surface.md`: if the row opens a popup, the popup is the action surface — no parallel CTAs on the row itself.
 
 ---
 
