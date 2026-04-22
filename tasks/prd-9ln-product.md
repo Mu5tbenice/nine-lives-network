@@ -1493,13 +1493,13 @@ Silent drift — nothing broke at runtime — but any reader cross-referencing t
 
 (Archive files under `docs/_raw-history/` also mention Avaloris; those are intentionally frozen historical artifacts per `feedback_archive_mining_default.md` and are out of scope for canon cleanup.)
 
-**Resolved 2026-04-22 in PR #?.** Single-word substitutions in both files — "Avaloris" → "Nethara." No other edits. Surfaced during the canon-cleanup scoping pass; entered and resolved in the same PR per the add-then-resolve pattern for pre-existing drift.
+**Resolved 2026-04-22 in PR #166.** Single-word substitutions in both files — "Avaloris" → "Nethara." No other edits. Surfaced during the canon-cleanup scoping pass; entered and resolved in the same PR per the add-then-resolve pattern for pre-existing drift.
 
 ### 9.54 `CLAUDE.md` and `STATE_OF_THE_CODEBASE.md` misattribute stale directory references
 
 **Symptom.** `CLAUDE.md` lines 33 and 96 claimed that `README.md` and `replit.md` reference non-existent `server/engine/` and `server/twitter/` directories. `STATE_OF_THE_CODEBASE.md` repeated the same claim on lines 15, 17, 88, and 274. Grepping both `README.md` and `replit.md` returned **zero** matches for either directory string — the claim was false. The only actual occurrences of `server/engine` / `server/twitter` in the repo were in `tasks/prd-9ln-product.md:703` (an explicit "those don't exist" note — informational, not drift), `CLAUDE.md` itself, and `STATE_OF_THE_CODEBASE.md`. Net effect: a future reader following the guidance to "fix the stale refs in README / replit.md" would find nothing to fix and waste the lookup.
 
-**Resolved 2026-04-22 in PR #?.** Updated the claims to match reality:
+**Resolved 2026-04-22 in PR #166.** Updated the claims to match reality:
 
 - `CLAUDE.md:33` — removed the "Note: README.md and replit.md call this directory..." sentence; replaced with a cleaner statement that the flat `services/` layout is the only structure.
 - `CLAUDE.md:96` — dropped the incorrect parenthetical from the `replit.md` bullet.
