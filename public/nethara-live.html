@@ -297,6 +297,16 @@
     .countdown-time.fighting { color: var(--gold); }
     @keyframes countdownPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
 
+    /* §9.57 arena loading spinner */
+    .arena-spinner {
+      width: 28px; height: 28px;
+      border: 2px solid rgba(212,166,75,0.15);
+      border-top-color: var(--gold);
+      border-radius: 50%;
+      animation: arenaSpin 0.9s linear infinite;
+    }
+    @keyframes arenaSpin { to { transform: rotate(360deg); } }
+
     /* ── Guild scoreboard ── */
     .arena-scoreboard { display: none; } /* replaced by sidebar */
     .arena-sb-title, .arena-sb-row, .arena-sb-guild, .arena-sb-wins { display: none; }
@@ -1184,12 +1194,12 @@
 <!-- ====== ARENA VIEW ====== -->
 <div id="arena-view">
 
-  <!-- Loading overlay — shown while PIXI initialises and sprites load -->
+  <!-- §9.57 Loading overlay — spinner + phase label. Dropped the progress bar
+       because its 0/35/60/100 checkpoints parked the fill at a visible %
+       between phases, reading as a stall. Spinner + honest phase text. -->
   <div id="arena-loading" style="position:absolute;inset:0;z-index:200;background:rgba(10,6,22,0.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;pointer-events:none;transition:opacity 0.6s;">
     <div style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:var(--gold);letter-spacing:4px;">ENTERING NETHARA</div>
-    <div style="width:200px;height:3px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;">
-      <div id="arena-loading-bar" style="height:100%;width:0%;background:linear-gradient(90deg,rgba(212,166,75,0.4),var(--gold));border-radius:2px;transition:width 0.4s;"></div>
-    </div>
+    <div class="arena-spinner" aria-hidden="true"></div>
     <div id="arena-loading-text" style="font-family:'Press Start 2P',monospace;font-size:7px;color:var(--faint);letter-spacing:1px;">LOADING ARENA...</div>
   </div>
 
@@ -1827,15 +1837,15 @@
   window._S = S; // expose to PIXI IIFE — set immediately so Proxy reads work on load
 
   // ── ARENA LOADING OVERLAY ──
-  function _showArenaLoading(msg, pct) {
+  // §9.57: progress bar dropped for a spinner; `pct` retained in the signature
+  // as a harmless no-op so existing call sites (pct=0/35/60/100) keep working.
+  function _showArenaLoading(msg, _pct) {
     const overlay = document.getElementById('arena-loading');
-    const bar     = document.getElementById('arena-loading-bar');
     const text    = document.getElementById('arena-loading-text');
     if (!overlay) return;
     overlay.style.display = 'flex';
     overlay.style.opacity = '1';
     overlay.style.pointerEvents = 'none';
-    if (bar)  bar.style.width  = pct + '%';
     if (text) text.textContent = msg;
   }
   function _dismissArenaLoading() {
@@ -2096,13 +2106,16 @@
     document.getElementById('zone-list-view').style.display = 'none';
     const isMobile = window.innerWidth <= 640;
     document.getElementById('arena-view').style.display = isMobile ? 'flex' : 'block';
-    // #17 Safety timeout — if loading takes > 8s, dismiss and show arena anyway
+    // §9.57 Safety timeout — if loading takes > 3s, dismiss and show arena anyway.
+    // Was 8s; shortened because the overlay's only honest purpose is a brief
+    // gate to the first arena:positions tick; if that hasn't landed by 3s,
+    // something else is wrong and holding the overlay up just hides it.
     if (window._arenaLoadTimeout) clearTimeout(window._arenaLoadTimeout);
     window._arenaLoadTimeout = setTimeout(() => {
       _dismissArenaLoading();
       window._arenaLoadTimeout = null;
       console.warn('Arena loading timeout — forcing dismiss');
-    }, 8000);
+    }, 3000);
     const sidebar = document.getElementById('arena-sidebar');
     if (sidebar) sidebar.style.display = isMobile ? 'none' : 'flex';
 

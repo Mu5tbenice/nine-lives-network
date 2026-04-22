@@ -1534,6 +1534,19 @@ Scope held to the one behaviour fix — no copy, positioning, or interaction cha
 
 The top-bar and sidebar clocks now tick together on the same state, and the LIVE pill / `⏱` icon were left untouched. No server changes.
 
+### 9.57 Arena loading overlay progress bar reads as a stall
+
+**Symptom (user-reported 2026-04-21, side note in PR165 Notes).** On entering a zone, the arena loading overlay's progress bar (`#arena-loading-bar` at `nethara-live.html:1191`) appears to freeze at roughly the midpoint before the Deploy Nine button becomes available. Players interpret the pause as the app having frozen.
+
+**Root cause.** The bar wasn't smoothly animating — it stepped through four hard-coded percentages mapped to real phases: `0` on `openArena()` (`2143`), `35` on biome-image load (`6360`/`6364`), `60` on socket connect (`3549`), `100` on the first `arena:positions` tick (`3562`). The gaps between those checkpoints (especially 35→60 and 60→100) are bounded by network latency, so the fill element literally parks at 35% or 60% while waiting for the next event. The 8-second safety timeout at `2105` masked pathological hangs but also let the "stall" visual persist for a full 8s in the worst case.
+
+**Resolved 2026-04-22 in PR #?.** Four-part fix in `public/nethara-live.html`:
+
+1. Removed `#arena-loading-bar` from the overlay DOM (`1190–1192`). Replaced with a small CSS `.arena-spinner` (gold arc over a subtle ring, `0.9s` linear rotation) added to the arena CSS block (`~299`).
+2. Rewrote `_showArenaLoading(msg, _pct)` (`1830`) to drop the bar-width write. Kept the `_pct` parameter as a harmless no-op so existing call sites at `2143 / 3549 / 3562 / 6360 / 6364` keep working without churn — the phase text labels (`LOADING ARENA...` → `LOADING FIGHTERS...` → `JOINING ZONE...` → `READY`) remain the honest indicator of what the app is doing.
+3. Dropped the safety timeout from 8 s to 3 s at `2105`. Past 3 s the overlay hiding itself is more useful than holding up the Deploy CTA while something upstream is wrong.
+4. No server-side or state changes. The LIVE pill, countdown timer (§9.56), and positions-tick dismiss path (§9.24) are untouched.
+
 ---
 
 ## Appendix A — Glossary
