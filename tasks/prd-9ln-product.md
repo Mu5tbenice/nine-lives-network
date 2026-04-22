@@ -1353,7 +1353,7 @@ Diagnostic `console.log` retained for one smoke-test cycle per the §9.35/PR #15
 
 **Status: OPEN — FLAG_OFF awaiting playtest.** Close when the flag has been flipped in production and the mechanic has survived a week without regression reports. Separate PR will then update the Game Bible V4 → V5 to document the "deploy window" concept formally.
 
-**Resolved 2026-04-22 in PR #?.** Flipped `FEATURE_DEPLOY_LOCKOUT: false` → `true` in `server/config/flags.js` as part of the in-arena combat watch loop rework. Server guard at `routes/zones.js:55` now active — mid-round deploys respond 423. Rejoin endpoint (`/api/zones/:zoneId/rejoin`) is not behind the flag, so KO'd players' auto-rejoin + manual rejoin paths continue to work during FIGHTING. Paired with §9.60 (client-side guard) the effect is: already-deployed players can't rebuild mid-round (widget-gated CTA, feed-event silent-skip on openDeployModal); new players entering a zone mid-round can still open the modal and pick cards, and their confirm deploy hits the existing 423 countdown on the deploy button (implemented in the original §9.46 plumbing). Game Bible V4 → V5 update deferred to a separate doc PR.
+**Resolved 2026-04-22 in PR #170.** Flipped `FEATURE_DEPLOY_LOCKOUT: false` → `true` in `server/config/flags.js` as part of the in-arena combat watch loop rework. Server guard at `routes/zones.js:55` now active — mid-round deploys respond 423. Rejoin endpoint (`/api/zones/:zoneId/rejoin`) is not behind the flag, so KO'd players' auto-rejoin + manual rejoin paths continue to work during FIGHTING. Paired with §9.60 (client-side guard) the effect is: already-deployed players can't rebuild mid-round (widget-gated CTA, feed-event silent-skip on openDeployModal); new players entering a zone mid-round can still open the modal and pick cards, and their confirm deploy hits the existing 423 countdown on the deploy button (implemented in the original §9.46 plumbing). Game Bible V4 → V5 update deferred to a separate doc PR.
 
 ### 9.47 Mobile visual follow-up — real-phone smoke test of PR #161
 
@@ -1528,7 +1528,7 @@ Scope held to the one behaviour fix — no copy, positioning, or interaction cha
 
 **Root cause.** `startCountdown()` at `nethara-live.html:5718` ran a 1s interval keyed on `S.cycleEndTime`, a value set by `fetchCycleTiming()` (`5730`) to the next wall-clock 15-minute boundary. Neither field is maintained by the round-state socket handlers (`arena:round_end` at `4007`, `arena:round_start` at `4101`) that drive `S._roundState` / `S._roundStartedAt` / `S._roundEndsAt`. The top-bar ticker and the sidebar round ticker (`4705–4731`) read from entirely different state.
 
-**Resolved 2026-04-22 in PR #?.** Three-part fix in `public/nethara-live.html`:
+**Resolved 2026-04-22 in PR #170.** Three-part fix in `public/nethara-live.html`:
 
 1. Dropped `cycleEndTime: null,` from the `S` state literal at `1824`.
 2. Deleted `fetchCycleTiming()` (`5730–5735`) entirely — no other callers existed.
@@ -1542,7 +1542,7 @@ The top-bar and sidebar clocks now tick together on the same state, and the LIVE
 
 **Root cause.** The bar wasn't smoothly animating — it stepped through four hard-coded percentages mapped to real phases: `0` on `openArena()` (`2143`), `35` on biome-image load (`6360`/`6364`), `60` on socket connect (`3549`), `100` on the first `arena:positions` tick (`3562`). The gaps between those checkpoints (especially 35→60 and 60→100) are bounded by network latency, so the fill element literally parks at 35% or 60% while waiting for the next event. The 8-second safety timeout at `2105` masked pathological hangs but also let the "stall" visual persist for a full 8s in the worst case.
 
-**Resolved 2026-04-22 in PR #?.** Four-part fix in `public/nethara-live.html`:
+**Resolved 2026-04-22 in PR #170.** Four-part fix in `public/nethara-live.html`:
 
 1. Removed `#arena-loading-bar` from the overlay DOM (`1190–1192`). Replaced with a small CSS `.arena-spinner` (gold arc over a subtle ring, `0.9s` linear rotation) added to the arena CSS block (`~299`).
 2. Rewrote `_showArenaLoading(msg, _pct)` (`1830`) to drop the bar-width write. Kept the `_pct` parameter as a harmless no-op so existing call sites at `2143 / 3549 / 3562 / 6360 / 6364` keep working without churn — the phase text labels (`LOADING ARENA...` → `LOADING FIGHTERS...` → `JOINING ZONE...` → `READY`) remain the honest indicator of what the app is doing.
@@ -1555,7 +1555,7 @@ The top-bar and sidebar clocks now tick together on the same state, and the LIVE
 
 **Root cause.** The original §9.31 suppression was correct for the *then*-current widget (blocking, 60-second countdown, pushing immediate redeploy) but left no replacement. The rejoin flow then split across three disjoint UIs: (a) a never-shown KO widget, (b) an ad-hoc bottom-center rejoin prompt created at round-end, (c) the round-end modal that happened to share screen-space with prompt (b). The PR165 Notes wave plan's "reworked KO widget" in the wave plan assumed the widget was still live; exploration surfaced it was dead.
 
-**Resolved 2026-04-22 in PR #?.** Rewired the KO widget as a non-blocking, informational overlay and collapsed the three-surface rejoin flow into one.
+**Resolved 2026-04-22 in PR #170.** Rewired the KO widget as a non-blocking, informational overlay and collapsed the three-surface rejoin flow into one.
 
 - **Combat:ko handler (`~3889`):** re-added `showKOOverlay(data.killerName || null)` for self-KOs, superseding §9.31's suppression. New widget design doesn't block the arena (`pointer-events: none` on the overlay root, `auto` on the widget itself), so the §9.31 concerns no longer apply.
 - **Widget DOM (`1640–1656`):** rebuilt with `💀` skull, `KNOCKED OUT` title, `by {killerName}` subtitle (dynamic via `#ko-killer`), short hint, primary `REJOIN` button (disabled until INTERMISSION), secondary `STAY WITHDRAWN` button. Removed the 60s countdown ring, the expired-message element, and the `pick-cards` link — the first two are obsolete (no deadline), the third is superseded by the round-end modal's CHANGE BUILD CTA.
@@ -1573,7 +1573,7 @@ Interactions preserved: auto-rejoin still fires on `arena:round_start` via the e
 
 **Root cause.** `_showRoundEnd` at `nethara-live.html:4434` created both a backdrop element and a center-anchored overlay (`top:50%;left:50%;transform:translate(-50%,-50%)`) with a scale-in animation. The design was "dramatic intermission beat" per an earlier comment, but the drama came at the cost of blocking everything behind it. The modal's own `NEXT ROUND IN Ns` countdown meant the player also had two clocks (it + the top-bar timer) competing for attention.
 
-**Resolved 2026-04-22 in PR #?.** Non-blocking rework inside `public/nethara-live.html`:
+**Resolved 2026-04-22 in PR #170.** Non-blocking rework inside `public/nethara-live.html`:
 
 - Removed the backdrop element creation + append (`4459–4465`). `_dismissRoundEnd` now only has to clean up the overlay itself (plus a defensive removeChild of any legacy backdrop node left over from a prior session).
 - Repositioned the overlay from viewport-center to `top: calc(var(--nav-height, 56px) + 48px); left: 50%; transform: translateX(-50%)` — sits just below the arena top bar, leaving the arena canvas, HUD tray, sidebar, and chat all visible.
@@ -1588,7 +1588,7 @@ CTA behavior (`_handleRoundEndAction` at `~4560`) is unchanged: auto-rejoin ON �
 
 **Symptom.** With `FEATURE_DEPLOY_LOCKOUT` flipping ON (§9.46 resolved), an already-deployed player clicking the SWAP or LOADOUT button during FIGHTING would see the deploy modal open, pick cards, and only discover the lockout when they hit the 423 countdown on the confirm button. The modal is visually loud (full-screen on mobile), so the UX was "the game tells me I can rebuild, then tells me I can't."
 
-**Resolved 2026-04-22 in PR #?.** Added an early guard in `openDeployModal` at `nethara-live.html:2845`:
+**Resolved 2026-04-22 in PR #170.** Added an early guard in `openDeployModal` at `nethara-live.html:2845`:
 
 ```javascript
 if (S._roundState === 'FIGHTING' && S.isDeployed) {
