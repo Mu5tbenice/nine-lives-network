@@ -1821,7 +1821,7 @@
     _metersRenderTimer: null,
     selectedCards: [], playerCards: [],
     guildScores: {}, feedEvents: [],
-    cycleEndTime: null, countdownInterval: null,
+    countdownInterval: null,
     snapshotCount: 0, currentCycle: 0,
   };
   window._S = S; // expose to PIXI IIFE — set immediately so Proxy reads work on load
@@ -5715,23 +5715,29 @@
     }
   }
 
+  // §9.56: top-bar timer mirrors the sidebar round ticker (FIGHTING → elapsed
+  // since round start; INTERMISSION → countdown to next round). Previous
+  // implementation showed the 15-min snapshot-cycle boundary, unrelated to
+  // round pacing.
   function startCountdown() {
     if (S.countdownInterval) clearInterval(S.countdownInterval);
     S.countdownInterval = setInterval(() => {
-      if (!S.cycleEndTime) { fetchCycleTiming(); return; }
-      const remaining = Math.max(0, Math.ceil((S.cycleEndTime - Date.now()) / 1000));
-      const m = Math.floor(remaining/60), s = remaining%60;
       const el = document.getElementById('countdown-time');
-      if (el) el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-      if (remaining === 0) { S.cycleEndTime = null; fetchCycleTiming(); }
+      if (!el) return;
+      if (S._roundState === 'INTERMISSION') {
+        const secLeft = Math.max(0, Math.round((S._roundEndsAt - Date.now()) / 1000));
+        const m = Math.floor(secLeft/60), s = secLeft % 60;
+        el.textContent = `${m}:${String(s).padStart(2,'0')}`;
+        el.classList.remove('fighting');
+        el.classList.toggle('urgent', secLeft <= 10);
+      } else {
+        const elapsed = Math.round((Date.now() - (S._roundStartedAt || Date.now())) / 1000);
+        const m = Math.floor(elapsed/60), s = elapsed % 60;
+        el.textContent = `${m}:${String(s).padStart(2,'0')}`;
+        el.classList.remove('urgent');
+        el.classList.add('fighting');
+      }
     }, 1000);
-  }
-
-  async function fetchCycleTiming() {
-    // Endpoint doesn't exist — derive from server time: snapshots every 15 min on the :00/:15/:30/:45
-    const now = Date.now();
-    const INTERVAL = 15 * 60 * 1000;
-    S.cycleEndTime = Math.ceil(now / INTERVAL) * INTERVAL;
   }
 
   // ── CHAT ──
