@@ -1510,6 +1510,16 @@ Silent drift — nothing broke at runtime — but any reader cross-referencing t
 
 Surfaced during the canon-cleanup scoping; entered and resolved in the same PR.
 
+### 9.55 KO overlay and round-end modal stack when a KO lands near round end
+
+**Symptom (user-reported 2026-04-21, screenshot `audit/screenshots/PR165 Notes/SS6.png`).** When a player's Nine is KO'd within the last few seconds of a round, both the KO widget (`#ko-overlay`, z-index 65) and the round-end modal (`#round-end-overlay`, z-index 8500) render simultaneously. The round-end modal paints over the top half of the KO widget because of the higher z-index, leaving a confusing stacked UI where both are partially visible and neither is cleanly dismissable without input.
+
+**Root cause.** `nethara-live.html` has a `dismissKOOverlay()` helper at line 3492, but none of the round-end rendering paths call it. The `arena:round_end` socket handler at line 4007 mutates round state and then calls `_showRoundEnd(data)` at line 4064 without first dismissing the KO widget. When the two events fire within the same animation frame (KO in the final second of a round that ends on KO), both overlays are visible at once.
+
+**Resolved 2026-04-22 in PR #?.** Added a single `dismissKOOverlay();` call inside the `arena:round_end` handler, placed immediately before `_showRoundEnd(data)` at `nethara-live.html:4064`. The dismiss is a safe no-op when the KO overlay isn't visible, so there's no branch or null-check needed. Placement is *after* the KO-rejoin bookkeeping at lines 4020–4029 (which reads `S._wasKOdThisRound` for auto-rejoin queueing) and *before* the round-end DOM mutation, so the UI state flip is clean: the KO widget closes, then the round-end modal opens in its place.
+
+Scope held to the one behaviour fix — no copy, positioning, or interaction changes to either modal. The larger KO / round-end UX rework (non-blocking positioning, skull emoji, killer name) is queued as a separate PR in the PR165 Notes wave.
+
 ---
 
 ## Appendix A — Glossary
