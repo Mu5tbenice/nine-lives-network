@@ -1565,6 +1565,23 @@ The top-bar and sidebar clocks now tick together on the same state, and the LIVE
 
 Interactions preserved: auto-rejoin still fires on `arena:round_start` via the existing `_doRejoin` path; on failure the widget's CTA re-enables so the player can retry. Session-expiry dismisses the widget via `dismissKOOverlay()` (replaces the old `_dismissRejoinPrompt` call).
 
+### 9.59 Round-end modal blocked the arena spectacle
+
+**Symptom (user-reported 2026-04-21, screenshot `audit/screenshots/PR165 Notes/SS3.png`).** When a round ends, the round-end modal (`#round-end-overlay`, z-index 8500) rendered at viewport center with a 40 %-opacity full-viewport backdrop (`#round-end-backdrop`, z-index 8499). The backdrop darkened the arena canvas, and the modal's center position obscured the card tray + chat on mobile. End result: the player couldn't watch the post-round moment (e.g., surviving sprites celebrating) or keep chatting during intermission — the intended "spectacle + chat stay live" loop was gated behind dismissing the modal.
+
+**Root cause.** `_showRoundEnd` at `nethara-live.html:4434` created both a backdrop element and a center-anchored overlay (`top:50%;left:50%;transform:translate(-50%,-50%)`) with a scale-in animation. The design was "dramatic intermission beat" per an earlier comment, but the drama came at the cost of blocking everything behind it. The modal's own `NEXT ROUND IN Ns` countdown meant the player also had two clocks (it + the top-bar timer) competing for attention.
+
+**Resolved 2026-04-22 in PR #?.** Non-blocking rework inside `public/nethara-live.html`:
+
+- Removed the backdrop element creation + append (`4459–4465`). `_dismissRoundEnd` now only has to clean up the overlay itself (plus a defensive removeChild of any legacy backdrop node left over from a prior session).
+- Repositioned the overlay from viewport-center to `top: calc(var(--nav-height, 56px) + 48px); left: 50%; transform: translateX(-50%)` — sits just below the arena top bar, leaving the arena canvas, HUD tray, sidebar, and chat all visible.
+- Replaced the `roundEndScale` center-translate animation with `roundEndSlide` (top-biased slide-down). Dropped the now-unused `roundEndFade` and `slideUp` keyframes from the inline `<style>`.
+- Tightened padding (`20px 22px` → `14px 18px`), shrunk ROUND OVER header font (9 → 8 px), survivor-grid gap (12 → 10 px), and trimmed a few vertical margins for a ~20 % shorter footprint. The CTA button font dropped 11 → 10 px + padding 14 → 12 px to match.
+- Kept the modal's internal `NEXT ROUND IN Ns` countdown as a secondary clock alongside the top-bar timer (§9.56).
+- Coordinated with §9.58: the KO widget moved from `top: 96px` to `bottom: 230px` so it sits above the HUD tray during intermission — round-end modal occupies the top-center slot; KO widget the bottom-center. They're fully visible simultaneously without overlap.
+
+CTA behavior (`_handleRoundEndAction` at `~4560`) is unchanged: auto-rejoin ON → CHANGE BUILD opens the preselected deploy modal; auto-rejoin OFF → the button flips the toggle on. The `§9.45` / `§9.47` / `§9.49` comments in that function still describe the correct invariants.
+
 ---
 
 ## Appendix A — Glossary

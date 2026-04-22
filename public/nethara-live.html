@@ -588,18 +588,18 @@
 
     /* Round banner */
     /* ── KO Widget (non-blocking corner) ── */
-    /* §9.58 KO widget: non-blocking informational overlay. Anchored over the
-       arena stage, floats above the HUD tray. Chat + tabs + top-bar remain
-       interactive. Skull + killer name + rejoin CTA (gated on round state). */
+    /* §9.58 KO widget: non-blocking informational overlay. Anchored above the
+       HUD tray (§9.59 round-end modal owns the top-center slot so the two
+       don't stack vertically). Chat + tabs + top-bar remain interactive. */
     #ko-overlay {
       display: none; position: absolute;
-      top: 96px; left: 50%; transform: translateX(-50%);
+      bottom: 230px; left: 50%; transform: translateX(-50%);
       z-index: 65;
       animation: koWidgetDrop 0.4s cubic-bezier(0.34,1.2,0.64,1);
       pointer-events: none; /* let clicks pass; .ko-widget re-enables on itself */
     }
     #ko-overlay.visible { display: block; }
-    @keyframes koWidgetDrop { from { transform: translateX(-50%) translateY(-20px); opacity:0; } to { transform: translateX(-50%) translateY(0); opacity:1; } }
+    @keyframes koWidgetDrop { from { transform: translateX(-50%) translateY(20px); opacity:0; } to { transform: translateX(-50%) translateY(0); opacity:1; } }
     .ko-widget {
       background: rgba(10,6,18,0.96); border: 1px solid rgba(232,90,106,0.45);
       border-radius: 14px; padding: 14px 18px;
@@ -4456,22 +4456,19 @@
           <span style="font-family:'Press Start 2P',monospace;font-size:7px;color:#6ac8d8">${n} alive</span>
         </div>`).join('');
 
-    // D3: centered over arena — dramatic intermission beat. Backdrop sits
-    // just below the overlay and briefly darkens the arena to sell the pause.
-    const backdrop = document.createElement('div');
-    backdrop.id = 'round-end-backdrop';
-    backdrop.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,0.4);
-      z-index:8499;animation:roundEndFade 0.2s ease;`;
-    document.body.appendChild(backdrop);
-
+    // §9.59: non-blocking round-end. No backdrop (so the arena + chat + tray
+    // stay visible and interactive); top-biased over the arena canvas so the
+    // KO widget (§9.58, bottom-anchored) remains fully visible during
+    // intermission.
     const overlay = document.createElement('div');
     overlay.id = 'round-end-overlay';
-    overlay.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-      width:min(480px, 90vw);max-height:calc(100vh - 80px);overflow-y:auto;
+    overlay.style.cssText = `position:fixed;top:calc(var(--nav-height, 56px) + 48px);left:50%;transform:translateX(-50%);
+      width:min(440px, 92vw);max-height:calc(100vh - 240px);overflow-y:auto;
       z-index:8500;background:linear-gradient(180deg,#16102a,#0d0a18);
       border:1px solid rgba(212,166,75,0.25);border-radius:6px;
-      animation:roundEndScale 0.22s cubic-bezier(0.34,1.56,0.64,1);
-      box-shadow:0 10px 50px rgba(0,0,0,0.7);`;
+      animation:roundEndSlide 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      box-shadow:0 10px 50px rgba(0,0,0,0.7);
+      pointer-events:auto;`;
 
     // §9.45 single context-aware CTA — read S._autoRedeploy at render time.
     // - ON  → "CHANGE BUILD" opens deploy modal pre-selected; if user closes
@@ -4483,32 +4480,30 @@
       `<div style="font-family:'Crimson Text',serif;font-size:13px;color:rgba(204,197,219,0.55);line-height:1.4;text-align:center;padding:0 8px;margin:0 0 8px;">Turn on auto-rejoin to keep fighting with your current build next round — or redeploy manually from the arena.</div>`;
 
     overlay.innerHTML = `
-      <style>@keyframes roundEndFade{from{opacity:0}to{opacity:1}}
-      @keyframes roundEndScale{from{transform:translate(-50%,-50%) scale(0.9);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
-      @keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
-      .round-end-cta{width:100%;margin:6px 0 8px;font-family:'Press Start 2P',monospace;font-size:11px;letter-spacing:1.5px;padding:14px 16px;border-radius:4px;cursor:pointer;background:linear-gradient(135deg,#D4A64B,#a8823a);color:#0d0a18;border:none;box-shadow:0 2px 12px rgba(212,166,75,0.3);transition:filter 0.15s;}
+      <style>@keyframes roundEndSlide{from{transform:translateX(-50%) translateY(-20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+      .round-end-cta{width:100%;margin:4px 0 6px;font-family:'Press Start 2P',monospace;font-size:10px;letter-spacing:1.5px;padding:12px 14px;border-radius:4px;cursor:pointer;background:linear-gradient(135deg,#D4A64B,#a8823a);color:#0d0a18;border:none;box-shadow:0 2px 12px rgba(212,166,75,0.3);transition:filter 0.15s;}
       .round-end-cta:hover{filter:brightness(1.1);}
       .round-end-cta:active{transform:translateY(1px);}</style>
-      <div style="padding:20px 22px;">
+      <div style="padding:14px 18px;">
 
-        <div style="text-align:center;margin-bottom:16px;">
-          <div style="font-family:'Press Start 2P',monospace;font-size:9px;color:rgba(255,255,255,.4);letter-spacing:2px;margin-bottom:4px">
+        <div style="text-align:center;margin-bottom:10px;">
+          <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:rgba(255,255,255,.4);letter-spacing:2px;margin-bottom:3px">
             ROUND ${data.roundNumber || ''} OVER
           </div>
-          <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,.25);margin-bottom:8px">
+          <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,.25);margin-bottom:6px">
             ${data.endReason === 'last_standing' ? 'LAST GUILD STANDING' : 'TIME CAP REACHED'} — ${Math.floor((data.elapsedMs||0)/60000)}:${String(Math.round(((data.elapsedMs||0)%60000)/1000)).padStart(2,'0')} elapsed
           </div>
           ${winner ? `
-          <div style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:#D4A64B;margin-bottom:4px">
+          <div style="font-family:'Cinzel',serif;font-size:20px;font-weight:700;color:#D4A64B;margin-bottom:3px">
             [${winner}]
           </div>
-          <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(212,166,75,.6)">
+          <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(212,166,75,.6)">
             ${flipped ? 'CAPTURED THE ZONE' : 'CONTROLS THE ZONE'}
           </div>` : `
-          <div style="font-family:'Cinzel',serif;font-size:18px;color:rgba(255,255,255,.4)">CONTESTED</div>`}
+          <div style="font-family:'Cinzel',serif;font-size:16px;color:rgba(255,255,255,.4)">CONTESTED</div>`}
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
           <div>
             <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,.35);margin-bottom:6px;letter-spacing:1px">SURVIVORS</div>
             ${guildHTML || '<div style="color:rgba(255,255,255,.3);font-size:11px">All fallen</div>'}
@@ -4520,7 +4515,7 @@
         </div>
 
         <!-- Nerm commentary -->
-        <div style="background:rgba(212,166,75,0.05);border:1px solid rgba(212,166,75,0.12);border-radius:4px;padding:8px 10px;margin-bottom:10px;">
+        <div style="background:rgba(212,166,75,0.05);border:1px solid rgba(212,166,75,0.12);border-radius:4px;padding:6px 10px;margin-bottom:8px;">
           <div style="display:flex;gap:8px;align-items:flex-start;">
             <span style="font-size:18px;flex-shrink:0;">🐱</span>
             <div>
@@ -4533,7 +4528,7 @@
         ${helper}
         <button class="round-end-cta" onclick="window._handleRoundEndAction()">${ctaLabel}</button>
 
-        <div style="text-align:center;padding-top:10px;border-top:1px solid rgba(255,255,255,.07)">
+        <div style="text-align:center;padding-top:8px;border-top:1px solid rgba(255,255,255,.07)">
           <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:#6ac8d8" id="round-next-countdown">
             NEXT ROUND IN ${Math.round((data.intermissionMs||25000)/1000)}s
           </div>
@@ -4591,6 +4586,8 @@
   };
 
   function _dismissRoundEnd() {
+    // §9.59: backdrop removed — round-end modal is non-blocking. Also clean
+    // up any legacy backdrop node that may have been left from a prior session.
     const el = document.getElementById('round-end-overlay');
     const bd = document.getElementById('round-end-backdrop');
     if (el) {
@@ -4600,11 +4597,7 @@
       el.style.transition = 'opacity 0.3s';
       setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 320);
     }
-    if (bd) {
-      bd.style.opacity = '0';
-      bd.style.transition = 'opacity 0.3s';
-      setTimeout(() => { if (bd.parentNode) bd.parentNode.removeChild(bd); }, 320);
-    }
+    if (bd && bd.parentNode) bd.parentNode.removeChild(bd);
   }
 
   window._showRoundEnd    = _showRoundEnd;
