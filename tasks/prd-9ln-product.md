@@ -1526,7 +1526,7 @@ Scope held to the one behaviour fix — no copy, positioning, or interaction cha
 
 **Root cause.** `startCountdown()` at `nethara-live.html:5718` ran a 1s interval keyed on `S.cycleEndTime`, a value set by `fetchCycleTiming()` (`5730`) to the next wall-clock 15-minute boundary. Neither field is maintained by the round-state socket handlers (`arena:round_end` at `4007`, `arena:round_start` at `4101`) that drive `S._roundState` / `S._roundStartedAt` / `S._roundEndsAt`. The top-bar ticker and the sidebar round ticker (`4705–4731`) read from entirely different state.
 
-**Resolved 2026-04-22 in PR #?.** Three-part fix in `public/nethara-live.html`:
+**Resolved 2026-04-22 in PR #168.** Three-part fix in `public/nethara-live.html`:
 
 1. Dropped `cycleEndTime: null,` from the `S` state literal at `1824`.
 2. Deleted `fetchCycleTiming()` (`5730–5735`) entirely — no other callers existed.
