@@ -1567,7 +1567,7 @@ The top-bar and sidebar clocks now tick together on the same state, and the LIVE
 
 Interactions preserved: auto-rejoin still fires on `arena:round_start` via the existing `_doRejoin` path; on failure the widget's CTA re-enables so the player can retry. Session-expiry dismisses the widget via `dismissKOOverlay()` (replaces the old `_dismissRejoinPrompt` call).
 
-**Follow-up 2026-04-22 in PR #?.** Smoke test on Replit revealed the §9.55 `dismissKOOverlay()` call inside `arena:round_end` was firing against the newly-revived widget and dismissing it at round-end before its CTA had a chance to flip. User feedback: the accidental behavior was preferable — "better than two buttons for one job." Formalised the simpler single-CTA model by dropping the widget's buttons entirely and letting the round-end modal (§9.59) own post-round action:
+**Follow-up 2026-04-22 in PR #171.** Smoke test on Replit revealed the §9.55 `dismissKOOverlay()` call inside `arena:round_end` was firing against the newly-revived widget and dismissing it at round-end before its CTA had a chance to flip. User feedback: the accidental behavior was preferable — "better than two buttons for one job." Formalised the simpler single-CTA model by dropping the widget's buttons entirely and letting the round-end modal (§9.59) own post-round action:
 
 - **Widget DOM (`~1640`):** removed `#ko-rejoin-btn` and `#ko-withdraw-btn` elements.
 - **Widget CSS (`~619–627`):** dropped both button rulesets.
@@ -1626,7 +1626,7 @@ Interactions: the round-end modal's CHANGE BUILD CTA opens `openDeployModal({pre
 
 Net effect: every chat send failed silently at the inbound hop; the outbound broadcast path was never reached. Origin is likely a historical rename on one side (probably server-side, splitting the action name into `chat:send` for inbound + `chat:message` for outbound) without updating the other side. Orphan copy in `server/services/arena-sockets.js` (a file not currently imported from `server/index.js`) had the same two-name pattern.
 
-**Resolved 2026-04-22 in PR #?.** Aligned every chat event on a single symmetric name, `zone:chat`:
+**Resolved 2026-04-22 in PR #171.** Aligned every chat event on a single symmetric name, `zone:chat`:
 
 - `server/index.js:264` — `socket.on('chat:send', …)` → `socket.on('zone:chat', …)`.
 - `server/index.js:276` — `arenaNamespace.to(`zone_${zoneId}`).emit('chat:message', …)` → `…emit('zone:chat', …)`.
