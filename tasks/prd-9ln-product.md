@@ -1567,6 +1567,18 @@ The top-bar and sidebar clocks now tick together on the same state, and the LIVE
 
 Interactions preserved: auto-rejoin still fires on `arena:round_start` via the existing `_doRejoin` path; on failure the widget's CTA re-enables so the player can retry. Session-expiry dismisses the widget via `dismissKOOverlay()` (replaces the old `_dismissRejoinPrompt` call).
 
+**Follow-up 2026-04-22 in PR #?.** Smoke test on Replit revealed the §9.55 `dismissKOOverlay()` call inside `arena:round_end` was firing against the newly-revived widget and dismissing it at round-end before its CTA had a chance to flip. User feedback: the accidental behavior was preferable — "better than two buttons for one job." Formalised the simpler single-CTA model by dropping the widget's buttons entirely and letting the round-end modal (§9.59) own post-round action:
+
+- **Widget DOM (`~1640`):** removed `#ko-rejoin-btn` and `#ko-withdraw-btn` elements.
+- **Widget CSS (`~619–627`):** dropped both button rulesets.
+- **Widget JS (`~3458`):** `showKOOverlay` now populates hint text based on `S._autoRedeploy` — `AUTO-REJOIN ON — REJOINING NEXT ROUND` when on, `WATCH THE ROUND — CHAT STAYS LIVE` when off. No more polling interval, no more button state manipulation.
+- **Cleanup:** deleted `_updateKOWidgetCTA` (~20 lines), `_koRejoinClick` / `_koWithdrawClick` window handlers, the `_koWidgetInt` state field + its init at `1821`, and the stale `_updateKOWidgetCTA()` call inside the `arena:round_start` auto-rejoin failure fallback (replaced with a feed-event nudge pointing to CHANGE BUILD / manual deploy).
+- **§9.55 dismiss at round-end** remains the intentional handoff mechanism; widget vanishes when the round-end modal (§9.59) appears.
+
+The widget is now a pure informational notice: skull + `KNOCKED OUT by {killerName}` + single hint line. The round-end modal is the sole source of post-round action. If the player wants to rejoin with same build and auto-rejoin is off, they toggle auto on via the modal's `ENABLE AUTO-REJOIN` CTA; auto-rejoin fires at round_start. If they want to change builds, they click CHANGE BUILD. Doing nothing keeps them withdrawn — same outcome as the deleted STAY WITHDRAWN button.
+
+Captured as a general design principle in the user's auto-memory (`feedback_single_cta_surface.md`): don't duplicate CTAs across widget + modal — pick one surface for the action.
+
 ### 9.59 Round-end modal blocked the arena spectacle
 
 **Symptom (user-reported 2026-04-21, screenshot `audit/screenshots/PR165 Notes/SS3.png`).** When a round ends, the round-end modal (`#round-end-overlay`, z-index 8500) rendered at viewport center with a 40 %-opacity full-viewport backdrop (`#round-end-backdrop`, z-index 8499). The backdrop darkened the arena canvas, and the modal's center position obscured the card tray + chat on mobile. End result: the player couldn't watch the post-round moment (e.g., surviving sprites celebrating) or keep chatting during intermission — the intended "spectacle + chat stay live" loop was gated behind dismissing the modal.
