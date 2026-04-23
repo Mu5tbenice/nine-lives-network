@@ -1800,6 +1800,26 @@ Verification: Jest test mocks two Nines (one withdrawn, one alive), calls `start
 
 ---
 
+### 9.72 Arena goes stale mid-session — deploy CTA shows, sprites hover from previous round, combat stuck, no console errors
+
+**Symptom (user-reported 2026-04-23 during smoke of the nine-PR batch).** After some period of watching a live arena — trigger is not reproducible but seems to involve the round boundary and/or a background tab window — the UI reaches a frozen state: `#deploy-cta` is visible, the player's own sprite hovers from a previous round, the opponent's sprite is stuck in place, combat events (damage numbers, HP ticks) stop arriving. No browser-console errors. Browser refresh restores normal state.
+
+**Effect.** High annoyance; directly blocks any extended smoke test because the player has to refresh and re-click-into the zone to recover. Adjacent to §9.24 (loading-overlay) and the tab-visibility fix shipped in PR #188, but neither fully explains this particular symptom — PR #188 addressed animation queue buildup and tab-return resync, while this bug persists even without a tab switch.
+
+**Root cause hypothesis.** Two candidates, both defensively addressed in the fix because I couldn't deterministically reproduce from the code path alone:
+1. **Zombie socket.** Socket.io auto-reconnect fires `connect` and emits `join_zone`, but for reasons specific to Replit / polling-fallback / sandbox lifecycle, the server's `arena:positions` broadcast never resumes to this client. Client has no watchdog, so the stale state sits forever. Sprites persist because `S.nines` is only culled by arena:positions ticks.
+2. **Server-side tick stall for the zone.** If `tickZone` throws inside the engine's `try/catch`, the catch logs and continues — but a repeating throw for a specific zone means no positions broadcast reaches any client in that zone until restart. Same downstream effect on the client.
+
+**Resolution plan.** Two-part client-side defense in `public/nethara-live.html`:
+1. **Stall detector.** New state field `S._lastPositionsAt` stamps each `arena:positions` receipt. `_startStallDetector()` runs every 2s; if the arena tab is visible AND `_lastPositionsAt > 0` AND more than 15s have passed without a tick, it logs `[stall] no arena:positions in Xs — forcing reconnect` and calls `S.socket.disconnect()` + `S.socket.connect()`. Socket.io's auto-reconnect machinery takes it from there.
+2. **Sprite cleanup on reconnect.** The `socket.on('connect', ...)` handler now clears `S.nines` (removing PIXI containers from the stage) before emitting `join_zone`. Without this, any stale sprite from the pre-dropout session lingers because no culling event arrives until positions resumes. Combined with the stall detector, this closes the loop: detect stall → force reconnect → clean sprite map → positions repopulate from server truth.
+
+The 15s threshold sits well above the 200ms tick interval (so no false alarms) and below where the user would notice the freeze. Tab-visibility guard (`S._tabHidden`) prevents the detector from false-firing when the browser naturally throttles RAF/setInterval.
+
+**Resolved 2026-04-23 in PR #?.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
