@@ -1661,7 +1661,7 @@ No other consumers of the old event names anywhere under `server/`, `public/`, o
 
 Pointer/arrow connecting popup visually to the row is deferred — current placement sits adjacent to the source row, which is the main ask. Add the pointer in a follow-up polish pass if the popup still feels disconnected in use.
 
-**Resolved 2026-04-23 in PR #?.** *(placeholder, per bootstrap mechanic)*
+**Resolved 2026-04-23 in PR #175.**
 
 ---
 
