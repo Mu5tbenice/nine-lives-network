@@ -152,6 +152,18 @@ try {
   captureBootFailure('./routes/admin', e);
 }
 
+// §9.78 — Chronicle admin endpoints (fire-act, health, recent-runs).
+// Mounted under /api/admin/chronicle so the existing x-admin-key gate
+// matches. Separate from /api/chronicle (player-facing dashboard data).
+try {
+  const adminChronicleRoutes = require('./routes/adminChronicle');
+  app.use('/api/admin/chronicle', adminChronicleRoutes);
+  console.log('✅ Admin chronicle routes loaded');
+} catch (e) {
+  console.error('❌ Failed to load admin chronicle routes:', e.message);
+  captureBootFailure('./routes/adminChronicle', e);
+}
+
 try {
   const spellRoutes = require('./routes/spells');
   app.use('/api/spells', spellRoutes);
