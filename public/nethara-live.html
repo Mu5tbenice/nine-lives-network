@@ -1253,12 +1253,15 @@
           <button onclick="window._sortFighters('kos')"    data-sort="kos"    class="sb-sort-btn" style="font-family:'Press Start 2P',monospace;font-size:5px;padding:3px 6px;border-radius:2px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:var(--faint);">KOs</button>
         </div>
       </div>
-      <!-- ROUND / SESSION toggle -->
+      <!-- Task 17.0 item 3: ROUND / TODAY toggle. "SESSION" renamed to "TODAY"
+           since the data is actually today's stats (00:00 UTC reset) per the
+           §9.50 / Task 17.0 item 1 wiring. Internal `_sidebarView` key stays
+           'session' to keep call-site churn down; the UI label is the change. -->
       <div style="display:flex;gap:0;padding:0 12px 6px;flex-shrink:0;">
         <button id="sb-view-round" data-sb-view="round" onclick="window._setSidebarView('round')"
-          style="font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 10px;border-radius:3px 0 0 3px;cursor:pointer;background:rgba(106,200,216,0.15);border:1px solid rgba(106,200,216,0.4);color:#6ac8d8;">⚡ ROUND <span id="sb-round-timer" style="opacity:0.6;font-size:5px;"></span></button>
+          style="font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 10px;border-radius:3px 0 0 3px;cursor:pointer;background:rgba(106,200,216,0.15);border:1px solid rgba(106,200,216,0.4);color:#6ac8d8;">⚡ THIS ROUND <span id="sb-round-timer" style="opacity:0.6;font-size:5px;"></span></button>
         <button id="sb-view-session" data-sb-view="session" onclick="window._setSidebarView('session')"
-          style="font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 10px;border-radius:0 3px 3px 0;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-left:none;color:var(--faint);">📊 SESSION</button>
+          style="font-family:'Press Start 2P',monospace;font-size:6px;padding:4px 10px;border-radius:0 3px 3px 0;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-left:none;color:var(--faint);">📊 TODAY</button>
       </div>
       <div id="fighters-list" style="flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(212,166,75,0.2) transparent;"></div>
     </div>
@@ -1577,8 +1580,8 @@
              mobile stay in sync. -->
         <div id="mob-tab-stats" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
           <div style="display:flex;gap:4px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;">
-            <button data-sb-view="round"   onclick="window._setSidebarView('round')"   style="flex:1;font-family:'Press Start 2P',monospace;font-size:14px;padding:8px 4px;border-radius:3px;cursor:pointer;background:rgba(106,200,216,0.15);border:1px solid rgba(106,200,216,0.4);color:#6ac8d8;">ROUND</button>
-            <button data-sb-view="session" onclick="window._setSidebarView('session')" style="flex:1;font-family:'Press Start 2P',monospace;font-size:14px;padding:8px 4px;border-radius:3px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:var(--faint);">SESSION</button>
+            <button data-sb-view="round"   onclick="window._setSidebarView('round')"   style="flex:1;font-family:'Press Start 2P',monospace;font-size:14px;padding:8px 4px;border-radius:3px;cursor:pointer;background:rgba(106,200,216,0.15);border:1px solid rgba(106,200,216,0.4);color:#6ac8d8;">THIS ROUND</button>
+            <button data-sb-view="session" onclick="window._setSidebarView('session')" style="flex:1;font-family:'Press Start 2P',monospace;font-size:14px;padding:8px 4px;border-radius:3px;cursor:pointer;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);color:var(--faint);">TODAY</button>
           </div>
           <div style="display:flex;gap:3px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0;overflow-x:auto;">
             <button class="mob-sb-sort-btn" data-sort="hp"     onclick="window._sortFighters('hp')"     style="flex:1;font-family:'Press Start 2P',monospace;font-size:14px;padding:6px 4px;border-radius:3px;cursor:pointer;background:rgba(212,166,75,0.12);border:1px solid rgba(212,166,75,0.3);color:var(--gold);">HP</button>
