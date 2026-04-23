@@ -1884,7 +1884,7 @@ This is a **real server bug**, not a client false-positive. The stall detector w
 
 Kept the intermission `return;` intact: combat mutation code ABOVE the intermission block (DOT timers, attack cycles, etc.) already gates on `hp > 0 && !waitingForRound`, so survivors with lingering poison stacks or burn timers would still tick during intermission if the return were removed. That's a pre-existing latent behavior separate from this fix; not touched.
 
-**Resolved 2026-04-23 in PR #?.**
+**Resolved 2026-04-23 in PR #196.**
 
 ---
 
