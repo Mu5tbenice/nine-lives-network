@@ -1861,6 +1861,33 @@ The 15s threshold sits well above the 200ms tick interval (so no false alarms) a
 
 ---
 
+### 9.76 Arena loading overlay flashes mid-intermission — server skips `arena:positions` broadcast for 35s, false-firing the §9.72 stall detector
+
+**Symptom (user-reported 2026-04-23 late, post-sync of PRs #193–#195).** During the 35-second intermission between rounds, the deploy-status pill + HUD get masked by a full-viewport loading overlay. User's quote: *"theres a loading screen that takes over the whole screen when theres about 15 seconds from next round starting... at the moment its difficult to tell if you are deployed or not."* Devtools console shows `[stall] no arena:positions in 32s — forcing reconnect` shortly before the overlay appears.
+
+**Effect.** Medium-high UX damage during every round transition. The deploy-status pill (§9.40), combat tray, and auto-rejoin controls disappear behind a `z-index:200` overlay at `public/nethara-live.html:1300`. Forced socket reconnect also wipes `S.nines` (§9.72 hotfix), which means the arena re-renders from scratch after each intermission — visually thrashy and makes players think something is broken.
+
+**Root cause.** `server/services/combatEngine.js` function `tickZone` contains an early-return at lines 1208–1211:
+
+```js
+if (zs.roundState === 'INTERMISSION') {
+  if (now >= zs.roundEndsAt) startRound(zoneId, zs, Array.from(zs.nines.values()));
+  return;
+}
+```
+
+The `return` exits the function before reaching the `broadcast(zoneId, 'arena:positions', ...)` at the bottom of the same function. For the full 35-second `INTERMISSION_MS` window, the server broadcasts zero position packets. The client's stall detector — correctly implemented in PR #191 with a 15-second silence threshold — watches for `arena:positions` and sees a long silence every round. It fires `console.warn("[stall] ...")`, calls `S.socket.disconnect()` → `S.socket.connect()`, and the reconnect handler at `public/nethara-live.html:3739` shows `_showArenaLoading('JOINING ZONE...', 60)`. Exactly Wray's reported symptom.
+
+This is a **real server bug**, not a client false-positive. The stall detector was correct; the server was incorrectly silent during intermission.
+
+**Resolution.** Refactor the `arena:positions` payload into a module-scoped `broadcastArenaPositions(zoneId, zs)` helper. Call it from two places: (a) the main path at the end of `tickZone` (same as before), AND (b) the intermission short-circuit so position ticks continue through the 35s window. Positions don't change during intermission — no combat runs, Nines sit at their last-tick coordinates — but the tick keeps the Socket.io wire busy and the stall detector stays quiet. Client renders unchanged, pill stays visible, no loading-overlay flash, no forced reconnect.
+
+Kept the intermission `return;` intact: combat mutation code ABOVE the intermission block (DOT timers, attack cycles, etc.) already gates on `hp > 0 && !waitingForRound`, so survivors with lingering poison stacks or burn timers would still tick during intermission if the return were removed. That's a pre-existing latent behavior separate from this fix; not touched.
+
+**Resolved 2026-04-23 in PR #196.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
