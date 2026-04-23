@@ -1900,6 +1900,20 @@ Kept the intermission `return;` intact: combat mutation code ABOVE the intermiss
 
 ---
 
+### 9.79 Arena bottom tray graphics disappear mid-session despite player still deployed → deferred
+
+**Symptom (user-reported 2026-04-23 end-of-session smoke).** During a continuous session, the `#arena-bottom-tray` (the combat HUD strip at the bottom of the arena view — card slots, withdraw/swap buttons, spell timeline) vanishes visually while the player is still deployed per `S.isDeployed`. Deploy-status pill (§9.40) stays correct; combat still progresses; so the state is fine, just the bottom UI is hidden.
+
+**Effect.** Low severity annoyance. Player loses access to the swap/exit buttons until they refresh. Not blocking gameplay — combat auto-continues, auto-rejoin still fires on KO. Flagged as "small annoyance" by Wray; not blocking MVP.
+
+**Root cause hypothesis (not verified).** Something is setting `document.getElementById('arena-bottom-tray').style.display = 'none'` without a matching re-show on the next legitimate deploy-visible transition. Candidates: the visibility re-sync path (`_onTabVisible` at `public/nethara-live.html:~4897`), the `arena:round_start` handler, or a stale leftover from one of the KO / withdraw paths. None of the recent PRs explicitly introduced this — most likely a pre-existing latent desync between `S.isDeployed` and the bottom-tray CSS.
+
+**Resolution plan.** Deferred. Pre-3D-animation work is being pushed out per 2026-04-23 priority reset. Will be revisited after the 3D animated-layers drop in ~2 weeks since arena polish is batched for that window. If the annoyance escalates before then, the fix is likely: add a deploy-state-to-tray-visibility sync on every state-change event (tab-visible, round_start, nine_rejoined, 30s metrics-sync interval) — same pattern as the pill from §9.40 / Task 17.0 item 5.
+
+**Status: OPEN — deferred.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
