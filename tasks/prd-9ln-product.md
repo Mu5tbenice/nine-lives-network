@@ -1896,7 +1896,7 @@ Kept the intermission `return;` intact: combat mutation code ABOVE the intermiss
 
 **Resolution.** Removed the handler body in `public/nethara-live.html` (replaced with a 5-line note explaining the removal + audit breadcrumb). Cleaned the two surviving references in `server/services/combatEngine.js` (one above the constants block, one where the session-timer loop used to live) — both now say "removed in §9.77" instead of "will be removed in a follow-up."
 
-**Resolved 2026-04-23 in PR #?.**
+**Resolved 2026-04-23 in PR #197.**
 
 ---
 
