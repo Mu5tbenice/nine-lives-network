@@ -1857,7 +1857,7 @@ The 15s threshold sits well above the 200ms tick interval (so no false alarms) a
 
 **Out of scope for this PR (deferred):** secondary-pages responsive pass (register / packs / how-to-play / builder / leaderboards / card-lab — the original plan's PR #2, now renumbered to a future §9.75 entry if prioritized). Dashboard hero inline-styles refactor and fluid typography sweep — also deferred to a future §9.76 pass.
 
-**Resolved 2026-04-23 in PR #?.**
+**Resolved 2026-04-23 in PR #194.**
 
 ---
 
