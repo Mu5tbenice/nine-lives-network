@@ -759,7 +759,7 @@ This PRD is not a roadmap — it describes the end state. But the work to close 
 
 This section is the **live bug ledger** the PRD carries. Each item is tied to a code location and should be resolved by a dedicated follow-up feature PRD (marked `→ FPRD`) or a one-liner cleanup PR (marked `→ cleanup`). Nothing here is acceptable in a shipped product long-term; all of it is currently live.
 
-**Maintenance convention.** Every PR that resolves an entry below appends a bold `**Resolved YYYY-MM-DD in PR #X.**` line to that entry rather than deleting it. Every PR that discovers a new issue adds a new entry at the next available number. See `CLAUDE.md` → "PRD discipline" for the mechanics, including the `PR #?` bootstrap pattern for self-referencing the current PR.
+**Maintenance convention.** Every PR that resolves an entry below appends a bold `**Resolved YYYY-MM-DD in PR #X.**` line to that entry rather than deleting it. Every PR that discovers a new issue adds a new entry at the next available number. See `CLAUDE.md` → "PRD discipline" for the mechanics, including the `PR #183` bootstrap pattern for self-referencing the current PR.
 
 ### 9.1 Scoring column split — `seasonal_points` vs `season_points` → FPRD
 
@@ -1279,7 +1279,9 @@ Server path required no change — engine/DB cleanup at `combatEngine.js:1045-10
 
 **Sequencing constraint.** Item 1 (daily_combat_stats) must ship before item 3 (sidebar rewrite). Items 2 and 4 can parallel-ship after item 1 lands. Item 5 is last.
 
-**Status: OPEN.** High priority — current state is actively incorrect per §4.8.5's rewritten spec. Batch with Task 17.0 (rollout task now expanded from M → M-L, 3-5 PRs).
+**Status: PARTIALLY RESOLVED.** Item 1 shipped 2026-04-23 in PR #183. Items 2–5 still OPEN — high priority for item 2 (`SESSION_MS` deletion) and item 4 (auto-rejoin UX flip); items 3 + 5 are polish.
+
+**Item 1 resolution (2026-04-23 in PR #183).** No new server-side tracking source was needed — the existing `player_zone_metrics` table (§9.50, PR #163) already keys on `(player_id, zone_id, metric_date)` with `metric_date` defaulting to `(now() AT TIME ZONE 'UTC')::date`, so rows naturally roll over at 00:00 UTC. The actual gap was client-side: `S.combatMetrics` only seeded from the server on zone entry, then grew unbounded via socket events with no reset boundary — a tab kept open across UTC midnight silently conflated yesterday's + today's stats. Fix in `public/nethara-live.html`: (a) extracted the seed fetch into a reusable `syncSessionMetricsFromServer(zoneId, {wholesale})` helper; (b) added `_checkUtcDayRollover()` that detects UTC date change, clears `S.combatMetrics`, re-fetches from `/api/zones/:zone_id/metrics`, and shows a `🕛 New UTC day — today's stats reset` feed event; (c) `startSessionMetricsSync()` wraps both in a 30s interval so the client stays bound to the server's day boundary and can't drift. Socket events still increment `S.combatMetrics` between re-syncs for sub-30s responsiveness; the periodic wholesale-replace absorbs any missed events back into the server's canonical count. `S.combatMetrics` kept its name for this PR — renaming to `S.dailyMetrics` (or splitting into ROUND/DAILY maps per item 3) is deferred to the sidebar rewrite.
 
 **Supersedes / updates:** §9.3 (2h SESSION_MS resolution superseded — SESSION_MS itself is being deleted), §9.38 (handler implementation correct, trigger semantics shift from 2h-inactivity to 1h-auto-rejoin-cap-hit), §9.40 (pill design needs rethink under the new three-state deploy state machine).
 
