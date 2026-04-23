@@ -102,6 +102,14 @@ try {
   console.log('⚠️ chronicleEngine not loaded');
   captureBootFailure('./services/chronicleEngine', e);
 }
+// §9.78 — persistent chronicle job log (replaces the in-memory-only jobLog)
+let chronicleJobLog = null;
+try {
+  chronicleJobLog = require('./chronicleJobLog');
+} catch (e) {
+  console.log('⚠️ chronicleJobLog not loaded');
+  captureBootFailure('./services/chronicleJobLog', e);
+}
 try {
   nermTwitter = require('./nermTwitter');
 } catch (e) {
@@ -269,80 +277,118 @@ function initializeScheduledJobs() {
   // 📜 THE CHRONICLE — 4-Act Daily Story
   // ════════════════════════════════════════════════
 
+  // §9.78 — shared wrapper that runs one act and records the outcome
+  // into chronicle_job_log. Engine preference: V2 chronicleEngine first,
+  // V4 narrativeEngine fallback. Manual admin trigger path lives in
+  // routes/adminChronicle.js and uses the same wrapper shape inline.
+  async function runChronicleActWithLog(actNum) {
+    const started = Date.now();
+    let engineUsed = null;
+    let tweetId = null;
+    try {
+      if (chronicleEngine) {
+        engineUsed = 'chronicleEngine';
+        const { postTweetAsBot } = require('./nermTwitter');
+        const result = await chronicleEngine.fireAct(actNum, postTweetAsBot);
+        tweetId = result?.tweet_id || result?.tweetId || null;
+      } else if (narrativeEngine) {
+        engineUsed = 'narrativeEngine';
+        const fn = narrativeEngine[`postAct${actNum}`];
+        if (typeof fn === 'function') {
+          const result = await fn();
+          tweetId = result?.tweet_id || result?.tweetId || null;
+        } else {
+          throw new Error(`narrativeEngine.postAct${actNum} not a function`);
+        }
+      } else {
+        throw new Error('No chronicle engine loaded');
+      }
+      if (chronicleJobLog) {
+        await chronicleJobLog.record({
+          job_name: `chronicle_act${actNum}`,
+          status: 'success',
+          duration_ms: Date.now() - started,
+          tweet_id: tweetId,
+          act_num: actNum,
+          metadata: { engineUsed, triggered: 'cron' },
+        });
+      }
+    } catch (e) {
+      console.error(`❌ Chronicle Act ${actNum}:`, e.message);
+      if (chronicleJobLog) {
+        await chronicleJobLog.record({
+          job_name: `chronicle_act${actNum}`,
+          status: 'error',
+          duration_ms: Date.now() - started,
+          act_num: actNum,
+          error_message: e.message,
+          error_code: e.code || null,
+          metadata: { engineUsed, triggered: 'cron', stack: String(e.stack || '').split('\n').slice(0, 6).join('\n') },
+        });
+      }
+    }
+  }
+
   // Act 1: The Call — 08:05 UTC
   cron.schedule('5 8 * * *', async () => {
     console.log(`[${ts()}] 📜 Chronicle Act 1: The Call`);
     logJob('chronicle_act1');
-    try {
-      if (territoryControl) await territoryControl.setRandomObjective();
-      if (chronicleEngine) {
-        const { postTweetAsBot } = require('./nermTwitter');
-        await chronicleEngine.fireAct(1, postTweetAsBot);
-      } else if (narrativeEngine) {
-        await narrativeEngine.postAct1(); // fallback
-      }
-    } catch (e) {
-      console.error('❌ Chronicle Act 1:', e.message);
+    if (territoryControl) {
+      try { await territoryControl.setRandomObjective(); } catch (e) { console.error('❌ setRandomObjective:', e.message); }
     }
+    await runChronicleActWithLog(1);
   });
 
   // Act 2: The March — 12:05 UTC
   cron.schedule('5 12 * * *', async () => {
     console.log(`[${ts()}] 📜 Chronicle Act 2: The March`);
     logJob('chronicle_act2');
-    try {
-      if (chronicleEngine) {
-        const { postTweetAsBot } = require('./nermTwitter');
-        await chronicleEngine.fireAct(2, postTweetAsBot);
-      } else if (narrativeEngine) {
-        await narrativeEngine.postAct2(); // fallback
-      }
-    } catch (e) {
-      console.error('❌ Chronicle Act 2:', e.message);
-    }
+    await runChronicleActWithLog(2);
   });
 
   // Act 3: The Storm — 16:05 UTC
   cron.schedule('5 16 * * *', async () => {
     console.log(`[${ts()}] 📜 Chronicle Act 3: The Storm`);
     logJob('chronicle_act3');
-    try {
-      if (chronicleEngine) {
-        const { postTweetAsBot } = require('./nermTwitter');
-        await chronicleEngine.fireAct(3, postTweetAsBot);
-      } else if (narrativeEngine) {
-        await narrativeEngine.postAct3(); // fallback
-      }
-    } catch (e) {
-      console.error('❌ Chronicle Act 3:', e.message);
-    }
+    await runChronicleActWithLog(3);
   });
 
   // Act 4: The Reckoning — 20:05 UTC
   cron.schedule('5 20 * * *', async () => {
     console.log(`[${ts()}] 📜 Chronicle Act 4: The Reckoning`);
     logJob('chronicle_act4');
-    try {
-      if (chronicleEngine) {
-        const { postTweetAsBot } = require('./nermTwitter');
-        await chronicleEngine.fireAct(4, postTweetAsBot);
-      } else if (narrativeEngine) {
-        await narrativeEngine.postAct4(); // fallback
-      }
-    } catch (e) {
-      console.error('❌ Chronicle Act 4:', e.message);
-    }
+    await runChronicleActWithLog(4);
   });
 
   // Reply scraping — every 10 min during story hours (8AM-9PM UTC)
   cron.schedule('*/10 8-21 * * *', async () => {
+    const started = Date.now();
     try {
       // Nerm scans Chronicle replies and mentions, awards points
       if (nermTwitter) await nermTwitter.runNermTwitterCycle();
       else if (narrativeEngine) await narrativeEngine.periodicScrape(); // fallback
       logJob('chronicle_scrape');
+      // §9.78 — success row so we can see scrape cadence in the health endpoint.
+      if (chronicleJobLog) {
+        await chronicleJobLog.record({
+          job_name: 'chronicle_scrape',
+          status: 'success',
+          duration_ms: Date.now() - started,
+          metadata: { triggered: 'cron', runner: nermTwitter ? 'nermTwitter' : narrativeEngine ? 'narrativeEngine' : 'none' },
+        });
+      }
     } catch (e) {
       console.error('❌ Chronicle scrape:', e.message);
+      if (chronicleJobLog) {
+        await chronicleJobLog.record({
+          job_name: 'chronicle_scrape',
+          status: 'error',
+          duration_ms: Date.now() - started,
+          error_message: e.message,
+          error_code: e.code || null,
+          metadata: { triggered: 'cron' },
+        });
+      }
     }
   });
 

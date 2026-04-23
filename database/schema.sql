@@ -949,6 +949,27 @@ ALTER TABLE zone_influence_history ADD CONSTRAINT zone_influence_history_zone_id
 ALTER TABLE zones ADD CONSTRAINT zones_school_id_fkey FOREIGN KEY (school_id) REFERENCES houses(id);
 ALTER TABLE zones ADD CONSTRAINT zones_controlling_school_id_fkey FOREIGN KEY (controlling_school_id) REFERENCES houses(id);
 
+-- §9.78 chronicle job log — persistent record of every Chronicle cron run
+-- (acts 1-4 + reply scraping) + every manual admin-triggered fire-act. The
+-- previous in-memory `jobLog` vaporized on restart and hid 6+ weeks of
+-- silent failures. Writer: `server/services/chronicleJobLog.js` (tolerant
+-- of missing table via 42P01 latch). Readers: admin health endpoint +
+-- recent-runs endpoint in `server/routes/adminChronicle.js`.
+CREATE TABLE IF NOT EXISTS chronicle_job_log (
+    id bigserial PRIMARY KEY,
+    job_name text NOT NULL,
+    status text NOT NULL CHECK (status IN ('success','error','skip')),
+    run_at timestamptz NOT NULL DEFAULT now(),
+    duration_ms integer,
+    tweet_id text,
+    error_message text,
+    error_code text,
+    act_num integer,
+    metadata jsonb
+);
+CREATE INDEX IF NOT EXISTS idx_chronicle_job_log_run_at ON chronicle_job_log(run_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chronicle_job_log_job_status ON chronicle_job_log(job_name, status, run_at DESC);
+
 -- ---------------------------------------------------------------------
 -- INDEXES, RLS POLICIES, TRIGGERS, CHECK CONSTRAINTS
 -- ---------------------------------------------------------------------
