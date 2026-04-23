@@ -1666,7 +1666,7 @@ No other consumers of the old event names anywhere under `server/`, `public/`, o
 
 **Follow-up filed as §9.69.** The existing self-reswap code path does a full withdraw + redeploy which resets HP and spawn position mid-round. This PR only unblocks the 423; the semantic choice (queue loadout for next round vs true hot-swap) is scoped to §9.69.
 
-**Resolved 2026-04-23 in PR #?.**
+**Resolved 2026-04-23 in PR #173.**
 
 ---
 
