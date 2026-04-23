@@ -1000,6 +1000,40 @@ function handleKO(nine, zoneId, all) {
   }
 }
 
+// §9.76 — shared arena:positions payload builder. Called from tickZone's
+// main path AND from the intermission short-circuit, so the client sees
+// a steady stream of position ticks every ~200ms including through the
+// 35s intermission. Without a tick during intermission the client's
+// stall detector (nethara-live.html:5297, 15s threshold) would fire a
+// false positive and force a reconnect → full-viewport loading overlay.
+function broadcastArenaPositions(zoneId, zs) {
+  broadcast(zoneId, 'arena:positions', {
+    zoneId,
+    nines: Array.from(zs.nines.values()).map((n) => ({
+      id: n.playerId,
+      deploymentId: n.deploymentId,
+      playerName: n.playerName,
+      x: Math.round(n.x),
+      y: Math.round(n.y),
+      hp: n.hp,
+      maxHp: n.maxHp,
+      guildTag: n.guildTag,
+      houseKey: n.houseKey,
+      waitingForRound: !!n.waitingForRound, // activates client filter at nethara-live.html:3315 (§9.26)
+      cardSlot: n.cardIdx % Math.max(1, n.cards.length),
+      activeEffect:
+        n.cards[n.cardIdx % Math.max(1, n.cards.length)]?.effect_1 || null,
+      status: {
+        burning: n.burnStacks > 0,
+        poisoned: n.poisonStacks > 0,
+        warded: n.wardUp,
+        silenced: n.silenced > 0,
+        taunting: n.tauntActive,
+      },
+    })),
+  });
+}
+
 // ─── ZONE TICK ────────────────────────────────────────────────────────
 async function tickZone(zoneId, zs) {
   zs.tick++;
@@ -1208,6 +1242,13 @@ async function tickZone(zoneId, zs) {
   if (zs.roundState === 'INTERMISSION') {
     if (now >= zs.roundEndsAt)
       startRound(zoneId, zs, Array.from(zs.nines.values()));
+    // §9.76: broadcast frozen positions during the 35s intermission so the
+    // client stall detector (15s threshold, nethara-live.html:5297) doesn't
+    // false-fire on the natural silence. Positions don't change tick-to-tick
+    // during intermission (no combat ran) but keeping the wire alive lets
+    // the client deploy-status pill + HUD stay visible instead of being
+    // masked by the reconnect loading overlay at z-index:200.
+    broadcastArenaPositions(zoneId, zs);
     return;
   }
 
@@ -1237,31 +1278,7 @@ async function tickZone(zoneId, zs) {
     }
   }
 
-  broadcast(zoneId, 'arena:positions', {
-    zoneId,
-    nines: Array.from(zs.nines.values()).map((n) => ({
-      id: n.playerId,
-      deploymentId: n.deploymentId,
-      playerName: n.playerName,
-      x: Math.round(n.x),
-      y: Math.round(n.y),
-      hp: n.hp,
-      maxHp: n.maxHp,
-      guildTag: n.guildTag,
-      houseKey: n.houseKey,
-      waitingForRound: !!n.waitingForRound, // activates client filter at nethara-live.html:3315 (§9.26)
-      cardSlot: n.cardIdx % Math.max(1, n.cards.length),
-      activeEffect:
-        n.cards[n.cardIdx % Math.max(1, n.cards.length)]?.effect_1 || null,
-      status: {
-        burning: n.burnStacks > 0,
-        poisoned: n.poisonStacks > 0,
-        warded: n.wardUp,
-        silenced: n.silenced > 0,
-        taunting: n.tauntActive,
-      },
-    })),
-  });
+  broadcastArenaPositions(zoneId, zs);
 
   // HP sync every 40 ticks (= 20s at 500ms per tick)
   if (zs.tick % 40 === 0) {
