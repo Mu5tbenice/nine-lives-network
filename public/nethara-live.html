@@ -7271,6 +7271,16 @@
     }
   }
 
+  // §9.75 — once-per-name log ledger for the visual-safety wrapper below.
+  // Visual helpers are cosmetic; if one throws, we swallow and log the first
+  // occurrence so the fault is visible in devtools without spamming.
+  const _vfxWarned = new Set();
+  function _vfxWarnOnce(fn, err) {
+    if (_vfxWarned.has(fn)) return;
+    _vfxWarned.add(fn);
+    console.warn(`[vfx-safety] ${fn} threw once; subsequent errors suppressed:`, err);
+  }
+
   function showFloatingText(x, y, text, color = 0xff4466, size = 12) {
     if (!state.arenaApp) return;
     // Tab-hidden guard — don't queue PIXI text + per-frame fade tickers while
@@ -7278,6 +7288,7 @@
     // HOTFIX: this runs inside the PIXI IIFE where `S` is out of scope —
     // read via the `state` Proxy instead (which forwards to window._S).
     if (state._tabHidden) return;
+    try {
     const app = state.arenaApp;
     // Arc direction: always away from centre-screen so numbers spread outward
     const cx = app.screen.width / 2;
@@ -7314,6 +7325,7 @@
       if (frame >= frames) { app.ticker.remove(ticker); app.stage.removeChild(t); }
     };
     app.ticker.add(ticker);
+    } catch (e) { _vfxWarnOnce('showFloatingText', e); }
   }
 
   // ═══════════════════════════════════════════
@@ -8157,6 +8169,7 @@
     // Tab-hidden guard — particle bursts are pure visual; drop while hidden.
     // HOTFIX: use `state` proxy, not `S` (PIXI IIFE scope).
     if (state._tabHidden) return;
+    try {
     const particles = [];
     // Boost count slightly
     const boostedCount = Math.round(count * 1.5);
@@ -8274,6 +8287,7 @@
       }
     };
     state.arenaApp.ticker.add(ticker);
+    } catch (e) { _vfxWarnOnce('spawnParticles', e); }
   }
 
   /** SCREEN FLASH — full viewport white/color flash on big hits */
@@ -8309,6 +8323,7 @@
     // was aborting the combat:ko handler before isDeployed/_withdrawnAfterKO
     // could update — which masked the KO client-side entirely.
     if (state._tabHidden) return;
+    try {
     nine.isAnimating = true;
 
     const startX = nine.container.x;
@@ -8349,6 +8364,7 @@
       }
     };
     state.arenaApp.ticker.add(ticker);
+    } catch (e) { _vfxWarnOnce('animateKO', e); }
   }
 
   /** Get effect particle config */
