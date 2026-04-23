@@ -110,9 +110,22 @@ router.post('/deploy', async (req, res) => {
               .status(400)
               .json({ error: 'no valid cards — ownership check failed' });
           }
+          // Resolve card data NOW (route is async) so the engine can apply
+          // sync at round start — avoids the DB-fetch race that left the
+          // survivor HP-reset using OLD maxHp and the round_start broadcast
+          // going out before cards were applied.
+          const resolvedCards = engine.fetchCardsByPlayerCardIds
+            ? await engine.fetchCardsByPlayerCardIds(finalIds)
+            : [];
+          if (!resolvedCards.length) {
+            return res
+              .status(400)
+              .json({ error: 'could not resolve card data' });
+          }
           engine.queuePendingCards(
             zone_id,
             existingNine.deploymentId,
+            resolvedCards,
             finalIds,
           );
           return res.status(200).json({

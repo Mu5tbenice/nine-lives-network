@@ -1480,12 +1480,10 @@ function startRound(zoneId, zs, all) {
   zs.roundEndsAt = Date.now() + ROUND_CAP_MS; // 5min hard cap
 
   // §9.69: apply any pending loadout changes queued during the previous
-  // round. Fire-and-forget — stats/cards/maxHp update in-place so HP and
-  // position are preserved. The HP-reset loop below then restores to the
-  // new maxHp for the player's new loadout.
-  applyPendingCardsAtRoundStart(zoneId, zs).catch((e) =>
-    console.error('[§9.69 hook]', e.message),
-  );
+  // round. Sync — cards/stats/maxHp update in-place BEFORE the HP-reset
+  // loop below, so survivors get reset to the NEW maxHp. Position and
+  // active status effects are preserved by applyCardsInPlace.
+  applyPendingCardsAtRoundStart(zoneId, zs);
 
   // Full HP reset for survivors — KO'd Nines become 'withdrawn' (must click rejoin)
   all.forEach((n) => {
@@ -1757,13 +1755,18 @@ function stopCombatEngine() {
 // (preserves HP and position — no fresh respawn). In-memory only; a rare
 // engine restart mid-intermission would drop pending entries, in which case
 // the player can just re-submit the swap. No schema change required.
-const pendingCardQueue = new Map(); // key: `${zoneId}:${deploymentId}` → cardIds[]
+//
+// Queue entries carry BOTH the resolved card objects (for fast sync apply at
+// round-start, so HP reset in startRound uses the new maxHp) AND the raw
+// player_card IDs (for the async DB slot rotation). Route fetches card data
+// up front; engine never does a DB read at apply time.
+const pendingCardQueue = new Map(); // key: `${zoneId}:${deploymentId}` → { cards, cardIds }
 
-function queuePendingCards(zoneId, deploymentId, cardIds) {
-  pendingCardQueue.set(
-    `${String(zoneId)}:${String(deploymentId)}`,
-    cardIds.slice(),
-  );
+function queuePendingCards(zoneId, deploymentId, cards, cardIds) {
+  pendingCardQueue.set(`${String(zoneId)}:${String(deploymentId)}`, {
+    cards: cards.slice(),
+    cardIds: cardIds.slice(),
+  });
 }
 
 async function fetchCardsByPlayerCardIds(cardIds) {
@@ -1820,34 +1823,36 @@ function applyCardsInPlace(nine, newCards, zoneBonus) {
   nine.cardTimer = cardInterval(spd);
 }
 
-async function applyPendingCardsAtRoundStart(zoneId, zs) {
+// Sync — no DB reads. Fetch already happened in the route at queue time so
+// the engine can apply in-place before the synchronous HP-reset in
+// startRound, and before the arena:round_start broadcast goes out (which
+// includes maxHp).
+function applyPendingCardsAtRoundStart(zoneId, zs) {
   const zoneKey = String(zoneId);
   const zoneBonus = getZoneBonus(zoneKey);
-  const toApply = [];
+  const appliedPlayerIds = [];
   for (const n of zs.nines.values()) {
     const key = `${zoneKey}:${n.deploymentId}`;
-    const cardIds = pendingCardQueue.get(key);
-    if (!cardIds) continue;
+    const entry = pendingCardQueue.get(key);
+    if (!entry) continue;
     pendingCardQueue.delete(key);
-    toApply.push({ nine: n, cardIds });
-  }
-  for (const { nine, cardIds } of toApply) {
     try {
-      const cards = await fetchCardsByPlayerCardIds(cardIds);
-      if (!cards.length) continue;
-      applyCardsInPlace(nine, cards, zoneBonus);
-      // Fire-and-forget DB sync so zone_card_slots reflects what's actually
-      // firing. Old slots deactivated, new slots inserted for same deployment.
-      syncSlotsForDeployment(nine.deploymentId, cardIds).catch((e) =>
+      applyCardsInPlace(n, entry.cards, zoneBonus);
+      appliedPlayerIds.push(n.playerId);
+      // Fire-and-forget DB sync so zone_card_slots eventually reflects
+      // what's actually firing. Old slots deactivated, new slots inserted
+      // for same deployment.
+      syncSlotsForDeployment(n.deploymentId, entry.cardIds).catch((e) =>
         console.error('[§9.69 slot sync]', e.message),
       );
       console.log(
-        `[§9.69] applied pending cards at round start — deployment=${nine.deploymentId} player=${nine.playerId}`,
+        `[§9.69] applied pending cards at round start — deployment=${n.deploymentId} player=${n.playerId}`,
       );
     } catch (e) {
       console.error('[§9.69 apply]', e.message);
     }
   }
+  return appliedPlayerIds;
 }
 
 async function syncSlotsForDeployment(deploymentId, cardIds) {
@@ -1877,4 +1882,5 @@ module.exports = {
   getZoneState: (id) => zones.get(String(id)) || null,
   refreshZoneBonusCache,
   queuePendingCards, // §9.69
+  fetchCardsByPlayerCardIds, // §9.69 — route fetches before queueing
 };
