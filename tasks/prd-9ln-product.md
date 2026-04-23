@@ -1390,7 +1390,7 @@ Desktop (≥641px) visually unchanged for all nine changes. All CSS scoped to `@
 
 **Decision 2026-04-23**: option (a) — tune intermission length + server-emitted deadline. Per-player extension (b) rejected: conflicts with the §9.46 lockout state machine and complicates timing ownership. CHANGE BUILD retention (rejecting c) supported by the wider window plus §9.69's queue landing same PR.
 
-**Resolved 2026-04-23 in PR #?.** `INTERMISSION_MS` bumped 25s → 35s in `server/services/combatEngine.js:17` — mobile smoke testing confirmed 25s was too tight for the open-modal / scroll-grid / tap-card / confirm flow. `arena:round_end` broadcast now carries `nextRoundAt` (absolute server timestamp) alongside the existing `intermissionMs` (duration); client uses `data.nextRoundAt || Date.now() + data.intermissionMs` at `public/nethara-live.html:3952-3962`, accurate across any client/server clock drift. Desktop is unaffected — 35s vs 25s is a non-issue with a mouse-driven flow.
+**Resolved 2026-04-23 in PR #178.** `INTERMISSION_MS` bumped 25s → 35s in `server/services/combatEngine.js:17` — mobile smoke testing confirmed 25s was too tight for the open-modal / scroll-grid / tap-card / confirm flow. `arena:round_end` broadcast now carries `nextRoundAt` (absolute server timestamp) alongside the existing `intermissionMs` (duration); client uses `data.nextRoundAt || Date.now() + data.intermissionMs` at `public/nethara-live.html:3952-3962`, accurate across any client/server clock drift. Desktop is unaffected — 35s vs 25s is a non-issue with a mouse-driven flow.
 
 ### 9.49 Multi-bug triage — 7 UI defects discovered 2026-04-20
 
@@ -1719,7 +1719,7 @@ Pointer/arrow connecting popup visually to the row is deferred — current place
 
 **Decision 2026-04-23**: queue-and-apply-at-next-round-start. Hot-swap deferred — the queue variant is lower risk (no mid-round stats-flicker), matches "round is sacred" mental model, and can be iterated into hot-swap later without breaking the contract.
 
-**Resolved 2026-04-23 in PR #?.** In-memory pending queue on the combat engine (`server/services/combatEngine.js`): new `pendingCardQueue` Map keyed by `${zoneId}:${deploymentId}` → cardIds. Three new engine internals:
+**Resolved 2026-04-23 in PR #178.** In-memory pending queue on the combat engine (`server/services/combatEngine.js`): new `pendingCardQueue` Map keyed by `${zoneId}:${deploymentId}` → cardIds. Three new engine internals:
 
 - **`queuePendingCards(zoneId, deploymentId, cardIds)`** — exported; sets the entry. Second queue overrides first (idempotent).
 - **`applyCardsInPlace(nine, newCards, zoneBonus)`** — recomputes `stats` + `maxHp` from house + new cards + zone bonus; assigns `nine.cards`; preserves `nine.hp`, `nine.x`, `nine.y`, and all active status effects; resets `cardIdx` to 0 so the new loadout fires from slot 1 cleanly; recomputes `atkTimer` / `cardTimer` from the new SPD.
