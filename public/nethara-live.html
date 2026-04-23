@@ -2848,16 +2848,12 @@
   // re-pick every card just to tweak one.
   async function openDeployModal(opts) {
     if (!S.playerId) { alert('Please log in first'); return; }
-    // §9.60: build-change gating — already-deployed players can't rebuild
-    // mid-round. Silent-skip with a feed event; they can keep watching the
-    // spectacle. The §9.46 server guard will 423 any deploy during FIGHTING,
-    // but for NEW players (not yet deployed on this zone) we still open the
-    // modal so they can pick cards — their DEPLOY button shows the existing
-    // lockout countdown from the 423 handler at ~3220.
-    if (S._roundState === 'FIGHTING' && S.isDeployed) {
-      addFeedEvent('🔒 Deploy opens at round end', 'system');
-      return;
-    }
+    // §9.60 was a client-side gate that silent-skipped already-deployed
+    // players during FIGHTING. Superseded by §9.69 (PR #178): the server
+    // now queues mid-round loadout changes and applies at next round
+    // start (preserves HP + position). confirmDeploy's pending-response
+    // branch shows the queued feed event. §9.46 server guard still 423s
+    // new-player deploys on a genuinely contested 2-guild zone per §9.67.
     const modal = document.getElementById('deploy-modal');
     if (!modal) return;
     const preselectCurrent = !!(opts && opts.preselectCurrent);
@@ -3164,6 +3160,13 @@
     if (modal) { modal.classList.remove('open'); modal.style.display = 'none'; }
   }
   window.closeDeployModal = closeDeployModal;
+  // §9.69 follow-up: expose openDeployModal to window so HTML inline
+  // onclick="openDeployModal()" attributes (mobile SWAP button at line 1544,
+  // desktop LOADOUT button at 1316) resolve the identifier. Desktop's
+  // btn-swap-build was accidentally working via the event-delegation catch
+  // at line 2546; the mobile .mob-btn has no id and missed that fallback.
+  // Pre-existing bug surfaced when §9.69 made mid-round reswap a valid flow.
+  window.openDeployModal = openDeployModal;
 
   // §9.46 deploy lockout (feature-flagged server-side). When server returns
   // 423 Locked, show a mm:ss countdown on the deploy button and keep it

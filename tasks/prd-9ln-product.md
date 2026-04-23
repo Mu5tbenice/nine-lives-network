@@ -1733,6 +1733,8 @@ Client (`public/nethara-live.html:3231-3241`): `confirmDeploy()` receives `pendi
 
 Known limitation: engine restart mid-intermission drops pending entries (in-memory only, no DB persistence). The player just resubmits the swap — acceptable for v1 since restarts are rare and the cost of a schema migration outweighs the benefit. Escalate to a `pending_card_ids` jsonb column on `zone_deployments` if restarts-mid-queue turn out to be common in production.
 
+**Follow-up in PR #179.** Smoke test of PR #178 revealed the queue path was unreachable from the UI: the mobile SWAP button at `public/nethara-live.html:1544` threw `Uncaught ReferenceError: openDeployModal is not defined` because `openDeployModal` was declared as a local `async function` inside an IIFE but never assigned to `window` (sibling functions `closeDeployModal`, `confirmDeploy`, `withdraw`, `toggleAutoRedeploy` all are). Desktop accidentally worked via the `btn-swap-build` event-delegation catch at line 2546; the mobile button's class-only markup missed that fallback. Pre-existing bug surfaced by §9.69 making mid-round reswap a valid flow. Fixed by adding `window.openDeployModal = openDeployModal;` next to the other exposures at line 3166. Also removed the now-superseded §9.60 client-side gate at `openDeployModal` entry (lines 2851-2860) that silent-skipped already-deployed players during FIGHTING — the server-side queue (above) is the source of truth now, and `confirmDeploy`'s `pending:true` response handler provides the user feedback.
+
 ---
 
 ### 9.70 Mobile X/Twitter auth deep-links into X app and never returns
@@ -1753,7 +1755,11 @@ Scope-boxed to `public/register.html`. Did not touch the server OAuth flow (`ser
 
 Trade-off: mobile users have to perform one extra gesture (long-press instead of tap) and follow a visible instruction. Not ideal UX, but reliable across iOS/Android/X-app-version combinations without requiring Apple Developer / Google Play verification for Universal Links on our own domain. Desktop flow is unchanged.
 
-**Fully resolved 2026-04-23 in PR #176.**
+**PR #176 reverted 2026-04-23 in PR #179.** Smoke test on real iPhone confirmed the long-press workaround was dead-end UX: user lands on the twitter-mobile instruction page, taps the Login button normally, X app still hijacks, nothing returns. The intermediate page added a tap without fixing the underlying problem. Wray's verdict: "it must read the login from the app like before, not need additional steps like this." The server-side UA redirect in `server/routes/auth.js:29-52` was removed; client flow returns to the PR #174 baseline (`window.open('/auth/twitter', '_blank')` direct). `/auth/twitter-mobile` endpoint left in place as orphaned code — cleanup deferred to the Universal Links PR.
+
+**Re-opened as PARTIALLY RESOLVED.** PR #174 (new-tab + storage listener) remains in effect as UX defense-in-depth. Core mobile hijack still unfixed. Next required step: **Apple Universal Links + Android App Links registration on 9lv.net**. Needs `/.well-known/apple-app-site-association` + `/.well-known/assetlinks.json` served with the correct MIME types, plus the Apple team ID / Android package / SHA-256 fingerprint that allow the OS to route the X app's return intent back to the browser. Scope for a dedicated session when Wray is ready.
+
+**Status: OPEN — pending Universal Links implementation.**
 
 ---
 
