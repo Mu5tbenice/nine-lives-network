@@ -4130,35 +4130,12 @@
       const kTracked = killerId || (data.killerName ? [...S.nines.entries()].find(([,s])=>s.name===data.killerName)?.[0] : null);
       if (kTracked) trackCombatStat(kTracked, data.killerName || getNineName(kTracked), '', '', 'kos', 1);
     })
-    // ── SESSION EXPIRED — server auto-withdrew this Nine (§9.38) ────────
-    socket.on('arena:session_expired', (data) => {
-      if (String(data.nineId) !== String(S.playerId)) return;
-      // Engine + DB already cleaned server-side (combatEngine.js:1045-1052).
-      // Client mirrors: sprite, UI state, pending prompts. Auto-rejoin
-      // flag/expiry intentionally left alone so the player's preference
-      // persists across redeploys — the 1h expiry check handles any drift.
-      S.isDeployed = false;
-      S.equippedCards = [];
-      S.deployedZoneIds.delete(S.currentZoneId);
-
-      // Remove self-sprite (arena:positions cull at line 3386 skips self,
-      // so the explicit removal is required to clear the stage).
-      if (typeof removeNineSprite === 'function') removeNineSprite(String(S.playerId));
-
-      // Dismiss pending post-KO widget if any (edge: timeout during intermission).
-      dismissKOOverlay();
-
-      // Hide combat tray, re-show DEPLOY CTA so the player can redeploy.
-      const tray = document.getElementById('arena-bottom-tray');
-      if (tray) tray.style.display = 'none';
-      const cta = document.getElementById('deploy-cta');
-      if (cta) cta.style.display = 'block';
-
-      // Notify (corrected to 2 hours per PRD §4.8.5 — see §9.3 resolution).
-      addFeedEvent('⏰ Session ended (2 hours) — redeploy to continue', 'snapshot');
-
-      // (#deploy-status-pill reference removed — element doesn't exist. See §9.40.)
-    });
+    // §9.77: `arena:session_expired` handler removed. PR #184 deleted the
+    // server-side emit (SESSION_MS + 2h inactivity timer gone); this
+    // client handler was kept one deploy cycle for backward-compat in
+    // case any stale server instances were still broadcasting. That
+    // cycle has passed — no stale events observed in the logs across
+    // 15+ PRs of smoke testing.
 
     // ── WAITING STATE: dim sprite + badge when KO'd mid-round ────────────
     socket.on('combat:ko', (dataKo) => {
