@@ -1503,7 +1503,7 @@
           <!-- Session total -->
           <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;padding:6px 8px;background:rgba(212,166,75,0.06);border:1px solid rgba(212,166,75,0.15);border-radius:4px;">
             <div id="pts-session-total" style="font-family:'Press Start 2P',monospace;font-size:22px;color:#D4A64B;">0</div>
-            <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(212,166,75,0.5);">PTS THIS SESSION</div>
+            <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(212,166,75,0.5);">PTS TODAY</div>
           </div>
           <!-- Breakdown by source -->
           <div style="font-family:'Press Start 2P',monospace;font-size:8px;color:rgba(255,255,255,0.35);letter-spacing:1px;margin-bottom:7px;">BREAKDOWN</div>
@@ -4765,9 +4765,74 @@
   }
   window._saveSessionState = _saveSessionState;
 
-  // Save on page hide (tab switch, close)
+  // ══════════════════════════════════════════════════════════════════════
+  // Tab visibility handling (2026-04-23 fix wave)
+  //
+  // Symptoms before this:
+  //  - Tab backgrounded → return → UI looks stale, often need to refresh +
+  //    click the zone again.
+  //  - Animations (floating damage text, particles, KO effects) queue up
+  //    while hidden and all fire at once on return → massive lag spike.
+  //
+  // Root cause: socket events keep arriving while the tab is hidden, but
+  // browsers throttle requestAnimationFrame to ~1Hz, so PIXI per-object
+  // animation tickers pile up without running. Socket.io transport drops
+  // on mobile after ~5min hidden; reconnect works but we never tell the
+  // engine to resend positions, so the sprite map goes stale.
+  //
+  // Fix strategy:
+  //  - Skip expensive visual spawns while hidden (showFloatingText,
+  //    spawnParticles, animateKO all check S._tabHidden). Combat state
+  //    still updates via arena:positions; only per-event visuals are dropped.
+  //  - On visible: re-emit join_zone, refetch deployments + metrics,
+  //    re-render sidebar. Covers both the stale-state and
+  //    dead-socket-reconnect cases in one pass.
+  // ══════════════════════════════════════════════════════════════════════
+  S._tabHidden = document.visibilityState === 'hidden';
+
+  function _onTabVisible() {
+    S._tabHidden = false;
+    // Defensive rejoin — socket.io auto-reconnects, but if it stayed
+    // connected via polling the server may still have us in the room.
+    // Either way, an extra join_zone is idempotent.
+    if (S.socket && S.currentZoneId) {
+      try { S.socket.emit('join_zone', { zoneId: S.currentZoneId }); } catch (e) {}
+    }
+    // Fresh deployments fetch so the sprite map matches the server. Skips
+    // if we're not currently watching a zone.
+    if (S.currentZoneId) {
+      fetch(`/api/zones/${S.currentZoneId}/deployments`)
+        .then(r => r.ok ? r.json() : null)
+        .then(dep => {
+          if (!dep?.deployments) return;
+          S._deployCache = S._deployCache || {};
+          dep.deployments.forEach(d => {
+            S._deployCache[String(d.player_id)] = {
+              profile_image: d.player?.profile_image || null,
+              equipped_images: d.nine?.equipped_images || {},
+              name: d.nine?.name || d.player?.twitter_handle || null,
+            };
+          });
+        })
+        .catch(() => {});
+    }
+    // Task 17.0 item 1 hook — freshen the sidebar immediately on return.
+    if (typeof syncSessionMetricsFromServer === 'function' && S.currentZoneId) {
+      syncSessionMetricsFromServer(S.currentZoneId, { wholesale: true });
+    }
+    // UTC rollover check in case we crossed midnight while hidden.
+    if (typeof _checkUtcDayRollover === 'function') _checkUtcDayRollover();
+    if (typeof renderGuildSidebar === 'function') renderGuildSidebar();
+  }
+
+  function _onTabHidden() {
+    S._tabHidden = true;
+    _saveSessionState();
+  }
+
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') _saveSessionState();
+    if (document.visibilityState === 'hidden') _onTabHidden();
+    else _onTabVisible();
   });
   // Periodic save every 60s
   setInterval(_saveSessionState, 60000);
@@ -6962,6 +7027,9 @@
 
   function showFloatingText(x, y, text, color = 0xff4466, size = 12) {
     if (!state.arenaApp) return;
+    // Tab-hidden guard — don't queue PIXI text + per-frame fade tickers while
+    // the tab is backgrounded; otherwise they all fire on return.
+    if (S._tabHidden) return;
     const app = state.arenaApp;
     // Arc direction: always away from centre-screen so numbers spread outward
     const cx = app.screen.width / 2;
@@ -7838,6 +7906,8 @@
   /** Spawn FLASHY particle burst — bigger, louder, more pixelated */
   function spawnParticles(x, y, color, count, type) {
     if (!state.arenaApp) return;
+    // Tab-hidden guard — particle bursts are pure visual; drop while hidden.
+    if (S._tabHidden) return;
     const particles = [];
     // Boost count slightly
     const boostedCount = Math.round(count * 1.5);
@@ -7982,6 +8052,11 @@
   function animateKO(nineIdOrSprite) {
     const nine = (typeof nineIdOrSprite === 'object') ? nineIdOrSprite : state.nines.get(nineIdOrSprite);
     if (!nine || !state.arenaApp) return;
+    // Tab-hidden guard — skip the spin/shrink/fade animation while the tab
+    // is backgrounded. The KO handler's sprite-removal path still fires on
+    // the 800ms timeout for other players; the visible animation is purely
+    // cosmetic and shouldn't queue while hidden.
+    if (S._tabHidden) return;
     nine.isAnimating = true;
 
     const startX = nine.container.x;
