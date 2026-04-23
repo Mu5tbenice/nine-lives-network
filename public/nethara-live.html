@@ -4960,9 +4960,9 @@
       const kos = f.kos || 0;
       const dmgTxt = dmg > 999 ? (dmg/1000).toFixed(1)+'k' : String(dmg);
       const healsTxt = heals > 999 ? (heals/1000).toFixed(1)+'k' : String(heals);
-      return `<div data-fighter-id="${f.id}" style="padding:8px 12px;${i<fighters.length-1?'border-bottom:1px solid rgba(255,255,255,0.06)':''};${f.isMe?'background:rgba(212,166,75,0.07);':''}${!f.live?'opacity:0.55;':''}"
-        onclick="window._showFighterPopup&&window._showFighterPopup('${f.id}')" style="cursor:pointer;"
-                onmouseenter="window.highlightGuild&&window.highlightGuild('${f.guild}')"
+      return `<div data-fighter-id="${f.id}" style="cursor:pointer;padding:8px 12px;${i<fighters.length-1?'border-bottom:1px solid rgba(255,255,255,0.06)':''};${f.isMe?'background:rgba(212,166,75,0.07);':''}${!f.live?'opacity:0.55;':''}"
+        onclick="event.stopPropagation();window._showFighterPopup&&window._showFighterPopup('${f.id}',this)"
+        onmouseenter="window.highlightGuild&&window.highlightGuild('${f.guild}')"
         onmouseleave="window.resetGuildHighlight&&window.resetGuildHighlight()">
         <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
           <div style="width:8px;height:8px;border-radius:50%;background:${hc};box-shadow:0 0 6px ${hc};flex-shrink:0;margin-top:1px;"></div>
@@ -5264,8 +5264,14 @@
 
   // ══════════════════════════════════════════════════
   // #9 FIGHTER POPUP — build + stats on click
+  // §9.63: accepts an optional anchor element (the clicked row) so the
+  // popup can position adjacent to its source instead of center-viewport.
+  // Row onclick passes `this` and calls event.stopPropagation() so the
+  // outside-click handler doesn't eat rapid row-to-row switches. A single
+  // close-handler reference is tracked on window so the listener isn't
+  // leaked when the popup is re-opened.
   // ══════════════════════════════════════════════════
-  window._showFighterPopup = function(id) {
+  window._showFighterPopup = function(id, anchorEl) {
     const sp = S.nines.get(String(id));
     const m  = S.combatMetrics.get(String(id)) || {};
     if (!sp && !m.name) return;
@@ -5282,10 +5288,35 @@
 
     const popup = document.createElement('div');
     popup.id = 'fighter-popup';
-    popup.style.cssText = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-      z-index:8000;background:linear-gradient(180deg,#16102a,#0d0a18);
+    const basePopupCss = `z-index:8000;background:linear-gradient(180deg,#16102a,#0d0a18);
       border:1px solid ${hc}44;border-radius:8px;padding:16px 20px;min-width:240px;max-width:300px;
       box-shadow:0 0 30px ${hc}22;animation:slideUp 0.25s ease;`;
+    // Anchored position if we have a row element and there's room on either
+    // side of it; otherwise fall back to center-viewport (mobile, narrow).
+    let positionCss = `position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);`;
+    if (anchorEl && typeof anchorEl.getBoundingClientRect === 'function') {
+      const rect = anchorEl.getBoundingClientRect();
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const GAP = 8, MARGIN = 8;
+      const popupW = 280, popupH = 280; // conservative mid-estimate
+      const spaceLeft  = rect.left;
+      const spaceRight = vw - rect.right;
+      let left, top;
+      if (spaceLeft >= popupW + GAP + MARGIN) {
+        left = rect.left - popupW - GAP;
+      } else if (spaceRight >= popupW + GAP + MARGIN) {
+        left = rect.right + GAP;
+      } else {
+        left = null; // fall back to centered
+      }
+      if (left !== null) {
+        // Align vertically to the row top, but clamp inside viewport
+        top = Math.min(Math.max(rect.top, MARGIN), vh - popupH - MARGIN);
+        if (top < MARGIN) top = MARGIN;
+        positionCss = `position:fixed;top:${top}px;left:${left}px;`;
+      }
+    }
+    popup.style.cssText = positionCss + basePopupCss;
 
     const cards = S.equippedCards || [];
     const cardHtml = cards.length
@@ -5318,8 +5349,24 @@
       <a href="/profile/${id}" style="display:block;margin-top:10px;text-align:center;font-family:'Press Start 2P',monospace;font-size:6px;color:${hc};text-decoration:none;opacity:0.6;hover:opacity:1;">VIEW PROFILE →</a>`;
 
     document.body.appendChild(popup);
-    // Close on click outside
-    setTimeout(() => { document.addEventListener('click', function _close(e) { if (!document.getElementById('fighter-popup')?.contains(e.target)) { document.getElementById('fighter-popup')?.remove(); document.removeEventListener('click',_close); } }, {once:false}); }, 100);
+    // Close on click outside. §9.63: track the handler on window so we can
+    // remove it before binding a new one — prevents a listener leak when
+    // the popup is re-opened without the outside-click path firing (which
+    // is now the common case since row onclick stopPropagation's).
+    if (window._fpCloseHandler) {
+      document.removeEventListener('click', window._fpCloseHandler);
+      window._fpCloseHandler = null;
+    }
+    setTimeout(() => {
+      window._fpCloseHandler = function(e) {
+        if (!document.getElementById('fighter-popup')?.contains(e.target)) {
+          document.getElementById('fighter-popup')?.remove();
+          document.removeEventListener('click', window._fpCloseHandler);
+          window._fpCloseHandler = null;
+        }
+      };
+      document.addEventListener('click', window._fpCloseHandler);
+    }, 100);
   };
 
 
