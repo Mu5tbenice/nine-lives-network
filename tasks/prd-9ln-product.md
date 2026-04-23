@@ -1388,7 +1388,9 @@ Desktop (≥641px) visually unchanged for all nine changes. All CSS scoped to `@
 3. **Interaction with §9.46 deploy lockout.** If lockout is ON and intermission is 25s, the player has exactly 25s to deploy or they're locked out until next round end. Combined with auto-rejoin on, this could strand a player who intended to deploy a new build.
 4. **What's the signal from the server that "deploy window closes in N seconds"?** Current round_start fires without a heads-up. Options: emit `arena:deploy_window_closing` at T-5s, or include a deploy-window-closes timestamp in `arena:round_end` payload that the client can render accurately.
 
-**Status: OPEN.** Tracked as design debt independent of Task 24.0's scope. Closes when a follow-up PR adds either (a) a tuned intermission length + server-emitted deadline the client can render accurately, or (b) a per-player deploy window extension API with clear interaction rules vs §9.46 lockout, or (c) a deliberate product decision to leave intermission fixed and remove the "CHANGE BUILD" affordance as a redesign.
+**Decision 2026-04-23**: option (a) — tune intermission length + server-emitted deadline. Per-player extension (b) rejected: conflicts with the §9.46 lockout state machine and complicates timing ownership. CHANGE BUILD retention (rejecting c) supported by the wider window plus §9.69's queue landing same PR.
+
+**Resolved 2026-04-23 in PR #?.** `INTERMISSION_MS` bumped 25s → 35s in `server/services/combatEngine.js:17` — mobile smoke testing confirmed 25s was too tight for the open-modal / scroll-grid / tap-card / confirm flow. `arena:round_end` broadcast now carries `nextRoundAt` (absolute server timestamp) alongside the existing `intermissionMs` (duration); client uses `data.nextRoundAt || Date.now() + data.intermissionMs` at `public/nethara-live.html:3952-3962`, accurate across any client/server clock drift. Desktop is unaffected — 35s vs 25s is a non-issue with a mouse-driven flow.
 
 ### 9.49 Multi-bug triage — 7 UI defects discovered 2026-04-20
 
@@ -1715,7 +1717,19 @@ Pointer/arrow connecting popup visually to the row is deferred — current place
 
 **Resolution plan.** Product decision pending. Wray's stated default (2026-04-23): accept the swap immediately but defer the card change until next `startRound` (preserves HP and position). Stretch alternative: a true hot-swap that replaces the `cards` array on the live Nine without respawning — the card rotation (`cardIdx`) picks up the new loadout on its next cycle. Hot-swap is more engaging but requires clear UI feedback — a pending-change indicator for the queued variant, or a "now firing" card indicator for the hot-swap variant — before it ships. Out of scope for §9.67 PR.
 
-**Status: OPEN.**
+**Decision 2026-04-23**: queue-and-apply-at-next-round-start. Hot-swap deferred — the queue variant is lower risk (no mid-round stats-flicker), matches "round is sacred" mental model, and can be iterated into hot-swap later without breaking the contract.
+
+**Resolved 2026-04-23 in PR #?.** In-memory pending queue on the combat engine (`server/services/combatEngine.js`): new `pendingCardQueue` Map keyed by `${zoneId}:${deploymentId}` → cardIds. Three new engine internals:
+
+- **`queuePendingCards(zoneId, deploymentId, cardIds)`** — exported; sets the entry. Second queue overrides first (idempotent).
+- **`applyCardsInPlace(nine, newCards, zoneBonus)`** — recomputes `stats` + `maxHp` from house + new cards + zone bonus; assigns `nine.cards`; preserves `nine.hp`, `nine.x`, `nine.y`, and all active status effects; resets `cardIdx` to 0 so the new loadout fires from slot 1 cleanly; recomputes `atkTimer` / `cardTimer` from the new SPD.
+- **`applyPendingCardsAtRoundStart(zoneId, zs)`** — async, called fire-and-forget from `startRound` at `services/combatEngine.js:1466-1471`. For each Nine with a queued entry it fetches the card data via `fetchCardsByPlayerCardIds`, calls `applyCardsInPlace`, and fires a DB sync (`syncSlotsForDeployment`) to rotate `zone_card_slots` rows so DB eventually matches what's actually firing. Errors are caught per-Nine so one failure can't block others.
+
+Route layer (`server/routes/zones.js:76-124`): a new self-reswap branch runs after the §9.46/§9.67 lockout check but before the existing "deactivate old deployment + redeploy" path. If the engine's in-memory zone state shows `roundState === 'FIGHTING'` and has a Nine with this `playerId`, the route validates `card_ids` belong to the player, calls `engine.queuePendingCards(...)`, and returns `200 { success, pending: true, message }` — no DB writes, no withdraw+redeploy. Self-reswap during `INTERMISSION` still flows through the existing immediate-apply path below.
+
+Client (`public/nethara-live.html:3231-3241`): `confirmDeploy()` receives `pending: true`, closes the modal, and surfaces a `⏳ Build queued — applies at next round start` feed event. Equipped-cards HUD stays on the *current* loadout — it'll update organically once the new cards start firing at round start via the existing combat event stream.
+
+Known limitation: engine restart mid-intermission drops pending entries (in-memory only, no DB persistence). The player just resubmits the swap — acceptable for v1 since restarts are rare and the cost of a schema migration outweighs the benefit. Escalate to a `pending_card_ids` jsonb column on `zone_deployments` if restarts-mid-queue turn out to be common in production.
 
 ---
 

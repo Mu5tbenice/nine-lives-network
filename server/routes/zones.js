@@ -73,6 +73,58 @@ router.post('/deploy', async (req, res) => {
       }
     }
 
+    // §9.69: self-reswap during FIGHTING → queue for next round start instead
+    // of doing a full withdraw+redeploy (which respawns at fresh HP and a
+    // new position mid-round). Detect by checking the engine's in-memory
+    // zone state for a Nine with this playerId; INTERMISSION still flows
+    // through the normal path below.
+    {
+      const engine = getCombatEngine();
+      const zs = engine?.getZoneState ? engine.getZoneState(zone_id) : null;
+      if (zs && zs.roundState === 'FIGHTING' && engine?.queuePendingCards) {
+        const existingNine = zs.nines
+          ? Array.from(zs.nines.values()).find(
+              (n) => String(n.playerId) === String(player_id),
+            )
+          : null;
+        if (existingNine) {
+          const cardIdsArray = Array.isArray(card_ids)
+            ? card_ids.map(Number).filter((n) => !isNaN(n) && n > 0)
+            : [];
+          if (cardIdsArray.length === 0) {
+            return res
+              .status(400)
+              .json({ error: 'card_ids required for self-reswap' });
+          }
+          const { data: validCards } = await supabase
+            .from('player_cards')
+            .select('id')
+            .eq('player_id', player_id)
+            .in('id', cardIdsArray);
+          const validSet = new Set((validCards || []).map((c) => c.id));
+          const finalIds = cardIdsArray
+            .filter((id) => validSet.has(id))
+            .slice(0, MAX_CARDS_PER_ZONE);
+          if (finalIds.length === 0) {
+            return res
+              .status(400)
+              .json({ error: 'no valid cards — ownership check failed' });
+          }
+          engine.queuePendingCards(
+            zone_id,
+            existingNine.deploymentId,
+            finalIds,
+          );
+          return res.status(200).json({
+            success: true,
+            pending: true,
+            message:
+              'Build queued — applies at next round start. Your Nine keeps its current HP and position.',
+          });
+        }
+      }
+    }
+
     // Get player's Nine
     const nine = await getNine(player_id);
     if (!nine) {
