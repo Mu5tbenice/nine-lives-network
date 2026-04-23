@@ -31,7 +31,32 @@
     a { color: var(--gold); text-decoration: none; }
 
     /* ═══ LAYOUT ═══ */
+    /* §9.68 responsive container. Mobile stays 500px (design baseline); */
+    /* tablets + desktops get progressively wider caps so the dashboard  */
+    /* actually uses the viewport instead of floating in dead space.     */
     .main-container { max-width: 500px; margin: 0 auto; padding: 80px 14px 40px !important; }
+    @media (min-width: 768px)  { .main-container { max-width: 720px;  padding: 80px 20px 40px !important; } }
+    @media (min-width: 1100px) { .main-container { max-width: 1040px; padding: 80px 28px 40px !important; } }
+    @media (min-width: 1440px) { .main-container { max-width: 1240px; } }
+
+    /* §9.68 image skeleton shimmer. Apply via class OR inline style on an */
+    /* element that also has a background-image — the shimmer paints      */
+    /* underneath and is covered once the image loads. Gives instant      */
+    /* "something's happening" feedback instead of dead black space.      */
+    .img-skeleton {
+      background-color: #1a1528;
+      background-image:
+        linear-gradient(90deg,
+          rgba(212,166,75,0.04) 0%,
+          rgba(212,166,75,0.10) 50%,
+          rgba(212,166,75,0.04) 100%);
+      background-size: 200% 100%;
+      animation: skeletonShimmer 1.6s linear infinite;
+    }
+    @keyframes skeletonShimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
 
     /* ═══ ANIMATIONS ═══ */
     @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -430,8 +455,10 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,n
 
     zH+='<a href="/nethara-live.html?zone_id='+z.id+'" style="display:block;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.06);transition:transform 0.2s,border-color 0.2s;text-decoration:none;background:var(--bg-card);" onmouseenter="this.style.borderColor=\'rgba(212,166,75,0.3)\';this.style.transform=\'translateY(-2px)\'" onmouseleave="this.style.borderColor=\'rgba(255,255,255,0.06)\';this.style.transform=\'none\'">';
 
-    // Image section
-    zH+='<div style="height:120px;background-image:url(\''+img+'\');background-size:cover;background-position:center;position:relative;">'
+    // Image section. §9.68: start with skeleton shimmer and a data-url
+    // attribute; a post-insert loop preloads the image and swaps it in on
+    // load. Replaces the "dead black rectangle while loading" UX.
+    zH+='<div class="img-skeleton" data-zone-img="'+esc(img)+'" style="height:120px;background-size:cover;background-position:center;position:relative;">'
       +'<div style="position:absolute;inset:0;background:linear-gradient(0deg,rgba(14,10,24,0.98) 0%,rgba(14,10,24,0.2) 60%,transparent 100%);"></div>';
 
     // Objective badge top-left
@@ -610,10 +637,29 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,n
        5. ACTIVE ZONES
     ══════════════════════════════════ */
     +sectionLabel('📍','ACTIVE ZONES','fade-up fade-up-3')
-    +'<div class="fade-up fade-up-3" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">'+zH+'</div>'
+    // §9.68 auto-fit grid — 2-col on mobile, reflows to 3/4/5 as viewport grows
+    +'<div class="fade-up fade-up-3" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:14px;">'+zH+'</div>'
 
   document.getElementById('loadingState').style.display='none';
   c.style.display='block';
+
+  // §9.68 preload zone card images; swap the skeleton for the real image
+  // once the browser has fetched it. Errors keep the skeleton but clear
+  // the animation so it doesn't shimmer forever on a broken URL.
+  (function revealZoneImages(){
+    var cards=c.querySelectorAll('[data-zone-img]');
+    cards.forEach(function(el){
+      var url=el.getAttribute('data-zone-img');
+      if(!url)return;
+      var pre=new Image();
+      pre.onload=function(){
+        el.style.backgroundImage="url('"+url.replace(/'/g,"\\'")+"')";
+        el.classList.remove('img-skeleton');
+      };
+      pre.onerror=function(){ el.classList.remove('img-skeleton'); };
+      pre.src=url;
+    });
+  })();
 
   // Load Nine preview with player data from API
   loadNinePreview(player);
