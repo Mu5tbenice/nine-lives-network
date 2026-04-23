@@ -20,8 +20,8 @@ const INTERMISSION_MS = 35 * 1000; // §9.48: 35s between rounds (was 25s — to
 // removed. The 2h server-side inactivity timer was the "deployment lifespan"
 // knob from the old conflated `session` concept — PRD §4.8.5's rewritten
 // spec makes deployments indefinite (KO or explicit withdraw only). Client
-// handler for `arena:session_expired` kept dormant one deploy cycle for
-// backward-compat and will be removed in a follow-up. See §9.41 item 2.
+// handler for `arena:session_expired` was kept dormant one deploy cycle
+// then removed in §9.77. See §9.41 item 2.
 const SPD_FLOOR = 5.5; // card cycle floor (effects stay deliberate)
 const ATK_FLOOR = 2.5; // auto-attack floor (constant visual activity)
 const CORRODE_CD = 5.0; // 5 second cooldown — time-based, tick-rate independent
@@ -1210,9 +1210,7 @@ async function tickZone(zoneId, zs) {
 
   // Task 17.0 item 2: 2h session-timer loop removed. Deployments are now
   // indefinite per PRD §4.8.5 — only KO or explicit withdraw end them.
-  // Client `arena:session_expired` handler at public/nethara-live.html:3896
-  // stays dormant one deploy cycle for backward-compat and is cleaned up in
-  // a follow-up PR (see §9.41 item 2).
+  // Client `arena:session_expired` handler removed in §9.77.
 
   // ── KO CHECK + ROUND END EVALUATION ─────────────────────────────────
   // Process all deaths this tick, then check if round should end

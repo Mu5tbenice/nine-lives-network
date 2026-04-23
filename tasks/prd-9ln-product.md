@@ -1888,6 +1888,18 @@ Kept the intermission `return;` intact: combat mutation code ABOVE the intermiss
 
 ---
 
+### 9.77 Remove dormant `arena:session_expired` client handler — one-deploy-cycle backward-compat window closed
+
+**Symptom / debt.** PR #184 deleted the server-side `SESSION_MS` + 2h inactivity timer but intentionally kept the client handler for `arena:session_expired` at `public/nethara-live.html:4134` dormant for one deploy cycle, as a safety net in case any stale server instance was still broadcasting the event. That cycle passed — 15+ PRs of smoke testing since PR #184, zero stale events observed in the logs. The handler + its "Session ended (2 hours)" feed message (which pre-dated the SESSION_MS deletion per §9.3) are now dead code whose presence is misleading to anyone reading the file.
+
+**Effect.** Low severity, code-hygiene only. No user impact. The handler never fires. But it's a ~28-line block that says a Nine can be "session expired" when by policy (§4.8.5) it cannot.
+
+**Resolution.** Removed the handler body in `public/nethara-live.html` (replaced with a 5-line note explaining the removal + audit breadcrumb). Cleaned the two surviving references in `server/services/combatEngine.js` (one above the constants block, one where the session-timer loop used to live) — both now say "removed in §9.77" instead of "will be removed in a follow-up."
+
+**Resolved 2026-04-23 in PR #197.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
