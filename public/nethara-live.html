@@ -646,6 +646,13 @@
       max-width: 520px; margin: 0 auto; padding: 16px 16px 24px; position: relative;
       min-height: 100vh; display: flex; flex-direction: column;
     }
+    /* §9.68 desktop breakpoints — the grid on #deploy-card-grid is already */
+    /* auto-fill minmax(130px,1fr), so raising the container lets cards    */
+    /* naturally reflow to more columns (SS3: "cards should span out       */
+    /* horizontally").                                                     */
+    @media (min-width: 768px)  { .deploy-inner { max-width: 720px;  } }
+    @media (min-width: 1100px) { .deploy-inner { max-width: 1040px; } }
+    @media (min-width: 1440px) { .deploy-inner { max-width: 1240px; } }
     .deploy-close-x {
       position: absolute; top: 12px; right: 12px; z-index: 5;
       background: none; border: none; color: var(--muted); font-size: 26px;

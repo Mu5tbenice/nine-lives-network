@@ -1676,15 +1676,25 @@ No other consumers of the old event names anywhere under `server/`, `public/`, o
 
 **Effect.** Medium. The live UI (`/public/`, vanilla HTML/CSS/JS) was designed mobile-first and lacks a desktop adaptation layer; the mobile polish from prior §9 passes doesn't translate up. Wray's framing: "file a ticket to dynamically detect the agent/browser to find their resolution and scale it to theirs."
 
-**Resolution plan.** Not this PR. Scope for a dedicated desktop UX pass:
+**Resolution plan.** First pass in PR #173 (this PR): container breakpoints on both dashboard + deploy modal, auto-fit zone grid on dashboard, reusable `.img-skeleton` shimmer utility + preload-and-reveal for zone card images. Remaining desktop work tracked below as follow-up.
 
-1. Add a desktop breakpoint on `.main-container` (`public/dashboard.html:34`) — raise max-width to ~1200–1400px above 1200px viewport.
-2. Shift the zone grid (line 613) to `grid-template-columns: repeat(auto-fit, minmax(250px, 1fr))` so items reflow as the window resizes.
-3. Move key typography to `clamp()` so it scales between mobile and desktop.
-4. Add image-loading spinners — reuse the existing `.spinner` pattern already defined at `public/dashboard.html:102-103` and `public/css/components-v2.css:210`. Apply as a CSS placeholder on card images via the `loadeddata` event or CSS `:not(.loaded)` state.
-5. Wire a `window.resize` listener to re-measure and re-flow dense regions if needed.
+**Partially resolved 2026-04-23 in PR #173.** Specifically landed:
 
-**Status: OPEN** — queued for a dedicated desktop pass. Not scoped to this PR.
+- `public/dashboard.html:34-54` — `.main-container` grows to 720 / 1040 / 1240px at 768 / 1100 / 1440px viewports. Mobile (500px) unchanged.
+- `public/dashboard.html` — `.img-skeleton` class + `@keyframes skeletonShimmer` added as a reusable loading state.
+- `public/dashboard.html` zone grid — shifted from hardcoded `1fr 1fr` to `repeat(auto-fit, minmax(220px, 1fr))` so cards reflow 2→3→4→5 columns as the window widens.
+- `public/dashboard.html` zone-card images — render with `.img-skeleton` + `data-zone-img`, then a post-insert preloader (`revealZoneImages`) swaps in the real `background-image` on `Image.onload` and removes the skeleton class. No more dead-black rectangles during image fetch.
+- `public/nethara-live.html:645-655` — `.deploy-inner` grows on the same three breakpoints. The deploy modal's card grid (already `auto-fill minmax(130px,1fr)`) now reflows to more columns on desktop instead of being pinned at 520px.
+
+**Follow-up scope (still OPEN, deferred).**
+
+1. Fluid typography — `clamp()` on dashboard hero / section headings + deploy modal titles so the font scales with viewport. Current pass leaves fixed-px typography intact.
+2. Dashboard hero card inline-styled fixed-px sections (stats bar, points float, character canvas) stay mobile-sized on desktop — will feel small on wide monitors.
+3. Other pages — builder.html, leaderboards.html, packs.html, card-lab.html — have the same 500px container pattern; each needs the breakpoint treatment.
+4. Apply `.img-skeleton` to other image surfaces (card thumbnails, house crests, zone thumbnails elsewhere).
+5. Agent/browser resolution detection per Wray's request — on modern browsers CSS media queries handle this natively, so likely not needed unless a specific device is misreporting. Revisit if a concrete device ID shows up.
+
+**Status: PARTIALLY RESOLVED** — follow-up items above remain open.
 
 ---
 
