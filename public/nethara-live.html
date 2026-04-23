@@ -1848,6 +1848,8 @@
     combatMetrics: new Map(),   // id → {name,guild,house,damage,heals,kos} — "today" metrics post-Task 17.0 item 1; periodically mirrored from server's player_zone_metrics (§9.50)
     _lastUtcDate: new Date().toISOString().slice(0, 10), // Task 17.0 item 1 — midnight UTC detection
     _metricsSyncInterval: null,  // Task 17.0 item 1 — periodic server sync handle
+    _lastPositionsAt: 0,         // §9.72 — ms timestamp of last arena:positions tick (0 = never)
+    _stallCheckInterval: null,   // §9.72 — 2s cadence stall detector handle
     chartData: {},              // name → {guild, pts[]}
     isFighting: false,
     _recentlyKOd: new Set(),
@@ -1923,6 +1925,9 @@
     // Task 17.0 item 5 — paint the pill on init so it reflects the current
     // deploy state (hidden pre-deploy, otherwise matches state).
     if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
+    // §9.72 — kick off the socket-stall detector. Idempotent; runs for the
+    // rest of the page lifetime and guards every arena session.
+    if (typeof _startStallDetector === 'function') _startStallDetector();
   }
 
   // ── PLAYER BAR ──
@@ -3632,6 +3637,18 @@
     S.socket = socket;
 
     socket.on('connect', () => {
+      // §9.72 — on (re)connect, wipe the sprite map so stale entries from a
+      // dropped session don't linger past the reconnect. arena:positions will
+      // re-populate from server truth within the next tick. Without this, a
+      // socket dropout leaves "hovering" sprites from the previous session on
+      // canvas because no cull event arrives until positions resumes.
+      if (S.nines && S.nines.size > 0) {
+        S.nines.forEach((sp) => {
+          try { if (sp.container && state.arenaApp) state.arenaApp.stage.removeChild(sp.container); } catch (e) {}
+        });
+        S.nines.clear();
+      }
+      S._lastPositionsAt = 0; // reset so the stall detector doesn't false-alarm during the rejoin warmup
       socket.emit('join_zone', { zoneId });
       addFeedEvent('Connected to arena', 'system');
       _showArenaLoading('JOINING ZONE...', 60);
@@ -3645,6 +3662,8 @@
     // First tick dismisses loading overlay
     let _firstPositionsTick = true;
     socket.on('arena:positions', (data) => {
+      // §9.72 — stamp the last positions tick for the stall detector.
+      S._lastPositionsAt = Date.now();
       if (_firstPositionsTick) {
         _firstPositionsTick = false;
         _showArenaLoading('READY', 100);
@@ -5164,6 +5183,37 @@
       // minute number only changes once a minute anyway.
       if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
     }, 30000);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════
+  // §9.72 — stall detector
+  //
+  // Symptom: arena UI breaks mid-session with no errors — deploy CTA is
+  // shown, sprites hover from a previous round, combat appears frozen. Root
+  // cause: socket.io auto-reconnect may fire its `connect` event, but if
+  // `arena:positions` never resumes (server tick stalled for the zone, or a
+  // zombie socket with polling transport), the sprite cache and state drift
+  // indefinitely. The connect-handler sprite-wipe above guarantees clean
+  // state *on reconnect*, but only if we notice the stall and force it.
+  //
+  // Detector: every 2s, if we've received at least one arena:positions and
+  // 15+ seconds have passed without another, forcibly disconnect the socket.
+  // socket.io's auto-reconnect handles the rest; the connect handler wipes
+  // the sprite map; the first new positions tick re-populates from truth.
+  // ══════════════════════════════════════════════════════════════════════
+  function _startStallDetector() {
+    if (S._stallCheckInterval) return;
+    S._stallCheckInterval = setInterval(() => {
+      if (!S.socket || !S.currentZoneId) return;
+      if (!S._lastPositionsAt) return; // never received a tick yet; rejoin flow owns this
+      const silentMs = Date.now() - S._lastPositionsAt;
+      if (silentMs < 15000) return;
+      if (S._tabHidden) return; // browser throttled the tick; not a real stall
+      console.warn(`[stall] no arena:positions in ${Math.round(silentMs / 1000)}s — forcing reconnect`);
+      S._lastPositionsAt = 0; // reset so we don't spam reconnects
+      try { S.socket.disconnect(); } catch (e) {}
+      try { S.socket.connect(); } catch (e) {}
+    }, 2000);
   }
 
   // Reset round metrics on every snapshot
