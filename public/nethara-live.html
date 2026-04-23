@@ -286,6 +286,21 @@
     }
     @keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
 
+    /* Task 17.0 item 5 — §9.40 deploy-status pill.
+       Three states map to the three-concept deploy state machine (PRD §4.8.5):
+       - active    = DEPLOYED (manual deploy, auto-rejoin OFF, indefinite)
+       - auto      = AUTO-REJOIN · Nm (1h window, counts down)
+       - withdrawn = WITHDRAWN (KO'd + auto-rejoin off or expired — needs redeploy)
+       Hidden when the player has not yet deployed. */
+    .arena-deploy-pill {
+      font-family: 'Press Start 2P', monospace; font-size: 7px;
+      padding: 4px 10px; border-radius: 20px; letter-spacing: 1px;
+      border: 1px solid; display: inline-block;
+    }
+    .deploy-pill--active    { color:#6ac8d8; background:rgba(106,200,216,0.1); border-color:rgba(106,200,216,0.3); }
+    .deploy-pill--auto      { color:#44cc88; background:rgba(68,204,136,0.1);  border-color:rgba(68,204,136,0.35); }
+    .deploy-pill--withdrawn { color:#e85a6a; background:rgba(232,90,106,0.1);  border-color:rgba(232,90,106,0.35); animation: livePulse 2s infinite; }
+
     /* Compact timer */
     .arena-timer-compact {
       display: flex; align-items: center; gap: 5px;
@@ -1230,6 +1245,9 @@
         <span class="timer-icon">⏱</span>
         <span class="countdown-time" id="countdown-time">--:--</span>
       </div>
+      <!-- Task 17.0 item 5 — §9.40 deploy-status pill. Hidden until first
+           deploy; updates via _updateDeployStatusPill(). -->
+      <div class="arena-deploy-pill" id="deploy-status-pill" style="display:none;"></div>
       <div class="arena-live-pill" id="arena-round-badge">LIVE</div>
     </div>
   </div>
@@ -1902,6 +1920,9 @@
     if (hudLbl) hudLbl.textContent = S._autoRedeploy ? 'AUTO-REJOIN: ON ✓' : 'AUTO-REJOIN';
     const hudTog = document.getElementById('auto-redeploy-toggle');
     if (hudTog) hudTog.classList.toggle('on', !!S._autoRedeploy);
+    // Task 17.0 item 5 — paint the pill on init so it reflects the current
+    // deploy state (hidden pre-deploy, otherwise matches state).
+    if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
   }
 
   // ── PLAYER BAR ──
@@ -3272,6 +3293,8 @@
         if (S._autoRedeploy && !S._autoRedeployExpiry) {
           S._autoRedeployExpiry = Date.now() + 3600000;
         }
+        // Task 17.0 item 5 — refresh the deploy-status pill on the state change.
+        if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
         // Cache card IDs so auto-redeploy always has them even after equippedCards clears
         S._lastDeployedCardIds = cards.map(c => c.player_card_id || c.id).filter(Boolean);
         S._lastDeployedCards = cards;
@@ -3389,6 +3412,7 @@
       const data = await res.json();
       if (data.success) {
         S.isDeployed = false;
+        S._withdrawnAfterKO = false; // explicit withdraw, not a KO
         S.deployedZoneIds.delete(S.currentZoneId);
         S.equippedCards = [];
         removeNineSprite(S.playerId);
@@ -3396,6 +3420,8 @@
         document.getElementById('deploy-cta').style.display = 'block';
         addFeedEvent('↩️ Withdrawn from battle.', 'system');
         recordBuildEnd();
+        // Task 17.0 item 5 — pill hides on explicit withdraw (not deployed, not KO'd).
+        if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
       } else {
         alert(data.error || 'Withdraw failed');
       }
@@ -3427,7 +3453,57 @@
     if (t) t.classList.toggle('on', S._autoRedeploy);
     if (l) l.textContent = S._autoRedeploy ? 'AUTO-REJOIN: ON ✓' : 'AUTO-REJOIN';
     if (window._syncAutoRejoinUI) window._syncAutoRejoinUI();
+    if (window._updateDeployStatusPill) window._updateDeployStatusPill();
     // deploy modal auto toggle handled by _syncAutoRejoinUI
+  };
+
+  // ══════════════════════════════════════════════════════════════════════
+  // Task 17.0 item 5 / §9.40 — Deploy status pill (topbar HUD)
+  //
+  // Three-state visual indicator of the player's current deploy state,
+  // reflecting PRD §4.8.5's three-concept model:
+  //   - DEPLOYED         — manual deploy, auto-rejoin OFF. Indefinite.
+  //   - AUTO-REJOIN · Nm — auto-rejoin ON, 1h window ticking. Shows minutes.
+  //   - WITHDRAWN        — KO'd with auto OFF or expired. Needs redeploy.
+  //   - hidden           — pre-deploy / explicit withdraw / not in arena.
+  //
+  // Call this on every state-change event (deploy success, KO, toggle,
+  // rejoin, round_start) AND piggybacked on the 30s metrics-sync interval
+  // so the countdown stays fresh without its own timer.
+  // ══════════════════════════════════════════════════════════════════════
+  window._updateDeployStatusPill = function() {
+    const el = document.getElementById('deploy-status-pill');
+    if (!el) return;
+    const autoActive = !!(S._autoRedeploy &&
+      (!S._autoRedeployExpiry || Date.now() <= S._autoRedeployExpiry));
+    const isDeployed = !!S.isDeployed;
+    const isWithdrawn = !!S._withdrawnAfterKO;
+
+    let state = null;
+    let label = '';
+    if (autoActive && (isDeployed || isWithdrawn)) {
+      state = 'auto';
+      if (S._autoRedeployExpiry) {
+        const min = Math.max(0, Math.ceil((S._autoRedeployExpiry - Date.now()) / 60000));
+        label = `AUTO-REJOIN · ${min}m`;
+      } else {
+        label = 'AUTO-REJOIN';
+      }
+    } else if (isWithdrawn) {
+      state = 'withdrawn';
+      label = 'WITHDRAWN — REDEPLOY';
+    } else if (isDeployed) {
+      state = 'active';
+      label = 'DEPLOYED';
+    }
+
+    if (!state) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'inline-block';
+    el.textContent = label;
+    el.className = 'arena-deploy-pill deploy-pill--' + state;
   };
   // Sync all auto-rejoin UI elements (HUD toggle + deploy modal toggle)
   window._syncAutoRejoinUI = function() {
@@ -3890,8 +3966,11 @@
       if (sprite) animateKO(sprite);
       if (String(koId) === String(S.playerId)) {
         S.isDeployed = false;
+        S._withdrawnAfterKO = true;
         S._recentlyKOd.add(String(S.playerId));
         setTimeout(() => S._recentlyKOd.delete(String(S.playerId)), 65000);
+        // Task 17.0 item 5 — pill flips to WITHDRAWN or stays AUTO-REJOIN depending on toggle.
+        if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
         // §9.58: non-blocking KO widget — skull + killer name + rejoin CTA that
         // activates at round end. Supersedes §9.31's "suppress KO popup" rule;
         // the new widget doesn't block the arena spectacle, so the reason §9.31
@@ -4097,7 +4176,10 @@
       if (String(data.playerId) === String(S.playerId)) {
         dismissKOOverlay();
         S._withdrawnAfterKO = false;
+        S.isDeployed = true; // server re-activated the row
         addFeedEvent('✅ Rejoined the round', 'flip');
+        // Task 17.0 item 5 — pill flips from WITHDRAWN/AUTO back to AUTO/DEPLOYED.
+        if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
       }
     });
 
@@ -4168,6 +4250,9 @@
       // Reset per-round tracking flags
       S._wasKOdThisRound = false;
       S._withdrawnAfterKO = false;
+      // Task 17.0 item 5 — on round_start the pill reflects the new state
+      // (either AUTO-REJOINING countdown tick, or DEPLOYED for survivors).
+      if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
       // Clear active debuffs/buffs — new round, fresh state
       if (typeof clearDebuffs === 'function') clearDebuffs();
       if (typeof _activeBuffs !== 'undefined') _activeBuffs.clear();
@@ -4823,6 +4908,9 @@
     // UTC rollover check in case we crossed midnight while hidden.
     if (typeof _checkUtcDayRollover === 'function') _checkUtcDayRollover();
     if (typeof renderGuildSidebar === 'function') renderGuildSidebar();
+    // Task 17.0 item 5 — refresh pill on return (Nm-left may have ticked down
+    // significantly while hidden, or auto-rejoin may have expired).
+    if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
   }
 
   function _onTabHidden() {
@@ -5052,6 +5140,10 @@
     S._metricsSyncInterval = setInterval(() => {
       if (_checkUtcDayRollover()) return; // rollover already fired a wholesale sync
       if (S.currentZoneId) syncSessionMetricsFromServer(S.currentZoneId, { wholesale: true });
+      // Task 17.0 item 5 — piggyback the pill refresh so the "Nm left" countdown
+      // ticks down without needing its own timer. 30s granularity is fine; the
+      // minute number only changes once a minute anyway.
+      if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
     }, 30000);
   }
 
