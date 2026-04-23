@@ -1643,7 +1643,7 @@ No other consumers of the old event names anywhere under `server/`, `public/`, o
 
 **Resolution.** Wrap instead of scroll. In the mobile media query, override `.deploy-house-tabs` to `flex-wrap: wrap; overflow-x: visible; row-gap: 6px`. 10 tabs × 40px fit as 5 per row at 393px (224px used, ~170px spare for container padding/margins), so the tabs reflow into 2 rows without horizontal scrolling and without any hidden gesture. No change to desktop (still single-row with `overflow-x: auto`).
 
-**Resolved 2026-04-23 in PR #?.** *(placeholder, per bootstrap mechanic)*
+**Resolved 2026-04-23 in PR #177.**
 
 ### 9.63 Sidebar fighter profile popup — can't navigate between profiles, center-viewport position
 
