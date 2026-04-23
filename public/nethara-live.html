@@ -1128,6 +1128,12 @@
       .deploy-selected-row,
       .deploy-house-tabs { box-sizing: border-box; max-width: 100%; min-width: 0; }
       #deploy-sort-bar { flex-wrap: wrap; row-gap: 6px; }
+      /* §9.62: on mobile, wrap the 10 house tabs (ALL + 9 houses) to 2 rows
+         instead of horizontal-scrolling. 5 tabs × 40px + 4 × 6px gap ≈ 224px
+         fits inside a 393px viewport comfortably. Wrapping avoids the
+         hidden-gesture cost of overflow-x:auto and prevents the visual
+         overlap Wray observed during PR #170 smoke test. */
+      .deploy-house-tabs { flex-wrap: wrap; overflow-x: visible; row-gap: 6px; }
 
       /* Hide desktop elements on mobile */
       #arena-tray-tabs { display:none; }

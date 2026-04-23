@@ -1208,7 +1208,7 @@ Not in scope for this PR (flagged for separate consideration): the `waitingForRo
 
 Option 1 is stronger because the spatial anchor (sprite position) is more reassuring than a disembodied text pill. Option 2 is a fallback if Option 1 turns out to interact badly with other post-KO cleanup paths. Settle the choice as part of Task 17.0's scope.
 
-**Status: OPEN.** No code change in this cycle.
+**Resolved 2026-04-22 in PR #170.** Option 1 landed as part of the in-arena combat watch loop UX pass (commit `a99343a`, merged in `#170`). Current code at `public/nethara-live.html:3871` guards the `setTimeout(removeNineSprite, 800)` with `if (koId !== S.playerId)` — self-sprite stays on the arena, dimmed, with WAITING badge from Handler 2 (`:3909-3924`) through intermission. `arena:nine_rejoined` handler at `:4026-4045` and `arena:round_start` at `:4066-4075` restore alpha=1 and remove the badge on rejoin. Status retroactively updated **2026-04-23 during §9 audit** that caught the stale entry — the fix was landed but the PRD was never updated at the time.
 
 PR #153 diagnostic logs retained for one more smoke-test cycle. Will be removed in the next PR once a successful rejoin on production is confirmed (expected log pattern: one `[combat:ko]` per KO, not four; `_wasKOdThisRound=true` at round_end; `POST /api/zones/10/rejoin → 200`; `🔄 <name> rejoined zone 10` server log; feed `✅ Rejoined`).
 
@@ -1639,9 +1639,11 @@ No other consumers of the old event names anywhere under `server/`, `public/`, o
 
 **Symptom (user-reported 2026-04-22 during PR #170 smoke test).** Follow-up on §9.51's fix (PR #164 resolved the main body overflow of the deploy modal at 393×852). The house filter tab row at the top of the modal (`#deploy-house-tabs`) still overlaps itself — tabs run into each other horizontally so adjacent house labels visually collide. Rest of the modal is visible and usable.
 
-**Root cause.** Not yet diagnosed. Likely either a flex layout that allows tabs to overflow without wrapping or scrolling, or fixed per-tab widths summing past the available 393px. Needs a focused investigation during the mobile sizing PR.
+**Root cause** (diagnosed 2026-04-23). `.deploy-house-tabs` at `public/nethara-live.html:682` uses `display: flex; overflow-x: auto` with `flex-shrink: 0` on each tab. 10 tabs (ALL + 9 houses) × 40px + 9 gaps × 6px = 454px — wider than the 393px viewport. The PR #164 / §9.51 follow-up added `min-width: 0` to the row so the flex parent could shrink and the `overflow-x: auto` would kick in — that did enable scrolling, but visually on real hardware the horizontal-scroll affordance is barely discoverable and tabs at the edge of the scroll window render as "half a tab" which reads as overlap / crash into each other.
 
-**Status: OPEN** — deferred to PR C (mobile sizing pass). Scope: audit `#deploy-house-tabs` CSS, likely add `flex-wrap: wrap` with a tighter tab size or switch to horizontal scroll with a scroll indicator. Validate on real 393×852 hardware.
+**Resolution.** Wrap instead of scroll. In the mobile media query, override `.deploy-house-tabs` to `flex-wrap: wrap; overflow-x: visible; row-gap: 6px`. 10 tabs × 40px fit as 5 per row at 393px (224px used, ~170px spare for container padding/margins), so the tabs reflow into 2 rows without horizontal scrolling and without any hidden gesture. No change to desktop (still single-row with `overflow-x: auto`).
+
+**Resolved 2026-04-23 in PR #?.** *(placeholder, per bootstrap mechanic)*
 
 ### 9.63 Sidebar fighter profile popup — can't navigate between profiles, center-viewport position
 
