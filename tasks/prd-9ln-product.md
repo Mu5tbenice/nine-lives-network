@@ -1838,6 +1838,29 @@ The 15s threshold sits well above the 200ms tick interval (so no false alarms) a
 
 ---
 
+### 9.74 Mobile arena polish — card name truncation ("TEMP...") + portrait column cramp breaks MVP acceptability
+
+**Symptom (user-reported 2026-04-23 with iPhone XR 414×896 screenshot saved at `audit/mobile/Screenshot 2026-04-23 205236.png`).** At sub-640px viewports the arena is functionally readable but visibly unpolished in ways that undermine the "is this a real product?" first impression. Specifically:
+- Card slot layout is horizontal (art left / name right) at ~128px total width. The name field gets ~67px after padding — not enough for Cinzel 14px bold. Full card names like "TEMPORAL CURRENT" or "PLAGUEMIRE" truncate to `TEMP...` / `PLAG...` / `VAH...` with CSS ellipsis. Players can't identify their own cards without tapping each one.
+- Portrait column at 84px (≤640) / 76px (≤390) feels thin. Player handle `@9LVNetwork` truncates to `@9LV_...` with ellipsis — loss of identity for a handle that's *the* brand.
+- General visual density. Wray's take: "users will not take it seriously."
+
+**Effect.** MVP-blocking on the quality dimension. Functionality is intact (tap still works, HP still renders, stats still track) but the first impression reads as a hacked web build rather than a shipped mobile game. Blocks the "small userbase of fans" MVP criterion from `project_vision.md` — can't ask people to show up and play if the mobile surface looks thrown together.
+
+**Resolution plan.** Arena-only polish pass (other pages deferred):
+1. **Card slot vertical layout.** Switch `.mob-card-slot` from `flex-direction:row` (art-left / name-right) to `flex-direction:column` (art-top / name-bottom). Art gets 64% of card height — the character/card visual becomes prominent. Name gets the bottom 36% at full card width (~96px at 414px viewport). Remove `white-space:nowrap`; use `-webkit-line-clamp: 2` so long names wrap to two lines instead of ellipsis-truncating. Font drops 14→13 to fit cleanly in two lines for the longest card names in the catalog.
+2. **Portrait column widen.** 84→96 at ≤640, 76→86 at ≤390. Extra 12px at 414px viewport still leaves comfortable room for the card-slot column.
+3. **Player handle 2-line wrap.** Replace `nowrap + ellipsis` with `-webkit-line-clamp: 2`. Drop font 14→12 so a wrapped 2-line handle doesn't eat too much vertical space before the HP bar.
+4. **Slot visual polish.** Subtle gradient background, small drop-shadow, slight border-contrast bump — makes the cards read as physical objects instead of flat rectangles.
+
+**Verification.** Manual smoke at three viewports: 390×844 (iPhone 15), 414×896 (iPhone XR — the reported case), 744×1133 (iPad portrait — PR #192's mid-range block should still apply cleanly). Regression check at 1920×1080 desktop — all new rules are inside the existing `@media (max-width: 640px)` and `@media (max-width: 390px)` blocks, so desktop is untouched.
+
+**Out of scope for this PR (deferred):** secondary-pages responsive pass (register / packs / how-to-play / builder / leaderboards / card-lab — the original plan's PR #2, now renumbered to a future §9.75 entry if prioritized). Dashboard hero inline-styles refactor and fluid typography sweep — also deferred to a future §9.76 pass.
+
+**Resolved 2026-04-23 in PR #194.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
