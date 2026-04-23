@@ -1733,11 +1733,11 @@ Scope-boxed to `public/register.html`. Did not touch the server OAuth flow (`ser
 
 **Partially resolved 2026-04-23 in PR #174.** The new-tab + storage-listener change improved tab UX and is defense-in-depth, but did NOT solve the underlying X-app Universal-Link intercept — Wray confirmed mobile login still dead-ends after PR #174 merged and after updating the X Dev Portal Website URL to production.
 
-**Follow-up resolution in PR #?.** Server-side mobile UA detection added in `GET /auth/twitter` (`server/routes/auth.js:30-62`). iPhone / iPad / Android / generic mobile user-agents are 302'd to the existing `/auth/twitter-mobile` HTML page, which renders a big "Login with X" button plus an explicit instruction: "If the X app opens instead of a login page, long-press the button and choose 'Open in Browser.'" Long-pressing an `<a href>` in iOS Safari / Android Chrome invokes the browser's context menu with an **Open in Background / Open in Safari / Open in Browser** option — which routes around the X app's Universal Link claim on `twitter.com/oauth/authorize` and keeps the OAuth flow entirely in the browser.
+**Follow-up resolution in PR #176.** Server-side mobile UA detection added in `GET /auth/twitter` (`server/routes/auth.js:30-62`). iPhone / iPad / Android / generic mobile user-agents are 302'd to the existing `/auth/twitter-mobile` HTML page, which renders a big "Login with X" button plus an explicit instruction: "If the X app opens instead of a login page, long-press the button and choose 'Open in Browser.'" Long-pressing an `<a href>` in iOS Safari / Android Chrome invokes the browser's context menu with an **Open in Background / Open in Safari / Open in Browser** option — which routes around the X app's Universal Link claim on `twitter.com/oauth/authorize` and keeps the OAuth flow entirely in the browser.
 
 Trade-off: mobile users have to perform one extra gesture (long-press instead of tap) and follow a visible instruction. Not ideal UX, but reliable across iOS/Android/X-app-version combinations without requiring Apple Developer / Google Play verification for Universal Links on our own domain. Desktop flow is unchanged.
 
-**Fully resolved 2026-04-23 in PR #?.** *(placeholder, per bootstrap mechanic)*
+**Fully resolved 2026-04-23 in PR #176.**
 
 ---
 
