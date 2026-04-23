@@ -3240,6 +3240,16 @@
       // surface a feed event, leave equipped-cards HUD showing the *current*
       // loadout (it'll update when the new cards start firing at round start).
       if (data.pending) {
+        // §9.69: save the picked cards client-side so the HUD can swap to
+        // them on arena:round_start (server applies engine-side at the
+        // same moment). Until then, the old cards are still firing.
+        S._queuedCards = S.selectedCards.map((s) => s.card);
+        try {
+          localStorage.setItem(
+            `9lv_cards_${S.currentZoneId}_${S.playerId}`,
+            JSON.stringify(S._queuedCards),
+          );
+        } catch (e) {}
         closeDeployModal();
         addFeedEvent(
           '⏳ ' + (data.message || 'Build queued — applies at next round start'),
@@ -4076,6 +4086,23 @@
       S._roundNumber    = data.roundNumber || 1;
       S._roundStartedAt = Date.now();
       S._roundEndsAt    = Date.now() + 300000; // 5min hard cap
+
+      // §9.69: if the player queued a loadout swap during the previous
+      // round, the engine applied it in-place at this startRound tick.
+      // Swap the client HUD to match so the new cards show in slots and
+      // in the arena card UI.
+      if (S._queuedCards) {
+        S.equippedCards = S._queuedCards;
+        S._lastDeployedCards = S._queuedCards;
+        S._lastDeployedCardIds = S._queuedCards
+          .map((c) => c.player_card_id || c.id)
+          .filter(Boolean);
+        S._queuedCards = null;
+        if (typeof renderCardSlots === 'function') renderCardSlots(S.equippedCards);
+        if (typeof renderMobileCardSlots === 'function') renderMobileCardSlots(S.equippedCards);
+        if (typeof updateYourNinePanel === 'function') updateYourNinePanel();
+        addFeedEvent('✅ Build applied — new round, new cards', 'flip');
+      }
 
       // Dismiss cinematic overlay
       _dismissRoundEnd();
