@@ -1763,6 +1763,31 @@ Trade-off: mobile users have to perform one extra gesture (long-press instead of
 
 ---
 
+### 9.71 KO'd-withdrawn self-sprite renders bright 0-HP bar (no dim, no WAITING badge) after round_start when auto-rejoin is OFF
+
+**Symptom (user-reported 2026-04-23 during PR #181 smoke test).** On a round that ends while the player is KO'd with auto-rejoin OFF (or declined), the next round starts and the player's own sprite is visible on the arena with a **bright red 0-HP bar** and **no dim treatment / no WAITING badge**. Expected: sprite stays at α=0.25 with "WAITING" label (the §9.37 treatment) until the player redeploys or the round ends again. The §9.58 KO widget + round-end modal CTAs still work — this is a cosmetic regression specific to the intermission → next-round transition for withdrawn self-sprites.
+
+**Effect.** Low–medium severity, cosmetic only. No gameplay impact (the player is correctly withdrawn server-side; engine skips them; redeploy path works). But the visual — a pristine-colored sprite with a bright 0-HP bar — reads as "my Nine is alive and at zero health", which is confusing during a live round and undermines the §9.37 / §9.35 "you are dead, here's where you'll respawn" UX.
+
+**Root cause.** Asymmetry between server-side `startRound` retention and client-side `arena:round_start` handler:
+
+- Server (`server/services/combatEngine.js:1488-1498`) keeps KO'd Nines in `zs.nines` per §9.35, flips them to `withdrawn:true`, leaves `hp:0`, and returns early from the HP-reset loop.
+- Server broadcast (`combatEngine.js:1533-1545`) emits `arena:round_start` with `nines: all.map({ id, hp, maxHp, guildTag, houseKey })` — **no `withdrawn` flag in the payload**.
+- Client (`public/nethara-live.html:4111-4123`) iterates `data.nines` and for every entry calls `updateNineHP()` (paints the bar), sets `sp.container.alpha = 1` (undoes §9.37 dim), and removes `sp._waitingBadge` (undoes WAITING label). The handler has no way to tell which entries are withdrawn and treats all Nines as survivors.
+
+The §9.37 dim is applied on `combat:ko` (`nethara-live.html:3937-3953`) with `waitingForRound: true`, but `arena:round_start` — which fires after intermission — clobbers it for every Nine in the payload. The bug was dormant while §9.33 auto-rejoin always re-entered a withdrawn self-sprite; when auto-rejoin is off, the sprite stays withdrawn across the round boundary and the clobber becomes visible.
+
+**Resolution plan.** Two-sided minimal fix:
+
+- **Server** (`server/services/combatEngine.js:1536-1544`): add `withdrawn: !!n.withdrawn` to the payload object. One line.
+- **Client** (`public/nethara-live.html:4115-4122`): gate the `sp.container.alpha = 1` + `_waitingBadge` removal on `!n.withdrawn && n.hp > 0`. If the Nine IS withdrawn, leave the dim and badge in place (and defensively re-apply α=0.25 if a race condition cleared them — belt-and-braces, ~4 lines).
+
+Verification: Jest test mocks two Nines (one withdrawn, one alive), calls `startRound`, asserts the broadcast payload includes `withdrawn:true` / `withdrawn:false` on the respective entries. Manual smoke: auto-rejoin OFF, take a KO, wait for next round → sprite stays dimmed with WAITING label; redeploy CTA still works.
+
+**Resolved 2026-04-23 in PR #182.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.

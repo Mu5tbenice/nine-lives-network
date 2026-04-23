@@ -4111,14 +4111,30 @@
       (data.nines || []).forEach(n => {
         const key = String(n.id); // aligned with arena:positions (playerId) per §9.25
         updateNineHP(key, n.hp, n.maxHp);
-        // Restore waiting sprites to visible
+        // Restore waiting sprites to visible — but only for survivors.
+        // §9.71: withdrawn Nines (KO'd last round, haven't rejoined, e.g. auto-
+        // rejoin off) stay at hp=0 in the server payload. Clobbering their
+        // alpha/badge here produced a bright 0-HP bar with no dim, no WAITING
+        // label. Gate the reset on withdrawn=false && hp>0 and defensively
+        // re-apply the §9.37 dim if a prior round cleared it.
         const sp = S.nines.get(key);
-        if (sp) {
+        if (!sp) return;
+        if (!n.withdrawn && n.hp > 0) {
           sp.container.alpha = 1;
           delete sp._waitingForRound;
           // §9.37 companion: remove WAITING badge here too, since the self-
           // sprite now persists through intermission with its badge attached.
           if (sp._waitingBadge) { sp.container.removeChild(sp._waitingBadge); delete sp._waitingBadge; }
+        } else {
+          // Withdrawn or 0-HP — ensure dim + WAITING badge are present.
+          sp.container.alpha = 0.25;
+          sp._waitingForRound = true;
+          if (!sp._waitingBadge && sp.container && window._S?.arenaApp) {
+            const badge = new PIXI.Text('WAITING', { fontFamily:'monospace', fontSize:7, fill:0x888888 });
+            badge.anchor.set(0.5); badge.x = 0; badge.y = -SPRITE_SIZE * 1.6; badge.zIndex = 10;
+            sp.container.addChild(badge);
+            sp._waitingBadge = badge;
+          }
         }
       });
 
