@@ -1,0 +1,5 @@
+# VO recording takes land here.
+# Naming: s<shot>_<label>_take<N>.wav
+#   e.g. s03_stormrage_take01.wav, s13_5_respawn_take02.wav
+#
+# See ../VO_SCRIPT.md for the session script and delivery notes.
