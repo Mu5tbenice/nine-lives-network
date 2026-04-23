@@ -16,13 +16,12 @@ const { buildRoundStartNinePayload } = require('./combatEnginePayloads');
 const TICK_MS = 200; // 200ms ticks — 5 server updates/sec
 const ROUND_CAP_MS = 5 * 60 * 1000; // 5 min hard cap — rounds end early on last guild standing
 const INTERMISSION_MS = 35 * 1000; // §9.48: 35s between rounds (was 25s — too tight on mobile for open-modal + scroll-grid + pick + confirm)
-// 2hr session timer before auto-withdraw (PRD §4.8.5 + §9.3 resolution).
-// SESSION_MS_OVERRIDE_SECONDS env var shortens the timer for smoke-testing
-// the §9.38 session-expired flow without waiting 2hr per attempt. Production
-// leaves the env var unset and gets the canonical 2h value.
-const SESSION_MS = process.env.SESSION_MS_OVERRIDE_SECONDS
-  ? Number(process.env.SESSION_MS_OVERRIDE_SECONDS) * 1000
-  : 2 * 60 * 60 * 1000;
+// Task 17.0 item 2 (2026-04-23): SESSION_MS + SESSION_MS_OVERRIDE_SECONDS
+// removed. The 2h server-side inactivity timer was the "deployment lifespan"
+// knob from the old conflated `session` concept — PRD §4.8.5's rewritten
+// spec makes deployments indefinite (KO or explicit withdraw only). Client
+// handler for `arena:session_expired` kept dormant one deploy cycle for
+// backward-compat and will be removed in a follow-up. See §9.41 item 2.
 const SPD_FLOOR = 5.5; // card cycle floor (effects stay deliberate)
 const ATK_FLOOR = 2.5; // auto-attack floor (constant visual activity)
 const CORRODE_CD = 5.0; // 5 second cooldown — time-based, tick-rate independent
@@ -311,7 +310,6 @@ function buildNineState(dep, nine, cards, zoneBonus) {
     _koProcessed: false,
     _currentTarget: null,
     _targetLockedUntil: 0,
-    _deployedAt: Date.now(),
     _lastHitBy: null,
     _lastHitById: null,
   };
@@ -1176,32 +1174,11 @@ async function tickZone(zoneId, zs) {
     }
   }
 
-  // ── SESSION TIMER — server-side enforcement ─────────────────────────
-  const nowMs = Date.now();
-  for (const nine of all) {
-    if (
-      !nine.waitingForRound &&
-      nine._deployedAt &&
-      nowMs - nine._deployedAt >= SESSION_MS
-    ) {
-      // Session expired — force withdraw
-      nine.waitingForRound = true;
-      zs.nines.delete(nine.deploymentId);
-      await supabaseAdmin
-        .from('zone_deployments')
-        .update({ is_active: false, current_hp: Math.round(nine.hp) })
-        .eq('id', nine.deploymentId)
-        .then(({ error }) => {
-          if (error) console.error('❌ Session expire:', error.message);
-        });
-      broadcast(zoneId, 'arena:session_expired', {
-        nineId: nine.playerId,
-        deploymentId: nine.deploymentId,
-        name: nine.playerName,
-      });
-      console.log(`⏰ Session expired: ${nine.playerName} on zone ${zoneId}`);
-    }
-  }
+  // Task 17.0 item 2: 2h session-timer loop removed. Deployments are now
+  // indefinite per PRD §4.8.5 — only KO or explicit withdraw end them.
+  // Client `arena:session_expired` handler at public/nethara-live.html:3896
+  // stays dormant one deploy cycle for backward-compat and is cleaned up in
+  // a follow-up PR (see §9.41 item 2).
 
   // ── KO CHECK + ROUND END EVALUATION ─────────────────────────────────
   // Process all deaths this tick, then check if round should end
