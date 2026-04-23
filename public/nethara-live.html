@@ -1824,7 +1824,9 @@
     nines: new Map(),          // id → sprite data
     equippedCards: [],          // current zone's 3 cards
     isDeployed: false,
-    combatMetrics: new Map(),   // id → {name,guild,house,damage,heals,kos}
+    combatMetrics: new Map(),   // id → {name,guild,house,damage,heals,kos} — "today" metrics post-Task 17.0 item 1; periodically mirrored from server's player_zone_metrics (§9.50)
+    _lastUtcDate: new Date().toISOString().slice(0, 10), // Task 17.0 item 1 — midnight UTC detection
+    _metricsSyncInterval: null,  // Task 17.0 item 1 — periodic server sync handle
     chartData: {},              // name → {guild, pts[]}
     isFighting: false,
     _recentlyKOd: new Set(),
@@ -2034,32 +2036,18 @@
       S._sessionPoints = { zone:0, kos:0, snapshots:0, chronicle:0, duels:0 };
       S._snapshotHistory = [];
     }
-    // §9.50 seed from server (authoritative). If the route is unavailable
-    // (offline, 5xx, table-missing) the localStorage restore above stays in
-    // place as a safety net. Fire-and-forget — combat events continue to
-    // tick client-side maps in real time regardless of fetch latency.
+    // §9.50 / Task 17.0 item 1 — seed from server's player_zone_metrics. The
+    // server table is the durable source of truth keyed by metric_date = today
+    // (UTC), so we mirror it here. Initial seed uses max-merge to preserve any
+    // socket-event increments that fired between zone-load and fetch return;
+    // the periodic re-sync started below (startSessionMetricsSync) uses
+    // wholesale replace so the client stays bound to the day boundary and
+    // can't silently retain yesterday's values across a midnight UTC rollover.
     if (zone?.id) {
-      fetch(`/api/zones/${zone.id}/metrics`)
-        .then(r => r.ok ? r.json() : null)
-        .then(body => {
-          if (!body || !Array.isArray(body.players) || !body.players.length) return;
-          if (String(S.currentZoneId) !== String(zone.id)) return; // user switched zones mid-flight
-          body.players.forEach(p => {
-            const id = String(p.player_id);
-            const existing = S.combatMetrics.get(id) || {};
-            S.combatMetrics.set(id, {
-              name:   p.name  || existing.name  || '',
-              guild:  p.guild || existing.guild || '',
-              house:  existing.house || '',
-              damage: Math.max(p.damage || 0, existing.damage || 0),
-              heals:  Math.max(p.heals  || 0, existing.heals  || 0),
-              kos:    Math.max(p.kos    || 0, existing.kos    || 0),
-            });
-          });
-          if (typeof renderGuildSidebar === 'function') renderGuildSidebar();
-        })
-        .catch(() => { /* offline — localStorage seed stays in place */ });
+      syncSessionMetricsFromServer(zone.id, { wholesale: false });
     }
+    // Kick off the 30s periodic re-sync + midnight-UTC detection loop. Idempotent.
+    startSessionMetricsSync();
     S.isDeployed = false;
     S.isFighting = false;
     S.guildScores = {};
@@ -4850,6 +4838,94 @@
     }
     renderGuildSidebar();
   };
+
+  // ═════════════════════════════════════════════════════════════════════
+  // Task 17.0 item 1 — daily combat stats sync (client ↔ server player_zone_metrics)
+  //
+  // The server's player_zone_metrics table (§9.50) is the durable source of
+  // truth, keyed by (player_id, zone_id, metric_date) — rows naturally roll
+  // over at 00:00 UTC. Before this task the client only seeded once on zone
+  // entry, then `S.combatMetrics` grew unbounded across UTC day boundaries,
+  // so a tab kept open across midnight showed yesterday's + today's events
+  // conflated. These helpers bind the client to the server's day boundary:
+  //  - `syncSessionMetricsFromServer(zoneId, {wholesale})` fetches today's
+  //    row for the zone. Wholesale=false preserves local socket deltas on
+  //    initial seed; wholesale=true overwrites (used by periodic + midnight).
+  //  - `_checkUtcDayRollover()` detects UTC date change and clears + re-fetches.
+  //  - `startSessionMetricsSync()` runs both on a 30s interval.
+  // Rationale: reuses existing §9.50 infra instead of adding a second table.
+  // ═════════════════════════════════════════════════════════════════════
+  function syncSessionMetricsFromServer(zoneId, opts) {
+    if (!zoneId) return Promise.resolve();
+    const wholesale = !!(opts && opts.wholesale);
+    return fetch(`/api/zones/${zoneId}/metrics`)
+      .then(r => r.ok ? r.json() : null)
+      .then(body => {
+        if (!body || !Array.isArray(body.players)) return;
+        if (String(S.currentZoneId) !== String(zoneId)) return; // user switched zones mid-flight
+        if (wholesale) {
+          // Replace wholesale — keep transient name/guild/house from existing
+          // entries when the server hasn't backfilled them (they come from the
+          // players table join but could be null on a fresh row).
+          const preserved = new Map();
+          S.combatMetrics.forEach((m, id) => {
+            preserved.set(id, { name: m.name, guild: m.guild, house: m.house });
+          });
+          S.combatMetrics.clear();
+          body.players.forEach(p => {
+            const id = String(p.player_id);
+            const prev = preserved.get(id) || {};
+            S.combatMetrics.set(id, {
+              name:   p.name  || prev.name  || '',
+              guild:  p.guild || prev.guild || '',
+              house:  prev.house || '',
+              damage: p.damage || 0,
+              heals:  p.heals  || 0,
+              kos:    p.kos    || 0,
+            });
+          });
+        } else {
+          // Max-merge seed — preserves local socket deltas that fired while
+          // the fetch was in flight. Used only for the initial zone-entry seed.
+          body.players.forEach(p => {
+            const id = String(p.player_id);
+            const existing = S.combatMetrics.get(id) || {};
+            S.combatMetrics.set(id, {
+              name:   p.name  || existing.name  || '',
+              guild:  p.guild || existing.guild || '',
+              house:  existing.house || '',
+              damage: Math.max(p.damage || 0, existing.damage || 0),
+              heals:  Math.max(p.heals  || 0, existing.heals  || 0),
+              kos:    Math.max(p.kos    || 0, existing.kos    || 0),
+            });
+          });
+        }
+        if (typeof renderGuildSidebar === 'function') renderGuildSidebar();
+      })
+      .catch(() => { /* offline — keep existing state */ });
+  }
+
+  function _checkUtcDayRollover() {
+    const now = new Date().toISOString().slice(0, 10);
+    if (now === S._lastUtcDate) return false;
+    S._lastUtcDate = now;
+    S.combatMetrics.clear();
+    if (S.currentZoneId) syncSessionMetricsFromServer(S.currentZoneId, { wholesale: true });
+    if (typeof renderGuildSidebar === 'function') renderGuildSidebar();
+    if (typeof addFeedEvent === 'function') addFeedEvent('🕛 New UTC day — today\'s stats reset', 'system');
+    return true;
+  }
+
+  function startSessionMetricsSync() {
+    if (S._metricsSyncInterval) return;
+    // 30s periodic resync. Keeps S.combatMetrics mirroring the server's
+    // player_zone_metrics row for today, so crossing midnight UTC or missing
+    // a few socket events doesn't accumulate drift.
+    S._metricsSyncInterval = setInterval(() => {
+      if (_checkUtcDayRollover()) return; // rollover already fired a wholesale sync
+      if (S.currentZoneId) syncSessionMetricsFromServer(S.currentZoneId, { wholesale: true });
+    }, 30000);
+  }
 
   // Reset round metrics on every snapshot
   function resetRoundMetrics() {
