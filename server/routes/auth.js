@@ -26,31 +26,22 @@ const oauthStates = new Map();
 const CALLBACK_URL =
   process.env.TWITTER_CALLBACK_URL || 'https://9lv.net/auth/twitter/callback';
 
-// §9.70 follow-up: match common mobile UA strings. If a mobile browser hits
-// /auth/twitter, iOS/Android will Universal-Link the twitter.com OAuth URL
-// into the X native app — once there, the return-to-browser is unreliable
-// and users get stranded. Route mobile through /auth/twitter-mobile instead,
-// which renders an instruction page telling the user to long-press the
-// Login button and pick "Open in Browser." That bypasses the Universal
-// Link intercept and keeps the whole OAuth flow in Safari/Chrome.
-const MOBILE_UA_RE =
-  /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i;
-function isMobileUA(req) {
-  const ua = req.headers['user-agent'] || '';
-  return MOBILE_UA_RE.test(ua);
-}
-
 /**
  * GET /auth/twitter
- * Initiates Twitter OAuth 2.0 flow. Mobile UAs are redirected to
- * /auth/twitter-mobile for the long-press workaround (see comment above).
+ * Initiates Twitter OAuth 2.0 flow.
+ *
+ * §9.70 note: PR #176 added a mobile-UA redirect here to
+ * /auth/twitter-mobile (long-press workaround page). Reverted 2026-04-23
+ * after smoke test confirmed the long-press step was dead-end UX — user
+ * tapped the Login button, X app still hijacked, nothing happened. The
+ * extra instruction page just added a step without fixing the underlying
+ * return-from-X-app problem. Real fix = Apple Universal Links /
+ * Android App Links registration on 9lv.net (deferred to a dedicated
+ * session). /auth/twitter-mobile endpoint kept as orphaned code; clean
+ * up when the UL PR lands.
  */
 router.get('/twitter', async (req, res) => {
   try {
-    if (isMobileUA(req)) {
-      return res.redirect('/auth/twitter-mobile');
-    }
-
     const { url, codeVerifier, state } = authClient.generateOAuth2AuthLink(
       CALLBACK_URL,
       { scope: ['tweet.read', 'users.read'] },
