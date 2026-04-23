@@ -3235,6 +3235,18 @@
         return;
       }
       const data = await res.json();
+      // §9.69 pending: self-reswap during FIGHTING gets queued for next round
+      // start instead of a mid-round withdraw+redeploy. Close the modal,
+      // surface a feed event, leave equipped-cards HUD showing the *current*
+      // loadout (it'll update when the new cards start firing at round start).
+      if (data.pending) {
+        closeDeployModal();
+        addFeedEvent(
+          '⏳ ' + (data.message || 'Build queued — applies at next round start'),
+          'system',
+        );
+        return;
+      }
       if (data.success || data.message) {
         const cards = S.selectedCards.map(s => s.card);
         S.equippedCards = cards;
@@ -3958,7 +3970,10 @@
     socket.on('arena:round_end', (data) => {
       S._roundState     = 'INTERMISSION';
       S._roundNumber    = (data.roundNumber || 1) + 1;
-      S._roundEndsAt    = Date.now() + (data.intermissionMs || 25000);
+      // §9.48: prefer the server's absolute nextRoundAt timestamp when
+      // present (accurate across clock drift); fall back to the legacy
+      // Date.now() + intermissionMs calc for backward compat.
+      S._roundEndsAt    = data.nextRoundAt || (Date.now() + (data.intermissionMs || 35000));
       S._roundStartedAt = null; // reset — will be set on arena:round_start
 
       // Was this player KO'd during the round? If so, queue a rejoin.

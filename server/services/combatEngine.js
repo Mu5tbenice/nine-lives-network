@@ -14,7 +14,7 @@ const pointsService = require('./pointsService');
 // ─── CONSTANTS ────────────────────────────────────────────────────────
 const TICK_MS = 200; // 200ms ticks — 5 server updates/sec
 const ROUND_CAP_MS = 5 * 60 * 1000; // 5 min hard cap — rounds end early on last guild standing
-const INTERMISSION_MS = 25 * 1000; // 25s between rounds
+const INTERMISSION_MS = 35 * 1000; // §9.48: 35s between rounds (was 25s — too tight on mobile for open-modal + scroll-grid + pick + confirm)
 // 2hr session timer before auto-withdraw (PRD §4.8.5 + §9.3 resolution).
 // SESSION_MS_OVERRIDE_SECONDS env var shortens the timer for smoke-testing
 // the §9.38 session-expired flow without waiting 2hr per attempt. Production
@@ -164,9 +164,12 @@ function getZoneBonus(zoneId) {
 let _metricsTableMissing = false;
 function trackMetric(nine, stat, amount) {
   if (!nine || !amount) return;
-  if (stat === 'damage')     nine._sessionDmgDelta   = (nine._sessionDmgDelta   || 0) + amount;
-  else if (stat === 'heals') nine._sessionHealsDelta = (nine._sessionHealsDelta || 0) + amount;
-  else if (stat === 'kos')   nine._sessionKosDelta   = (nine._sessionKosDelta   || 0) + amount;
+  if (stat === 'damage')
+    nine._sessionDmgDelta = (nine._sessionDmgDelta || 0) + amount;
+  else if (stat === 'heals')
+    nine._sessionHealsDelta = (nine._sessionHealsDelta || 0) + amount;
+  else if (stat === 'kos')
+    nine._sessionKosDelta = (nine._sessionKosDelta || 0) + amount;
 }
 async function flushZoneMetrics(zoneId, zs) {
   if (_metricsTableMissing) return;
@@ -194,9 +197,14 @@ async function flushZoneMetrics(zoneId, zs) {
       .eq('metric_date', today)
       .in('player_id', pids);
     if (rerr) {
-      if (rerr.code === '42P01' || /relation .* does not exist/i.test(rerr.message || '')) {
+      if (
+        rerr.code === '42P01' ||
+        /relation .* does not exist/i.test(rerr.message || '')
+      ) {
         _metricsTableMissing = true;
-        console.warn('[§9.50] player_zone_metrics table missing — run the migration (see PR docs). Skipping metric flush until restart.');
+        console.warn(
+          '[§9.50] player_zone_metrics table missing — run the migration (see PR docs). Skipping metric flush until restart.',
+        );
         return;
       }
       console.error('[§9.50 read]', rerr.message);
@@ -204,14 +212,18 @@ async function flushZoneMetrics(zoneId, zs) {
     }
     const existingMap = new Map((existing || []).map((r) => [r.player_id, r]));
     const upserts = deltas.map((r) => {
-      const cur = existingMap.get(r.player_id) || { damage: 0, heals: 0, kos: 0 };
+      const cur = existingMap.get(r.player_id) || {
+        damage: 0,
+        heals: 0,
+        kos: 0,
+      };
       return {
         player_id: r.player_id,
         zone_id: zid,
         metric_date: today,
         damage: (cur.damage || 0) + r.damage,
-        heals:  (cur.heals  || 0) + r.heals,
-        kos:    (cur.kos    || 0) + r.kos,
+        heals: (cur.heals || 0) + r.heals,
+        kos: (cur.kos || 0) + r.kos,
         updated_at: new Date().toISOString(),
       };
     });
@@ -219,7 +231,10 @@ async function flushZoneMetrics(zoneId, zs) {
       .from('player_zone_metrics')
       .upsert(upserts, { onConflict: 'player_id,zone_id,metric_date' });
     if (uerr) {
-      if (uerr.code === '42P01') { _metricsTableMissing = true; return; }
+      if (uerr.code === '42P01') {
+        _metricsTableMissing = true;
+        return;
+      }
       console.error('[§9.50 upsert]', uerr.message);
     }
   } catch (e) {
@@ -317,10 +332,7 @@ function pickTarget(nine, all) {
   // other nine, including same-guild. Guild tag is cosmetic; hostile
   // aggro ignores it.
   const taunter = all.find(
-    (n) =>
-      n.hp > 0 &&
-      n.deploymentId !== nine.deploymentId &&
-      n.tauntActive,
+    (n) => n.hp > 0 && n.deploymentId !== nine.deploymentId && n.tauntActive,
   );
   if (taunter) {
     nine._currentTarget = taunter.deploymentId;
@@ -1447,6 +1459,10 @@ async function endRound(zoneId, zs, all, endReason) {
     pointsLog,
     intermissionMs: INTERMISSION_MS,
     nextRoundIn: INTERMISSION_MS,
+    // §9.48: absolute server timestamp for accurate client countdown —
+    // sidesteps clock drift between client's Date.now()+intermissionMs
+    // calculation and the actual server round_start fire time.
+    nextRoundAt: zs.roundEndsAt,
     endReason: endReason || 'cap', // 'last_standing' | 'cap'
     elapsedMs,
   });
@@ -1462,6 +1478,14 @@ function startRound(zoneId, zs, all) {
   zs.roundState = 'FIGHTING';
   zs.roundStartedAt = Date.now();
   zs.roundEndsAt = Date.now() + ROUND_CAP_MS; // 5min hard cap
+
+  // §9.69: apply any pending loadout changes queued during the previous
+  // round. Fire-and-forget — stats/cards/maxHp update in-place so HP and
+  // position are preserved. The HP-reset loop below then restores to the
+  // new maxHp for the player's new loadout.
+  applyPendingCardsAtRoundStart(zoneId, zs).catch((e) =>
+    console.error('[§9.69 hook]', e.message),
+  );
 
   // Full HP reset for survivors — KO'd Nines become 'withdrawn' (must click rejoin)
   all.forEach((n) => {
@@ -1630,10 +1654,7 @@ async function loadDeploymentIntoEngine(dep) {
     const zs = zones.get(zoneId);
     if (zs) {
       for (const existing of zs.nines.values()) {
-        if (
-          existing.hp > 0 &&
-          existing.deploymentId !== state.deploymentId
-        ) {
+        if (existing.hp > 0 && existing.deploymentId !== state.deploymentId) {
           existing.poisonStacks = Math.min(3, (existing.poisonStacks || 0) + 1);
           if (!existing._poisonNextAt || Date.now() > existing._poisonNextAt)
             existing._poisonNextAt = Date.now() + 1500;
@@ -1731,6 +1752,121 @@ function stopCombatEngine() {
   _tickInt = null;
 }
 
+// §9.69 pending loadout queue — lets a player reswap their cards during an
+// active round; the new loadout is applied in-place at the next startRound
+// (preserves HP and position — no fresh respawn). In-memory only; a rare
+// engine restart mid-intermission would drop pending entries, in which case
+// the player can just re-submit the swap. No schema change required.
+const pendingCardQueue = new Map(); // key: `${zoneId}:${deploymentId}` → cardIds[]
+
+function queuePendingCards(zoneId, deploymentId, cardIds) {
+  pendingCardQueue.set(
+    `${String(zoneId)}:${String(deploymentId)}`,
+    cardIds.slice(),
+  );
+}
+
+async function fetchCardsByPlayerCardIds(cardIds) {
+  if (!cardIds || !cardIds.length) return [];
+  const { data: playerCards } = await supabaseAdmin
+    .from('player_cards')
+    .select('id, spell_id')
+    .in('id', cardIds);
+  if (!playerCards || !playerCards.length) return [];
+  const spellIds = playerCards.map((c) => c.spell_id).filter(Boolean);
+  if (!spellIds.length) return [];
+  const { data: spells } = await supabaseAdmin
+    .from('spells')
+    .select(
+      'id, slug, name, card_type, house, base_atk, base_hp, base_spd, base_def, base_luck, effect_1',
+    )
+    .in('id', spellIds);
+  const spellMap = {};
+  (spells || []).forEach((s) => {
+    spellMap[s.id] = s;
+  });
+  // Preserve the order the player submitted (maps to slot 1, 2, 3 visually)
+  const pcBySpell = {};
+  (playerCards || []).forEach((pc) => {
+    pcBySpell[pc.id] = pc;
+  });
+  return cardIds
+    .map((id, idx) => {
+      const pc = pcBySpell[id];
+      const spell = pc ? spellMap[pc.spell_id] : null;
+      if (!spell) return null;
+      return { slot_number: idx + 1, ...spell };
+    })
+    .filter(Boolean);
+}
+
+function applyCardsInPlace(nine, newCards, zoneBonus) {
+  const h = HOUSE_STATS[nine.houseKey] || HOUSE_STATS.stormrage;
+  const atk = h.atk + newCards.reduce((s, c) => s + (c.base_atk || 0), 0);
+  let hp = h.hp + newCards.reduce((s, c) => s + (c.base_hp || 0), 0);
+  let spd = h.spd + newCards.reduce((s, c) => s + (c.base_spd || 0), 0);
+  const def = h.def + newCards.reduce((s, c) => s + (c.base_def || 0), 0);
+  const luck = h.luck + newCards.reduce((s, c) => s + (c.base_luck || 0), 0);
+  const bk = zoneBonus?.bonus?.key;
+  if (bk === 'hp') hp = Math.round(hp * (zoneBonus.bonus.mult || 1));
+  if (bk === 'spd') spd = Math.round(spd * (zoneBonus.bonus.mult || 1));
+  nine.cards = newCards;
+  nine.stats = { atk, hp, spd, def, luck };
+  nine.maxHp = hp;
+  // Preserve nine.hp (current health), nine.x/y (position), status effects.
+  // Reset timers + cycle so the new loadout fires from slot 1 cleanly.
+  nine.cardIdx = 0;
+  nine.atkTimer = atkInterval(spd);
+  nine.cardTimer = cardInterval(spd);
+}
+
+async function applyPendingCardsAtRoundStart(zoneId, zs) {
+  const zoneKey = String(zoneId);
+  const zoneBonus = getZoneBonus(zoneKey);
+  const toApply = [];
+  for (const n of zs.nines.values()) {
+    const key = `${zoneKey}:${n.deploymentId}`;
+    const cardIds = pendingCardQueue.get(key);
+    if (!cardIds) continue;
+    pendingCardQueue.delete(key);
+    toApply.push({ nine: n, cardIds });
+  }
+  for (const { nine, cardIds } of toApply) {
+    try {
+      const cards = await fetchCardsByPlayerCardIds(cardIds);
+      if (!cards.length) continue;
+      applyCardsInPlace(nine, cards, zoneBonus);
+      // Fire-and-forget DB sync so zone_card_slots reflects what's actually
+      // firing. Old slots deactivated, new slots inserted for same deployment.
+      syncSlotsForDeployment(nine.deploymentId, cardIds).catch((e) =>
+        console.error('[§9.69 slot sync]', e.message),
+      );
+      console.log(
+        `[§9.69] applied pending cards at round start — deployment=${nine.deploymentId} player=${nine.playerId}`,
+      );
+    } catch (e) {
+      console.error('[§9.69 apply]', e.message);
+    }
+  }
+}
+
+async function syncSlotsForDeployment(deploymentId, cardIds) {
+  await supabaseAdmin
+    .from('zone_card_slots')
+    .update({ is_active: false })
+    .eq('deployment_id', deploymentId)
+    .eq('is_active', true);
+  const rows = cardIds.slice(0, 3).map((card_id, i) => ({
+    deployment_id: deploymentId,
+    card_id,
+    slot_number: i + 1,
+    is_active: true,
+  }));
+  if (rows.length) {
+    await supabaseAdmin.from('zone_card_slots').insert(rows);
+  }
+}
+
 module.exports = {
   startCombatEngine,
   stopCombatEngine,
@@ -1740,4 +1876,5 @@ module.exports = {
   removeDeploymentFromEngine,
   getZoneState: (id) => zones.get(String(id)) || null,
   refreshZoneBonusCache,
+  queuePendingCards, // §9.69
 };
