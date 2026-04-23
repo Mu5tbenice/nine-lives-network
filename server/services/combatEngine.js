@@ -10,6 +10,7 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 const pointsService = require('./pointsService');
+const { buildRoundStartNinePayload } = require('./combatEnginePayloads');
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────
 const TICK_MS = 200; // 200ms ticks — 5 server updates/sec
@@ -1533,15 +1534,9 @@ function startRound(zoneId, zs, all) {
   broadcast(zoneId, 'arena:round_start', {
     zoneId,
     roundNumber: zs.roundNumber,
-    nines: all.map((n) => ({
-      id: n.playerId, // align with arena:positions — S.nines on the client is keyed by playerId (§9.25)
-      deploymentId: n.deploymentId,
-      playerId: n.playerId,
-      hp: n.hp,
-      maxHp: n.maxHp,
-      guildTag: n.guildTag,
-      houseKey: n.houseKey,
-    })),
+    // §9.71: payload shape (incl. `withdrawn`) lives in combatEnginePayloads.js
+    // so the unit test can cover it without requiring the full engine module.
+    nines: all.map(buildRoundStartNinePayload),
   });
 
   console.log(
