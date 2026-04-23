@@ -1816,7 +1816,7 @@ Verification: Jest test mocks two Nines (one withdrawn, one alive), calls `start
 
 The 15s threshold sits well above the 200ms tick interval (so no false alarms) and below where the user would notice the freeze. Tab-visibility guard (`S._tabHidden`) prevents the detector from false-firing when the browser naturally throttles RAF/setInterval.
 
-**Resolved 2026-04-23 in PR #?.**
+**Resolved 2026-04-23 in PR #191.**
 
 ---
 
