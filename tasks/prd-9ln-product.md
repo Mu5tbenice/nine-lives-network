@@ -1722,7 +1722,7 @@ No other consumers of the old event names anywhere under `server/`, `public/`, o
 
 Scope-boxed to `public/register.html`. Did not touch the server OAuth flow (`server/routes/auth.js`), the orphaned `/auth/twitter-mobile` endpoint (cleanup for a later dead-code pass), or Universal Link / App Link infrastructure (deferred — only needed if new-tab fix doesn't unblock mobile auth).
 
-**Resolved 2026-04-23 in PR #?.** *(placeholder, per bootstrap mechanic)*
+**Resolved 2026-04-23 in PR #174.**
 
 ---
 
