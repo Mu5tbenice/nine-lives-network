@@ -1834,7 +1834,7 @@ The 15s threshold sits well above the 200ms tick interval (so no false alarms) a
 2. **641–768px block** added to cascade over the 640px mobile rules. Widens `#mob-portrait-col` from 84px → 110px, bumps portrait image 64px → 84px, raises base font sizes on buttons/tabs/chat/log to 15px, and gives the canvas 60% of vertical height (vs 54% on narrow phones). All rules `min-width:641px and max-width:768px` gated — nothing unconditional, desktop 1920×1080 untouched.
 3. **`.tap-target` utility** (`min-height:44px; min-width:44px; padding:10px 14px`) declared at the top of the stylesheet. Existing mobile buttons keep their inline padding (converting them risks visual regression); the utility is documentation + escape hatch for future additions.
 
-**Resolved 2026-04-23 in PR #?.**
+**Resolved 2026-04-23 in PR #192.**
 
 ---
 
