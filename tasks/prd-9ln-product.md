@@ -1650,9 +1650,18 @@ No other consumers of the old event names anywhere under `server/`, `public/`, o
 1. **Navigation friction.** If another profile is already open, clicking a new fighter row doesn't switch to them — player has to dismiss the current popup first, then click again.
 2. **Position.** Popup renders center-viewport. Wray wants it anchored to the clicked fighter row, "more like a speech bubble or extra window extending from the profile card."
 
-**Root cause.** Not yet diagnosed. The click handler on the fighter row likely ignores new clicks while a popup is visible; the popup CSS likely uses `position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%)` as a default.
+**Root cause** (diagnosed 2026-04-23). Two core issues + two bonus bugs found while there:
 
-**Status: OPEN** — queued for PR B (UI elements pass). Scope: refactor the popup to replace its contents on any fighter click (instead of requiring dismiss-then-click), and reposition to attach visually to the clicked row with a pointer/arrow. Per `feedback_single_cta_surface.md`: if the row opens a popup, the popup is the action surface — no parallel CTAs on the row itself.
+1. The row's `onclick` bubbled up to a document-level outside-click handler (`public/nethara-live.html:5322`) that removed the popup immediately on any click that wasn't *inside* the popup. Rapid row-to-row switches went: row click → `_showFighterPopup` creates popup → document handler fires → target is the row (not inside popup) → popup removed. User saw a flash or nothing, had to dismiss-then-reclick.
+2. Popup CSS was hardcoded to `top:50%;left:50%;transform:translate(-50%,-50%)` regardless of where the source row was.
+3. *(Bonus)* The row `<div>` had **two** `style=""` attributes (one with layout, one with `cursor:pointer`). Browser kept the first, dropped the second — `cursor:pointer` silently never applied.
+4. *(Bonus)* Listener leak: each popup open attached a new `document.addEventListener('click', _close)` but the old handlers were only removed when they actually fired an outside-click close. Repeated row clicks stacked document listeners.
+
+**Resolution.** Row `onclick` now calls `event.stopPropagation()` and passes `this` as an anchor element into `_showFighterPopup(id, anchorEl)`. The popup computes position from `anchorEl.getBoundingClientRect()` — places to the left of the row if there's room, else to the right, else falls back to center-viewport (narrow / mobile). Outside-click handler tracked as `window._fpCloseHandler` so each re-open removes the prior listener before binding a new one. Duplicate `style` attribute on the row merged into one.
+
+Pointer/arrow connecting popup visually to the row is deferred — current placement sits adjacent to the source row, which is the main ask. Add the pointer in a follow-up polish pass if the popup still feels disconnected in use.
+
+**Resolved 2026-04-23 in PR #175.**
 
 ---
 
