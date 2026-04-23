@@ -4390,6 +4390,8 @@
   function getNineName(id) {
     return S.nines.get(resolveId(id))?.name || String(id||'').slice(0,8) || 'Unknown';
   }
+  // §9.30 — expose to PIXI IIFE (processArenaEvent + future cross-IIFE handlers).
+  window.getNineName = getNineName;
 
   // ── FEED & LOG ──
   function addFeedEvent(html, type) {
@@ -4404,6 +4406,8 @@
     const mc = document.getElementById('mob-chat-log');
     if (mc) { mc.insertBefore(div.cloneNode(true), mc.firstChild); while(mc.children.length>50) mc.removeChild(mc.lastChild); }
   }
+  // §9.30 — expose to PIXI IIFE.
+  window.addFeedEvent = addFeedEvent;
 
   function addBattleLog(text, type) {
     const el = document.getElementById('battle-log-full');
@@ -5605,6 +5609,8 @@
       }, 1500);
     }
   }
+  // §9.30 — expose to PIXI IIFE.
+  window.trackCombatStat = trackCombatStat;
 
   function renderSidebarChart() {
     const canvas = document.getElementById('sidebar-dmg-chart');
@@ -6279,6 +6285,14 @@
     get(_, k) { return window._S ? window._S[k] : undefined; },
     set(_, k, v) { if (window._S) window._S[k] = v; return true; },
   });
+  // §9.30 — IIFE-1 function bridge. processArenaEvent (line ~8430) and any
+  // future PIXI-IIFE code that needs these helpers now has a safe alias
+  // that reads from window at call time. Previously bare calls like
+  // `getNineName(id)` threw ReferenceError when reached because these
+  // functions live in the main IIFE's closure, not in this PIXI scope.
+  const getNineName     = (...args) => (window.getNineName     || (() => ''))(...args);
+  const addFeedEvent    = (...args) => (window.addFeedEvent    || (() => {}))(...args);
+  const trackCombatStat = (...args) => (window.trackCombatStat || (() => {}))(...args);
   // Live aliases to constants from main IIFE (exposed via window._*)
   const _c = () => window._HOUSES       || {};
   const HOUSES        = new Proxy({}, { get(_, k) { return (window._HOUSES       || {})[k]; } });
