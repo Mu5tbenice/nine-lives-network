@@ -33,7 +33,8 @@ const CALLBACK_URL =
 // which renders an instruction page telling the user to long-press the
 // Login button and pick "Open in Browser." That bypasses the Universal
 // Link intercept and keeps the whole OAuth flow in Safari/Chrome.
-const MOBILE_UA_RE = /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i;
+const MOBILE_UA_RE =
+  /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i;
 function isMobileUA(req) {
   const ua = req.headers['user-agent'] || '';
   return MOBILE_UA_RE.test(ua);
