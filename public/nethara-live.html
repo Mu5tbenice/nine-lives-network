@@ -2371,12 +2371,17 @@
         document.getElementById('deploy-cta').style.display = 'block';
         document.getElementById('arena-bottom-tray').style.display = 'none';
         S.isDeployed = false;
+        // Task 17.0 item 5 — hide pill when the checkDeployment fetch confirms
+        // no active deployment in this zone.
+        if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
         return;
       }
       S.isDeployed = true;
       S.deployedZoneIds.add(zoneId);
       document.getElementById('deploy-cta').style.display = 'none';
       document.getElementById('arena-bottom-tray').style.display = 'flex';
+      // Task 17.0 item 5 — pill reflects active deployment on zone entry.
+      if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
       const tl0 = document.getElementById('spell-timeline');
       if (tl0) tl0.style.display = 'block';
       switchTrayTab('build');
@@ -3285,6 +3290,7 @@
         const cards = S.selectedCards.map(s => s.card);
         S.equippedCards = cards;
         S.isDeployed = true;
+        S._withdrawnAfterKO = false; // redeploy clears any lingering KO'd state
         S._sessionStartAt = S._sessionStartAt || Date.now();
         S.deployedZoneIds.add(S.currentZoneId);
         // Task 17.0 item 4 — arm the 1h auto-rejoin window on first deploy
@@ -3478,10 +3484,16 @@
       (!S._autoRedeployExpiry || Date.now() <= S._autoRedeployExpiry));
     const isDeployed = !!S.isDeployed;
     const isWithdrawn = !!S._withdrawnAfterKO;
+    // `hasZoneDeploy` is the ground truth for "the player has a deployment in
+    // this zone." It stays true across KO → round_start → nine_rejoined, so
+    // we don't flicker hidden between transient state-flag transitions. Only
+    // confirmDeploy, checkDeployment, and withdraw mutate deployedZoneIds.
+    const hasZoneDeploy = !!(S.currentZoneId && S.deployedZoneIds &&
+      S.deployedZoneIds.has(S.currentZoneId));
 
     let state = null;
     let label = '';
-    if (autoActive && (isDeployed || isWithdrawn)) {
+    if (autoActive && (isDeployed || isWithdrawn || hasZoneDeploy)) {
       state = 'auto';
       if (S._autoRedeployExpiry) {
         const min = Math.max(0, Math.ceil((S._autoRedeployExpiry - Date.now()) / 60000));
@@ -3489,7 +3501,9 @@
       } else {
         label = 'AUTO-REJOIN';
       }
-    } else if (isWithdrawn) {
+    } else if (isWithdrawn || (hasZoneDeploy && !isDeployed)) {
+      // Latent "needs redeploy" state — covers the case where round_start
+      // cleared _withdrawnAfterKO before the player redeployed (auto off).
       state = 'withdrawn';
       label = 'WITHDRAWN — REDEPLOY';
     } else if (isDeployed) {
@@ -3563,7 +3577,10 @@
       if (!data) return;
       if (data.success || data.message) {
         S.isDeployed = true;
+        S._withdrawnAfterKO = false; // auto-redeploy cleared the KO'd state
         S._sessionStartAt = S._sessionStartAt || Date.now();
+        // Task 17.0 item 5 — pill flips from WITHDRAWN back to AUTO/DEPLOYED.
+        if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
         const restoreCards = cards.length ? cards : (S._lastDeployedCards || []);
         if (restoreCards.length) {
           S.equippedCards = restoreCards;
@@ -4276,6 +4293,8 @@
           if (!ok) {
             addFeedEvent('⚠️ Auto-rejoin failed — use CHANGE BUILD or manual deploy', 'system');
             S._withdrawnAfterKO = true;
+            // Task 17.0 item 5 — pill flips to WITHDRAWN since auto didn't land.
+            if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
           }
         });
       }
