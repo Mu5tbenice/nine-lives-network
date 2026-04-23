@@ -3465,7 +3465,14 @@
         body: JSON.stringify({ player_id: S.playerId, zone_id: S.currentZoneId }),
       });
       const data = await res.json();
-      if (data.success) {
+      // HOTFIX: server returns 404 "No active deployment" when zone_deployments
+      // has is_active=false for this player+zone — this is the expected state
+      // post-KO (combatEngine sets is_active=false at line 982). Treat 404 as
+      // "already withdrawn, sync client state" rather than an alert-worthy
+      // error, so the UI doesn't get stuck thinking the player is still
+      // deployed when the server disagrees.
+      const alreadyGone = res.status === 404 && /no active deployment/i.test(data?.error || '');
+      if (data.success || alreadyGone) {
         S.isDeployed = false;
         S._withdrawnAfterKO = false; // explicit withdraw, not a KO
         S.deployedZoneIds.delete(S.currentZoneId);
@@ -3473,7 +3480,7 @@
         removeNineSprite(S.playerId);
         document.getElementById('arena-bottom-tray').style.display = 'none';
         document.getElementById('deploy-cta').style.display = 'block';
-        addFeedEvent('↩️ Withdrawn from battle.', 'system');
+        addFeedEvent(alreadyGone ? 'ℹ️ Already withdrawn — ready to redeploy.' : '↩️ Withdrawn from battle.', 'system');
         recordBuildEnd();
         // Task 17.0 item 5 — pill hides on explicit withdraw (not deployed, not KO'd).
         if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
@@ -3686,9 +3693,15 @@
       // re-populate from server truth within the next tick. Without this, a
       // socket dropout leaves "hovering" sprites from the previous session on
       // canvas because no cull event arrives until positions resumes.
+      // HOTFIX: was `state.arenaApp` but `state` is only defined inside the
+      // PIXI IIFE; here in the main IIFE we use S.arenaApp directly.
+      // Silent catch was swallowing the ReferenceError, so the PIXI stage
+      // removal never actually ran — sprites got orphaned on stage while
+      // the Map cleared. Follow the pattern used at line ~2084 (the existing
+      // zone-leave sprite cleanup).
       if (S.nines && S.nines.size > 0) {
         S.nines.forEach((sp) => {
-          try { if (sp.container && state.arenaApp) state.arenaApp.stage.removeChild(sp.container); } catch (e) {}
+          try { if (sp.container && S.arenaApp) S.arenaApp.stage.removeChild(sp.container); } catch (e) {}
         });
         S.nines.clear();
       }
@@ -7234,7 +7247,9 @@
     if (!state.arenaApp) return;
     // Tab-hidden guard — don't queue PIXI text + per-frame fade tickers while
     // the tab is backgrounded; otherwise they all fire on return.
-    if (S._tabHidden) return;
+    // HOTFIX: this runs inside the PIXI IIFE where `S` is out of scope —
+    // read via the `state` Proxy instead (which forwards to window._S).
+    if (state._tabHidden) return;
     const app = state.arenaApp;
     // Arc direction: always away from centre-screen so numbers spread outward
     const cx = app.screen.width / 2;
@@ -8112,7 +8127,8 @@
   function spawnParticles(x, y, color, count, type) {
     if (!state.arenaApp) return;
     // Tab-hidden guard — particle bursts are pure visual; drop while hidden.
-    if (S._tabHidden) return;
+    // HOTFIX: use `state` proxy, not `S` (PIXI IIFE scope).
+    if (state._tabHidden) return;
     const particles = [];
     // Boost count slightly
     const boostedCount = Math.round(count * 1.5);
@@ -8261,7 +8277,10 @@
     // is backgrounded. The KO handler's sprite-removal path still fires on
     // the 800ms timeout for other players; the visible animation is purely
     // cosmetic and shouldn't queue while hidden.
-    if (S._tabHidden) return;
+    // HOTFIX: use `state` proxy, not `S` (PIXI IIFE scope). Previous throw
+    // was aborting the combat:ko handler before isDeployed/_withdrawnAfterKO
+    // could update — which masked the KO client-side entirely.
+    if (state._tabHidden) return;
     nine.isAnimating = true;
 
     const startX = nine.container.x;
