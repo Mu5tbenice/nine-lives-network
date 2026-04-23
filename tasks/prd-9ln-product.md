@@ -1820,6 +1820,24 @@ The 15s threshold sits well above the 200ms tick interval (so no false alarms) a
 
 ---
 
+### 9.73 Arena mid-range (641–768px) uncovered, no breakpoint tokens, inlined tap-target specs
+
+**Symptom (inventory 2026-04-23).** The mobile responsive audit surfaced three interrelated gaps in `public/nethara-live.html`:
+1. The `641–768px` viewport range (iPad portrait, landscape phones, small tablets) has no `@media` rules — it falls through to the `max-width: 640px` mobile block (which assumes 84px portrait col + compressed HUD and wastes space at 700px) or jumps to the `min-width: 768px` desktop modal rules (which don't re-expand the mobile layout). Tests awkwardly in both directions.
+2. Every `@media` query hardcodes raw px values (`640px`, `768px`, `1100px`, `1440px`). No naming convention. Future rename or retune across the file is high-friction grep + replace.
+3. `44px+` tap-target spec mentioned in comments (per iOS HIG + WCAG 2.5.5) but not enforced via a shared class — individual mobile button styles satisfy it through different combinations of `font-size + padding + border`, and new buttons risk drifting below the threshold.
+
+**Effect.** Pre-resolution: iPad portrait users on `/zone/:id` see the mobile HUD squeezed into 768px as if they were on a 393px phone. Developer cost: any cross-file breakpoint change is fragile. Accessibility: new buttons may regress below the 44px target without anyone noticing until external review.
+
+**Resolution plan.** Three coordinated micro-changes in one PR:
+1. **Breakpoint tokens** declared as commented CSS custom properties at the top of the file (`--bp-xs: 390px`, `--bp-sm: 640px`, `--bp-md: 768px`, `--bp-lg: 1100px`, `--bp-xl: 1440px`). Since `@media` can't reference CSS vars directly, every existing and new `@media` block gets a trailing comment (`/* --bp-sm 640px */`) so the file is grep-friendly for future token-driven refactors.
+2. **641–768px block** added to cascade over the 640px mobile rules. Widens `#mob-portrait-col` from 84px → 110px, bumps portrait image 64px → 84px, raises base font sizes on buttons/tabs/chat/log to 15px, and gives the canvas 60% of vertical height (vs 54% on narrow phones). All rules `min-width:641px and max-width:768px` gated — nothing unconditional, desktop 1920×1080 untouched.
+3. **`.tap-target` utility** (`min-height:44px; min-width:44px; padding:10px 14px`) declared at the top of the stylesheet. Existing mobile buttons keep their inline padding (converting them risks visual regression); the utility is documentation + escape hatch for future additions.
+
+**Resolved 2026-04-23 in PR #192.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
