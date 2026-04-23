@@ -1784,7 +1784,7 @@ The §9.37 dim is applied on `combat:ko` (`nethara-live.html:3937-3953`) with `w
 
 Verification: Jest test mocks two Nines (one withdrawn, one alive), calls `startRound`, asserts the broadcast payload includes `withdrawn:true` / `withdrawn:false` on the respective entries. Manual smoke: auto-rejoin OFF, take a KO, wait for next round → sprite stays dimmed with WAITING label; redeploy CTA still works.
 
-**Resolved 2026-04-23 in PR #?.**
+**Resolved 2026-04-23 in PR #182.**
 
 ---
 
