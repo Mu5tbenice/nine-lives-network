@@ -3214,15 +3214,12 @@
     const btn = document.getElementById('btn-confirm-deploy');
     if (btn) { btn.disabled = true; btn.textContent = 'DEPLOYING...'; }
     const cardIds = S.selectedCards.map(s => s.card.player_card_id || s.card.id);
-    // If already deployed on this zone, withdraw first (card swap), not a new deployment
-    if (S.isDeployed && S.currentZoneId) {
-      try {
-        await fetch('/api/zones/withdraw', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ player_id: S.playerId, zone_id: S.currentZoneId }),
-        });
-      } catch(e) { /* ignore — proceed with deploy anyway */ }
-    }
+    // §9.69 follow-up: do NOT pre-emptively withdraw. The old pattern
+    // (withdraw → deploy) predates the server handling reswap itself;
+    // it now breaks the §9.69 queue path because withdraw removes the
+    // Nine from zs.nines before deploy's self-reswap detection runs.
+    // The server's /api/zones/deploy route handles self-reswap end to
+    // end — queue during FIGHTING, withdraw+redeploy during INTERMISSION.
     try {
       const res = await fetch('/api/zones/deploy', {
         method: 'POST',
