@@ -1710,6 +1710,22 @@ No other consumers of the old event names anywhere under `server/`, `public/`, o
 
 ---
 
+### 9.70 Mobile X/Twitter auth deep-links into X app and never returns
+
+**Symptom (user-reported 2026-04-23 during PR #173 smoke test).** On mobile with the X native app installed, tapping "Connect Twitter" on `/register.html` deep-links into the X app, the user authorizes, then nothing happens — the user is stranded in the X app with no return to the game. Login fails silently. Blocks mobile registration and blocks smoke-testing any logged-in flow (Wray flagged this while trying to regression-test §9.67 on a legitimately contested zone).
+
+**Effect.** High — mobile is the primary device class for the target audience (Twitter-native crypto-survival game); broken login kills onboarding and blocks further smoke testing.
+
+**Root cause.** `public/register.html:325` used `window.location.href = '/auth/twitter'` — full-page nav. The server 302s to `https://twitter.com/oauth/authorize?...`; iOS/Android treat that URL as a Universal Link / App Link and hand it to the X native app. The X app completes OAuth and tries to redirect to `https://9lv.net/auth/twitter/callback`, but because the original browser tab was replaced by the nav, there's no return path — iOS either drops the result in a tab the user can't find or keeps the user in the X app. No `apple-app-site-association` or `.well-known/assetlinks.json` on 9lv.net to hand the X app's return intent back to the browser context.
+
+**Resolution.** Open auth in a new tab via `window.open('/auth/twitter', '_blank', 'noopener')` so the X app detour doesn't orphan the original tab. Add a `storage`-event listener on the original tab so it auto-navigates to `/dashboard.html?player_id=X` once the new tab writes `player_id` to localStorage (the existing callback chain already does this — see `public/dashboard.html:170` and `public/register.html:657`). Show a "waiting on new tab" state on the button so the user knows the flow is active elsewhere. Popup-blocker fallback: if `window.open` returns null, fall back to `window.location.href` so the user isn't stuck.
+
+Scope-boxed to `public/register.html`. Did not touch the server OAuth flow (`server/routes/auth.js`), the orphaned `/auth/twitter-mobile` endpoint (cleanup for a later dead-code pass), or Universal Link / App Link infrastructure (deferred — only needed if new-tab fix doesn't unblock mobile auth).
+
+**Resolved 2026-04-23 in PR #174.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.

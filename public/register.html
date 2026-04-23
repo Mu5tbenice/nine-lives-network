@@ -160,7 +160,10 @@
     <div class="roast-bubble">
       <div class="roast-text">another one. wonderful. connect your twitter so i can figure out what's wrong with you.<span class="cursor"></span></div>
     </div>
-    <button class="twitter-btn" onclick="startAuth()">𝕏 Connect Twitter</button>
+    <button class="twitter-btn" id="btnConnectX" onclick="startAuth()">𝕏 Connect Twitter</button>
+    <div id="authHint" style="display:none;font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-top:12px;line-height:1.5;letter-spacing:0.5px;">
+      login opened in a new tab.<br>this tab will refresh once you're signed in.
+    </div>
     <p style="font-size:11px;color:var(--text-faint);margin-top:14px;">Already playing? <a href="/dashboard.html">Go to Dashboard</a></p>
   </div>
 
@@ -322,8 +325,30 @@ function showError(msg) {
 
 /* ── Auth ── */
 function startAuth() {
-  window.location.href = '/auth/twitter';
+  // §9.70: open X OAuth in a new tab so mobile X-app deep-link intercept
+  // doesn't strand the original tab. Storage listener below catches the
+  // successful sign-in (new tab writes player_id to localStorage on
+  // completion) and navigates this tab to /dashboard.html automatically.
+  var newTab = window.open('/auth/twitter', '_blank', 'noopener');
+  // If the browser blocked the popup (rare for user-initiated click),
+  // fall back to same-tab nav so the user isn't left with nothing.
+  if (!newTab) { window.location.href = '/auth/twitter'; return; }
+  var btn = document.getElementById('btnConnectX');
+  var hint = document.getElementById('authHint');
+  if (btn) { btn.disabled = true; btn.textContent = 'WAITING FOR LOGIN…'; }
+  if (hint) hint.style.display = 'block';
 }
+
+// §9.70 return-to-original-tab: the successful callback chain writes
+// player_id to localStorage (see register.html:657 on new-user completion,
+// and dashboard.html:170 on returning-user load). Storage events fire in
+// *other* tabs when that write happens, so this listener bridges the new
+// auth tab back to the tab the user started in.
+window.addEventListener('storage', function(e) {
+  if (e.key === 'player_id' && e.newValue) {
+    window.location.href = '/dashboard.html?player_id=' + encodeURIComponent(e.newValue);
+  }
+});
 
 function checkOAuthReturn() {
   var p = new URLSearchParams(window.location.search);
