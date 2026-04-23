@@ -304,6 +304,59 @@ router.get('/zone-influence/:id', async (req, res) => {
   }
 });
 
+// GET /api/admin/zones/:id/state — §9.67 diagnostic for deploy-lockout triage.
+// Returns the combat engine's in-memory view of a zone (roundState, timing,
+// distinct guilds, per-Nine summary) so ops can reason about why a deploy
+// was accepted or rejected. Read-only.
+router.get('/zones/:id/state', (req, res) => {
+  try {
+    let engine = null;
+    try {
+      engine = require('../services/combatEngine');
+    } catch (e) {
+      return res.status(503).json({ error: 'combat engine unavailable' });
+    }
+    if (!engine || !engine.getZoneState) {
+      return res.status(503).json({ error: 'combat engine unavailable' });
+    }
+    const zoneId = req.params.id;
+    const zs = engine.getZoneState(zoneId);
+    if (!zs) {
+      return res.json({ zone_id: zoneId, loaded: false });
+    }
+    const now = Date.now();
+    const nines = zs.nines ? Array.from(zs.nines.values()) : [];
+    const guilds = Array.from(new Set(nines.map((n) => n.guildTag)));
+    const msLeft = (zs.roundEndsAt || 0) - now;
+    res.json({
+      zone_id: zoneId,
+      loaded: true,
+      roundState: zs.roundState,
+      roundNumber: zs.roundNumber,
+      roundEndsAt: zs.roundEndsAt,
+      secondsToNext: Math.max(0, Math.ceil(msLeft / 1000)),
+      stale: zs.roundState === 'FIGHTING' && msLeft <= 0,
+      ninesCount: nines.length,
+      guilds,
+      contested: guilds.length >= 2,
+      nines: nines.map((n) => ({
+        deploymentId: n.deploymentId,
+        playerId: n.playerId,
+        playerName: n.playerName,
+        guildTag: n.guildTag,
+        houseKey: n.houseKey,
+        hp: n.hp,
+        maxHp: n.maxHp,
+        waitingForRound: !!n.waitingForRound,
+        withdrawn: !!n.withdrawn,
+      })),
+    });
+  } catch (e) {
+    console.error('[admin zones/:id/state]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ╔═══════════════════════════════════╗
 // ║  COMMUNITY CLASH MANAGEMENT        ║
 // ╚═══════════════════════════════════╝

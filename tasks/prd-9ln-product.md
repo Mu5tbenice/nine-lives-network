@@ -1656,6 +1656,50 @@ No other consumers of the old event names anywhere under `server/`, `public/`, o
 
 ---
 
+### 9.67 Deploy lockout deadlocks single-guild zones — 423 with `nextWindowInSeconds: 0` on Twilight Grove + Hanwu Boglands
+
+**Symptom (user-reported 2026-04-23 during PR #171 smoke test — SS4).** POST `/api/zones/deploy` returns **423 Locked** with body `{"error":"deploy_locked","message":"Deployment is only allowed during intermission","nextWindowInSeconds":0}` on zones 13 (Twilight Grove) and Hanwu Boglands. Only those two zones exhibit the bug — other zones deploy fine. The zero-seconds window suggests the server thinks intermission is imminent yet the state never transitions. A player already deployed on the affected zone also cannot reconfigure their own loadout — the same 423 blocks self-reswap.
+
+**Root cause.** The guard at `server/routes/zones.js:55-66` (introduced by §9.46 and flipped ON by §9.60) returns 423 whenever the zone's `roundState === 'FIGHTING'`. Twilight Grove and Hanwu have active deployments from a single guild. With no enemy, the combat engine's last-guild-standing transition (`services/combatEngine.js:1231-1248`) never fires, and the 5-minute hard cap (line 1225) immediately flows back into FIGHTING on the next `startRound`. Net effect: the first guild to claim an empty zone soft-locks it against all future joiners AND against their own loadout edits. Zones with no deployments return `null` from `getZoneState()` and skip the guard entirely, which is why other zones appear unaffected.
+
+**Resolution plan.** Extract the guard predicate into `server/services/deployLockout.js` and tighten to require all three conditions before returning 423: (a) round has real time left (`roundEndsAt > now`); (b) zone has ≥2 distinct guilds present (a genuine contest, matching Game Bible's "last guild standing" semantics); (c) requester is not already deployed on this zone (self-reswap is always allowed). Add Jest tests covering every bypass path. Add `GET /api/admin/zones/:id/state` diagnostic so ops can inspect the engine's in-memory zone view (roundState, guilds, stale flag, per-Nine summary) when triaging future lockout reports.
+
+**Follow-up filed as §9.69.** The existing self-reswap code path does a full withdraw + redeploy which resets HP and spawn position mid-round. This PR only unblocks the 423; the semantic choice (queue loadout for next round vs true hot-swap) is scoped to §9.69.
+
+**Resolved 2026-04-23 in PR #?.**
+
+---
+
+### 9.68 Desktop viewport at 1728×1117 is unresponsive — 500px cap, 2-col grid, no image loading state
+
+**Symptom (user-reported 2026-04-23 during PR #171 smoke test — SS2 + SS3).** Dashboard caps at `max-width: 500px` in `public/dashboard.html:34`, leaving ~600px of empty space on each side on a 1728×1117 Chrome window at 100% zoom. Typography renders small because sizing is fixed-`px` rather than fluid. The zone grid is hardcoded to 2 columns (`grid-template-columns: 1fr 1fr` at line 613) regardless of viewport, so wider displays don't pack more zones per row. Zone card images render as dead black rectangles while loading — no placeholder, no spinner, no indication that anything is happening.
+
+**Effect.** Medium. The live UI (`/public/`, vanilla HTML/CSS/JS) was designed mobile-first and lacks a desktop adaptation layer; the mobile polish from prior §9 passes doesn't translate up. Wray's framing: "file a ticket to dynamically detect the agent/browser to find their resolution and scale it to theirs."
+
+**Resolution plan.** Not this PR. Scope for a dedicated desktop UX pass:
+
+1. Add a desktop breakpoint on `.main-container` (`public/dashboard.html:34`) — raise max-width to ~1200–1400px above 1200px viewport.
+2. Shift the zone grid (line 613) to `grid-template-columns: repeat(auto-fit, minmax(250px, 1fr))` so items reflow as the window resizes.
+3. Move key typography to `clamp()` so it scales between mobile and desktop.
+4. Add image-loading spinners — reuse the existing `.spinner` pattern already defined at `public/dashboard.html:102-103` and `public/css/components-v2.css:210`. Apply as a CSS placeholder on card images via the `loadeddata` event or CSS `:not(.loaded)` state.
+5. Wire a `window.resize` listener to re-measure and re-flow dense regions if needed.
+
+**Status: OPEN** — queued for a dedicated desktop pass. Not scoped to this PR.
+
+---
+
+### 9.69 Self-reswap during an active round — semantic decision pending (queue vs hot-swap)
+
+**Symptom (surfaced 2026-04-23 during §9.67 fix).** Once §9.67 unblocks self-reswap, a player reconfiguring their own loadout during FIGHTING goes through the existing withdraw + redeploy code path at `server/routes/zones.js:86-106`. This deactivates the old slots, removes the Nine from `zones.get(zone_id)` via `removeDeploymentFromEngine`, then re-inserts a fresh deployment downstream. Side-effects: the Nine gets **fresh HP and a new spawn position** mid-round. Not a regression — pre-existing behavior — but a UX question surfaced by the §9.67 unblock.
+
+**Effect.** Low. Functional but semantically unclear to players. A player who reswaps "in a pinch" during a contested round effectively heals themselves and relocates, which may or may not be the intended cost/benefit.
+
+**Resolution plan.** Product decision pending. Wray's stated default (2026-04-23): accept the swap immediately but defer the card change until next `startRound` (preserves HP and position). Stretch alternative: a true hot-swap that replaces the `cards` array on the live Nine without respawning — the card rotation (`cardIdx`) picks up the new loadout on its next cycle. Hot-swap is more engaging but requires clear UI feedback — a pending-change indicator for the queued variant, or a "now firing" card indicator for the hot-swap variant — before it ships. Out of scope for §9.67 PR.
+
+**Status: OPEN.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.

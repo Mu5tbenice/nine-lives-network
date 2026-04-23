@@ -9,8 +9,13 @@ const supabase = require('../config/supabase');
 const { createClient } = require('@supabase/supabase-js');
 const { getNine, healNine } = require('../services/nineSystem');
 const { addPoints } = require('../services/pointsService');
+const { shouldBlockDeploy } = require('../services/deployLockout');
 const flags = (() => {
-  try { return require('../config/flags'); } catch (e) { return {}; }
+  try {
+    return require('../config/flags');
+  } catch (e) {
+    return {};
+  }
 })();
 
 // Lazy-load combatEngine to avoid circular deps — only used for removeDeploymentFromEngine
@@ -49,14 +54,17 @@ router.post('/deploy', async (req, res) => {
       return res.status(400).json({ error: 'player_id and zone_id required' });
     }
 
-    // §9.46 deploy lockout (feature-flagged, default OFF). When the zone is
-    // in an active round, reject with 423 so the client can show a countdown
-    // to the next intermission. No behavior change with flag false.
+    // §9.46 + §9.67 deploy lockout. Predicate lives in services/deployLockout
+    // so it is unit-testable in isolation. 423 only fires on a genuine active
+    // contest (round has time left, ≥2 guilds present, not a self-reswap).
     if (flags.FEATURE_DEPLOY_LOCKOUT) {
       const engine = getCombatEngine();
       const zs = engine?.getZoneState ? engine.getZoneState(zone_id) : null;
-      if (zs && zs.roundState === 'FIGHTING') {
-        const msLeft = Math.max(0, (zs.roundEndsAt || 0) - Date.now());
+      const { block, msLeft } = shouldBlockDeploy({
+        zoneState: zs,
+        playerId: player_id,
+      });
+      if (block) {
         return res.status(423).json({
           error: 'deploy_locked',
           message: 'Deployment is only allowed during intermission',
@@ -1305,7 +1313,8 @@ router.post('/:zoneId/rejoin', async (req, res) => {
 router.get('/:zone_id/metrics', async (req, res) => {
   try {
     const zoneId = parseInt(req.params.zone_id, 10);
-    if (!Number.isFinite(zoneId)) return res.status(400).json({ error: 'invalid zone_id' });
+    if (!Number.isFinite(zoneId))
+      return res.status(400).json({ error: 'invalid zone_id' });
     const today = new Date().toISOString().slice(0, 10);
 
     const { data: rows, error } = await supabaseAdmin
@@ -1316,7 +1325,11 @@ router.get('/:zone_id/metrics', async (req, res) => {
 
     if (error) {
       const msg = error.message || '';
-      if (error.code === '42P01' || /relation .* does not exist/i.test(msg) || /player_zone_metrics/.test(msg)) {
+      if (
+        error.code === '42P01' ||
+        /relation .* does not exist/i.test(msg) ||
+        /player_zone_metrics/.test(msg)
+      ) {
         // Table not migrated yet — soft-empty so client uses localStorage.
         return res.json({ players: [], note: 'metrics_table_missing' });
       }
