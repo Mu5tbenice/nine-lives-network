@@ -2152,6 +2152,8 @@ Each PR ships with a ≤6-item smoke-test checklist on real phones at 390 / 414 
 
 **Partially resolved 2026-04-24 in PR #219 — action button hierarchy: SWAP gold (neutral), EXIT red (destructive), AUTO explicit ON/OFF pill with sliding dot and `.auto-on` state class. Addresses item 4.**
 
+**Partially resolved 2026-04-24 in PR #220 — tab label consistency (all 4 tabs get icon + text) + active-tab underline indicator + chat send button treatment (gold-outlined pill with visible input field). Addresses items 7, 12.**
+
 
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
