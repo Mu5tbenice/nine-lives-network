@@ -2051,7 +2051,7 @@ Files still mixing both `supabase` and `supabaseAdmin` variable names (`routes/i
 
 RLS stays enabled exactly as §9.82 configured it — it's the correct security floor (protects against anything holding the anon key, which is shipped to the browser). The server, as the trusted actor, uses service_role as intended.
 
-**Resolved 2026-04-25 in PR #?.**
+**Resolved 2026-04-25 in PR #213.**
 
 ---
 
