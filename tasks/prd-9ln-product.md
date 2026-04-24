@@ -1940,6 +1940,20 @@ Kept the intermission `return;` intact: combat mutation code ABOVE the intermiss
 
 ---
 
+### 9.82 Supabase RLS security pass — 44 public tables exposed via PostgREST
+
+**Symptom (user-reported 2026-04-24).** Supabase sent security-vulnerability email alerts. The project's external-facing advisor flagged 44 tables in the `public` schema with RLS disabled but exposed through PostgREST — anyone with the anon key (which is designed to be public-facing) could freely `SELECT`, and in some cases `INSERT`/`UPDATE`, against game-sensitive data: `players`, `scoring_config`, `nerm_user_memory`, `chronicle_acts`, `player_cards`, `duels`, etc. Three tables had overly-permissive "Allow insert/update for all" policies — the anon role could overwrite rows. Several tables carried redundant always-true service-role policies (service role already bypasses RLS natively, so the policies were noise that tripped the `rls_policy_always_true` advisor).
+
+Additional legacy debt surfaced by the audit: `add_mana()` function from the now-removed mana system (PR #201), unused `add_points()` / two `degrade_sharpness()` variants / duplicate `increment_season_points(integer, integer)` function that no code calls via RPC, a duplicate index `spells_slug_unique`, and three functions with mutable `search_path`.
+
+**Effect.** High. Free-plan egress overage pressure plus a live security-leak window for any actor that obtained the anon key (easily leaked via any client-side inclusion — today the server is the only consumer, but any future client-side Supabase use would expose everything).
+
+**Resolution plan.** Enable RLS on all 44 flagged tables. Audit the server anon-client reads (39 tables across routes + services — full list in PR body) and add a deny-all-default + explicit `anon_read` SELECT policy per table the server actually reads. Tables only touched by the service-role client get RLS-on with no policies (admin-only access). Drop the three dangerous Allow-insert/update-for-all policies. Drop the seven redundant service-role-always-true policies. Drop dead functions (`add_mana`, `add_points`, both `degrade_sharpness` variants, integer variant of `increment_season_points`). Fix `search_path = public, pg_catalog` on the three remaining functions. Drop duplicate `spells_slug_unique` index (kept `spells_slug_key`). Full migration SQL checked in at `database/migrations/001_rls_security_pass.sql`.
+
+**Resolved 2026-04-24 in PR #203.**
+
+---
+
 ### 9.83 players.js route still selects/inserts dropped `mana` column — dashboard 404
 
 **Symptom (user-reported 2026-04-24 after PR #201 Replit sync + §9.82 RLS migration).** `/api/players/:id` returns 404 for every existing player. Browser console shows `Failed to load resource: /api/players/47:1 404`. Dashboard fails to load player data on first paint.
