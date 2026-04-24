@@ -16,7 +16,7 @@
  * ═══════════════════════════════════════════════════════
  */
 
-const { supabaseAdmin } = require('../config/supabase');
+const supabaseAdmin = require('../config/supabaseAdmin');
 
 // ── Constants ──
 const MAX_TICKETS_PER_DAY = 6;

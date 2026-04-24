@@ -11,7 +11,7 @@
 const express = require('express');
 const router = express.Router();
 const narrativeEngine = require('../services/narrativeEngine');
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 
 /**
  * GET /api/raids/today

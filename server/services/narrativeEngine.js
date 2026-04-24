@@ -18,7 +18,7 @@
  * ═══════════════════════════════════════════════════════
  */
 
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 const {
   narratives,
   getRandomNarrative,

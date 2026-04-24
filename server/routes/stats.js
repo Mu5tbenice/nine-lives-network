@@ -66,7 +66,7 @@ router.post('/preview', async (req, res) => {
       return res.status(400).json({ error: 'player_id required' });
     }
 
-    const supabase = require('../config/supabase');
+    const supabase = require('../config/supabaseAdmin');
 
     // Get player's house
     const { data: player } = await supabase

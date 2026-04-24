@@ -6,7 +6,7 @@
 // Every page should call this instead of doing its own math.
 // ═══════════════════════════════════════════════════════════
 
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 
 /**
  * Calculate complete stats for a player's Nine.

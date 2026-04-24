@@ -18,7 +18,7 @@
 //   - Your Nine's identity carries over from zone battles
 // ═══════════════════════════════════════════════════════
 
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseAdmin = createClient(

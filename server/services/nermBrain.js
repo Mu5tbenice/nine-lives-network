@@ -13,7 +13,7 @@
 // history tracking, etc. This file just provides the shared prompt + helpers.
 // ═══════════════════════════════════════════════════════════════
 
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseAdmin = createClient(

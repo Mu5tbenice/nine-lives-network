@@ -359,7 +359,7 @@ app.get('/api/health', (req, res) => {
 // Called by dashboard on load. Updates login streak.
 // streak=0→1 first visit, +=1 if last login was yesterday, reset to 1 if gap >1 day
 app.post('/api/players/:id/streak-ping', async (req, res) => {
-  const supabase = require('./config/supabase');
+  const supabase = require('./config/supabaseAdmin');
   const { createClient } = require('@supabase/supabase-js');
   const supabaseAdmin = createClient(
     process.env.SUPABASE_URL,

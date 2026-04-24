@@ -10,7 +10,7 @@
 //  - Records everything in chronicle_participants table
 // ═══════════════════════════════════════════════════════════════
 
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 const { createClient } = require('@supabase/supabase-js');
 const { addPoints } = require('./pointsService');
 

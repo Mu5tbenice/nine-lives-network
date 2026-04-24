@@ -2,7 +2,7 @@
 // Handles creating and managing player Nines
 // V2: reads all stats from houses table (source of truth)
 
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 
 /**
  * Create a Nine for a player based on their house.

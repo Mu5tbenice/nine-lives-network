@@ -1,4 +1,4 @@
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 const { twitter9LV } = require('../config/twitter');
 
 /**

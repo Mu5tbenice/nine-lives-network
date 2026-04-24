@@ -7,7 +7,7 @@
 // No multipliers. No percentages. Just addition.
 // ═══════════════════════════════════════════════════════
 
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 
 // ─── COMBAT FORMULAS ───────────────────────────────────
 

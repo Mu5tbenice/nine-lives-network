@@ -4,7 +4,7 @@
 // Called by scheduler at 00:00 UTC
 // ═══════════════════════════════════════════════════════
 
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 const { createClient } = require('@supabase/supabase-js');
 const effectEngine = require('./effectEngine');
 

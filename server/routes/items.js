@@ -4,7 +4,7 @@
 // ═══════════════════════════════════════════
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 const supabaseAdmin = require('../config/supabaseAdmin'); // bypass RLS for player data
 
 const VALID_SLOTS = [

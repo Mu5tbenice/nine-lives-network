@@ -1,7 +1,7 @@
 // server/services/cardDurability.js
 // Handles card charge usage, exhaustion, and recharging
 
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 
 // Durability charges by rarity
 const CHARGES_BY_RARITY = {

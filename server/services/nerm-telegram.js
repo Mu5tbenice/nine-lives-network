@@ -1,7 +1,7 @@
 const { NERM_SYSTEM_PROMPT } = require('./nermBrain');
 const TelegramBot = require('node-telegram-bot-api');
 const Anthropic = require('@anthropic-ai/sdk');
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 
 // ╔══════════════════════════════════════════╗
 // ║                                          ║

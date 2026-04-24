@@ -6,7 +6,7 @@
 // FIX: Random basic card selection (no more same 2 cards every pack)
 // ═══════════════════════════════════════════════════════
 
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 const supabaseAdmin = require('../config/supabaseAdmin');
 
 // ── RARITY CONFIG ──

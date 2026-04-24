@@ -6,7 +6,7 @@
 
 const express = require('express');
 const router = express.Router();
-const supabaseAdmin = require('../config/supabase');
+const supabaseAdmin = require('../config/supabaseAdmin');
 const {
   getLevel,
   getXPForLevel,
