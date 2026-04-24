@@ -2160,6 +2160,8 @@ Each PR ships with a ≤6-item smoke-test checklist on real phones at 390 / 414 
 
 **Partially resolved 2026-04-24 in PR #223 — round-end modal converts to bottom-sheet on ≤640: top/bottom/left/right inline-override to a bottom-anchored full-width sheet (75vh max-height, 14px top-corner radius, slide-up animation, safe-area-inset padding). Non-blocking intent from §9.59 preserved — no backdrop, arena stays interactive behind. Addresses item 6.**
 
+**Partially resolved 2026-04-25 in PR #? — tab unread badge on mobile Chat / Log: S._unreadMobChat + S._unreadMobLog counters, hooks in addFeedEvent + addBattleLog to bump when the tab is not active on ≤640, switchMobTab clears the counter on entry, `_updateUnreadBadge()` renders a red pill at top-right of the inactive tab button (99+ cap). Addresses item 11.**
+
 
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
