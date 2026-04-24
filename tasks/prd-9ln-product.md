@@ -2146,7 +2146,7 @@ History-rewriting the old token out of git is explicitly out of scope — the to
 
 Each PR ships with a ≤6-item smoke-test checklist on real phones at 390 / 414 / 640 viewports. Card-slot name truncation (item 3) is deferred to PR D alongside the tab polish since the root cause (line-clamp not applying) likely lives in the same CSS cluster as the tab content treatment. No PIXI / server / engine changes in any PR.
 
-**Partially resolved 2026-04-24 in PR #? — top-bar flex overflow fix (item 1).**
+**Partially resolved 2026-04-24 in PR #217 — top-bar flex overflow fix (item 1).**
 
 
 
