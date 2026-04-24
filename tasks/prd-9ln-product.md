@@ -1988,7 +1988,7 @@ Additional legacy debt surfaced by the audit: `add_mana()` function from the now
 
 Combined egress reduction on the combat loop: ~20× (from ~10 req/sec per active zone to ~0.5 req/sec). Full migration SQL at `database/migrations/002_combat_egress_reduction.sql`.
 
-**Resolved 2026-04-24 in PR #?.**
+**Resolved 2026-04-24 in PR #205.**
 
 ---
 
