@@ -1968,6 +1968,30 @@ Additional legacy debt surfaced by the audit: `add_mana()` function from the now
 
 ---
 
+### 9.84 Combat engine egress reduction — 200 ms per-tick Supabase writes overwhelm free-plan cap
+
+**Symptom (user-reported 2026-04-24 during the §9.82 security investigation).** Supabase free plan was flagging egress overage. API logs showed ~90 Supabase calls in a 40-second window for a single active zone with 1-2 players — a tight GET + UPSERT loop against `player_zone_metrics` firing every 200ms, plus sequential `zone_deployments` UPDATEs every 8s.
+
+**Root cause.** `services/combatEngine.js` fires three inefficient patterns per tick path:
+
+1. **`flushZoneMetrics()` runs every 200 ms tick** (combatEngine.js:1298). Each call does a SELECT for the existing row, then an UPSERT with the summed totals — two round-trips per flush. 5 flushes/sec × 2 calls × N zones = egress compounds fast.
+2. **HP sync loop at tick % 40** (combatEngine.js:1285-1291) awaits a separate UPDATE per Nine. With 4 Nines in a zone, 4 round-trips every 8 seconds.
+3. (Out of scope, noted for follow-up) Round-end `increment_season_points` RPC awaits sequentially per survivor.
+
+**Effect.** Compute + egress waste. At 4 active players across 27 zones, theoretical peak ~400 req/sec on the combat loop alone — well over the Supabase free-plan egress curve. Also creates noise in logs that hides real issues.
+
+**Resolution plan.**
+
+1. New Postgres function `add_zone_metrics_deltas(zone_id, metric_date, deltas jsonb)` — atomic `INSERT ... ON CONFLICT DO UPDATE SET col = col + EXCLUDED.col`. Eliminates the SELECT entirely; one RPC call per flush instead of two round-trips.
+2. Rewrite `flushZoneMetrics()` to call the RPC. Move the call from **every tick** to **every 10 ticks** (~2 s) — the UI reads live state from Socket.io broadcasts, not this table, so persistence cadence doesn't need to match render cadence. Add a final flush inside `endRound()` so any sub-10-tick leftover deltas get persisted.
+3. Batch the HP sync into one `upsert([...rows])` call instead of sequential awaits. Same frequency (every 40 ticks), single round-trip regardless of zone size.
+
+Combined egress reduction on the combat loop: ~20× (from ~10 req/sec per active zone to ~0.5 req/sec). Full migration SQL at `database/migrations/002_combat_egress_reduction.sql`.
+
+**Resolved 2026-04-24 in PR #205.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
