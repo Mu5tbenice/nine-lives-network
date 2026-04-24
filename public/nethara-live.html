@@ -1080,6 +1080,20 @@
         content:'';position:absolute;left:12%;right:12%;bottom:0;height:2px;
         background:var(--gold);border-radius:1px;
       }
+      /* §9.90 PR H item 11: unread badge on inactive Chat / Log tabs.
+         Injected by `_updateUnreadBadge()` as a `<span class="unread-badge">N</span>`
+         child of the tab button; removed when count is 0 or tab becomes active.
+         Positioned top-right of the button, red pill with small Press Start 2P. */
+      .mob-tab-btn .unread-badge {
+        position:absolute;top:4px;right:4px;
+        min-width:16px;height:16px;border-radius:8px;
+        background:#e85a6a;color:#fff;
+        font-family:'Press Start 2P',monospace;font-size:8px;
+        display:flex;align-items:center;justify-content:center;
+        padding:0 4px;line-height:1;
+        box-shadow:0 1px 3px rgba(0,0,0,0.4);
+        pointer-events:none;
+      }
       /* Tab content panels */
       #mob-tab-cards { display:flex;flex:1;flex-direction:column;overflow:hidden; }
       #mob-tab-stats  { display:none;flex:1;overflow-y:auto;padding:8px 10px; }
@@ -1829,10 +1843,10 @@
       <!-- [TABS + CONTENT] -->
       <div id="mob-tab-area">
         <div id="mob-tabs">
-          <button class="mob-tab-btn active" onclick="window.switchMobTab('cards')">🗡 BUILD</button>
-          <button class="mob-tab-btn" onclick="window.switchMobTab('stats')">📊 STATS</button>
-          <button class="mob-tab-btn" onclick="window.switchMobTab('chat')">💬 CHAT</button>
-          <button class="mob-tab-btn" onclick="window.switchMobTab('log')">📜 LOG</button>
+          <button class="mob-tab-btn active" data-tab-key="cards" onclick="window.switchMobTab('cards')">🗡 BUILD</button>
+          <button class="mob-tab-btn" data-tab-key="stats" onclick="window.switchMobTab('stats')">📊 STATS</button>
+          <button class="mob-tab-btn" data-tab-key="chat" onclick="window.switchMobTab('chat')">💬 CHAT</button>
+          <button class="mob-tab-btn" data-tab-key="log" onclick="window.switchMobTab('log')">📜 LOG</button>
         </div>
         <!-- BUILD: cast bar + cards -->
         <div id="mob-tab-cards" style="display:flex;flex:1;flex-direction:column;overflow:hidden;">
@@ -4621,6 +4635,8 @@
     // Mirror to mobile chat
     const mc = document.getElementById('mob-chat-log');
     if (mc) { mc.insertBefore(div.cloneNode(true), mc.firstChild); while(mc.children.length>50) mc.removeChild(mc.lastChild); }
+    // §9.90 PR H: unread badge on inactive mobile chat tab.
+    if (window._bumpUnread) window._bumpUnread('chat');
   }
   // §9.30 — expose to PIXI IIFE.
   window.addFeedEvent = addFeedEvent;
@@ -4637,6 +4653,8 @@
     // Mirror to mobile log
     const mlog = document.getElementById('mob-battle-log');
     if (mlog) { mlog.innerHTML = el.innerHTML; mlog.scrollTop = mlog.scrollHeight; }
+    // §9.90 PR H: unread badge on inactive mobile log tab.
+    if (window._bumpUnread) window._bumpUnread('log');
   }
 
   // ── TRAY TABS ──
@@ -6209,6 +6227,40 @@
   }
 
   // ── MOBILE TAB SWITCHING ──
+  // §9.90 PR H item 11: track active mobile tab + per-tab unread counters.
+  // State lives on S for consistency with other mobile HUD flags; cleared
+  // when user switches to the tab. `_activeMobTab` starts at 'cards'
+  // (same as the initial DOM-visible panel in `initMobileHUD`).
+  S._activeMobTab = 'cards';
+  S._unreadMobChat = 0;
+  S._unreadMobLog = 0;
+  window._bumpUnread = function(tab) {
+    if (window.innerWidth > 640) return;
+    if (S._activeMobTab === tab) return;
+    if (tab === 'chat') S._unreadMobChat++;
+    else if (tab === 'log') S._unreadMobLog++;
+    _updateUnreadBadge();
+  };
+  function _updateUnreadBadge() {
+    const map = { chat: S._unreadMobChat, log: S._unreadMobLog };
+    Object.entries(map).forEach(([key, count]) => {
+      const btn = document.querySelector(`.mob-tab-btn[data-tab-key="${key}"]`);
+      if (!btn) return;
+      let badge = btn.querySelector('.unread-badge');
+      if (count > 0) {
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'unread-badge';
+          btn.appendChild(badge);
+        }
+        badge.textContent = count > 99 ? '99+' : String(count);
+      } else if (badge) {
+        badge.remove();
+      }
+    });
+  }
+  window._updateUnreadBadge = _updateUnreadBadge;
+
   window.switchMobTab = function(tab) {
     const panels = ['cards','stats','chat','log'];
     panels.forEach(p => {
@@ -6226,6 +6278,11 @@
     if (tab === 'stats') renderGuildSidebar();
     if (tab === 'chat') syncMobChat();
     if (tab === 'log')  syncMobLog();
+    // §9.90 PR H: clear unread counter for the tab being opened.
+    S._activeMobTab = tab;
+    if (tab === 'chat') S._unreadMobChat = 0;
+    else if (tab === 'log') S._unreadMobLog = 0;
+    _updateUnreadBadge();
   };
 
   function syncMobChat() {
