@@ -2055,6 +2055,31 @@ RLS stays enabled exactly as §9.82 configured it — it's the correct security 
 
 ---
 
+### 9.87 PIXI firework secondary-burst crashes on KO race — `addChild` on null stage
+
+**Symptom (surfaced 2026-04-25, production console).** Every arena session logs dozens of copies of:
+
+```
+Uncaught TypeError: Cannot read properties of null (reading 'addChild')
+    at nethara-live.html:7568:21
+    at _fireworkExplosion (nethara-live.html:7555)
+    at ticker (...)
+```
+
+137+ instances in a single session after watching a few rounds. Doesn't break gameplay (in-memory combat still runs, visuals still render) but the console spam is loud enough to mask real errors.
+
+**Root cause.** `_fireworkExplosion` (nethara-live.html:7495) null-guards `state.arenaApp` at line 7496 before capturing `const app = state.arenaApp`. It then schedules a 60ms `setTimeout` at line 7555 for secondary mini-bursts. Between schedule and fire, a round intermission or a full arena teardown can call `PIXI.Application.destroy()`, which nulls `app.stage`. When the timer fires it executes `app.stage.addChild(g)` on that now-null stage → TypeError. KO events fire `_fireworkExplosion` directly (65× in the sample console), which is why the crash count scales with KOs.
+
+The synchronous body of `_fireworkExplosion` (lines 7500–7552) doesn't crash because it runs before any teardown could intervene. Only the deferred `setTimeout` body hits the race. The post-burst `explTicker` (line 7575) uses `.parent` guards on removeChild which already protect it.
+
+**Effect.** Low severity — cosmetic/console only. No visible break. But loud and hides signal during triage.
+
+**Resolution plan.** Add a single-line null guard at the top of the setTimeout body: `if (!app.stage) return;`. Minimum-diff, behaves identically in the happy path, bails cleanly if teardown has happened.
+
+**Resolved 2026-04-25 in PR #?.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.

@@ -7553,6 +7553,7 @@
 
     // ── SECONDARY MINI-BURSTS — 3 small pops radiating outward ──
     setTimeout(() => {
+      if (!app.stage) return;
       for (let b = 0; b < 3; b++) {
         const bAng = (b / 3) * Math.PI * 2;
         const bDist = 12 + Math.random() * 8;
