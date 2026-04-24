@@ -2114,7 +2114,7 @@ History-rewriting the old token out of git is explicitly out of scope — the to
 
 **Resolution plan.** Two small additions, one in each rejoin path, mirroring the alpha-restore pattern: `sp.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xFFFFFF; });`. Matches the existing hit-flash revert idiom everywhere else in the file.
 
-**Resolved 2026-04-25 in PR #?.**
+**Resolved 2026-04-25 in PR #216.**
 
 ---
 
