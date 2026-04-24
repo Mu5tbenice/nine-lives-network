@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Nine Lives: Survive</title>
+<style>
+  :root {
+    --ink: #e8edf2;
+    --mute: #9aa7b5;
+    --panel: rgba(12, 14, 20, 0.82);
+    --panel-edge: rgba(255,255,255,0.08);
+    --accent: #f0c56a;
+    --hp: #ff5a6a;
+    --xp: #6fcf97;
+    --boss: #c56afc;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #000; color: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow: hidden; height: 100%; -webkit-tap-highlight-color: transparent; }
+  #sv-canvas { position: fixed; inset: 0; display: block; image-rendering: pixelated; image-rendering: crisp-edges; touch-action: none; }
+
+  /* HUD layout */
+  #sv-hud {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 10;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .sv-top {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 10px; align-items: center;
+    padding: 8px 14px;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 999px;
+    font-variant-numeric: tabular-nums; font-size: 13px;
+    max-width: calc(100vw - 20px);
+  }
+  .sv-top .sep { width: 1px; height: 14px; background: rgba(255,255,255,0.18); }
+  #sv-timer { color: var(--accent); font-weight: 700; letter-spacing: 0.04em; }
+  #sv-chapter { color: var(--mute); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #sv-kills, #sv-gold { color: var(--ink); }
+
+  .sv-bottom {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    width: min(720px, calc(100vw - 24px));
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .sv-bar {
+    position: relative; height: 12px; border-radius: 8px;
+    background: rgba(0,0,0,0.5); border: 1px solid var(--panel-edge); overflow: hidden;
+  }
+  .sv-bar .sv-fill { position: absolute; left:0; top:0; bottom:0; border-radius: 8px; transition: width 140ms ease-out; }
+  #sv-hp-fill { background: linear-gradient(90deg, #ff5a6a, #ff8e8e); }
+  #sv-xp-fill { background: linear-gradient(90deg, #6fcf97, #b3e59f); }
+  .sv-bar-text { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; color: rgba(255,255,255,0.85); letter-spacing: 0.04em; }
+  .sv-row { display: flex; justify-content: space-between; gap: 12px; }
+  .sv-strip { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .sv-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: rgba(0,0,0,0.5); border: 1px solid var(--panel-edge);
+    position: relative; display: grid; place-items: center; overflow: hidden;
+  }
+  .sv-icon img { max-width: 100%; max-height: 100%; }
+  .sv-icon .sv-lv {
+    position: absolute; right: 2px; bottom: 1px;
+    font-size: 10px; font-weight: 700; color: var(--accent);
+    background: rgba(0,0,0,0.7); border-radius: 4px; padding: 0 4px;
+  }
+  .sv-passive {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: rgba(0,0,0,0.5); border: 1px solid var(--panel-edge);
+    display: grid; place-items: center; font-size: 15px; color: var(--accent);
+    position: relative;
+  }
+  .sv-passive span { position: absolute; right: -4px; bottom: -4px; font-size: 9px; color: var(--ink); background: rgba(0,0,0,0.8); border-radius: 4px; padding: 0 3px; }
+
+  /* Boss bar */
+  #sv-boss {
+    position: absolute; top: 56px; left: 50%; transform: translateX(-50%);
+    width: min(460px, calc(100vw - 40px));
+    display: none; flex-direction: column; gap: 4px;
+    background: var(--panel);
+    border: 1px solid var(--panel-edge);
+    border-radius: 10px; padding: 8px 12px;
+  }
+  .sv-boss-name { font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--boss); }
+  .sv-boss-bar { height: 10px; background: rgba(0,0,0,0.6); border-radius: 6px; overflow: hidden; }
+  .sv-boss-fill { height: 100%; background: linear-gradient(90deg, #c56afc, #ff6aa0); transition: width 200ms ease-out; }
+
+  /* Chapter banner */
+  #sv-banner {
+    position: fixed; top: 38%; left: 50%; transform: translate(-50%, -50%);
+    font-size: clamp(22px, 4vw, 42px); font-weight: 800; letter-spacing: 0.08em;
+    color: var(--accent); text-shadow: 0 2px 20px rgba(0,0,0,0.6);
+    padding: 14px 24px; background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(240,197,106,0.3); border-radius: 10px;
+    opacity: 0; transition: opacity 400ms ease; pointer-events: none; z-index: 20;
+  }
+  #sv-banner.show { opacity: 1; }
+
+  /* FPS overlay */
+  #sv-fps {
+    position: fixed; bottom: 6px; right: 10px; z-index: 15;
+    font-size: 11px; color: rgba(255,255,255,0.45); font-variant-numeric: tabular-nums;
+    pointer-events: none;
+  }
+
+  /* Start + game-over + level-up modals */
+  .sv-screen {
+    position: fixed; inset: 0; z-index: 40;
+    display: none; align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at center, rgba(8,9,14,0.75), rgba(0,0,0,0.92));
+    padding: 20px;
+  }
+  .sv-start-panel {
+    max-width: 720px; width: 100%;
+    background: var(--panel); border: 1px solid var(--panel-edge);
+    border-radius: 16px; padding: 26px; box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+  }
+  .sv-start-panel h1 { margin: 0 0 4px; font-size: clamp(24px, 4vw, 36px); color: var(--accent); letter-spacing: 0.04em; }
+  .sv-sub { color: var(--mute); margin: 0 0 18px; }
+  .sv-house-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 18px; }
+  .sv-house {
+    background: rgba(30,36,46,0.7);
+    color: var(--ink);
+    border: 1px solid var(--panel-edge);
+    border-radius: 12px;
+    padding: 14px;
+    font: inherit; text-align: left;
+    cursor: pointer;
+    transition: transform 120ms ease, border-color 160ms ease, background 160ms ease;
+  }
+  .sv-house:hover, .sv-house:focus-visible {
+    border-color: var(--accent);
+    background: rgba(40,46,60,0.9);
+    transform: translateY(-2px);
+    outline: none;
+  }
+  .sv-house-name { font-weight: 700; font-size: 16px; margin-bottom: 2px; }
+  .sv-house-tag  { color: var(--mute); font-size: 12px; }
+  .sv-help { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--mute); }
+
+  .sv-name-label {
+    display: flex; flex-direction: column; gap: 4px;
+    margin: 0 0 14px; font-size: 12px; color: var(--mute); letter-spacing: 0.04em;
+  }
+  .sv-name-input {
+    background: rgba(0,0,0,0.4); color: var(--ink);
+    border: 1px solid var(--panel-edge); border-radius: 8px;
+    padding: 9px 12px; font: inherit; font-size: 14px;
+    outline: none; transition: border-color 160ms ease;
+  }
+  .sv-name-input:focus { border-color: var(--accent); }
+
+  .sv-top-runs {
+    margin: 16px 0 14px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--panel-edge);
+    border-radius: 12px;
+    padding: 12px 14px;
+  }
+  .sv-top-runs-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 12px; color: var(--mute); letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .sv-top-meta { color: var(--accent); font-size: 11px; letter-spacing: 0.02em; }
+  .sv-top-list { list-style: none; padding: 0; margin: 0; max-height: 220px; overflow: auto; }
+  .sv-top-row {
+    display: grid;
+    grid-template-columns: 1.3fr 0.9fr 0.6fr 0.6fr 0.6fr 0.6fr;
+    gap: 8px; padding: 6px 4px; font-size: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    align-items: center;
+  }
+  .sv-top-row:last-child { border-bottom: 0; }
+  .sv-top-row.is-win .sv-top-ch { color: var(--accent); }
+  .sv-top-name { color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sv-top-house { color: var(--mute); font-size: 11px; text-transform: capitalize; }
+  .sv-top-time { color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 700; }
+  .sv-top-lv, .sv-top-ch { color: var(--mute); font-size: 11px; }
+  .sv-top-when { color: var(--mute); font-size: 11px; text-align: right; }
+  .sv-top-empty { color: var(--mute); font-size: 13px; padding: 8px 4px; }
+  @media (max-width: 520px) {
+    .sv-top-row { grid-template-columns: 1.2fr 0.6fr 0.6fr 0.5fr; font-size: 11px; }
+    .sv-top-row .sv-top-house, .sv-top-row .sv-top-when { display: none; }
+  }
+
+  /* Level-up */
+  .sv-card-panel {
+    max-width: 820px; width: 100%;
+    background: var(--panel); border: 1px solid var(--panel-edge);
+    border-radius: 16px; padding: 22px;
+  }
+  .sv-card-head { font-size: 18px; color: var(--accent); margin-bottom: 14px; font-weight: 700; letter-spacing: 0.04em; }
+  .sv-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .sv-card {
+    position: relative;
+    background: rgba(30,36,46,0.8);
+    border: 1px solid var(--panel-edge);
+    border-radius: 14px;
+    padding: 12px 14px 16px;
+    display: flex; flex-direction: column; gap: 8px;
+    cursor: pointer; color: var(--ink);
+    font: inherit; text-align: left;
+    transition: transform 120ms ease, border-color 160ms ease;
+    min-height: 180px;
+  }
+  .sv-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+  .sv-card.is-new { box-shadow: inset 0 0 0 1px rgba(240,197,106,0.3); }
+  .sv-card-art {
+    height: 110px; border-radius: 10px;
+    background: rgba(0,0,0,0.4); overflow: hidden;
+    display: grid; place-items: center;
+  }
+  .sv-card-art img { width: 100%; height: 100%; object-fit: cover; }
+  .sv-card-symbol { font-size: 56px; color: var(--accent); line-height: 1; }
+  .sv-card-name { font-weight: 700; font-size: 15px; }
+  .sv-card-text { color: var(--mute); font-size: 12px; }
+  .sv-new-tag {
+    position: absolute; top: 8px; right: 8px;
+    font-size: 10px; letter-spacing: 0.08em; color: #0b0f14;
+    background: var(--accent); padding: 2px 6px; border-radius: 4px; font-weight: 700;
+  }
+
+  /* Game over */
+  .sv-over-panel {
+    max-width: 420px; width: 100%;
+    background: var(--panel); border: 1px solid var(--panel-edge);
+    border-radius: 16px; padding: 22px;
+    text-align: center;
+  }
+  .sv-over-panel h2 { margin: 0 0 14px; color: var(--accent); }
+  .sv-stats { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 18px; }
+  .sv-stats > div { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 10px; }
+  .sv-stats span { color: var(--mute); font-size: 11px; display: block; text-transform: uppercase; letter-spacing: 0.08em; }
+  .sv-stats b { font-size: 18px; color: var(--ink); }
+  .sv-btn {
+    background: var(--accent); color: #0b0f14; border: 0; border-radius: 10px;
+    padding: 10px 16px; font: inherit; font-weight: 700; cursor: pointer;
+  }
+
+  /* Make all overlays interactable */
+  #sv-start, #sv-modal, #sv-over { pointer-events: auto; }
+  #sv-hud { pointer-events: none; }
+  #sv-hud > * { pointer-events: none; }
+</style>
+</head>
+<body>
+  <canvas id="sv-canvas"></canvas>
+
+  <div id="sv-hud">
+    <div class="sv-top">
+      <span id="sv-timer">0:00</span>
+      <span class="sep"></span>
+      <span id="sv-chapter">Chapter —</span>
+      <span class="sep"></span>
+      <span id="sv-kills">☠ 0</span>
+      <span class="sep"></span>
+      <span id="sv-gold">★ 0</span>
+    </div>
+
+    <div id="sv-boss">
+      <div class="sv-boss-name">Boss</div>
+      <div class="sv-boss-bar"><div class="sv-boss-fill" style="width:100%"></div></div>
+    </div>
+
+    <div class="sv-bottom">
+      <div class="sv-bar">
+        <div class="sv-fill" id="sv-hp-fill" style="width:100%"></div>
+        <div class="sv-bar-text" id="sv-hp-text">100 / 100</div>
+      </div>
+      <div class="sv-bar">
+        <div class="sv-fill" id="sv-xp-fill" style="width:0"></div>
+        <div class="sv-bar-text" id="sv-xp-text">Lv 1 · 0 / 0</div>
+      </div>
+      <div class="sv-row">
+        <div class="sv-strip" id="sv-weapons"></div>
+        <div class="sv-strip" id="sv-passives"></div>
+      </div>
+    </div>
+
+    <div id="sv-banner"></div>
+    <div id="sv-fps">—</div>
+  </div>
+
+  <div id="sv-start"    class="sv-screen"></div>
+  <div id="sv-modal"    class="sv-screen"></div>
+  <div id="sv-over"     class="sv-screen"></div>
+
+  <script type="module" src="/js/survivors/main.js"></script>
+</body>
+</html>

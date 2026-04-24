@@ -202,6 +202,15 @@ try {
   captureBootFailure('./routes/quests', e);
 }
 
+try {
+  const survivorsRoutes = require('./routes/survivors');
+  app.use('/api/survivors', survivorsRoutes);
+  console.log('✅ Survivors routes loaded');
+} catch (e) {
+  console.error('❌ Failed to load survivors routes:', e.message);
+  captureBootFailure('./routes/survivors', e);
+}
+
 // ── COMBAT ENGINE ──
 let combatEngine = null;
 try {

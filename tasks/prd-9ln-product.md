@@ -595,6 +595,20 @@ No code path awards points by any other route. The RPC `increment_season_points`
 
 **4.22.6 Admin boundary.** All admin endpoints require an `x-admin-key` header. See `ADMIN_COMMANDS.md` for the full catalogue. Admin endpoints can override any gameplay value — that surface is intentional and audited in-band (every admin mutation should write a `point_log` or equivalent audit row where applicable).
 
+### 4.23 Survivors — Vampire-Survivors-style Arcade Mode
+
+**4.23.1 Purpose.** A standalone single-player roguelite at `/survivors.html` that doubles as (a) a polish surface for the new layered 3D-style sprite pipeline under `public/assets/3d sprites/sprites/` and (b) a retention hook independent of the daily-reward loop and the main 2D arena.
+
+**4.23.2 Gameplay loop.** Top-down, camera-follow, 4000×4000 world. WASD / arrow keys / on-screen joystick. Auto-firing weapons. Enemies drop XP gems → level-up → pick one of three cards (new weapon, weapon level, or passive). Six chapters of ~3 min each; each chapter swaps biome + enemy palette + boss. Killing the chapter boss advances to the next chapter; surviving all six wins the run. Death returns to the start screen.
+
+**4.23.3 Art reuse.** Characters — both player and enemy cats — are composed at runtime from the layered BASE + OUTFITS + HATSHEADWEAR + WEAPONSHOLDING + FACIAL sprites, tinted and cached per-combination as an 8-angle atlas. Enemies are randomly styled (unlimited variety at zero asset cost). Bosses use pre-rendered creature PNGs from `public/assets/nine/familiar/`. Backgrounds use downsampled webp copies of the existing biome art (baked by `scripts/bake-biomes.js`).
+
+**4.23.4 Card pool v1.** Eight weapons using existing spell art (Mana Bolt, Ember Toss, Firewall, Arcane Shield, Spore Cloud, Petrify Pulse, Terraform Slam, Plague Aura) plus eight text-rendered passives (Haste, Might, Veil, Recovery, Magnet, Greed, Fortune, Tome). Weapons and passives each cap at level 5. Bespoke passive-card art is a follow-up.
+
+**4.23.5 Persistence.** Ephemeral in v1 — run results are not stored. A `submitRunResult()` stub in `main.js` marks the future hook for a Supabase `survivors_runs` table and `/api/survivors/runs` route; no DB changes have been made.
+
+**4.23.6 Non-goals (v1).** No leaderboard, no wallet or account integration, no audio (repo has no SFX/music assets yet), no real-time multiplayer. The 2D-arena polish-freeze still holds — survivors is a separate surface.
+
 ---
 
 ## 5. Non-Goals (Out of Scope)
