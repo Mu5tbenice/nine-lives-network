@@ -2080,6 +2080,30 @@ The synchronous body of `_fireworkExplosion` (lines 7500–7552) doesn't crash b
 
 ---
 
+### 9.88 Secrets pinned in `.replit` — Nerm Telegram bot token committed in plaintext
+
+**Symptom (flagged during 2026-04-24 end-of-day handover, acted on 2026-04-25).** The repository's `.replit` config file contained a live production secret:
+
+```
+[userenv.shared]
+TELEGRAM_BOT_TOKEN = "8596422570:AAFuDVL0hA7wLf2kYyNtexhZ2aNTeR3FSEo"
+TWITTER_CALLBACK_URL = "https://9lv.net/auth/twitter/callback"
+```
+
+The file is tracked in git; first landed in commit `76eadf8` (Replit "Published your App" auto-commit) and has been in public git history since. Anyone with read access to the GitHub repo had the Telegram bot token.
+
+**Effect.** High. The token granted full BotFather control of `@NermTheCat` — could be used to impersonate, send spam, pull private chat logs the bot has seen, etc. `TWITTER_CALLBACK_URL` is not secret but still shouldn't be pinned in-tree (brittle across environments).
+
+**Resolution plan.** Two-phase:
+1. **Rotate** — revoke the leaked token via BotFather (done by Wray before this PR landed); set the new token in Replit Secrets (the correct location for environment-scoped production values).
+2. **Scrub** — remove the `[userenv]` / `[userenv.shared]` block from `.replit` entirely. `services/nerm-telegram.js` already reads `process.env.TELEGRAM_BOT_TOKEN`; `routes/auth.js:27` already defaults `TWITTER_CALLBACK_URL` to `'https://9lv.net/auth/twitter/callback'` when unset. No code changes required.
+
+History-rewriting the old token out of git is explicitly out of scope — the token is revoked, the rewrite churn across the published repo isn't worth it, and future clones won't see a live credential.
+
+**Resolved 2026-04-25 in PR #215.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
