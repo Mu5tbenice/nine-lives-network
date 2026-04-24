@@ -850,7 +850,7 @@ One-off scripts at root (should move to `scripts/` or delete after migration): `
 
 **Resolution:** Inspect the seed file + live `houses` table. If live rows match §4.3 names, delete the README table. If they match legacy names, that's a larger migration; plan it deliberately.
 
-**Resolved 2026-04-24 in PR #?.** Verified live `houses` table matches canon (`Smoulders`, `Darktide`, `Stonebark`, `Ashenvale`, `Stormrage`, `Nighthollow`, `Dawnbringer`, `Manastorm`, `Plaguemire`). Current `README.md` has no legacy names (confirmed by grep); prior audit reference in §4.3.2 was stale. Seed files at `database/seeds/{schools,spells,zones}.sql` were non-functional — fewer factions than canon, referenced dropped `mana_cost` column — and deleted. PRD §4.3.2 updated to mark the live DB as sole source of truth.
+**Resolved 2026-04-24 in PR #208.** Verified live `houses` table matches canon (`Smoulders`, `Darktide`, `Stonebark`, `Ashenvale`, `Stormrage`, `Nighthollow`, `Dawnbringer`, `Manastorm`, `Plaguemire`). Current `README.md` has no legacy names (confirmed by grep); prior audit reference in §4.3.2 was stale. Seed files at `database/seeds/{schools,spells,zones}.sql` were non-functional — fewer factions than canon, referenced dropped `mana_cost` column — and deleted. PRD §4.3.2 updated to mark the live DB as sole source of truth.
 
 ### 9.11 Arena engine V5 parallel implementation → decide & prune
 
