@@ -70,9 +70,10 @@ ALTER FUNCTION public.update_spells_timestamp() SET search_path = public, pg_cat
 -- 5. DROP DUPLICATE INDEX
 -- ---------------------------------------------------------------------
 
-DROP INDEX IF EXISTS public.spells_slug_unique;
--- (spells_slug_key is the keeper — same columns, automatically created
---  by the UNIQUE constraint.)
+-- spells_slug_unique index is backed by a UNIQUE constraint; drop the
+-- constraint and the index is removed automatically. spells_slug_key
+-- (also unique on slug) is the keeper.
+ALTER TABLE public.spells DROP CONSTRAINT IF EXISTS spells_slug_unique;
 
 -- ---------------------------------------------------------------------
 -- 6. ADD SELECT POLICIES FOR TABLES THE SERVER READS VIA ANON CLIENT
