@@ -2158,6 +2158,8 @@ Each PR ships with a ≤6-item smoke-test checklist on real phones at 390 / 414 
 
 **Partially resolved 2026-04-24 in PR #222 — combat log row legibility (`.log-entry` rows were 12px Crimson due to specificity over the mobile container rule; explicit `#mob-tab-log .log-entry` selector bumps to 15px with breathing line-height + row borders) + Nerm bubble mobile repositioning (top:52→74 to clear the post-PR-A top bar, max-width 260→320, z-index 55→65 so nothing in canvas hides her). Addresses items 9, 10.**
 
+**Partially resolved 2026-04-24 in PR #? — round-end modal converts to bottom-sheet on ≤640: top/bottom/left/right inline-override to a bottom-anchored full-width sheet (75vh max-height, 14px top-corner radius, slide-up animation, safe-area-inset padding). Non-blocking intent from §9.59 preserved — no backdrop, arena stays interactive behind. Addresses item 6.**
+
 
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
