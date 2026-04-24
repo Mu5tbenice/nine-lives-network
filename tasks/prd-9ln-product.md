@@ -2154,6 +2154,8 @@ Each PR ships with a ≤6-item smoke-test checklist on real phones at 390 / 414 
 
 **Partially resolved 2026-04-24 in PR #220 — tab label consistency (all 4 tabs get icon + text) + active-tab underline indicator + chat send button treatment (gold-outlined pill with visible input field). Addresses items 7, 12.**
 
+**Partially resolved 2026-04-24 in PR #221 — vertical space tuning: action bar slimmed (14→13 font, padding tightened, min-height 44→40), BUILD card slots drop max-height cap so they flex to fill, stats-tab nested view-toggle and sort buttons compacted (14→11 font) to reclaim ~20px for the fighter list. Addresses the "only top competitor visible" stats-tab cramp reported alongside the A–D batch.**
+
 
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
