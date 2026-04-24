@@ -1922,7 +1922,7 @@ Kept the intermission `return;` intact: combat mutation code ABOVE the intermiss
 
 **Resolution plan.** Full removal: delete `manaRegen.js`, `gauntletEngine.js`, `bossEngine.js`, their routes, `public/boss.html`; strip mana gate from `twitterBot.js` and `territory.js`; remove midnight mana-reset from `territoryControl.js`; remove boss cron jobs + dead vars from `scheduler.js`; delete admin `reset-mana` endpoint; scrub player-facing docs (builder, how-to-play, packs, spellbook, EFFECTS). DB migration drops `players.mana/max_mana/last_mana_regen`, `casts.mana_cost`, `nfts.total_mana`, `traits.stat_mana`, `daily_quests.reward_mana`, `player_quests.reward_mana`; drops `gauntlet_runs`, `boss_contributions`, `boss_deployments`, `boss_fights` tables. `packSystem.all_mana_spent` flag kept (load-bearing for daily card upgrade gate) and now fires on every territory cast.
 
-**Resolved 2026-04-24 in PR #?.**
+**Resolved 2026-04-24 in PR #201.**
 
 ---
 
