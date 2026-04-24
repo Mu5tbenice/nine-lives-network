@@ -978,19 +978,18 @@
         display: flex !important; flex-direction: row; flex: 1;
         position: relative; overflow: hidden;
       }
-      /* [YELLOW] Portrait column — Nine overlapping top.
-         §9.47 trimmed back to 84px after shortening button labels
-         (↻ SWAP / EXIT) so card slots regain ~32px of horizontal space. */
+      /* [HEADER STRIP] Horizontal portrait + identity column.
+         §9.90 PR B (items 2, 5): converted from 96px LEFT SPINE to full-width
+         top strip. Portrait stays 64×64 on the left; identity column
+         (name + HP bar + HP text + debuffs) flex:1 in the middle. Portrait
+         keeps its upward overflow so it "pokes up" into the canvas above. */
       #mob-portrait-col {
-        /* §9.74 polish — widened 84→96 so the player name + HP + buttons
-           don't feel cramped. At 414px viewport (iPhone XR) this still
-           leaves ~318px for the card-slot + tab-area column. */
-        display: flex; flex-direction: column; align-items: center;
-        width: 96px; flex-shrink: 0; padding: 0 7px 8px;
-        border-right: 1px solid rgba(255,255,255,0.07);
+        display: flex; flex-direction: row; align-items: center;
+        gap: 12px; width: 100%; flex-shrink: 0; padding: 0 12px 8px;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
         position: relative;
       }
-      /* Nine portrait — overflows upward into arena canvas */
+      /* Nine portrait — overflows upward into arena canvas (preserved from left-spine design) */
       #mob-nine-portrait {
         width: 64px; height: 64px; border-radius: 10px;
         background: rgba(8,6,18,0.9);
@@ -1004,37 +1003,40 @@
       }
       #mob-nine-icon { font-size: 30px; }
       #mob-nine-img { position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none; }
-      /* §9.45 strict 14px Press Start 2P floor on mobile — readability over retro aesthetic. */
-      /* §9.74 — allow 2-line wrap for handles longer than ~7 chars instead
-         of truncating to "@9LV_..." with ellipsis. Slightly smaller font
-         so wrap doesn't eat too much vertical space. */
-      #mob-nine-name { font-family:'Press Start 2P',monospace;font-size:12px !important;color:var(--gold);text-align:center;margin-top:6px;max-width:100%;line-height:1.25;word-break:break-all;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
-      #mob-nine-hp-bar { width:100%;height:6px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin:6px 0; }
-      #mob-nine-hp-fill { height:100%;background:linear-gradient(90deg,#44cc88,#66eebb);border-radius:3px;transition:width 0.4s;width:100%; }
-      /* §9.47 HP stacked layout: 14px current on top, 14px /max below (dimmed).
-         Single-line 439/620 at 14px Press 2P would overflow 84px portrait col
-         and clip left edge. Stacking keeps both visible within the 14px floor. */
-      #mob-nine-hp-text { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--green);text-align:center;line-height:1.2;max-width:100%;overflow:hidden;white-space:nowrap; }
-      #mob-nine-hp-text .hp-cur { display:block;color:var(--green); }
-      /* §9.49: dropped 2px gap so the stacked cur/max clause uses less vertical
-         space — helps the AUTO toggle below become reachable without scrolling. */
-      #mob-nine-hp-text .hp-max { display:block;color:var(--green);opacity:0.5;margin-top:0;font-size:14px; }
-      #mob-debuffs { display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:14px;margin-top:4px; }
+      /* Identity column: name, HP row, debuffs — left-aligned, flex:1 */
+      #mob-nine-identity { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; padding:6px 0; }
+      /* §9.45 strict 14px Press Start 2P floor on mobile — readability over retro aesthetic.
+         §9.74 — allow 2-line wrap for handles longer than ~7 chars instead of ellipsis.
+         §9.90 PR B — left-align + widen to full identity column width, so handle reads
+         naturally as a row header rather than a centred caption. */
+      #mob-nine-name { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--gold);text-align:left;line-height:1.25;word-break:break-all;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden; }
+      /* HP row — bar flex:1, text right-aligned inline. Replaces the stacked
+         centred cur/max layout that was needed in the 86px spine. */
+      #mob-nine-hp-row { display:flex; align-items:center; gap:8px; }
+      #mob-nine-hp-bar { flex:1;height:8px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden; }
+      #mob-nine-hp-fill { height:100%;background:linear-gradient(90deg,#44cc88,#66eebb);border-radius:4px;transition:width 0.4s;width:100%; }
+      #mob-nine-hp-text { font-family:'Press Start 2P',monospace;font-size:13px !important;color:var(--green);line-height:1.2;white-space:nowrap; flex-shrink:0; }
+      #mob-nine-hp-text .hp-cur { color:var(--green); }
+      #mob-nine-hp-text .hp-max { color:var(--green);opacity:0.5; }
+      #mob-debuffs { display:flex;gap:4px;flex-wrap:wrap;min-height:14px; }
 
-      /* [ORANGE] Buttons row at bottom of portrait col — 44px+ tap targets.
-         §9.47 tightened padding + dropped letter-spacing so 4-char "SWAP"/"EXIT"
-         labels fit 84px (≤640px) / 76px (≤390px) portrait col widths. */
-      #mob-buttons { display:flex;flex-direction:column;gap:6px;width:100%;margin-top:auto; }
+      /* [ACTIONS BAR] — bottom sticky row at root level.
+         §9.90 PR B moved this OUT of `#mob-portrait-col` to be a sibling in
+         `#mobile-hud-root`, so buttons form a thumb-reachable horizontal row
+         beneath the tab content. PR C refines the visual hierarchy. */
+      #mob-buttons {
+        display:flex;flex-direction:row;gap:8px;
+        padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));
+        border-top:1px solid rgba(255,255,255,0.07);
+        background:rgba(8,6,18,0.7);
+        flex-shrink:0;
+      }
       .mob-btn {
-        /* §9.49: padding trimmed from 12px→9px vertical so the 3-button stack
-           leaves enough height for the AUTO toggle to be reachable without a
-           scroll on 393x852 (iPhone 14). 44px tap target still honored via
-           14px font + 9px padding + 1px border = ~42-44px. */
-        font-family:'Press Start 2P',monospace;font-size:14px;padding:9px 4px;
-        border-radius:4px;cursor:pointer;width:100%;text-align:center;
+        font-family:'Press Start 2P',monospace;font-size:14px;padding:11px 8px;
+        border-radius:4px;cursor:pointer;flex:1;text-align:center;
         border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);
         color:var(--faint);line-height:1.2;letter-spacing:0;
-        overflow:hidden;
+        overflow:hidden;min-height:44px;
       }
       .mob-btn-red { border-color:rgba(255,68,102,0.3);background:rgba(255,68,102,0.06);color:var(--red); }
 
@@ -1115,12 +1117,11 @@
       #mob-chat-send { background:none;border:none;color:var(--gold);cursor:pointer;padding:10px 14px;font-size:16px; }
       #mob-battle-log { font-size:14px !important;line-height:1.45; }
 
-      /* Auto toggle — §9.47 vertical layout so "AUTO" label fits 84px col
-         without wrapping to 3 lines as "AUTO-REJOIN: ON ✓" did.
-         §9.49: switched to row layout so label + toggle share one horizontal
-         line instead of stacking, reclaiming the vertical space needed for
-         the AUTO toggle to be reachable at 393x852 without scrolling. */
-      #mob-auto-row { display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;margin-top:6px; }
+      /* Auto toggle — §9.90 PR B: now sits inline with SWAP / EXIT in the
+         bottom actions bar. Same toggle + label pair, wrapped in a flex:1
+         container so it claims an equal share of the row alongside the
+         other buttons. PR C will convert this into a proper ON/OFF pill. */
+      #mob-auto-row { display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;flex:1;min-height:44px;border:1px solid rgba(255,255,255,0.12);border-radius:4px;background:rgba(255,255,255,0.04); }
       #mob-auto-toggle { width:36px;height:18px;background:rgba(255,255,255,0.06);border-radius:10px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0; }
       #mob-auto-label { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--faint);line-height:1.2;white-space:nowrap; }
 
@@ -1225,11 +1226,17 @@
 
     @media (max-width: 390px) {
       /* --bp-xs 390px — iPhone SE portrait + very narrow Android.
-         §9.74 — bumped 76→86 to match the widened 96px base; at 390px the
-         card-slot column still has ~284px which fits three ~88px cards. */
-      #mob-portrait-col { width: 86px; padding: 0 5px 8px; }
-      #mob-nine-portrait { width: 64px; height: 64px; margin-top: -32px; }
-      #mob-nine-name { font-size: 11px !important; }
+         §9.90 PR B — portrait col is now a full-width horizontal strip
+         (see ≤640 block). At 390px drop the gap + padding slightly so
+         identity column keeps legibility. */
+      #mob-portrait-col { padding: 0 8px 6px; gap: 8px; }
+      #mob-nine-portrait { width: 56px; height: 56px; margin-top: -18px; }
+      #mob-nine-name { font-size: 13px !important; }
+      #mob-nine-hp-text { font-size: 12px !important; }
+      #mob-buttons { padding: 6px 8px calc(6px + env(safe-area-inset-bottom,0px)); gap: 6px; }
+      .mob-btn { font-size: 13px; padding: 10px 6px; }
+      #mob-auto-row { font-size: 13px; }
+      #mob-auto-label { font-size: 13px !important; }
       /* §9.90 PR A — top bar tighter still at 390px. Zone name drops 16→14,
          deploy pill abbreviates via max-width + ellipsis, LIVE pill stays
          legible at 11px. Total right-group footprint ~130px leaves ~200px
@@ -1255,10 +1262,14 @@
        without disturbing it. Nothing unconditional — desktop 1920×1080
        experience is untouched. */
     @media (min-width: 641px) and (max-width: 768px) {
-      /* --bp-sm → --bp-md range */
-      #mob-portrait-col { width: 110px; padding: 0 8px 10px; }
-      #mob-nine-portrait { width: 84px; height: 84px; margin-top: -42px; }
-      #mob-nine-name { font-size: 15px; }
+      /* --bp-sm → --bp-md range.
+         §9.90 PR B — portrait col is now a full-width horizontal strip,
+         so `width:` is dropped; just scale the portrait and fonts up for
+         the extra horizontal room. */
+      #mob-portrait-col { padding: 0 16px 10px; gap: 16px; }
+      #mob-nine-portrait { width: 84px; height: 84px; margin-top: -24px; }
+      #mob-nine-name { font-size: 15px !important; }
+      #mob-nine-hp-text { font-size: 14px !important; }
       .mob-btn { font-size: 15px; padding: 10px 12px; }
       .mob-tab-btn { font-size: 15px; padding: 10px 8px; }
       .mob-card-slot .slot-name { font-size: 13px; }
@@ -1668,28 +1679,30 @@
       <div id="hud-nine-guild" style="display:none;"></div>
 
     </div><!-- close hud-main -->
-    <!-- ══ MOBILE HUD (≤640px only — controlled by CSS display:none/flex) ══ -->
-    <div id="mobile-hud-root" style="display:none;flex-direction:row;flex:1;position:relative;overflow:hidden;min-height:0;">
+    <!-- ══ MOBILE HUD (≤640px only — controlled by CSS display:none/flex) ══
+         §9.90 PR B (item 2, 5): restructured from [portrait-col LEFT SPINE]
+         + [tab-area RIGHT] into vertical stack: [header strip TOP] + [tabs
+         MIDDLE] + [actions bar BOTTOM]. Column now flexes top-down so the
+         portrait strip is a proper mobile header, tab content claims the
+         full viewport width, and actions sit in a thumb-reachable row at
+         the bottom. `#mob-buttons` moved out of `#mob-portrait-col` to be
+         a sibling at the root. New `#mob-nine-identity` wrapper groups
+         name/HP/debuffs next to the portrait inside the header strip. -->
+    <div id="mobile-hud-root" style="display:none;flex-direction:column;flex:1;position:relative;overflow:hidden;min-height:0;">
 
-      <!-- [PORTRAIT COL] Nine portrait overlapping arena top -->
+      <!-- [HEADER STRIP] Horizontal portrait + identity column (name/HP/debuffs) -->
       <div id="mob-portrait-col">
         <div id="mob-nine-portrait">
           <div id="mob-nine-icon">🐱</div>
           <img id="mob-nine-img" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;" onload="this.style.display='block';document.getElementById('mob-nine-icon').style.display='none'">
         </div>
-        <div id="mob-nine-name"></div>
-        <div id="mob-nine-hp-bar"><div id="mob-nine-hp-fill" style="height:100%;background:linear-gradient(90deg,#44cc88,#66eebb);border-radius:3px;transition:width 0.4s;width:100%"></div></div>
-        <div id="mob-nine-hp-text" style="color:var(--green);text-align:center;margin-top:4px;">--/--</div>
-        <div id="mob-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;justify-content:center;min-height:14px;margin-top:4px;"></div>
-        <div id="mob-buttons">
-          <button class="mob-btn" onclick="openDeployModal()">SWAP</button>
-          <button class="mob-btn mob-btn-red" onclick="withdraw()">EXIT</button>
-          <div id="mob-auto-row">
-            <div id="mob-auto-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()">
-              <div style="position:absolute;top:2px;left:2px;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.3);transition:left 0.2s;"></div>
-            </div>
-            <span id="mob-auto-label">AUTO</span>
+        <div id="mob-nine-identity">
+          <div id="mob-nine-name"></div>
+          <div id="mob-nine-hp-row">
+            <div id="mob-nine-hp-bar"><div id="mob-nine-hp-fill" style="height:100%;background:linear-gradient(90deg,#44cc88,#66eebb);border-radius:3px;transition:width 0.4s;width:100%"></div></div>
+            <div id="mob-nine-hp-text" style="color:var(--green);">--/--</div>
           </div>
+          <div id="mob-debuffs" style="display:flex;gap:3px;flex-wrap:wrap;min-height:14px;"></div>
         </div>
       </div>
 
@@ -1740,6 +1753,22 @@
         <!-- LOG -->
         <div id="mob-tab-log" style="display:none;flex:1;overflow-y:auto;padding:6px 10px;">
           <div id="mob-battle-log" style="font-family:'Crimson Text',serif;color:var(--muted);"></div>
+        </div>
+      </div>
+
+      <!-- [ACTIONS BAR] — bottom sticky row: SWAP | EXIT | AUTO.
+           Moved out of `#mob-portrait-col` in §9.90 PR B so they sit in a
+           thumb-reachable horizontal row instead of a vertical stack inside
+           the portrait spine. PR C will refine the visual hierarchy
+           (SWAP neutral/gold, EXIT destructive red, AUTO explicit pill). -->
+      <div id="mob-buttons">
+        <button class="mob-btn" onclick="openDeployModal()">SWAP</button>
+        <button class="mob-btn mob-btn-red" onclick="withdraw()">EXIT</button>
+        <div id="mob-auto-row">
+          <div id="mob-auto-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()">
+            <div style="position:absolute;top:2px;left:2px;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.3);transition:left 0.2s;"></div>
+          </div>
+          <span id="mob-auto-label">AUTO</span>
         </div>
       </div>
 
