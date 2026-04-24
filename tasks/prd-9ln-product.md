@@ -1926,6 +1926,20 @@ Kept the intermission `return;` intact: combat mutation code ABOVE the intermiss
 
 ---
 
+### 9.81 nethara-live.html — malformed `</html>` close leaks CSS as visible text
+
+**Symptom (user-reported 2026-04-24 during PR #201 smoke test).** Arena shell briefly shows raw CSS text right before zones finish loading: `div:hover { background: rgba(255,255,255,0.05) !important; } /* Slideshow dots */ #ss-dots > div { transition: background 0.2s; } >`. Pre-existing in `main` at the time of discovery — not introduced by any specific recent PR.
+
+**Root cause.** `public/nethara-live.html` ended with `</html` (no `>`), then ~18 lines of orphan CSS rules, then a stray `>` on its own line that finally closed the mangled `</html` tag. Browser absorbed most of the CSS as pseudo-attributes on the malformed close tag but leaked the tail as visible text in the document body during first paint.
+
+**Effect.** Low. Cosmetic text leak during arena first-load only. Not blocking gameplay; CSS rules were also effectively ignored (not inside a `<style>` block), so any styling intent was already lost.
+
+**Resolution plan.** Move the orphaned rules into the existing `<style>` block in `<head>` (where they clearly belong — standard game UI rules for deploy grid, HUD buffs, stats tab, slideshow dots). Replace mangled close with clean `</html>`.
+
+**Resolved 2026-04-24 in PR #202.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.

@@ -1254,6 +1254,25 @@
     .nav-packs-btn:hover {
       background: var(--gold-dim) !important;
     }
+
+    /* #2 Deploy card grid */
+    .deploy-grid-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important; }
+    .deploy-grid-card.selected { transform: translateY(-1px); }
+
+    /* #10 Slideshow animation */
+    @keyframes ssSlide { from { opacity:0; transform:translateX(8px); } to { opacity:1; transform:translateX(0); } }
+
+    /* #7 Round end panel slide from right */
+    @keyframes panelSlideIn { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
+
+    /* #6 buff/debuff bar */
+    #hud-buffs .debuff-tip, #hud-debuffs .debuff-tip { z-index:9999; }
+
+    /* #15 Stats tab */
+    #stats-round-avgs > div:hover { background: rgba(255,255,255,0.05) !important; }
+
+    /* Slideshow dots */
+    #ss-dots > div { transition: background 0.2s; }
   </style>
 </head>
 <body>
@@ -9784,24 +9803,4 @@
 
 </script>
 </body>
-</html
-    /* #2 Deploy card grid */
-    .deploy-grid-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important; }
-    .deploy-grid-card.selected { transform: translateY(-1px); }
-
-    /* #10 Slideshow animation */
-    @keyframes ssSlide { from { opacity:0; transform:translateX(8px); } to { opacity:1; transform:translateX(0); } }
-
-    /* #7 Round end panel slide from right */
-    @keyframes panelSlideIn { from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
-
-    /* #6 buff/debuff bar */
-    #hud-buffs .debuff-tip, #hud-debuffs .debuff-tip { z-index:9999; }
-
-    /* #15 Stats tab */
-    #stats-round-avgs > div:hover { background: rgba(255,255,255,0.05) !important; }
-
-    /* Slideshow dots */
-    #ss-dots > div { transition: background 0.2s; }
-
->
+</html>
