@@ -19,7 +19,7 @@ const supabaseAdmin = createClient(
 );
 
 // Also need the regular client for reads
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 
 // V5: Drop Ticket integration — earn tickets when Chronicle awards points
 let dropTicketEngine = null;

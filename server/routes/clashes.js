@@ -13,7 +13,7 @@
 
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 
 function requireAdmin(req, res, next) {
   if (req.headers['x-admin-key'] !== process.env.ADMIN_KEY) {

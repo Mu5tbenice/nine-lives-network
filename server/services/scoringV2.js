@@ -4,7 +4,7 @@
 // Used by territory.js to calculate points + influence
 // ═══════════════════════════════════════════════════════
 
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 
 // ── RARITY MULTIPLIERS ──
 const RARITY_MULT = {

@@ -53,10 +53,10 @@ try {
   captureBootFailure('./services/packSystem', e);
 }
 try {
-  supabase = require('../config/supabase');
+  supabase = require('../config/supabaseAdmin');
 } catch (e) {
   console.log('⚠️ supabase not loaded');
-  captureBootFailure('../config/supabase', e);
+  captureBootFailure('../config/supabaseAdmin', e);
 }
 try {
   combatEngine = require('./combatEngine');

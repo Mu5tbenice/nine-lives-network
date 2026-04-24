@@ -31,7 +31,7 @@ function initScheduler() {
  */
 async function checkAndPostObjective() {
   try {
-    const supabase = require('../config/supabase');
+    const supabase = require('../config/supabaseAdmin');
     const today = new Date().toISOString().split('T')[0];
 
     const { data, error } = await supabase

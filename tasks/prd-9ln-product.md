@@ -2014,6 +2014,47 @@ Combined egress reduction on the combat loop: ~20× (from ~10 req/sec per active
 
 ---
 
+### 9.86 Server routes/services use anon Supabase client — §9.82 RLS pass silently broke deploys + most reads
+
+**Symptom (production outage, surfaced 2026-04-25 on first smoke of `nethara-live`).** Five endpoints return HTTP 500, and the deploy flow is fully dead:
+
+```
+GET  /api/zones/:id/metrics          500
+GET  /api/zones/:id/deployments      500
+GET  /api/zones/my-deployments/:pid  500
+GET  /api/packs/collection/:pid      500
+POST /api/zones/deploy               500
+```
+
+Arena loading-overlay times out; WebSocket stalls; user cannot deploy at all.
+
+**Root cause.** §9.82 (PR #203) enabled RLS on 45 tables and added 24 `anon_read` SELECT policies, per the stated intent "writes still flow through service_role (bypasses RLS)." But the server never actually routed writes through service_role — **40 files across `server/routes/`, `server/services/`, `server/jobs/`, and `server/config/` were still importing `config/supabase.js` (the anon-key client).** Two were especially pernicious: `xp-engine.js` and `leveling.js` both named their variable `supabaseAdmin` while importing the anon module (silent pre-existing bugs surfaced by RLS enablement). `dropTicketEngine.js` used `const { supabaseAdmin } = require('../config/supabase')`, which worked only because `config/supabase.js` re-exports the admin client as a side property.
+
+Once RLS turned on:
+- **Every INSERT/UPDATE/DELETE from anon → blocked** (no write policies anywhere — the design intent). `POST /api/zones/deploy` fails at the INSERT step.
+- Reads of tables **not** in the 24-table `anon_read` allowlist (e.g. `zones`, `zone_card_slots`, `players`, `battles`, `player_zone_metrics`) → blocked.
+- Relation-embeds that touch those tables (`nine:nine_id(...)`, `player:player_id(...)`, `zone:zone_id(...)`) → blocked at relation resolution → 500.
+
+Combat engine + arena broadcast survived because `services/combatEngine.js` already imported the dedicated admin client. That masked the scope of the break in `§9.82`'s smoke tests — the visible live-arena loop looked fine while REST endpoints were silently dying for anyone trying to deploy.
+
+**Effect.** Critical. Every logged-in player trying to deploy on `nethara-live.html` sees console-spammed 500s, the loading overlay force-dismisses, and the deploy modal can't fetch the card collection. Existing deployments keep running (combat engine is in-memory) but nothing can be added, modified, or fetched through the REST routes.
+
+**Resolution plan.** Swap the anon import to the dedicated admin module across every non-config server file:
+
+- `require('../config/supabase')` → `require('../config/supabaseAdmin')` (routes, services, jobs)
+- `require('./config/supabase')` → `require('./config/supabaseAdmin')` (`server/index.js`)
+- `require('./server/config/supabase')` → `require('./server/config/supabaseAdmin')` (`services/seed-narratives.js`)
+- `const { supabaseAdmin } = require('../config/supabase')` → `const supabaseAdmin = require('../config/supabaseAdmin')` (`services/dropTicketEngine.js`)
+- `captureBootFailure('../config/supabase', ...)` → `captureBootFailure('../config/supabaseAdmin', ...)` (`services/scheduler.js` log string)
+
+Files still mixing both `supabase` and `supabaseAdmin` variable names (`routes/items.js`, `routes/players.js`, `services/packSystem.js`) are left with both vars pointing at the admin client — functionally identical; cosmetic dedupe is a cheap follow-up, not blocking.
+
+RLS stays enabled exactly as §9.82 configured it — it's the correct security floor (protects against anything holding the anon key, which is shipped to the browser). The server, as the trusted actor, uses service_role as intended.
+
+**Resolved 2026-04-25 in PR #213.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.

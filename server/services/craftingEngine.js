@@ -13,7 +13,7 @@
 //   - Exhausted cards on zones need recharging
 // ═══════════════════════════════════════════════════════
 
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseAdmin = createClient(

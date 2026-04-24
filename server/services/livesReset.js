@@ -1,4 +1,4 @@
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 
 /**
  * Reset all player lives to 3

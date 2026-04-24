@@ -8,7 +8,7 @@
  * Safe to run multiple times — uses upsert so it won't create duplicates.
  */
 
-const supabase = require('./server/config/supabase');
+const supabase = require('./server/config/supabaseAdmin');
 const { narratives } = require('./server/services/narratives');
 
 async function seed() {

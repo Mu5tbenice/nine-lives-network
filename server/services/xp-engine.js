@@ -3,7 +3,7 @@
  * Handles XP calculation, level-up logic, and zone unlock gating.
  */
 
-const supabaseAdmin = require('../config/supabase');
+const supabaseAdmin = require('../config/supabaseAdmin');
 
 // ═══════════════════════════════════════
 // XP CURVE — Total XP needed to REACH each level

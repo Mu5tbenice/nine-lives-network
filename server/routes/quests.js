@@ -9,7 +9,7 @@
 
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 const { createClient } = require('@supabase/supabase-js');
 const { addPoints } = require('../services/pointsService');
 

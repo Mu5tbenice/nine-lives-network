@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authClient, createUserClient } = require('../config/twitter');
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 
 // V3: Nine creation on registration
 let nineSystem = null;

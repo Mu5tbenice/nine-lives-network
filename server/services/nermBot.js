@@ -1,7 +1,7 @@
 const { NERM_SYSTEM_PROMPT } = require('./nermBrain');
 const { TwitterApi } = require('twitter-api-v2');
 const Anthropic = require('@anthropic-ai/sdk');
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 
 /**
  * @9LV_Nerm - The Condemned Observer

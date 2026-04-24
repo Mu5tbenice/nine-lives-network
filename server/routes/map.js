@@ -5,7 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 
 // GET /api/zones — list all zones
 router.get('/', async (req, res) => {

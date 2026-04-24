@@ -1,7 +1,7 @@
 const { TwitterApi } = require('twitter-api-v2');
 const { createClient } = require('@supabase/supabase-js');
 const Anthropic = require('@anthropic-ai/sdk');
-const supabase = require('../config/supabase');
+const supabase = require('../config/supabaseAdmin');
 const {
   houses,
   getRandomNarrative,

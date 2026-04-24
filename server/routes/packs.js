@@ -190,7 +190,7 @@ router.get('/hand/:player_id', async (req, res) => {
 // GET /api/packs/history/:player_id?limit=10
 router.get('/history/:player_id', async (req, res) => {
   try {
-    const supabase = require('../config/supabase');
+    const supabase = require('../config/supabaseAdmin');
     const limit = parseInt(req.query.limit) || 10;
     const { data, error } = await supabase
       .from('card_packs')
