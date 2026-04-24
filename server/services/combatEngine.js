@@ -171,6 +171,10 @@ function trackMetric(nine, stat, amount) {
   else if (stat === 'kos')
     nine._sessionKosDelta = (nine._sessionKosDelta || 0) + amount;
 }
+// §9.84: single-RPC atomic accumulator. Replaces the previous SELECT +
+// UPSERT pattern (two round-trips per flush). The add_zone_metrics_deltas
+// SQL function does INSERT ... ON CONFLICT DO UPDATE SET col = col + delta,
+// so we never read the existing row.
 async function flushZoneMetrics(zoneId, zs) {
   if (_metricsTableMissing) return;
   const deltas = [];
@@ -187,58 +191,28 @@ async function flushZoneMetrics(zoneId, zs) {
   });
   if (!deltas.length) return;
   try {
-    const today = new Date().toISOString().slice(0, 10);
-    const zid = Number(zoneId);
-    const pids = deltas.map((d) => d.player_id);
-    const { data: existing, error: rerr } = await supabaseAdmin
-      .from('player_zone_metrics')
-      .select('player_id,damage,heals,kos')
-      .eq('zone_id', zid)
-      .eq('metric_date', today)
-      .in('player_id', pids);
-    if (rerr) {
+    const { error } = await supabaseAdmin.rpc('add_zone_metrics_deltas', {
+      p_zone_id: Number(zoneId),
+      p_metric_date: new Date().toISOString().slice(0, 10),
+      p_deltas: deltas,
+    });
+    if (error) {
       if (
-        rerr.code === '42P01' ||
-        /relation .* does not exist/i.test(rerr.message || '')
+        error.code === '42P01' ||
+        error.code === '42883' ||
+        /relation .* does not exist/i.test(error.message || '') ||
+        /function .* does not exist/i.test(error.message || '')
       ) {
         _metricsTableMissing = true;
         console.warn(
-          '[§9.50] player_zone_metrics table missing — run the migration (see PR docs). Skipping metric flush until restart.',
+          '[§9.84] player_zone_metrics or add_zone_metrics_deltas missing — run migrations. Skipping metric flush until restart.',
         );
         return;
       }
-      console.error('[§9.50 read]', rerr.message);
-      return;
-    }
-    const existingMap = new Map((existing || []).map((r) => [r.player_id, r]));
-    const upserts = deltas.map((r) => {
-      const cur = existingMap.get(r.player_id) || {
-        damage: 0,
-        heals: 0,
-        kos: 0,
-      };
-      return {
-        player_id: r.player_id,
-        zone_id: zid,
-        metric_date: today,
-        damage: (cur.damage || 0) + r.damage,
-        heals: (cur.heals || 0) + r.heals,
-        kos: (cur.kos || 0) + r.kos,
-        updated_at: new Date().toISOString(),
-      };
-    });
-    const { error: uerr } = await supabaseAdmin
-      .from('player_zone_metrics')
-      .upsert(upserts, { onConflict: 'player_id,zone_id,metric_date' });
-    if (uerr) {
-      if (uerr.code === '42P01') {
-        _metricsTableMissing = true;
-        return;
-      }
-      console.error('[§9.50 upsert]', uerr.message);
+      console.error('[§9.84 rpc]', error.message);
     }
   } catch (e) {
-    console.error('[§9.50 flush]', e.message);
+    console.error('[§9.84 flush]', e.message);
   }
 }
 
@@ -1278,32 +1252,45 @@ async function tickZone(zoneId, zs) {
 
   broadcastArenaPositions(zoneId, zs);
 
-  // HP sync every 40 ticks (= 20s at 500ms per tick)
+  // §9.84: HP sync every 40 ticks, batched into ONE upsert instead of a
+  // sequential await per nine. Single round-trip regardless of zone size.
   if (zs.tick % 40 === 0) {
     const nineArr = Array.from(zs.nines.values());
-    for (const n of nineArr) {
-      await supabaseAdmin
+    if (nineArr.length > 0) {
+      const rows = nineArr.map((n) => ({
+        id: n.deploymentId,
+        current_hp: Math.max(0, Math.round(n.hp)),
+      }));
+      supabaseAdmin
         .from('zone_deployments')
-        .update({ current_hp: Math.max(0, Math.round(n.hp)) })
-        .eq('id', n.deploymentId)
+        .upsert(rows, { onConflict: 'id' })
         .then(({ error }) => {
           if (error) console.error('❌ HP sync:', error.message);
         });
     }
   }
 
-  // §9.50 metrics flush — fire-and-forget so combat latency is unaffected.
-  // Safe-by-default: errors are caught inside flushZoneMetrics and the
-  // table-missing case latches so we don't re-hit a bad state every tick.
-  flushZoneMetrics(zoneId, zs).catch((e) =>
-    console.error('[§9.50 flush outer]', e.message),
-  );
+  // §9.84: metrics flush every 10 ticks (~2s), not every tick (200ms).
+  // Deltas accumulate in memory between flushes via trackMetric();
+  // flushZoneMetrics early-returns when there's nothing to write, so idle
+  // zones cost zero API calls. Socket.io broadcasts keep the live UI in
+  // sync in real-time; DB is persistence-only, not the read-path.
+  if (zs.tick % 10 === 0) {
+    flushZoneMetrics(zoneId, zs).catch((e) =>
+      console.error('[§9.84 flush outer]', e.message),
+    );
+  }
 }
 
 // ─── ROUND END ────────────────────────────────────────────────────────
 async function endRound(zoneId, zs, all, endReason) {
   zs.roundState = 'INTERMISSION';
   zs.roundEndsAt = Date.now() + INTERMISSION_MS;
+
+  // §9.84: ensure any leftover metric deltas from the last sub-10 tick
+  // window get persisted before round-end. Fire-and-forget — if it fails
+  // we lose at most a couple seconds of data, not the whole round.
+  flushZoneMetrics(zoneId, zs).catch(() => {});
 
   // Guild control: most alive members wins. Ties by total HP.
   const guildAlive = {},
