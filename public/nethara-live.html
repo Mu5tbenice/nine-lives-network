@@ -1032,11 +1032,11 @@
         flex-shrink:0;
       }
       .mob-btn {
-        font-family:'Press Start 2P',monospace;font-size:14px;padding:11px 8px;
+        font-family:'Press Start 2P',monospace;font-size:13px;padding:9px 6px;
         border-radius:4px;cursor:pointer;flex:1;text-align:center;
         border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);
         color:var(--faint);line-height:1.2;letter-spacing:0;
-        overflow:hidden;min-height:44px;
+        overflow:hidden;min-height:40px;
         transition:background 0.15s, border-color 0.15s, color 0.15s;
       }
       .mob-btn:active { transform:translateY(1px); }
@@ -1048,6 +1048,19 @@
 
       /* [GREEN] Tab content area */
       #mob-tab-area { flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden; }
+      /* §9.90 PR E: compact the stats-tab nested controls (THIS ROUND / TODAY
+         view toggle + HP / DMG / HEAL / KOs sort row). They were 14px Press
+         Start 2P with 8px padding, two ~36px rows eating ~80px of tab height
+         so only the top ~2 fighter rows were visible. Shrink font + padding
+         to reclaim ~20px for the fighter list. Inline styles on these
+         buttons require !important to override. */
+      #mob-tab-stats [data-sb-view],
+      #mob-tab-stats .mob-sb-sort-btn {
+        font-size: 11px !important;
+        padding: 6px 4px !important;
+      }
+      #mob-tab-stats > div:first-child { padding: 4px 6px !important; gap: 3px !important; }
+      #mob-tab-stats > div:nth-child(2) { padding: 4px 6px !important; gap: 3px !important; }
       /* Tab bar — 44px+ tap target.
          §9.90 PR D item 7: consistent icon + label across all 4 tabs
          (was 🗡 BUILD + 3 icon-only siblings). Active tab gets an
@@ -1083,11 +1096,15 @@
          of room, which truncated anything over 5-6 characters. Vertical
          layout gives the full ~96px card width to the name + allows
          2-line wrap — "TEMPORAL CURRENT" fits, "PLAGUEMIRE" fits, etc. */
-      #mob-card-slots { display:flex !important;flex-direction:row;gap:6px;padding:6px 8px;flex:1;align-items:stretch;min-height:120px;max-height:140px;overflow-x:hidden !important;overflow-y:hidden; }
+      /* §9.90 PR E: drop max-height cap so the 3 card slots flex:1 fill the
+         available BUILD-tab height (previously stuck at 140px with empty
+         space below). min-height keeps the slot readable when viewport is
+         very short (e.g. landscape ≤500h). */
+      #mob-card-slots { display:flex !important;flex-direction:row;gap:6px;padding:8px 8px;flex:1;align-items:stretch;min-height:140px;overflow-x:hidden !important;overflow-y:hidden; }
       .mob-card-slot {
         flex:1 1 0 !important;min-width:0;width:auto;border:1px solid rgba(255,255,255,0.14);
         border-radius:8px;overflow:hidden;display:flex;flex-direction:column;
-        min-height:110px;
+        min-height:140px;
         background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));
         cursor:pointer;position:relative;
         box-shadow:0 1px 2px rgba(0,0,0,0.3);
@@ -1159,7 +1176,7 @@
          so SWAP / EXIT claim the remaining row share equally. */
       #mob-auto-row {
         display:flex;flex-direction:row;align-items:center;justify-content:center;
-        gap:8px;flex:0 0 auto;padding:0 14px;min-height:44px;
+        gap:8px;flex:0 0 auto;padding:0 12px;min-height:40px;
         border:1px solid rgba(255,255,255,0.12);border-radius:4px;
         background:rgba(255,255,255,0.04);cursor:pointer;
         transition:background 0.15s, border-color 0.15s;
@@ -1170,7 +1187,7 @@
       }
       #mob-auto-row:active { transform:translateY(1px); }
       #mob-auto-toggle { width:28px;height:14px;background:rgba(255,255,255,0.06);border-radius:8px;border:1px solid rgba(255,255,255,0.12);position:relative;flex-shrink:0;pointer-events:none; }
-      #mob-auto-label { font-family:'Press Start 2P',monospace;font-size:13px !important;color:rgba(255,255,255,0.5);line-height:1.2;white-space:nowrap;pointer-events:none; }
+      #mob-auto-label { font-family:'Press Start 2P',monospace;font-size:12px !important;color:rgba(255,255,255,0.5);line-height:1.2;white-space:nowrap;pointer-events:none; }
 
       /* Top bar — timer + LIVE pill must stay scannable.
          §9.90 PR A: enforce single-line flex so long zone names ellipsis-
@@ -1281,10 +1298,16 @@
       #mob-nine-name { font-size: 13px !important; }
       #mob-nine-hp-text { font-size: 12px !important; }
       #mob-buttons { padding: 6px 8px calc(6px + env(safe-area-inset-bottom,0px)); gap: 6px; }
-      .mob-btn { font-size: 13px; padding: 10px 6px; }
-      #mob-auto-row { padding: 0 10px; gap: 6px; }
+      .mob-btn { font-size: 12px; padding: 8px 4px; }
+      #mob-auto-row { padding: 0 10px; gap: 6px; min-height: 38px; }
       #mob-auto-label { font-size: 11px !important; }
       #mob-auto-toggle { width: 24px; height: 12px; }
+      /* §9.90 PR E: stats-tab nested controls even tighter at 390 */
+      #mob-tab-stats [data-sb-view],
+      #mob-tab-stats .mob-sb-sort-btn {
+        font-size: 10px !important;
+        padding: 5px 3px !important;
+      }
       /* §9.90 PR A — top bar tighter still at 390px. Zone name drops 16→14,
          deploy pill abbreviates via max-width + ellipsis, LIVE pill stays
          legible at 11px. Total right-group footprint ~130px leaves ~200px
