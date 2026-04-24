@@ -124,7 +124,7 @@ Numbered within each subsection. When a subsection overrides an older doc, the o
 
 **4.3.1** Base stats are read from the `houses` table at runtime. Changing a base stat in that table is a balance change, not a feature change.
 
-**4.3.2** The deprecated old-scheme names (Ember/Tidal/Stone/Zephyr/Storm/Umbral/Radiant/Arcane/WildCat) appear in the current `README.md` and may appear in some seed files. **Seed data is the tiebreaker:** whatever names `database/seeds/schools.sql` ships become canonical in production. Any name mismatch is a bug.
+**4.3.2** Historical: a deprecated old-scheme (Ember Covenant / Tidal Conclave / Stone Covenant / Zephyr Circle / etc.) existed in pre-canon seed files and a prior README. Those seeds (`database/seeds/*.sql`) were deleted in PR #208 (§9.10) — they had fewer factions than canon, referenced dropped columns (`mana_cost`), and diverged from the live `houses` table which already uses canon names. **The live DB `houses` table is now the sole source of truth.** Current canonical names: Smoulders, Darktide, Stonebark, Ashenvale, Stormrage, Nighthollow, Dawnbringer, Manastorm, Plaguemire.
 
 ### 4.4 Guilds
 
@@ -849,6 +849,8 @@ One-off scripts at root (should move to `scripts/` or delete after migration): `
 **Symptom.** README uses legacy scheme (Ember Covenant / Tidal Conclave / etc.); §4.3 of this PRD uses the canonical scheme (Stormrage / Smoulders / etc.). `database/seeds/schools.sql` is the tiebreaker for production.
 
 **Resolution:** Inspect the seed file + live `houses` table. If live rows match §4.3 names, delete the README table. If they match legacy names, that's a larger migration; plan it deliberately.
+
+**Resolved 2026-04-24 in PR #208.** Verified live `houses` table matches canon (`Smoulders`, `Darktide`, `Stonebark`, `Ashenvale`, `Stormrage`, `Nighthollow`, `Dawnbringer`, `Manastorm`, `Plaguemire`). Current `README.md` has no legacy names (confirmed by grep); prior audit reference in §4.3.2 was stale. Seed files at `database/seeds/{schools,spells,zones}.sql` were non-functional — fewer factions than canon, referenced dropped `mana_cost` column — and deleted. PRD §4.3.2 updated to mark the live DB as sole source of truth.
 
 ### 9.11 Arena engine V5 parallel implementation → decide & prune
 
