@@ -2118,7 +2118,37 @@ History-rewriting the old token out of git is explicitly out of scope — the to
 
 ---
 
-## Appendix A — Glossary
+### 9.90 Arena mobile UI cohesion pass — layout reads as crammed desktop
+
+**Symptom (user-reported 2026-04-24, audit captures in `audit/mobile/` from 2026-04-24).** Despite eight prior mobile-polish §9 passes (9.51, 9.55, 9.59, 9.62, 9.68, 9.72, 9.73, 9.74, 9.76), the arena still reads as "Desktop HUD crammed into a tiny phone screen, janky." Not broken — playable — but visibly a web build rather than a shipped mobile game, blocking the MVP "take it seriously" bar from `project_vision.md`. The 2026-04-24 audit surfaced twelve specific jank points across six screenshots:
+
+1. **Top bar overflow.** `.arena-top-bar` left group (back + zone name + guild-control pill) wraps `HANWU BOGLANDS` onto two lines at ≤414px, which grows the flex row vertically and pushes the right group (timer + `DEPLOYED` pill + `LIVE` pill) off-screen — `LIVE` clips to `LI…`. Visible in 212453, 215205, 215842, 215856 screenshots.
+2. **Portrait column reads as a vestigial desktop sidebar.** `#mob-portrait-col` is an 86–96px vertical spine on the left with portrait → handle → HP counter → `SWAP` → `EXIT` → `AUTO` stacked. It squeezes portrait/handle legibility and forces tab content into a narrow 314–320px right column.
+3. **Card slot names still truncate to single-line ellipsis.** `COUNTERSPELL` renders, but `THUNDER GUARD` → `THUNDER GUAR…` and `PHANTOM STEED` → `PHANTOM STEE…`. `-webkit-line-clamp: 2` from PR #194 appears not to be applying or is being overridden.
+4. **Action button hierarchy broken.** `SWAP` and `EXIT` are both red (destructive colour). `AUTO` is dim-outlined with a green checkmark-only as state indicator. `SWAP` needs a neutral/gold treatment; `AUTO` needs an explicit ON/OFF pill so toggle state is legible at a glance.
+5. **Actions stacked vertically.** `SWAP` / `EXIT` / `AUTO` are three rows in the 86px column, wasting mobile horizontal affordance and pushing `AUTO` near the fold.
+6. **Round-end modal is a centre overlay, not a bottom sheet.** At 414×896 it covers most of the screen including the tray and canvas; bottom-sheet treatment with backdrop-tap-dismiss is the mobile-native pattern.
+7. **`BUILD` label row is vestigial.** Tiny monochrome header above the three card slots whose purpose reads as a leftover desktop label; inline or remove.
+8. **Stats tab fighter rows double-truncate identity.** `ALLWILL…` + `(@allwillretire)` both render in the same row — the parenthetical handle alone would carry the identity. Drop the truncated bold name.
+9. **Combat Log tab is pixel-dense and sub-legible.** 9–10px `Press Start 2P` rows with abbreviated `attacker – target damage [effect]` entries; need more line-height and slightly larger font, or per-row horizontal colour-coding for scannability.
+10. **Nerm commentary bubble absent on mobile.** Desktop shows Nerm flavour commentary above the tray; mobile captures show no Nerm bubble, losing character engagement that is core to the IP.
+11. **Tab switcher (`#mob-tabs`) visual treatment inconsistent.** Active-tab indicator weak; the Stats tab has a nested `THIS ROUND | TODAY` sub-toggle that competes for visual hierarchy on the same screen.
+12. **Chat send affordance nearly invisible.** The ► glyph on the input row blends into the background; no visible send-button treatment, no colour distinction.
+
+**Effect.** Blocks the MVP "is this a real product?" first-impression bar. Mobile is the primary surface for the Twitter-native audience (`project_audience_traction`, `project_vision`), so this quality gap is audience-facing.
+
+**Resolution plan.** Incremental cohesion pass across four PRs, scoped in `/home/wrays/.claude/plans/back-after-that-break-breezy-sunrise.md`. All changes contained in `public/nethara-live.html` style block + markup:
+
+- **PR A** (this PR): top-bar flex overflow fix — prevent zone-name wrap, ellipsis-truncate long names, keep right group at natural width so `LIVE` never clips. Addresses item 1.
+- **PR B**: retire `#mob-portrait-col` as a vertical spine, move handle/HP/portrait into a horizontal strip at the top of `.arena-bottom-tray`. Addresses items 2, 5.
+- **PR C**: action button hierarchy — `SWAP` neutral/gold, `EXIT` destructive red, `AUTO` explicit ON/OFF pill with colour state. Arrange in a single horizontal row. Addresses items 4, 5.
+- **PR D**: tab polish + modal bottom-sheet + Nerm bubble mobile positioning + stats/log legibility + chat send button. Addresses items 3, 6, 7, 8, 9, 10, 11, 12.
+
+Each PR ships with a ≤6-item smoke-test checklist on real phones at 390 / 414 / 640 viewports. Card-slot name truncation (item 3) is deferred to PR D alongside the tab polish since the root cause (line-clamp not applying) likely lives in the same CSS cluster as the tab content treatment. No PIXI / server / engine changes in any PR.
+
+**Partially resolved 2026-04-24 in PR #? — top-bar flex overflow fix (item 1).**
+
+
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
 
