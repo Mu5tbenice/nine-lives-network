@@ -825,6 +825,8 @@ This section is the **live bug ledger** the PRD carries. Each item is tied to a 
 
 **Resolution options:** (a) wire them up in combat engine so per-session stats surface in profile; (b) drop the columns. Pick one.
 
+**Resolved 2026-04-24 in PR #?.** Dropped — option (b). Combat stats already accumulate on `player_zone_metrics` at per-player / zone / date granularity via §9.84's atomic RPC; `zone_deployments` is lifecycle-state only (HP, is_active, card_ids, ko_until). Verified only `arena-engine.js` (dead, removed in §9.11) referenced any of these columns; other tables' same-named columns (`casts.points_earned`, `territory_actions.points_earned`) are live and untouched. Migration: `database/migrations/003_drop_dead_zone_deployments_columns.sql`, applied via MCP.
+
 ### 9.8 Orphaned routes and services → cleanup
 
 Routes on disk but never mounted in `server/index.js`: `arena.js`, `chronicle.js`, `drop-tickets.js`, `leveling.js`, `raids.js`, `stats.js`.
