@@ -2076,7 +2076,7 @@ The synchronous body of `_fireworkExplosion` (lines 7500–7552) doesn't crash b
 
 **Resolution plan.** Add a single-line null guard at the top of the setTimeout body: `if (!app.stage) return;`. Minimum-diff, behaves identically in the happy path, bails cleanly if teardown has happened.
 
-**Resolved 2026-04-25 in PR #?.**
+**Resolved 2026-04-25 in PR #214.**
 
 ---
 
