@@ -2104,6 +2104,20 @@ History-rewriting the old token out of git is explicitly out of scope — the to
 
 ---
 
+### 9.89 KO tint persists across rounds — rejoined sprites stay red
+
+**Symptom (user-reported 2026-04-25 after the §9.86 smoke test).** After being knocked out and rejoining the next round, the player's sprite stays tinted deep red (`0xff2222`) until the first time a hit-flash happens to overwrite it. Full opacity and scale are restored correctly; only the tint leaks across rounds.
+
+**Root cause.** `animateKO` (nethara-live.html:8347) sets `spriteGroup.children[*].tint = 0xff2222` at KO, but has no revert timer (the tint is intentionally permanent for the duration of the KO'd/withdrawn state). The two rejoin paths — `arena:nine_rejoined` (line 4279) and `arena:round_start` survivors-branch (line 4347) — restore `container.alpha = 1` but neither resets `tint`. So the rejoined sprite comes back full-size and opaque but still red.
+
+**Effect.** Low. Visual-state correctness only; no gameplay impact and the red goes away on the first incoming hit-flash (every tint-setTimeout path on line 8491/8558/etc. stomps 0xFFFFFF).
+
+**Resolution plan.** Two small additions, one in each rejoin path, mirroring the alpha-restore pattern: `sp.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xFFFFFF; });`. Matches the existing hit-flash revert idiom everywhere else in the file.
+
+**Resolved 2026-04-25 in PR #216.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.

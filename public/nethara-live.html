@@ -4285,6 +4285,9 @@
       const sp = S.nines.get(spriteKey);
       if (sp) {
         sp.container.alpha = 1;
+        // §9.89: animateKO leaves a permanent 0xff2222 tint on every spriteGroup
+        // child. Restore alpha without resetting tint → rejoined sprite stays red.
+        if (sp.spriteGroup) sp.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xFFFFFF; });
         delete sp._waitingForRound;
         delete sp._withdrawn;
         if (sp._waitingBadge) { sp.container.removeChild(sp._waitingBadge); delete sp._waitingBadge; }
@@ -4346,6 +4349,8 @@
         if (!sp) return;
         if (!n.withdrawn && n.hp > 0) {
           sp.container.alpha = 1;
+          // §9.89: clear the KO tint (animateKO sets 0xff2222 permanently).
+          if (sp.spriteGroup) sp.spriteGroup.children.forEach(c => { if (c.tint !== undefined) c.tint = 0xFFFFFF; });
           delete sp._waitingForRound;
           // §9.37 companion: remove WAITING badge here too, since the self-
           // sprite now persists through intermission with its badge attached.
