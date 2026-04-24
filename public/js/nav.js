@@ -9,7 +9,6 @@
     { href: '/nethara-live.html', label: 'Nethara' },
     { href: '/duels.html', label: 'Duels' },
     { href: '/wilds.html', label: 'The Wilds' },
-    { href: '/boss.html', label: 'Boss' },
     { href: '/leaderboards.html', label: 'Ranks' },
     { href: '/packs.html', label: 'Packs' },
     { href: '/token.html', label: '$9LV' },

@@ -115,7 +115,6 @@ router.get('/:id/stats', async (req, res) => {
       school_id: player.school_id,
       seasonal_points: player.seasonal_points || 0,
       lifetime_points: player.lifetime_points || 0,
-      mana: player.mana !== null ? player.mana : 7,
       lives: player.lives !== null ? player.lives : 3,
       duel_wins: player.duel_wins || 0,
       duel_losses: player.duel_losses || 0,

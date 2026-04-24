@@ -62,7 +62,6 @@
     @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes glowPulse { 0%,100% { box-shadow: 0 0 20px rgba(212,166,75,0.08); } 50% { box-shadow: 0 0 30px rgba(212,166,75,0.15); } }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-    /* V5: mana removed */
     @keyframes subtleFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -374,8 +373,6 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,n
     +(!guildTag?'<span style="color:var(--cyan);font-size:10px;">🐺 Lone Wolves get 1.5x ATK in zone battles</span>':'')
     +'</div>';
 
-  // V5: Mana orbs removed
-
   // Streak dots
   var sH='';
   for(var i=0;i<7;i++){
@@ -666,8 +663,6 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,n
 
   // Load Chronicle from API
   loadChronicle();
-
-  // V5: Mana timer removed
 
   // Start snapshot countdown
   startSnapshotTimer(snapshotInfo);

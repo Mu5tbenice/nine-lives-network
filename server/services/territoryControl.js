@@ -13,7 +13,6 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 
-const MANA_CAP = 7;
 const ZONE_CAPTURE_BONUS = 15;
 const ZONE_HELD_BONUS = 5;
 const DECAY_PERCENT = 40; // 40% decay overnight
@@ -384,21 +383,6 @@ async function resetDaily() {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().split('T')[0];
-
-    // Reset all player mana to 7
-    const { data: manaResult } = await supabaseAdmin
-      .from('players')
-      .update({ mana: MANA_CAP })
-      .eq('is_active', true)
-      .select('id');
-
-    console.log(
-      '  Reset mana to ' +
-        MANA_CAP +
-        ' for ' +
-        (manaResult ? manaResult.length : 0) +
-        ' players',
-    );
 
     // Update streaks
     // Players who acted yesterday: increment streak

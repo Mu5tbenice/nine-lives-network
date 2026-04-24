@@ -20,7 +20,7 @@ Preferred communication style: Simple, everyday language.
 - **Runtime**: Node.js with Express.js (v5), written in CommonJS (`require`/`module.exports`), entry point is `server/index.js`
 - **Routes**: Modular Express routers — `auth.js` (Twitter OAuth 2.0), `players.js`, `territory.js`, `duels.js`, `map.js`, `leaderboards.js`, `admin.js`
 - **Services**: Business logic modules — `twitterBot.js` (game bot), `nermBot.js` (AI personality bot), `territoryControl.js` (zone control calculations), `activityDecay.js` (inactivity penalties), `livesReset.js` (daily life resets), `narratives.js` (story/lore engine with 40 rotating narratives across 25 zones), `scheduler.js` (cron jobs)
-- **Admin API**: Protected by `x-admin-key` header, provides manual controls for daily game operations (post objectives, process spell casts, end-of-day calculations, reset mana, view stats)
+- **Admin API**: Protected by `x-admin-key` header, provides manual controls for daily game operations (post objectives, process spell casts, end-of-day calculations, view stats)
 
 ### Database
 - **Primary Database**: Supabase (PostgreSQL) accessed via `@supabase/supabase-js` client library. Two clients are used: a regular client (respects Row Level Security) for public reads, and an admin/service-role client (bypasses RLS) for server-side writes.
@@ -30,7 +30,7 @@ Preferred communication style: Simple, everyday language.
 ### Game Loop & Scheduling
 - Uses `node-cron` for automated jobs
 - Spell processing runs every 2 minutes (checks Twitter replies)
-- Daily cycle: morning objective post → process casts throughout day → end-of-day winner calculation → results post → midnight mana/lives reset
+- Daily cycle: morning objective post → process casts throughout day → end-of-day winner calculation → results post → midnight lives reset
 - Admin can trigger any step manually via API
 
 ### Authentication

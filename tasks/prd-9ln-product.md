@@ -1914,6 +1914,18 @@ Kept the intermission `return;` intact: combat mutation code ABOVE the intermiss
 
 ---
 
+### 9.80 Mana system + gauntlet + boss cleanup — dead code removal
+
+**Symptom.** Mana column/logic persisted in the DB, server routes, scheduler, and Chronicle bot despite the V5 product direction (§4.2.2, §5.9) marking mana as legacy. Frontend was stubbed to `99` in dashboard/zone-detail but the server still deducted on spell cast and the midnight cron still reset the pool — a silent divergence where players could hit a server-side gate they couldn't see. Gauntlet and boss features shipped as full routes + engines + tables but were no longer part of the MVP loop. `/boss.html` was still reachable from nav and fetched `/api/boss/*` endpoints that existed but were dead-ended. `twitterBot.js` (the Chronicle spellcast bot) gated spell casts on `player.mana <= 0`, a legacy concern actively blocking the Chronicle revival interview.
+
+**Effect.** Low player-visible — no one complained. But ~50 files of dead code, a reachable `/boss.html` that silently errored, and a blocking concept for the upcoming Chronicle revival.
+
+**Resolution plan.** Full removal: delete `manaRegen.js`, `gauntletEngine.js`, `bossEngine.js`, their routes, `public/boss.html`; strip mana gate from `twitterBot.js` and `territory.js`; remove midnight mana-reset from `territoryControl.js`; remove boss cron jobs + dead vars from `scheduler.js`; delete admin `reset-mana` endpoint; scrub player-facing docs (builder, how-to-play, packs, spellbook, EFFECTS). DB migration drops `players.mana/max_mana/last_mana_regen`, `casts.mana_cost`, `nfts.total_mana`, `traits.stat_mana`, `daily_quests.reward_mana`, `player_quests.reward_mana`; drops `gauntlet_runs`, `boss_contributions`, `boss_deployments`, `boss_fights` tables. `packSystem.all_mana_spent` flag kept (load-bearing for daily card upgrade gate) and now fires on every territory cast.
+
+**Resolved 2026-04-24 in PR #201.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.

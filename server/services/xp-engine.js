@@ -79,9 +79,6 @@ const XP_REWARDS = {
   zone_flip: 8,
   duel_win: 4,
   duel_lose: 1,
-  gauntlet_floor: 3,
-  boss_cycle: 3,
-  boss_kill: 15,
   daily_login: 5,
 };
 

@@ -77,24 +77,6 @@ try {
 }
 
 try {
-  const gauntletRoutes = require('./routes/gauntlet');
-  app.use('/api/gauntlet', gauntletRoutes);
-  console.log('✅ Gauntlet routes loaded');
-} catch (e) {
-  console.error('❌ Failed to load gauntlet routes:', e.message);
-  captureBootFailure('./routes/gauntlet', e);
-}
-
-try {
-  const bossRoutes = require('./routes/boss');
-  app.use('/api/boss', bossRoutes);
-  console.log('✅ Boss routes loaded');
-} catch (e) {
-  console.error('❌ Failed to load boss routes:', e.message);
-  captureBootFailure('./routes/boss', e);
-}
-
-try {
   const playerRoutes = require('./routes/players');
   app.use('/api/players', playerRoutes);
   console.log('✅ Player routes loaded');

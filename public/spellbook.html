@@ -453,7 +453,6 @@ async function loadData() {
           name: s.name || 'Unknown',
           house: (s.house || 'universal').toLowerCase(),
           spell_type: (s.spell_type || s.type || 'attack').toLowerCase(),
-          mana_cost: s.mana_cost || 1,
           tier: s.tier || 0,
           base_atk: s.base_atk || 0,
           base_hp: s.base_hp || 0,
@@ -512,7 +511,6 @@ function normalizePlayerCard(c) {
     spell_type: (c.spell_type || ref.spell_type || 'attack').toLowerCase(),
     rarity: (c.rarity || 'common').toLowerCase(),
     house: (c.spell_house || ref.house || 'universal').toLowerCase(),
-    mana_cost: sp.mana_cost || ref.mana_cost || 1,
     base_atk: sp.base_atk || ref.base_atk || 0,
     base_hp: sp.base_hp || ref.base_hp || 0,
     base_spd: sp.base_spd || ref.base_spd || 0,
@@ -755,7 +753,7 @@ function renderCodex() {
     if (discovered) {
       var cardData = {
         name: spell.name, house: spell.house, spell_type: spell.spell_type, rarity: 'common',
-        mana_cost: spell.mana_cost, base_atk: spell.base_atk, base_hp: spell.base_hp,
+        base_atk: spell.base_atk, base_hp: spell.base_hp,
         base_spd: spell.base_spd, base_def: spell.base_def, base_luck: spell.base_luck,
         base_effect: '', bonus_effects: spell.bonus_effects, flavor_text: spell.flavor_text, image_url: spell.image_url
       };
@@ -766,7 +764,7 @@ function renderCodex() {
     } else {
       var ghostData = {
         name: '???', house: spell.house, spell_type: spell.spell_type, rarity: 'common',
-        mana_cost: spell.mana_cost, base_atk: 0, base_hp: 0, base_spd: 0, base_def: 0, base_luck: 0,
+        base_atk: 0, base_hp: 0, base_spd: 0, base_def: 0, base_luck: 0,
         base_effect: '', bonus_effects: [], flavor_text: '', image_url: ''
       };
       html += '<div class="card-wrap card-wrap--undiscovered">';

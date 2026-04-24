@@ -76,7 +76,7 @@ Phase 4: Knockout
 | **HASTE** | Bonus auto-attack at 50% damage after normal attack |
 | **SWIFT** | First card of the day: effect doubled (handled at cast time) |
 | **DODGE** | 30% chance to avoid ALL damage (effects and auto-attacks) |
-| **FREE** | Card costs 0 mana (handled at cast time, not in combat) |
+| **FREE** | No-op after §9.80 mana removal — legacy tag, cards are always free now |
 
 ## ATTRITION EFFECTS (4)
 
@@ -141,7 +141,7 @@ When multiple effects interact, this is the resolution order:
 
 ## WHAT'S NOT IN COMBAT ENGINE (handled elsewhere)
 
-- **FREE**: Reduces mana cost to 0 — handled in zone deploy endpoint
+- **FREE**: Legacy no-op — all casts are free after the §9.80 mana-system removal
 - **SWIFT**: Doubles first card effect of the day — handled in zone deploy endpoint
 - **Rarity scaling**: Bonus ATK/HP from rarity — applied when card is pulled, stored in DB
 - **House affinity**: ×1.3 effect strength — applied when effects are parsed from card data

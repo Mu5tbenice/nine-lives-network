@@ -140,19 +140,6 @@ router.post('/force-objective', async (req, res) => {
   }
 });
 
-// POST /api/admin/reset-mana — reset all player mana to 7
-router.post('/reset-mana', async (req, res) => {
-  try {
-    await supabaseAdmin
-      .from('players')
-      .update({ mana: 7 })
-      .eq('is_active', true);
-    res.json({ success: true, message: 'All players mana reset to 7' });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
 // ╔═══════════════════════════════════╗
 // ║  ZONE MANAGEMENT                   ║
 // ╚═══════════════════════════════════╝
@@ -728,7 +715,6 @@ router.put('/player/:id', async (req, res) => {
   try {
     const playerId = parseInt(req.params.id);
     const allowed = [
-      'mana',
       'seasonal_points',
       'lifetime_points',
       'streak',

@@ -205,7 +205,6 @@ var zoneId=new URLSearchParams(window.location.search).get('id');
 var playerId=localStorage.getItem('player_id');
 var playerCards=[],myDeployment=null,isDeployed=false,handOpen=false;
 var carouselIdx=0,sortKey='rarity',sorted=[];
-var currentMana=99,maxMana=99; // V5: mana removed — always allow deploy
 function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 function houseByName(name){for(var k in HOUSES)if(HOUSES[k].n.toLowerCase()===(name||'').toLowerCase())return HOUSES[k];return{n:'Universal',c:'#D4A64B',i:'\u2726'};}
 function spawnParticles(){var el=document.getElementById('particles');if(!el)return;var h='';for(var i=0;i<12;i++){var x=10+(i*7.5)%85,y=15+(i*13)%55;h+='<div class="particle" style="left:'+x+'%;top:'+y+'%;background:rgba('+(100+i*15)+','+(180+i*5)+','+(200+i*3)+',0.4);animation-duration:'+(2+i*0.3)+'s;animation-delay:'+i*0.2+'s;"></div>';}el.innerHTML=h;}

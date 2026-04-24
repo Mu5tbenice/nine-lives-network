@@ -361,9 +361,6 @@ router.post('/complete-registration', express.json(), async (req, res) => {
         school_id: parseInt(school_id),
         guild_tag: playerGuildTag, // V3: renamed from community_tag
         profile_image: profile_image || null,
-        mana: 3,
-        max_mana: 10, // V3: new column
-        last_mana_regen: new Date().toISOString(), // V3: new column
         lifetime_points: 0,
         seasonal_points: 0,
         is_active: true,

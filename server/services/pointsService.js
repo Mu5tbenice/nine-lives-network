@@ -42,8 +42,7 @@ const CHRONICLE_SOURCES = [
  * @param {number} playerId - The player's ID
  * @param {number} amount - Points to add (always positive)
  * @param {string} source - Category tag: 'zone_deploy', 'zone_survive', 'zone_ko',
- *                          'zone_flip', 'zone_control', 'gauntlet_floor', 'gauntlet_milestone',
- *                          'boss_cycle', 'boss_kill', 'chronicle_reply', 'chronicle_named',
+ *                          'zone_flip', 'zone_control', 'chronicle_reply', 'chronicle_named',
  *                          'chronicle_wildcard', 'midnight_bonus', etc.
  * @param {string} [description] - Optional human-readable description
  * @returns {object} { success, new_seasonal, new_lifetime }

@@ -28,42 +28,6 @@ CREATE TABLE battles (
     ended_at timestamp without time zone
 );
 
-CREATE TABLE boss_contributions (
-    id integer NOT NULL,
-    boss_id integer NOT NULL,
-    player_id integer NOT NULL,
-    guild_tag text,
-    damage_dealt integer DEFAULT 0,
-    cycles_survived integer DEFAULT 0,
-    updated_at timestamp with time zone DEFAULT now()
-);
-
-CREATE TABLE boss_deployments (
-    id integer NOT NULL,
-    boss_id integer,
-    player_id integer,
-    nine_id integer,
-    guild_tag text,
-    current_hp integer DEFAULT 20,
-    max_hp integer DEFAULT 20,
-    base_atk integer DEFAULT 3,
-    base_spd integer DEFAULT 5,
-    card_id integer,
-    is_active boolean DEFAULT true,
-    deployed_at timestamp with time zone DEFAULT now()
-);
-
-CREATE TABLE boss_fights (
-    id integer NOT NULL,
-    boss_name text NOT NULL,
-    total_hp integer DEFAULT 10000 NOT NULL,
-    current_hp integer DEFAULT 10000 NOT NULL,
-    phase integer DEFAULT 1,
-    is_active boolean DEFAULT true,
-    started_at timestamp with time zone DEFAULT now(),
-    ends_at timestamp with time zone
-);
-
 CREATE TABLE bounties (
     id integer NOT NULL,
     target_player_id integer NOT NULL,
@@ -109,7 +73,6 @@ CREATE TABLE casts (
     target_player_id integer,
     zone_id integer,
     tweet_id character varying,
-    mana_cost integer DEFAULT 1,
     points_earned integer DEFAULT 0,
     created_at timestamp with time zone DEFAULT now(),
     school_position integer,
@@ -193,7 +156,6 @@ CREATE TABLE daily_quests (
     target integer DEFAULT 1,
     progress integer DEFAULT 0,
     completed boolean DEFAULT false,
-    reward_mana integer DEFAULT 0,
     reward_points integer DEFAULT 0,
     created_at timestamp with time zone DEFAULT now()
 );
@@ -265,14 +227,6 @@ CREATE TABLE events (
     starts_at timestamp with time zone DEFAULT now(),
     ends_at timestamp with time zone,
     is_active boolean DEFAULT true
-);
-
-CREATE TABLE gauntlet_runs (
-    id bigint NOT NULL,
-    player_id text NOT NULL,
-    run_date date DEFAULT 'CURRENT_DATE' NOT NULL,
-    highest_floor integer DEFAULT 0 NOT NULL,
-    created_at timestamp with time zone DEFAULT now()
 );
 
 CREATE TABLE guild_clashes (
@@ -425,7 +379,6 @@ CREATE TABLE nfts (
     total_attack integer DEFAULT 10,
     total_defense integer DEFAULT 10,
     total_speed integer DEFAULT 10,
-    total_mana integer DEFAULT 10,
     power_rating integer DEFAULT 100,
     created_at timestamp without time zone DEFAULT now(),
     updated_at timestamp without time zone DEFAULT now()
@@ -526,7 +479,6 @@ CREATE TABLE player_quests (
     progress integer DEFAULT 0,
     completed boolean DEFAULT false,
     reward_claimed boolean DEFAULT false,
-    reward_mana integer DEFAULT 0,
     reward_points integer DEFAULT 0,
     created_at timestamp with time zone DEFAULT now()
 );
@@ -563,7 +515,6 @@ CREATE TABLE players (
     wallet_address character varying,
     school_id integer,
     guild_tag character varying,
-    mana integer DEFAULT 3,
     lifetime_points integer DEFAULT 0,
     seasonal_points integer DEFAULT 0,
     created_at timestamp with time zone DEFAULT now(),
@@ -574,11 +525,9 @@ CREATE TABLE players (
     duel_wins integer DEFAULT 0,
     duel_losses integer DEFAULT 0,
     lives_last_reset timestamp without time zone,
-    max_mana integer DEFAULT 7,
     arcane_energy integer DEFAULT 0,
     arcane_energy_today integer DEFAULT 0,
     streak integer DEFAULT 0,
-    last_mana_regen timestamp with time zone DEFAULT now(),
     duel_elo integer DEFAULT 1000,
     season_points integer DEFAULT 0
 );
@@ -685,7 +634,6 @@ CREATE TABLE traits (
     stat_attack integer DEFAULT 0,
     stat_defense integer DEFAULT 0,
     stat_speed integer DEFAULT 0,
-    stat_mana integer DEFAULT 0,
     element character varying,
     element_bonus integer DEFAULT 0,
     special_ability character varying,
@@ -819,13 +767,10 @@ CREATE TABLE zones (
 );
 
 -- ---------------------------------------------------------------------
--- PRIMARY KEYS (59)
+-- PRIMARY KEYS (55)
 -- ---------------------------------------------------------------------
 
 ALTER TABLE battles ADD CONSTRAINT battles_pkey PRIMARY KEY (id);
-ALTER TABLE boss_contributions ADD CONSTRAINT boss_contributions_pkey PRIMARY KEY (id);
-ALTER TABLE boss_deployments ADD CONSTRAINT boss_deployments_pkey PRIMARY KEY (id);
-ALTER TABLE boss_fights ADD CONSTRAINT boss_fights_pkey PRIMARY KEY (id);
 ALTER TABLE bounties ADD CONSTRAINT bounties_pkey PRIMARY KEY (id);
 ALTER TABLE bounty_damage ADD CONSTRAINT bounty_damage_pkey PRIMARY KEY (id);
 ALTER TABLE card_durability_log ADD CONSTRAINT card_durability_log_pkey PRIMARY KEY (id);
@@ -844,7 +789,6 @@ ALTER TABLE duel_history ADD CONSTRAINT duel_history_pkey PRIMARY KEY (id);
 ALTER TABLE duels ADD CONSTRAINT duels_pkey PRIMARY KEY (id);
 ALTER TABLE effect_definitions ADD CONSTRAINT effect_definitions_pkey PRIMARY KEY (id);
 ALTER TABLE events ADD CONSTRAINT events_pkey PRIMARY KEY (id);
-ALTER TABLE gauntlet_runs ADD CONSTRAINT gauntlet_runs_pkey PRIMARY KEY (id);
 ALTER TABLE guild_clashes ADD CONSTRAINT guild_clashes_pkey PRIMARY KEY (id);
 ALTER TABLE guilds ADD CONSTRAINT guilds_pkey PRIMARY KEY (id);
 ALTER TABLE house_alliances ADD CONSTRAINT house_alliances_pkey PRIMARY KEY (house_id);
@@ -883,16 +827,12 @@ ALTER TABLE zone_influence_history ADD CONSTRAINT zone_influence_history_pkey PR
 ALTER TABLE zones ADD CONSTRAINT zones_pkey PRIMARY KEY (id);
 
 -- ---------------------------------------------------------------------
--- FOREIGN KEYS (62)
+-- FOREIGN KEYS (58)
 -- ---------------------------------------------------------------------
 
 ALTER TABLE battles ADD CONSTRAINT battles_challenger_nft_id_fkey FOREIGN KEY (challenger_nft_id) REFERENCES nfts(id);
 ALTER TABLE battles ADD CONSTRAINT battles_defender_nft_id_fkey FOREIGN KEY (defender_nft_id) REFERENCES nfts(id);
 ALTER TABLE battles ADD CONSTRAINT battles_winner_nft_id_fkey FOREIGN KEY (winner_nft_id) REFERENCES nfts(id);
-ALTER TABLE boss_contributions ADD CONSTRAINT boss_contributions_boss_id_fkey FOREIGN KEY (boss_id) REFERENCES boss_fights(id);
-ALTER TABLE boss_contributions ADD CONSTRAINT boss_contributions_player_id_fkey FOREIGN KEY (player_id) REFERENCES players(id);
-ALTER TABLE boss_deployments ADD CONSTRAINT boss_deployments_boss_id_fkey FOREIGN KEY (boss_id) REFERENCES boss_fights(id);
-ALTER TABLE boss_deployments ADD CONSTRAINT boss_deployments_player_id_fkey FOREIGN KEY (player_id) REFERENCES players(id);
 ALTER TABLE bounties ADD CONSTRAINT bounties_target_player_id_fkey FOREIGN KEY (target_player_id) REFERENCES players(id);
 ALTER TABLE bounty_damage ADD CONSTRAINT bounty_damage_bounty_id_fkey FOREIGN KEY (bounty_id) REFERENCES bounties(id);
 ALTER TABLE bounty_damage ADD CONSTRAINT bounty_damage_attacker_id_fkey FOREIGN KEY (attacker_id) REFERENCES players(id);

@@ -51,12 +51,6 @@ router.post('/action', async (req, res) => {
       return res.status(404).json({ error: 'Player not found' });
     }
 
-    if (player.mana < 1) {
-      return res
-        .status(400)
-        .json({ error: 'Not enough mana', mana_remaining: 0 });
-    }
-
     // Get zone
     const { data: zone, error: zoneError } = await supabase
       .from('zones')
@@ -142,25 +136,11 @@ router.post('/action', async (req, res) => {
       };
     }
 
-    // Check mana cost
-    const manaCost = card.cost || 1;
-    if (player.mana < manaCost) {
-      return res.status(400).json({
-        error:
-          'Not enough mana. Card costs ' +
-          manaCost +
-          ' MP, you have ' +
-          player.mana,
-        mana_remaining: player.mana,
-      });
-    }
-
     // ─── PROCESS EFFECTS ───
     let effectResult = {
       powerModifier: 1.0,
       bonusPoints: 0,
       effectsApplied: [],
-      manaRefund: 0,
       extraInfluence: 0,
     };
 
@@ -190,19 +170,6 @@ router.post('/action', async (req, res) => {
 
     const finalPoints = Math.round(scoreResult.totalPoints * multiplier);
     const finalPower = Math.round(scoreResult.totalPower * multiplier);
-
-    // ─── DEDUCT MANA (minus any HASTE refund) ───
-    const actualManaCost = Math.max(
-      0,
-      manaCost - (effectResult.manaRefund || 0),
-    );
-    const newMana = player.mana - actualManaCost;
-
-    // Deduct mana
-    await supabaseAdmin
-      .from('players')
-      .update({ mana: newMana })
-      .eq('id', player_id);
 
     // ─── RECORD ACTION ───
     const actionInsert = {
@@ -236,11 +203,6 @@ router.post('/action', async (req, res) => {
       .single();
 
     if (actionError) {
-      // Refund mana on failure
-      await supabaseAdmin
-        .from('players')
-        .update({ mana: player.mana })
-        .eq('id', player_id);
       console.error('Territory action insert error:', actionError);
       return res.status(500).json({ error: 'Failed to record action' });
     }
@@ -256,7 +218,7 @@ router.post('/action', async (req, res) => {
     // }
 
     // ─── UPDATE PLAYER POINTS ───
-    let totalPointsAwarded = finalPoints;
+    const totalPointsAwarded = finalPoints;
 
     await supabaseAdmin
       .from('players')
@@ -266,32 +228,16 @@ router.post('/action', async (req, res) => {
       })
       .eq('id', player_id);
 
-    // ─── ALL MANA SPENT BONUS ───
-    let allManaBonus = 0;
-    if (newMana === 0) {
-      allManaBonus = 10;
-      totalPointsAwarded += allManaBonus;
-
+    // Mark today's daily_hand as active so it's eligible for the 00:05 upgrade roll.
+    // Legacy flag name: was gated on mana exhaustion; now fires on any cast.
+    try {
       await supabaseAdmin
-        .from('players')
-        .update({
-          seasonal_points:
-            (player.seasonal_points || 0) + finalPoints + allManaBonus,
-          lifetime_points:
-            (player.lifetime_points || 0) + finalPoints + allManaBonus,
-        })
-        .eq('id', player_id);
-
-      // Update daily hand if it exists
-      try {
-        await supabaseAdmin
-          .from('daily_hands')
-          .update({ all_mana_spent: true })
-          .eq('player_id', player_id)
-          .eq('game_day', today);
-      } catch (e) {
-        /* daily_hands might not exist yet */
-      }
+        .from('daily_hands')
+        .update({ all_mana_spent: true })
+        .eq('player_id', player_id)
+        .eq('game_day', today);
+    } catch (e) {
+      /* daily_hands might not exist yet */
     }
 
     // ─── UPDATE ZONE INFLUENCE ───
@@ -324,8 +270,6 @@ router.post('/action', async (req, res) => {
     });
     if (appliedEffects.length > 0)
       message += ' — ' + appliedEffects.length + ' effect(s)!';
-    if (allManaBonus > 0)
-      message += ' 🔥 All mana bonus +' + allManaBonus + '!';
     if (combos.length > 0) message += ' ✨ ' + combos[0].label + '!';
 
     // ─── RESPOND ───
@@ -334,8 +278,6 @@ router.post('/action', async (req, res) => {
       action,
       message,
       points_earned: totalPointsAwarded,
-      mana_remaining: newMana,
-      mana_cost: actualManaCost,
       is_objective: zone.is_current_objective,
       multiplier: multiplier,
       // V2 scoring breakdown (frontend uses when ready)
@@ -352,7 +294,6 @@ router.post('/action', async (req, res) => {
         affinity_mult: scoreResult.affinityMult,
         effect_bonus: scoreResult.effectBonus,
         zone_multiplier: multiplier,
-        all_mana_bonus: allManaBonus,
         total: totalPointsAwarded,
       },
       effects: effectResult.effectsApplied,

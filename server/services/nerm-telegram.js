@@ -177,7 +177,6 @@ const CONFIG = {
     'manastorm',
     'plaguemire',
     'chronicle',
-    'gauntlet',
     'spell card',
   ],
 };
@@ -844,9 +843,7 @@ VOICE:
     'manastorm',
     'plaguemire',
     'chronicle',
-    'gauntlet',
     'duel',
-    'boss',
     'guild',
     'nine lives',
     '9lv',

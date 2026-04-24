@@ -13,10 +13,8 @@ let narrativeEngine = null;
 let effectEngine = null;
 let packSystem = null;
 let supabase = null;
-let manaRegen = null;
 let nineSystem = null;
 let combatEngine = null;
-let bossEngine = null;
 let twitterBot = null;
 let nermBot = null;
 let dropTicketEngine = null;
@@ -65,12 +63,6 @@ try {
 } catch (e) {
   console.log('⚠️ combatEngine not loaded');
   captureBootFailure('./services/combatEngine', e);
-}
-try {
-  bossEngine = require('./bossEngine');
-} catch (e) {
-  console.log('⚠️ bossEngine not loaded');
-  captureBootFailure('./services/bossEngine', e);
 }
 try {
   nineSystem = require('./nineSystem');
@@ -202,44 +194,6 @@ function initializeScheduledJobs() {
 
   // V3 combat engine runs its own internal loop via startCombatEngine()
   // Old runCombatCycle cron removed — no longer needed
-
-  // ════════════════════════════════
-  // V3: BOSS SPAWN — Monday 00:30 UTC
-  // ════════════════════════════════
-  cron.schedule('30 0 * * 1', async () => {
-    try {
-      if (bossEngine) {
-        console.log(`[${ts()}] 👑 Spawning weekly boss...`);
-        const result = await bossEngine.spawnBoss();
-        console.log(
-          `[${ts()}] 👑 Boss spawn:`,
-          result.success ? result.boss?.name : result.error,
-        );
-        logJob('boss_spawn');
-      }
-    } catch (e) {
-      console.error('❌ Boss spawn error:', e.message);
-    }
-  });
-
-  // ════════════════════════════════
-  // V3: BOSS COMBAT — every 15 min
-  // ════════════════════════════════
-  cron.schedule('*/15 * * * *', async () => {
-    try {
-      if (bossEngine) {
-        const result = await bossEngine.bossCombatCycle();
-        if (!result.skipped) {
-          console.log(
-            `[${ts()}] 👑 Boss cycle: ${result.damage_dealt || 0} dmg, HP: ${result.boss_hp || 'defeated'}`,
-          );
-          logJob('boss_combat');
-        }
-      }
-    } catch (e) {
-      console.error('❌ Boss combat error:', e.message);
-    }
-  });
 
   // ════════════════════════════════
   // CARD UPGRADES — 00:05 UTC
@@ -501,8 +455,7 @@ function initializeScheduledJobs() {
   console.log(
     '🏦 Midnight:  00:00 banking + heal + drop tickets | 00:05 upgrades | 01:30 decay',
   );
-  console.log('⚔️  Combat:    */15 zone cycles + boss cycles');
-  console.log('👑 Boss:      Mon 00:30 spawn');
+  console.log('⚔️  Combat:    */15 zone cycles');
   console.log(
     '🎫 Tickets:   Midnight auto-roll (earned from Chronicle + login)',
   );

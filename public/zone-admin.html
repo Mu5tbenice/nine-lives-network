@@ -436,8 +436,7 @@ function buildSpellRow(s){
     +'<div class="field-group"><span class="field-label">SLUG</span><input class="admin-input admin-input--mono" value="'+esc(s.slug)+'" data-spell="'+s.id+'" data-field="slug" onchange="markSpell(\''+s.id+'\')"></div>'
     +'<div class="field-group"><span class="field-label">HOUSE</span><select class="admin-select" data-spell="'+s.id+'" data-field="house" onchange="markSpell(\''+s.id+'\')">'+houseOpts+'</select></div>'
     +'<div class="field-group"><span class="field-label">TYPE</span><select class="admin-select" data-spell="'+s.id+'" data-field="spell_type" onchange="markSpell(\''+s.id+'\')">'+typeOpts+'</select></div>'
-    +'<div class="field-group"><span class="field-label">TIER</span><select class="admin-select" data-spell="'+s.id+'" data-field="tier" onchange="markSpell(\''+s.id+'\')"><option value="0"'+(s.tier==0?' selected':'')+'>T0 — Basic</option><option value="1"'+(s.tier==1?' selected':'')+'>T1 — 1 MP</option><option value="2"'+(s.tier==2?' selected':'')+'>T2 — 2 MP</option><option value="3"'+(s.tier==3?' selected':'')+'>T3 — 3 MP</option></select></div>'
-    +'<div class="field-group"><span class="field-label">MANA COST</span><input type="number" class="admin-input" value="'+s.mana_cost+'" min="0" max="5" data-spell="'+s.id+'" data-field="mana_cost" onchange="markSpell(\''+s.id+'\')"></div>'
+    +'<div class="field-group"><span class="field-label">TIER</span><select class="admin-select" data-spell="'+s.id+'" data-field="tier" onchange="markSpell(\''+s.id+'\')"><option value="0"'+(s.tier==0?' selected':'')+'>T0 — Basic</option><option value="1"'+(s.tier==1?' selected':'')+'>T1</option><option value="2"'+(s.tier==2?' selected':'')+'>T2</option><option value="3"'+(s.tier==3?' selected':'')+'>T3</option></select></div>'
     +'<div class="field-group admin-card__grid--full"><span class="field-label">BASE EFFECT</span><input class="admin-input" value="'+esc(s.base_effect)+'" data-spell="'+s.id+'" data-field="base_effect" onchange="markSpell(\''+s.id+'\')"></div>'
     +'<div class="field-group"><span class="field-label">FLAVOR TEXT</span><input class="admin-input" value="'+esc(s.flavor_text||'')+'" data-spell="'+s.id+'" data-field="flavor_text" onchange="markSpell(\''+s.id+'\')"></div>'
     +'<div class="field-group"><span class="field-label">MOTTO</span><input class="admin-input" value="'+esc(s.motto||'')+'" data-spell="'+s.id+'" data-field="motto" onchange="markSpell(\''+s.id+'\')"></div>'
@@ -463,7 +462,7 @@ function collectSpellData(id){
   var data={};
   document.querySelectorAll('[data-spell="'+id+'"][data-field]').forEach(function(el){
     var f=el.dataset.field,v=el.value;
-    if(f==='tier'||f==='mana_cost')v=parseInt(v);
+    if(f==='tier')v=parseInt(v);
     data[f]=v;
   });
   var bonuses=[];
@@ -508,7 +507,7 @@ function removeBonus(id,idx){
 
 function createNewSpell(){
   var nid='new_'+Date.now();
-  allSpells.unshift({id:nid,name:'New Spell',slug:'new-spell',house:'universal',tier:1,mana_cost:1,spell_type:'attack',base_effect:'+10 influence',bonus_effects:[],flavor_text:'',motto:null,is_active:true,is_always_available:false,_isNew:true});
+  allSpells.unshift({id:nid,name:'New Spell',slug:'new-spell',house:'universal',tier:1,spell_type:'attack',base_effect:'+10 influence',bonus_effects:[],flavor_text:'',motto:null,is_active:true,is_always_available:false,_isNew:true});
   renderSpells();
   var el=document.getElementById('spell-'+nid);if(el)el.scrollIntoView({behavior:'smooth'});
 }

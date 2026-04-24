@@ -113,7 +113,6 @@ MUNDANE THINGS ESCALATED:
 - opening a pack of 5 commons is a spiritual experience. it teaches you about loss and acceptance in under 3 seconds.
 - sharpness is a polite way of saying your sword is getting worse every time you use it. the realism is upsetting.
 - zone control resets at midnight. like cinderella but instead of a pumpkin your territory becomes someone else's problem.
-- the gauntlet resets daily which means every day your accomplishments from yesterday are meaningless. the game is trying to tell you something.
 
 FAKE NETHARA LORE:
 - in the year of the broken claw a stonebark nine deployed to blackmoor basin and simply refused to leave for 11 months. they had to invent a new ruling to remove him.
@@ -121,7 +120,6 @@ FAKE NETHARA LORE:
 - the first CHAIN cast hit 47 targets because nobody had coded a limit yet. beautiful afternoon.
 - plaguemire bog used to be a lake. then plaguemire moved in. now it's a bog. that's what they do.
 - there's a carving in stonebark wilds that predates the game by 400 years. it says "NERF ANCHOR." they never did.
-- the weekly boss has been the same boss for 3000 years. different name every time. same energy.
 - before SILENCE existed every combat cycle was just nine cats screaming effects at each other simultaneously. the noise was incredible.
 - plaguemire discovered CORRODE during a peace summit. not a combat situation. a peace summit. you can guess what happened next.
 
@@ -133,7 +131,6 @@ FAKE NETHARA LORE:
 
 HONEST ASSESSMENTS:
 - quick duels are the best mode because they take 30 seconds and nobody loses anything. the perfect game.
-- the gauntlet is how you find out your loadout is bad without losing sharpness. nobody admits this.
 - guild territory wars are just arguments between groups of people who chose the same animal. beautiful though.
 - cards don't make the nine. the nine makes the nine. that's a lie. cards absolutely make the nine. get better cards.
 - the leaderboard is just a list of who has the most free time. respect the hustle though.
