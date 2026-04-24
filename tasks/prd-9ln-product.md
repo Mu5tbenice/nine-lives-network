@@ -2162,7 +2162,7 @@ Each PR ships with a ≤6-item smoke-test checklist on real phones at 390 / 414 
 
 **Partially resolved 2026-04-25 in PR #225 — tab unread badge on mobile Chat / Log: S._unreadMobChat + S._unreadMobLog counters, hooks in addFeedEvent + addBattleLog to bump when the tab is not active on ≤640, switchMobTab clears the counter on entry, `_updateUnreadBadge()` renders a red pill at top-right of the inactive tab button (99+ cap). Addresses item 11.**
 
-**Resolved 2026-04-25 in PR #? — fighter row identity dedupe: `[${f.guild}]` pill suppressed when guild starts with `@` (defaulted to player's handle) OR equals `f.name` (duplicate identity), so players without a real guild tag no longer render as e.g. `ALLWILL… [@allwillretire]`. Closes item 8. Card-name truncation (item 3) auto-resolved by PR B's tab-area width gain (verified no `…` on typical COUNTERSPELL / THUNDER GUARD / PHANTOM STEED card names post A–E batch, 2026-04-25). All twelve audit items now closed.**
+**Resolved 2026-04-25 in PR #226 — fighter row identity dedupe: `[${f.guild}]` pill suppressed when guild starts with `@` (defaulted to player's handle) OR equals `f.name` (duplicate identity), so players without a real guild tag no longer render as e.g. `ALLWILL… [@allwillretire]`. Closes item 8. Card-name truncation (item 3) auto-resolved by PR B's tab-area width gain (verified no `…` on typical COUNTERSPELL / THUNDER GUARD / PHANTOM STEED card names post A–E batch, 2026-04-25). All twelve audit items now closed.**
 
 
 
