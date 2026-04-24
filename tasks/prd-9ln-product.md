@@ -1992,6 +1992,20 @@ Combined egress reduction on the combat loop: ~20× (from ~10 req/sec per active
 
 ---
 
+### 9.85 HP sync batched upsert returns 400 — zone_deployments NOT NULL constraints fail
+
+**Symptom (surfaced 2026-04-24 after PR #205 production rollout).** Every ~8 seconds the combat engine's HP sync fires a `POST /rest/v1/zone_deployments?on_conflict=id&columns="id","current_hp"` — and every single one returns HTTP 400. Metrics path works (§9.84's RPC is clean), but HP is not being persisted to the DB at all. Combat still runs in-memory, so players don't see an immediate UX break, but any server restart loses HP state.
+
+**Root cause.** `zone_deployments` has NOT NULL columns (`player_id`, `nine_id`, `zone_id`, `guild_tag`, etc.). PostgREST's `.upsert()` translates to `INSERT ... ON CONFLICT DO UPDATE SET ...`, and it validates the payload against the INSERT shape — not the UPDATE shape — even when the row already exists. So sending just `{id, current_hp}` trips the NOT NULL check at request-parse time before the ON CONFLICT decision ever runs. This was a blind spot in the §9.84 design.
+
+**Effect.** Medium. HP sync silently fails; other than lost HP on restart, no visible break because Socket.io broadcasts keep the UI showing live state.
+
+**Resolution plan.** Revert HP sync to per-Nine `.update()` but run the N updates in parallel via `Promise.all` rather than sequentially — still N round-trips but ~N× faster than the old await-in-loop. HP sync only fires every 8s (tick % 40) with ~4 active Nines, so the incremental egress is ~0.5 req/sec — not a hotspot. A proper fix (Postgres RPC that does batch UPDATE WHERE id IN (...)) is possible if this becomes a real bottleneck; deferred as low-value.
+
+**Resolved 2026-04-24 in PR #?.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.

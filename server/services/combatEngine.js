@@ -1252,21 +1252,33 @@ async function tickZone(zoneId, zs) {
 
   broadcastArenaPositions(zoneId, zs);
 
-  // §9.84: HP sync every 40 ticks, batched into ONE upsert instead of a
-  // sequential await per nine. Single round-trip regardless of zone size.
+  // §9.84 / §9.85: HP sync every 40 ticks. The batched `.upsert()` approach
+  // we shipped in #205 400s against PostgREST because zone_deployments has
+  // NOT NULL columns (player_id, nine_id, zone_id, ...) that aren't in the
+  // sync payload — PostgREST treats upserts as INSERT-with-DO-UPDATE and
+  // validates NOT NULL on the INSERT path even when every id exists.
+  //
+  // Falling back to per-Nine .update() but running them in parallel via
+  // Promise.all (not sequential awaits). Still N round-trips for N Nines
+  // but ~N× faster than the original await loop. Revisit with a Postgres
+  // RPC if this becomes a real bottleneck (only fires every 8s; small).
   if (zs.tick % 40 === 0) {
     const nineArr = Array.from(zs.nines.values());
     if (nineArr.length > 0) {
-      const rows = nineArr.map((n) => ({
-        id: n.deploymentId,
-        current_hp: Math.max(0, Math.round(n.hp)),
-      }));
-      supabaseAdmin
-        .from('zone_deployments')
-        .upsert(rows, { onConflict: 'id' })
-        .then(({ error }) => {
-          if (error) console.error('❌ HP sync:', error.message);
-        });
+      Promise.all(
+        nineArr.map((n) =>
+          supabaseAdmin
+            .from('zone_deployments')
+            .update({ current_hp: Math.max(0, Math.round(n.hp)) })
+            .eq('id', n.deploymentId),
+        ),
+      )
+        .then((results) => {
+          for (const { error } of results) {
+            if (error) console.error('❌ HP sync:', error.message);
+          }
+        })
+        .catch((e) => console.error('❌ HP sync outer:', e.message));
     }
   }
 
