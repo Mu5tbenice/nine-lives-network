@@ -1143,6 +1143,21 @@
       .hud-stat-val   { font-size:14px !important; min-width:36px !important; text-align:right; flex-shrink:0; line-height:1.2; }
       .hud-stat-track { flex:1 !important; height:7px !important; }
 
+      /* §9.90 PR F item 9: battle log row legibility.
+         Container had font-size:14px but individual `.log-entry` rows
+         have their own CSS declaration at 12px Crimson, which won by
+         specificity — so mobile log rendered at 12px despite the
+         container rule. Explicit child selector bumps rows to 15px
+         with breathing-room line-height + row padding. Color stays
+         as-is so the log-ko / log-spell / log-heal variants keep
+         their meaning. */
+      #mob-tab-log .log-entry {
+        font-size: 15px !important;
+        line-height: 1.5 !important;
+        padding: 5px 0 !important;
+        border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+      }
+
       /* Chat — 14px Crimson body floor.
          §9.90 PR D item 12: chat send button now has a proper button
          treatment — gold-outlined pill with a clear glyph — instead of
@@ -1213,8 +1228,14 @@
         white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
         max-width:120px; flex-shrink:1;
       }
-      .nerm-bubble-container { top:52px;left:50%;transform:translateX(-50%);bottom:auto;right:auto;max-width:calc(100% - 20px);z-index:55; }
-      .nerm-bubble { min-width:0;max-width:260px;font-size:14px;padding:8px 12px; }
+      /* §9.90 PR F item 10: Nerm bubble mobile positioning.
+         Was at top:52px which risked overlap with the post-PR-A single-
+         line top bar. Moved to top:74px (clear of top-bar + small gap)
+         and bumped z-index to 65 so nothing in the canvas can hide her.
+         Max-width widened 260→320 to match the now full-width mobile
+         layout so her commentary doesn't feel squeezed. */
+      .nerm-bubble-container { top:74px;left:50%;transform:translateX(-50%);bottom:auto;right:auto;max-width:calc(100% - 20px);z-index:65; }
+      .nerm-bubble { min-width:0;max-width:320px;font-size:14px;padding:8px 12px; }
 
       /* Deploy CTA */
       .arena-deploy-cta { top:27%;left:50%;transform:translate(-50%,-50%); }
