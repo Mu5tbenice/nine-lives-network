@@ -5696,7 +5696,7 @@
         <div style="display:flex;align-items:center;gap:7px;margin-bottom:5px;">
           <div style="width:8px;height:8px;border-radius:50%;background:${hc};box-shadow:0 0 6px ${hc};flex-shrink:0;margin-top:1px;"></div>
           <div style="font-family:'Cinzel',serif;font-size:15px;font-weight:700;color:${f.isMe?'var(--gold)':'var(--bright)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;line-height:1.2;">${f.name}</div>
-          ${f.guild && f.guild !== 'lone_wolf' && !f.guild.startsWith('lone_wolf') ?`<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:${hc};opacity:0.7;flex-shrink:0;">[${f.guild}]</div>`:''}
+          ${f.guild && f.guild !== 'lone_wolf' && !f.guild.startsWith('lone_wolf') && !f.guild.startsWith('@') && f.guild !== f.name ?`<div style="font-family:'Press Start 2P',monospace;font-size:7px;color:${hc};opacity:0.7;flex-shrink:0;">[${f.guild}]</div>`:''}
           <div data-fighter-hp-num style="font-family:'Press Start 2P',monospace;font-size:9px;color:${hpC};flex-shrink:0;">${Math.round(f.hp)}</div>
         </div>
         <div style="height:4px;background:rgba(0,0,0,0.4);border-radius:2px;overflow:hidden;margin-bottom:5px;">
