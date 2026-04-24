@@ -856,6 +856,8 @@ One-off scripts at root (should move to `scripts/` or delete after migration): `
 
 **Resolution:** Either (a) delete V5 entirely (it's dead); or (b) a feature PRD migrates combatEngine.js → arena-engine.js. Carrying both is pure cost.
 
+**Resolved 2026-04-24 in PR #207.** Deleted — option (a). Verified orphan chain: `server/services/arena-engine.js` was only required by `server/services/arena-sockets.js`, which was itself not required anywhere; the parallel `server/routes/arena.js` existed but was never mounted in `index.js` (live arena runs via `io.of('/arena')` inline in `server/index.js` driving `services/combatEngine.js`). No frontend calls to `/api/arena/*`. Removed all three files: `server/services/arena-engine.js` (1636 lines), `server/services/arena-sockets.js` (199 lines), `server/routes/arena.js` (320 lines) — ~2155 lines of dead code. Boot-tested clean.
+
 ### 9.12 React scaffold — retain or remove? → decide
 
 `/client/` is a complete Vite+React+shadcn scaffold with a two-route placeholder app. It contributes ~40 component files and a parallel dependency graph (React 19, Tailwind, drizzle-kit, @vitejs/plugin-react) for zero shipped features.
