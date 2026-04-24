@@ -84,7 +84,7 @@ Note: `server/jobs/scheduler.js` exists AND `server/services/scheduler.js` exist
 - **The V4 "middle" is missing.** `EFFECTS_REFERENCE_V5.md` names `CARD_STATS_V4.md` and `9LV_GAME_DESIGN_V4.md` as companion documents. Neither file is in the repo. There was clearly a V4 design layer that has either been deleted or never committed. `patch-game-modes-v4.py` and `card-v4-reference.jsx` at repo root are leftover artifacts of that phase.
 - **Game Bible says V3 combat; Effects Ref says V5 effects.** Not necessarily a contradiction (combat model ≠ effect catalog) but a reader has to know that to avoid being misled. Nothing in either document says "effects V5 is the counterpart to combat V3" — you have to infer.
 - **No V6 document exists anywhere.** Yet `server/index.js:306` announces `"Combat engine started — V6 wave combat, 30s buffer"` on boot. See §4.
-- **Naming drift across docs.** `README.md` calls the nine factions "schools" with names like *Ember Covenant*, *Tidal Conclave*. The Game Bible calls them "houses" with names like *Stormrage*, *Smoulders*, *Stonebark*. `ADMIN_COMMANDS.md` uses the README names. The DB-seeded names (`database/seeds/schools.sql`) will determine which is actually live — worth verifying. This is a content conflict, not a version conflict, but it will confuse anyone reading only some of the docs.
+- ~~**Naming drift across docs.**~~ Resolved in PR #208 (§9.10): verified live `houses` table uses canon names (Smoulders / Darktide / Stonebark / Ashenvale / Stormrage / Nighthollow / Dawnbringer / Manastorm / Plaguemire). Legacy seed files (`database/seeds/*`) deleted. Current README has no legacy names.
 
 ### Best guess at what's authoritative
 
@@ -137,7 +137,7 @@ Both sites use `try { require(...) } catch {}` patterns, so the server boots wit
 ### Database schema integrity
 
 - **`database/schema.sql` is effectively empty.** The file is 5 bytes and contains the literal string `s.sql\n`. This is the primary schema file the project claims to ship. The actual schema lives in Supabase (cloud) and is invisible to anyone cloning the repo.
-- `database/seeds/` contains `schools.sql`, `spells.sql`, `zones.sql` (intact).
+- ~~`database/seeds/` contains `schools.sql`, `spells.sql`, `zones.sql` (intact).~~ Deleted in PR #208 (§9.10) — non-functional (fewer factions than canon, referenced dropped `mana_cost` column).
 - Server code references ~45 tables via `supabase.from(...)` including `players`, `zones`, `casts`, `duels`, `player_cards`, `zone_card_slots`, `zone_deployments`, `boss_fights`, `chronicle_acts`, `narrative_raids`, `guilds`, `houses`, `items`, `spells`, `drop_tickets`, `player_quests`, `point_log`, etc. Cross-checking them against schema is **not possible locally** because `schema.sql` is gone. Any new contributor cannot reproduce the DB without Supabase access.
 
 ---
