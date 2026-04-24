@@ -1950,7 +1950,7 @@ Kept the intermission `return;` intact: combat mutation code ABOVE the intermiss
 
 **Resolution plan.** Remove `mana,` from the SELECT list and `mana: 7,` from the INSERT payload. One-line pair. No schema change.
 
-**Resolved 2026-04-24 in PR #?.**
+**Resolved 2026-04-24 in PR #204.**
 
 ---
 
