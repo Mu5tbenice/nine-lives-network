@@ -1,0 +1,632 @@
+import os
+import random
+import math
+import tkinter as tk
+from tkinter import ttk
+from PIL import Image, ImageTk, ImageChops, ImageFilter
+
+class SpriteViewerApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Real-Time Animated Sprite Engine")
+        self.root.geometry("1200x850") 
+        
+        self.is_spinning = False
+        self.is_wandering = False
+        
+        # --- GAME STATE ---
+        self.in_game = False
+        self.hp = 100
+        self.score = 0
+        self.enemies = []
+        self.projectiles = []
+        self.keys = {'w': False, 'a': False, 's': False, 'd': False}
+        
+        # Auto-Shooter & Spawner Timers
+        self.shoot_cooldown = 0
+        self.spawn_timer = 50
+        self.spawn_interval = 60 # Starting spawn rate (gets faster over time)
+
+        # Spatial Coordinates & Animation Clocks
+        self.char_x = 450
+        self.char_y = 400
+        self.dx = 0
+        self.dy = 0
+        self.steps_remaining = 0
+        self.aura_tick = 0.0 
+        self.current_frame_idx = 0
+        self.anim_frames = [] 
+
+        # Movement Mapping (8-way direction)
+        self.angle_vectors = {
+            "000": (0, 1),    "045": (1, 1),    "090": (1, 0),    "135": (1, -1),
+            "180": (0, -1),   "225": (-1, -1),  "270": (-1, 0),   "315": (-1, 1)
+        }
+
+        self.folders = {
+            "animated": "ANIMATED", "base": "BASE", "outfits": "OUTFITS", 
+            "hats": "HATSHEADWEAR", "weapons": "WEAPONSHOLDING", "facial": "FACIAL"
+        }
+        self.angles = ["000", "045", "090", "135", "180", "225", "270", "315"]
+        self.current_angle = tk.StringVar(value="000")
+        self.default_layers = ["Hat", "Facial", "Weapon", "Outfit", "Base"]
+
+        self.setup_ui()
+        self.refresh_folders()
+        
+        # Keyboard bindings for the game
+        self.root.bind('<KeyPress>', self.key_press)
+        self.root.bind('<KeyRelease>', self.key_release)
+        
+        self.root.update_idletasks() 
+        self.global_animation_tick()
+
+    def setup_ui(self):
+        # --- CONTROL PANEL (Split into 2 Columns) ---
+        control_frame = tk.Frame(self.root, padx=10, pady=10)
+        control_frame.pack(side=tk.LEFT, fill=tk.Y)
+        
+        col1 = tk.Frame(control_frame, width=220)
+        col1.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        
+        col2 = tk.Frame(control_frame, width=220)
+        col2.pack(side=tk.LEFT, fill=tk.Y)
+
+        # ====== COLUMN 1 ======
+        comp_frame = tk.LabelFrame(col1, text="Equip Components", padx=5, pady=5)
+        comp_frame.pack(fill=tk.X, pady=(0, 5))
+
+        tk.Label(comp_frame, text="Outfit:").pack(anchor=tk.W)
+        self.combo_outfit = ttk.Combobox(comp_frame, state="readonly")
+        self.combo_outfit.pack(fill=tk.X)
+        self.combo_outfit.bind("<<ComboboxSelected>>", self.update_preview)
+
+        tk.Label(comp_frame, text="Weapon:").pack(anchor=tk.W)
+        self.combo_weapon = ttk.Combobox(comp_frame, state="readonly")
+        self.combo_weapon.pack(fill=tk.X)
+        self.combo_weapon.bind("<<ComboboxSelected>>", self.update_preview)
+
+        tk.Label(comp_frame, text="Headwear:").pack(anchor=tk.W)
+        self.combo_hat = ttk.Combobox(comp_frame, state="readonly")
+        self.combo_hat.pack(fill=tk.X)
+        self.combo_hat.bind("<<ComboboxSelected>>", self.update_preview)
+
+        tk.Label(comp_frame, text="Facial:").pack(anchor=tk.W)
+        self.combo_facial = ttk.Combobox(comp_frame, state="readonly")
+        self.combo_facial.pack(fill=tk.X)
+        self.combo_facial.bind("<<ComboboxSelected>>", self.update_preview)
+
+        layer_frame = tk.LabelFrame(col1, text="Layer Order", padx=5, pady=5)
+        layer_frame.pack(fill=tk.X, pady=(0, 5))
+
+        self.layer_listbox = tk.Listbox(layer_frame, height=5, selectmode=tk.SINGLE, font=("Arial", 10))
+        self.layer_listbox.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        for layer in self.default_layers: self.layer_listbox.insert(tk.END, layer)
+        self.layer_listbox.bind("<<ListboxSelect>>", lambda e: self.update_preview())
+
+        btn_frame = tk.Frame(layer_frame)
+        btn_frame.pack(side=tk.RIGHT, padx=5)
+        tk.Button(btn_frame, text="▲ Up", command=self.move_layer_up, width=4).pack(pady=2)
+        tk.Button(btn_frame, text="▼ Dn", command=self.move_layer_down, width=4).pack(pady=2)
+
+        color_frame = tk.LabelFrame(col1, text="Base Skin Tint", padx=5, pady=5)
+        color_frame.pack(fill=tk.X, pady=(0, 5))
+        self.r_var, self.g_var, self.b_var = tk.IntVar(value=255), tk.IntVar(value=224), tk.IntVar(value=189)
+        tk.Scale(color_frame, variable=self.r_var, from_=0, to=255, orient=tk.HORIZONTAL, command=self.update_preview, bg="#ffcccc", length=100, showvalue=0).pack(fill=tk.X, pady=1)
+        tk.Scale(color_frame, variable=self.g_var, from_=0, to=255, orient=tk.HORIZONTAL, command=self.update_preview, bg="#ccffcc", length=100, showvalue=0).pack(fill=tk.X, pady=1)
+        tk.Scale(color_frame, variable=self.b_var, from_=0, to=255, orient=tk.HORIZONTAL, command=self.update_preview, bg="#ccccff", length=100, showvalue=0).pack(fill=tk.X, pady=1)
+
+        # ====== COLUMN 2 ======
+        aura_frame = tk.LabelFrame(col2, text="Magic Aura (Pulsing)", padx=5, pady=5)
+        aura_frame.pack(fill=tk.X, pady=(0, 5))
+        
+        self.aura_enabled = tk.BooleanVar(value=False)
+        tk.Checkbutton(aura_frame, text="Enable Aura", variable=self.aura_enabled, command=self.update_preview).pack(anchor=tk.W)
+        
+        self.ar_var, self.ag_var, self.ab_var = tk.IntVar(value=150), tk.IntVar(value=0), tk.IntVar(value=255)
+        tk.Scale(aura_frame, variable=self.ar_var, from_=0, to=255, orient=tk.HORIZONTAL, command=self.update_preview, bg="#ffcccc", length=100, showvalue=0).pack(fill=tk.X, pady=1)
+        tk.Scale(aura_frame, variable=self.ag_var, from_=0, to=255, orient=tk.HORIZONTAL, command=self.update_preview, bg="#ccffcc", length=100, showvalue=0).pack(fill=tk.X, pady=1)
+        tk.Scale(aura_frame, variable=self.ab_var, from_=0, to=255, orient=tk.HORIZONTAL, command=self.update_preview, bg="#ccccff", length=100, showvalue=0).pack(fill=tk.X, pady=1)
+
+        tk.Label(col2, text="Zoom Level:").pack(anchor=tk.W)
+        self.zoom_slider = tk.Scale(col2, from_=0.25, to=5.0, resolution=0.25, orient=tk.HORIZONTAL, command=self.update_preview)
+        self.zoom_slider.set(2.0)
+        self.zoom_slider.pack(fill=tk.X)
+
+        tk.Label(col2, text="Movement Speed:").pack(anchor=tk.W)
+        self.speed_slider = tk.Scale(col2, from_=1, to=30, orient=tk.HORIZONTAL)
+        self.speed_slider.set(10)
+        self.speed_slider.pack(fill=tk.X)
+
+        anim_frame = tk.Frame(col2)
+        anim_frame.pack(fill=tk.X, pady=(10, 0))
+        self.spin_button = tk.Button(anim_frame, text="↻ Spin", command=self.toggle_spin, bg="#4CAF50", fg="white", font=("Arial", 9, "bold"))
+        self.spin_button.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 2))
+        self.wander_button = tk.Button(anim_frame, text="🚶 Wander", command=self.toggle_wander, bg="#9C27B0", fg="white", font=("Arial", 9, "bold"))
+        self.wander_button.pack(side=tk.RIGHT, fill=tk.X, expand=True, padx=(2, 0))
+
+        # --- GAME START BUTTON ---
+        self.game_btn = tk.Button(col2, text="🎮 Play Mini-Game", command=self.start_game, bg="#E91E63", fg="white", font=("Arial", 10, "bold"))
+        self.game_btn.pack(fill=tk.X, pady=(10, 0))
+
+        export_frame = tk.LabelFrame(col2, text="Compilation Tools", padx=5, pady=5)
+        export_frame.pack(fill=tk.X, pady=(10, 0))
+        self.export_gif_btn = tk.Button(export_frame, text="💾 Export Anim. GIF", command=self.export_anim_gif, bg="#2196F3", fg="white", font=("Arial", 9, "bold"))
+        self.export_gif_btn.pack(fill=tk.X, pady=2)
+        self.export_sheet_btn = tk.Button(export_frame, text="🗺️ Export Sprite Sheet", command=self.export_spritesheet, bg="#FF9800", fg="white", font=("Arial", 9, "bold"))
+        self.export_sheet_btn.pack(fill=tk.X, pady=2)
+        
+        self.status_label = tk.Label(col2, text="", fg="green")
+        self.status_label.pack()
+
+        # --- RIGHT PANEL (2D Game Canvas) ---
+        preview_frame = tk.Frame(self.root, bg="#121212", bd=2, relief=tk.SUNKEN)
+        preview_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.canvas = tk.Canvas(preview_frame, bg="#121212", highlightthickness=0)
+        self.canvas.pack(fill=tk.BOTH, expand=True)
+
+    # --- UI & FOLDER LOGIC ---
+    def move_layer_up(self):
+        idx = self.layer_listbox.curselection()
+        if not idx or idx[0] == 0: return 
+        val = self.layer_listbox.get(idx[0])
+        self.layer_listbox.delete(idx[0])
+        self.layer_listbox.insert(idx[0] - 1, val)
+        self.layer_listbox.selection_set(idx[0] - 1)
+        self.update_preview()
+
+    def move_layer_down(self):
+        idx = self.layer_listbox.curselection()
+        if not idx or idx[0] == self.layer_listbox.size() - 1: return 
+        val = self.layer_listbox.get(idx[0])
+        self.layer_listbox.delete(idx[0])
+        self.layer_listbox.insert(idx[0] + 1, val)
+        self.layer_listbox.selection_set(idx[0] + 1)
+        self.update_preview()
+
+    def refresh_folders(self):
+        def get_prefixes(folder):
+            if not os.path.exists(folder): return []
+            return [f.rsplit("_", 1)[0] for f in os.listdir(folder) if f.endswith("000.png")]
+
+        self.outfits = ["None"] + get_prefixes(self.folders["outfits"])
+        self.hats = ["None"] + get_prefixes(self.folders["hats"])
+        self.weapons = ["None"] + get_prefixes(self.folders["weapons"])
+        self.facials = ["None"] + get_prefixes(self.folders["facial"])
+
+        self.combo_outfit['values'] = [o.replace("OUTFITS_", "") for o in self.outfits]
+        self.combo_hat['values'] = [h.replace("HATSHEADWEAR_", "") for h in self.hats]
+        self.combo_weapon['values'] = [w.replace("WEAPONSHOLDING_", "") for w in self.weapons]
+        self.combo_facial['values'] = [f.replace("FACIAL_", "") for f in self.facials]
+
+        self.combo_outfit.current(0); self.combo_hat.current(0)
+        self.combo_weapon.current(0); self.combo_facial.current(0)
+
+        if os.path.exists(self.folders["animated"]):
+            files = os.listdir(self.folders["animated"])
+            frames = set([f.split("_")[-1].replace(".png", "") for f in files if "000" in f and "_f" in f])
+            self.anim_frames = sorted(list(frames))
+        else:
+            self.anim_frames = []
+            
+        if not self.anim_frames: self.anim_frames = [""] 
+        self.update_preview()
+
+    # --- GAMEPLAY ENGINE ---
+    def key_press(self, event):
+        key = event.keysym.lower()
+        if key in self.keys: self.keys[key] = True
+
+    def key_release(self, event):
+        key = event.keysym.lower()
+        if key in self.keys: self.keys[key] = False
+
+    def get_angle_from_vector(self, dx, dy):
+        if dx > 0.3 and abs(dy) < 0.3: return "090"
+        if dx < -0.3 and abs(dy) < 0.3: return "270"
+        if dy > 0.3 and abs(dx) < 0.3: return "000"
+        if dy < -0.3 and abs(dx) < 0.3: return "180"
+        if dx > 0 and dy > 0: return "045"
+        if dx > 0 and dy < 0: return "135"
+        if dx < 0 and dy > 0: return "315"
+        if dx < 0 and dy < 0: return "225"
+        return self.current_angle.get()
+
+    def start_game(self):
+        self.is_wandering = False
+        self.is_spinning = False
+        self.in_game = True
+        self.hp = 100
+        self.score = 0
+        self.enemies = []
+        self.projectiles = []
+        self.shoot_cooldown = 0
+        self.spawn_timer = 30
+        self.spawn_interval = 60 # Starting spawn interval
+        
+        self.char_x = self.canvas.winfo_width() / 2
+        self.char_y = self.canvas.winfo_height() / 2
+        
+        self.game_btn.config(text="⏹ Stop Game", bg="#f44336", command=self.stop_game)
+        
+        for _ in range(3): self.spawn_enemy()
+        self.game_tick()
+
+    def stop_game(self):
+        self.in_game = False
+        self.game_btn.config(text="🎮 Play Mini-Game", bg="#E91E63", command=self.start_game)
+        self.update_preview()
+
+    def spawn_enemy(self):
+        outfit = random.choice(list(self.combo_outfit['values']))
+        weapon = random.choice(list(self.combo_weapon['values']))
+        hat = random.choice(list(self.combo_hat['values']))
+        facial = "CAT_MASK.001" if "CAT_MASK.001" in self.combo_facial['values'] else "None"
+        gear = {"Outfit": outfit, "Weapon": weapon, "Hat": hat, "Facial": facial}
+        
+        images = {}
+        frame = self.anim_frames[0] if self.anim_frames else ""
+        z = self.zoom_slider.get() * 0.9 
+        
+        for ang in self.angles:
+            comp = self.process_layer_stack(ang, frame, custom_gear=gear, is_enemy=True)
+            if comp:
+                comp = comp.resize((max(1, int(comp.width*z)), max(1, int(comp.height*z))), Image.Resampling.NEAREST)
+                images[ang] = ImageTk.PhotoImage(comp)
+                
+        # Spawn off-screen or at edges
+        w, h = self.canvas.winfo_width(), self.canvas.winfo_height()
+        spawn_edges = [
+            (random.randint(0, w), -50),           # Top edge
+            (random.randint(0, w), h + 50),        # Bottom edge
+            (-50, random.randint(0, h)),           # Left edge
+            (w + 50, random.randint(0, h))         # Right edge
+        ]
+        x, y = random.choice(spawn_edges)
+        
+        self.enemies.append({'x': x, 'y': y, 'hp': 100, 'images': images, 'angle': '000', 'gear': gear})
+
+    def game_tick(self):
+        if not self.in_game: return
+        
+        # 1. PLAYER MOVEMENT
+        dx = 0; dy = 0
+        if self.keys['w']: dy -= 1
+        if self.keys['s']: dy += 1
+        if self.keys['a']: dx -= 1
+        if self.keys['d']: dx += 1
+        
+        speed = self.speed_slider.get()
+        self.char_x += dx * speed
+        self.char_y += dy * speed
+        
+        # Screen constraints for player
+        self.char_x = max(20, min(self.canvas.winfo_width() - 20, self.char_x))
+        self.char_y = max(20, min(self.canvas.winfo_height() - 20, self.char_y))
+        
+        if dx != 0 or dy != 0:
+            self.current_angle.set(self.get_angle_from_vector(dx, dy))
+            
+        # 2. AUTO-SHOOTER LOGIC
+        if self.shoot_cooldown > 0:
+            self.shoot_cooldown -= 1
+            
+        # Find nearest enemy
+        nearest_enemy = None
+        min_dist = float('inf')
+        for e in self.enemies:
+            dist = math.hypot(e['x'] - self.char_x, e['y'] - self.char_y)
+            if dist < min_dist:
+                min_dist = dist
+                nearest_enemy = e
+                
+        # Shoot projectile if ready and enemy is within 400px
+        if self.shoot_cooldown <= 0 and nearest_enemy and min_dist < 400:
+            edx = nearest_enemy['x'] - self.char_x
+            edy = nearest_enemy['y'] - self.char_y
+            dist = math.hypot(edx, edy)
+            if dist > 0:
+                proj_speed = 20
+                self.projectiles.append({
+                    'x': self.char_x,
+                    'y': self.char_y,
+                    'dx': (edx/dist) * proj_speed,
+                    'dy': (edy/dist) * proj_speed,
+                    'life': 50 # Dies after 50 frames if it misses
+                })
+                self.shoot_cooldown = 12 # Fire rate (lower is faster)
+                
+        # 3. PROJECTILE UPDATES
+        for p in self.projectiles[:]:
+            p['x'] += p['dx']
+            p['y'] += p['dy']
+            p['life'] -= 1
+            
+            hit = False
+            for e in self.enemies[:]:
+                if math.hypot(e['x'] - p['x'], e['y'] - p['y']) < 40: # Projectile hit radius
+                    e['hp'] -= 35 # Damage per shot (3 hits to kill)
+                    hit = True
+                    break
+                    
+            if hit or p['life'] <= 0:
+                if p in self.projectiles:
+                    self.projectiles.remove(p)
+
+        # 4. ENEMY AI & COMBAT (Swarm logic)
+        for e in self.enemies[:]:
+            edx = self.char_x - e['x']
+            edy = self.char_y - e['y']
+            dist = math.hypot(edx, edy)
+            
+            # Follow Player
+            if dist > 0:
+                # Enemies move slightly slower than the player's set speed
+                e['x'] += (edx/dist) * (max(2, speed * 0.5))
+                e['y'] += (edy/dist) * (max(2, speed * 0.5))
+                e['angle'] = self.get_angle_from_vector(edx/dist, edy/dist)
+                
+            # Player takes melee damage from cats
+            if dist < 45: 
+                self.hp -= 1.5 # Drain health while touching
+                
+            # Enemy death
+            if e['hp'] <= 0:
+                self.score += 10
+                self.enemies.remove(e)
+                
+        # 5. DYNAMIC SPAWNING (The Swarm)
+        self.spawn_timer -= 1
+        if self.spawn_timer <= 0:
+            self.spawn_enemy()
+            # Decrease the interval slightly, capping at a minimum of 8 ticks (insane swarm mode)
+            self.spawn_interval = max(8, self.spawn_interval - 1)
+            self.spawn_timer = self.spawn_interval
+                
+        if self.hp <= 0:
+            self.in_game = False
+            
+        self.render_game_frame()
+        if self.in_game:
+            self.root.after(50, self.game_tick)
+
+    def render_game_frame(self):
+        self.canvas.delete("all")
+        
+        # Draw Projectiles
+        for p in self.projectiles:
+            # Draw a glowing magic orb (Darker outer, brighter inner)
+            self.canvas.create_oval(p['x']-8, p['y']-8, p['x']+8, p['y']+8, fill="#00BCD4", outline="")
+            self.canvas.create_oval(p['x']-4, p['y']-4, p['x']+4, p['y']+4, fill="#E0F7FA", outline="")
+        
+        # Draw Enemies
+        for e in self.enemies:
+            img = e['images'].get(e['angle'])
+            if img:
+                self.canvas.create_image(e['x'], e['y'], image=img, anchor=tk.CENTER)
+                # Floating HP Bar
+                self.canvas.create_rectangle(e['x']-20, e['y']-40, e['x']+20, e['y']-35, fill="red")
+                self.canvas.create_rectangle(e['x']-20, e['y']-40, e['x']-20 + (40*(e['hp']/100)), e['y']-35, fill="lime green")
+                
+        # Draw Player
+        frame_str = self.anim_frames[self.current_frame_idx] if self.anim_frames else ""
+        comp = self.process_layer_stack(self.current_angle.get(), frame_str)
+        if comp:
+            z = self.zoom_slider.get()
+            comp = comp.resize((max(1, int(comp.width*z)), max(1, int(comp.height*z))), Image.Resampling.NEAREST)
+            self.player_img = ImageTk.PhotoImage(comp)
+            self.canvas.create_image(self.char_x, self.char_y, image=self.player_img, anchor=tk.CENTER)
+            
+        # Draw HUD
+        self.canvas.create_text(20, 20, text=f"HP: {max(0, int(self.hp))}/100", fill="lime green" if self.hp > 30 else "red", font=("Arial", 20, "bold"), anchor=tk.W)
+        self.canvas.create_text(20, 50, text=f"SCORE: {self.score}", fill="gold", font=("Arial", 20, "bold"), anchor=tk.W)
+        
+        if self.hp <= 0:
+            self.canvas.create_text(self.canvas.winfo_width()/2, self.canvas.winfo_height()/2 - 30, text="GAME OVER", fill="red", font=("Arial", 60, "bold"))
+            self.canvas.create_text(self.canvas.winfo_width()/2, self.canvas.winfo_height()/2 + 40, text=f"Final Score: {self.score}", fill="gold", font=("Arial", 30, "bold"))
+
+    # --- IDLE ANIMATIONS ---
+    def global_animation_tick(self):
+        self.aura_tick += 0.25
+        if self.anim_frames and self.anim_frames[0] != "":
+            self.current_frame_idx = (self.current_frame_idx + 1) % len(self.anim_frames)
+        if not self.is_spinning and not self.is_wandering and not self.in_game:
+            self.update_preview()
+        self.root.after(100, self.global_animation_tick) 
+
+    def toggle_spin(self):
+        self.is_spinning = not self.is_spinning
+        if self.is_spinning:
+            if self.is_wandering: self.toggle_wander() 
+            self.spin_button.config(text="⏹ Stop", bg="#f44336")
+            self.spin_step()
+        else:
+            self.spin_button.config(text="↻ Spin", bg="#4CAF50")
+
+    def spin_step(self):
+        if self.is_spinning:
+            current_idx = self.angles.index(self.current_angle.get())
+            next_idx = (current_idx + 1) % len(self.angles)
+            self.current_angle.set(self.angles[next_idx])
+            self.update_preview()
+            self.root.after(150, self.spin_step)
+
+    def toggle_wander(self):
+        self.is_wandering = not self.is_wandering
+        if self.is_wandering:
+            if self.is_spinning: self.toggle_spin() 
+            self.wander_button.config(text="⏹ Stop", bg="#f44336")
+            self.steps_remaining = 0 
+            self.wander_step()
+        else:
+            self.wander_button.config(text="🚶 Wander", bg="#9C27B0")
+
+    def wander_step(self):
+        if not self.is_wandering: return
+        canvas_w, canvas_h = self.canvas.winfo_width(), self.canvas.winfo_height()
+        speed = self.speed_slider.get()
+        
+        if self.steps_remaining <= 0:
+            new_angle = random.choice(self.angles)
+            self.current_angle.set(new_angle)
+            self.dx, self.dy = self.angle_vectors[new_angle]
+            self.steps_remaining = random.randint(15, 60) 
+            
+        self.char_x += self.dx * speed
+        self.char_y += self.dy * speed
+        
+        hit_wall = False
+        padding = 40 * self.zoom_slider.get() 
+        if self.char_x < padding or self.char_x > canvas_w - padding:
+            self.char_x -= self.dx * speed; hit_wall = True
+        if self.char_y < padding or self.char_y > canvas_h - padding:
+            self.char_y -= self.dy * speed; hit_wall = True
+            
+        if hit_wall: self.steps_remaining = 0 
+            
+        self.steps_remaining -= 1
+        self.update_preview()
+        self.root.after(50, self.wander_step)
+
+    # --- RENDERING ENGINE ---
+    def process_layer_stack(self, angle, frame_str="", override_aura_tick=None, custom_gear=None, is_enemy=False):
+        loaded_layers = {}
+        base_img = None
+
+        if frame_str:
+            anim_path = os.path.join(self.folders["animated"], f"BASE_Armature_{angle}_{frame_str}.png")
+            if os.path.exists(anim_path): base_img = Image.open(anim_path).convert("RGBA")
+                
+        if not base_img:
+            static_path = os.path.join(self.folders["base"], f"BASE_{angle}.png")
+            if os.path.exists(static_path): base_img = Image.open(static_path).convert("RGBA")
+
+        if not base_img: return None 
+
+        if is_enemy:
+            r_val, g_val, b_val = random.randint(50, 255), random.randint(50, 255), random.randint(50, 255)
+        else:
+            r_val, g_val, b_val = self.r_var.get(), self.g_var.get(), self.b_var.get()
+            
+        r, g, b, a = base_img.split()
+        base_rgb = Image.merge("RGB", (r, g, b))
+        solid_color = Image.new("RGB", base_img.size, (r_val, g_val, b_val))
+        tinted_base = ImageChops.multiply(base_rgb, solid_color)
+        img_base = tinted_base.convert("RGBA")
+        img_base.putalpha(a)
+        loaded_layers["Base"] = img_base
+
+        def load_custom_layer(layer_name, folder_key, combo_box, prefix_list, gear_key):
+            if custom_gear:
+                target_val = custom_gear.get(gear_key, "None")
+                try: idx = list(combo_box['values']).index(target_val)
+                except ValueError: idx = 0
+            else:
+                idx = combo_box.current()
+                
+            if idx > 0: 
+                prefix = prefix_list[idx]
+                if frame_str:
+                    anim_path = os.path.join(self.folders[folder_key], f"{prefix}_{angle}_{frame_str}.png")
+                    if os.path.exists(anim_path):
+                        loaded_layers[layer_name] = Image.open(anim_path).convert("RGBA")
+                        return
+                static_path = os.path.join(self.folders[folder_key], f"{prefix}_{angle}.png")
+                if os.path.exists(static_path):
+                    loaded_layers[layer_name] = Image.open(static_path).convert("RGBA")
+
+        load_custom_layer("Outfit", "outfits", self.combo_outfit, self.outfits, "Outfit")
+        load_custom_layer("Weapon", "weapons", self.combo_weapon, self.weapons, "Weapon")
+        load_custom_layer("Hat", "hats", self.combo_hat, self.hats, "Hat")
+        load_custom_layer("Facial", "facial", self.combo_facial, self.facials, "Facial")
+
+        render_order = reversed(self.layer_listbox.get(0, tk.END))
+        comp = Image.new("RGBA", loaded_layers["Base"].size, (0, 0, 0, 0))
+        for layer_name in render_order:
+            if layer_name in loaded_layers:
+                comp = Image.alpha_composite(comp, loaded_layers[layer_name])
+
+        if self.aura_enabled.get() and not is_enemy:
+            tick = override_aura_tick if override_aura_tick is not None else self.aura_tick
+            r, g, b, a = comp.split()
+            expanded_alpha = a.filter(ImageFilter.MaxFilter(5)) 
+            pulse = max(0, min(255, int(185 + 70 * math.sin(tick))))
+            aura_alpha = expanded_alpha.point(lambda p: pulse if p > 0 else 0)
+            aura_img = Image.new("RGBA", comp.size, (self.ar_var.get(), self.ag_var.get(), self.ab_var.get(), 255))
+            aura_img.putalpha(aura_alpha)
+            comp = Image.alpha_composite(aura_img, comp)
+
+        return comp
+
+    def update_preview(self, event=None):
+        if self.in_game: return 
+        
+        frame_str = self.anim_frames[self.current_frame_idx] if self.anim_frames else ""
+        comp = self.process_layer_stack(self.current_angle.get(), frame_str)
+        self.canvas.delete("all")
+
+        if comp:
+            current_zoom = self.zoom_slider.get()
+            new_w, new_h = max(1, int(comp.width * current_zoom)), max(1, int(comp.height * current_zoom))
+            comp = comp.resize((new_w, new_h), Image.Resampling.NEAREST)
+            self.preview_image = ImageTk.PhotoImage(comp)
+            self.canvas.create_image(self.char_x, self.char_y, image=self.preview_image, anchor=tk.CENTER)
+        else:
+            self.canvas.create_text(self.canvas.winfo_width()/2, self.canvas.winfo_height()/2, 
+                                    text=f"Missing files for angle {self.current_angle.get()}", fill="white")
+        self.status_label.config(text="") 
+
+    # --- COMPILATION TOOLS ---
+    def export_anim_gif(self):
+        self.status_label.config(text="Compiling GIF...", fg="orange"); self.root.update() 
+        export_dir = "EXPORTS"
+        if not os.path.exists(export_dir): os.makedirs(export_dir)
+        frames = []
+        temp_tick = 0.0 
+        angle = self.current_angle.get()
+
+        for f_str in self.anim_frames:
+            comp = self.process_layer_stack(angle, f_str, override_aura_tick=temp_tick)
+            if comp: frames.append(comp)
+            temp_tick += 0.8 
+        
+        if frames:
+            name = f"ANIM_{self.combo_outfit.get()}_{self.combo_weapon.get()}_{angle}.gif"
+            frames[0].save(os.path.join(export_dir, name), format='GIF', save_all=True, append_images=frames[1:], duration=100, loop=0, disposal=2, transparency=0)
+            self.status_label.config(text=f"Saved GIF to EXPORTS!", fg="green")
+        else:
+            self.status_label.config(text="Failed to compile GIF.", fg="red")
+
+    def export_spritesheet(self):
+        self.status_label.config(text="Compiling Spritesheet...", fg="orange"); self.root.update() 
+        export_dir = "EXPORTS"
+        if not os.path.exists(export_dir): os.makedirs(export_dir)
+
+        sample_comp = self.process_layer_stack("000", self.anim_frames[0] if self.anim_frames else "")
+        if not sample_comp:
+            self.status_label.config(text="Failed: Missing Base Files.", fg="red")
+            return
+
+        cell_w, cell_h = sample_comp.width, sample_comp.height
+        sheet_w = cell_w * max(1, len(self.anim_frames))
+        sheet_h = cell_h * len(self.angles)
+
+        spritesheet = Image.new("RGBA", (sheet_w, sheet_h), (0, 0, 0, 0))
+        temp_tick = 0.0
+
+        for row, angle in enumerate(self.angles):
+            for col, f_str in enumerate(self.anim_frames):
+                comp = self.process_layer_stack(angle, f_str, override_aura_tick=temp_tick)
+                if comp: spritesheet.paste(comp, (col * cell_w, row * cell_h))
+                temp_tick += 0.8 
+
+        name = f"SHEET_{self.combo_outfit.get()}_{self.combo_weapon.get()}.png"
+        spritesheet.save(os.path.join(export_dir, name), "PNG")
+        self.status_label.config(text=f"Saved Spritesheet to EXPORTS!", fg="green")
+
+if __name__ == "__main__":
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(script_dir)
+    root = tk.Tk()
+    app = SpriteViewerApp(root)
+    root.mainloop()
