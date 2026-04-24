@@ -10,7 +10,7 @@ npm start       # node server/index.js (production)
 npm test        # jest — test suite is not populated yet
 ```
 
-Default port is `5000` (overridable via `PORT`). `npm run dev`/`npm start` only run the backend; the Vite client (`vite.config.ts`) is a separate scaffold that isn't wired into the npm scripts. To build the React scaffold manually: `npx vite build` (outputs to `dist/public`). There is no lint script configured.
+Default port is `5000` (overridable via `PORT`). `npm run dev`/`npm start` run the backend — that's all there is. The unused `/client/` React scaffold was deleted in PR #210 (§9.12); UI lives in `/public/`.
 
 Node 18+ is required (`engines` in `package.json`).
 
@@ -18,11 +18,11 @@ Admin endpoints are protected by an `x-admin-key` header. See `ADMIN_COMMANDS.md
 
 ## Architecture
 
-### Dual frontend — the live UI is in `/public/`, not `/client/`
+### Frontend — vanilla HTML/CSS/JS under `/public/`
 
-The actual game UI is vanilla HTML/CSS/JS under `/public/` (dashboard, map, leaderboards, duels, arena, packs, card-lab, zone-battle, admin pages, etc.), served as Express static files. Three.js and Leaflet.js are used via CDN on specific pages.
+The game UI is vanilla HTML/CSS/JS under `/public/` (dashboard, map, leaderboards, duels, arena, packs, card-lab, zone-battle, admin pages, etc.), served as Express static files. Three.js and Leaflet.js are used via CDN on specific pages. There is no bundler or build step for the frontend.
 
-`/client/` is a separate Vite + React + TypeScript scaffold with shadcn-style components and Tailwind. It currently only holds placeholder pages and is **not** served by `server/index.js`. Path aliases: `@/` → `client/src/`, `@shared/` → `shared/`. Unless a task explicitly targets the React scaffold, assume UI work lives in `/public/`.
+(Historical: a `/client/` Vite+React scaffold existed but was never wired to anything; deleted in PR #210, §9.12.)
 
 ### Backend is CommonJS Express (v5)
 
@@ -40,7 +40,7 @@ Layout:
 
 ### Database: Supabase is source of truth, Drizzle is vestigial
 
-Game data lives in Supabase (PostgreSQL) and is accessed via `@supabase/supabase-js` throughout `server/services/` and `server/routes/`. `database/schema.sql` is the canonical SQL. `drizzle.config.ts` and `shared/schema.ts` exist but only define a placeholder `users` table — **do not** treat Drizzle as the schema authority and do not try to model game tables through it.
+Game data lives in Supabase (PostgreSQL) and is accessed via `@supabase/supabase-js` throughout `server/services/` and `server/routes/`. `database/schema.sql` is the canonical SQL — regenerate via `scripts/dump-schema.js` after DDL changes. Migrations live in `database/migrations/` (filename-prefixed with an incrementing number).
 
 Two clients, chosen deliberately:
 - `config/supabase.js` — anon key, for reads that should respect Row Level Security
