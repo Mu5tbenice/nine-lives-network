@@ -2100,7 +2100,7 @@ The file is tracked in git; first landed in commit `76eadf8` (Replit "Published 
 
 History-rewriting the old token out of git is explicitly out of scope — the token is revoked, the rewrite churn across the published repo isn't worth it, and future clones won't see a live credential.
 
-**Resolved 2026-04-25 in PR #?.**
+**Resolved 2026-04-25 in PR #215.**
 
 ---
 
