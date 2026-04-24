@@ -2156,7 +2156,7 @@ Each PR ships with a ≤6-item smoke-test checklist on real phones at 390 / 414 
 
 **Partially resolved 2026-04-24 in PR #221 — vertical space tuning: action bar slimmed (14→13 font, padding tightened, min-height 44→40), BUILD card slots drop max-height cap so they flex to fill, stats-tab nested view-toggle and sort buttons compacted (14→11 font) to reclaim ~20px for the fighter list. Addresses the "only top competitor visible" stats-tab cramp reported alongside the A–D batch.**
 
-**Partially resolved 2026-04-24 in PR #? — combat log row legibility (`.log-entry` rows were 12px Crimson due to specificity over the mobile container rule; explicit `#mob-tab-log .log-entry` selector bumps to 15px with breathing line-height + row borders) + Nerm bubble mobile repositioning (top:52→74 to clear the post-PR-A top bar, max-width 260→320, z-index 55→65 so nothing in canvas hides her). Addresses items 9, 10.**
+**Partially resolved 2026-04-24 in PR #222 — combat log row legibility (`.log-entry` rows were 12px Crimson due to specificity over the mobile container rule; explicit `#mob-tab-log .log-entry` selector bumps to 15px with breathing line-height + row borders) + Nerm bubble mobile repositioning (top:52→74 to clear the post-PR-A top bar, max-width 260→320, z-index 55→65 so nothing in canvas hides her). Addresses items 9, 10.**
 
 
 
