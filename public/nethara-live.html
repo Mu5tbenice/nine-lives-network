@@ -1124,13 +1124,30 @@
       #mob-auto-toggle { width:36px;height:18px;background:rgba(255,255,255,0.06);border-radius:10px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0; }
       #mob-auto-label { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--faint);line-height:1.2;white-space:nowrap; }
 
-      /* Top bar — timer + LIVE pill must stay scannable. */
-      .arena-top-bar { padding:6px 12px; }
-      .arena-zone-name { font-size:16px; }
-      .arena-timer-compact { gap:6px; }
+      /* Top bar — timer + LIVE pill must stay scannable.
+         §9.90 PR A: enforce single-line flex so long zone names ellipsis-
+         truncate inline instead of wrapping to 2 lines and pushing the right
+         group (timer + deploy pill + LIVE) off-screen. */
+      .arena-top-bar { padding:6px 12px; gap:8px; flex-wrap:nowrap; }
+      .arena-top-bar > div:first-child {
+        flex:1 1 auto; min-width:0; overflow:hidden; gap:8px;
+      }
+      .arena-top-bar > div:last-child {
+        flex:0 0 auto; gap:6px;
+      }
+      .arena-zone-name {
+        font-size:16px;
+        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        min-width:0; max-width:100%;
+      }
+      .arena-timer-compact { gap:6px; flex-shrink:0; }
       .timer-icon { font-size:14px; }
       .countdown-time { font-size:14px !important; }
-      .arena-live-pill { font-size:14px !important;padding:4px 10px;letter-spacing:1px; }
+      .arena-live-pill { font-size:14px !important;padding:4px 10px;letter-spacing:1px; flex-shrink:0; }
+      .arena-deploy-pill {
+        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        max-width:120px; flex-shrink:1;
+      }
       .nerm-bubble-container { top:52px;left:50%;transform:translateX(-50%);bottom:auto;right:auto;max-width:calc(100% - 20px);z-index:55; }
       .nerm-bubble { min-width:0;max-width:260px;font-size:14px;padding:8px 12px; }
 
@@ -1213,6 +1230,18 @@
       #mob-portrait-col { width: 86px; padding: 0 5px 8px; }
       #mob-nine-portrait { width: 64px; height: 64px; margin-top: -32px; }
       #mob-nine-name { font-size: 11px !important; }
+      /* §9.90 PR A — top bar tighter still at 390px. Zone name drops 16→14,
+         deploy pill abbreviates via max-width + ellipsis, LIVE pill stays
+         legible at 11px. Total right-group footprint ~130px leaves ~200px
+         for left group. */
+      .arena-zone-name { font-size: 14px; }
+      .arena-top-bar { padding: 5px 10px; gap: 6px; }
+      .arena-top-bar > div:last-child { gap: 5px; }
+      .arena-timer-compact { gap: 4px; }
+      .timer-icon { font-size: 11px; }
+      .countdown-time { font-size: 11px !important; }
+      .arena-live-pill { font-size: 11px !important; padding: 3px 7px; letter-spacing: 0.8px; }
+      .arena-deploy-pill { font-size: 5px !important; padding: 3px 5px; max-width: 90px; }
     }
 
     /* §9.73 — 641–768px mid-range: iPad portrait, landscape phones, small
