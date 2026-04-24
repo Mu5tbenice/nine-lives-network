@@ -1037,7 +1037,13 @@
         border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);
         color:var(--faint);line-height:1.2;letter-spacing:0;
         overflow:hidden;min-height:44px;
+        transition:background 0.15s, border-color 0.15s, color 0.15s;
       }
+      .mob-btn:active { transform:translateY(1px); }
+      /* §9.90 PR C: hierarchy — SWAP gold (neutral action), EXIT red
+         (destructive), default .mob-btn is a muted fallback that shouldn't
+         get used in the action bar after PR C. */
+      .mob-btn-gold { border-color:rgba(212,166,75,0.4);background:rgba(212,166,75,0.06);color:var(--gold); }
       .mob-btn-red { border-color:rgba(255,68,102,0.3);background:rgba(255,68,102,0.06);color:var(--red); }
 
       /* [GREEN] Tab content area */
@@ -1117,13 +1123,26 @@
       #mob-chat-send { background:none;border:none;color:var(--gold);cursor:pointer;padding:10px 14px;font-size:16px; }
       #mob-battle-log { font-size:14px !important;line-height:1.45; }
 
-      /* Auto toggle — §9.90 PR B: now sits inline with SWAP / EXIT in the
-         bottom actions bar. Same toggle + label pair, wrapped in a flex:1
-         container so it claims an equal share of the row alongside the
-         other buttons. PR C will convert this into a proper ON/OFF pill. */
-      #mob-auto-row { display:flex;flex-direction:row;align-items:center;justify-content:center;gap:6px;flex:1;min-height:44px;border:1px solid rgba(255,255,255,0.12);border-radius:4px;background:rgba(255,255,255,0.04); }
-      #mob-auto-toggle { width:36px;height:18px;background:rgba(255,255,255,0.06);border-radius:10px;border:1px solid rgba(255,255,255,0.12);cursor:pointer;position:relative;flex-shrink:0; }
-      #mob-auto-label { font-family:'Press Start 2P',monospace;font-size:14px !important;color:var(--faint);line-height:1.2;white-space:nowrap; }
+      /* Auto toggle — §9.90 PR C: explicit ON/OFF pill with sliding dot.
+         Container gets the toggle + label as a unified tap target.
+         `.auto-on` class (set by `_syncAutoRejoinUI`) switches the pill to
+         a green-tinted state so the toggle state reads at a glance, not
+         just from a ✓ glyph. Container is content-width (flex:0 0 auto)
+         so SWAP / EXIT claim the remaining row share equally. */
+      #mob-auto-row {
+        display:flex;flex-direction:row;align-items:center;justify-content:center;
+        gap:8px;flex:0 0 auto;padding:0 14px;min-height:44px;
+        border:1px solid rgba(255,255,255,0.12);border-radius:4px;
+        background:rgba(255,255,255,0.04);cursor:pointer;
+        transition:background 0.15s, border-color 0.15s;
+      }
+      #mob-auto-row.auto-on {
+        border-color:rgba(68,204,136,0.5);
+        background:rgba(68,204,136,0.08);
+      }
+      #mob-auto-row:active { transform:translateY(1px); }
+      #mob-auto-toggle { width:28px;height:14px;background:rgba(255,255,255,0.06);border-radius:8px;border:1px solid rgba(255,255,255,0.12);position:relative;flex-shrink:0;pointer-events:none; }
+      #mob-auto-label { font-family:'Press Start 2P',monospace;font-size:13px !important;color:rgba(255,255,255,0.5);line-height:1.2;white-space:nowrap;pointer-events:none; }
 
       /* Top bar — timer + LIVE pill must stay scannable.
          §9.90 PR A: enforce single-line flex so long zone names ellipsis-
@@ -1235,8 +1254,9 @@
       #mob-nine-hp-text { font-size: 12px !important; }
       #mob-buttons { padding: 6px 8px calc(6px + env(safe-area-inset-bottom,0px)); gap: 6px; }
       .mob-btn { font-size: 13px; padding: 10px 6px; }
-      #mob-auto-row { font-size: 13px; }
-      #mob-auto-label { font-size: 13px !important; }
+      #mob-auto-row { padding: 0 10px; gap: 6px; }
+      #mob-auto-label { font-size: 11px !important; }
+      #mob-auto-toggle { width: 24px; height: 12px; }
       /* §9.90 PR A — top bar tighter still at 390px. Zone name drops 16→14,
          deploy pill abbreviates via max-width + ellipsis, LIVE pill stays
          legible at 11px. Total right-group footprint ~130px leaves ~200px
@@ -1757,18 +1777,19 @@
       </div>
 
       <!-- [ACTIONS BAR] — bottom sticky row: SWAP | EXIT | AUTO.
-           Moved out of `#mob-portrait-col` in §9.90 PR B so they sit in a
-           thumb-reachable horizontal row instead of a vertical stack inside
-           the portrait spine. PR C will refine the visual hierarchy
-           (SWAP neutral/gold, EXIT destructive red, AUTO explicit pill). -->
+           §9.90 PR C item 4: visual hierarchy — SWAP gets a neutral/gold
+           treatment (change loadout), EXIT stays destructive red (leave
+           zone), AUTO becomes an explicit ON/OFF pill with a sliding dot
+           so toggle state is legible at a glance without squinting for
+           a checkmark. -->
       <div id="mob-buttons">
-        <button class="mob-btn" onclick="openDeployModal()">SWAP</button>
+        <button class="mob-btn mob-btn-gold" onclick="openDeployModal()">SWAP</button>
         <button class="mob-btn mob-btn-red" onclick="withdraw()">EXIT</button>
-        <div id="mob-auto-row">
-          <div id="mob-auto-toggle" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()">
+        <div id="mob-auto-row" onclick="window.toggleAutoRedeploy&&window.toggleAutoRedeploy()">
+          <div id="mob-auto-toggle">
             <div style="position:absolute;top:2px;left:2px;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.3);transition:left 0.2s;"></div>
           </div>
-          <span id="mob-auto-label">AUTO</span>
+          <span id="mob-auto-label">AUTO OFF</span>
         </div>
       </div>
 
@@ -3686,13 +3707,26 @@
     // HUD bottom-left
     const hudTog = document.getElementById('auto-redeploy-toggle');
     if (hudTog) hudTog.className = on ? 'on' : '';
-    // Mobile — §9.47 short labels so text doesn't wrap in the 84px portrait col.
+    // Mobile — §9.90 PR C: explicit ON/OFF pill with sliding dot.
+    // Row carries the state class for the green-tinted container; toggle
+    // inside carries the sliding dot + inner background shift; label swaps
+    // AUTO ON ↔ AUTO OFF so state is legible without relying on a ✓ glyph.
+    const mobRow = document.getElementById('mob-auto-row');
+    if (mobRow) mobRow.classList.toggle('auto-on', on);
     const mobTog = document.getElementById('mob-auto-toggle');
-    if (mobTog) mobTog.style.background = on ? 'rgba(68,204,136,0.15)' : '';
+    if (mobTog) {
+      mobTog.style.background = on ? 'rgba(68,204,136,0.25)' : 'rgba(255,255,255,0.06)';
+      mobTog.style.borderColor = on ? 'rgba(68,204,136,0.5)' : 'rgba(255,255,255,0.12)';
+      const dot = mobTog.querySelector('div');
+      if (dot) {
+        dot.style.left = on ? 'calc(100% - 9px)' : '2px';
+        dot.style.background = on ? '#44cc88' : 'rgba(255,255,255,0.3)';
+      }
+    }
     const mobLbl = document.getElementById('mob-auto-label');
     if (mobLbl) {
-      mobLbl.textContent = on ? 'AUTO ✓' : 'AUTO';
-      mobLbl.style.color = on ? '#44cc88' : '';
+      mobLbl.textContent = on ? 'AUTO ON' : 'AUTO OFF';
+      mobLbl.style.color = on ? '#44cc88' : 'rgba(255,255,255,0.5)';
     }
     // Deploy modal
     const depTog = document.getElementById('deploy-auto-rejoin-toggle');
