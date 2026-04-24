@@ -597,11 +597,6 @@ async function processSpellCasts() {
         continue;
       }
 
-      if (player.mana <= 0) {
-        console.log(`Player @${user.username} has no mana`);
-        continue;
-      }
-
       // Check if player already cast on this bounty today (1 cast per player per bounty)
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
       const { data: alreadyCast } = await supabase
@@ -670,7 +665,6 @@ async function processSpellCasts() {
           spell_name: spell.name,
           zone_id: zone.id,
           tweet_id: tweet.id,
-          mana_cost: spell.mana_cost,
           points_earned: finalPoints,
           school_position: firstBlood?.position || null,
           first_blood_bonus: firstBlood?.points || 0,
@@ -686,7 +680,6 @@ async function processSpellCasts() {
       await supabaseAdmin
         .from('players')
         .update({
-          mana: player.mana - spell.mana_cost,
           last_cast_at: new Date().toISOString(),
           seasonal_points: (player.seasonal_points || 0) + finalPoints,
           lifetime_points: (player.lifetime_points || 0) + finalPoints,
@@ -791,7 +784,6 @@ function parseSpell(text, schoolId) {
 
   return {
     name: spellName,
-    mana_cost: 1,
     type: 'offensive',
     hasSchoolFlair,
     wordCount,

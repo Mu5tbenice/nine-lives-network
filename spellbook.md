@@ -1,5 +1,7 @@
 # Nine Lives Network — Spellbook System V2
 
+> **⚠️ Historical reference.** The mana system (daily MP pool, tier costs) was removed in the §9.80 cleanup PR. Spell casts are now free. Tier remains as a card grouping but no longer gates on cost. Treat the "MP" / "Daily Mana" / "Siphon" copy below as historical context — the PRD is the source of truth for live behavior.
+
 ## Core Philosophy
 
 **Spells enhance the existing Attack/Defend system — they don't replace it.**

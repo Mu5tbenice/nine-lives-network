@@ -284,9 +284,8 @@
           // Row 2: House + Type
           '<div class="field-group"><span class="field-label">HOUSE</span><select class="spell-select" data-spell="' + s.id + '" data-field="house" onchange="markChanged(' + s.id + ')">' + HOUSES.map(function(h) { return '<option value="' + h + '"' + (s.house === h ? ' selected' : '') + '>' + h + '</option>'; }).join('') + '</select></div>' +
           '<div class="field-group"><span class="field-label">TYPE</span><select class="spell-select" data-spell="' + s.id + '" data-field="spell_type" onchange="markChanged(' + s.id + ')">' + TYPES.map(function(t) { return '<option value="' + t + '"' + (s.spell_type === t ? ' selected' : '') + '>' + t + '</option>'; }).join('') + '</select></div>' +
-          // Row 3: Tier + Mana Cost
-          '<div class="field-group"><span class="field-label">TIER</span><select class="spell-select" data-spell="' + s.id + '" data-field="tier" onchange="markChanged(' + s.id + ')"><option value="0"' + (s.tier==0?' selected':'') + '>T0 â€” Basic</option><option value="1"' + (s.tier==1?' selected':'') + '>T1 â€” 1 MP</option><option value="2"' + (s.tier==2?' selected':'') + '>T2 â€” 2 MP</option><option value="3"' + (s.tier==3?' selected':'') + '>T3 â€” 3 MP</option></select></div>' +
-          '<div class="field-group"><span class="field-label">MANA COST</span><input type="number" class="spell-input" value="' + s.mana_cost + '" min="0" max="5" data-spell="' + s.id + '" data-field="mana_cost" onchange="markChanged(' + s.id + ')"></div>' +
+          // Row 3: Tier
+          '<div class="field-group"><span class="field-label">TIER</span><select class="spell-select" data-spell="' + s.id + '" data-field="tier" onchange="markChanged(' + s.id + ')"><option value="0"' + (s.tier==0?' selected':'') + '>T0 â€” Basic</option><option value="1"' + (s.tier==1?' selected':'') + '>T1</option><option value="2"' + (s.tier==2?' selected':'') + '>T2</option><option value="3"' + (s.tier==3?' selected':'') + '>T3</option></select></div>' +
           // Row 4: Base Effect (full width)
           '<div class="field-group spell-card__grid--full"><span class="field-label">BASE EFFECT</span><input class="spell-input" value="' + escAttr(s.base_effect) + '" data-spell="' + s.id + '" data-field="base_effect" onchange="markChanged(' + s.id + ')"></div>' +
           // Row 5: Flavor + Motto
@@ -319,7 +318,7 @@
       document.querySelectorAll('[data-spell="' + id + '"][data-field]').forEach(function(el) {
         var field = el.dataset.field;
         var val = el.value;
-        if (field === 'tier' || field === 'mana_cost') val = parseInt(val);
+        if (field === 'tier') val = parseInt(val);
         data[field] = val;
       });
       // Collect bonus effects
@@ -393,7 +392,7 @@
       var newId = 'new_' + Date.now();
       allSpells.unshift({
         id: newId, name: 'New Spell', slug: 'new-spell', house: 'universal', tier: 1,
-        mana_cost: 1, spell_type: 'attack', base_effect: '+10 influence',
+        spell_type: 'attack', base_effect: '+10 influence',
         bonus_effects: [], flavor_text: '', motto: null, is_active: true, is_always_available: false, _isNew: true
       });
       renderSpells();
@@ -473,7 +472,7 @@
         if (adminKey !== process.env.ADMIN_KEY) {
           return res.status(401).json({ error: 'Invalid admin key' });
         }
-        const { name, slug, house, tier, mana_cost, spell_type, base_effect, bonus_effects, flavor_text, motto } = req.body;
+        const { name, slug, house, tier, spell_type, base_effect, bonus_effects, flavor_text, motto } = req.body;
         if (!name || !slug) return res.status(400).json({ error: 'Name and slug required' });
 
         const { data, error } = await supabase
@@ -483,7 +482,6 @@
             slug: slug.trim(),
             house: house || 'universal',
             tier: tier || 0,
-            mana_cost: mana_cost || 1,
             spell_type: spell_type || 'attack',
             base_effect: base_effect || '+10 influence',
             bonus_effects: JSON.stringify(bonus_effects || []),
@@ -511,7 +509,7 @@
         }
         const spellId = parseInt(req.params.id);
         const updates = {};
-        const allowed = ['name','slug','house','tier','mana_cost','spell_type','base_effect','bonus_effects','flavor_text','motto','is_active','is_always_available','image_url'];
+        const allowed = ['name','slug','house','tier','spell_type','base_effect','bonus_effects','flavor_text','motto','is_active','is_always_available','image_url'];
         allowed.forEach(field => {
           if (req.body[field] !== undefined) {
             updates[field] = field === 'bonus_effects' ? JSON.stringify(req.body[field]) : req.body[field];

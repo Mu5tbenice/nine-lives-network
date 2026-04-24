@@ -131,10 +131,10 @@
     <!-- picker now renders as overlay inside slotContainer -->
     <div id="trinketCallout" style="display:none;padding:12px 16px;border-radius:10px;margin-bottom:12px;background:rgba(106,200,216,0.05);border:1px solid rgba(106,200,216,0.15);text-align:center">
       <div style="font-family:var(--font-data);font-size:6px;color:var(--cyan);margin-bottom:4px">💎 TRINKET SLOTS</div>
-      <div style="font-family:var(--font-mono);font-size:10px;color:var(--body);line-height:1.6">Trinkets are powerful stat items found in chests, boss drops, and season rewards. These slots unlock when you find your first one.</div>
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--body);line-height:1.6">Trinkets are powerful stat items found in chests, event drops, and season rewards. These slots unlock when you find your first one.</div>
     </div>
     <div style="padding:10px 14px;border-radius:8px;margin-bottom:16px;background:rgba(212,166,75,0.05);border:1px solid var(--border);text-align:center">
-      <div style="font-family:var(--font-mono);font-size:9px;color:var(--gold)">💡 Starter items give base stat bonuses. Rarer gear drops from chests, boss loot, and the collectables shop.</div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--gold)">💡 Starter items give base stat bonuses. Rarer gear drops from chests, event rewards, and the collectables shop.</div>
     </div>
     <button class="cta-btn" id="step1Btn" onclick="goStep(2)">CUSTOMIZE YOUR NINE → </button>
     <div style="text-align:center;margin-top:8px;font-family:var(--font-mono);font-size:8px;color:var(--faint)">you can change your look anytime from your profile</div>
@@ -388,9 +388,7 @@ function loadItemsFromAPI(callback) {
 var TC = {Attack:'#e85a6a',attack:'#e85a6a',Defend:'#5599ff',defend:'#5599ff',Support:'#6acd8a',support:'#6acd8a',Manipulation:'#b088e8',manipulation:'#b088e8',Utility:'#6ac8d8',utility:'#6ac8d8'};
 var GM = [
   {i:'⚔️',n:'Zone Battles',t:'Continuous',d:'Deploy your Nine to zones. Continuous auto-combat with 15-min scoring snapshots. Guild with most surviving HP controls the zone.',c:'#e85a6a',live:true},
-  {i:'🗡️',n:'Quick Duels',t:'Free · 30 sec',d:'1v1 card battles. Both players reveal a card — higher ATK wins. Best of 3. No sharpness cost.',c:'#D4A64B',live:false},
-  {i:'🏔️',n:'The Gauntlet',t:'Free · solo',d:'Fight AI opponents that get harder each floor. Daily reset — how far can you get? Great for learning card combos.',c:'#6ac8d8',live:false},
-  {i:'👹',n:'Weekly Boss',t:'Mon–Fri',d:'A massive boss appears Monday. Your whole guild attacks together. Phases get harder at 50% and 25% HP.',c:'#b088e8',live:false}
+  {i:'🗡️',n:'Quick Duels',t:'Free · 30 sec',d:'1v1 card battles. Both players reveal a card — higher ATK wins. Best of 3. No sharpness cost.',c:'#D4A64B',live:false}
 ];
 
 var HOUSE_PREVIEW_CARDS = {
