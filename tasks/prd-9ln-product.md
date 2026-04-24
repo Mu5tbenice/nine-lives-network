@@ -2002,7 +2002,7 @@ Combined egress reduction on the combat loop: ~20× (from ~10 req/sec per active
 
 **Resolution plan.** Revert HP sync to per-Nine `.update()` but run the N updates in parallel via `Promise.all` rather than sequentially — still N round-trips but ~N× faster than the old await-in-loop. HP sync only fires every 8s (tick % 40) with ~4 active Nines, so the incremental egress is ~0.5 req/sec — not a hotspot. A proper fix (Postgres RPC that does batch UPDATE WHERE id IN (...)) is possible if this becomes a real bottleneck; deferred as low-value.
 
-**Resolved 2026-04-24 in PR #?.**
+**Resolved 2026-04-24 in PR #211.**
 
 ---
 
