@@ -1940,6 +1940,20 @@ Kept the intermission `return;` intact: combat mutation code ABOVE the intermiss
 
 ---
 
+### 9.83 players.js route still selects/inserts dropped `mana` column — dashboard 404
+
+**Symptom (user-reported 2026-04-24 after PR #201 Replit sync + §9.82 RLS migration).** `/api/players/:id` returns 404 for every existing player. Browser console shows `Failed to load resource: /api/players/47:1 404`. Dashboard fails to load player data on first paint.
+
+**Root cause.** `server/routes/players.js:24` still lists `mana` in the `.select()` column list, and `players.js:203` still inserts `mana: 7` in the complete-registration handler. PR #201 dropped `players.mana` from the DB but only removed two of the three code paths that referenced it — this third path was missed. Against the migrated DB, Supabase returns `column "mana" does not exist` → the route treats that as a not-found → 404.
+
+**Effect.** High. Blocks the dashboard and new registration end-to-end. Existing players can't view their profile data; new OAuth registrations fail. Surfaced only after the RLS migration because Wray re-synced Replit, which pulled the post-#201 code on top of the now-migrated DB.
+
+**Resolution plan.** Remove `mana,` from the SELECT list and `mana: 7,` from the INSERT payload. One-line pair. No schema change.
+
+**Resolved 2026-04-24 in PR #?.**
+
+---
+
 ## Appendix A — Glossary
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
