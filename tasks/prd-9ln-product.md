@@ -2150,6 +2150,8 @@ Each PR ships with a ≤6-item smoke-test checklist on real phones at 390 / 414 
 
 **Partially resolved 2026-04-24 in PR #218 — portrait column → horizontal header strip; `#mob-buttons` lifted out of `#mob-portrait-col` to a sibling bottom actions bar. `#mobile-hud-root` restacks row → column so the tab content gets full viewport width. Addresses items 2, 5.**
 
+**Partially resolved 2026-04-24 in PR #219 — action button hierarchy: SWAP gold (neutral), EXIT red (destructive), AUTO explicit ON/OFF pill with sliding dot and `.auto-on` state class. Addresses item 4.**
+
 
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
