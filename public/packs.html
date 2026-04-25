@@ -14,23 +14,33 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Press+Start+2P&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
 
   <style>
-    /* ═══ BASE ═══ */
+    /* ═══ BASE ═══
+       Tokens: most come from /css/variables-v2.css (Warm Night). Below are
+       page-specific overrides + local-name aliases. Pack reveals lean on
+       saturated rarity colors (--cyan/green/red/blue) so those stay vivid
+       even as the rest of the app trends muted. */
     :root {
-      --bg:        #0a0812;
-      --bg-card:   #110e1c;
-      --bg-panel:  rgba(255,255,255,0.03);
-      --border:    rgba(255,255,255,0.07);
-      --gold:      #D4A64B;
+      /* Page-specific darker backgrounds for the bazaar feel. */
+      --bg:          #0a0812;
+      --bg-card:     #110e1c;
+      --bg-panel:    rgba(255,255,255,0.03);
+      /* Local-name aliases → v2 canonical tokens (text + border). */
+      --border:      var(--border-subtle);
+      --bright:      var(--text-bright);
+      --body:        var(--text-body);
+      --muted:       var(--text-muted);
+      --faint:       var(--text-faint);
+      /* Page-specific gold accents — distinct from v2's --gold-light /
+         --gold-dim (different intent). */
       --gold-bright: #F5D680;
-      --gold-dim:  #8B7332;
-      --bright:    #F0ECF8;
-      --body:      #CCC5DB;
-      --muted:     #847C98;
-      --faint:     #554E68;
-      --cyan:      #00D4FF;
-      --green:     #44cc88;
-      --red:       #ff4466;
-      --blue:      #55bbff;
+      --gold-dim:    #8B7332;
+      /* Saturated rarity colors — kept vivid for pack-reveal dopamine.
+         These intentionally do NOT use v2's muted --cyan / --green / --red. */
+      --cyan:        #00D4FF;
+      --green:       #44cc88;
+      --red:         #ff4466;
+      --blue:        #55bbff;
+      /* --gold, --purple come straight from v2. */
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
