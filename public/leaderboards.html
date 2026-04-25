@@ -192,6 +192,18 @@
     .house-rivalry{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-top:2px}
     .house-rivalry strong{font-weight:600;color:var(--text-bright)}
 
+    /* House-leader badge — small pill in the name row when player is the
+       top-ranked Nine in their school. Color picks up the house token so
+       it reads as "your tribe's #1" not generic gold. */
+    .house-leader-badge{
+      font-family:var(--font-data);font-size:7px;letter-spacing:1px;
+      padding:2px 6px;border-radius:4px;
+      border:1px solid;
+      display:inline-flex;align-items:center;
+      flex-shrink:0;
+      text-transform:uppercase;
+    }
+
     /* Share-to-X button on the YOU pin. Tucked under the score so the row
        reads as a single shareable unit. Tap surface ≥28px for thumbs;
        opens twitter.com/intent/tweet in a new tab. */
@@ -813,6 +825,25 @@ function meShareButton(p, rank, win) {
     + '</button>';
 }
 
+// True when this player is the top-ranked one in their house (by
+// seasonal_points). Surfaced as a small badge on the YOU pin name row —
+// "1st in <House>" — so house leaders feel celebrated even at low overall
+// ranks. Operates on the unfiltered season list so the badge works on
+// TODAY/WEEK windows too (semantic doesn't change with window flip).
+function isFirstInHouse(p, list) {
+  if (!p || !p.school_id || !list || !list.length) return false;
+  // Walk top→bottom by seasonal_points (the list is already ordered that
+  // way from the server). The first player matching this school_id is
+  // the house leader.
+  for (var i = 0; i < list.length; i++) {
+    var row = list[i];
+    if (row && row.school_id == p.school_id) {
+      return row.id == p.id;
+    }
+  }
+  return false;
+}
+
 // House rivalry sub-line for the YOU pin. Renders "Your house <X> is #N
 // in the war" using the houses leaderboard. Hidden when the player has
 // no school_id or houses data isn't loaded yet.
@@ -886,6 +917,29 @@ function mePin(found, opts) {
       } else {
         gapHtml = '<div class="gap-to-next">' + gameIcon('laurels','gi-sm') + ' #1!</div>';
       }
+    } else if (rank >= 4 && rank <= 6) {
+      // Podium-reach framing — for players hovering just below the podium
+      // (#4–6), reframe the gap to emphasize how close they are to top-3
+      // rather than the abstract pts-behind. Only on SEASON window where
+      // the podium is the canonical reward surface.
+      if (win === 'season') {
+        var spots = rank - 3;
+        var third = opts.fullList[2];
+        var thirdScore = third ? (third.seasonal_points||0) : 0;
+        var podiumGap = thirdScore - pScore;
+        gapHtml = '<div class="gap-to-next">' + gameIcon('laurels','gi-sm') + ' Podium is <strong>' + spots + '</strong> spot' + (spots === 1 ? '' : 's') + ' away · <strong>' + podiumGap.toLocaleString() + '</strong> pts to #3</div>';
+      } else {
+        // TODAY/WEEK: keep the standard gap-to-next-above copy.
+        var ahead = opts.fullList[rank - 2];
+        if (ahead) {
+          var aScore = win === 'today' ? (ahead.points_today||0)
+                      : ((ahead.history && ahead.history.length >= 2) ? (ahead.history[ahead.history.length-1] - ahead.history[0]) : 0);
+          var diff = aScore - pScore;
+          gapHtml = diff === 0
+            ? '<div class="gap-to-next">Tied at #' + rank + ' with @<strong>' + esc(ahead.twitter_handle || '???') + '</strong> — break the tie</div>'
+            : '<div class="gap-to-next"><strong>' + diff.toLocaleString() + '</strong> pts behind @' + esc(ahead.twitter_handle || '???') + '</div>';
+        }
+      }
     } else {
       var ahead = opts.fullList[rank - 2];
       if (ahead) {
@@ -912,6 +966,9 @@ function mePin(found, opts) {
     + '<div class="lb-info" style="flex:1;min-width:0;">'
     + '<div class="lb-name-row"><span class="lb-name">@' + esc(p.twitter_handle || '???') + '</span>'
     + streakBadge(p)
+    + (!opts.showDuels && opts.fullList && isFirstInHouse(p, opts.fullList)
+        ? '<span class="house-leader-badge" style="background:' + (h.color||'var(--gold)') + '15;border-color:' + (h.color||'var(--gold)') + '50;color:' + (h.color||'var(--gold)') + ';">1st in ' + (h.name||'House') + '</span>'
+        : '')
     + (p._level ? '<span class="lb-lvl">Lv.' + p._level + '</span>' : '')
     + (p.guild_tag ? '<span class="lb-guild">' + esc(p.guild_tag) + '</span>' : '')
     + '</div>'
