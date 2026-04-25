@@ -187,6 +187,32 @@
     .streak-risk .gi-sm{color:#FF8C00;flex-shrink:0}
     .streak-risk strong{color:#FFD194;font-weight:600}
 
+    /* ── ACTIVITY TICKER — pulse-of-the-game feed at the bottom of the
+       Season tab. Tight rows with house-color dot, handle link, amount,
+       source label, ago-time. Reads as a trader-ticker / Discord-feed
+       hybrid. */
+    .activity-ticker{
+      display:flex;flex-direction:column;
+      border-radius:10px;
+      background:rgba(255,255,255,0.02);
+      border:1px solid var(--border);
+      padding:4px 0;margin-bottom:14px;
+      max-height:280px;overflow-y:auto;
+    }
+    .activity-tick{
+      display:flex;align-items:center;gap:8px;
+      padding:6px 12px;
+      font-family:var(--font-mono);font-size:10px;
+      border-bottom:1px solid rgba(255,255,255,0.03);
+    }
+    .activity-tick:last-child{border-bottom:none}
+    .activity-tick__dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;box-shadow:0 0 4px currentColor}
+    .activity-tick__handle{color:var(--text-bright);text-decoration:none;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+    .activity-tick__handle:hover{color:var(--cyan)}
+    .activity-tick__amount{font-family:var(--font-data);font-size:9px;color:#6acd8a;flex-shrink:0}
+    .activity-tick__source{color:var(--text-muted);font-size:9px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .activity-tick__time{color:var(--text-faint);font-size:9px;flex-shrink:0}
+
     /* Gap-to-next — appears on YOU pin only. "23 pts behind @leader_handle"
        or "🏆 #1!" when at the top. Sub-line of the YOU pin. */
     .gap-to-next{font-family:var(--font-mono);font-size:9px;color:var(--text-faint);font-style:italic;margin-top:1px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
@@ -691,11 +717,14 @@ async function loadAll() {
   }
 
   try {
-    var [pR, hR, dR, cR] = await Promise.all([
+    var [pR, hR, dR, cR, aR] = await Promise.all([
       fetch('/api/leaderboards/players' + (playerId ? '?me=' + encodeURIComponent(playerId) : '')).then(function(r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).catch(catchAndFlag([])),
       fetch('/api/leaderboards/schools').then(function(r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).catch(catchAndFlag([])),
       fetch('/api/leaderboards/duels').then(function(r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).catch(catchAndFlag([])),
-      fetch('/api/leaderboards/clashes').then(function(r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).catch(catchAndFlag({ matches:[], standings:[] }))
+      fetch('/api/leaderboards/clashes').then(function(r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).catch(catchAndFlag({ matches:[], standings:[] })),
+      // Activity ticker — last 20 point_log entries with handle + source.
+      // Failure here is non-fatal; the section just hides if no data.
+      fetch('/api/leaderboards/activity?limit=20').then(function(r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).catch(function() { return []; })
     ]);
 
     if (_loadFailures === 4) {
@@ -719,6 +748,7 @@ async function loadAll() {
     data.houses = Array.isArray(hR) ? hR : hR.schools || hR.houses || [];
     data.duels = Array.isArray(dR) ? dR : dR.players || [];
     data.clashes = cR && cR.matches ? cR : { matches: [], standings: [] };
+    data.activity = Array.isArray(aR) ? aR : [];
 
     // V5: Fetch levels for all players and merge
     try {
@@ -884,6 +914,39 @@ function isFirstInHouse(p, list) {
     }
   }
   return false;
+}
+
+// Compact "N ago" formatter for the activity ticker. Returns "12s",
+// "4m", "2h", "3d", or absolute date for very old entries.
+function timeAgoCompact(iso) {
+  if (!iso) return '';
+  var sec = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (sec < 60)        return sec + 's';
+  if (sec < 3600)      return Math.floor(sec / 60) + 'm';
+  if (sec < 86400)     return Math.floor(sec / 3600) + 'h';
+  if (sec < 86400 * 7) return Math.floor(sec / 86400) + 'd';
+  return new Date(iso).toLocaleDateString();
+}
+
+// Human-readable source label. point_log.source is a snake_case enum
+// (e.g. 'zone_ko', 'chronicle_reply', 'duel_win'). This lookup keeps
+// the ticker readable without requiring a server-side migration.
+function sourceLabel(src) {
+  if (!src) return 'points';
+  var map = {
+    zone_ko:           'KO',
+    zone_survive:      'survive',
+    zone_win:          'won round',
+    zone_flip:         'flipped zone',
+    chronicle_reply:   'chronicle',
+    chronicle_replied: 'chronicle',
+    duel_win:          'duel won',
+    daily_login:       'login',
+    daily_pack:        'daily pack',
+    quest:             'quest',
+    objective:         'objective',
+  };
+  return map[src] || src.replace(/_/g, ' ');
 }
 
 // House rivalry sub-line for the YOU pin. Renders "Your house <X> is #N
@@ -1206,6 +1269,30 @@ function render() {
       });
     } else {
       html += '<div class="empty">No players yet. Be the first to earn points!</div>';
+    }
+
+    // Recent Activity ticker — pulse-of-the-game feed. Hidden if no events
+    // were returned (cold-start days, total network failure on /activity).
+    if (data.activity && data.activity.length > 0) {
+      html += sectionLabel('burst', 'RECENT ACTIVITY');
+      html += '<div class="activity-ticker">';
+      data.activity.forEach(function(ev) {
+        var house = HOUSES[ev.school_id] || { color: 'var(--gold)' };
+        var handle = ev.twitter_handle ? esc(ev.twitter_handle) : 'someone';
+        var handleHref = ev.twitter_handle
+          ? '/p/' + encodeURIComponent(String(ev.twitter_handle).toLowerCase())
+          : null;
+        html += '<div class="activity-tick">'
+          + '<span class="activity-tick__dot" style="background:' + house.color + '"></span>'
+          + (handleHref
+              ? '<a class="activity-tick__handle" href="' + handleHref + '">@' + handle + '</a>'
+              : '<span class="activity-tick__handle">@' + handle + '</span>')
+          + '<span class="activity-tick__amount">+' + (ev.amount||0).toLocaleString() + '</span>'
+          + '<span class="activity-tick__source">' + sourceLabel(ev.source) + '</span>'
+          + '<span class="activity-tick__time">' + timeAgoCompact(ev.created_at) + ' ago</span>'
+          + '</div>';
+      });
+      html += '</div>';
     }
 
     // Season Prizes
