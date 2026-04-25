@@ -742,6 +742,47 @@ router.put('/player/:id', async (req, res) => {
   }
 });
 
+// DELETE /api/admin/player/:idOrHandle — cascade-delete a player.
+// Accepts a numeric id OR a twitter handle (case-insensitive, with or
+// without leading @). Calls the delete_player_cascade(p_id) SQL function
+// (database/migrations/006_delete_player_cascade.sql) which wipes 20
+// dependent tables in one transaction and returns a per-table count.
+//
+// Use case: registration smoke testing — re-test the /register.html flow
+// without manually deleting rows across child tables.
+//   curl -X DELETE -H "x-admin-key: $ADMIN_KEY" \
+//     https://9lv.net/api/admin/player/Mu5tb3n1ce
+router.delete('/player/:idOrHandle', async (req, res) => {
+  try {
+    const raw = String(req.params.idOrHandle || '').trim();
+    if (!raw) return res.status(400).json({ error: 'idOrHandle required' });
+
+    let playerId;
+    if (/^\d+$/.test(raw)) {
+      playerId = parseInt(raw, 10);
+    } else {
+      const handle = raw.replace(/^@/, '');
+      const { data: lookup, error: lookupErr } = await supabaseAdmin
+        .from('players')
+        .select('id, twitter_handle')
+        .ilike('twitter_handle', handle)
+        .limit(1)
+        .maybeSingle();
+      if (lookupErr) throw lookupErr;
+      if (!lookup) return res.status(404).json({ error: 'player_not_found', handle });
+      playerId = lookup.id;
+    }
+
+    const { data: summary, error } = await supabaseAdmin.rpc('delete_player_cascade', {
+      p_id: playerId,
+    });
+    if (error) throw error;
+    res.json({ success: true, playerId, deleted: summary });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ╔═══════════════════════════════════╗
 // ║  NERM BOT CONTROLS                 ║
 // ╚═══════════════════════════════════╝
