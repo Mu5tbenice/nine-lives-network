@@ -10,7 +10,11 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
 const pointsService = require('./pointsService');
-const { buildRoundStartNinePayload } = require('./combatEnginePayloads');
+const { addXP, XP_REWARDS } = require('./xp-engine');
+const {
+  buildRoundStartNinePayload,
+  calculateRoundXP,
+} = require('./combatEnginePayloads');
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────
 const TICK_MS = 200; // 200ms ticks — 5 server updates/sec
@@ -971,6 +975,13 @@ function handleKO(nine, zoneId, all) {
         `KO'd ${nine.playerName} on zone ${zoneId}`,
       )
       .catch((err) => console.error('❌ KO pts:', err.message));
+
+    // §9.91: also award XP for the kill. Fire-and-forget — XP failures must
+    // never block KO bookkeeping. Round-end XP (survive/win/flip) is awarded
+    // separately in endRound; this path covers KO mid-round.
+    addXP(killerId, XP_REWARDS.zone_ko, 'zone_ko').catch((err) =>
+      console.error('❌ KO xp:', err.message),
+    );
   }
 }
 
@@ -1374,8 +1385,8 @@ async function endRound(zoneId, zs, all, endReason) {
   const pointsLog = [];
 
   const now = new Date().toISOString();
-  for (const n of all) {
-    if (n.hp <= 0 || n.waitingForRound) continue;
+  const livingNines = all.filter((n) => n.hp > 0 && !n.waitingForRound);
+  for (const n of livingNines) {
     let pts = 5; // alive at round end (+5)
     if (winner && n.guildTag === winner) {
       pts += 8; // guild controls (+8)
@@ -1395,6 +1406,31 @@ async function endRound(zoneId, zs, all, endReason) {
         if (error) console.error(`❌ Round pts ${n.playerId}:`, error.message);
       });
   }
+
+  // §9.91: parallel XP awards for round-end. Pure calc lives in
+  // combatEnginePayloads.calculateRoundXP for testability. KO XP is awarded
+  // immediately in handleKO. We fire addXP per player in parallel and merge
+  // the level-up results back into the broadcast so the client can surface
+  // a celebration in the round-end modal.
+  const xpDeltas = calculateRoundXP({ winner, flipped, livingNines });
+  const xpResults = await Promise.all(
+    xpDeltas.map((d) =>
+      addXP(d.playerId, d.xp, 'zone_round')
+        .then((r) => ({ ...d, ...(r || {}) }))
+        .catch((err) => {
+          console.error(`❌ Round xp ${d.playerId}:`, err.message);
+          return d;
+        }),
+    ),
+  );
+  const xpLog = xpResults.map((r) => ({
+    playerId: r.playerId,
+    xp: r.xp,
+    leveledUp: !!r.leveledUp,
+    newLevel: r.newLevel || null,
+    previousLevel: r.previousLevel || null,
+    unlocksGained: r.unlocksGained || [],
+  }));
 
   // KO leaderboard for this round — derive from _killsThisRound
   const koBoard = [];
@@ -1449,6 +1485,7 @@ async function endRound(zoneId, zs, all, endReason) {
     guildHp,
     koBoard: koBoard.slice(0, 5),
     pointsLog,
+    xpLog, // §9.91: per-player XP delta + level-up state for round-end modal
     intermissionMs: INTERMISSION_MS,
     nextRoundIn: INTERMISSION_MS,
     // §9.48: absolute server timestamp for accurate client countdown —

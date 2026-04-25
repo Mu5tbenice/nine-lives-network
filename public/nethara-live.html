@@ -4460,6 +4460,26 @@
           const cy = app ? app.screen.height / 2 : 200;
           showFloatingText(cx, cy, `+${myPts.pts} pts`, 0xD4A64B, 16);
         }
+
+        // §9.91: XP earned this round. Captured into S._roundXP for the modal,
+        // floated as green text alongside the gold points so they read as
+        // distinct dopamine beats. KO XP (+5 each) was awarded mid-round in
+        // handleKO and is NOT included in xpLog — only survive/win/flip lands here.
+        const myXp = (data.xpLog || []).find(x => String(x.playerId) === String(S.playerId));
+        if (myXp && myXp.xp > 0) {
+          S._roundXP = myXp.xp;
+          if (myXp.leveledUp) {
+            S._roundLevelUp = {
+              newLevel: myXp.newLevel,
+              previousLevel: myXp.previousLevel,
+              unlocks: myXp.unlocksGained || [],
+            };
+          }
+          const app = window._S?.arenaApp;
+          const cx = app ? app.screen.width / 2 : 300;
+          const cy = app ? app.screen.height / 2 + 30 : 230;
+          showFloatingText(cx, cy, `+${myXp.xp} XP`, 0x6acd8a, 14);
+        }
       }
 
       // Feed event
@@ -4591,6 +4611,9 @@
       // display shows only what was earned this round. See _showRoundEnd +
       // project_round_end_dopamine.md.
       S._roundPoints = 0;
+      // §9.91: parallel reset for round-scoped XP + level-up state.
+      S._roundXP = 0;
+      S._roundLevelUp = null;
       // Refresh sidebar
       if (typeof renderGuildSidebar === 'function') renderGuildSidebar();
       if (S.isDeployed && S.playerId && S.currentZoneId) loadMyCards(S.currentZoneId);
@@ -4960,6 +4983,7 @@
 
     overlay.innerHTML = `
       <style>@keyframes roundEndSlide{from{transform:translateX(-50%) translateY(-20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+      @keyframes levelUpPop{0%{transform:scale(0.85);opacity:0}60%{transform:scale(1.04);opacity:1}100%{transform:scale(1);opacity:1}}
       .round-end-cta{width:100%;margin:4px 0 6px;font-family:'Press Start 2P',monospace;font-size:10px;letter-spacing:1.5px;padding:12px 14px;border-radius:4px;cursor:pointer;background:linear-gradient(135deg,#D4A64B,#a8823a);color:#0d0a18;border:none;box-shadow:0 2px 12px rgba(212,166,75,0.3);transition:filter 0.15s;}
       .round-end-cta:hover{filter:brightness(1.1);}
       .round-end-cta:active{transform:translateY(1px);}
@@ -4996,22 +5020,36 @@
           </div>
         </div>
 
-        <!-- YOUR ROUND: points earned this round + XP placeholder. The points
-             number is the visible dopamine hit per design note. XP stays a
-             muted placeholder until the XP system wires a round delta in; the
-             slot exists now so the later ship is a content fill, not a layout
-             change. Future iteration (see project_round_end_dopamine.md):
-             drop roller lives alongside these chips. -->
+        <!-- §9.91: YOUR ROUND — points (gold) + XP (green) chips, both live.
+             Points come from increment_season_points; XP comes from the
+             xp-engine via combatEngine round-end payload. KO points/XP land
+             mid-round and are already accumulated in S._roundPoints by the
+             time this modal renders. Level-up celebration sits below this
+             row when S._roundLevelUp is set — see project_round_end_dopamine. -->
         <div style="display:flex;gap:8px;margin-bottom:8px;">
           <div style="flex:1;background:linear-gradient(180deg,rgba(212,166,75,0.12),rgba(212,166,75,0.04));border:1px solid rgba(212,166,75,0.22);border-radius:4px;padding:8px 10px;text-align:center;">
             <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(212,166,75,0.55);letter-spacing:1.5px;margin-bottom:4px;">POINTS THIS ROUND</div>
             <div style="font-family:'Press Start 2P',monospace;font-size:14px;color:#D4A64B;letter-spacing:1px;">+${(S._roundPoints || 0).toLocaleString()}</div>
           </div>
-          <div style="flex:1;background:rgba(255,255,255,0.02);border:1px dashed rgba(255,255,255,0.08);border-radius:4px;padding:8px 10px;text-align:center;opacity:0.55;">
-            <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(255,255,255,0.3);letter-spacing:1.5px;margin-bottom:4px;">XP</div>
-            <div style="font-family:'Press Start 2P',monospace;font-size:11px;color:rgba(255,255,255,0.25);letter-spacing:1px;">coming soon</div>
+          <div style="flex:1;background:linear-gradient(180deg,rgba(106,205,138,0.12),rgba(106,205,138,0.04));border:1px solid rgba(106,205,138,0.22);border-radius:4px;padding:8px 10px;text-align:center;">
+            <div style="font-family:'Press Start 2P',monospace;font-size:5px;color:rgba(106,205,138,0.55);letter-spacing:1.5px;margin-bottom:4px;">XP THIS ROUND</div>
+            <div style="font-family:'Press Start 2P',monospace;font-size:14px;color:#6acd8a;letter-spacing:1px;">+${(S._roundXP || 0).toLocaleString()}</div>
           </div>
         </div>
+
+        ${S._roundLevelUp ? `
+        <!-- §9.91: level-up celebration. Renders inline only when this round
+             pushed the player past a level threshold. unlocksGained may
+             include zone_slot unlocks AND/OR a level_up item drop (xp-engine
+             rolls a random rarity-weighted item on every level-up). -->
+        <div style="background:linear-gradient(135deg,rgba(212,166,75,0.18),rgba(106,205,138,0.10));border:1px solid rgba(212,166,75,0.45);border-radius:4px;padding:10px 12px;margin-bottom:8px;animation:levelUpPop 0.5s cubic-bezier(0.34,1.56,0.64,1);box-shadow:0 0 18px rgba(212,166,75,0.18);">
+          <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(212,166,75,0.75);letter-spacing:2.5px;margin-bottom:6px;text-align:center;">★ LEVEL UP ★</div>
+          <div style="font-family:'Cinzel',serif;font-size:18px;font-weight:700;color:#D4A64B;text-align:center;margin-bottom:${S._roundLevelUp.unlocks && S._roundLevelUp.unlocks.length ? '6px' : '0'};letter-spacing:2px;">LEVEL ${S._roundLevelUp.newLevel}</div>
+          ${S._roundLevelUp.unlocks && S._roundLevelUp.unlocks.length ? `
+          <div style="font-family:'Crimson Text',serif;font-size:13px;color:#CCC5DB;line-height:1.55;">
+            ${S._roundLevelUp.unlocks.map(u => `<div style="padding:2px 0;">→ ${u.description || ''}</div>`).join('')}
+          </div>` : ''}
+        </div>` : ''}
 
         <!-- Nerm commentary -->
         <div style="background:rgba(212,166,75,0.05);border:1px solid rgba(212,166,75,0.12);border-radius:4px;padding:6px 10px;margin-bottom:8px;">
@@ -5159,9 +5197,14 @@
   S._sessionStartAt = null;
   // Round-scoped running total of points earned since the last arena:round_start.
   // Reset by the round_start handler; surfaced in the round-end modal for the
-  // dopamine beat (see project_round_end_dopamine.md). XP stays a placeholder
-  // until the XP system feeds a round delta — structure is ready for it.
+  // dopamine beat (see project_round_end_dopamine.md).
   S._roundPoints = 0;
+  // §9.91: parallel round-scoped XP delta + level-up state. Round-end handler
+  // pulls these from `xpLog` in the arena:round_end payload and the modal
+  // surfaces them alongside points + an inline level-up celebration when
+  // `_roundLevelUp` is set.
+  S._roundXP = 0;
+  S._roundLevelUp = null;
 
   function _addSessionPoints(source, amount) {
     if (!S._sessionPoints) S._sessionPoints = { zone:0, kos:0, snapshots:0, chronicle:0, duels:0 };
