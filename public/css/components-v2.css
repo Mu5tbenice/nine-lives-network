@@ -127,6 +127,48 @@ img { max-width: 100%; display: block; }
   border-radius: 5px; cursor: pointer;
 }
 
+/* Marquee CTA — the elevated "primary action" gold button used on home-hub
+   surfaces (dashboard DEPLOY TO BATTLE). Sibling of .btn-gold, not a
+   modifier — styling is too divergent (3-stop diagonal gradient, multi-shadow
+   glow, larger padding/font, light border halo) to inherit the base. */
+.btn-gold--marquee {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; padding: 18px 24px;
+  margin: 16px 0;
+  background: linear-gradient(135deg, #D4A64B 0%, #b8903d 60%, #8a6d2f 100%);
+  border: 1px solid rgba(255, 220, 130, 0.3);
+  border-radius: 12px;
+  box-shadow:
+    0 4px 0 #6b5525,
+    0 0 30px rgba(212, 166, 75, 0.25),
+    0 8px 32px rgba(212, 166, 75, 0.15);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-gold--marquee:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 0 #6b5525,
+    0 0 40px rgba(212, 166, 75, 0.4),
+    0 12px 40px rgba(212, 166, 75, 0.2);
+}
+.btn-gold--marquee:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #6b5525;
+}
+.btn-gold--marquee__icon { font-size: 20px; }
+.btn-gold--marquee__label {
+  font-family: var(--font-title);
+  font-size: 17px; font-weight: 800;
+  color: var(--bg-warm);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
 .btn-attack {
   flex: 1; padding: 10px 0; border-radius: 6px;
   background: linear-gradient(135deg, #cc3333, #aa2222);
