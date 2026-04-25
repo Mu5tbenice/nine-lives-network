@@ -68,6 +68,31 @@
 <body>
   <script src="/js/nav.js"></script>
 
+  <!-- §9.91+: this legacy page is superseded by /p/<handle> (server-rendered
+       public profile with per-player OG cards). The script below redirects
+       any hit to the canonical URL. The original render path is preserved
+       below as fallback in case the redirect fails (older browsers, JS
+       disabled, etc.) — same shape as before, just unreachable in the
+       happy path. -->
+  <script>
+    (function() {
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var fromUrl = params.get('player_id');
+        var pid = fromUrl || localStorage.getItem('player_id');
+        if (pid) {
+          // /p/by-id/:player_id is a server-side 302 helper — resolves to
+          // the player's twitter_handle and 302s to /p/<handle>. Single
+          // canonical URL preserved.
+          if (fromUrl) localStorage.setItem('player_id', fromUrl);
+          window.location.replace('/p/by-id/' + encodeURIComponent(pid));
+          return;
+        }
+      } catch (e) { /* fall through to register page */ }
+      window.location.replace('/register.html');
+    })();
+  </script>
+
   <div class="main-container" id="profileContent" style="display:none;">
     <div class="loading" id="loadingState"><div class="spinner"></div></div>
   </div>
