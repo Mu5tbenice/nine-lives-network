@@ -125,6 +125,21 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 </head>
 <body>
+<!-- §9.91+: zone-detail.html is superseded by /nethara-live.html (the
+     post-§9.90 canonical live arena). This page shipped pre-IA refactor
+     and increasingly overlapped with nethara-live. The redirect shim
+     below carries any ?zone_id forward and lands the visitor on the live
+     arena. The legacy render path stays below as JS-disabled fallback. -->
+<script>
+  (function() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var zoneId = params.get('zone_id');
+      var dest = '/nethara-live.html' + (zoneId ? '?zone_id=' + encodeURIComponent(zoneId) : '');
+      window.location.replace(dest);
+    } catch (e) { /* fall through to legacy render */ }
+  })();
+</script>
 <div id="loadingState" class="loading">
   <div class="spinner"></div>
   <div style="font-family:var(--f-data);font-size:7px;color:var(--muted);margin-top:12px;letter-spacing:1px;">LOADING ZONE...</div>

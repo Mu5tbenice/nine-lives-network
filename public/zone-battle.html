@@ -163,6 +163,20 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 </head>
 <body>
+<!-- §9.91+: zone-battle.html was a manual-trigger combat artifact (admin/dev).
+     Superseded by /nethara-live.html which auto-runs the round loop via
+     Socket.io. Redirect shim carries ?zone_id forward; legacy render
+     stays below as JS-disabled fallback. -->
+<script>
+  (function() {
+    try {
+      var params = new URLSearchParams(window.location.search);
+      var zoneId = params.get('zone_id');
+      var dest = '/nethara-live.html' + (zoneId ? '?zone_id=' + encodeURIComponent(zoneId) : '');
+      window.location.replace(dest);
+    } catch (e) { /* fall through to legacy render */ }
+  })();
+</script>
 <div class="wrap" id="app">
   <div style="text-align:center;padding:60px 20px">
     <div style="width:32px;height:32px;border:3px solid rgba(212,166,75,.15);border-top-color:#D4A64B;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px"></div>
