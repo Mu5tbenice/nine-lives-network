@@ -33,16 +33,28 @@
 
     /* Section label */
     .section-label{display:flex;align-items:center;gap:10px;margin:18px 0 10px}
-    /* Replaces the legacy emoji icon — small gold square accent. The
-       sectionLabel(icon, text) helper now ignores the icon param and renders
-       this consistent visual instead. */
+    /* Gold square accent — paired with an optional thematic ICONS-key
+       glyph via section-label__icon. Even when no icon is passed the
+       accent bar reads as intentional chrome. */
     .section-label__accent{width:6px;height:14px;background:linear-gradient(180deg,#F8DA72,#9C7B2F);border-radius:2px;box-shadow:0 0 6px rgba(212,166,75,0.4);flex-shrink:0}
+    .section-label__icon{color:var(--gold);display:inline-flex;align-items:center}
     .section-label__text{font-family:var(--font-title);font-size:12px;font-weight:700;color:var(--gold);letter-spacing:2px}
     .section-label__line{flex:1;height:1px;background:linear-gradient(90deg,rgba(212,166,75,0.25),transparent)}
 
     /* Tabs */
+    /* ── Game icons (inline SVG, currentColor) ──
+       .gi    base — 1em square so it scales with surrounding font-size
+       .gi-sm fixed 12px (sub-tabs, prize bullets, gap-to-next inline)
+       .gi-md fixed 16px (tab buttons, modal titles)
+       .gi-lg fixed 22px (section labels, clash crowns) */
+    .gi{width:1em;height:1em;display:inline-block;vertical-align:-0.15em;flex-shrink:0}
+    .gi-sm{width:12px;height:12px;display:inline-block;vertical-align:-2px;flex-shrink:0}
+    .gi-md{width:16px;height:16px;display:inline-block;vertical-align:-3px;flex-shrink:0}
+    .gi-lg{width:22px;height:22px;display:inline-block;vertical-align:-5px;flex-shrink:0}
+
     .tabs{display:flex;gap:4px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px}
-    .tab{font-family:var(--font-mono);font-size:8px;font-weight:400;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;white-space:nowrap;transition:all 0.15s}
+    .tab{font-family:var(--font-mono);font-size:8px;font-weight:400;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;white-space:nowrap;transition:all 0.15s;display:inline-flex;align-items:center;gap:6px}
+    .tab .gi-md{color:currentColor}
     .tab.active{font-weight:700}
     .tab[data-color="gold"].active{color:var(--gold);border-color:rgba(212,166,75,0.25);background:var(--gold-dim)}
     .tab[data-color="sunset"].active{color:var(--sunset);border-color:rgba(232,133,90,0.25);background:rgba(232,133,90,0.1)}
@@ -118,11 +130,13 @@
 
     /* Streak fire — appears next to handle when streak >= 3.
        Inline with the name row so it reads as a status badge, not a separate UI. */
-    .streak-fire{font-family:var(--font-data);font-size:8px;color:#FF8C00;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:2px;text-shadow:0 0 6px rgba(255,140,0,0.4)}
+    .streak-fire{font-family:var(--font-data);font-size:9px;color:#FF8C00;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:3px;filter:drop-shadow(0 0 4px rgba(255,140,0,0.4))}
+    .streak-fire .gi-sm{color:#FF8C00}
 
     /* Gap-to-next — appears on YOU pin only. "23 pts behind @leader_handle"
        or "🏆 #1!" when at the top. Sub-line of the YOU pin. */
-    .gap-to-next{font-family:var(--font-mono);font-size:9px;color:var(--text-faint);font-style:italic;margin-top:1px}
+    .gap-to-next{font-family:var(--font-mono);font-size:9px;color:var(--text-faint);font-style:italic;margin-top:1px;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+    .gap-to-next .gi-sm{color:var(--gold)}
     .gap-to-next strong{color:var(--cyan);font-style:normal;font-weight:600}
 
     .lb-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative}
@@ -176,10 +190,10 @@
     .clash-guild__score{font-family:var(--font-data);font-size:14px;margin-top:6px}
     .clash-guild__score.live{font-size:16px;color:var(--cyan)}
     .clash-guild__score.won{color:var(--green);text-shadow:0 0 8px rgba(106,205,138,0.3)}
-    .clash-vs{font-family:var(--font-title);font-size:11px;color:var(--text-faint);width:40px;text-align:center;border-radius:8px;padding:4px 0}
-    .clash-vs.live{background:rgba(106,200,216,0.1)}
+    .clash-vs{font-family:var(--font-title);font-size:11px;color:var(--text-faint);width:40px;text-align:center;border-radius:8px;padding:4px 0;display:flex;align-items:center;justify-content:center}
+    .clash-vs.live{background:rgba(106,200,216,0.12);color:var(--cyan)}
     .clash-week{text-align:center;margin-top:8px;font-family:var(--font-mono);font-size:8px;color:var(--text-faint)}
-    .clash-crown{font-size:10px;margin-top:4px}
+    .clash-crown{margin-top:4px;color:var(--gold);display:flex;justify-content:center}
 
     /* Standings table */
     .standings{border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:16px}
@@ -195,7 +209,7 @@
 
     /* Prize card */
     .prize-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:var(--bg-card);border:1px solid var(--border);margin-bottom:4px}
-    .prize-icon{font-size:18px}
+    .prize-icon{display:inline-flex;align-items:center;width:22px;height:22px;justify-content:center}
     .prize-text{flex:1;font-family:var(--font-mono);font-size:10px;color:var(--text-bright)}
     .prize-place{font-family:var(--font-data);font-size:8px;color:var(--gold)}
 
@@ -270,7 +284,7 @@
 <!-- Admin Clash Modal (hidden by default) -->
 <div id="clashModal" class="modal-overlay" style="display:none">
   <div class="modal">
-    <div class="modal__title">⚔️ Create Guild Clash</div>
+    <div class="modal__title"><svg class="gi-md" viewBox="0 0 512 512" aria-hidden="true" style="color:var(--gold);margin-right:6px"><path fill="currentColor" d="M66.54 18.002a18.066 18.066 0 0 0-12.37 4.541c-7.508 6.632-8.218 18.094-1.586 25.602 4.394 4.974 10.906 6.945 16.986 5.792l57.838 65.475-50.373 44.498 24.188 27.38c9.69-21.368 22.255-39.484 37.427-54.65l6.91 36.188c25.092-6.29 49.834-10.563 74.366-12.873l-23.912-27.07-38.66-12.483c17.117-12.9 36.734-22.97 58.62-30.474l-24.19-27.385-50.37 44.496-57.92-65.57c1.79-5.835.617-12.43-3.72-17.34a18.092 18.092 0 0 0-13.235-6.128zm384.397 0a18.094 18.094 0 0 0-13.232 6.127c-4.338 4.91-5.514 11.506-3.723 17.343l-57.92 65.568-50.37-44.497-24.188 27.385c21.884 7.504 41.5 17.573 58.62 30.472l-38.66 12.485-23.255 26.324c24.71 1.863 49.367 5.706 74.118 11.46l6.498-34.03c15.173 15.166 27.74 33.282 37.43 54.65l24.185-27.38-50.372-44.498 57.838-65.475c6.08 1.153 12.593-.818 16.987-5.792 6.63-7.508 5.92-18.97-1.586-25.602a18.066 18.066 0 0 0-12.37-4.541zm-186.425 158.51c-39.56-.098-79.467 5.226-120.633 16.095-2.046 90.448 34.484 209.35 118.47 259.905 81.295-49.13 122.402-169.902 120.552-259.914-39.75-10.496-78.91-15.988-118.39-16.086zm-117.176 153.5L60.47 428.35l-12.2 63.894 61.9-19.994 68.49-77.535c-12.86-20.108-23.246-42.03-31.324-64.703zm228.203 6.11c-8.69 22.238-19.577 43.634-32.706 63.142l64.473 72.986 61.898 19.994-12.2-63.894-81.466-92.23z"/></svg>Create Guild Clash</div>
     <label>Week Number</label>
     <input type="number" id="clashWeek" min="1" max="99" value="1">
     <label>Guild A Name</label>
@@ -302,6 +316,31 @@
 // ═══════════════════════════════════════
 // HOUSES DATA
 // ═══════════════════════════════════════
+// ─── Game-icons.net inline SVG library ───────────────────────────────
+// Paths sourced from /public/assets/icons/icons/ffffff/000000/1x1/<artist>/.
+// Stripped of the black background rect; rendered with `fill="currentColor"`
+// so CSS color: <var> recolors them at any size.
+//
+// To add another icon: copy the path's `d=` attribute from any source SVG
+// (skip the first <path d="M0 0h512v512H0z"/> which is the bg rect).
+var ICONS = {
+  laurels: 'M137.273 41c1.41 59.526 16.381 119.035 35.125 167.77 19.69 51.191 44.086 90.988 57.965 104.867l2.637 2.636V343h46v-26.727l2.637-2.636c13.879-13.88 38.275-53.676 57.965-104.867 18.744-48.735 33.715-108.244 35.125-167.77zm-50.605 68.295c-17.97 6.05-32.296 18.214-37.625 30.367-3.015 6.875-3.48 13.44-.988 20.129.285.766.62 1.54.996 2.318a119.032 119.032 0 0 1 8.504-4.812l6.277-3.215 4.621 5.326c5.137 5.92 9.61 12.37 13.422 19.125 2.573-3.06 5.207-7.864 7.05-14.037 4.491-15.034 4.322-36.95-2.257-55.201zm338.664 0c-6.58 18.25-6.748 40.167-2.258 55.201 1.844 6.173 4.478 10.977 7.051 14.037 3.813-6.756 8.285-13.205 13.422-19.125l4.621-5.326 6.277 3.215a119.033 119.033 0 0 1 8.504 4.812c.375-.779.71-1.552.996-2.318 2.492-6.689 2.027-13.254-.988-20.129-5.329-12.153-19.655-24.317-37.625-30.367zm-365.975 67.74c-20.251 12.486-34.121 31.475-36.746 47.973-1.447 9.1.09 17.224 5.323 24.545 1.66 2.324 3.743 4.594 6.304 6.76a116.606 116.606 0 0 1 11.44-14.977l4.72-5.24 6.217 3.33c7.91 4.236 15.262 9.424 21.94 15.252.973-3.633 1.619-7.892 1.773-12.616.636-19.438-6.762-45.536-20.97-65.027zm393.286 0c-14.21 19.49-21.607 45.59-20.971 65.027.154 4.724.8 8.983 1.773 12.616 6.678-5.828 14.03-11.016 21.94-15.252l6.217-3.33 4.72 5.24a116.606 116.606 0 0 1 11.44 14.976c2.56-2.165 4.643-4.435 6.304-6.76 5.233-7.32 6.77-15.444 5.323-24.544-2.625-16.498-16.495-35.487-36.746-47.973zM54.4 259.133c-14.394 18.806-20.496 41.413-17.004 57.748 1.928 9.014 6.298 16.078 13.844 21.078 4.944 3.276 11.48 5.7 19.94 6.645a120.631 120.631 0 0 1 7.101-17.852l3.125-6.338 6.9 1.535c4.095.911 8.133 2.046 12.094 3.377-.373-3.838-1.309-8.185-2.925-12.82-6.416-18.396-22.749-40.184-43.075-53.373zm403.2 0c-20.326 13.189-36.66 34.977-43.075 53.373-1.616 4.635-2.552 8.982-2.925 12.82a119.337 119.337 0 0 1 12.093-3.377l6.9-1.535 3.126 6.338a120.63 120.63 0 0 1 7.101 17.852c8.46-.944 14.996-3.37 19.94-6.645 7.546-5 11.916-12.065 13.844-21.078 3.492-16.335-2.61-38.942-17.004-57.748zM91.5 341.527c-9.285 23.14-9.027 47.85-.709 63.54 4.57 8.619 11.106 14.607 20.268 17.562 4.586 1.479 9.957 2.19 16.185 1.803-2.135-11.155-2.771-22.97-1.756-34.938l.602-7.074 7.02-1.065a129.43 129.43 0 0 1 13.458-1.312c.554-.025 1.107-.04 1.66-.059-12.419-15.776-33.883-31.43-56.728-38.457zm329 0c-22.845 7.027-44.31 22.68-56.729 38.457.554.019 1.107.034 1.66.059 4.5.206 8.995.637 13.46 1.312l7.02 1.065.6 7.074c1.016 11.967.38 23.783-1.755 34.938 6.228.386 11.6-.324 16.185-1.803 9.162-2.955 15.699-8.943 20.268-17.563 8.318-15.69 8.576-40.4-.709-63.539zM199.729 361c-1.943 7.383-6.045 14.043-11.366 19.363a46.544 46.544 0 0 1-3.484 3.125c14.804 3.295 28.659 8.692 40.404 15.46 2.384-5.36 5.376-10.345 9.408-14.534C239.96 378.942 247.51 375 256 375c8.491 0 16.041 3.942 21.309 9.414 4.032 4.19 7.024 9.175 9.408 14.533 11.815-6.808 25.766-12.23 40.67-15.52a48.107 48.107 0 0 1-3.739-3.413c-5.227-5.333-9.27-11.852-11.261-19.014zM256 393c-3.434 0-5.635 1.084-8.34 3.895-2.704 2.81-5.395 7.52-7.527 13.298-4.265 11.556-6.343 27-7.156 38.446-1.07 15.043 3 33.368 12.285 40.06 4.733 3.412 16.743 3.412 21.476 0 9.285-6.692 13.355-25.017 12.285-40.06-.813-11.446-2.891-26.89-7.156-38.446-2.132-5.777-4.823-10.488-7.527-13.298-2.705-2.81-4.906-3.895-8.34-3.895zm-103.521 4.979c-1.714-.008-3.424.022-5.127.09-1.405.055-2.77.281-4.164.39-.418 27.817 9.816 53.543 24.994 66.644 8.264 7.134 17.586 10.772 28.35 10.157 5.908-.338 12.394-2.03 19.374-5.52-1.27-7.665-1.377-15.42-.883-22.379.632-8.89 1.852-19.962 4.479-30.877-17.16-10.686-42.426-18.395-67.023-18.506zm207.042 0c-24.597.11-49.863 7.82-67.023 18.505 2.627 10.915 3.847 21.987 4.479 30.877.494 6.958.387 14.714-.883 22.38 6.98 3.49 13.466 5.181 19.375 5.519 10.763.615 20.085-3.023 28.35-10.156 15.177-13.102 25.411-38.828 24.993-66.645-1.393-.109-2.76-.335-4.164-.39a116.32 116.32 0 0 0-5.127-.09z',
+  flag: 'M151 32v247h18V32h-18zm247 9.574-13.428 7.59c-31.626 17.876-61.492 12.267-93.138 4.356-31.647-7.912-64.83-18.84-97.946-4.807L188 51.039v115.549l12.512-5.3c25.883-10.968 54.201-2.396 86.554 5.692 32.354 8.089 68.988 14.98 106.362-6.144l4.572-2.584V41.574zM73 297v67.271l32 32V487h302v-90.729l32-32V297h-46v39h-18v-39h-46v39h-18v-39h-46v39h-18v-39h-46v39h-18v-39h-46v39h-18v-39H73z',
+  swords: 'M66.54 18.002a18.066 18.066 0 0 0-12.37 4.541c-7.508 6.632-8.218 18.094-1.586 25.602 4.394 4.974 10.906 6.945 16.986 5.792l57.838 65.475-50.373 44.498 24.188 27.38c9.69-21.368 22.255-39.484 37.427-54.65l6.91 36.188c25.092-6.29 49.834-10.563 74.366-12.873l-23.912-27.07-38.66-12.483c17.117-12.9 36.734-22.97 58.62-30.474l-24.19-27.385-50.37 44.496-57.92-65.57c1.79-5.835.617-12.43-3.72-17.34a18.092 18.092 0 0 0-13.235-6.128zm384.397 0a18.094 18.094 0 0 0-13.232 6.127c-4.338 4.91-5.514 11.506-3.723 17.343l-57.92 65.568-50.37-44.497-24.188 27.385c21.884 7.504 41.5 17.573 58.62 30.472l-38.66 12.485-23.255 26.324c24.71 1.863 49.367 5.706 74.118 11.46l6.498-34.03c15.173 15.166 27.74 33.282 37.43 54.65l24.185-27.38-50.372-44.498 57.838-65.475c6.08 1.153 12.593-.818 16.987-5.792 6.63-7.508 5.92-18.97-1.586-25.602a18.066 18.066 0 0 0-12.37-4.541zm-186.425 158.51c-39.56-.098-79.467 5.226-120.633 16.095-2.046 90.448 34.484 209.35 118.47 259.905 81.295-49.13 122.402-169.902 120.552-259.914-39.75-10.496-78.91-15.988-118.39-16.086zm-117.176 153.5L60.47 428.35l-12.2 63.894 61.9-19.994 68.49-77.535c-12.86-20.108-23.246-42.03-31.324-64.703zm228.203 6.11c-8.69 22.238-19.577 43.634-32.706 63.142l64.473 72.986 61.898 19.994-12.2-63.894-81.466-92.23z',
+  burst: 'm54.184 19.512 116.02 144.838a103.316 103.316 0 0 0-27.923 36.095L20.493 142.73v62.993l113.983 19.172a102.585 102.585 0 0 0-1.707 18.67c0 3.502.177 6.965.52 10.378l-72.376 27.7 79.467.687a102.85 102.85 0 0 0 16.948 27.775L20.492 441.7v52.484h47.336l105.87-168.65c11.644 8.795 25.212 15.165 39.945 18.366l-23.7 150.284H294.22L253.25 344.69a101.796 101.796 0 0 0 24.744-7.7l37.262 42.268-21.326-51.365a103.605 103.605 0 0 0 18.68-16.692l182.533 146.61V348.556L329.43 284.865a101.846 101.846 0 0 0 8.195-31.238l84.7-25.93-86.78-7.008a101.966 101.966 0 0 0-10.852-27.825l170.452-87.398V23.924L311.918 175.15a103.605 103.605 0 0 0-17.912-15.86l15.533-38.382-29.968 29.967a101.844 101.844 0 0 0-30.996-9.148L269.89 19.512h-40.12l1.27 121.478c-19.017.808-36.716 6.816-51.706 16.64L94.102 19.51H54.184z',
+  fire: 'M256 16c-52.5 252.632-210 277.845 0 454.688C466 293.845 308.5 268.63 256 16zM124.75 167.407C98.5 243.197 46 294.117 46 369.907S151 496 229.75 496c-157.5-126.317-105-202.278-105-328.593zm262.5 0c0 126.317 52.5 202.278-105 328.593C361 496 466 445.696 466 369.907c0-75.79-52.5-126.71-78.75-202.5z',
+  crown: 'M256 38.55c-30.5 0-55 24.52-55 55 0 30.45 24.5 54.95 55 54.95s55-24.5 55-54.95c0-30.48-24.5-55-55-55zM191.3 164.4c-5.7 0-11.1.4-16 1.4-19.9 4-34.1 15.6-43.1 35.4-9.4 20.6-12.1 50.6-5.8 88l6 5.9c13.8 13.8 36.1 21.4 58.6 21.4 21.1 0 42.1-6.7 56-19V179.2c-21-9.8-39.8-14.5-55.7-14.8zm129.4 0c-15.9.3-34.7 5-55.7 14.8v118.3c13.9 12.3 34.9 19 56 19 22.5 0 44.8-7.6 58.6-21.4l6-5.9c6.3-37.4 3.6-67.4-5.8-88-9-19.8-23.2-31.4-43.1-35.4-4.9-1-10.3-1.4-16-1.4zm-209.1 14.4h-.2c-30 .7-55.2 12.1-70.2 32.1-13.3 17.8-19.5 42.9-13.6 76 .9 5.1 2.1 10.5 3.7 16 24.5 18.5 54.3 18.6 78.9.3-9.2-44.8-6.9-81.9 5.6-109.4 2.4-5.3 5.2-10.2 8.4-14.7-2.9-.2-5.8-.3-8.6-.3h-3.9c-.1 0-.1-.1-.1 0zm288.8 0c0-.1 0 0-.1 0h-3.9c-2.8 0-5.7.1-8.6.3 3.2 4.5 6 9.4 8.4 14.7 12.5 27.5 14.8 64.6 5.6 109.4 24.5 18.3 54.4 18.2 78.9-.3 1.5-5.5 2.8-10.9 3.7-16 5.9-33.1-.3-58.2-13.6-76-15-20-40.2-31.4-70.2-32.1h-.2zM132.8 318.4c6.9 26.1 17.7 54.9 32.9 86.1h58.6l22.7-56.7v-28c-16.4 10-36.3 14.7-56 14.7-20.7 0-41.5-5.2-58.2-16.1zm246.4 0c-16.7 10.9-37.5 16.1-58.2 16.1-19.7 0-39.6-4.7-56-14.7v28l22.7 56.7h58.6c15.2-31.2 26-60 32.9-86.1zm-264.6 3.4c-23 13.9-50.1 16.1-74.5 6.4 9.6 23 24.1 48.5 44.5 76.3h61c-14-29.6-24.2-57.2-31-82.7zm282.8 0c-6.8 25.5-17 53.1-31 82.7h61c20.4-27.8 34.9-53.3 44.5-76.3-24.3 9.7-51.5 7.5-74.5-6.4zM256 373.7l-22.1 55.4 22.1 44.3 22.1-44.3zM91.53 422.5l11.47 46h35.3l-23-23 23-23zm90.27 0 16.6 16.6 6.3 6.4-23 23h51.7l-19.3-38.6 3-7.4zm113.1 0 1.5 3.7 1.5 3.7-19.3 38.6h51.7l-23-23 23-23zm78.9 0 16.6 16.6 6.3 6.4-23 23H409l11.5-46zM160 426.2l-19.3 19.3 19.3 19.3 19.3-19.3zm192 0-19.3 19.3 19.3 19.3 19.3-19.3z',
+  sparkles: 'M237.4 20.73c-6.1 42.1-26.8 64.2-63.9 64 31.6 4.5 63.8 8 63.9 64.07-.6-46.1 24.5-63.07 64.1-64.07-38-1.5-64.9-16.3-64.1-64zm127.8 11.58c-9.1 14.25-20.8 21.29-38.9 10.28 14.9 11.79 18.6 24.76 10.2 38.97 8.9-11.18 17.5-22.73 39-10.27-17.8-10.06-18.8-23.57-10.3-38.98zM59.68 41.69c-2.7 18.8-12 28.6-28.5 28.5 14.1 2 28.4 3.6 28.5 28.52-.3-20.5 10.9-28.12 28.5-28.52-16.9-.7-28.9-7.3-28.5-28.5zM431 66.28c-2.7 18.8-12 28.6-28.5 28.5 14.1 2 28.4 3.6 28.5 28.52-.3-20.5 10.9-28.12 28.5-28.52-16.9-.7-28.9-7.3-28.5-28.5zM120.3 116.4c-15.8 53.7-47.76 48-79.35 43.4C76.6 170 90.3 197.1 84.28 239.2c12.66-46 42.62-52.6 79.42-43.4-37.6-12.1-56.9-35.4-43.4-79.4zm187 5c-8.8 61.6-39.3 94-93.6 93.7 46.2 6.5 93.6 11.7 93.6 93.7-.8-67.3 35.9-92.2 93.8-93.7-55.5-2.2-94.9-23.9-93.8-93.7zm136.8 38.3c-13.1 21.6-29.5 28.8-49.7 20.1 16.3 9.7 33 19.1 20.1 49.6 10.3-25.2 27.9-28.7 49.7-20-20.3-9.7-31.6-23.9-20.1-49.7zM50.7 243.2c9.16 16.7 7.63 30.1-5.61 40 12.46-6.9 24.85-14.3 39.91 5.6-12.57-16.2-8.2-29 5.61-40-13.92 9.7-27.47 11.6-39.91-5.6zm137.2.3c11.4 26.8-.5 41.3-21.7 50.9 22.7-8.5 40.8-4.5 50.9 21.7-12.7-31.8 4.8-41.2 21.7-50.9-21 8.5-37.8.9-50.9-21.7zm228 12.6c-26.6 64.7-68.7 91.7-127.8 76.4 48.6 19.8 98.8 38.5 76.4 127.9 17.5-73.7 64.4-90.7 127.9-76.5-59.9-17.5-96.9-52-76.5-127.8zM99.94 295.5c15.66 57.8.86 98.1-47.32 118.5 43.46-11.8 87.38-25.2 118.68 47.4-26.4-59.3-3.4-95.4 47.3-118.8-50 19.2-93.1 15-118.66-47.1zm169.36 61c-21.8 20.6-43 23.6-63.2 7.3 15.5 16.3 31.6 32.4 7.2 63.3 19.8-25.6 41.2-24.1 63.3-7.3-20.2-17.4-28.6-37.5-7.3-63.3zM443.2 404c-2.7 18.8-12 28.6-28.5 28.5 14.1 2 28.4 3.6 28.5 28.5-.3-20.5 10.9-28.1 28.5-28.5-16.9-.7-28.9-7.3-28.5-28.5zm-169.7 36c-2.7 18.8-12 28.6-28.5 28.5 14.1 2 28.4 3.6 28.5 28.5-.3-20.5 10.9-28.1 28.5-28.5-16.9-.7-28.9-7.3-28.5-28.5z'
+};
+
+// Render a game-icon as inline <svg>. fills with currentColor so CSS color
+// is the recoloring lever. cls lets callers add sizing classes.
+function gameIcon(name, cls) {
+  var d = ICONS[name];
+  if (!d) return '';
+  return '<svg class="' + (cls || 'gi') + '" viewBox="0 0 512 512" aria-hidden="true"><path fill="currentColor" d="' + d + '"/></svg>';
+}
+
 // Sigil paths follow `reference_house_sigils.md` — Ashenvale uses capital A,
 // the rest are lowercase. icon: kept as fallback only (used if the <img>
 // 404s, e.g. during local dev with stale assets).
@@ -317,12 +356,15 @@ var HOUSES = {
   9:{name:'Plaguemire', color:'#E84393',icon:'☠️',role:'DOT',         sigil:'/assets/images/houses/House-plaguemire.png'}
 };
 
+// `icon` is now an ICONS key (rendered by gameIcon below), `place` stays as
+// a small text label. The legacy `🏠` place value is kept as text since the
+// position column is just a short label, not an icon target.
 var SEASON_PRIZES = [
-  {place:'#1',prize:'Design a permanent spell card',icon:'✨'},
-  {place:'#1-3',prize:'Named in Season 2 storyline',icon:'📖'},
-  {place:'#1-5',prize:'Champion card frame + First Nine badge',icon:'👑'},
-  {place:'#1-10',prize:'Council membership + Nines priority',icon:'🏛️'},
-  {place:'🏠',prize:'Winning house gets exclusive seasonal spell',icon:'⚔️'}
+  {place:'#1',    prize:'Design a permanent spell card',         icon:'sparkles'},
+  {place:'#1-3',  prize:'Named in Season 2 storyline',           icon:'laurels'},
+  {place:'#1-5',  prize:'Champion card frame + First Nine badge',icon:'crown'},
+  {place:'#1-10', prize:'Council membership + Nines priority',   icon:'flag'},
+  {place:'House', prize:'Winning house gets exclusive seasonal spell', icon:'swords'}
 ];
 
 // ═══════════════════════════════════════
@@ -580,7 +622,7 @@ function rankDelta(p) {
 // visible momentum tangible (a 7-day streak reads as a real commitment).
 function streakBadge(p) {
   if (!p || !p.streak || p.streak < 3) return '';
-  return '<span class="streak-fire">🔥 ' + p.streak + '</span>';
+  return '<span class="streak-fire">' + gameIcon('fire','gi-sm') + p.streak + '</span>';
 }
 
 // Find current player in a ranked list. Returns {player, rank} or null.
@@ -625,9 +667,9 @@ function mePin(found, opts) {
       var second = opts.fullList[1];
       if (second) {
         var lead = (p.seasonal_points||0) - (second.seasonal_points||0);
-        gapHtml = '<div class="gap-to-next">🏆 #1 — leading by <strong>' + lead.toLocaleString() + '</strong> pts</div>';
+        gapHtml = '<div class="gap-to-next">' + gameIcon('laurels','gi-sm') + ' #1 — leading by <strong>' + lead.toLocaleString() + '</strong> pts</div>';
       } else {
-        gapHtml = '<div class="gap-to-next">🏆 #1!</div>';
+        gapHtml = '<div class="gap-to-next">' + gameIcon('laurels','gi-sm') + ' #1!</div>';
       }
     } else {
       var ahead = opts.fullList[rank - 2];
@@ -716,10 +758,10 @@ function render() {
 
   // Tabs
   html += '<div class="tabs">';
-  html += '<button class="tab' + (currentTab==='season'?' active':'') + '" data-color="gold" onclick="switchTab(\'season\')">🏆 SEASON</button>';
-  html += '<button class="tab' + (currentTab==='houses'?' active':'') + '" data-color="sunset" onclick="switchTab(\'houses\')">🏠 HOUSES</button>';
-  html += '<button class="tab' + (currentTab==='duels'?' active':'') + '" data-color="red" onclick="switchTab(\'duels\')">⚔️ DUELS</button>';
-  html += '<button class="tab' + (currentTab==='clash'?' active':'') + '" data-color="cyan" onclick="switchTab(\'clash\')">💥 CLASH</button>';
+  html += '<button class="tab' + (currentTab==='season'?' active':'') + '" data-color="gold" onclick="switchTab(\'season\')">' + gameIcon('laurels','gi-md') + 'SEASON</button>';
+  html += '<button class="tab' + (currentTab==='houses'?' active':'') + '" data-color="sunset" onclick="switchTab(\'houses\')">' + gameIcon('flag','gi-md') + 'HOUSES</button>';
+  html += '<button class="tab' + (currentTab==='duels'?' active':'') + '" data-color="red" onclick="switchTab(\'duels\')">' + gameIcon('swords','gi-md') + 'DUELS</button>';
+  html += '<button class="tab' + (currentTab==='clash'?' active':'') + '" data-color="cyan" onclick="switchTab(\'clash\')">' + gameIcon('burst','gi-md') + 'CLASH</button>';
   html += '</div>';
 
   // ═══ SEASON TAB ═══
@@ -750,12 +792,12 @@ function render() {
       html += '</div>';
 
       // Rest of rankings
-      html += sectionLabel('📊', 'RANKINGS');
+      html += sectionLabel('laurels', 'RANKINGS');
       players.slice(3).forEach(function(p, i) {
         html += playerRow(p, i + 4, { prefix: 'season_' });
       });
     } else if (players.length > 0) {
-      html += sectionLabel('📊', 'RANKINGS');
+      html += sectionLabel('laurels', 'RANKINGS');
       players.forEach(function(p, i) {
         html += playerRow(p, i + 1, { prefix: 'season_' });
       });
@@ -764,10 +806,10 @@ function render() {
     }
 
     // Season Prizes
-    html += sectionLabel('🎁', 'SEASON PRIZES');
+    html += sectionLabel('sparkles', 'SEASON PRIZES');
     SEASON_PRIZES.forEach(function(pr, i) {
       html += '<div class="prize-row" style="animation:fadeSlideIn 0.3s ease ' + (i * 0.05) + 's both">';
-      html += '<span class="prize-icon">' + pr.icon + '</span>';
+      html += '<span class="prize-icon" style="color:var(--gold)">' + gameIcon(pr.icon, 'gi-md') + '</span>';
       html += '<span class="prize-text">' + pr.prize + '</span>';
       html += '<span class="prize-place">' + pr.place + '</span>';
       html += '</div>';
@@ -781,7 +823,7 @@ function render() {
 
     // Chart
     if (houses.length > 0) {
-      html += sectionLabel('📈', 'HOUSE PROGRESSION');
+      html += sectionLabel(null, 'HOUSE PROGRESSION');
       html += '<div class="chart-box">';
       html += '<canvas id="houseChart" style="width:100%;max-width:440px;height:140px;display:block"></canvas>';
       html += '<div class="chart-legend">';
@@ -793,7 +835,7 @@ function render() {
       html += '</div></div>';
     }
 
-    html += sectionLabel('🏠', 'HOUSE RANKINGS');
+    html += sectionLabel('flag', 'HOUSE RANKINGS');
     if (houses.length > 0) {
       houses.forEach(function(hd, i) {
         var h = HOUSES[hd.school_id] || { name:'?', color:'#888', icon:'?', role:'' };
@@ -823,7 +865,7 @@ function render() {
 
   // ═══ DUELS TAB ═══
   if (currentTab === 'duels') {
-    html += sectionLabel('⚔️', 'DUEL RANKINGS');
+    html += sectionLabel('swords', 'DUEL RANKINGS');
     html += '<div class="info-box">Ranked by wins · All active duelists shown</div>';
 
     var duelists = data.duels;
@@ -851,8 +893,8 @@ function render() {
 
     // Sub-tabs
     html += '<div class="sub-tabs">';
-    html += '<button class="sub-tab' + (clashView==='standings'?' active':'') + '" onclick="switchClashView(\'standings\')">📊 Standings</button>';
-    html += '<button class="sub-tab' + (clashView==='matches'?' active':'') + '" onclick="switchClashView(\'matches\')">⚔️ Matches</button>';
+    html += '<button class="sub-tab' + (clashView==='standings'?' active':'') + '" onclick="switchClashView(\'standings\')">' + gameIcon('laurels','gi-sm') + ' Standings</button>';
+    html += '<button class="sub-tab' + (clashView==='matches'?' active':'') + '" onclick="switchClashView(\'matches\')">' + gameIcon('swords','gi-sm') + ' Matches</button>';
     html += '</div>';
 
     var matches = data.clashes.matches || [];
@@ -861,7 +903,7 @@ function render() {
     if (clashView === 'standings') {
       // Standings table
       if (standings.length > 0) {
-        html += sectionLabel('🏆', 'ROUND ROBIN STANDINGS');
+        html += sectionLabel('laurels', 'ROUND ROBIN STANDINGS');
         html += '<div class="standings">';
         html += '<div class="standings__head"><span>GUILD</span><span style="text-align:center">W</span><span style="text-align:center">L</span><span style="text-align:right">PTS</span></div>';
         standings.forEach(function(g, i) {
@@ -882,7 +924,7 @@ function render() {
       var thisWeek = matches.filter(function(m) { return m.week === currentWeek; });
 
       if (thisWeek.length > 0) {
-        html += sectionLabel('⚡', 'THIS WEEK');
+        html += sectionLabel('burst', 'THIS WEEK');
         thisWeek.forEach(function(c, i) { html += clashCard(c, i); });
       }
 
@@ -893,7 +935,7 @@ function render() {
 
     if (clashView === 'matches') {
       if (matches.length > 0) {
-        html += sectionLabel('📜', 'ALL MATCH RESULTS');
+        html += sectionLabel(null, 'ALL MATCH RESULTS');
         // Group by week, newest first
         var weeks = {};
         matches.forEach(function(m) {
@@ -911,17 +953,17 @@ function render() {
     }
 
     // Clash Prizes
-    html += sectionLabel('🎁', 'CLASH PRIZES');
+    html += sectionLabel('sparkles', 'CLASH PRIZES');
     html += '<div class="clash-prizes">';
     html += '<div class="clash-prizes__title">Season Clash Champion</div>';
     var clashPrizes = [
-      {icon:'👑', text:'"Warlord" title for your guild'},
-      {icon:'⚔️', text:'Choose one featured clash matchup next season'},
-      {icon:'📣', text:'Victory spotlight thread from @9LVNetwork'},
-      {icon:'🔥', text:'Undefeated streak (3+ wins) = "Unbeatable" badge'}
+      {icon:'crown',    text:'"Warlord" title for your guild'},
+      {icon:'swords',   text:'Choose one featured clash matchup next season'},
+      {icon:'sparkles', text:'Victory spotlight thread from @9LVNetwork'},
+      {icon:'fire',     text:'Undefeated streak (3+ wins) = "Unbeatable" badge'}
     ];
     clashPrizes.forEach(function(cp) {
-      html += '<div class="clash-prizes__item"><span class="clash-prizes__item-icon">' + cp.icon + '</span>';
+      html += '<div class="clash-prizes__item"><span class="clash-prizes__item-icon" style="color:var(--cyan)">' + gameIcon(cp.icon, 'gi-md') + '</span>';
       html += '<span class="clash-prizes__item-text">' + cp.text + '</span></div>';
     });
     html += '</div>';
@@ -956,10 +998,13 @@ function render() {
   });
 }
 
-// `icon` param is preserved for call-site compatibility but ignored — the
-// CSS-drawn .section-label__accent replaces all the emoji placeholders.
+// Section label with optional thematic icon. Pass an ICONS key (e.g.
+// 'laurels', 'flag', 'swords', 'burst', 'sparkles') to render a small
+// inline SVG between the accent bar and the text. Pass null/undefined
+// to keep just the gold accent bar (for generic sections).
 function sectionLabel(icon, text) {
-  return '<div class="section-label"><span class="section-label__accent"></span><span class="section-label__text">' + text + '</span><span class="section-label__line"></span></div>';
+  var iconHtml = (icon && ICONS[icon]) ? '<span class="section-label__icon">' + gameIcon(icon, 'gi-md') + '</span>' : '';
+  return '<div class="section-label"><span class="section-label__accent"></span>' + iconHtml + '<span class="section-label__text">' + text + '</span><span class="section-label__line"></span></div>';
 }
 
 function clashCard(c, i) {
@@ -980,15 +1025,15 @@ function clashCard(c, i) {
   h += '<div class="clash-guild">';
   h += '<div class="clash-guild__name' + (bWon ? ' dim' : '') + '" style="color:' + (aWon ? (c.color_a||'#fff') : '') + '">' + esc(c.guild_a) + '</div>';
   h += '<div class="clash-guild__score' + (isLive ? ' live' : '') + (aWon ? ' won' : '') + '">' + (c.score_a||0).toLocaleString() + '</div>';
-  if (aWon) h += '<div class="clash-crown">👑</div>';
+  if (aWon) h += '<div class="clash-crown">' + gameIcon('crown','gi-lg') + '</div>';
   h += '</div>';
   // VS
-  h += '<div class="clash-vs' + (isLive ? ' live' : '') + '">' + (isLive ? '⚔️' : c.status === 'upcoming' ? 'TBD' : 'VS') + '</div>';
+  h += '<div class="clash-vs' + (isLive ? ' live' : '') + '">' + (isLive ? gameIcon('swords','gi-md') : c.status === 'upcoming' ? 'TBD' : 'VS') + '</div>';
   // Guild B
   h += '<div class="clash-guild">';
   h += '<div class="clash-guild__name' + (aWon ? ' dim' : '') + '" style="color:' + (bWon ? (c.color_b||'#fff') : '') + '">' + esc(c.guild_b) + '</div>';
   h += '<div class="clash-guild__score' + (isLive ? ' live' : '') + (bWon ? ' won' : '') + '">' + (c.score_b||0).toLocaleString() + '</div>';
-  if (bWon) h += '<div class="clash-crown">👑</div>';
+  if (bWon) h += '<div class="clash-crown">' + gameIcon('crown','gi-lg') + '</div>';
   h += '</div>';
   h += '</div>';
 
