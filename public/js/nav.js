@@ -8,7 +8,6 @@
     { href: '/dashboard.html', label: 'Dashboard' },
     { href: '/nethara-live.html', label: 'Nethara' },
     { href: '/duels.html', label: 'Duels' },
-    { href: '/wilds.html', label: 'The Wilds' },
     { href: '/leaderboards.html', label: 'Ranks' },
     { href: '/packs.html', label: 'Packs' },
     { href: '/token.html', label: '$9LV' },
