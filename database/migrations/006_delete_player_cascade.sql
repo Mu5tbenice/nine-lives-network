@@ -1,38 +1,37 @@
 -- 006_delete_player_cascade.sql
 -- ─────────────────────────────────────────────────────────────────────
--- delete_player_cascade(p_id integer) — wipes a player and all 20
--- dependent table rows in one transactional call. Returns a jsonb
--- summary of rows deleted per table.
+-- delete_player_cascade(p_id integer) — wipes a player and all
+-- dependent rows in one transactional call. Returns a jsonb summary
+-- of rows deleted per table.
 --
 -- Motivation: re-testing the registration funnel previously required
 -- manual SQL deletes across each child table in dependency order
--- (`feedback_registration_smoke_friction.md`). 20 child tables FK to
--- players(id), only player_zone_metrics has ON DELETE CASCADE. This
--- function consolidates the cascade into one call.
+-- (`feedback_registration_smoke_friction.md`).
 --
--- Tables covered (verified via grep on database/schema.sql):
---   bounties, bounty_damage, card_packs, casts, chronicle_participants,
---   daily_quests, drop_tickets, duels, nfts, nine_builds, pack_inventory,
---   player_cards, player_items, player_levels, player_nines, player_quests,
---   player_weekly_rewards, point_log, player_zone_metrics, territory_actions,
---   zone_deployments  (+ players itself).
+-- Scope:
+--   - 21 direct-child tables FK to players(id)
+--   - 4 transitive child tables that FK to those direct children
+--     (battles → nfts, card_durability_log → player_cards,
+--      zone_card_slots → player_cards + zone_deployments,
+--      bounty_damage → bounties)
 --
--- Multi-FK tables fold into per-table OR clauses:
+-- Order:
+--   Phase 1 — clear transitive children scoped by player ownership
+--   Phase 2 — clear direct children (zone_deployments BEFORE player_nines
+--             because zone_deployments.nine_id → player_nines.id)
+--   Phase 3 — delete the players row itself
+--
+-- Multi-FK direct-child tables fold into per-table OR clauses:
 --   casts: player_id OR target_player_id
 --   duels: challenger_id OR target_id OR winner_id OR loser_id
---   bounties: target_player_id only (no actor FK)
---   bounty_damage: attacker_id only
---   nfts: owner_player_id
 --
--- Order is irrelevant for inter-table FKs (no child table references
--- another via player_id). The only ordering constraint is dependents
--- before players itself; plpgsql function bodies execute in a single
--- transaction so partial failures roll back.
---
--- Usage:
---   SELECT delete_player_cascade(123);
--- Returns:
---   {"bounties": 0, "casts": 3, "duels": 1, ..., "players": 1}
+-- History:
+--   v1 (initial)   — missed transitive FKs; failed on player_cards
+--                    when zone_card_slots had references.
+--   v2 (this file) — adds Phase 1 transitive clears and corrects the
+--                    zone_deployments / player_nines order. Replaces v1
+--                    via CREATE OR REPLACE so applying this file alone
+--                    is sufficient.
 -- ─────────────────────────────────────────────────────────────────────
 
 CREATE OR REPLACE FUNCTION delete_player_cascade(p_id integer)
@@ -48,11 +47,32 @@ BEGIN
     RAISE EXCEPTION 'Player id % not found', p_id;
   END IF;
 
+  -- ─── Phase 1: transitive children (FK to a player-owned row, not players directly) ───
+
+  DELETE FROM battles
+    WHERE challenger_nft_id IN (SELECT id FROM nfts WHERE owner_player_id = p_id)
+       OR defender_nft_id   IN (SELECT id FROM nfts WHERE owner_player_id = p_id)
+       OR winner_nft_id     IN (SELECT id FROM nfts WHERE owner_player_id = p_id);
+  GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('battles', cnt);
+
+  DELETE FROM card_durability_log
+    WHERE card_id IN (SELECT id FROM player_cards WHERE player_id = p_id);
+  GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('card_durability_log', cnt);
+
+  DELETE FROM zone_card_slots
+    WHERE card_id       IN (SELECT id FROM player_cards     WHERE player_id = p_id)
+       OR deployment_id IN (SELECT id FROM zone_deployments WHERE player_id = p_id);
+  GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('zone_card_slots', cnt);
+
+  DELETE FROM bounty_damage
+    WHERE attacker_id = p_id
+       OR bounty_id IN (SELECT id FROM bounties WHERE target_player_id = p_id);
+  GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('bounty_damage', cnt);
+
+  -- ─── Phase 2: direct child rows (player-scoped) ───
+
   DELETE FROM bounties WHERE target_player_id = p_id;
   GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('bounties', cnt);
-
-  DELETE FROM bounty_damage WHERE attacker_id = p_id;
-  GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('bounty_damage', cnt);
 
   DELETE FROM card_packs WHERE player_id = p_id;
   GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('card_packs', cnt);
@@ -71,19 +91,14 @@ BEGIN
 
   DELETE FROM duels
     WHERE challenger_id = p_id
-       OR target_id = p_id
-       OR winner_id = p_id
-       OR loser_id = p_id;
+       OR target_id     = p_id
+       OR winner_id     = p_id
+       OR loser_id      = p_id;
   GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('duels', cnt);
 
-  DELETE FROM nfts WHERE owner_player_id = p_id;
-  GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('nfts', cnt);
-
-  DELETE FROM nine_builds WHERE player_id = p_id;
-  GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('nine_builds', cnt);
-
-  DELETE FROM pack_inventory WHERE player_id = p_id;
-  GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('pack_inventory', cnt);
+  -- zone_deployments BEFORE player_nines (zone_deployments.nine_id → player_nines.id).
+  DELETE FROM zone_deployments WHERE player_id = p_id;
+  GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('zone_deployments', cnt);
 
   DELETE FROM player_cards WHERE player_id = p_id;
   GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('player_cards', cnt);
@@ -106,14 +121,22 @@ BEGIN
   DELETE FROM player_zone_metrics WHERE player_id = p_id;
   GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('player_zone_metrics', cnt);
 
+  DELETE FROM nfts WHERE owner_player_id = p_id;
+  GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('nfts', cnt);
+
+  DELETE FROM nine_builds WHERE player_id = p_id;
+  GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('nine_builds', cnt);
+
+  DELETE FROM pack_inventory WHERE player_id = p_id;
+  GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('pack_inventory', cnt);
+
   DELETE FROM point_log WHERE player_id = p_id;
   GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('point_log', cnt);
 
   DELETE FROM territory_actions WHERE player_id = p_id;
   GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('territory_actions', cnt);
 
-  DELETE FROM zone_deployments WHERE player_id = p_id;
-  GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('zone_deployments', cnt);
+  -- ─── Phase 3: the player itself ───
 
   DELETE FROM players WHERE id = p_id;
   GET DIAGNOSTICS cnt = ROW_COUNT; result := result || jsonb_build_object('players', cnt);
@@ -123,7 +146,6 @@ END;
 $$;
 
 COMMENT ON FUNCTION delete_player_cascade(integer) IS
-  'Hard-delete a player and all 20 dependent table rows in one transaction. '
+  'Hard-delete a player and all dependent rows (direct + transitive) in one transaction. '
   'Returns jsonb summary of rows deleted per table. '
-  'Used by DELETE /api/admin/player/:idOrHandle for registration smoke testing. '
-  'SECURITY DEFINER so it can be invoked by anon/authenticated through RPC if needed.';
+  'Used by DELETE /api/admin/player/:idOrHandle for registration smoke testing.';
