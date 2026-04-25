@@ -2214,7 +2214,7 @@ Each PR ships with a ≤6-item smoke-test checklist on real phones at 390 / 414 
 
 **Resolution plan.** One-line copy fix — drop the "— 1 MANA" suffix from all three duels.html occurrences. The §9.80 / PR #201 cleanup left this string behind; no engine work needed.
 
-**Resolved 2026-04-25 in PR #? — three duels.html `FIND OPPONENT — 1 MANA` strings stripped to `FIND OPPONENT`. No engine, route, or DB changes (the broader mana removal was already done in §9.80 / PR #201). Verified `grep -nE "mana|MANA" public/duels.html` returns zero results post-fix.**
+**Resolved 2026-04-25 in PR #239 — three duels.html `FIND OPPONENT — 1 MANA` strings stripped to `FIND OPPONENT`. No engine, route, or DB changes (the broader mana removal was already done in §9.80 / PR #201). Verified `grep -nE "mana|MANA" public/duels.html` returns zero results post-fix.**
 
 
 
