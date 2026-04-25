@@ -48,7 +48,7 @@ async function lookupPlayerByHandle(handle) {
   const { data, error } = await supabaseAdmin
     .from('players')
     .select(
-      'id, twitter_handle, school_id, guild_tag, lifetime_points, seasonal_points, streak, duel_wins, duel_losses, duel_elo, profile_image, is_active, created_at',
+      'id, twitter_handle, school_id, guild_tag, lifetime_points, seasonal_points, streak, duel_wins, duel_losses, duel_elo, profile_image, is_active, created_at, last_cast_at',
     )
     .ilike('twitter_handle', lower)
     .eq('is_active', true)

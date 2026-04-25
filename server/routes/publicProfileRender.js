@@ -24,6 +24,10 @@ const HOUSES = {
   9: { name: 'Plaguemire',  color: '#E84393', image: '/assets/images/houses/House-plaguemire.png' },
 };
 
+// Fallback when no house can be resolved. Per-house crests are preferred
+// (set in renderProfileTemplate from HOUSES[player.school_id].image) so
+// each of the 9 houses produces a visually distinct shared-link card.
+// PR 7 ships dynamic per-player image generation.
 const DEFAULT_OG_IMAGE = '/assets/images/title-nethara.png';
 
 /**
@@ -88,7 +92,12 @@ function renderProfileTemplate(template, player, options = {}) {
       : `[${guildTag.toUpperCase()}]`
     : 'LONE WOLF';
 
-  const ogImage = options.ogImage || `${baseUrl}${DEFAULT_OG_IMAGE}`;
+  // Default OG image is the player's HOUSE CREST so each of the 9 houses
+  // produces a distinct shared-link preview card. Falls back to the site
+  // title PNG only if house lookup somehow failed.
+  const ogImage =
+    options.ogImage ||
+    `${baseUrl}${house.image || DEFAULT_OG_IMAGE}`;
   const ogUrl = `${baseUrl}/p/${encodeURIComponent(handleLower)}`;
 
   const shareText = buildShareText({
@@ -99,6 +108,13 @@ function renderProfileTemplate(template, player, options = {}) {
     baseUrl,
   });
 
+  const seasonalPoints = (player && player.seasonal_points) || 0;
+  const duelWins = (player && player.duel_wins) || 0;
+  const duelLosses = (player && player.duel_losses) || 0;
+  // For First Cast badge — the cheapest signal that a player has cast at
+  // least once. Avoids a separate query into spell_casts.
+  const hasCasts = !!(player && player.last_cast_at);
+
   const replacements = {
     '{{handle}}': escapeHtml(handle),
     '{{handle_lower}}': escapeHtml(handleLower),
@@ -107,9 +123,13 @@ function renderProfileTemplate(template, player, options = {}) {
     '{{house_image}}': house.image,
     '{{level}}': String(level),
     '{{lifetime_points}}': lifetimePoints.toLocaleString(),
+    '{{seasonal_points}}': seasonalPoints.toLocaleString(),
     '{{streak}}': String(streak),
     '{{duel_elo}}': String(duelElo),
+    '{{duel_wins}}': String(duelWins),
+    '{{duel_losses}}': String(duelLosses),
     '{{guild_display}}': escapeHtml(guildDisplay),
+    '{{has_casts}}': hasCasts ? 'true' : 'false',
     '{{og_image}}': escapeHtml(ogImage),
     '{{og_url}}': escapeHtml(ogUrl),
     '{{player_id}}': escapeHtml(player ? player.id : ''),

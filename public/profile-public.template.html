@@ -36,104 +36,15 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 
   <style>
-    .pp-wrap { max-width: 560px; margin: 0 auto; padding: 14px; }
-    .pp-hero {
-      background: linear-gradient(180deg, var(--bg-card-solid), var(--bg-deep));
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius);
-      padding: 28px 18px 20px;
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-    .pp-hero::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(ellipse at 50% 0%, {{house_color}}28, transparent 65%);
-      pointer-events: none;
-    }
-    .pp-hero > * { position: relative; }
-    .pp-house-crest {
-      width: 96px; height: 96px;
-      object-fit: contain;
-      margin: 0 auto 12px;
-      filter: drop-shadow(0 4px 16px {{house_color}}55);
-    }
-    .pp-handle {
-      font-family: var(--font-data);
-      font-size: 9px;
-      color: var(--text-muted);
-      letter-spacing: 2px;
-      margin-bottom: 6px;
-    }
-    .pp-house-name {
-      font-family: var(--font-title);
-      font-size: 22px;
-      font-weight: 700;
-      color: {{house_color}};
-      letter-spacing: 2.5px;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-    .pp-level {
-      font-family: var(--font-data);
-      font-size: 8px;
-      color: var(--gold);
-      letter-spacing: 2px;
-      margin-bottom: 4px;
-    }
-    .pp-guild {
-      display: inline-block;
-      font-family: var(--font-data);
-      font-size: 7px;
-      color: var(--text-muted);
-      letter-spacing: 1.5px;
-      padding: 4px 10px;
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-xs);
-      margin-top: 4px;
-    }
-    .pp-stats {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: var(--gap-sm);
-      margin-top: var(--gap-md);
-    }
-    .pp-stat {
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-sm);
-      padding: 14px 10px;
-      text-align: center;
-    }
-    .pp-stat__val {
-      font-family: var(--font-data);
-      font-size: 14px;
-      color: var(--gold);
-      letter-spacing: 1px;
-    }
-    .pp-stat__label {
-      font-family: var(--font-data);
-      font-size: 6px;
-      color: var(--text-muted);
-      letter-spacing: 1.5px;
-      margin-top: 6px;
-      text-transform: uppercase;
-    }
-    .pp-share-row {
-      display: flex;
-      gap: var(--gap-sm);
-      margin-top: var(--gap-md);
-    }
-    .pp-share-row > * { flex: 1; }
+    .pp-wrap { max-width: 560px; margin: 0 auto; padding: 14px 14px 40px; display: flex; flex-direction: column; gap: var(--gap-md); }
+
+    /* ═══ SELF-ONLY EDIT RIBBON ═══ */
     .pp-self-ribbon {
       display: none;
       background: var(--gold-dim);
       border: 1px solid var(--gold-border);
       border-radius: var(--radius-sm);
       padding: 8px 12px;
-      margin-bottom: 10px;
       font-family: var(--font-data);
       font-size: 7px;
       color: var(--gold);
@@ -141,17 +52,220 @@
       text-align: center;
     }
     .pp-self-ribbon a { color: var(--gold); text-decoration: underline; }
-    .pp-placeholder-note {
-      margin-top: 24px;
-      padding: 12px;
+
+    /* ═══ HERO — house crest background + layered character sprite ═══ */
+    .pp-hero {
+      position: relative;
+      background: linear-gradient(180deg, var(--bg-card-solid), var(--bg-deep));
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      padding: 22px 18px 18px;
+      overflow: hidden;
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .pp-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 50% 30%, {{house_color}}33, transparent 70%);
+      pointer-events: none;
+    }
+    .pp-hero-crest {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 220px;
+      height: 220px;
+      object-fit: contain;
+      transform: translate(-50%, -55%);
+      opacity: 0.18;
+      filter: drop-shadow(0 0 30px {{house_color}}40);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .pp-character {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin: 0 auto 10px;
+      z-index: 2;
+    }
+    .pp-character .pp-char-fallback {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 16px {{house_color}}55);
+    }
+    .pp-character .pp-char-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .pp-handle {
+      position: relative;
+      z-index: 2;
+      font-family: var(--font-data);
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+    .pp-house-name {
+      position: relative;
+      z-index: 2;
+      font-family: var(--font-title);
+      font-size: 22px;
+      font-weight: 700;
+      color: {{house_color}};
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      text-shadow: 0 0 18px {{house_color}}55;
+    }
+    .pp-level-strip {
+      position: relative;
+      z-index: 2;
+      font-family: var(--font-data);
+      font-size: 8px;
+      color: var(--gold);
+      letter-spacing: 2px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pp-level-strip .pp-divider { color: var(--text-faint); }
+    .pp-level-strip .pp-guild { color: var(--text-muted); }
+
+    /* ═══ HEADLINE STATS ═══ */
+    .pp-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--gap-sm);
+    }
+    .pp-stat {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 14px 8px;
+      text-align: center;
+    }
+    .pp-stat__val {
+      font-family: var(--font-data);
+      font-size: 14px;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+    .pp-stat__label {
+      font-family: var(--font-data);
+      font-size: 6px;
+      color: var(--text-muted);
+      letter-spacing: 1.5px;
+      margin-top: 8px;
+      text-transform: uppercase;
+    }
+    .pp-stat--lifetime .pp-stat__val { color: var(--gold); }
+    .pp-stat--streak   .pp-stat__val { color: var(--orange); }
+    .pp-stat--elo      .pp-stat__val { color: var(--cyan); }
+
+    /* ═══ FIGHTER STATS (audience flex) ═══ */
+    .pp-flex-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--gap-sm);
+    }
+    .pp-flex {
       background: var(--bg-inset);
-      border: 1px dashed var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 10px 6px;
+      text-align: center;
+    }
+    .pp-flex__val {
+      font-family: var(--font-data);
+      font-size: 11px;
+      color: var(--text-bright);
+      letter-spacing: 0.5px;
+    }
+    .pp-flex__label {
+      font-family: var(--font-data);
+      font-size: 5px;
+      color: var(--text-muted);
+      letter-spacing: 1.5px;
+      margin-top: 6px;
+      text-transform: uppercase;
+    }
+
+    /* ═══ BADGES ═══ */
+    .pp-badges-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--gap-sm);
+    }
+    .pp-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 12px 6px;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.05);
       border-radius: var(--radius-sm);
       text-align: center;
-      font-family: var(--font-mono);
-      font-size: 11px;
+    }
+    .pp-badge.earned {
+      border-color: var(--gold-border);
+      background: rgba(212, 166, 75, 0.06);
+    }
+    .pp-badge.locked { opacity: 0.35; }
+    .pp-badge__icon { font-size: 26px; }
+    .pp-badge__name {
+      font-family: var(--font-data);
+      font-size: 6px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      line-height: 1.3;
+    }
+    .pp-badge.earned .pp-badge__name { color: var(--gold); }
+
+    /* ═══ ACTIVITY ═══ */
+    #ppActivity .activity-item:last-child { margin-bottom: 0; }
+    .pp-empty-quip {
+      text-align: center;
       color: var(--text-faint);
       font-style: italic;
+      padding: 14px 0;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    /* ═══ SHARE ROW ═══ */
+    .pp-share-row {
+      display: flex;
+      gap: var(--gap-sm);
+      margin-top: 4px;
+    }
+    .pp-share-row > * {
+      flex: 1;
+      text-align: center;
+      padding: 10px 12px;
+      font-size: 10px;
+    }
+
+    /* ═══ MOBILE ═══ */
+    @media (max-width: 480px) {
+      .pp-character { width: 170px; height: 170px; }
+      .pp-hero-crest { width: 190px; height: 190px; }
+      .pp-house-name { font-size: 19px; letter-spacing: 2px; }
+      .pp-stat__val { font-size: 12px; }
     }
   </style>
 </head>
@@ -160,69 +274,216 @@
 
 <div class="pp-wrap">
 
-  <!-- Self-only ribbon, JS-shown when localStorage.player_id matches viewed handle -->
+  <!-- Self-only ribbon — JS-shown when localStorage.player_id matches viewed player -->
   <div class="pp-self-ribbon" id="ppSelfRibbon">
     Viewing your own profile · <a href="/builder.html?skip_intro=1">edit your Nine</a>
   </div>
 
+  <!-- HERO -->
   <div class="pp-hero">
-    <img class="pp-house-crest" src="{{house_image}}" alt="{{house_name}}" onerror="this.style.display='none'">
+    <img class="pp-hero-crest" src="{{house_image}}" alt="" onerror="this.style.display='none'">
+    <div class="pp-character" id="ppCharacter">
+      <img class="pp-char-fallback" id="ppCharFallback" src="{{house_image}}" alt="{{house_name}}" onerror="this.style.display='none'">
+    </div>
     <div class="pp-handle">@{{handle}}</div>
     <div class="pp-house-name">{{house_name}}</div>
-    <div class="pp-level">LEVEL {{level}} · NINE</div>
-    <div class="pp-guild">{{guild_display}}</div>
+    <div class="pp-level-strip">
+      <span>LEVEL {{level}}</span>
+      <span class="pp-divider">·</span>
+      <span class="pp-guild">{{guild_display}}</span>
+    </div>
   </div>
 
-  <div class="pp-stats">
-    <div class="pp-stat">
+  <!-- HEADLINE STATS -->
+  <div class="pp-stats-row">
+    <div class="pp-stat pp-stat--lifetime">
       <div class="pp-stat__val">{{lifetime_points}}</div>
-      <div class="pp-stat__label">Lifetime</div>
+      <div class="pp-stat__label">Lifetime Pts</div>
     </div>
-    <div class="pp-stat">
+    <div class="pp-stat pp-stat--streak">
       <div class="pp-stat__val">{{streak}}</div>
-      <div class="pp-stat__label">Streak</div>
+      <div class="pp-stat__label">Day Streak</div>
     </div>
-    <div class="pp-stat">
+    <div class="pp-stat pp-stat--elo">
       <div class="pp-stat__val">{{duel_elo}}</div>
-      <div class="pp-stat__label">ELO</div>
+      <div class="pp-stat__label">Duel ELO</div>
     </div>
   </div>
 
-  <div class="pp-share-row">
-    <a class="btn-pill" href="https://twitter.com/intent/tweet?text={{share_text_encoded}}" target="_blank" rel="noopener" style="text-align:center;">SHARE ON X</a>
-    <button class="btn-pill" onclick="copyProfileLink()" style="text-align:center;">COPY LINK</button>
+  <!-- BADGES -->
+  <div class="card">
+    <div class="card-header">
+      <span class="label">Badges</span>
+      <span class="label" id="ppBadgeCount" style="color:var(--text-faint);"></span>
+    </div>
+    <div class="pp-badges-grid" id="ppBadgesGrid"></div>
   </div>
 
-  <div class="pp-placeholder-note">
-    Profile v1 placeholder. Character-sprite hero, badges, and audience flex sections land in PR 2.
+  <!-- FIGHTER STATS (audience flex) -->
+  <div class="card">
+    <div class="card-header"><span class="label">Fighter Stats</span></div>
+    <div class="pp-flex-grid">
+      <div class="pp-flex">
+        <div class="pp-flex__val">{{duel_wins}}</div>
+        <div class="pp-flex__label">Duel Wins</div>
+      </div>
+      <div class="pp-flex">
+        <div class="pp-flex__val">{{duel_losses}}</div>
+        <div class="pp-flex__label">Duel Losses</div>
+      </div>
+      <div class="pp-flex">
+        <div class="pp-flex__val">{{seasonal_points}}</div>
+        <div class="pp-flex__label">Season Pts</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECENT ACTIVITY -->
+  <div class="card">
+    <div class="card-header"><span class="label">Recent Activity</span></div>
+    <div id="ppActivity">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- SHARE -->
+  <div class="pp-share-row">
+    <a class="btn-pill" href="https://twitter.com/intent/tweet?text={{share_text_encoded}}" target="_blank" rel="noopener">Share on X</a>
+    <button class="btn-pill" onclick="copyProfileLink()">Copy Link</button>
   </div>
 
 </div>
 
 <script>
-  // Self-detection — show edit ribbon when the viewer is the profile owner.
+  // ═══ Self-detection — show edit ribbon when viewing your own page ═══
   (function() {
     var viewedId = "{{player_id}}";
     var ownId = localStorage.getItem('player_id');
     if (ownId && ownId === viewedId) {
-      var ribbon = document.getElementById('ppSelfRibbon');
-      if (ribbon) ribbon.style.display = 'block';
+      var r = document.getElementById('ppSelfRibbon');
+      if (r) r.style.display = 'block';
     }
   })();
 
+  // ═══ Layered character render — fetches equipped items, replaces fallback ═══
+  // Mirrors public/builder.html:469-476 layer logic. Z order: fur(1), outfit(2),
+  // weapon(3), expression(4), headwear(5), familiar(6). Trinkets render outside
+  // the layer stack on the builder, so omitted here.
+  var SLOT_Z = { fur: 1, outfit: 2, weapon: 3, expression: 4, headwear: 5, familiar: 6 };
+  fetch('/api/items/equipped/{{player_id}}')
+    .then(function(r) { return r.ok ? r.json() : null; })
+    .then(function(items) {
+      if (!items || !Array.isArray(items) || items.length === 0) return;
+      var container = document.getElementById('ppCharacter');
+      var fallback = document.getElementById('ppCharFallback');
+      var html = '';
+      var any = false;
+      items.forEach(function(item) {
+        var slot = item && (item.slot || item.slot_type || item.item_slot);
+        var file = item && (item.image_filename || item.f || item.filename);
+        if (!slot || !file || !(slot in SLOT_Z)) return;
+        any = true;
+        html += '<img class="pp-char-layer" src="/assets/nine/' + slot + '/' + file +
+                '" style="z-index:' + SLOT_Z[slot] + '" onerror="this.style.display=\'none\'">';
+      });
+      if (any) {
+        if (fallback) fallback.style.display = 'none';
+        container.insertAdjacentHTML('beforeend', html);
+      }
+    })
+    .catch(function() { /* keep house-crest fallback */ });
+
+  // ═══ Recent activity feed ═══
+  fetch('/api/players/{{player_id}}/casts')
+    .then(function(r) { return r.ok ? r.json() : []; })
+    .then(function(casts) {
+      var div = document.getElementById('ppActivity');
+      if (!div) return;
+      if (!casts || !Array.isArray(casts) || casts.length === 0) {
+        div.innerHTML = '<p class="pp-empty-quip">no casts yet. they\'ve been a tourist.</p>';
+        return;
+      }
+      var html = '';
+      casts.slice(0, 5).forEach(function(c) {
+        var title = c.spell_name || c.zone_name || 'Spell Cast';
+        var pts = (c.points_earned || 0) | 0;
+        var when = c.cast_at ? _relativeTime(c.cast_at) : '';
+        html += '<div class="activity-item">' +
+                  '<div class="activity-dot" style="background:var(--gold)"></div>' +
+                  '<div class="activity-info">' +
+                    '<div class="activity-zone">' + _esc(title) + '</div>' +
+                    '<div class="activity-meta">' + _esc(when) + '</div>' +
+                  '</div>' +
+                  '<div class="activity-points">+' + pts + ' pts</div>' +
+                '</div>';
+      });
+      div.innerHTML = html;
+    })
+    .catch(function() {
+      var div = document.getElementById('ppActivity');
+      if (div) div.innerHTML = '<p class="pp-empty-quip">activity feed timed out. probably nerm\'s fault.</p>';
+    });
+
+  // ═══ Badges — server-injected has_casts + streak feed the only two
+  //     real conditions wired today. Other badges render as 'locked' until
+  //     the achievements system ships (PR 4 of the IA sequence). ═══
+  (function() {
+    var hasCasts = ({{has_casts}});
+    var streak = parseInt('{{streak}}', 10) || 0;
+    var badges = [
+      { icon: '🔥', name: 'First Cast',     earned: hasCasts },
+      { icon: '⚡', name: '5-Day Streak',   earned: streak >= 5 },
+      { icon: '💎', name: 'Week Warrior',   earned: streak >= 7 },
+      { icon: '🏰', name: 'Territory Lord', earned: false },
+      { icon: '👑', name: 'Top 10',         earned: false },
+      { icon: '🐱', name: 'Genesis Cat',    earned: false }
+    ];
+    var grid = document.getElementById('ppBadgesGrid');
+    var count = badges.filter(function(b) { return b.earned; }).length;
+    var counter = document.getElementById('ppBadgeCount');
+    if (counter) counter.textContent = count + '/' + badges.length;
+    var html = '';
+    badges.forEach(function(b) {
+      html += '<div class="pp-badge ' + (b.earned ? 'earned' : 'locked') + '">' +
+                '<span class="pp-badge__icon">' + b.icon + '</span>' +
+                '<span class="pp-badge__name">' + _esc(b.name) + '</span>' +
+              '</div>';
+    });
+    grid.innerHTML = html;
+  })();
+
+  // ═══ Helpers ═══
   function copyProfileLink() {
     var url = "{{og_url}}";
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url).then(function() {
         var btn = event.target;
         var orig = btn.textContent;
-        btn.textContent = 'COPIED';
+        btn.textContent = 'Copied';
         setTimeout(function() { btn.textContent = orig; }, 1400);
       });
     } else {
-      // fallback — open prompt
       window.prompt('Copy this link', url);
     }
+  }
+
+  function _esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function _relativeTime(iso) {
+    try {
+      var t = new Date(iso).getTime();
+      if (!t) return '';
+      var diff = Math.floor((Date.now() - t) / 1000);
+      if (diff < 60) return 'just now';
+      if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+      if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+      if (diff < 86400 * 7) return Math.floor(diff / 86400) + 'd ago';
+      return new Date(iso).toLocaleDateString();
+    } catch (e) { return ''; }
   }
 </script>
 
