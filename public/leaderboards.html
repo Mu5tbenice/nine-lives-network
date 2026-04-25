@@ -941,24 +941,26 @@ function render() {
 
   document.getElementById('content').innerHTML = html;
 
-  // Draw sparklines after DOM update
+  // Draw sparklines after DOM update. Real 7-day cumulative point trend per
+  // player from point_log (server-attached p.history). Color matches the
+  // rank-delta arrow story: climbing = green, falling = red, flat = muted.
+  // No history (e.g. duels endpoint) → no sparkline drawn (safe no-op).
   requestAnimationFrame(function() {
-    // Player sparklines (generate from seasonal_points as mock progression)
     var allPlayers = currentTab === 'duels' ? data.duels : data.players;
     var prefix = currentTab === 'duels' ? 'duel_' : 'season_';
     allPlayers.forEach(function(p) {
       var canvas = document.getElementById('spark_' + prefix + p.id);
-      if (canvas) {
-        var h = HOUSES[p.school_id] || { color: '#888' };
-        // Generate a simple progression curve from the points
-        var pts = p.seasonal_points || 0;
-        var fakeHistory = [];
-        for (var d = 0; d < 14; d++) {
-          fakeHistory.push(Math.round(pts * (d + 1) / 14 * (0.8 + Math.random() * 0.4)));
-        }
-        fakeHistory[fakeHistory.length - 1] = pts; // ensure end matches
-        drawSparkline('spark_' + prefix + p.id, fakeHistory, h.color);
-      }
+      if (!canvas) return;
+      var hist = p.history;
+      if (!hist || hist.length < 2) return;
+      // Trend color from the existing rank_change signal so the sparkline
+      // reads as the same story the arrow tells. Fall back to gold for
+      // brand-new players (no rank_change).
+      var trendColor;
+      if (typeof p.rank_change === 'number' && p.rank_change > 0) trendColor = '#6acd8a';
+      else if (typeof p.rank_change === 'number' && p.rank_change < 0) trendColor = '#e85a6a';
+      else trendColor = '#9B8E7E';
+      drawSparkline('spark_' + prefix + p.id, hist, trendColor);
     });
 
     // House progression chart
