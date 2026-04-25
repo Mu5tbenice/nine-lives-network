@@ -2305,7 +2305,7 @@ Spec touches:
 - `<noscript>` fallback link for the rare JS-off case
 - No external CSS/JS deps — the redirect doesn't need styling
 
-**Resolved 2026-04-25 in PR #?.** Both files reduced to the minimal redirect shell. zone-detail.html: 422→25 lines. zone-battle.html: 941→25 lines. ~1300 lines of dormant legacy code removed; component drift in those files eliminated.
+**Resolved 2026-04-25 in PR #253.** Both files reduced to the minimal redirect shell. zone-detail.html: 422→25 lines. zone-battle.html: 941→25 lines. ~1300 lines of dormant legacy code removed; component drift in those files eliminated.
 
 ---
 
