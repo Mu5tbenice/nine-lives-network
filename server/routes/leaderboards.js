@@ -136,7 +136,60 @@ router.get('/players', async (req, res) => {
       };
     });
 
-    res.json(enriched);
+    // ── Climber spotlight: biggest positive rank_change since yesterday.
+    //    Tiebreaker: most points_today (real-action signal). Returns null
+    //    when nobody moved up (e.g. fresh season or quiet day).
+    let climber = null;
+    enriched.forEach((p) => {
+      if (p.rank_change <= 0) return;
+      if (!climber) { climber = p; return; }
+      if (p.rank_change > climber.rank_change) climber = p;
+      else if (p.rank_change === climber.rank_change && p.points_today > climber.points_today) climber = p;
+    });
+
+    // ── me_row: if ?me=<player_id> is supplied AND that player isn't in
+    //    the top-N already, fetch them separately and compute rank by
+    //    counting players with strictly more seasonal_points. Lets a
+    //    rank-87 player still see their YOU pin on the leaderboard.
+    let me_row = null;
+    const meId = parseInt(req.query.me, 10);
+    if (meId && !enriched.some((p) => p.id === meId)) {
+      const { data: meRows } = await supabase
+        .from('players')
+        .select('id, twitter_handle, school_id, guild_tag, profile_image, seasonal_points, lifetime_points, duel_wins, duel_losses, streak')
+        .eq('id', meId)
+        .eq('is_active', true)
+        .limit(1);
+      const meData = (meRows || [])[0];
+      if (meData) {
+        const { count } = await supabase
+          .from('players')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_active', true)
+          .gt('seasonal_points', meData.seasonal_points || 0);
+        const rank = (count || 0) + 1;
+        // Pull me's today-delta so prev_rank is computable.
+        const { data: meTodayLog } = await supabase
+          .from('point_log')
+          .select('amount')
+          .gte('created_at', startIso)
+          .eq('player_id', meId);
+        const meToday = (meTodayLog || []).reduce((s, r) => s + (r.amount || 0), 0);
+        // For me_row, we don't have prev_rank against the full ladder
+        // without a heavier query — skip rank_change for the standalone
+        // path. The pin still renders correctly without an arrow.
+        me_row = {
+          ...meData,
+          rank,
+          prev_rank: rank,
+          rank_change: 0,
+          points_today: meToday,
+          history: null,
+        };
+      }
+    }
+
+    res.json({ players: enriched, climber, me_row });
   } catch (error) {
     console.error('Error in players leaderboard:', error);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });

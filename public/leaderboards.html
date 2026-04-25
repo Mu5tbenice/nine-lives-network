@@ -182,6 +182,30 @@
     .gap-to-next .gi-sm{color:var(--gold)}
     .gap-to-next strong{color:var(--cyan);font-style:normal;font-weight:600}
 
+    /* Lone-wolf nudge — sub-line on YOU pin for guild-less players. */
+    .lonewolf-nudge{font-family:var(--font-mono);font-size:9px;margin-top:2px}
+    .lonewolf-nudge a{color:#FF8C00;text-decoration:none;border-bottom:1px dashed rgba(255,140,0,0.4);transition:border-color 0.15s}
+    .lonewolf-nudge a:hover{border-bottom-color:#FF8C00}
+
+    /* ── CLIMBER SPOTLIGHT — top mover today, hero card above the standings.
+       Green-tinted to match the rank-delta arrow / sparkline color story.
+       Renders only when the server returns a climber (someone climbed >0). */
+    .climber-card{
+      display:flex;align-items:center;gap:14px;
+      padding:12px 14px;border-radius:12px;
+      background:linear-gradient(135deg,rgba(106,205,138,0.16),rgba(106,205,138,0.03));
+      border:1px solid rgba(106,205,138,0.35);
+      box-shadow:0 0 18px rgba(106,205,138,0.12);
+      margin-bottom:14px;
+      animation:fadeSlideIn 0.35s ease both;
+      text-decoration:none;color:inherit;
+    }
+    .climber-card:hover{background:linear-gradient(135deg,rgba(106,205,138,0.22),rgba(106,205,138,0.05))}
+    .climber-card__label{font-family:var(--font-data);font-size:6px;color:#6acd8a;letter-spacing:2px;margin-bottom:2px;display:flex;align-items:center;gap:4px}
+    .climber-card__name{font-family:var(--font-mono);font-size:13px;color:var(--text-bright)}
+    .climber-card__delta{font-family:var(--font-data);font-size:14px;color:#6acd8a;text-shadow:0 0 8px rgba(106,205,138,0.4);flex-shrink:0;margin-left:auto}
+    .climber-card__delta-label{font-family:var(--font-data);font-size:5px;color:#6acd8a;opacity:0.7;letter-spacing:1px;margin-top:2px;text-align:right}
+
     .lb-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative}
     .lb-avatar__sigil{width:100%;height:100%;object-fit:contain;padding:3px;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.4))}
     .lb-avatar__initial{font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--text-bright);text-shadow:0 1px 0 rgba(0,0,0,0.3)}
@@ -596,7 +620,7 @@ async function loadAll() {
 
   try {
     var [pR, hR, dR, cR] = await Promise.all([
-      fetch('/api/leaderboards/players').then(function(r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).catch(catchAndFlag([])),
+      fetch('/api/leaderboards/players' + (playerId ? '?me=' + encodeURIComponent(playerId) : '')).then(function(r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).catch(catchAndFlag([])),
       fetch('/api/leaderboards/schools').then(function(r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).catch(catchAndFlag([])),
       fetch('/api/leaderboards/duels').then(function(r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).catch(catchAndFlag([])),
       fetch('/api/leaderboards/clashes').then(function(r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).catch(catchAndFlag({ matches:[], standings:[] }))
@@ -618,6 +642,8 @@ async function loadAll() {
     }
 
     data.players = Array.isArray(pR) ? pR : pR.players || [];
+    data.climber = pR && !Array.isArray(pR) ? pR.climber || null : null;
+    data.me_row = pR && !Array.isArray(pR) ? pR.me_row || null : null;
     data.houses = Array.isArray(hR) ? hR : hR.schools || hR.houses || [];
     data.duels = Array.isArray(dR) ? dR : dR.players || [];
     data.clashes = cR && cR.matches ? cR : { matches: [], standings: [] };
@@ -697,6 +723,17 @@ function findMe(list) {
   return null;
 }
 
+// Like findMe but with a fallback: when the player isn't in the visible
+// top-N, the server returns their row separately as `me_row` (rank
+// computed against the full ladder). Lets a rank-87 player still see
+// their YOU pin.
+function findMeWithFallback(list, meRow) {
+  var hit = findMe(list);
+  if (hit) return hit;
+  if (meRow && meRow.id) return { player: meRow, rank: meRow.rank, outOfList: true };
+  return null;
+}
+
 // Sticky "YOU" pin — appears above rankings when player exists in the
 // list. Stays visible as the user scrolls so they always know where they
 // stand. Tappable like any row to land on /p/<own-handle>. Per
@@ -755,6 +792,11 @@ function mePin(found, opts) {
     + '</div>'
     + '<div class="lb-house" style="color:' + h.color + ';font-size:10px;">' + h.name + '</div>'
     + gapHtml
+    // Lone-wolf nudge — players without a guild get an actionable prompt
+    // instead of empty space. Tappable link to the dashboard guild input.
+    + ((!p.guild_tag || p.guild_tag === 'lone_wolf')
+        ? '<div class="lonewolf-nudge"><a href="/dashboard.html#guild" onclick="event.stopPropagation()">Find a guild → shared bonuses</a></div>'
+        : '')
     + '</div>'
     + '<div class="lb-score" style="text-align:right;flex-shrink:0;">'
     + '<div class="lb-score__val" style="font-size:13px;color:var(--cyan);">' + scoreVal + '</div>'
@@ -834,9 +876,45 @@ function render() {
   // ═══ SEASON TAB ═══
   if (currentTab === 'season') {
     var players = data.players;
+
+    // Climber spotlight — top mover today. Server picks the player with
+    // the largest rank_change > 0 (tiebreak by points_today). Hidden on
+    // quiet days when nobody climbed.
+    if (data.climber && data.climber.id !== playerId) {
+      var cl = data.climber;
+      var clHandle = cl.twitter_handle ? String(cl.twitter_handle).toLowerCase() : null;
+      var clHref = clHandle ? '/p/' + encodeURIComponent(clHandle) : '#';
+      html += '<a class="climber-card" href="' + clHref + '">'
+        + avatar(cl, HOUSES[cl.school_id] || {color:'#888',sigil:null})
+        + '<div style="flex:1;min-width:0;">'
+        +   '<div class="climber-card__label">' + gameIcon('burst','gi-sm') + ' TOP MOVER TODAY</div>'
+        +   '<div class="climber-card__name">@' + esc(cl.twitter_handle || '???') + '</div>'
+        + '</div>'
+        + '<div style="text-align:right;flex-shrink:0;">'
+        +   '<div class="climber-card__delta">▲' + cl.rank_change + '</div>'
+        +   '<div class="climber-card__delta-label">RANKS</div>'
+        + '</div>'
+        + '</a>';
+    } else if (data.climber && data.climber.id === playerId) {
+      // YOU are the climber — flip framing for extra bragging fuel.
+      var cl2 = data.climber;
+      html += '<div class="climber-card" style="cursor:default;">'
+        + avatar(cl2, HOUSES[cl2.school_id] || {color:'#888',sigil:null})
+        + '<div style="flex:1;min-width:0;">'
+        +   '<div class="climber-card__label">' + gameIcon('burst','gi-sm') + ' YOU\'RE THE TOP MOVER TODAY</div>'
+        +   '<div class="climber-card__name">Climbed ' + cl2.rank_change + ' rank' + (cl2.rank_change === 1 ? '' : 's') + ' — keep it up</div>'
+        + '</div>'
+        + '<div style="text-align:right;flex-shrink:0;">'
+        +   '<div class="climber-card__delta">▲' + cl2.rank_change + '</div>'
+        + '</div>'
+        + '</div>';
+    }
+
     // Sticky YOU pin — shows above rankings regardless of scroll depth.
-    // Pass full list so the pin can compute gap-to-next-rank vs the player ahead.
-    html += mePin(findMe(players), { fullList: players });
+    // findMeWithFallback uses data.me_row when player isn't in top-N
+    // (server includes them as a separate row with rank computed against
+    // the full ladder).
+    html += mePin(findMeWithFallback(players, data.me_row), { fullList: players });
     if (players.length >= 3) {
       // Podium: #2, #1, #3
       var order = [1, 0, 2];
