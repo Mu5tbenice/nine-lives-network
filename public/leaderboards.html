@@ -32,10 +32,13 @@
     .season-bar__labels{display:flex;justify-content:space-between;margin-top:4px;font-family:var(--font-mono);font-size:8px;color:var(--text-faint)}
 
     /* Section label */
-    .section-label{display:flex;align-items:center;gap:8px;margin:18px 0 10px}
-    .section-label__icon{font-size:14px}
+    .section-label{display:flex;align-items:center;gap:10px;margin:18px 0 10px}
+    /* Replaces the legacy emoji icon — small gold square accent. The
+       sectionLabel(icon, text) helper now ignores the icon param and renders
+       this consistent visual instead. */
+    .section-label__accent{width:6px;height:14px;background:linear-gradient(180deg,#F8DA72,#9C7B2F);border-radius:2px;box-shadow:0 0 6px rgba(212,166,75,0.4);flex-shrink:0}
     .section-label__text{font-family:var(--font-title);font-size:12px;font-weight:700;color:var(--gold);letter-spacing:2px}
-    .section-label__line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+    .section-label__line{flex:1;height:1px;background:linear-gradient(90deg,rgba(212,166,75,0.25),transparent)}
 
     /* Tabs */
     .tabs{display:flex;gap:4px;margin-bottom:16px;overflow-x:auto;padding-bottom:2px}
@@ -47,16 +50,26 @@
     .tab[data-color="cyan"].active{color:var(--cyan);border-color:rgba(106,200,216,0.25);background:rgba(106,200,216,0.1)}
 
     /* Podium */
-    .podium{display:flex;gap:6px;margin-bottom:16px;align-items:flex-end}
-    .podium__card{flex:1;text-align:center;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);animation:fadeSlideIn 0.4s ease both}
-    .podium__card.first{padding:16px 8px 12px;border-color:rgba(212,166,75,0.25);background:linear-gradient(180deg,rgba(212,166,75,0.06),var(--bg-card))}
-    .podium__card.second,.podium__card.third{padding:12px 8px 10px}
-    .podium__medal{margin-bottom:4px}
-    .podium__house{font-size:22px;margin-bottom:4px}
-    .podium__card.first .podium__house{font-size:28px}
+    .podium{display:flex;gap:6px;margin-bottom:16px;align-items:flex-end;position:relative}
+    .podium__card{flex:1;text-align:center;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);animation:fadeSlideIn 0.4s ease both;position:relative;overflow:hidden}
+    /* #1 — elevated stage feel: warm glow, subtle pulse, larger than siblings */
+    .podium__card.first{
+      padding:18px 8px 14px;
+      border:1px solid rgba(212,166,75,0.45);
+      background:linear-gradient(180deg,rgba(212,166,75,0.14) 0%,rgba(212,166,75,0.04) 60%,var(--bg-card) 100%);
+      box-shadow:0 0 24px rgba(212,166,75,0.2),inset 0 1px 0 rgba(255,220,130,0.18);
+      transform:translateY(-4px);
+    }
+    .podium__card.second{padding:12px 8px 10px;border-color:rgba(220,220,220,0.18);background:linear-gradient(180deg,rgba(220,220,220,0.06),var(--bg-card))}
+    .podium__card.third{padding:12px 8px 10px;border-color:rgba(179,107,67,0.18);background:linear-gradient(180deg,rgba(179,107,67,0.06),var(--bg-card))}
+    .podium__medal{margin-bottom:6px;display:flex;justify-content:center}
+    .podium__sigil-wrap{display:flex;justify-content:center;margin-bottom:6px}
+    .podium__sigil{width:40px;height:40px;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))}
+    .podium__card.first .podium__sigil{width:52px;height:52px}
     .podium__name{font-family:var(--font-mono);font-size:10px;color:var(--text-bright);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .podium__card.first .podium__name{font-size:11px;color:var(--gold)}
     .podium__pts{font-family:var(--font-data);font-size:9px;color:var(--gold);margin-top:4px}
-    .podium__card.first .podium__pts{font-size:11px}
+    .podium__card.first .podium__pts{font-size:12px;text-shadow:0 0 8px rgba(212,166,75,0.4)}
     .podium__label{font-family:var(--font-mono);font-size:8px;color:var(--text-faint);margin-top:2px}
 
     /* Player row */
@@ -66,7 +79,32 @@
     .lb-row:hover{background:rgba(30,22,42,0.9)}
 
     .rank{font-family:var(--font-data);font-size:10px;min-width:30px;text-align:center;color:var(--text-muted)}
-    .rank-medal{font-size:18px;min-width:30px;text-align:center}
+
+    /* CSS-drawn rank badges for top 3 — replaces 🥇🥈🥉 system emoji.
+       Same shape across all OS, with intentional gradient/glow per tier. */
+    .rank-badge{
+      width:28px;height:28px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-family:var(--font-data);font-size:11px;font-weight:700;
+      color:var(--bg-deep);letter-spacing:0;
+      border:1.5px solid;
+      flex-shrink:0;
+    }
+    .rank-badge--1{
+      background:linear-gradient(135deg,#F8DA72 0%,#D4A64B 50%,#9C7B2F 100%);
+      border-color:#FFE38A;
+      box-shadow:0 0 12px rgba(212,166,75,0.55), inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+    .rank-badge--2{
+      background:linear-gradient(135deg,#E8E8E8 0%,#B8B8B8 50%,#7E7E7E 100%);
+      border-color:#F0F0F0;
+      box-shadow:0 0 8px rgba(220,220,220,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+    .rank-badge--3{
+      background:linear-gradient(135deg,#E0976C 0%,#B36B43 50%,#7B442A 100%);
+      border-color:#EBA77E;
+      box-shadow:0 0 8px rgba(179,107,67,0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+    }
 
     /* Rank-delta arrows — visible movement vs yesterday's leaderboard.
        Positive (climbed) = green, negative (fell) = red, zero = muted dash.
@@ -87,7 +125,9 @@
     .gap-to-next{font-family:var(--font-mono);font-size:9px;color:var(--text-faint);font-style:italic;margin-top:1px}
     .gap-to-next strong{color:var(--cyan);font-style:normal;font-weight:600}
 
-    .lb-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+    .lb-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;position:relative}
+    .lb-avatar__sigil{width:100%;height:100%;object-fit:contain;padding:3px;filter:drop-shadow(0 1px 1px rgba(0,0,0,0.4))}
+    .lb-avatar__initial{font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--text-bright);text-shadow:0 1px 0 rgba(0,0,0,0.3)}
     .lb-info{flex:1;min-width:0}
     .lb-name-row{display:flex;align-items:center;gap:6px}
     .lb-name{font-family:var(--font-mono);font-size:11px;color:var(--text-bright);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -105,7 +145,8 @@
     .house-card{padding:14px 16px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);border-left:3px solid;margin-bottom:6px}
     .house-card.top3{border-color:rgba(212,166,75,0.2)}
     .house-card__inner{display:flex;align-items:center;gap:12px}
-    .house-card__icon{font-size:28px}
+    .house-card__icon{width:44px;height:44px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .house-card__sigil{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5))}
     .house-card__body{flex:1}
     .house-card__name{font-family:var(--font-title);font-size:15px;font-weight:700}
     .house-card__role{font-family:var(--font-mono);font-size:8px;color:var(--text-faint);margin-left:8px}
@@ -172,7 +213,15 @@
     .info-box{padding:10px 12px;border-radius:10px;background:var(--bg-card);border:1px solid var(--border);margin-bottom:12px;font-family:var(--font-mono);font-size:9px;color:var(--text-muted);text-align:center}
 
     /* Empty state */
-    .empty{text-align:center;padding:40px 20px;color:var(--text-faint);font-style:italic;font-family:var(--font-body)}
+    .empty{
+      text-align:center;padding:32px 20px;
+      color:var(--text-muted);font-style:italic;
+      font-family:var(--font-body);font-size:14px;
+      border:1px dashed rgba(212,166,75,0.18);
+      border-radius:12px;
+      background:linear-gradient(180deg,rgba(212,166,75,0.03),transparent);
+      margin:8px 0 12px;
+    }
 
     /* Loading */
     .loading{text-align:center;padding:60px 20px}
@@ -253,16 +302,19 @@
 // ═══════════════════════════════════════
 // HOUSES DATA
 // ═══════════════════════════════════════
+// Sigil paths follow `reference_house_sigils.md` — Ashenvale uses capital A,
+// the rest are lowercase. icon: kept as fallback only (used if the <img>
+// 404s, e.g. during local dev with stale assets).
 var HOUSES = {
-  1:{name:'Smoulders',color:'#E03C31',icon:'🔥',role:'Glass Cannon'},
-  2:{name:'Darktide',color:'#00B4D8',icon:'🌊',role:'Thief'},
-  3:{name:'Stonebark',color:'#5CB338',icon:'🌿',role:'Wall'},
-  4:{name:'Ashenvale',color:'#B0C4DE',icon:'💨',role:'Rogue'},
-  5:{name:'Stormrage',color:'#FFC800',icon:'⚡',role:'Glass Cannon'},
-  6:{name:'Nighthollow',color:'#7B2D8E',icon:'🌙',role:'Disruptor'},
-  7:{name:'Dawnbringer',color:'#FF8C00',icon:'☀️',role:'Healer'},
-  8:{name:'Manastorm',color:'#5B8FE0',icon:'🔮',role:'Controller'},
-  9:{name:'Plaguemire',color:'#E84393',icon:'☠️',role:'DOT'}
+  1:{name:'Smoulders',  color:'#E03C31',icon:'🔥',role:'Glass Cannon',sigil:'/assets/images/houses/House-smoulders.png'},
+  2:{name:'Darktide',   color:'#00B4D8',icon:'🌊',role:'Thief',       sigil:'/assets/images/houses/House-darktide.png'},
+  3:{name:'Stonebark',  color:'#5CB338',icon:'🌿',role:'Wall',        sigil:'/assets/images/houses/House-stonebark.png'},
+  4:{name:'Ashenvale',  color:'#B0C4DE',icon:'💨',role:'Rogue',       sigil:'/assets/images/houses/House-Ashenvale.png'},
+  5:{name:'Stormrage',  color:'#FFC800',icon:'⚡',role:'Glass Cannon',sigil:'/assets/images/houses/House-stormrage.png'},
+  6:{name:'Nighthollow',color:'#7B2D8E',icon:'🌙',role:'Disruptor',   sigil:'/assets/images/houses/House-nighthollow.png'},
+  7:{name:'Dawnbringer',color:'#FF8C00',icon:'☀️',role:'Healer',      sigil:'/assets/images/houses/House-dawnbringer.png'},
+  8:{name:'Manastorm',  color:'#5B8FE0',icon:'🔮',role:'Controller',  sigil:'/assets/images/houses/House-manastorm.png'},
+  9:{name:'Plaguemire', color:'#E84393',icon:'☠️',role:'DOT',         sigil:'/assets/images/houses/House-plaguemire.png'}
 };
 
 var SEASON_PRIZES = [
@@ -491,10 +543,25 @@ async function loadAll() {
 // RENDER HELPERS
 // ═══════════════════════════════════════
 function medal(rank) {
-  if (rank === 1) return '<span class="rank-medal" style="filter:drop-shadow(0 0 4px rgba(255,215,0,0.5))">🥇</span>';
-  if (rank === 2) return '<span class="rank-medal">🥈</span>';
-  if (rank === 3) return '<span class="rank-medal">🥉</span>';
+  if (rank === 1) return '<span class="rank-badge rank-badge--1">1</span>';
+  if (rank === 2) return '<span class="rank-badge rank-badge--2">2</span>';
+  if (rank === 3) return '<span class="rank-badge rank-badge--3">3</span>';
   return '<span class="rank">#' + rank + '</span>';
+}
+
+// Avatar — house sigil PNG over house-colored backdrop. Falls back to the
+// player's first-letter initial in white over the same color when the sigil
+// fails to load (defensive — Ashenvale's case-sensitive filename has bitten
+// us elsewhere) or when no school_id is set.
+function avatar(p, h) {
+  var bg = h.color + '20';
+  var border = h.color + '40';
+  var initial = (p && p.twitter_handle) ? esc(p.twitter_handle.charAt(0).toUpperCase()) : '?';
+  var sigil = h.sigil
+    ? '<img class="lb-avatar__sigil" src="' + h.sigil + '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';">'
+    : '';
+  var initialBlock = '<span class="lb-avatar__initial" style="' + (h.sigil ? 'display:none;position:absolute;inset:0;align-items:center;justify-content:center;' : 'display:flex;align-items:center;justify-content:center;width:100%;height:100%;') + '">' + initial + '</span>';
+  return '<div class="lb-avatar" style="background:' + bg + ';border:2px solid ' + border + '">' + sigil + initialBlock + '</div>';
 }
 
 // Rank-delta arrow — paired with medal() inside .rank-cell. p.rank_change
@@ -577,14 +644,14 @@ function mePin(found, opts) {
     + '<span style="font-family:var(--font-data);font-size:11px;color:var(--text-bright);">#' + rank + '</span>'
     + rankDelta(p)
     + '</div>'
-    + '<div class="lb-avatar" style="background:' + h.color + '20;border:2px solid ' + h.color + '40">' + h.icon + '</div>'
+    + avatar(p, h)
     + '<div class="lb-info" style="flex:1;min-width:0;">'
     + '<div class="lb-name-row"><span class="lb-name">@' + esc(p.twitter_handle || '???') + '</span>'
     + streakBadge(p)
     + (p._level ? '<span class="lb-lvl">Lv.' + p._level + '</span>' : '')
     + (p.guild_tag ? '<span class="lb-guild">' + esc(p.guild_tag) + '</span>' : '')
     + '</div>'
-    + '<div class="lb-house" style="color:' + h.color + ';font-size:10px;">' + h.icon + ' ' + h.name + '</div>'
+    + '<div class="lb-house" style="color:' + h.color + ';font-size:10px;">' + h.name + '</div>'
     + gapHtml
     + '</div>'
     + '<div class="lb-score" style="text-align:right;flex-shrink:0;">'
@@ -617,7 +684,7 @@ function playerRow(p, rank, opts) {
   const hrefAttr = handle ? ' href="/p/' + encodeURIComponent(handle) + '" style="text-decoration:none;color:inherit;display:block;"' : '';
   return '<' + tag + hrefAttr + ' class="lb-row' + (rank <= 3 ? ' top3' : '') + (isMe ? ' me' : '') + '" style="animation-delay:' + delay + 's;animation:fadeSlideIn 0.3s ease ' + delay + 's both;display:flex;align-items:center;gap:10px;">'
     + '<div class="rank-cell">' + medal(rank) + rankDelta(p) + '</div>'
-    + '<div class="lb-avatar" style="background:' + h.color + '20;border:2px solid ' + h.color + '40">' + h.icon + '</div>'
+    + avatar(p, h)
     + '<div class="lb-info">'
     + '<div class="lb-name-row">'
     + (isMe ? '<span style="color:var(--cyan);font-size:10px">★</span> ' : '')
@@ -626,7 +693,7 @@ function playerRow(p, rank, opts) {
     + (p._level ? '<span class="lb-lvl">Lv.' + p._level + '</span>' : '')
     + (p.guild_tag ? '<span class="lb-guild">' + esc(p.guild_tag) + '</span>' : '')
     + '</div>'
-    + '<div class="lb-house" style="color:' + h.color + '">' + h.icon + ' ' + h.name + '</div>'
+    + '<div class="lb-house" style="color:' + h.color + '">' + h.name + '</div>'
     + '</div>'
     + '<canvas id="' + sparkId + '" class="sparkline" style="width:70px;height:22px"></canvas>'
     + scoreHtml
@@ -667,11 +734,14 @@ function render() {
       html += '<div class="podium">';
       order.forEach(function(idx) {
         var p = players[idx];
-        var h = HOUSES[p.school_id] || { icon:'🐱', color:'#888' };
+        var h = HOUSES[p.school_id] || { color:'#888', sigil:null };
         var cls = idx === 0 ? 'first' : (idx === 1 ? 'second' : 'third');
+        var rank = idx + 1;
         html += '<div class="podium__card ' + cls + '" style="animation-delay:' + (idx * 0.1) + 's">';
-        html += '<div class="podium__medal">' + (idx === 0 ? '<span style="font-size:28px">🥇</span>' : idx === 1 ? '<span style="font-size:22px">🥈</span>' : '<span style="font-size:22px">🥉</span>') + '</div>';
-        html += '<div class="podium__house">' + h.icon + '</div>';
+        html += '<div class="podium__medal"><span class="rank-badge rank-badge--' + rank + '" style="width:' + (idx===0?'34px':'28px') + ';height:' + (idx===0?'34px':'28px') + ';font-size:' + (idx===0?'13px':'11px') + ';">' + rank + '</span></div>';
+        if (h.sigil) {
+          html += '<div class="podium__sigil-wrap"><img class="podium__sigil" src="' + h.sigil + '" alt="" loading="lazy"></div>';
+        }
         html += '<div class="podium__name">@' + esc(p.twitter_handle) + '</div>';
         html += '<div class="podium__pts">' + (p.seasonal_points||0).toLocaleString() + '</div>';
         html += '<div class="podium__label">pts</div>';
@@ -734,7 +804,9 @@ function render() {
         html += '<div class="house-card' + (i < 3 ? ' top3' : '') + '" style="border-left-color:' + h.color + ';animation:fadeSlideIn 0.3s ease ' + delay + 's both">';
         html += '<div class="house-card__inner">';
         html += '<div style="min-width:28px;text-align:center">' + medal(i + 1) + '</div>';
-        html += '<span class="house-card__icon">' + h.icon + '</span>';
+        html += h.sigil
+          ? '<span class="house-card__icon"><img class="house-card__sigil" src="' + h.sigil + '" alt="" loading="lazy"></span>'
+          : '<span class="house-card__icon" style="font-size:28px">' + h.icon + '</span>';
         html += '<div class="house-card__body">';
         html += '<div><span class="house-card__name" style="color:' + h.color + '">' + h.name + '</span>';
         html += '<span class="house-card__role">' + h.role + '</span></div>';
@@ -884,8 +956,10 @@ function render() {
   });
 }
 
+// `icon` param is preserved for call-site compatibility but ignored — the
+// CSS-drawn .section-label__accent replaces all the emoji placeholders.
 function sectionLabel(icon, text) {
-  return '<div class="section-label"><span class="section-label__icon">' + icon + '</span><span class="section-label__text">' + text + '</span><span class="section-label__line"></span></div>';
+  return '<div class="section-label"><span class="section-label__accent"></span><span class="section-label__text">' + text + '</span><span class="section-label__line"></span></div>';
 }
 
 function clashCard(c, i) {
