@@ -22,9 +22,13 @@ const TEMPLATE_FIXTURE = `<!DOCTYPE html>
   <div class="house" style="color:{{house_color}}">{{house_name}}</div>
   <img src="{{house_image}}">
   <div class="lifetime">{{lifetime_points}}</div>
+  <div class="seasonal">{{seasonal_points}}</div>
   <div class="streak">{{streak}}</div>
   <div class="elo">{{duel_elo}}</div>
+  <div class="duel-wins">{{duel_wins}}</div>
+  <div class="duel-losses">{{duel_losses}}</div>
   <div class="guild">{{guild_display}}</div>
+  <div class="has-casts">{{has_casts}}</div>
   <div class="player-id" data-id="{{player_id}}"></div>
   <a href="https://twitter.com/intent/tweet?text={{share_text_encoded}}">SHARE</a>
 </body>
@@ -39,6 +43,9 @@ const examplePlayer = {
   seasonal_points: 1200,
   streak: 7,
   duel_elo: 1340,
+  duel_wins: 12,
+  duel_losses: 4,
+  last_cast_at: '2026-04-25T10:00:00Z',
   is_active: true,
 };
 
@@ -65,12 +72,44 @@ describe('renderProfileTemplate', () => {
     expect(out).toContain('og:url" content="https://9lv.net/p/catlord"');
   });
 
-  test('uses default OG image when no override given', () => {
+  test('OG image defaults to player house crest (per-house preview cards)', () => {
     const out = renderProfileTemplate(TEMPLATE_FIXTURE, examplePlayer, {
       level: 1,
       baseUrl: 'https://9lv.net',
     });
-    expect(out).toContain('https://9lv.net/assets/images/title-nethara.png');
+    // Stormrage school_id 5 → House-stormrage.png
+    expect(out).toContain(
+      'og:image" content="https://9lv.net/assets/images/houses/House-stormrage.png"',
+    );
+    // No fallback title-nethara should appear when house resolves
+    expect(out).not.toContain(
+      'og:image" content="https://9lv.net/assets/images/title-nethara.png"',
+    );
+  });
+
+  test('OG image varies per house (distinct preview per school_id)', () => {
+    const stormrage = renderProfileTemplate(
+      TEMPLATE_FIXTURE,
+      { ...examplePlayer, school_id: 5 },
+      { level: 1, baseUrl: 'https://9lv.net' },
+    );
+    const darktide = renderProfileTemplate(
+      TEMPLATE_FIXTURE,
+      { ...examplePlayer, school_id: 2 },
+      { level: 1, baseUrl: 'https://9lv.net' },
+    );
+    expect(stormrage).toContain('House-stormrage.png');
+    expect(darktide).toContain('House-darktide.png');
+    expect(stormrage).not.toContain('House-darktide.png');
+  });
+
+  test('explicit ogImage option overrides house default', () => {
+    const out = renderProfileTemplate(TEMPLATE_FIXTURE, examplePlayer, {
+      level: 1,
+      baseUrl: 'https://9lv.net',
+      ogImage: 'https://9lv.net/custom/x.png',
+    });
+    expect(out).toContain('og:image" content="https://9lv.net/custom/x.png"');
   });
 
   test('falls back to Smoulders (school_id 1) on unknown school_id', () => {
@@ -133,6 +172,33 @@ describe('renderProfileTemplate', () => {
     // The encoded text should contain url-encoded "9lv.net/p/catlord"
     expect(out).toContain(encodeURIComponent('9lv.net/p/catlord'));
     expect(out).toContain(encodeURIComponent('12,450 lifetime points'));
+  });
+
+  test('renders seasonal points + duel record placeholders', () => {
+    const out = renderProfileTemplate(TEMPLATE_FIXTURE, examplePlayer, {
+      level: 8,
+      baseUrl: 'https://9lv.net',
+    });
+    expect(out).toContain('class="seasonal">1,200<');
+    expect(out).toContain('class="duel-wins">12<');
+    expect(out).toContain('class="duel-losses">4<');
+  });
+
+  test('has_casts is "true" when last_cast_at present', () => {
+    const out = renderProfileTemplate(TEMPLATE_FIXTURE, examplePlayer, {
+      level: 1,
+      baseUrl: 'https://9lv.net',
+    });
+    expect(out).toContain('class="has-casts">true<');
+  });
+
+  test('has_casts is "false" when last_cast_at absent', () => {
+    const fresh = { ...examplePlayer, last_cast_at: null };
+    const out = renderProfileTemplate(TEMPLATE_FIXTURE, fresh, {
+      level: 1,
+      baseUrl: 'https://9lv.net',
+    });
+    expect(out).toContain('class="has-casts">false<');
   });
 
   test('returns empty string when template is empty', () => {
