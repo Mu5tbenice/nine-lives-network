@@ -2206,6 +2206,16 @@ Each PR ships with a ≤6-item smoke-test checklist on real phones at 390 / 414 
 
 **Resolved 2026-04-25 in PR #236 — wilds.html deleted, nav link removed. Confirmed no other references in `public/`, `server/`, or `tasks/` (`grep -rn "wilds"` only matched the file's internal CSS classes + a single Nerm flavor-text mention in `server/services/nermBrain.js` that's lore, not navigation).**
 
+### 9.93 Duels CTA still reads "1 MANA" — leftover copy from §9.80 cleanup
+
+**Symptom.** `public/duels.html` "FIND OPPONENT" CTA still appended "— 1 MANA" in three places (the initial render at line 103, plus two restore-after-failure paths at lines 152 and 156). This text was a leftover from the pre-V5 mana system removed wholesale in §9.80 / PR #201. Server-side mana gating is gone — duels do not check or consume mana, no `/api/mana` route exists — so the copy implied a cost players were never charged.
+
+**Effect.** Misleading first-impression for the duels surface. New players seeing "1 MANA" assume a resource gate that doesn't exist; returning players who remember the V4 mana economy expect deductions that don't happen. Low-severity but visible drift between UI copy and engine reality.
+
+**Resolution plan.** One-line copy fix — drop the "— 1 MANA" suffix from all three duels.html occurrences. The §9.80 / PR #201 cleanup left this string behind; no engine work needed.
+
+**Resolved 2026-04-25 in PR #? — three duels.html `FIND OPPONENT — 1 MANA` strings stripped to `FIND OPPONENT`. No engine, route, or DB changes (the broader mana removal was already done in §9.80 / PR #201). Verified `grep -nE "mana|MANA" public/duels.html` returns zero results post-fix.**
+
 
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
