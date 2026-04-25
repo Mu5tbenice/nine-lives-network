@@ -16,22 +16,27 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
 
   <style>
+    /* Tokens: most come from /css/variables-v2.css (Warm Night). Below are
+       page-specific overrides + local-name aliases so token.html keeps its
+       short alias style (--bright, --body, --muted, --faint) while inheriting
+       v2 values. Future v2 token changes propagate automatically. */
     :root {
-      --bg:        #0a0812;
-      --bg-card:   #110e1c;
-      --bg-panel:  rgba(255,255,255,0.03);
-      --border:    rgba(255,255,255,0.07);
-      --gold:      #D4A64B;
+      /* Page-specific backgrounds — token.html runs darker than the rest of
+         the app for the financial/contract surface feel. */
+      --bg:          #0a0812;
+      --bg-card:     #110e1c;
+      --bg-panel:    rgba(255,255,255,0.03);
+      /* Local-name aliases → v2 canonical tokens. */
+      --border:      var(--border-subtle);
+      --bright:      var(--text-bright);
+      --body:        var(--text-body);
+      --muted:       var(--text-muted);
+      --faint:       var(--text-faint);
+      /* Page-specific gold accents — distinct from v2's --gold-light /
+         --gold-dim (different intent). */
       --gold-bright: #F5D680;
-      --gold-dim:  #8B7332;
-      --bright:    #F0ECF8;
-      --body:      #CCC5DB;
-      --muted:     #847C98;
-      --faint:     #554E68;
-      --cyan:      #6ac8d8;
-      --green:     #6acd8a;
-      --red:       #e85a6a;
-      --purple:    #b088e8;
+      --gold-dim:    #8B7332;
+      /* --gold, --cyan, --green, --red, --purple come straight from v2. */
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Crimson Text', serif; background: var(--bg); color: var(--body); min-height: 100vh; overflow-x: hidden; }
