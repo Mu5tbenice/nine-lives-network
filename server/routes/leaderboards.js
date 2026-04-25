@@ -151,7 +151,7 @@ router.get('/schools', async (req, res) => {
   try {
     const { data: players, error } = await supabase
       .from('players')
-      .select('school_id, seasonal_points')
+      .select('id, school_id, seasonal_points')
       .eq('is_active', true);
 
     if (error) {
@@ -160,18 +160,41 @@ router.get('/schools', async (req, res) => {
     }
 
     const schoolStats = {};
+    const playerToSchool = {};
     (players || []).forEach((player) => {
       if (!player.school_id) return;
+      playerToSchool[player.id] = player.school_id;
       if (!schoolStats[player.school_id]) {
         schoolStats[player.school_id] = {
           school_id: player.school_id,
           total_points: 0,
           member_count: 0,
+          points_today: 0,
         };
       }
       schoolStats[player.school_id].total_points += player.seasonal_points || 0;
       schoolStats[player.school_id].member_count += 1;
     });
+
+    // Per-house "today's momentum" — sum of point_log deltas since UTC
+    // midnight, joined back to player.school_id. Single bulk query.
+    const startOfDay = new Date();
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    const playerIds = Object.keys(playerToSchool).map(Number);
+    if (playerIds.length > 0) {
+      const { data: todayLog, error: logErr } = await supabase
+        .from('point_log')
+        .select('player_id, amount')
+        .gte('created_at', startOfDay.toISOString())
+        .in('player_id', playerIds);
+      if (!logErr) {
+        (todayLog || []).forEach((row) => {
+          const sid = playerToSchool[row.player_id];
+          if (!sid || !schoolStats[sid]) return;
+          schoolStats[sid].points_today += row.amount || 0;
+        });
+      }
+    }
 
     const sorted = Object.values(schoolStats).sort(
       (a, b) => b.total_points - a.total_points,
