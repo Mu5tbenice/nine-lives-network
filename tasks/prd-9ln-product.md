@@ -2216,7 +2216,48 @@ Each PR ships with a ≤6-item smoke-test checklist on real phones at 390 / 414 
 
 **Resolved 2026-04-25 in PR #239 — three duels.html `FIND OPPONENT — 1 MANA` strings stripped to `FIND OPPONENT`. No engine, route, or DB changes (the broader mana removal was already done in §9.80 / PR #201). Verified `grep -nE "mana|MANA" public/duels.html` returns zero results post-fix.**
 
+---
 
+### 9.94 Deploy-modal lockout countdown drifts from round timer → painted-once, never resyncs
+
+**Symptom (Wray smoke 2026-04-25 post-PR #244).** Deploy modal's `🔒 DEPLOY OPENS IN m:ss` button countdown shows times that are out of sync with the top-bar round timer. Reported example: lockout button at 1:30 remaining while round timer at 1:00 elapsed. After a few rounds the two timers visibly resynced.
+
+**Effect.** Confusing "when does deploy open" UX during contested rounds. Doesn't block deploy (server still authoritatively returns 423 with a fresh `nextWindowInSeconds` on every attempt, and the button does enable when the local countdown hits zero), but the displayed remaining time can be wrong by minutes. Low severity.
+
+**Root cause hypothesis.** `_showDeployLockout(btn, secs)` at `public/nethara-live.html:3494-3524` paints the countdown once from the server's `Math.ceil(msLeft/1000)` (where `msLeft = roundEndsAt - now` at the moment of the 423 response) and then ticks down locally at 1s intervals. There is no re-sync when:
+- `arena:round_end` fires (deploy opens — countdown should clear, not keep ticking through intermission)
+- `arena:round_start` fires (new round resets `roundEndsAt = now + 5min`, so any stale remaining is by definition wrong)
+- The button is re-painted from a fresh `_showDeployLockout` call (it does clear the previous interval, so this path is fine)
+
+So the drift is between "server reality at last 423" + "wall-clock ticks since" vs the actual `roundEndsAt` which can change mid-countdown (round ends early on last-guild-standing, intermission begins, new round starts).
+
+**Resolution plan.** Two-part:
+1. Clear `_deployLockoutInt` and reset the button text in the `arena:round_end` handler — once intermission begins, deploy is open, the lockout has no meaning.
+2. Clear it again in the `arena:round_start` handler as a safety net — a fresh round should never paint over a stale lockout.
+
+Both wire-ups follow the §9.40 / §9.79 sync-on-state-event pattern. Same PR could expose `window._clearDeployLockout()` for callers, mirroring the `_syncBottomTrayVisibility` / `_updateDeployStatusPill` shape.
+
+**Resolved 2026-04-25 in PR #?.** Added `window._clearDeployLockout()` next to `_showDeployLockout` (`public/nethara-live.html:3527-3539`) — clears `_deployLockoutInt`, resets the modal confirm button to its default state (`⚔️ DEPLOY` if 3 cards selected else `SELECT N MORE`). Wired into both `arena:round_end` (first line — clears any stale lockout the moment intermission begins) and `arena:round_start` (belt-and-braces after the new `roundEndsAt` is set). Bundled with §9.95 in the same PR.
+
+---
+
+### 9.95 Round-end modal CTAs don't reflect KO state — KO'd players see same CHANGE BUILD / WAIT as survivors
+
+**Symptom (Wray smoke 2026-04-25 post-PR #244).** When the player was KO'd during the round that just ended, the round-end modal at `_showRoundEnd` (`public/nethara-live.html:4951+`) shows the same primary CHANGE BUILD + secondary WAIT CTAs as a survivor's modal. There is no language acknowledging the KO or framing the next-round path as "REJOIN."
+
+**Effect.** UX dissonance — the bottom-anchored KO widget (§9.58) shows skull + killer name + REJOIN CTA, but the larger round-end modal at the top shows generic intermission CTAs. The user who was just KO'd gets two different action surfaces with different framings. Per `feedback_single_cta_surface.md` the modal should own actions; the widget should be informational. Low severity (auto-rejoin still functionally works — the secondary WAIT is equivalent to "let auto-rejoin take over"), but visible muddle.
+
+**Root cause.** Task 17.0 item 4's two-CTA design (`nethara-live.html:4990-5000`) was written for the survivor case — auto-on default makes WAIT the right "do nothing" path. The post-KO branch was never differentiated; KO state (`S._wasKOdThisRound` / `S._withdrawnAfterKO`) is computed but not consulted by the modal renderer.
+
+**Resolution plan.** Branch the CTA rendering on `S._wasKOdThisRound`:
+- **KO'd path:** primary `REJOIN NEXT ROUND` (re-uses the WAIT path's auto-rejoin-on-next-round-start mechanism; if auto is OFF, click also toggles it ON), secondary `CHANGE BUILD`. Helper text reflects KO state ("You were KO'd — auto-rejoin next round, or change build").
+- **Survivor path:** unchanged — primary CHANGE BUILD, secondary WAIT.
+
+Reuses existing `_handleRoundEndAction('change')` (CHANGE BUILD) and the WAIT path's auto-rejoin-on-round_start (no new server-side work needed). Pairs naturally with whatever resolution lands for the KO widget's REJOIN button — the cleanest end-state is widget = informational, modal = actions, but that's a follow-up decision.
+
+**Resolved 2026-04-25 in PR #?.** Branched the helper text + CTA buttons in `_showRoundEnd` on `S._withdrawnAfterKO` (the canonical "needs rejoin path" signal at modal-render time, since `arena:round_end` flips `_wasKOdThisRound→false` and sets `_withdrawnAfterKO=true` *before* the modal renders). KO'd players now see primary `REJOIN NEXT ROUND` + secondary `CHANGE BUILD`; survivors keep `CHANGE BUILD` + `WAIT`. New `'rejoin'` action in `window._handleRoundEndAction` ensures auto-rejoin is on (toggling it on if off) and surfaces a feed event — actual rejoin still fires from the `arena:round_start` handler, which is the only point at which the server accepts `/rejoin` (see §9.35). KO widget's REJOIN button left in place; cleaner widget=informational consolidation can land in a follow-up.
+
+---
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
 
