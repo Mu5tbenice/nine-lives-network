@@ -2178,6 +2178,20 @@ Each PR ships with a ≤6-item smoke-test checklist on real phones at 390 / 414 
 
 **Resolved 2026-04-25 in PR #226 — fighter row identity dedupe: `[${f.guild}]` pill suppressed when guild starts with `@` (defaulted to player's handle) OR equals `f.name` (duplicate identity), so players without a real guild tag no longer render as e.g. `ALLWILL… [@allwillretire]`. Closes item 8. Card-name truncation (item 3) auto-resolved by PR B's tab-area width gain (verified no `…` on typical COUNTERSPELL / THUNDER GUARD / PHANTOM STEED card names post A–E batch, 2026-04-25). All twelve audit items now closed.**
 
+### 9.91 Arena combat awards zero XP — leveling system inert for zone play
+
+**Symptom (discovered 2026-04-25 during round-end dopamine scoping).** `server/services/xp-engine.js` defines `XP_REWARDS = { zone_survive: 2, zone_win: 3, zone_ko: 5, zone_flip: 8, ... }` and exposes `addXP(playerId, amount, source)`. Duels call it correctly (`server/routes/duels.js:86, 94`) and surface the result via `/api/levels/:playerId`. Combat engine `endRound` (`server/services/combatEngine.js:1298–1466`) and `handleKO` (`server/services/combatEngine.js:873–975`) **never call `addXP`**. Zone play earns season points but no XP. The XP bar on `profile.html` only moves from duel activity.
+
+**Effect.** Three downstream retention loops were dead behind the gap: (a) the level-up content path in `xp-engine.addXP` (`zone-slot unlocks` + a rarity-weighted random item drop on level-up at lines 240–269) never fires for zone players; (b) the round-end modal's XP slot in `nethara-live.html` (`_showRoundEnd` line ~5010) was a hardcoded "coming soon" placeholder waiting for a server delta that never came; (c) zone deployment progression had no per-round dopamine beyond the season-points line item. Compounds with `project_round_end_dopamine.md` — the modal's reward chips were structurally ready but content-incomplete.
+
+**Resolution plan.** One PR closes the gap end-to-end:
+- **Server:** extract `calculateRoundXP({ winner, flipped, livingNines })` as a pure function in `server/services/combatEnginePayloads.js` so the math is unit-testable. Have `endRound` call it, fire `addXP` per player in parallel, and merge the resulting `{ leveledUp, newLevel, unlocksGained }` into a new `xpLog` field on the `arena:round_end` broadcast. Wire `addXP(killerId, XP_REWARDS.zone_ko, 'zone_ko')` alongside the existing `pointsService.addPoints` call in `handleKO`.
+- **Client:** in the `arena:round_end` handler in `public/nethara-live.html`, mirror the existing `myPts → S._roundPoints` pattern with `myXp → S._roundXP` and capture level-up state as `S._roundLevelUp`. Replace the placeholder XP slot in `_showRoundEnd` with the live value styled in the green stat-color (matches HP semantics, distinct from the gold points chip). Render an inline `LEVEL UP` celebration block when `S._roundLevelUp` is set, surfacing zone-slot unlocks AND any item drop the engine rolled.
+- **Test:** Jest test `__tests__/calculateRoundXP.test.js` covers no-survivors, no-winner, losing-guild, winning-guild-no-flip, winning-guild-flip, mixed-roster, and undefined-input cases.
+- **Docs:** mirror the rollup in `project_retention_loops_status.md` so the working/not-working table reflects round-end dopamine + arena-XP both shipped.
+
+**Resolved 2026-04-25 in PR #229 — full server↔client wire of zone XP awards. Survive +2, win +3, flip +8, KO +5 (all per `xp-engine.XP_REWARDS`) flow through `addXP` at round-end and KO. `arena:round_end.xpLog` carries per-player delta + level-up state; `_showRoundEnd` replaces the "coming soon" XP slot with a live green chip and renders a LEVEL UP celebration block (with zone-slot + item-drop unlocks) when the round triggers a level threshold. The engine's level-up random item drop (xp-engine.js:240–269) is now reachable for zone players for the first time — bonus retention surface activates incidentally. Jest 8/8 on `calculateRoundXP`. UI hand-back as ready-to-try; test on phone end-to-end after a winning round.**
+
 
 
 Definitions of terms used throughout this PRD. Each ≤15 words.

@@ -27,4 +27,35 @@ function buildRoundStartNinePayload(n) {
   };
 }
 
-module.exports = { buildRoundStartNinePayload };
+/**
+ * Calculate per-player XP awards for round end.
+ *
+ * §9.91: arena combat was emitting zero XP — the xp-engine defined
+ * zone_survive/zone_win/zone_flip rewards but combatEngine.endRound never
+ * called addXP. Extracted here as a pure function so endRound stays focused
+ * on points/zone-control bookkeeping and the XP math is unit-testable.
+ *
+ * Caller is responsible for filtering `livingNines` (hp > 0,
+ * !waitingForRound). KO XP is awarded immediately in handleKO and is NOT
+ * computed here.
+ *
+ * @param {object} args
+ * @param {string|null} args.winner Guild tag controlling the zone, or null
+ * @param {boolean} args.flipped Whether the winner flipped control this round
+ * @param {Array} args.livingNines Pre-filtered alive Nines
+ * @returns {Array<{playerId, xp}>} XP delta per player
+ */
+function calculateRoundXP({ winner, flipped, livingNines }) {
+  const log = [];
+  for (const n of livingNines || []) {
+    let xp = 2; // zone_survive — alive at end of round
+    if (winner && n.guildTag === winner) {
+      xp += 3; // zone_win — guild controls zone
+      if (flipped) xp += 8; // zone_flip — guild flipped control this round
+    }
+    log.push({ playerId: n.playerId, xp });
+  }
+  return log;
+}
+
+module.exports = { buildRoundStartNinePayload, calculateRoundXP };

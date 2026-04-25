@@ -110,8 +110,7 @@
 
     /* Pack card pulse demo */
     .pack-card { display: flex; align-items: center; gap: 14px; }
-    .pack-icon { font-size: 36px; }
-    .pack-info { flex: 1; }
+    .pack-info { flex: 1; min-width: 0; }
     .pack-eyebrow {
       font-family: var(--font-data); font-size: 8px;
       color: var(--gold); letter-spacing: 2px;
@@ -479,7 +478,7 @@
     <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin: 16px 0 8px;">DAILY PACK · UNCLAIMED (HERO PULSE)</p>
     <div class="card card--gold-pulse">
       <div class="pack-card">
-        <div class="pack-icon">📦</div>
+        <img src="/assets/images/booster-pack.png" alt="Booster Pack" style="width: 56px; height: auto; flex-shrink: 0; filter: drop-shadow(0 4px 12px rgba(212,166,75,0.35));">
         <div class="pack-info">
           <div class="pack-eyebrow">1 PACK WAITING</div>
           <div class="pack-title">Daily Pack — Day 7</div>
