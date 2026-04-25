@@ -6120,7 +6120,7 @@
       </div>
       <div style="font-family:'Press Start 2P',monospace;font-size:6px;color:rgba(255,255,255,0.3);letter-spacing:1px;margin-bottom:6px;">EQUIPPED CARDS</div>
       <div>${cardHtml}</div>
-      <a href="/profile/${id}" style="display:block;margin-top:10px;text-align:center;font-family:'Press Start 2P',monospace;font-size:6px;color:${hc};text-decoration:none;opacity:0.6;hover:opacity:1;">VIEW PROFILE →</a>`;
+      <a href="/p/by-id/${encodeURIComponent(id)}" style="display:block;margin-top:10px;text-align:center;font-family:'Press Start 2P',monospace;font-size:6px;color:${hc};text-decoration:none;opacity:0.7;letter-spacing:1.5px;padding:6px;border:1px solid ${hc}33;border-radius:4px;">VIEW PROFILE →</a>`;
 
     document.body.appendChild(popup);
     // Close on click outside. §9.63: track the handler on window so we can

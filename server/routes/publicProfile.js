@@ -73,6 +73,28 @@ async function fetchLevel(playerId) {
   return { level: data.level || 1, xp: data.xp || 0 };
 }
 
+// /p/by-id/:player_id — UUID-keyed redirect helper. The arena fighter
+// popup (and any future surface that has playerId but not twitter_handle
+// to hand) deep-links here; the route resolves to the canonical
+// /p/<handle> and 302s. Keeps a single canonical URL while letting
+// internal callers route by id without an extra round-trip.
+router.get('/by-id/:player_id', async (req, res) => {
+  const playerId = req.params.player_id;
+  if (!playerId) return res.status(404).sendFile(NOT_FOUND_PATH);
+
+  const { data: player } = await supabaseAdmin
+    .from('players')
+    .select('twitter_handle, is_active')
+    .eq('id', playerId)
+    .maybeSingle();
+
+  if (!player || !player.is_active || !player.twitter_handle) {
+    return res.status(404).sendFile(NOT_FOUND_PATH);
+  }
+  const lower = String(player.twitter_handle).toLowerCase();
+  return res.redirect(302, `/p/${encodeURIComponent(lower)}`);
+});
+
 router.get('/:handle', async (req, res) => {
   // Fast-fail for handles with characters that can't be Twitter handles —
   // avoids a DB hit on obvious 404s (favicon.ico, robots.txt accidents,
