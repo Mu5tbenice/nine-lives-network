@@ -388,6 +388,10 @@ var playerCards = [];
 var allSpells = [];
 var spellLookup = {};
 var discoveredSet = {};
+// Track load failures so render() can surface a visible error instead of
+// silently leaving the page blank when both data fetches die.
+var _spellLoadFailed = false;
+var _collectionLoadFailed = false;
 var activeTab = 'mycards';
 var activeFilters = { rarity:'all', type:'all', status:'all', house:'all' };
 var zoomCardData = null;    // currently zoomed card data
@@ -467,7 +471,10 @@ async function loadData() {
       });
       allSpells.forEach(function(s) { spellLookup[s.name.toLowerCase()] = s; });
     }
-  } catch(e) { console.error('Spells load error:', e); }
+  } catch(e) {
+    console.error('Spells load error:', e);
+    _spellLoadFailed = true;
+  }
 
   if (playerId) {
     try {
@@ -476,11 +483,50 @@ async function loadData() {
         var cd = await cR.json();
         playerCards = (cd.cards || cd || []).map(normalizePlayerCard);
         playerCards.forEach(function(c) { discoveredSet[c.name.toLowerCase()] = true; });
+      } else {
+        _collectionLoadFailed = true;
       }
-    } catch(e) { console.error('Collection load error:', e); }
+    } catch(e) {
+      console.error('Collection load error:', e);
+      _collectionLoadFailed = true;
+    }
   }
 
   updateProgress();
+  // If the spell catalog failed AND we have no player cards, the page has
+  // nothing to render — surface the error state. Otherwise fall through to
+  // normal render with whatever data did land.
+  if (_spellLoadFailed && playerCards.length === 0) {
+    renderLoadError('spells');
+    return;
+  }
+  render();
+}
+
+// Surfaced-error helper — clears the filtered grid and renders the visible
+// error state when one of the load paths fails. Replaces the previous
+// console.error-only behaviour so users aren't left with a blank page.
+function renderLoadError(which) {
+  var msg = which === 'spells'
+    ? 'spell catalog timed out. nerm probably ate it.'
+    : 'collection load failed. try refreshing.';
+  document.getElementById('content').innerHTML =
+    '<div class="sb-empty"><div class="sb-empty-icon">&#9888;</div>'
+    + '<div class="sb-empty-title">something broke</div>'
+    + '<div class="sb-empty-text" style="font-family:var(--font-mono);font-style:italic;">' + msg + '</div>'
+    + '<a href="#" onclick="event.preventDefault();window.location.reload();">Try Again</a></div>';
+}
+
+// Clear all active filters and re-render the grid. Wired into the
+// filtered-empty recovery CTA.
+function clearAllFilters() {
+  activeFilters = { rarity:'all', type:'all', status:'all', house:'all' };
+  document.querySelectorAll('.fbtn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.val === 'all');
+  });
+  document.querySelectorAll('.house-pill').forEach(function(p) { p.classList.remove('active'); });
+  var search = document.getElementById('searchInput');
+  if (search) search.value = '';
   render();
 }
 
@@ -538,6 +584,12 @@ function updateProgress() {
   document.getElementById('progressWrap').style.display = 'block';
   document.getElementById('progressFill').style.width = pct + '%';
   document.getElementById('progressText').textContent = found + ' / ' + total + ' DISCOVERED';
+  // Surface completion % on the CODEX tab label so the collection
+  // completionism hook reads at glance speed (per ux-plan-mobile polish).
+  var codexTab = document.querySelector('.sb-tab[data-tab="codex"]');
+  if (codexTab && allSpells.length) {
+    codexTab.innerHTML = 'CODEX <span style="font-family:var(--font-data);font-size:8px;color:var(--text-faint);letter-spacing:0.5px;margin-left:4px;">' + pct + '%</span>';
+  }
 
   if (playerCards.length > 0) {
     document.getElementById('statsBanner').style.display = 'flex';
@@ -678,10 +730,12 @@ function renderMyCards() {
     return;
   }
   if (items.length === 0) {
+    // Filtered-empty — surface a recovery CTA instead of a dead end.
     document.getElementById('content').innerHTML =
       '<div class="sb-empty"><div class="sb-empty-icon">&#128269;</div>'
       + '<div class="sb-empty-title">No matches</div>'
-      + '<div class="sb-empty-text">Try changing your filters</div></div>';
+      + '<div class="sb-empty-text">try fewer filters. or open more packs.</div>'
+      + '<a href="#" onclick="event.preventDefault();clearAllFilters();">Clear Filters</a></div>';
     return;
   }
 
