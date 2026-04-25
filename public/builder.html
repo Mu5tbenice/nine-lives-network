@@ -67,6 +67,13 @@
 </head>
 <body>
 <div class="wrap">
+  <!-- §9.91+: EDIT-MODE BANNER — visible only when ?skip_intro=1 (entered
+       from dashboard EDIT pill). Distinguishes "configure your character"
+       from the 4-step onboarding wizard. -->
+  <div id="editModeBanner" style="display:none;background:rgba(212,166,75,0.12);border:1px solid rgba(212,166,75,0.4);border-radius:8px;padding:8px 12px;margin-bottom:10px;text-align:center;font-family:var(--font-data);font-size:7px;color:var(--gold);letter-spacing:1.5px;">
+    EDITING YOUR NINE · TAP <span style="opacity:0.85;">SAVE & BACK</span> BELOW TO RETURN
+  </div>
+
   <!-- HEADER -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px" id="builderHeader">
     <div style="display:flex;align-items:center;gap:10px">
@@ -311,8 +318,8 @@ var ITEMS = {
   expression:[{id:'none',name:'Default',f:null,s:{},r:'none',d:'Neutral expression'}],
   headwear: [{id:'none',name:'None',f:null,s:{},r:'none',d:'No headwear'}],
   familiar: [{id:'none',name:'None',f:null,s:{},r:'none',d:'No off-hand item'}],
-  trinket1: [{id:'none',name:'Empty',f:null,s:{},r:'none',d:'Find trinkets in chests & drops'}],
-  trinket2: [{id:'none',name:'Empty',f:null,s:{},r:'none',d:'Find trinkets in chests & drops'}]
+  trinket1: [{id:'none',name:'Empty',f:null,s:{},r:'none',d:'Trinket slots unlock as your Nine levels'}],
+  trinket2: [{id:'none',name:'Empty',f:null,s:{},r:'none',d:'Trinket slots unlock as your Nine levels'}]
 };
 
 /* Load OWNED items from player inventory via API */
@@ -409,6 +416,13 @@ var HOUSE_PREVIEW_CARDS = {
 /* ══════════════════════════════════════ */
 var step=1,aSlot=null,pSlot=null,pItem=null,oMode=null;
 var _skipIntro = new URLSearchParams(window.location.search).get('skip_intro') === '1';
+
+// §9.91+: edit-mode banner — shown only when entered from dashboard EDIT
+// pill. Distinguishes ongoing edit flow from the 4-step onboarding wizard.
+if (_skipIntro) {
+  var _emb = document.getElementById('editModeBanner');
+  if (_emb) _emb.style.display = 'block';
+}
 
 var eq={};
 
