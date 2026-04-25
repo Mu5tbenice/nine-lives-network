@@ -3523,6 +3523,19 @@
     }, 1000);
   }
 
+  // §9.94: clear a stale lockout countdown. The local ticker is decoupled from
+  // the server's roundEndsAt — when the round ends early or a new round begins,
+  // any in-flight countdown is by definition wrong. Called from arena:round_end
+  // and arena:round_start. Resets the modal confirm button to its default state.
+  window._clearDeployLockout = function() {
+    if (_deployLockoutInt) { clearInterval(_deployLockoutInt); _deployLockoutInt = null; }
+    const btn = document.getElementById('btn-confirm-deploy');
+    if (!btn) return;
+    const sel = (S.selectedCards && S.selectedCards.length) || 0;
+    btn.disabled = sel !== 3;
+    btn.textContent = sel === 3 ? '⚔️ DEPLOY' : `SELECT ${3 - sel} MORE`;
+  };
+
   async function confirmDeploy() {
     if (S.selectedCards.length !== 3) return;
     if (!S.playerId || !S.currentZoneId) return;
@@ -4417,6 +4430,9 @@
 
     // ── ROUND END — cinematic moment ────────────────────────────────────
     socket.on('arena:round_end', (data) => {
+      // §9.94: round just ended → deploy is open during intermission, any
+      // in-flight lockout countdown is stale. Clear before any other state work.
+      if (typeof window._clearDeployLockout === 'function') window._clearDeployLockout();
       S._roundState     = 'INTERMISSION';
       S._roundNumber    = (data.roundNumber || 1) + 1;
       // §9.48: prefer the server's absolute nextRoundAt timestamp when
@@ -4558,6 +4574,9 @@
       // §9.79: survivor safety net — ensure tray is visible at round_start
       // for any player still flagged as deployed. Cheap and idempotent.
       if (typeof window._syncBottomTrayVisibility === 'function') window._syncBottomTrayVisibility();
+      // §9.94: belt-and-braces — fresh round resets server roundEndsAt to
+      // now+5min, so any in-flight lockout countdown is by definition wrong.
+      if (typeof window._clearDeployLockout === 'function') window._clearDeployLockout();
 
       // §9.69: if the player queued a loadout swap during the previous
       // round, the engine applied it in-place at this startRound tick.
@@ -4994,10 +5013,19 @@
     // the "do nothing" path. Build-tweaking is the rarer deliberate action,
     // promoted to primary. Auto OFF path is an edge case (user explicitly
     // disabled) — we keep a small inline toggle-on hint instead of a third CTA.
+    //
+    // §9.95: when the player was KO'd this round (or stayed withdrawn from a
+    // prior round), swap the CTAs so the post-KO action is REJOIN-flavored.
+    // arena:round_end already flipped S._wasKOdThisRound→false and set
+    // S._withdrawnAfterKO=true (line ~4438), so _withdrawnAfterKO is the
+    // canonical "needs rejoin path" signal at modal-render time.
     const autoOn = _autoRejoinActive();
-    const helper = autoOn
-      ? `<div style="font-family:'Crimson Text',serif;font-size:12px;color:rgba(204,197,219,0.5);line-height:1.4;text-align:center;padding:0 8px;margin:0 0 8px;">Auto-rejoin is on — WAIT lets the next round start with your current build.</div>`
-      : `<div style="font-family:'Crimson Text',serif;font-size:12px;color:rgba(204,197,219,0.55);line-height:1.4;text-align:center;padding:0 8px;margin:0 0 8px;">Auto-rejoin is off — you'll sit out the next round unless you <a href="#" onclick="event.preventDefault();window.toggleAutoRedeploy&&window.toggleAutoRedeploy();_dismissRoundEnd();" style="color:#6ac8d8;text-decoration:underline;">turn it back on</a> or CHANGE BUILD to redeploy.</div>`;
+    const isWithdrawn = !!S._withdrawnAfterKO;
+    const helper = isWithdrawn
+      ? `<div style="font-family:'Crimson Text',serif;font-size:12px;color:rgba(204,197,219,0.55);line-height:1.4;text-align:center;padding:0 8px;margin:0 0 8px;">You were KO'd this round. ${autoOn ? 'REJOIN to rejoin next round, or CHANGE BUILD to swap loadout.' : '<a href="#" onclick="event.preventDefault();window.toggleAutoRedeploy&&window.toggleAutoRedeploy();_dismissRoundEnd();" style="color:#6ac8d8;text-decoration:underline;">Turn auto-rejoin on</a> or CHANGE BUILD to redeploy.'}</div>`
+      : (autoOn
+        ? `<div style="font-family:'Crimson Text',serif;font-size:12px;color:rgba(204,197,219,0.5);line-height:1.4;text-align:center;padding:0 8px;margin:0 0 8px;">Auto-rejoin is on — WAIT lets the next round start with your current build.</div>`
+        : `<div style="font-family:'Crimson Text',serif;font-size:12px;color:rgba(204,197,219,0.55);line-height:1.4;text-align:center;padding:0 8px;margin:0 0 8px;">Auto-rejoin is off — you'll sit out the next round unless you <a href="#" onclick="event.preventDefault();window.toggleAutoRedeploy&&window.toggleAutoRedeploy();_dismissRoundEnd();" style="color:#6ac8d8;text-decoration:underline;">turn it back on</a> or CHANGE BUILD to redeploy.</div>`);
 
     overlay.innerHTML = `
       <style>@keyframes roundEndSlide{from{transform:translateX(-50%) translateY(-20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
@@ -5081,8 +5109,11 @@
         </div>
 
         ${helper}
-        <button class="round-end-cta" onclick="window._handleRoundEndAction('change')">CHANGE BUILD</button>
-        <button class="round-end-cta-secondary" onclick="window._handleRoundEndAction('wait')">WAIT</button>
+        ${isWithdrawn
+          ? `<button class="round-end-cta" onclick="window._handleRoundEndAction('rejoin')">REJOIN NEXT ROUND</button>
+        <button class="round-end-cta-secondary" onclick="window._handleRoundEndAction('change')">CHANGE BUILD</button>`
+          : `<button class="round-end-cta" onclick="window._handleRoundEndAction('change')">CHANGE BUILD</button>
+        <button class="round-end-cta-secondary" onclick="window._handleRoundEndAction('wait')">WAIT</button>`}
 
         <div style="text-align:center;padding-top:8px;border-top:1px solid rgba(255,255,255,.07)">
           <div style="font-family:'Press Start 2P',monospace;font-size:7px;color:#6ac8d8" id="round-next-countdown">
@@ -5126,6 +5157,17 @@
     _dismissRoundEnd();
     if (action === 'change') {
       openDeployModal({ preselectCurrent: true });
+    } else if (action === 'rejoin') {
+      // §9.95: post-KO REJOIN — server only accepts /rejoin after it sets
+      // nine.withdrawn=true at the next startRound, so we can't call _doRejoin
+      // here. Ensure auto-rejoin is on; the arena:round_start handler at
+      // line ~4644 will fire _doRejoin() the moment the new round begins.
+      // If auto is already on, this is a no-op confirmation that intent matches state.
+      if (typeof _autoRejoinActive === 'function' && !_autoRejoinActive()
+          && typeof window.toggleAutoRedeploy === 'function') {
+        window.toggleAutoRedeploy();
+      }
+      addFeedEvent('🔄 Will rejoin at the start of the next round.', 'system');
     }
     // 'wait' path: nothing to do — round_start handler owns auto-rejoin.
   };
