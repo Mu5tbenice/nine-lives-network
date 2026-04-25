@@ -187,6 +187,28 @@
     .lonewolf-nudge a{color:#FF8C00;text-decoration:none;border-bottom:1px dashed rgba(255,140,0,0.4);transition:border-color 0.15s}
     .lonewolf-nudge a:hover{border-bottom-color:#FF8C00}
 
+    /* Per-house rivalry sub-line on YOU pin. Surfaces guild context even
+       when personal rank is low — "your tribe is winning" framing. */
+    .house-rivalry{font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-top:2px}
+    .house-rivalry strong{font-weight:600;color:var(--text-bright)}
+
+    /* Share-to-X button on the YOU pin. Tucked under the score so the row
+       reads as a single shareable unit. Tap surface ≥28px for thumbs;
+       opens twitter.com/intent/tweet in a new tab. */
+    .me-share{
+      display:inline-flex;align-items:center;justify-content:center;
+      width:28px;height:28px;
+      background:rgba(212,166,75,0.08);
+      border:1px solid rgba(212,166,75,0.25);
+      border-radius:6px;
+      color:var(--gold);
+      cursor:pointer;
+      transition:all 0.15s;
+      padding:0;
+    }
+    .me-share:hover{background:rgba(212,166,75,0.18);border-color:rgba(212,166,75,0.5);transform:translateY(-1px)}
+    .me-share:active{transform:translateY(0)}
+
     /* ── CLIMBER SPOTLIGHT — top mover today, hero card above the standings.
        Green-tinted to match the rank-delta arrow / sparkline color story.
        Renders only when the server returns a climber (someone climbed >0). */
@@ -761,6 +783,51 @@ function findMeWithFallback(list, meRow) {
   return null;
 }
 
+// Share button HTML for the YOU pin. Composes a twitter.com/intent URL
+// with rank-aware character-voice copy and links to the player's public
+// profile so the embed pulls their OG card. Returns empty when the player
+// has no handle (defensive — shouldn't happen in practice).
+function meShareButton(p, rank, win) {
+  if (!p || !p.twitter_handle) return '';
+  var handle = String(p.twitter_handle).toLowerCase();
+  var url = 'https://9lv.net/p/' + encodeURIComponent(handle);
+  var text;
+  if (win === 'today') {
+    text = rank === 1 ? "Top of the daily on @9LVNetwork 🔥"
+         : rank <= 3 ? "Top 3 today on @9LVNetwork ⚡"
+         : "Hunting daily glory on @9LVNetwork — currently #" + rank;
+  } else if (win === 'week') {
+    text = rank <= 3 ? "Top 3 this week on @9LVNetwork 🔥"
+         : rank <= 10 ? "Top 10 weekly on @9LVNetwork ⚔️"
+         : "Climbing this week on @9LVNetwork — currently #" + rank;
+  } else {
+    text = rank === 1 ? "I'm leading Season 1 on @9LVNetwork 🏆"
+         : rank <= 10 ? "Climbed to #" + rank + " in Season 1 on @9LVNetwork ⚔️"
+         : "Currently #" + rank + " in Season 1, climbing 🐾 @9LVNetwork";
+  }
+  var intent = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text) + '&url=' + encodeURIComponent(url);
+  // Inline onclick: stopPropagation + preventDefault so the button doesn't
+  // also navigate the wrapping <a>'s href to /p/<handle>. window.open new tab.
+  return '<button class="me-share" onclick="event.stopPropagation();event.preventDefault();window.open(\'' + intent + '\',\'_blank\',\'noopener\');return false" title="Share to X" aria-label="Share to X">'
+    + '<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817-5.97 6.817H1.67l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>'
+    + '</button>';
+}
+
+// House rivalry sub-line for the YOU pin. Renders "Your house <X> is #N
+// in the war" using the houses leaderboard. Hidden when the player has
+// no school_id or houses data isn't loaded yet.
+function houseRivalryLine(p, houses) {
+  if (!p || !p.school_id || !houses || !houses.length) return '';
+  var sorted = houses.slice().sort(function(a, b) { return (b.total_points||0) - (a.total_points||0); });
+  var idx = -1;
+  for (var i = 0; i < sorted.length; i++) {
+    if (sorted[i].school_id == p.school_id) { idx = i; break; }
+  }
+  if (idx < 0) return '';
+  var h = HOUSES[p.school_id] || { name: '?', color: 'var(--gold)' };
+  return '<div class="house-rivalry">Your house <strong style="color:' + h.color + '">' + h.name + '</strong> is <strong>#' + (idx + 1) + '</strong> in the war</div>';
+}
+
 // Sticky "YOU" pin — appears above rankings when player exists in the
 // list. Stays visible as the user scrolls so they always know where they
 // stand. Tappable like any row to land on /p/<own-handle>. Per
@@ -850,15 +917,23 @@ function mePin(found, opts) {
     + '</div>'
     + '<div class="lb-house" style="color:' + h.color + ';font-size:10px;">' + h.name + '</div>'
     + gapHtml
+    // Per-house rivalry — gives guild-affiliated players competitive
+    // context even when their personal rank is low. Skipped on Duels tab.
+    + (!opts.showDuels ? houseRivalryLine(p, opts.houses) : '')
     // Lone-wolf nudge — players without a guild get an actionable prompt
     // instead of empty space. Tappable link to the dashboard guild input.
     + ((!p.guild_tag || p.guild_tag === 'lone_wolf')
         ? '<div class="lonewolf-nudge"><a href="/dashboard.html#guild" onclick="event.stopPropagation()">Find a guild → shared bonuses</a></div>'
         : '')
     + '</div>'
-    + '<div class="lb-score" style="text-align:right;flex-shrink:0;">'
-    + '<div class="lb-score__val" style="font-size:13px;color:var(--cyan);">' + scoreVal + '</div>'
-    + '<div class="lb-score__label" style="font-size:7px;">' + scoreLabel + '</div>'
+    + '<div class="lb-score" style="text-align:right;flex-shrink:0;display:flex;flex-direction:column;align-items:flex-end;gap:4px;">'
+    + '<div>'
+    +   '<div class="lb-score__val" style="font-size:13px;color:var(--cyan);">' + scoreVal + '</div>'
+    +   '<div class="lb-score__label" style="font-size:7px;">' + scoreLabel + '</div>'
+    + '</div>'
+    // Share button skipped on Duels tab — copy strings are season/today/week
+    // flavored. Duels-specific share copy can land in a follow-up.
+    + (!opts.showDuels ? meShareButton(p, rank, win) : '')
     + '</div>'
     + '</a>';
 }
@@ -991,7 +1066,7 @@ function render() {
     // (server includes them as a separate row with rank computed against
     // the full ladder). Pass the active window so the pin's score + gap
     // copy reflect what's being viewed.
-    html += mePin(findMeWithFallback(players, data.me_row), { fullList: players, window: seasonWindow });
+    html += mePin(findMeWithFallback(players, data.me_row), { fullList: players, window: seasonWindow, houses: data.houses });
     if (players.length >= 3) {
       // Podium: #2, #1, #3
       var order = [1, 0, 2];
