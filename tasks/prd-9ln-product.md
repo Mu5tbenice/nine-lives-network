@@ -2293,6 +2293,22 @@ Spec touches:
 
 ---
 
+### 9.98 zone-detail.html / zone-battle.html — strip dormant legacy render below redirect shim
+
+**Symptom (audit 2026-04-25 during component-drift sweep).** PR #242 added a top-of-body redirect to `/nethara-live.html` from both `public/zone-detail.html` (422 lines) and `public/zone-battle.html` (941 lines), but left the entire legacy render below the script as "JS-disabled fallback." That fallback contained ~1300 lines of inline component CSS that drifted from `/css/components-v2.css` (custom `--bg`/`--card`/`--bright` tokens, redefinitions of `.spinner`, `.section-head`, `.fade-up`, etc.).
+
+**Effect.** The "JS-disabled fallback" rationale doesn't hold up: `/nethara-live.html` itself requires JS (Socket.io, PIXI, the entire arena loop), so a JS-off visitor lands on a target page that won't function anyway. Meanwhile the dormant legacy code was a hidden source of component drift (audited by grepping for `.spinner` / `.section-head` redefinitions) and a 1.3K-line maintenance liability for a redirect shim.
+
+**Resolution plan.** Strip both files down to a minimal redirect-only HTML shell (~25 lines each):
+- `<meta http-equiv="refresh">` + JS `window.location.replace` for instant redirect
+- Accept both `zone_id` and `id` query params (legacy URLs)
+- `<noscript>` fallback link for the rare JS-off case
+- No external CSS/JS deps — the redirect doesn't need styling
+
+**Resolved 2026-04-25 in PR #253.** Both files reduced to the minimal redirect shell. zone-detail.html: 422→25 lines. zone-battle.html: 941→25 lines. ~1300 lines of dormant legacy code removed; component drift in those files eliminated.
+
+---
+
 Definitions of terms used throughout this PRD. Each ≤15 words.
 
 | Term | Definition |
