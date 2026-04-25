@@ -2259,6 +2259,28 @@ Reuses existing `_handleRoundEndAction('change')` (CHANGE BUILD) and the WAIT pa
 
 ---
 
+### 9.96 Mid-round join — deploy modal stays open with lockout countdown instead of queueing cards and closing → deferred
+
+**Symptom (Wray smoke 2026-04-25 post-PR #245).** When joining a contested zone mid-round (FIGHTING, ≥2 guilds, not a self-reswap), the deploy modal stays open after the player picks 3 cards and clicks deploy. The `🔒 DEPLOY OPENS IN m:ss` countdown takes over the confirm button. Wray tested in two browsers — one drifted out of sync (related to §9.94's lockout-vs-round drift), and **neither auto-joined when the new round started**.
+
+**Effect.** Two related problems:
+1. **Bad UX shape.** Holding the modal open mid-round forces the player to either watch a confusing countdown they don't fully control, or close the modal and lose their card selection. Wray's framing: "makes more sense for the card select to lock the choices and close so player can watch the round."
+2. **Auto-join failure.** Even with the cards picked and the lockout countdown running, neither browser actually joined when the next round started. The countdown hitting zero re-enables the confirm button but doesn't auto-fire deploy — the player has to notice and click again. If they're watching the round (which the new UX intends), they may miss the window.
+
+**Resolution plan (deferred — track for follow-up, not immediate).** Mirror §9.69's self-reswap pattern but for new joiners during contested rounds:
+- On 423 lockout response, **queue the picked cards** (similar to `S._queuedCards` from §9.69) and **close the deploy modal** with a clear feed event: "Will deploy at the start of the next round."
+- On `arena:round_start`, if `S._queuedDeploy` exists (different flag from `_queuedCards`, since this is a fresh deploy not a reswap), fire `/api/zones/deploy` automatically with the queued cards and clear the flag.
+- Remove the lockout-countdown button paint entirely (or relegate it to the rare "intermission already passed by the time the player picks cards" edge case).
+
+Spec touches:
+- `public/nethara-live.html` `confirmDeploy` 423 branch (currently calls `_showDeployLockout`) — replace with queue-and-close.
+- `public/nethara-live.html` `arena:round_start` handler — add a `S._queuedDeploy` consumer alongside the existing `S._queuedCards` and auto-rejoin logic.
+- May obsolete `_showDeployLockout` / `_clearDeployLockout` (§9.94) if the lockout button paint is removed entirely.
+
+**Status: OPEN — deferred. Wray's call 2026-04-25: "we can come back and keep polishing this flow later."**
+
+---
+
 Definitions of terms used throughout this PRD. Each ≤15 words.
 
 | Term | Definition |
