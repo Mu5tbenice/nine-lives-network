@@ -3815,6 +3815,17 @@
     el.textContent = label;
     el.className = 'arena-deploy-pill deploy-pill--' + state;
   };
+  // §9.79: central tray-visibility sync. Mirrors §9.40 deploy-pill pattern.
+  // Existing call sites at deploy/withdraw/KO/checkDeployment continue to set
+  // the tray inline — this function exists to catch the gaps (rejoin paths,
+  // tab-return, periodic sync) where direct mutations were missing and the
+  // tray would silently stay hidden mid-session.
+  window._syncBottomTrayVisibility = function() {
+    const tray = document.getElementById('arena-bottom-tray');
+    if (!tray) return;
+    const shouldShow = !!(S.currentZoneId && S.isDeployed);
+    tray.style.display = shouldShow ? 'flex' : 'none';
+  };
   // Sync all auto-rejoin UI elements (HUD toggle + deploy modal toggle)
   window._syncAutoRejoinUI = function() {
     const on = !!S._autoRedeploy;
@@ -4526,6 +4537,9 @@
         addFeedEvent('✅ Rejoined the round', 'flip');
         // Task 17.0 item 5 — pill flips from WITHDRAWN/AUTO back to AUTO/DEPLOYED.
         if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
+        // §9.79: re-show the tray. KO handler hid it; the rejoin path (vs the
+        // /api/zones/deploy auto-redeploy at line ~3901) had no matching show.
+        if (typeof window._syncBottomTrayVisibility === 'function') window._syncBottomTrayVisibility();
       }
     });
 
@@ -4540,6 +4554,10 @@
       S._roundNumber    = data.roundNumber || 1;
       S._roundStartedAt = Date.now();
       S._roundEndsAt    = Date.now() + 300000; // 5min hard cap
+
+      // §9.79: survivor safety net — ensure tray is visible at round_start
+      // for any player still flagged as deployed. Cheap and idempotent.
+      if (typeof window._syncBottomTrayVisibility === 'function') window._syncBottomTrayVisibility();
 
       // §9.69: if the player queued a loadout swap during the previous
       // round, the engine applied it in-place at this startRound tick.
@@ -5292,6 +5310,9 @@
     // Task 17.0 item 5 — refresh pill on return (Nm-left may have ticked down
     // significantly while hidden, or auto-rejoin may have expired).
     if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
+    // §9.79: re-derive tray visibility on tab return — catches any desync that
+    // accumulated while the tab was hidden.
+    if (typeof window._syncBottomTrayVisibility === 'function') window._syncBottomTrayVisibility();
   }
 
   function _onTabHidden() {
@@ -5525,6 +5546,9 @@
       // ticks down without needing its own timer. 30s granularity is fine; the
       // minute number only changes once a minute anyway.
       if (typeof window._updateDeployStatusPill === 'function') window._updateDeployStatusPill();
+      // §9.79: 30s catch-all tray sync. Ensures any desync that slipped past
+      // event-driven sites converges within one interval tick.
+      if (typeof window._syncBottomTrayVisibility === 'function') window._syncBottomTrayVisibility();
     }, 30000);
   }
 
