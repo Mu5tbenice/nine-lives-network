@@ -74,6 +74,55 @@ router.get('/players', async (req, res) => {
       prevRankMap[row.id] = idx + 1;
     });
 
+    // Build 7-day cumulative point history per player. Pull all point_log
+    // rows for these players in the last 7 days, bucket by (player, UTC day),
+    // then derive each player's daily-cumulative seasonal_points walking
+    // backwards from current. Result is an 8-element array per player
+    // (today + 7 prior days) used for the row sparkline.
+    const sparkDays = 7;
+    const sparkStart = new Date();
+    sparkStart.setUTCHours(0, 0, 0, 0);
+    sparkStart.setUTCDate(sparkStart.getUTCDate() - sparkDays);
+    const historyMap = {};
+    if (ids.length > 0) {
+      const { data: histLog, error: histErr } = await supabase
+        .from('point_log')
+        .select('player_id, amount, created_at')
+        .gte('created_at', sparkStart.toISOString())
+        .in('player_id', ids);
+      if (histErr) {
+        console.error('Error fetching point_log history:', histErr);
+        // Non-fatal — clients fall back to no sparkline.
+      } else {
+        // Index amounts by player_id → { 'YYYY-MM-DD': sumDelta }
+        const byDay = {};
+        (histLog || []).forEach((row) => {
+          const day = row.created_at.slice(0, 10);
+          if (!byDay[row.player_id]) byDay[row.player_id] = {};
+          byDay[row.player_id][day] =
+            (byDay[row.player_id][day] || 0) + (row.amount || 0);
+        });
+        // For each player, build cumulative array. Today's value = current
+        // seasonal_points. Walk backwards: yesterday = today - today's delta,
+        // day before = yesterday - yesterday's delta, etc.
+        list.forEach((p) => {
+          const dayDeltas = byDay[p.id] || {};
+          const arr = new Array(sparkDays + 1);
+          let running = p.seasonal_points || 0;
+          arr[sparkDays] = running;
+          for (let d = sparkDays - 1; d >= 0; d--) {
+            const date = new Date();
+            date.setUTCHours(0, 0, 0, 0);
+            date.setUTCDate(date.getUTCDate() - (sparkDays - d));
+            const key = date.toISOString().slice(0, 10);
+            running -= dayDeltas[key] || 0;
+            arr[d] = running;
+          }
+          historyMap[p.id] = arr;
+        });
+      }
+    }
+
     const enriched = list.map((p, idx) => {
       const rank = idx + 1;
       const prev_rank = prevRankMap[p.id] || rank;
@@ -83,6 +132,7 @@ router.get('/players', async (req, res) => {
         prev_rank,
         rank_change: prev_rank - rank, // positive = climbed
         points_today: todayMap[p.id] || 0,
+        history: historyMap[p.id] || null,
       };
     });
 
