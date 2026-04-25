@@ -21,6 +21,14 @@
     .section-label{display:flex;align-items:center;gap:8px;margin:24px 0 10px}
     .section-label__text{font-family:var(--font-title);font-size:12px;font-weight:700;color:var(--gold);letter-spacing:2px}
     .section-label__line{flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
+    /* Accordion sections (deeper-dive content collapsed below the fold for
+       mobile first-impression — per docs/ux-plan-mobile.md polish note). */
+    details.section-accordion{margin:0;padding:0}
+    details.section-accordion > summary{list-style:none;cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent}
+    details.section-accordion > summary::-webkit-details-marker{display:none}
+    details.section-accordion .section-toggle{font-family:var(--font-data);font-size:9px;color:var(--text-faint);transition:transform .2s ease;display:inline-block;margin-left:4px}
+    details.section-accordion[open] .section-toggle{transform:rotate(180deg);color:var(--gold)}
+    details.section-accordion > summary:hover .section-label__text{color:var(--gold-light, #E8C675)}
     .step{display:flex;gap:14px;padding:14px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);margin-bottom:8px}
     .step-num{font-family:var(--font-data);font-size:14px;color:var(--gold);min-width:28px;text-align:center;padding-top:2px}
     .step-body h3{font-family:var(--font-title);font-size:14px;font-weight:700;color:var(--text-bright);margin-bottom:4px}
@@ -138,46 +146,54 @@
       <p>Both players reveal a card simultaneously. Higher ATK deals damage. Best of 3 rounds. Duels are <span style="color:var(--green);">free</span>, and cards are never consumed. The perfect "I have 2 minutes" mode.</p>
     </div>
 
-    <!-- ===== THE CHRONICLE ===== -->
-    <div class="section-label"><span style="font-size:14px;">📜</span><span class="section-label__text">THE CHRONICLE</span><span class="coming-soon-badge">COMING SOON</span><span class="section-label__line"></span></div>
+    <!-- Deeper-dive sections collapsed below the fold for mobile
+         first-impression. New players see Getting Started → Houses →
+         Cards → Modes always; tap a header to expand the rest. -->
 
-    <div class="info-card">
-      <h4>📜 The Chronicle: Twitter Narrative</h4>
-      <p>Every day, <span style="color:var(--text-bright);">@9LVNetwork</span> posts a four-act collaborative story on 𝕏. Reply in character as your Nine. The bot reads replies, weaves players into the narrative, and awards points. Get named in the story for a massive flex.</p>
-      <p style="margin-top:6px;">Act 4's ending is unpredictable. Sometimes the biggest guild wins, sometimes the lone underdog gets the bonus. You can't game it. Just show up and write something brilliant.</p>
-      <p style="margin-top:6px;">Chronicle points count toward the main leaderboard. A Twitter-only player can be competitive without ever touching the web app.</p>
-    </div>
+    <!-- ===== THE CHRONICLE ===== -->
+    <details class="section-accordion">
+      <summary class="section-label"><span style="font-size:14px;">📜</span><span class="section-label__text">THE CHRONICLE</span><span class="coming-soon-badge">COMING SOON</span><span class="section-label__line"></span><span class="section-toggle">▼</span></summary>
+      <div class="info-card">
+        <h4>📜 The Chronicle: Twitter Narrative</h4>
+        <p>Every day, <span style="color:var(--text-bright);">@9LVNetwork</span> posts a four-act collaborative story on 𝕏. Reply in character as your Nine. The bot reads replies, weaves players into the narrative, and awards points. Get named in the story for a massive flex.</p>
+        <p style="margin-top:6px;">Act 4's ending is unpredictable. Sometimes the biggest guild wins, sometimes the lone underdog gets the bonus. You can't game it. Just show up and write something brilliant.</p>
+        <p style="margin-top:6px;">Chronicle points count toward the main leaderboard. A Twitter-only player can be competitive without ever touching the web app.</p>
+      </div>
+    </details>
 
     <!-- ===== GUILDS ===== -->
-    <div class="section-label"><span style="font-size:14px;">👥</span><span class="section-label__text">GUILDS</span><span class="section-label__line"></span></div>
-
-    <div class="info-card">
-      <h4>Guilds vs Houses</h4>
-      <p><span style="color:var(--text-bright);">House = your class</span> (how you fight). <span style="color:var(--text-bright);">Guild = your faction</span> (who you fight for). Guilds are crypto communities, friend groups, or any team. "$BONK Legion" and "Cat Lovers United" are both valid guilds.</p>
-      <p style="margin-top:6px;">A well-built guild wants house diversity: DPS, tanks, healers, and controllers. Going all one house is a risk. One SILENCE effect shuts down your whole team.</p>
-      <p style="margin-top:6px;">No guild? <span style="color:var(--text-bright);">Lone Wolves</span> get <span style="color:var(--gold);">×1.5 ATK</span> in combat to compensate for fighting solo.</p>
-    </div>
+    <details class="section-accordion">
+      <summary class="section-label"><span style="font-size:14px;">👥</span><span class="section-label__text">GUILDS</span><span class="section-label__line"></span><span class="section-toggle">▼</span></summary>
+      <div class="info-card">
+        <h4>Guilds vs Houses</h4>
+        <p><span style="color:var(--text-bright);">House = your class</span> (how you fight). <span style="color:var(--text-bright);">Guild = your faction</span> (who you fight for). Guilds are crypto communities, friend groups, or any team. "$BONK Legion" and "Cat Lovers United" are both valid guilds.</p>
+        <p style="margin-top:6px;">A well-built guild wants house diversity: DPS, tanks, healers, and controllers. Going all one house is a risk. One SILENCE effect shuts down your whole team.</p>
+        <p style="margin-top:6px;">No guild? <span style="color:var(--text-bright);">Lone Wolves</span> get <span style="color:var(--gold);">×1.5 ATK</span> in combat to compensate for fighting solo.</p>
+      </div>
+    </details>
 
     <!-- ===== SCORING & POINTS ===== -->
-    <div class="section-label"><span style="font-size:14px;">🏆</span><span class="section-label__text">SCORING & LEADERBOARDS</span><span class="section-label__line"></span></div>
-
-    <div class="info-card">
-      <h4>How Points Work</h4>
-      <p>Everything you do earns season points. Zone battles, duels, and Chronicle participation all count. Points feed the main leaderboard and convert to <span style="color:var(--gold);">$9LV tokens</span>.</p>
-      <p style="margin-top:6px;">You never lose points. You stop earning, but you never go backwards. Card rarity doesn't affect points, only combat performance.</p>
-    </div>
-    <div class="info-card">
-      <h4>Leaderboards</h4>
-      <p>Compete across multiple boards: Player (main), Guild, House, Duel (Elo rating), and Zone Control (total cycles held). Season prizes go to the top players, winning house, and top guilds.</p>
-    </div>
+    <details class="section-accordion">
+      <summary class="section-label"><span style="font-size:14px;">🏆</span><span class="section-label__text">SCORING & LEADERBOARDS</span><span class="section-label__line"></span><span class="section-toggle">▼</span></summary>
+      <div class="info-card">
+        <h4>How Points Work</h4>
+        <p>Everything you do earns season points. Zone battles, duels, and Chronicle participation all count. Points feed the main leaderboard and convert to <span style="color:var(--gold);">$9LV tokens</span>.</p>
+        <p style="margin-top:6px;">You never lose points. You stop earning, but you never go backwards. Card rarity doesn't affect points, only combat performance.</p>
+      </div>
+      <div class="info-card">
+        <h4>Leaderboards</h4>
+        <p>Compete across multiple boards: Player (main), Guild, House, Duel (Elo rating), and Zone Control (total cycles held). Season prizes go to the top players, winning house, and top guilds.</p>
+      </div>
+    </details>
 
     <!-- ===== DAILY CYCLE ===== -->
-    <div class="section-label"><span style="font-size:14px;">🌙</span><span class="section-label__text">DAILY CYCLE</span><span class="section-label__line"></span></div>
-
-    <div class="info-card">
-      <h4>Midnight Reset (UTC)</h4>
-      <p>Every day at midnight UTC: all Nines heal to full HP, zone power decays 30–50%, attrition effects process, daily quests reset, a new daily pack becomes available, and the Daily Objective zone changes. Deployed cards remain active.</p>
-    </div>
+    <details class="section-accordion">
+      <summary class="section-label"><span style="font-size:14px;">🌙</span><span class="section-label__text">DAILY CYCLE</span><span class="section-label__line"></span><span class="section-toggle">▼</span></summary>
+      <div class="info-card">
+        <h4>Midnight Reset (UTC)</h4>
+        <p>Every day at midnight UTC: all Nines heal to full HP, zone power decays 30–50%, attrition effects process, daily quests reset, a new daily pack becomes available, and the Daily Objective zone changes. Deployed cards remain active.</p>
+      </div>
+    </details>
 
     <!-- ===== CTA ===== -->
     <div style="text-align:center;padding:24px 0;">
