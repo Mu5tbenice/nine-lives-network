@@ -100,7 +100,7 @@ async function loadDuels(){
   html+='</div>';
 
   html+='<div style="text-align:center;margin-bottom:4px;"><span id="pickCount" style="font-family:var(--font-data);font-size:7px;color:var(--text-faint);">0/3 SELECTED</span></div>';
-  html+='<button class="fight-btn" id="fightBtn" disabled onclick="startDuel()">⚔️ FIND OPPONENT — 1 MANA</button>';
+  html+='<button class="fight-btn" id="fightBtn" disabled onclick="startDuel()">⚔️ FIND OPPONENT</button>';
 
   // History
   if(history.length>0){
@@ -149,11 +149,11 @@ async function startDuel(){
     }else{
       var err=await r.json().catch(function(){return{error:'Failed'};});
       btn.textContent='❌ '+(err.error||'Failed');
-      setTimeout(function(){btn.textContent='⚔️ FIND OPPONENT — 1 MANA';btn.disabled=false;},2000);
+      setTimeout(function(){btn.textContent='⚔️ FIND OPPONENT';btn.disabled=false;},2000);
     }
   }catch(e){
     btn.textContent='❌ Network error';
-    setTimeout(function(){btn.textContent='⚔️ FIND OPPONENT — 1 MANA';btn.disabled=false;},2000);
+    setTimeout(function(){btn.textContent='⚔️ FIND OPPONENT';btn.disabled=false;},2000);
   }
 }
 
