@@ -525,7 +525,12 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,n
     +'<span style="color:rgba(255,255,255,0.1);">·</span>'
     +'<span style="font-family:var(--font-data);font-size:9px;color:'+house.color+';opacity:0.8;">'+house.icon+' '+(house.role||'').toUpperCase()+'</span>'
     +'</div>'
-    +'<a href="/builder.html?skip_intro=1" style="display:inline-block;margin-top:6px;font-family:var(--font-data);font-size:8px;color:var(--gold);background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);padding:4px 10px;border-radius:6px;border:1px solid rgba(212,166,75,0.2);text-decoration:none;cursor:pointer;transition:border-color 0.2s;" onmouseenter="this.style.borderColor=\'rgba(212,166,75,0.5)\'" onmouseleave="this.style.borderColor=\'rgba(212,166,75,0.2)\'">✏️ EDIT</a>'
+    +'<div style="display:inline-flex;gap:6px;margin-top:6px;flex-wrap:wrap;">'
+    +'<a href="/builder.html?skip_intro=1" style="font-family:var(--font-data);font-size:8px;color:var(--gold);background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);padding:4px 10px;border-radius:6px;border:1px solid rgba(212,166,75,0.2);text-decoration:none;cursor:pointer;transition:border-color 0.2s;" onmouseenter="this.style.borderColor=\'rgba(212,166,75,0.5)\'" onmouseleave="this.style.borderColor=\'rgba(212,166,75,0.2)\'">✏️ EDIT</a>'
+    // §9.91+: VIEW PROFILE pill — public profile muscle memory. Tappable
+    // /p/<handle_lower>; falls back to /dashboard (no-op) if handle missing.
+    +(player.twitter_handle?'<a href="/p/'+encodeURIComponent(String(player.twitter_handle).toLowerCase())+'" style="font-family:var(--font-data);font-size:8px;color:var(--gold);background:rgba(0,0,0,0.45);backdrop-filter:blur(4px);padding:4px 10px;border-radius:6px;border:1px solid rgba(212,166,75,0.2);text-decoration:none;cursor:pointer;transition:border-color 0.2s;" onmouseenter="this.style.borderColor=\'rgba(212,166,75,0.5)\'" onmouseleave="this.style.borderColor=\'rgba(212,166,75,0.2)\'">🪞 VIEW PROFILE</a>':'')
+    +'</div>'
     +'</div>'
     +'<div style="display:flex;gap:6px;flex-shrink:0;flex-direction:column;align-items:flex-end;">'
     +'<span style="font-family:var(--font-data);font-size:9px;padding:5px 14px;border-radius:10px;border:1px solid rgba(212,166,75,0.25);background:rgba(212,166,75,0.08);color:var(--gold);letter-spacing:1.5px;">SEASON 0</span>'
@@ -539,10 +544,13 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,n
     +'</div>'
 
     // ── CHARACTER SHOWCASE — behind stats bar, centered, BIG ──
+    // §9.91+: character is tap-through to /p/<handle_lower>. Builds the muscle
+    // memory of "tap myself → see my page" so players develop the share-to-X
+    // habit. Falls back to no-op if handle missing.
     +'<div style="position:relative;display:flex;justify-content:center;align-items:flex-end;height:270px;overflow:visible;margin-top:-8px;">'
-    +'<div style="animation:subtleFloat 6s ease-in-out infinite;position:relative;z-index:1;">'
+    +(player.twitter_handle?'<a href="/p/'+encodeURIComponent(String(player.twitter_handle).toLowerCase())+'" aria-label="View your public profile" style="display:block;animation:subtleFloat 6s ease-in-out infinite;position:relative;z-index:1;cursor:pointer;text-decoration:none;">':'<div style="animation:subtleFloat 6s ease-in-out infinite;position:relative;z-index:1;">')
     +'<canvas id="dashNineCanvas" width="500" height="500" style="width:300px;height:300px;filter:drop-shadow(0 8px 30px '+house.color+'40) drop-shadow(0 2px 8px rgba(0,0,0,0.5));margin-bottom:-36px;"></canvas>'
-    +'</div>'
+    +(player.twitter_handle?'</a>':'</div>')
 
     // Points — floating top-right
     +'<div style="position:absolute;top:12px;right:16px;text-align:right;z-index:4;">'
@@ -607,18 +615,25 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,n
     ══════════════════════════════════ */
     +'<div class="fade-up fade-up-2" style="display:flex;gap:8px;margin-bottom:14px;">'
 
-    // Streak
+    // Streak — eyebrow is context-aware: "START A STREAK" at 0, "WEEK STREAK
+    // · KEEP IT GOING" at 7+, "DAY N · DON'T BREAK IT" otherwise. Non-shaming
+    // framing for broken streaks per project_nerm voice.
     +'<div style="flex:1;padding:12px 10px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);text-align:center;">'
-    +'<div style="font-family:var(--font-data);font-size:7px;color:var(--text-muted);letter-spacing:1px;margin-bottom:4px;">STREAK</div>'
-    +'<div id="streakIcon" style="font-size:20px;">'+(streak>=7?'💎':'🔥')+'</div>'
+    +'<div style="font-family:var(--font-data);font-size:7px;color:'+(streak===0?'var(--text-faint)':'var(--gold)')+';letter-spacing:1.2px;margin-bottom:4px;">'
+    +(streak===0?'START A STREAK':streak>=7?'WEEK STREAK · KEEP GOING':'DAY '+streak+' · DON\'T BREAK IT')
+    +'</div>'
+    +'<div id="streakIcon" style="font-size:20px;">'+(streak>=7?'💎':streak>=1?'🔥':'⚪')+'</div>'
     +'<div id="streakNumber" style="font-family:var(--font-data);font-size:12px;color:var(--text-bright);margin-top:2px;">'+streak+'</div>'
     +'<div style="display:flex;gap:3px;justify-content:center;margin-top:4px;">'+sH+'</div>'
     +'</div>'
 
-    // Packs — dynamic status
-    +'<a href="/packs.html" id="packsWidget" style="flex:1;padding:12px 10px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);text-align:center;text-decoration:none;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:border-color 0.2s;">'
-    +'<div style="margin-bottom:4px;"><img src="/assets/images/booster-pack.png" style="width:44px;height:58px;object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(0 0 8px rgba(212,166,75,0.5));"></div>'
-    +'<div style="font-family:var(--font-data);font-size:7px;color:var(--gold);letter-spacing:1px;">PACKS</div>'
+    // Packs — dynamic status. updatePackStatus() promotes the widget to the
+    // gold-pulse hero when a pack is available (the canonical loudest unclaimed
+    // CTA per docs/ux-information-architecture.md retention model — gaming +
+    // crypto audience both hit hardest by the daily-pack hook).
+    +'<a href="/packs.html" id="packsWidget" style="flex:1;padding:12px 10px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);text-align:center;text-decoration:none;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.2s, border-color 0.2s;">'
+    +'<div style="margin-bottom:4px;"><img id="packsWidgetIcon" src="/assets/images/booster-pack.png" style="width:44px;height:58px;object-fit:contain;mix-blend-mode:multiply;filter:drop-shadow(0 0 8px rgba(212,166,75,0.5));transition:transform 0.3s ease;"></div>'
+    +'<div id="packsWidgetEyebrow" style="font-family:var(--font-data);font-size:7px;color:var(--gold);letter-spacing:1px;">PACKS</div>'
     +'<div id="packStatus" style="margin-top:4px;"></div>'
     +'</a>'
 
@@ -667,7 +682,10 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,n
   // Start snapshot countdown
   startSnapshotTimer(snapshotInfo);
 
-  // Pack status — check if free pack available, show countdown if not
+  // Pack status — check if free pack available, show countdown if not.
+  // §9.91+: when available, promote widget to gold-pulse hero (the loudest
+  // unclaimed CTA per IA retention model). When claimed, return to muted
+  // countdown so the contrast between unclaimed/claimed reads at a glance.
   async function updatePackStatus(){
     var el=document.getElementById('packStatus');
     if(!el)return;
@@ -677,16 +695,52 @@ async function render(player,casts,zones,schools,quests,myDeploys,snapshotInfo,n
       if(r.ok){
         var d=await r.json();
         if(d.free_pack_available||d.freePackAvailable||d.available){
-          el.innerHTML='<div style="font-family:var(--font-data);font-size:7px;color:var(--green);">1 FREE</div><div style="font-family:var(--font-data);font-size:5px;color:var(--text-faint);margin-top:1px;">AVAILABLE</div>';
-          // Glow border to draw attention
-          var w=document.getElementById('packsWidget');
-          if(w)w.style.borderColor='rgba(106,205,138,0.3)';
+          _setPackPulse(true);
+          el.innerHTML='<div style="font-family:var(--font-data);font-size:6px;color:var(--gold);opacity:0.75;letter-spacing:1.5px;margin-top:1px;">TAP TO OPEN</div>';
           return;
         }
       }
     }catch(e){/* API might not exist yet */}
     // No pack available or API error — show countdown to midnight UTC
+    _setPackPulse(false);
     showPackCountdown(el);
+  }
+
+  // Pack widget visual mode toggle — pulse when unclaimed, muted otherwise.
+  // Reuses the global glowPulse keyframe from components-v2.css.
+  function _setPackPulse(active){
+    var w=document.getElementById('packsWidget');
+    var eb=document.getElementById('packsWidgetEyebrow');
+    var icon=document.getElementById('packsWidgetIcon');
+    if(active){
+      if(w){
+        w.style.borderColor='rgba(212,166,75,0.45)';
+        w.style.animation='glowPulse 4s ease-in-out infinite';
+        w.style.boxShadow='0 0 15px rgba(212,166,75,0.25)';
+        w.style.background='linear-gradient(180deg,rgba(212,166,75,0.08),rgba(212,166,75,0.02))';
+      }
+      if(eb){
+        eb.textContent='1 PACK WAITING';
+        eb.style.color='var(--gold)';
+        eb.style.letterSpacing='1.5px';
+        eb.style.fontWeight='700';
+      }
+      if(icon)icon.style.transform='scale(1.08)';
+    }else{
+      if(w){
+        w.style.borderColor='rgba(255,255,255,0.06)';
+        w.style.animation='';
+        w.style.boxShadow='';
+        w.style.background='rgba(255,255,255,0.03)';
+      }
+      if(eb){
+        eb.textContent='PACKS';
+        eb.style.color='var(--gold)';
+        eb.style.letterSpacing='1px';
+        eb.style.fontWeight='';
+      }
+      if(icon)icon.style.transform='';
+    }
   }
 
   function showPackCountdown(el){
