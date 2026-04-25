@@ -2204,7 +2204,7 @@ Each PR ships with a ≤6-item smoke-test checklist on real phones at 390 / 414 
 - No server changes — there is no `/api/wilds` route or service.
 - No PRD content scope change — wilds was never a tracked feature.
 
-**Resolved 2026-04-25 in PR #? — wilds.html deleted, nav link removed. Confirmed no other references in `public/`, `server/`, or `tasks/` (`grep -rn "wilds"` only matched the file's internal CSS classes + a single Nerm flavor-text mention in `server/services/nermBrain.js` that's lore, not navigation).**
+**Resolved 2026-04-25 in PR #236 — wilds.html deleted, nav link removed. Confirmed no other references in `public/`, `server/`, or `tasks/` (`grep -rn "wilds"` only matched the file's internal CSS classes + a single Nerm flavor-text mention in `server/services/nermBrain.js` that's lore, not navigation).**
 
 
 
