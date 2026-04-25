@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Design Preview · 9LV</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Press+Start+2P&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/variables-v2.css">
+  <link rel="stylesheet" href="/css/components-v2.css">
+  <link rel="stylesheet" href="/css/nav-v2.css">
+
+  <style>
+    /* Preview-only layout. NOT canonical. */
+    .dp-wrap { max-width: 720px; margin: 0 auto; padding: 14px; }
+    .dp-section { margin: 32px 0 20px; }
+    .dp-section-title {
+      font-family: var(--font-data); font-size: 9px;
+      color: var(--gold); letter-spacing: 2px;
+      padding: 6px 10px; background: var(--gold-dim);
+      border: 1px solid var(--gold-border); border-radius: 4px;
+      display: inline-block; margin-bottom: 12px;
+    }
+    .dp-note {
+      font-family: var(--font-mono); font-size: 11px;
+      color: var(--text-faint); font-style: italic;
+      margin-bottom: 12px;
+    }
+    .dp-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+    .dp-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .dp-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    @media (max-width: 600px) { .dp-grid-4 { grid-template-columns: repeat(2, 1fr); } }
+
+    .swatch {
+      display: flex; flex-direction: column;
+      padding: 14px 12px; border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      min-height: 78px; justify-content: space-between;
+    }
+    .swatch__name { font-family: var(--font-title); font-size: 12px; font-weight: 700; }
+    .swatch__hex { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }
+
+    .type-sample { padding: 8px 0; border-bottom: 1px solid var(--border-subtle); }
+    .type-sample:last-child { border-bottom: none; }
+    .type-sample-meta { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); margin-top: 4px; }
+
+    /* Tab demo */
+    .tab-demo { display: flex; border-bottom: 1px solid var(--border-subtle); }
+    .tab-demo button {
+      font-family: var(--font-data); font-size: 8px; letter-spacing: 1px;
+      padding: 12px 16px; border: none; background: none; cursor: pointer;
+      color: rgba(255,255,255,0.3); border-bottom: 2px solid transparent;
+      position: relative;
+    }
+    .tab-demo button.active { color: var(--gold); border-bottom-color: var(--gold); }
+    .tab-demo .unread-badge {
+      position: absolute; top: 6px; right: 6px;
+      background: var(--gold); color: var(--bg-deep);
+      font-family: var(--font-data); font-size: 6px;
+      padding: 2px 4px; border-radius: 6px; line-height: 1;
+    }
+
+    /* YOU sticky leaderboard demo */
+    .lb-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 6px;
+      background: var(--bg-inset); margin-bottom: 5px;
+    }
+    .lb-row--you {
+      background: var(--gold-dim); border: 1px solid var(--gold-border);
+      box-shadow: 0 0 12px var(--gold-glow);
+    }
+    .lb-rank {
+      font-family: var(--font-data); font-size: 10px;
+      color: var(--text-muted); width: 28px;
+    }
+    .lb-row--you .lb-rank {
+      background: var(--gold); color: var(--bg-deep);
+      padding: 3px 6px; border-radius: 3px;
+    }
+    .lb-handle { font-family: var(--font-title); font-size: 14px; flex: 1; }
+    .lb-pts { font-family: var(--font-data); font-size: 10px; color: var(--green); }
+
+    /* Bottom action bar demo */
+    .ba-demo {
+      display: flex; gap: 8px; padding: 10px 12px;
+      background: rgba(14,10,24,0.92); backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border-subtle);
+      border-radius: 0 0 12px 12px;
+    }
+
+    /* Bottom sheet demo */
+    .bs-demo {
+      background: var(--bg-card-solid);
+      border: 1px solid var(--gold-border);
+      border-radius: 16px 16px 0 0;
+      padding: 18px 16px;
+      box-shadow: 0 -8px 32px rgba(0,0,0,0.6);
+    }
+    .bs-demo__handle {
+      width: 36px; height: 3px;
+      background: var(--text-faint); border-radius: 2px;
+      margin: 0 auto 14px;
+    }
+
+    /* Pack card pulse demo */
+    .pack-card { display: flex; align-items: center; gap: 14px; }
+    .pack-icon { font-size: 36px; }
+    .pack-info { flex: 1; }
+    .pack-eyebrow {
+      font-family: var(--font-data); font-size: 8px;
+      color: var(--gold); letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+    .pack-title {
+      font-family: var(--font-title); font-size: 16px;
+      color: var(--text-bright); font-weight: 700; margin-bottom: 2px;
+    }
+    .pack-sub {
+      font-family: var(--font-mono); font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Nerm band demo */
+    .nerm-band {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px; border-radius: 8px;
+      background: var(--gold-dim);
+      border: 1px solid var(--gold-border);
+    }
+    .nerm-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--bg-card-solid); border: 1.5px solid var(--gold);
+      flex-shrink: 0;
+    }
+    .nerm-text {
+      font-family: var(--font-mono); font-size: 12px;
+      color: var(--text-body); font-style: italic;
+    }
+  </style>
+</head>
+<body>
+<script src="/js/nav.js"></script>
+
+<div class="dp-wrap">
+
+  <!-- Header -->
+  <div style="text-align:center; padding: 20px 0;">
+    <div class="badge badge--season" style="margin-bottom: 12px;">DESIGN PREVIEW · WARM NIGHT</div>
+    <h1 class="title" style="font-size: 24px; margin-bottom: 6px;">9LV Design System</h1>
+    <p style="font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);">
+      Visual ground truth for <code style="color:var(--gold);">/design.md</code>. Every component on this page uses the live CSS from <code style="color:var(--gold);">/public/css/</code> — no inline overrides for the tokens themselves.
+    </p>
+  </div>
+
+  <!-- ═══════════════ SECTION 1: COLORS ═══════════════ -->
+  <div class="dp-section">
+    <div class="dp-section-title">§1 · COLOR PALETTE</div>
+    <p class="dp-note">Brand gold is the only prestige color. Stat colors are inviolable. House colors stay inside guild contexts.</p>
+
+    <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin: 16px 0 8px;">BACKGROUND RAMP</p>
+    <div class="dp-grid-4">
+      <div class="swatch" style="background:#0e0a18;"><span class="swatch__name" style="color:var(--text-bright);">Deep</span><span class="swatch__hex">#0e0a18</span></div>
+      <div class="swatch" style="background:#120e1e;"><span class="swatch__name" style="color:var(--text-bright);">Mid</span><span class="swatch__hex">#120e1e</span></div>
+      <div class="swatch" style="background:#1a1528;"><span class="swatch__name" style="color:var(--text-bright);">Warm</span><span class="swatch__hex">#1a1528</span></div>
+      <div class="swatch" style="background:#1e1630;"><span class="swatch__name" style="color:var(--text-bright);">Card</span><span class="swatch__hex">#1e1630</span></div>
+    </div>
+
+    <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin: 16px 0 8px;">GOLD RAMP</p>
+    <div class="dp-grid-4">
+      <div class="swatch" style="background:#D4A64B;"><span class="swatch__name" style="color:#0e0a18;">Gold</span><span class="swatch__hex" style="color:#5a4615;">#D4A64B</span></div>
+      <div class="swatch" style="background:#E8C675;"><span class="swatch__name" style="color:#0e0a18;">Light</span><span class="swatch__hex" style="color:#5a4615;">#E8C675</span></div>
+      <div class="swatch" style="background:rgba(212,166,75,0.15);border-color:var(--gold-border);"><span class="swatch__name" style="color:var(--gold);">Dim</span><span class="swatch__hex">15% alpha</span></div>
+      <div class="swatch" style="background:rgba(212,166,75,0.25);border-color:var(--gold-border);"><span class="swatch__name" style="color:var(--gold-light);">Glow</span><span class="swatch__hex">25% alpha</span></div>
+    </div>
+
+    <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin: 16px 0 8px;">TEXT HIERARCHY</p>
+    <div class="card">
+      <p style="color:var(--text-bright); font-size: 16px;">Bright — headings, key values</p>
+      <p style="color:var(--text-body); font-size: 14px;">Body — default paragraph copy</p>
+      <p style="color:var(--text-muted); font-size: 13px;">Muted — secondary labels, inactive nav</p>
+      <p style="color:var(--text-faint); font-size: 12px;">Faint — timestamps, helper text</p>
+    </div>
+
+    <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin: 16px 0 8px;">STAT SEMANTICS (INVIOLABLE)</p>
+    <div class="dp-grid-4" style="grid-template-columns:repeat(5,1fr);">
+      <div class="swatch" style="border-color:rgba(232,90,106,0.3);"><span class="swatch__name" style="color:var(--stat-atk);">ATK</span><span class="swatch__hex">#e85a6a</span></div>
+      <div class="swatch" style="border-color:rgba(106,205,138,0.3);"><span class="swatch__name" style="color:var(--stat-hp);">HP</span><span class="swatch__hex">#6acd8a</span></div>
+      <div class="swatch" style="border-color:rgba(106,200,216,0.3);"><span class="swatch__name" style="color:var(--stat-spd);">SPD</span><span class="swatch__hex">#6ac8d8</span></div>
+      <div class="swatch" style="border-color:rgba(176,136,232,0.3);"><span class="swatch__name" style="color:var(--stat-def);">DEF</span><span class="swatch__hex">#b088e8</span></div>
+      <div class="swatch" style="border-color:var(--gold-border);"><span class="swatch__name" style="color:var(--stat-luck);">LUCK</span><span class="swatch__hex">#D4A64B</span></div>
+    </div>
+
+    <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin: 16px 0 8px;">HOUSE COLORS · GUILD/HOUSE CONTEXTS ONLY</p>
+    <div class="dp-grid-4" style="grid-template-columns:repeat(3,1fr);">
+      <div class="swatch" style="background:#E03C31;"><span class="swatch__name" style="color:#fff;">Smoulders</span><span class="swatch__hex" style="color:rgba(255,255,255,0.6);">#E03C31</span></div>
+      <div class="swatch" style="background:#00B4D8;"><span class="swatch__name" style="color:#fff;">Darktide</span><span class="swatch__hex" style="color:rgba(255,255,255,0.6);">#00B4D8</span></div>
+      <div class="swatch" style="background:#5CB338;"><span class="swatch__name" style="color:#fff;">Stonebark</span><span class="swatch__hex" style="color:rgba(255,255,255,0.6);">#5CB338</span></div>
+      <div class="swatch" style="background:#B0C4DE;"><span class="swatch__name" style="color:#0e0a18;">Ashenvale</span><span class="swatch__hex" style="color:#3a4050;">#B0C4DE</span></div>
+      <div class="swatch" style="background:#FFC800;"><span class="swatch__name" style="color:#0e0a18;">Stormrage</span><span class="swatch__hex" style="color:#5a4615;">#FFC800</span></div>
+      <div class="swatch" style="background:#7B2D8E;"><span class="swatch__name" style="color:#fff;">Nighthollow</span><span class="swatch__hex" style="color:rgba(255,255,255,0.6);">#7B2D8E</span></div>
+      <div class="swatch" style="background:#FF8C00;"><span class="swatch__name" style="color:#0e0a18;">Dawnbringer</span><span class="swatch__hex" style="color:#5a4615;">#FF8C00</span></div>
+      <div class="swatch" style="background:#5B8FE0;"><span class="swatch__name" style="color:#fff;">Manastorm</span><span class="swatch__hex" style="color:rgba(255,255,255,0.6);">#5B8FE0</span></div>
+      <div class="swatch" style="background:#E84393;"><span class="swatch__name" style="color:#fff;">Plaguemire</span><span class="swatch__hex" style="color:rgba(255,255,255,0.6);">#E84393</span></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SECTION 2: TYPOGRAPHY ═══════════════ -->
+  <div class="dp-section">
+    <div class="dp-section-title">§2 · TYPOGRAPHY</div>
+    <p class="dp-note">Four families, four jobs. Cinzel = display. Crimson Text = body. Press Start 2P = ALL CAPS labels (≤5 words). JetBrains Mono = numerals.</p>
+
+    <div class="card">
+      <div class="type-sample">
+        <h1 class="title" style="font-size: 28px;">NINES OF NETHARA</h1>
+        <p class="type-sample-meta">Cinzel · 28px · 700 · 3px tracking · uppercase</p>
+      </div>
+      <div class="type-sample">
+        <h2 class="title" style="font-size: 18px;">Section heading</h2>
+        <p class="type-sample-meta">Cinzel · 18px · 700 · 1.5px tracking</p>
+      </div>
+      <div class="type-sample">
+        <p style="font-family: var(--font-body); font-size: 16px; color: var(--text-body);">The default body text in Crimson Text. Sixteen pixels, a serif with personality, used for any prose that runs longer than a label. This is the floor — never drop below 16px.</p>
+        <p class="type-sample-meta">Crimson Text · 16px · 400</p>
+      </div>
+      <div class="type-sample">
+        <span class="label">UI LABEL · ALL CAPS</span>
+        <p class="type-sample-meta">Press Start 2P · 10px · 2px tracking · uppercase only · ≤5 words</p>
+      </div>
+      <div class="type-sample">
+        <p style="font-family: var(--font-mono); font-size: 14px; color: var(--text-bright);">142 · 1,847 · 23:59:54</p>
+        <p class="type-sample-meta">JetBrains Mono · 14px · 500 · timers, points, HP values</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SECTION 3: BUTTONS ═══════════════ -->
+  <div class="dp-section">
+    <div class="dp-section-title">§3 · BUTTONS</div>
+    <p class="dp-note">One <code style="color:var(--gold);">.btn-gold</code> per surface. <code style="color:var(--gold);">.btn-pill</code> for everything else. <code style="color:var(--gold);">.btn-attack</code> / <code style="color:var(--gold);">.btn-defend</code> reserved for combat surfaces.</p>
+
+    <div class="card">
+      <p class="dp-note">Press the gold button to feel the 3D drop.</p>
+      <div class="dp-row">
+        <button class="btn-gold">PRIMARY ACTION</button>
+        <button class="btn-pill">Secondary</button>
+        <button class="btn-pill">Refresh</button>
+      </div>
+
+      <p class="dp-note" style="margin-top: 18px;">Combat-only pair (red attack, blue defend):</p>
+      <div class="dp-row">
+        <button class="btn-attack" style="flex: 0 0 auto; padding: 10px 24px;">ATTACK</button>
+        <button class="btn-defend" style="flex: 0 0 auto; padding: 10px 24px;">DEFEND</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SECTION 4: CARDS ═══════════════ -->
+  <div class="dp-section">
+    <div class="dp-section-title">§4 · CARDS</div>
+    <p class="dp-note">Default → Featured (gold border + glow) → Hero (animated pulse, AT MOST ONE per page).</p>
+
+    <div class="card" style="margin-bottom: 10px;">
+      <div class="card-header">
+        <span class="label">DEFAULT CARD</span>
+        <span class="badge badge--mvp">MVP</span>
+      </div>
+      <p style="font-family: var(--font-body); color: var(--text-body); font-size: 14px;">Translucent surface, subtle border, 12px radius. The default content container.</p>
+    </div>
+
+    <div class="card card--gold" style="margin-bottom: 10px;">
+      <div class="card-header">
+        <span class="label">FEATURED · CARD--GOLD</span>
+        <span class="badge badge--season">SEASON 0 LIVE</span>
+      </div>
+      <p style="font-family: var(--font-body); color: var(--text-body); font-size: 14px;">Gold border + soft glow. Use for daily quest, prestige content, "this is important" surfaces.</p>
+    </div>
+
+    <div class="card card--gold-pulse">
+      <div class="card-header">
+        <span class="label">HERO · CARD--GOLD-PULSE</span>
+        <span class="badge badge--live">LIVE</span>
+      </div>
+      <p style="font-family: var(--font-body); color: var(--text-body); font-size: 14px;">Animated pulse halo (4s loop). Reserved for the loudest retention surface — the unclaimed daily pack, an active Chronicle thread, a live duel match. <strong style="color:var(--gold);">At most one per page.</strong></p>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SECTION 5: BADGES ═══════════════ -->
+  <div class="dp-section">
+    <div class="dp-section-title">§5 · BADGES</div>
+    <p class="dp-note">Press Start 2P micro-pills. Semantic — never decorative.</p>
+
+    <div class="card">
+      <div class="dp-row">
+        <span class="badge badge--live">● LIVE</span>
+        <span class="badge badge--nerm">NERM</span>
+        <span class="badge badge--mvp">MVP</span>
+        <span class="badge badge--season">SEASON 0 LIVE</span>
+        <span class="badge badge--streak">DAY 7</span>
+        <span class="pct pct--up">+12%</span>
+        <span class="pct pct--down">-3%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SECTION 6: BARS & HUD ═══════════════ -->
+  <div class="dp-section">
+    <div class="dp-section-title">§6 · BARS & HUD ELEMENTS</div>
+    <p class="dp-note">Bars use semantic fill colors. Mana orbs, life hearts, streak dots are HUD primitives.</p>
+
+    <div class="card">
+      <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin-bottom: 6px;">XP BAR · GOLD GRADIENT</p>
+      <div class="bar-track" style="margin-bottom: 14px;">
+        <div class="bar-fill" style="width: 68%; background: linear-gradient(90deg, var(--gold), var(--gold-light));"></div>
+      </div>
+
+      <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin-bottom: 6px;">HP BAR · GREEN</p>
+      <div class="bar-track" style="margin-bottom: 14px;">
+        <div class="bar-fill" style="width: 42%; background: var(--stat-hp);"></div>
+      </div>
+
+      <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin-bottom: 6px;">SPD BAR · CYAN</p>
+      <div class="bar-track" style="margin-bottom: 18px;">
+        <div class="bar-fill" style="width: 85%; background: var(--stat-spd);"></div>
+      </div>
+
+      <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin-bottom: 6px;">MANA ORBS</p>
+      <div class="mana-row" style="justify-content: flex-start; margin-bottom: 14px;">
+        <div class="mana-orb mana-orb--filled"></div>
+        <div class="mana-orb mana-orb--filled"></div>
+        <div class="mana-orb mana-orb--filled"></div>
+        <div class="mana-orb"></div>
+        <div class="mana-orb"></div>
+      </div>
+
+      <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin-bottom: 6px;">LIFE HEARTS</p>
+      <div class="lives-row" style="justify-content: flex-start; margin-bottom: 14px;">
+        <span class="life-heart">♥</span>
+        <span class="life-heart">♥</span>
+        <span class="life-heart life-heart--empty">♥</span>
+        <span class="life-heart life-heart--empty">♥</span>
+      </div>
+
+      <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin-bottom: 6px;">STREAK DOTS</p>
+      <div class="streak-dots">
+        <div class="streak-dot streak-dot--filled"></div>
+        <div class="streak-dot streak-dot--filled"></div>
+        <div class="streak-dot streak-dot--filled"></div>
+        <div class="streak-dot streak-dot--filled"></div>
+        <div class="streak-dot streak-dot--filled"></div>
+        <div class="streak-dot"></div>
+        <div class="streak-dot"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SECTION 7: TABS WITH UNREAD BADGES ═══════════════ -->
+  <div class="dp-section">
+    <div class="dp-section-title">§7 · TABS · UNREAD BADGES</div>
+    <p class="dp-note">PR #225 pattern. Active tab gets gold text + 2px gold inset bottom-border. Unread badges (top-right, 99+ cap) tell the player something happened behind the tab.</p>
+
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div class="tab-demo">
+        <button class="active">SPELLS</button>
+        <button style="position:relative;">LOG<span class="unread-badge">3</span></button>
+        <button>STATS</button>
+        <button style="position:relative;">CHAT<span class="unread-badge">99+</span></button>
+        <button>POINTS</button>
+      </div>
+      <div style="padding: 18px;">
+        <p style="font-family: var(--font-body); color: var(--text-muted); font-size: 13px;">Tab content area. The unread badges on LOG and CHAT pull the player's eye when content arrives behind a tab they aren't currently viewing.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SECTION 8: QUICK ACTIONS GRID ═══════════════ -->
+  <div class="dp-section">
+    <div class="dp-section-title">§8 · QUICK ACTIONS · HUB PATTERN</div>
+    <p class="dp-note">3-column grid on mobile. Tappable doorways. Use on dashboard and any future hub-style screen.</p>
+
+    <div class="quick-actions">
+      <a href="#" class="quick-btn">
+        <span class="quick-btn__icon">⚔</span>
+        <span class="quick-btn__label">DEPLOY</span>
+      </a>
+      <a href="#" class="quick-btn">
+        <span class="quick-btn__icon">🎴</span>
+        <span class="quick-btn__label">SPELLBOOK</span>
+      </a>
+      <a href="#" class="quick-btn">
+        <span class="quick-btn__icon">🏆</span>
+        <span class="quick-btn__label">LEADERS</span>
+      </a>
+      <a href="#" class="quick-btn">
+        <span class="quick-btn__icon">📦</span>
+        <span class="quick-btn__label">BAZAAR</span>
+      </a>
+      <a href="#" class="quick-btn">
+        <span class="quick-btn__icon">💥</span>
+        <span class="quick-btn__label">DUELS</span>
+      </a>
+      <a href="#" class="quick-btn">
+        <span class="quick-btn__icon">🗺</span>
+        <span class="quick-btn__label">MAP</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SECTION 9: ACTIVITY ROW ═══════════════ -->
+  <div class="dp-section">
+    <div class="dp-section-title">§9 · ACTIVITY ROW</div>
+    <p class="dp-note">Recent activity, deployment summaries, leaderboard rows.</p>
+
+    <div class="card">
+      <div class="activity-item">
+        <div class="activity-dot" style="background: var(--gold);"></div>
+        <div class="activity-info">
+          <div class="activity-zone">The Spire</div>
+          <div class="activity-meta">⚔ 2 min ago · won round 3 of 4</div>
+        </div>
+        <div class="activity-points">+45 pts</div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-dot" style="background: var(--cyan);"></div>
+        <div class="activity-info">
+          <div class="activity-zone">Hollow Reaches</div>
+          <div class="activity-meta">⚔ 8 min ago · deployed</div>
+        </div>
+        <div class="activity-points">+12 pts</div>
+      </div>
+      <div class="activity-item">
+        <div class="activity-dot" style="background: var(--red);"></div>
+        <div class="activity-info">
+          <div class="activity-zone">Ember Wastes</div>
+          <div class="activity-meta">⚔ 14 min ago · KO'd</div>
+        </div>
+        <div class="activity-points" style="color: var(--red);">-8 pts</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SECTION 10: STATES ═══════════════ -->
+  <div class="dp-section">
+    <div class="dp-section-title">§10 · LOADING / EMPTY / ERROR</div>
+    <p class="dp-note">Three obligatory states. Voice = Nerm.</p>
+
+    <div class="dp-grid-2">
+      <div class="card" style="text-align:center; padding: 32px 16px;">
+        <div class="loading"><div class="spinner"></div></div>
+        <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-faint); margin-top: 8px; letter-spacing: 1px;">LOADING…</p>
+      </div>
+
+      <div class="card" style="text-align:center; padding: 32px 16px;">
+        <div style="font-size: 48px; opacity: 0.4; margin-bottom: 8px;">🃏</div>
+        <h3 class="title" style="font-size: 16px; margin-bottom: 6px;">Empty spellbook</h3>
+        <p style="font-family: var(--font-body); color: var(--text-muted); font-size: 13px; margin-bottom: 12px;">no cards yet. you can't fight with vibes.</p>
+        <button class="btn-pill">Open a pack</button>
+      </div>
+    </div>
+
+    <div class="card" style="text-align:center; padding: 32px 16px; margin-top: 10px; border-color: rgba(232,90,106,0.25);">
+      <div style="font-size: 48px; opacity: 0.4; margin-bottom: 8px;">⚠</div>
+      <h3 class="title" style="font-size: 16px; margin-bottom: 6px; color: var(--red);">something broke. not surprised.</h3>
+      <p style="font-family: var(--font-mono); color: var(--text-muted); font-size: 12px; margin-bottom: 12px; font-style: italic;">try again. the network's having a moment.</p>
+      <button class="btn-pill">Try again</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SECTION 11: RETENTION PATTERNS ═══════════════ -->
+  <div class="dp-section">
+    <div class="dp-section-title">§11 · RETENTION PATTERNS</div>
+    <p class="dp-note">Three retention surfaces every screen should serve. Daily-loop · compete-with-named-people · lore + voice.</p>
+
+    <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin: 16px 0 8px;">DAILY PACK · UNCLAIMED (HERO PULSE)</p>
+    <div class="card card--gold-pulse">
+      <div class="pack-card">
+        <div class="pack-icon">📦</div>
+        <div class="pack-info">
+          <div class="pack-eyebrow">1 PACK WAITING</div>
+          <div class="pack-title">Daily Pack — Day 7</div>
+          <div class="pack-sub">streak boost active · +1 rarity weighting</div>
+        </div>
+        <button class="btn-gold" style="padding: 10px 18px; font-size: 12px;">CLAIM</button>
+      </div>
+    </div>
+
+    <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin: 16px 0 8px;">LEADERBOARD · STICKY YOU ROW</p>
+    <div class="card" style="padding: 12px;">
+      <div class="lb-row">
+        <span class="lb-rank">7</span>
+        <span class="lb-handle">@catlord</span>
+        <span class="lb-pts">2,840 pts</span>
+      </div>
+      <div class="lb-row lb-row--you">
+        <span class="lb-rank">12</span>
+        <span class="lb-handle">@you</span>
+        <span class="lb-pts">2,104 pts</span>
+      </div>
+      <div class="lb-row">
+        <span class="lb-rank">13</span>
+        <span class="lb-handle">@whiskerbeast</span>
+        <span class="lb-pts">2,089 pts</span>
+      </div>
+    </div>
+
+    <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin: 16px 0 8px;">NERM COMMENTARY BAND</p>
+    <div class="nerm-band">
+      <div class="nerm-avatar"></div>
+      <div class="nerm-text">"that one's on you. don't blame the dice."</div>
+      <span class="badge badge--nerm" style="flex-shrink: 0;">NERM</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════ SECTION 12: MOBILE CHROME ═══════════════ -->
+  <div class="dp-section">
+    <div class="dp-section-title">§12 · MOBILE APP CHROME</div>
+    <p class="dp-note">App feel, not website feel. Fixed bottom action bar (PR #218). Bottom-sheet modal (PR #223).</p>
+
+    <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin: 16px 0 8px;">BOTTOM ACTION BAR · COMBAT SURFACE</p>
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <div style="padding: 24px 16px; text-align: center;">
+        <p style="font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); font-style: italic;">[ live arena content area ]</p>
+      </div>
+      <div class="ba-demo">
+        <button class="btn-gold" style="flex: 1; padding: 10px; font-size: 12px;">SWAP</button>
+        <button class="btn-pill" style="padding: 8px 14px;">AUTO ON</button>
+        <button class="btn-attack" style="padding: 10px 18px; flex: 0 0 auto;">EXIT</button>
+      </div>
+    </div>
+
+    <p style="font-family: var(--font-data); font-size: 8px; color: var(--text-muted); margin: 16px 0 8px;">BOTTOM SHEET · MODAL ON ≤640px</p>
+    <div class="bs-demo">
+      <div class="bs-demo__handle"></div>
+      <h2 class="title" style="font-size: 18px; margin-bottom: 4px; text-align: center;">Round Complete</h2>
+      <p style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-align: center; margin-bottom: 14px; font-style: italic;">your guild held the zone. barely.</p>
+      <div class="dp-grid-4" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 14px;">
+        <div class="stat-card"><span class="label">POINTS</span><span style="font-family: var(--font-data); font-size: 14px; color: var(--green);">+45</span></div>
+        <div class="stat-card"><span class="label">XP</span><span style="font-family: var(--font-data); font-size: 14px; color: var(--gold);">+12</span></div>
+        <div class="stat-card"><span class="label">RANK</span><span style="font-family: var(--font-data); font-size: 14px; color: var(--cyan);">+3</span></div>
+      </div>
+      <button class="btn-gold" style="width: 100%;">CONTINUE</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="text-align: center; padding: 40px 0 60px; font-family: var(--font-mono); font-size: 11px; color: var(--text-faint);">
+    <p>Every component above is the live CSS, not a mockup.</p>
+    <p style="margin-top: 4px;">If something looks wrong here, it's wrong everywhere.</p>
+  </div>
+
+</div>
+</body>
+</html>
