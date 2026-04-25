@@ -2192,6 +2192,20 @@ Each PR ships with a ≤6-item smoke-test checklist on real phones at 390 / 414 
 
 **Resolved 2026-04-25 in PR #229 — full server↔client wire of zone XP awards. Survive +2, win +3, flip +8, KO +5 (all per `xp-engine.XP_REWARDS`) flow through `addXP` at round-end and KO. `arena:round_end.xpLog` carries per-player delta + level-up state; `_showRoundEnd` replaces the "coming soon" XP slot with a live green chip and renders a LEVEL UP celebration block (with zone-slot + item-drop unlocks) when the round triggers a level threshold. The engine's level-up random item drop (xp-engine.js:240–269) is now reachable for zone players for the first time — bonus retention surface activates incidentally. Jest 8/8 on `calculateRoundXP`. UI hand-back as ready-to-try; test on phone end-to-end after a winning round.**
 
+### 9.92 Experimental wilds.html — JSX-styled page never wired to runtime; flagged for removal
+
+**Symptom (audit 2026-04-25 via docs/ux-plan-mobile.md FLAG tag).** `public/wilds.html` was authored with JSX syntax (`onClick={...}`, `style={{}}`) inside a vanilla static HTML codebase. No Babel runtime is loaded by the page; the JSX never compiles in-browser; the experimental "exploration / roaming" mode the page intended to showcase never shipped. The file was reachable only via the `/wilds.html` link in `public/js/nav.js` ("The Wilds") — no other surface in the app referenced it.
+
+**Effect.** A nav link from every page leads to a JSX-broken page. First-impression cost — anyone tapping "The Wilds" sees nothing functional render. Out-of-band code style for a vanilla HTML/CSS/JS codebase.
+
+**Resolution plan.** One PR removes the file and the nav reference:
+- `git rm public/wilds.html` (1149 lines).
+- `public/js/nav.js`: drop the `/wilds.html` entry from `NAV_LINKS`.
+- No server changes — there is no `/api/wilds` route or service.
+- No PRD content scope change — wilds was never a tracked feature.
+
+**Resolved 2026-04-25 in PR #236 — wilds.html deleted, nav link removed. Confirmed no other references in `public/`, `server/`, or `tasks/` (`grep -rn "wilds"` only matched the file's internal CSS classes + a single Nerm flavor-text mention in `server/services/nermBrain.js` that's lore, not navigation).**
+
 
 
 Definitions of terms used throughout this PRD. Each ≤15 words.
