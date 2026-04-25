@@ -411,13 +411,37 @@ async function loadAll() {
   playerId = getPlayerId();
   isAdmin = checkAdmin();
 
+  // Per-endpoint failure tracking. Each .catch bumps the counter so we can
+  // tell the difference between "no data yet" (200 with empty array) and
+  // "network died" (all four endpoints threw). Empty-board copy stays for
+  // partial failures; error state surfaces only when everything dies.
+  var _loadFailures = 0;
+  function catchAndFlag(fallback) {
+    return function() { _loadFailures++; return fallback; };
+  }
+
   try {
     var [pR, hR, dR, cR] = await Promise.all([
-      fetch('/api/leaderboards/players').then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
-      fetch('/api/leaderboards/schools').then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
-      fetch('/api/leaderboards/duels').then(function(r) { return r.ok ? r.json() : []; }).catch(function() { return []; }),
-      fetch('/api/leaderboards/clashes').then(function(r) { return r.ok ? r.json() : { matches:[], standings:[] }; }).catch(function() { return { matches:[], standings:[] }; })
+      fetch('/api/leaderboards/players').then(function(r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).catch(catchAndFlag([])),
+      fetch('/api/leaderboards/schools').then(function(r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).catch(catchAndFlag([])),
+      fetch('/api/leaderboards/duels').then(function(r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).catch(catchAndFlag([])),
+      fetch('/api/leaderboards/clashes').then(function(r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); }).catch(catchAndFlag({ matches:[], standings:[] }))
     ]);
+
+    if (_loadFailures === 4) {
+      // Total network failure — surface a visible error state instead of
+      // letting the page render four "no data yet" tabs that lie about
+      // the underlying problem.
+      var content = document.getElementById('content') || document.body;
+      content.innerHTML =
+        '<div style="text-align:center;padding:80px 20px;font-family:var(--font-body);">'
+        + '<div style="font-size:48px;opacity:0.4;margin-bottom:14px;">&#9888;</div>'
+        + '<h2 style="font-family:var(--font-title);font-size:20px;color:var(--text-bright);margin-bottom:8px;">leaderboards timed out</h2>'
+        + '<p style="font-family:var(--font-mono);font-size:13px;color:var(--text-muted);font-style:italic;margin-bottom:18px;">"the void is being weird. try again."<br>— nerm</p>'
+        + '<button onclick="window.location.reload()" style="font-family:var(--font-data);font-size:9px;padding:10px 22px;border-radius:8px;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-border);cursor:pointer;letter-spacing:1.5px;">TRY AGAIN</button>'
+        + '</div>';
+      return;
+    }
 
     data.players = Array.isArray(pR) ? pR : pR.players || [];
     data.houses = Array.isArray(hR) ? hR : hR.schools || hR.houses || [];
