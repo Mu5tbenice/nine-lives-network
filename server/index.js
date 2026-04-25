@@ -193,6 +193,18 @@ try {
   captureBootFailure('./routes/items', e);
 }
 
+// Public profile — /p/<handle>. Server-renders HTML with per-player OG tags
+// so shared links produce rich preview cards on X / Telegram / Discord.
+// See docs/ux-information-architecture.md for the architecture.
+try {
+  const publicProfileRoutes = require('./routes/publicProfile');
+  app.use('/p', publicProfileRoutes);
+  console.log('✅ Public profile route loaded');
+} catch (e) {
+  console.error('❌ Failed to load public profile route:', e.message);
+  captureBootFailure('./routes/publicProfile', e);
+}
+
 try {
   const questRoutes = require('./routes/quests');
   app.use('/api/quests', questRoutes);
