@@ -127,6 +127,28 @@ img { max-width: 100%; display: block; }
   border-radius: 5px; cursor: pointer;
 }
 
+/* Compact gold action pill used in HUD overlays (e.g. dashboard EDIT /
+   VIEW PROFILE next to the character art, builder/playthrough toggles).
+   Sits over content so the dim backdrop + blur keep it readable on
+   patterned/illustrated backgrounds. Hover lights up the gold border. */
+.btn-hud-pill {
+  font-family: var(--font-data);
+  font-size: 8px;
+  color: var(--gold);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(212, 166, 75, 0.2);
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn-hud-pill:hover { border-color: rgba(212, 166, 75, 0.5); }
+
 /* Marquee CTA — the elevated "primary action" gold button used on home-hub
    surfaces (dashboard DEPLOY TO BATTLE). Sibling of .btn-gold, not a
    modifier — styling is too divergent (3-stop diagonal gradient, multi-shadow
