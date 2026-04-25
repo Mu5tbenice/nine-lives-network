@@ -456,9 +456,36 @@ var SEASON_PRIZES = [
 // ═══════════════════════════════════════
 var playerId = null;
 var currentTab = 'season';
+// Time-window sub-tab on the Season tab. 'season' = sort by seasonal_points
+// (current behavior); 'week' = sum point_log over last 7 days from p.history;
+// 'today' = sort by points_today. All client-side re-sort using existing
+// server data — no extra fetches required.
+var seasonWindow = 'season';
 var clashView = 'standings';
 var isAdmin = false;
 var data = { players:[], houses:[], duels:[], clashes:{ matches:[], standings:[] } };
+
+// Score function for the active time-window. Used by getRankedPlayers()
+// for both the rendered list and the YOU pin's gap calculation.
+function getWindowScore(p, win) {
+  if (win === 'today') return p.points_today || 0;
+  if (win === 'week') {
+    if (!p.history || p.history.length < 2) return 0;
+    return (p.history[p.history.length - 1] || 0) - (p.history[0] || 0);
+  }
+  return p.seasonal_points || 0;
+}
+function getRankedPlayers(list, win) {
+  if (win === 'season') return list; // already in this order from server
+  return list.slice().sort(function(a, b) {
+    return getWindowScore(b, win) - getWindowScore(a, win);
+  });
+}
+window.switchSeasonWindow = function(win) {
+  if (seasonWindow === win) return;
+  seasonWindow = win;
+  render();
+};
 
 function getPlayerId() {
   var p = new URLSearchParams(window.location.search);
@@ -746,10 +773,18 @@ function mePin(found, opts) {
   var h = HOUSES[p.school_id] || { name:'?', color:'#888', icon:'🐱' };
   var handle = p.twitter_handle ? String(p.twitter_handle).toLowerCase() : null;
   var hrefAttr = handle ? ' href="/p/' + encodeURIComponent(handle) + '"' : '';
+  var win = opts.window || 'season';
   var scoreVal, scoreLabel;
   if (opts.showDuels) {
     scoreVal = (p.duel_wins||0) + 'W';
     scoreLabel = (p.duel_losses||0) + 'L';
+  } else if (win === 'today') {
+    scoreVal = (p.points_today||0).toLocaleString();
+    scoreLabel = 'today';
+  } else if (win === 'week') {
+    var wk = (p.history && p.history.length >= 2) ? (p.history[p.history.length - 1] - p.history[0]) : 0;
+    scoreVal = wk.toLocaleString();
+    scoreLabel = 'this wk';
   } else {
     scoreVal = (p.seasonal_points||0).toLocaleString();
     scoreLabel = 'pts';
@@ -757,13 +792,29 @@ function mePin(found, opts) {
 
   // Gap-to-next-rank — a concrete number the player is chasing. At #1 we
   // flip the framing to celebrate and call out the gap to #2 (defending the
-  // crown). For Duels tab we don't have a points gap to compute, so skip.
+  // crown). Gap math uses the active window's score so the "behind by X"
+  // copy reflects what's being viewed (TODAY view → today's points gap, etc).
+  // Tied detection — when the player ahead has the same score, frame as
+  // "tied at #N with @them" instead of "0 pts behind."
+  // Day-1 — when the player has zero score in the active window, framing
+  // flips from gap-chasing to onboarding ("Earn your first points to climb").
   var gapHtml = '';
+  var pScore = win === 'today' ? (p.points_today||0)
+              : win === 'week' ? ((p.history && p.history.length >= 2) ? (p.history[p.history.length-1] - p.history[0]) : 0)
+              : (p.seasonal_points||0);
   if (!opts.showDuels && opts.fullList && opts.fullList.length) {
-    if (rank === 1) {
+    if (pScore === 0) {
+      // Day-1 / dormant player. Identical message regardless of window.
+      var firstPlace = opts.fullList[0];
+      var seal = firstPlace ? Math.max(1, Math.round((firstPlace.seasonal_points || 100) / 50)) : 100;
+      gapHtml = '<div class="gap-to-next">' + gameIcon('sparkles','gi-sm') + ' Earn your first <strong>' + seal + '</strong> pts to break the seal</div>';
+    } else if (rank === 1) {
       var second = opts.fullList[1];
       if (second) {
-        var lead = (p.seasonal_points||0) - (second.seasonal_points||0);
+        var sScore = win === 'today' ? (second.points_today||0)
+                    : win === 'week' ? ((second.history && second.history.length >= 2) ? (second.history[second.history.length-1] - second.history[0]) : 0)
+                    : (second.seasonal_points||0);
+        var lead = pScore - sScore;
         gapHtml = '<div class="gap-to-next">' + gameIcon('laurels','gi-sm') + ' #1 — leading by <strong>' + lead.toLocaleString() + '</strong> pts</div>';
       } else {
         gapHtml = '<div class="gap-to-next">' + gameIcon('laurels','gi-sm') + ' #1!</div>';
@@ -771,8 +822,15 @@ function mePin(found, opts) {
     } else {
       var ahead = opts.fullList[rank - 2];
       if (ahead) {
-        var diff = (ahead.seasonal_points||0) - (p.seasonal_points||0);
-        gapHtml = '<div class="gap-to-next"><strong>' + diff.toLocaleString() + '</strong> pts behind @' + esc(ahead.twitter_handle || '???') + '</div>';
+        var aScore = win === 'today' ? (ahead.points_today||0)
+                    : win === 'week' ? ((ahead.history && ahead.history.length >= 2) ? (ahead.history[ahead.history.length-1] - ahead.history[0]) : 0)
+                    : (ahead.seasonal_points||0);
+        var diff = aScore - pScore;
+        if (diff === 0) {
+          gapHtml = '<div class="gap-to-next">Tied at #' + rank + ' with @<strong>' + esc(ahead.twitter_handle || '???') + '</strong> — break the tie</div>';
+        } else {
+          gapHtml = '<div class="gap-to-next"><strong>' + diff.toLocaleString() + '</strong> pts behind @' + esc(ahead.twitter_handle || '???') + '</div>';
+        }
       }
     }
   }
@@ -811,11 +869,17 @@ function playerRow(p, rank, opts) {
   var isMe = playerId && (p.id == playerId);
   var delay = (rank - 1) * 0.03;
   var sparkId = 'spark_' + (opts.prefix || '') + p.id;
+  var win = opts.window || 'season';
 
   var scoreHtml = '';
   if (opts.showDuels) {
     var wr = Math.round(((p.duel_wins||0) / ((p.duel_wins||0) + (p.duel_losses||0) || 1)) * 100);
     scoreHtml = '<div class="lb-score"><div class="lb-score__val" style="color:var(--green)">' + (p.duel_wins||0) + 'W</div><div style="font-family:var(--font-mono);font-size:8px;color:var(--red)">' + (p.duel_losses||0) + 'L <span style="color:var(--text-faint)">(' + wr + '%)</span></div></div>';
+  } else if (win === 'today') {
+    scoreHtml = '<div class="lb-score"><div class="lb-score__val">' + (p.points_today||0).toLocaleString() + '</div><div class="lb-score__label">today</div></div>';
+  } else if (win === 'week') {
+    var wkPts = (p.history && p.history.length >= 2) ? (p.history[p.history.length-1] - p.history[0]) : 0;
+    scoreHtml = '<div class="lb-score"><div class="lb-score__val">' + wkPts.toLocaleString() + '</div><div class="lb-score__label">this wk</div></div>';
   } else {
     scoreHtml = '<div class="lb-score"><div class="lb-score__val">' + (p.seasonal_points||0).toLocaleString() + '</div><div class="lb-score__label">pts</div></div>';
   }
@@ -827,7 +891,7 @@ function playerRow(p, rank, opts) {
   const tag = handle ? 'a' : 'div';
   const hrefAttr = handle ? ' href="/p/' + encodeURIComponent(handle) + '" style="text-decoration:none;color:inherit;display:block;"' : '';
   return '<' + tag + hrefAttr + ' class="lb-row' + (rank <= 3 ? ' top3' : '') + (isMe ? ' me' : '') + '" style="animation-delay:' + delay + 's;animation:fadeSlideIn 0.3s ease ' + delay + 's both;display:flex;align-items:center;gap:10px;">'
-    + '<div class="rank-cell">' + medal(rank) + rankDelta(p) + '</div>'
+    + '<div class="rank-cell">' + medal(rank) + (win === 'season' ? rankDelta(p) : '') + '</div>'
     + avatar(p, h)
     + '<div class="lb-info">'
     + '<div class="lb-name-row">'
@@ -875,12 +939,24 @@ function render() {
 
   // ═══ SEASON TAB ═══
   if (currentTab === 'season') {
-    var players = data.players;
+    // Time-window sub-tabs. SEASON is the default lifetime/cumulative view.
+    // TODAY uses points_today as the score; WEEK uses 7-day cumulative gain
+    // from p.history. Both views re-rank client-side; the rendered list
+    // dataset is the same (same server payload, different sort).
+    html += '<div class="sub-tabs sub-tabs--season">';
+    html += '<button class="sub-tab' + (seasonWindow==='today'?' active':'') + '" onclick="switchSeasonWindow(\'today\')">TODAY</button>';
+    html += '<button class="sub-tab' + (seasonWindow==='week'?' active':'') + '" onclick="switchSeasonWindow(\'week\')">WEEK</button>';
+    html += '<button class="sub-tab' + (seasonWindow==='season'?' active':'') + '" onclick="switchSeasonWindow(\'season\')">SEASON</button>';
+    html += '</div>';
 
-    // Climber spotlight — top mover today. Server picks the player with
-    // the largest rank_change > 0 (tiebreak by points_today). Hidden on
-    // quiet days when nobody climbed.
-    if (data.climber && data.climber.id !== playerId) {
+    // Server returns players sorted by seasonal_points. For TODAY/WEEK we
+    // need a different score, so re-rank client-side.
+    var players = getRankedPlayers(data.players, seasonWindow);
+
+    // Climber spotlight — top mover today. Only renders on SEASON view —
+    // TODAY/WEEK don't have a meaningful "rank change" since they're already
+    // ephemeral leaderboards.
+    if (seasonWindow === 'season' && data.climber && data.climber.id !== playerId) {
       var cl = data.climber;
       var clHandle = cl.twitter_handle ? String(cl.twitter_handle).toLowerCase() : null;
       var clHref = clHandle ? '/p/' + encodeURIComponent(clHandle) : '#';
@@ -895,7 +971,7 @@ function render() {
         +   '<div class="climber-card__delta-label">RANKS</div>'
         + '</div>'
         + '</a>';
-    } else if (data.climber && data.climber.id === playerId) {
+    } else if (seasonWindow === 'season' && data.climber && data.climber.id === playerId) {
       // YOU are the climber — flip framing for extra bragging fuel.
       var cl2 = data.climber;
       html += '<div class="climber-card" style="cursor:default;">'
@@ -913,8 +989,9 @@ function render() {
     // Sticky YOU pin — shows above rankings regardless of scroll depth.
     // findMeWithFallback uses data.me_row when player isn't in top-N
     // (server includes them as a separate row with rank computed against
-    // the full ladder).
-    html += mePin(findMeWithFallback(players, data.me_row), { fullList: players });
+    // the full ladder). Pass the active window so the pin's score + gap
+    // copy reflect what's being viewed.
+    html += mePin(findMeWithFallback(players, data.me_row), { fullList: players, window: seasonWindow });
     if (players.length >= 3) {
       // Podium: #2, #1, #3
       var order = [1, 0, 2];
@@ -930,8 +1007,12 @@ function render() {
           html += '<div class="podium__sigil-wrap"><img class="podium__sigil" src="' + h.sigil + '" alt="" loading="lazy"></div>';
         }
         html += '<div class="podium__name">@' + esc(p.twitter_handle) + '</div>';
-        html += '<div class="podium__pts">' + (p.seasonal_points||0).toLocaleString() + '</div>';
-        html += '<div class="podium__label">pts</div>';
+        var podiumScore = seasonWindow === 'today' ? (p.points_today||0)
+                        : seasonWindow === 'week' ? ((p.history && p.history.length >= 2) ? (p.history[p.history.length-1] - p.history[0]) : 0)
+                        : (p.seasonal_points||0);
+        var podiumLabel = seasonWindow === 'today' ? 'today' : seasonWindow === 'week' ? 'this wk' : 'pts';
+        html += '<div class="podium__pts">' + podiumScore.toLocaleString() + '</div>';
+        html += '<div class="podium__label">' + podiumLabel + '</div>';
         html += '</div>';
       });
       html += '</div>';
@@ -939,12 +1020,12 @@ function render() {
       // Rest of rankings
       html += sectionLabel('laurels', 'RANKINGS');
       players.slice(3).forEach(function(p, i) {
-        html += playerRow(p, i + 4, { prefix: 'season_' });
+        html += playerRow(p, i + 4, { prefix: 'season_', window: seasonWindow });
       });
     } else if (players.length > 0) {
       html += sectionLabel('laurels', 'RANKINGS');
       players.forEach(function(p, i) {
-        html += playerRow(p, i + 1, { prefix: 'season_' });
+        html += playerRow(p, i + 1, { prefix: 'season_', window: seasonWindow });
       });
     } else {
       html += '<div class="empty">No players yet. Be the first to earn points!</div>';
@@ -1161,6 +1242,10 @@ function render() {
   // rank-delta arrow story: climbing = green, falling = red, flat = muted.
   // No history (e.g. duels endpoint) → no sparkline drawn (safe no-op).
   requestAnimationFrame(function() {
+    // TODAY view doesn't have a meaningful sparkline (single data point).
+    // Skip sparkline rendering entirely on that window — the canvas
+    // elements exist but stay blank, sized via CSS so layout doesn't shift.
+    if (currentTab === 'season' && seasonWindow === 'today') return;
     var allPlayers = currentTab === 'duels' ? data.duels : data.players;
     var prefix = currentTab === 'duels' ? 'duel_' : 'season_';
     allPlayers.forEach(function(p) {
