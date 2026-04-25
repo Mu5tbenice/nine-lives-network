@@ -2281,6 +2281,18 @@ Spec touches:
 
 ---
 
+### 9.97 Orphaned `gauntlet.html` — server routes deleted in §9.80, page still reachable
+
+**Symptom (audit 2026-04-25 during the site-wide design consistency sweep).** `public/gauntlet.html` (a 314-line gauntlet UI) still existed on disk and was directly URL-reachable, but its `/api/gauntlet/*` endpoints were deleted in §9.80 / PR #201 along with `gauntletEngine.js` and the `gauntlet_runs` table. Any visitor hitting the page got a fully broken UI — `apiFetch('/api/gauntlet/active/...')` and `apiFetch('/api/gauntlet/start')` would 404, the page would render its empty shell with no meaningful state.
+
+**Effect.** Identical pattern to §9.92 (`wilds.html`, deleted in PR #236). Dead code on disk, no nav link (already pruned), zero player traffic but a hostile experience for anyone with a stale bookmark or shared link. Low severity but trivial to clean up.
+
+**Resolution plan.** Delete `public/gauntlet.html`. No redirect needed — the URL was never canonical and §9.80 already retired the feature publicly. Lone external reference (a comment line in `public/js/card-slot-helper.js`) is informational only, left as-is.
+
+**Resolved 2026-04-25 in PR #250.** File deleted in the same PR as this entry (add-and-resolve, mirroring §9.92's pattern).
+
+---
+
 Definitions of terms used throughout this PRD. Each ≤15 words.
 
 | Term | Definition |
