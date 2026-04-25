@@ -4,7 +4,18 @@ const supabase = require('../config/supabaseAdmin');
 
 /**
  * GET /api/leaderboards/players
- * Top players by seasonal points
+ * Top players by seasonal points.
+ *
+ * Returns per-player movement data:
+ *   - points_today  — sum of point_log.amount for today (UTC)
+ *   - rank          — position in today's ordering (1-indexed)
+ *   - prev_rank     — position when sorted by (seasonal_points - points_today),
+ *                     i.e. yesterday-equivalent ordering
+ *   - rank_change   — prev_rank - rank (positive = climbed, negative = fell)
+ *
+ * Uses point_log to compute today's delta — `pointsService.addPoints` is the
+ * canonical writer (all paths now route through it post-§9.1) so seasonal_points
+ * minus today's log sum reconstructs yesterday's seasonal_points exactly.
  */
 router.get('/players', async (req, res) => {
   try {
@@ -24,7 +35,58 @@ router.get('/players', async (req, res) => {
       return res.status(500).json({ error: 'Failed to fetch leaderboard' });
     }
 
-    res.json(players || []);
+    const list = players || [];
+
+    // Sum today's point_log per player (UTC day boundary).
+    const startOfDay = new Date();
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    const startIso = startOfDay.toISOString();
+    const ids = list.map((p) => p.id);
+
+    const todayMap = {};
+    if (ids.length > 0) {
+      const { data: todayLog, error: logErr } = await supabase
+        .from('point_log')
+        .select('player_id, amount')
+        .gte('created_at', startIso)
+        .in('player_id', ids);
+      if (logErr) {
+        console.error('Error fetching today point_log:', logErr);
+        // Non-fatal — fall through with todayMap empty so all rank_change=0.
+      } else {
+        (todayLog || []).forEach((row) => {
+          todayMap[row.player_id] =
+            (todayMap[row.player_id] || 0) + (row.amount || 0);
+        });
+      }
+    }
+
+    // Build prev-rank ordering by sorting on (seasonal_points - points_today).
+    // Two-stable sort: primary by yesterday-equivalent points desc, tiebreak by id.
+    const prevSorted = list
+      .map((p) => ({
+        id: p.id,
+        prev_pts: (p.seasonal_points || 0) - (todayMap[p.id] || 0),
+      }))
+      .sort((a, b) => b.prev_pts - a.prev_pts || a.id - b.id);
+    const prevRankMap = {};
+    prevSorted.forEach((row, idx) => {
+      prevRankMap[row.id] = idx + 1;
+    });
+
+    const enriched = list.map((p, idx) => {
+      const rank = idx + 1;
+      const prev_rank = prevRankMap[p.id] || rank;
+      return {
+        ...p,
+        rank,
+        prev_rank,
+        rank_change: prev_rank - rank, // positive = climbed
+        points_today: todayMap[p.id] || 0,
+      };
+    });
+
+    res.json(enriched);
   } catch (error) {
     console.error('Error in players leaderboard:', error);
     res.status(500).json({ error: 'Failed to fetch leaderboard' });
