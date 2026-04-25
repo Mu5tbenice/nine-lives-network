@@ -468,7 +468,13 @@ function playerRow(p, rank, opts) {
     scoreHtml = '<div class="lb-score"><div class="lb-score__val">' + (p.seasonal_points||0).toLocaleString() + '</div><div class="lb-score__label">pts</div></div>';
   }
 
-  return '<div class="lb-row' + (rank <= 3 ? ' top3' : '') + (isMe ? ' me' : '') + '" style="animation-delay:' + delay + 's;animation:fadeSlideIn 0.3s ease ' + delay + 's both">'
+  // Wrap row in <a> so taps go to /p/<handle>. Falls back to <div> if no
+  // handle (defensive — shouldn't happen given the data fetch). Inline
+  // text-decoration override keeps the link styled like a row, not a link.
+  const handle = p.twitter_handle ? String(p.twitter_handle).toLowerCase() : null;
+  const tag = handle ? 'a' : 'div';
+  const hrefAttr = handle ? ' href="/p/' + encodeURIComponent(handle) + '" style="text-decoration:none;color:inherit;display:block;"' : '';
+  return '<' + tag + hrefAttr + ' class="lb-row' + (rank <= 3 ? ' top3' : '') + (isMe ? ' me' : '') + '" style="animation-delay:' + delay + 's;animation:fadeSlideIn 0.3s ease ' + delay + 's both;display:flex;align-items:center;gap:10px;">'
     + medal(rank)
     + '<div class="lb-avatar" style="background:' + h.color + '20;border:2px solid ' + h.color + '40">' + h.icon + '</div>'
     + '<div class="lb-info">'
@@ -482,7 +488,7 @@ function playerRow(p, rank, opts) {
     + '</div>'
     + '<canvas id="' + sparkId + '" class="sparkline" style="width:70px;height:22px"></canvas>'
     + scoreHtml
-    + '</div>';
+    + '</' + tag + '>';
 }
 
 // ═══════════════════════════════════════
