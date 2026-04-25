@@ -11,7 +11,15 @@
   <link rel="stylesheet" href="/css/components-v2.css">
   <link rel="stylesheet" href="/css/card-v4.css">
   <style>
-    :root{--bg-deep:#120e1e;--bg-warm:#1a1528;--bg-card:rgba(30,22,42,0.7);--border:rgba(212,166,75,0.12);--border-glow:rgba(212,166,75,0.3);--gold:#D4A64B;--bright:#F5F0E8;--body:#D4C8B8;--muted:#9B8E7E;--faint:#6B5E50;--red:#e85a6a;--green:#6acd8a;--cyan:#6ac8d8;--purple:#b088e8;--font-title:'Cinzel',serif;--font-body:'Crimson Text',Georgia,serif;--font-data:'Press Start 2P',monospace;--font-mono:'JetBrains Mono',monospace}
+    /* Tokens come from /css/variables-v2.css (Warm Night). Below are local-name
+       aliases so builder.html keeps its short alias style (--bright, --body,
+       --muted, --faint) while inheriting v2 values. */
+    :root{
+      --bright: var(--text-bright);
+      --body:   var(--text-body);
+      --muted:  var(--text-muted);
+      --faint:  var(--text-faint);
+    }
     *{box-sizing:border-box;margin:0;padding:0}
     body{min-height:100vh;background:radial-gradient(ellipse at 50% 15%,rgba(123,45,142,0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(212,166,75,0.04) 0%,transparent 40%),linear-gradient(180deg,#1a1528 0%,#120e1e 50%,#0e0a18 100%);font-family:var(--font-body);color:var(--body);display:flex;flex-direction:column;align-items:center;padding:16px}
     .wrap{max-width:480px;width:100%}
