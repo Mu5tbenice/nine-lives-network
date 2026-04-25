@@ -123,8 +123,8 @@
 
     /* ═══ LOADING / ERROR ═══ */
     .loading-state { text-align: center; padding: 60px 20px; }
-    .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-state .spinner { margin: 0 auto 12px; }
+    /* .spinner + .spinner--lg / @keyframes spin live in components-v2.css */
     .error-state { text-align: center; padding: 60px 20px; }
     .error-state p { margin-bottom: 8px; }
 
@@ -142,7 +142,7 @@
 
   <!-- LOADING -->
   <div class="main-container" id="loadingState">
-    <div class="loading-state"><div class="spinner"></div><span style="font-family:var(--font-mono);font-size:8px;color:var(--text-faint);letter-spacing:1px;">LOADING...</span></div>
+    <div class="loading-state"><div class="spinner spinner--lg"></div><span style="font-family:var(--font-mono);font-size:8px;color:var(--text-faint);letter-spacing:1px;">LOADING...</span></div>
   </div>
 
   <!-- ERROR -->

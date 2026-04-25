@@ -208,6 +208,8 @@ img { max-width: 100%; display: block; }
 /* ═══ LOADING ═══ */
 .loading { display: flex; align-items: center; justify-content: center; min-height: 80px; }
 .spinner { width: 26px; height: 26px; border: 2.5px solid var(--gold-dim); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+.spinner--sm { width: 20px; height: 20px; border-width: 2px; }
+.spinner--lg { width: 32px; height: 32px; border-width: 3px; }
 
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 480px) {
