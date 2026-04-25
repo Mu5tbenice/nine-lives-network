@@ -1928,11 +1928,11 @@ Kept the intermission `return;` intact: combat mutation code ABOVE the intermiss
 
 **Effect.** Low severity annoyance. Player loses access to the swap/exit buttons until they refresh. Not blocking gameplay — combat auto-continues, auto-rejoin still fires on KO. Flagged as "small annoyance" by Wray; not blocking MVP.
 
-**Root cause (verified 2026-04-25 during PR #? investigation).** The bottom-tray's display was mutated directly at every state transition (deploy success, withdraw, KO, checkDeployment) with no central re-sync — so any path that updated `S.isDeployed` *without* an inline `tray.style.display = 'flex'` left the tray hidden. The dominant trigger was the `arena:nine_rejoined` handler at `public/nethara-live.html:4505-4530`: it set `S.isDeployed = true` after a successful `/api/zones/:zoneId/rejoin` (the auto-rejoin and KO-widget rejoin paths) but never re-showed the tray. The KO handler had hidden it earlier; nothing brought it back. Three additional gap sites: `arena:round_start` had no survivor safety net, `_onTabVisible` re-fetched state but didn't re-derive tray visibility, and the 30s `startSessionMetricsSync` interval had no piggyback (the deploy-pill from §9.40 already had one).
+**Root cause (verified 2026-04-25 during PR #244 investigation).** The bottom-tray's display was mutated directly at every state transition (deploy success, withdraw, KO, checkDeployment) with no central re-sync — so any path that updated `S.isDeployed` *without* an inline `tray.style.display = 'flex'` left the tray hidden. The dominant trigger was the `arena:nine_rejoined` handler at `public/nethara-live.html:4505-4530`: it set `S.isDeployed = true` after a successful `/api/zones/:zoneId/rejoin` (the auto-rejoin and KO-widget rejoin paths) but never re-showed the tray. The KO handler had hidden it earlier; nothing brought it back. Three additional gap sites: `arena:round_start` had no survivor safety net, `_onTabVisible` re-fetched state but didn't re-derive tray visibility, and the 30s `startSessionMetricsSync` interval had no piggyback (the deploy-pill from §9.40 already had one).
 
 **Resolution.** Mirror the §9.40 deploy-pill pattern: introduce `window._syncBottomTrayVisibility()` that re-derives `tray.style.display` from `(S.currentZoneId && S.isDeployed)`, and call it from the four gap sites (`arena:nine_rejoined`, `arena:round_start`, `_onTabVisible`, `startSessionMetricsSync` interval). Existing inline mutations stay in place — the new sync function is purely additive and idempotent, so it can never override correct state, only catch missing re-shows.
 
-**Resolved 2026-04-25 in PR #?.**
+**Resolved 2026-04-25 in PR #244.**
 
 ---
 
