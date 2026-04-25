@@ -2289,7 +2289,7 @@ Spec touches:
 
 **Resolution plan.** Delete `public/gauntlet.html`. No redirect needed — the URL was never canonical and §9.80 already retired the feature publicly. Lone external reference (a comment line in `public/js/card-slot-helper.js`) is informational only, left as-is.
 
-**Resolved 2026-04-25 in PR #?.** File deleted in the same PR as this entry (add-and-resolve, mirroring §9.92's pattern).
+**Resolved 2026-04-25 in PR #250.** File deleted in the same PR as this entry (add-and-resolve, mirroring §9.92's pattern).
 
 ---
 
