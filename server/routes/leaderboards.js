@@ -260,6 +260,54 @@ router.get('/schools', async (req, res) => {
 });
 
 /**
+ * GET /api/leaderboards/activity
+ * Recent point_log events, joined with player handle/school. Powers the
+ * pulse-of-the-game ticker on /leaderboards.html. Returns up to ?limit=20
+ * by default, ordered most-recent-first.
+ *
+ * Why no real-time socket feed: this is a polled HTTP endpoint to keep
+ * the leaderboard surface stateless. Refresh-on-tab-open is enough for
+ * a "trader ticker" feel — sub-second freshness isn't required.
+ */
+router.get('/activity', async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const { data: events, error } = await supabase
+      .from('point_log')
+      .select('id, player_id, amount, source, created_at')
+      .gt('amount', 0) // skip 0/negative entries (cleanup writes)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) {
+      console.error('Error fetching activity:', error);
+      return res.status(500).json({ error: 'Failed to fetch activity' });
+    }
+    const ids = Array.from(new Set((events || []).map((e) => e.player_id)));
+    let playerMap = {};
+    if (ids.length) {
+      const { data: players } = await supabase
+        .from('players')
+        .select('id, twitter_handle, school_id')
+        .in('id', ids);
+      (players || []).forEach((p) => { playerMap[p.id] = p; });
+    }
+    const enriched = (events || []).map((e) => ({
+      id: e.id,
+      player_id: e.player_id,
+      twitter_handle: playerMap[e.player_id]?.twitter_handle || null,
+      school_id: playerMap[e.player_id]?.school_id || null,
+      amount: e.amount,
+      source: e.source,
+      created_at: e.created_at,
+    }));
+    res.json(enriched);
+  } catch (error) {
+    console.error('Error in activity:', error);
+    res.status(500).json({ error: 'Failed to fetch activity' });
+  }
+});
+
+/**
  * GET /api/leaderboards/duels
  * Top duelists by win rate (min 5 duels to qualify)
  */
