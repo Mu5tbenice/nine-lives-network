@@ -2237,7 +2237,7 @@ So the drift is between "server reality at last 423" + "wall-clock ticks since" 
 
 Both wire-ups follow the §9.40 / §9.79 sync-on-state-event pattern. Same PR could expose `window._clearDeployLockout()` for callers, mirroring the `_syncBottomTrayVisibility` / `_updateDeployStatusPill` shape.
 
-**Resolved 2026-04-25 in PR #?.** Added `window._clearDeployLockout()` next to `_showDeployLockout` (`public/nethara-live.html:3527-3539`) — clears `_deployLockoutInt`, resets the modal confirm button to its default state (`⚔️ DEPLOY` if 3 cards selected else `SELECT N MORE`). Wired into both `arena:round_end` (first line — clears any stale lockout the moment intermission begins) and `arena:round_start` (belt-and-braces after the new `roundEndsAt` is set). Bundled with §9.95 in the same PR.
+**Resolved 2026-04-25 in PR #245.** Added `window._clearDeployLockout()` next to `_showDeployLockout` (`public/nethara-live.html:3527-3539`) — clears `_deployLockoutInt`, resets the modal confirm button to its default state (`⚔️ DEPLOY` if 3 cards selected else `SELECT N MORE`). Wired into both `arena:round_end` (first line — clears any stale lockout the moment intermission begins) and `arena:round_start` (belt-and-braces after the new `roundEndsAt` is set). Bundled with §9.95 in the same PR.
 
 ---
 
@@ -2255,7 +2255,7 @@ Both wire-ups follow the §9.40 / §9.79 sync-on-state-event pattern. Same PR co
 
 Reuses existing `_handleRoundEndAction('change')` (CHANGE BUILD) and the WAIT path's auto-rejoin-on-round_start (no new server-side work needed). Pairs naturally with whatever resolution lands for the KO widget's REJOIN button — the cleanest end-state is widget = informational, modal = actions, but that's a follow-up decision.
 
-**Resolved 2026-04-25 in PR #?.** Branched the helper text + CTA buttons in `_showRoundEnd` on `S._withdrawnAfterKO` (the canonical "needs rejoin path" signal at modal-render time, since `arena:round_end` flips `_wasKOdThisRound→false` and sets `_withdrawnAfterKO=true` *before* the modal renders). KO'd players now see primary `REJOIN NEXT ROUND` + secondary `CHANGE BUILD`; survivors keep `CHANGE BUILD` + `WAIT`. New `'rejoin'` action in `window._handleRoundEndAction` ensures auto-rejoin is on (toggling it on if off) and surfaces a feed event — actual rejoin still fires from the `arena:round_start` handler, which is the only point at which the server accepts `/rejoin` (see §9.35). KO widget's REJOIN button left in place; cleaner widget=informational consolidation can land in a follow-up.
+**Resolved 2026-04-25 in PR #245.** Branched the helper text + CTA buttons in `_showRoundEnd` on `S._withdrawnAfterKO` (the canonical "needs rejoin path" signal at modal-render time, since `arena:round_end` flips `_wasKOdThisRound→false` and sets `_withdrawnAfterKO=true` *before* the modal renders). KO'd players now see primary `REJOIN NEXT ROUND` + secondary `CHANGE BUILD`; survivors keep `CHANGE BUILD` + `WAIT`. New `'rejoin'` action in `window._handleRoundEndAction` ensures auto-rejoin is on (toggling it on if off) and surfaces a feed event — actual rejoin still fires from the `arena:round_start` handler, which is the only point at which the server accepts `/rejoin` (see §9.35). KO widget's REJOIN button left in place; cleaner widget=informational consolidation can land in a follow-up.
 
 ---
 
