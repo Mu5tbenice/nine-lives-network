@@ -581,6 +581,7 @@
     }
     .feed-event.feed-type-attack { border-left: 2px solid var(--red); }
     .feed-event.feed-type-effect { border-left: 2px solid var(--gold); }
+    .feed-event.feed-type-cast   { border-left: 2px solid var(--gold); background: rgba(212,166,75,0.06); }
     .feed-event.feed-type-ko     { border-left: 2px solid #ff2222; background: rgba(255,34,34,0.08); }
     .feed-event.feed-type-heal   { border-left: 2px solid var(--green); }
     .feed-event.feed-type-system { border-left: 2px solid var(--faint); }
@@ -588,6 +589,7 @@
     .feed-event .feed-dmg  { color: var(--red); font-weight: 700; }
     .feed-event .feed-heal { color: var(--green); font-weight: 700; }
     .feed-event .feed-effect { color: var(--gold); }
+    .feed-event .feed-card { color: var(--gold); font-weight: 700; letter-spacing: 0.02em; }
     .feed-event .feed-crit { color: #ffd700; font-weight: 700; }
     .feed-event .feed-time { color: var(--faint); margin-left: auto; flex-shrink: 0; font-size: 11px; }
 
@@ -4227,8 +4229,10 @@
       }
 
       const critPart = data.crit ? ` <span class="feed-crit">★ CRIT!</span>` : '';
-      addFeedEvent(`⚔️ ${from} → ${to} <strong>-${dmg}</strong>${critPart}${data.effect ? ` [${data.effect}]` : ''}`, 'attack');
-      addBattleLog(`${from} → ${to} -${dmg}${data.crit?' CRIT':''}${data.effect?' ['+data.effect+']':''}`, 'default');
+      const cardLabel = data.card_name ? `<span class="feed-card">${data.card_name}</span> ` : '';
+      const cardPlain = data.card_name ? `${data.card_name} ` : '';
+      addFeedEvent(`⚔️ ${from} ${cardLabel}→ ${to} <strong>-${dmg}</strong>${critPart}${data.effect ? ` [${data.effect}]` : ''}`, 'attack');
+      addBattleLog(`${from} ${cardPlain}→ ${to} -${dmg}${data.crit?' CRIT':''}${data.effect?' ['+data.effect+']':''}`, 'default');
 
       // Self: drive timeline + ATK bar
       if (fromId === String(S.playerId) && data.slot) {
@@ -4272,6 +4276,18 @@
       const tId  = resolveId(data.targetId || data.on);
       const caster = S.nines.get(cId);
       const target  = S.nines.get(tId);
+
+      // Named cast beat — render once per spell-cast event so each card gets
+      // a moment in the log. Skip if no card_name (legacy events / non-card
+      // effects like CHAIN bounce which already log via combat:attack).
+      if (data.card_name) {
+        const casterName = caster ? (caster.name || getNineName(cId)) : (data.by || getNineName(cId));
+        const targetName = (data.on && data.on !== data.by)
+          ? (target ? (target.name || getNineName(tId)) : data.on)
+          : 'self';
+        addFeedEvent(`✨ ${casterName} casts <span class="feed-card">${data.card_name}</span> on ${targetName}${effName ? ` <span class="feed-effect">[${effName}]</span>` : ''}`, 'cast');
+        addBattleLog(`${casterName} casts ${data.card_name} on ${targetName}${effName ? ' ['+effName+']' : ''}`, 'default');
+      }
 
       // Screen position — sprite first, then engine coords fallback
       const ep = data.tx != null ? engineToScreen({ x: data.tx, y: data.ty || 0 }) : null;
