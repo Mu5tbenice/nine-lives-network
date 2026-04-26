@@ -228,6 +228,48 @@ function initializeScheduledJobs() {
   });
 
   // ════════════════════════════════════════════════
+  // ZONE CONTROL HISTORY TTL — 03:00 UTC daily
+  // §9.107: prune rows older than 30 days. Bounded growth at scale.
+  // ════════════════════════════════════════════════
+  // The branding/house-presence reads at routes/zones.js only ever look
+  // back 24h (`gte('snapped_at', NOW() - 24h)`), so anything past 24h is
+  // dead weight. Keeping 30 days as a forensic buffer for retrospective
+  // audits without letting the table grow unbounded — at 14k rows/day
+  // saturation that caps the table at ~420k rows, well within Supabase's
+  // free-tier comfort zone. Tunable via ZONE_CONTROL_TTL_DAYS.
+  const ZONE_CONTROL_TTL_DAYS = parseInt(
+    process.env.ZONE_CONTROL_TTL_DAYS || '30',
+    10,
+  );
+  cron.schedule('0 3 * * *', async () => {
+    console.log(`[${ts()}] 🧹 zone_control_history TTL`);
+    logJob('zone_control_history_ttl');
+    if (!supabase) {
+      console.log('⚠️ supabaseAdmin not loaded — skipping TTL');
+      return;
+    }
+    try {
+      const cutoff = new Date(
+        Date.now() - ZONE_CONTROL_TTL_DAYS * 24 * 60 * 60 * 1000,
+      ).toISOString();
+      const { data, error } = await supabase
+        .from('zone_control_history')
+        .delete({ count: 'exact' })
+        .lt('snapped_at', cutoff);
+      if (error) {
+        console.error('❌ zone_control_history TTL:', error.message);
+        return;
+      }
+      const removed = (data && data.length) || 0;
+      console.log(
+        `✅ zone_control_history TTL: removed ${removed} rows older than ${ZONE_CONTROL_TTL_DAYS}d (cutoff ${cutoff})`,
+      );
+    } catch (e) {
+      console.error('❌ zone_control_history TTL:', e.message);
+    }
+  });
+
+  // ════════════════════════════════════════════════
   // 📜 THE CHRONICLE — 4-Act Daily Story
   // ════════════════════════════════════════════════
 

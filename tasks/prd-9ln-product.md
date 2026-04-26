@@ -2395,6 +2395,18 @@ Spec touches:
 
 ---
 
+### 9.107 zone_control_history grows unbounded — TTL added
+
+**Symptom (audit during 2026-04-26 combat-engine alignment).** `zone_control_history` accumulates one row per zone per round end, indefinitely. At full saturation (~10 zones running ~6 rounds/hour) that's ~14,400 rows/day with no cleanup. After a year that's ~5M rows in a table whose only readers (`routes/zones.js:1131` zone-bonus, `:1192` recalculate-identities) only ever query the **last 24 hours** (`gte('snapped_at', NOW() - 24h)`). Everything older than 24h is dead weight bloating the table.
+
+**Effect.** Pre-launch this is a non-issue (Supabase free tier handles millions of rows). Becomes a real cost driver at scale — index size, vacuum overhead, occasional cold-start scans on the snapped_at index. Wray's framing 2026-04-26: *"i'm paranoid about when we get more used the database getting really heavy."*
+
+**Resolution plan.** Daily TTL cron in `services/scheduler.js` at 03:00 UTC that DELETEs rows older than 30 days (configurable via `ZONE_CONTROL_TTL_DAYS` env var). 30 days is a 30× buffer past the 24h read window — generous forensic retention without unbounded growth. Caps the table at ~420k rows at peak saturation. No reader code changes needed.
+
+**Resolved 2026-04-26 in PR #?.** New cron at `scheduler.js` (03:00 UTC daily) — `DELETE FROM zone_control_history WHERE snapped_at < NOW() - INTERVAL '30 days'`. Logs row count removed each run. Tunable via `ZONE_CONTROL_TTL_DAYS` env var (default 30). `point_log` retention is intentionally NOT touched here — it's the canonical points-awarded audit trail tied to season scoring and future token distribution; needs its own scoping decision before any TTL.
+
+---
+
 Definitions of terms used throughout this PRD. Each ≤15 words.
 
 | Term | Definition |
