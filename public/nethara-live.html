@@ -468,6 +468,21 @@
     }
     .arena-card-slot:hover { border-color: rgba(212,166,75,0.35); }
     .arena-card-slot.slot-active { border-color: var(--slot-color, var(--gold)); box-shadow: 0 0 10px rgba(212,166,75,0.2); }
+    /* Slot windup pulse — fires for the player's own cast during the 1.2s
+       windup window. Anticipation cue parity with the spectator charge bar. */
+    .arena-card-slot.slot-windup {
+      border-color: #ffd23f;
+      box-shadow: 0 0 12px rgba(255,210,63,0.55), inset 0 0 8px rgba(255,210,63,0.15);
+      animation: slot-windup-pulse 0.6s ease-in-out infinite alternate;
+    }
+    @keyframes slot-windup-pulse {
+      from { box-shadow: 0 0 8px rgba(255,210,63,0.4), inset 0 0 6px rgba(255,210,63,0.1); }
+      to   { box-shadow: 0 0 18px rgba(255,210,63,0.85), inset 0 0 12px rgba(255,210,63,0.25); }
+    }
+    .mob-card-slot.slot-windup {
+      box-shadow: 0 0 12px #ffd23f;
+      animation: slot-windup-pulse 0.6s ease-in-out infinite alternate;
+    }
     /* Art panel */
     .slot-art {
       width: 42%; flex-shrink: 0; position: relative; overflow: hidden;
@@ -4231,6 +4246,16 @@
       const attacker = S.nines.get(resolveId(fromId));
       const from = attacker ? (attacker.name || getNineName(fromId)) : (data.attacker || getNineName(fromId));
       startWindupBar(fromId, data.duration_ms);
+      // Self-cast windup → pulse the player's own card slot so the bottom-tray
+      // anticipation matches what spectators see above the sprite. Cleared
+      // when the cast resolves (combat:attack handler swaps to slot-active).
+      if (fromId === String(S.playerId) && data.slot) {
+        const si = data.slot - 1;
+        const el = document.getElementById(`card-slot-${si}`);
+        if (el) el.classList.add('slot-windup');
+        const mel = document.getElementById(`mob-card-slot-${si}`);
+        if (mel) mel.classList.add('slot-windup');
+      }
       if (!data.card_name) return;
       // Recipient-aware narration — SELF/ALLY_AOE/ALLY_PICK/OFFENSIVE.
       const r = data.recipient || 'OFFENSIVE';
@@ -4313,6 +4338,11 @@
       // Self: drive timeline + ATK bar
       if (fromId === String(S.playerId) && data.slot) {
         const si = data.slot - 1;
+        // Resolution → swap windup pulse for slot-active flash.
+        const wel = document.getElementById(`card-slot-${si}`);
+        if (wel) wel.classList.remove('slot-windup');
+        const wmel = document.getElementById(`mob-card-slot-${si}`);
+        if (wmel) wmel.classList.remove('slot-windup');
         const valid = S.equippedCards.filter(Boolean);
         sweepSpellBar(si, valid.length || 3);
         const HSPD = {stormrage:30,smoulders:25,stonebark:10,ashenvale:22,nighthollow:30,dawnbringer:15,manastorm:25,plaguemire:20,darktide:20};
@@ -4546,6 +4576,11 @@
       // Clear any in-flight windup bars — server resets state on round
       // transitions; this is a defensive sweep so client never holds stale.
       S.nines.forEach((_, id) => clearWindupBar(id));
+      // Defensive: clear self-cast slot-windup pulse if it's still applied.
+      for (let i = 0; i < 3; i++) {
+        document.getElementById(`card-slot-${i}`)?.classList.remove('slot-windup');
+        document.getElementById(`mob-card-slot-${i}`)?.classList.remove('slot-windup');
+      }
       S._roundState     = 'INTERMISSION';
       S._roundNumber    = (data.roundNumber || 1) + 1;
       // §9.48: prefer the server's absolute nextRoundAt timestamp when
