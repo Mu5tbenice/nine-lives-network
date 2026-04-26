@@ -214,13 +214,45 @@
           <span class="pill-empty" id="telegram-status">NOT LINKED</span>
         </div>
         <p class="field__hint">
-          Link your Telegram so the bot can ping you when drops or events go live.
+          Join the 9LV Telegram and the bot will bind it to your Nine. Drops, events, and pings land there.
         </p>
 
+        <!-- Initial state — single button to start the link flow -->
         <div class="field__input-row" id="telegram-link-row">
           <button class="btn" id="telegram-link-btn" style="flex:1;">LINK TELEGRAM</button>
         </div>
 
+        <!-- Active state — code + group link + paste instructions -->
+        <div id="telegram-handshake" style="display:none; flex-direction:column; gap:10px;">
+          <div style="font-family:var(--font-data); font-size:10px; letter-spacing:1px; color:var(--text-faint);">
+            STEP 1 — JOIN THE GROUP
+          </div>
+          <a
+            href="https://t.me/iduj9q8mx98"
+            target="_blank"
+            rel="noopener"
+            id="telegram-join-btn"
+            class="btn"
+            style="display:block; text-align:center; padding:10px 14px; text-decoration:none;"
+          >
+            JOIN 9LV TELEGRAM →
+          </a>
+
+          <div style="font-family:var(--font-data); font-size:10px; letter-spacing:1px; color:var(--text-faint); margin-top:4px;">
+            STEP 2 — PASTE THIS IN THE CHAT
+          </div>
+          <div style="display:flex; gap:8px; align-items:stretch;">
+            <code id="telegram-cmd" style="flex:1; font-family:var(--font-data); font-size:13px; letter-spacing:0.5px; padding:10px 12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); border-radius:8px; color:var(--gold); user-select:all; word-break:break-all;">/start ABCD1234</code>
+            <button class="btn" id="telegram-cmd-copy">COPY</button>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; font-family:var(--font-data); font-size:9px; letter-spacing:1px; color:var(--text-faint);">
+            <span>Bot will confirm in-channel.</span>
+            <button id="telegram-cancel" style="background:none; border:none; color:var(--text-faint); cursor:pointer; font-family:inherit; font-size:9px; letter-spacing:1px; text-decoration:underline;">CANCEL</button>
+          </div>
+        </div>
+
+        <!-- Linked state — show username + unlink + persistent community CTA -->
         <div class="field__input-row" id="telegram-linked-row" style="display:none;">
           <span class="row__value" id="telegram-linked-handle" style="flex:1; text-align:left;">—</span>
           <button class="btn" id="telegram-unlink-btn">UNLINK</button>
@@ -407,10 +439,18 @@
     });
 
     // ─── TELEGRAM LINK ───
+    // Group-canonical flow per feedback_nerm_group_canonical.md — Nerm
+    // doesn't reliably DM, so the user joins the 9LV Telegram and pastes
+    // /start <code> in the chat. Bot processes in-channel, /settings polls
+    // status until the bind completes.
     var tgEls = {
       status: document.getElementById('telegram-status'),
       linkBtn: document.getElementById('telegram-link-btn'),
       linkRow: document.getElementById('telegram-link-row'),
+      handshake: document.getElementById('telegram-handshake'),
+      cmd: document.getElementById('telegram-cmd'),
+      cmdCopy: document.getElementById('telegram-cmd-copy'),
+      cancel: document.getElementById('telegram-cancel'),
       linkedRow: document.getElementById('telegram-linked-row'),
       linkedHandle: document.getElementById('telegram-linked-handle'),
       unlinkBtn: document.getElementById('telegram-unlink-btn'),
@@ -426,12 +466,18 @@
       tgEls.msg.className = 'field__msg ' + (kind === 'err' ? 'msg-err' : kind === 'ok' ? 'msg-ok' : '');
     }
 
+    function showHandshakePanel(show) {
+      tgEls.handshake.style.display = show ? 'flex' : 'none';
+      tgEls.linkRow.style.display = show ? 'none' : '';
+    }
+
     function setTelegramLinked(state) {
       var linked = !!(state && state.linked);
       if (linked) {
         tgEls.status.textContent = 'LINKED';
         tgEls.status.className = 'pill-ok';
         tgEls.linkRow.style.display = 'none';
+        showHandshakePanel(false);
         tgEls.linkedRow.style.display = '';
         tgEls.linkedHandle.textContent = state.telegram_username
           ? '@' + state.telegram_username
@@ -441,6 +487,7 @@
         tgEls.status.textContent = 'NOT LINKED';
         tgEls.status.className = 'pill-empty';
         tgEls.linkRow.style.display = '';
+        showHandshakePanel(false);
         tgEls.linkedRow.style.display = 'none';
         tgEls.cta.style.display = 'none';
       }
@@ -455,12 +502,11 @@
 
     function startTgPoll(deadlineMs) {
       stopTgPoll();
-      var attempt = 0;
       tgPollHandle = setInterval(function() {
-        attempt++;
         if (Date.now() > deadlineMs) {
           stopTgPoll();
           tgEls.linkBtn.disabled = false;
+          showHandshakePanel(false);
           setTgMsg("Didn't see a confirmation. Tap LINK TELEGRAM to try again.", 'err');
           return;
         }
@@ -470,15 +516,36 @@
             if (s && s.linked) {
               stopTgPoll();
               setTelegramLinked({ linked: true, telegram_username: s.telegram_username });
-              setTgMsg('Linked. Welcome aboard.', 'ok');
+              setTgMsg('Linked.', 'ok');
               tgEls.linkBtn.disabled = false;
             } else {
               var secsLeft = Math.max(0, Math.round((deadlineMs - Date.now()) / 1000));
-              setTgMsg('Waiting for confirmation in Telegram… (' + secsLeft + 's)', '');
+              setTgMsg('Waiting for the bot in the group… (' + secsLeft + 's)', '');
             }
           })
           .catch(function(){ /* swallow transient errors during polling */ });
       }, 3000);
+    }
+
+    function copyToClipboard(text) {
+      // Prefer the modern clipboard API; fall back to the legacy pattern
+      // for older mobile browsers. Either way, return a Promise.
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text);
+      }
+      return new Promise(function(resolve, reject){
+        try {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          resolve();
+        } catch (e) { reject(e); }
+      });
     }
 
     if (tgEls.linkBtn) {
@@ -497,16 +564,42 @@
               setTgMsg((res.body && res.body.error) || 'Could not start link', 'err');
               return;
             }
-            window.open(res.body.deeplink, '_blank');
-            setTgMsg('Waiting for confirmation in Telegram…', '');
-            // Poll for ~2 minutes; the code itself is valid 10min server-side
-            // but most users complete in seconds.
-            startTgPoll(Date.now() + 120000);
+            // Show the code + group link panel. User joins, pastes the
+            // command, the bot processes in-channel, our poll picks it up.
+            tgEls.cmd.textContent = '/start ' + res.body.code;
+            showHandshakePanel(true);
+            setTgMsg('Waiting for the bot in the group…', '');
+            // Poll for ~3 minutes (the code itself is valid 10min server-side).
+            startTgPoll(Date.now() + 180000);
           })
           .catch(function(e) {
             tgEls.linkBtn.disabled = false;
             setTgMsg('Network error: ' + e.message, 'err');
           });
+      });
+    }
+
+    if (tgEls.cmdCopy) {
+      tgEls.cmdCopy.addEventListener('click', function() {
+        var text = tgEls.cmd.textContent.trim();
+        copyToClipboard(text)
+          .then(function(){
+            var oldText = tgEls.cmdCopy.textContent;
+            tgEls.cmdCopy.textContent = 'COPIED';
+            setTimeout(function(){ tgEls.cmdCopy.textContent = oldText; }, 1500);
+          })
+          .catch(function(){
+            setTgMsg('Could not copy — tap the code text, then long-press to copy.', 'err');
+          });
+      });
+    }
+
+    if (tgEls.cancel) {
+      tgEls.cancel.addEventListener('click', function() {
+        stopTgPoll();
+        showHandshakePanel(false);
+        tgEls.linkBtn.disabled = false;
+        setTgMsg('', '');
       });
     }
 
