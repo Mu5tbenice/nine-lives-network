@@ -2317,7 +2317,7 @@ Spec touches:
 
 **Resolution plan.** Remove `plaguemire` entry from `HOUSE_BONUSES`. Remove the inert deploy-time `poison_aura` apply block in `loadDeploymentIntoEngine`. Plaguemire continues to function as a house — base stats + house-effect catalog (POISON/CORRODE/WITHER) unchanged. Zone-control bonus simply becomes "no bonus" when Plaguemire dominates, same as a zone with no dominant house. House identity / zone bonus redesign queued for the simulator-paired balance pass.
 
-**Resolved 2026-04-26 in PR #?.** Plaguemire entry removed from `HOUSE_BONUSES` (`combatEngine.js:88-99`); inert deploy-time apply block removed from `loadDeploymentIntoEngine` (`combatEngine.js:1780-1796`). Documented both with comments referencing this entry. The 8 working zone bonuses (Smoulders ATK, Stonebark HP, etc.) deliberately untouched — they're in clean state today and queued for the simulator pass as a designed initiative, not a strip. See `project_combat_design_2026_04_26.md` for the full ruling.
+**Resolved 2026-04-26 in PR #280.** Plaguemire entry removed from `HOUSE_BONUSES` (`combatEngine.js:88-99`); inert deploy-time apply block removed from `loadDeploymentIntoEngine` (`combatEngine.js:1780-1796`). Documented both with comments referencing this entry. The 8 working zone bonuses (Smoulders ATK, Stonebark HP, etc.) deliberately untouched — they're in clean state today and queued for the simulator pass as a designed initiative, not a strip. See `project_combat_design_2026_04_26.md` for the full ruling.
 
 ---
 
@@ -2329,7 +2329,7 @@ Spec touches:
 
 **Resolution plan.** Defer hard deletion until the voxel-pixel visual rebuild (Phase 3 of the 2026-04-26 alignment plan) scopes which helpers get carried forward. The voxel rebuild replaces the visual surface — same direction means deleting now is wasted effort. Tagged with a `§9.100` comment block at the top of `processArenaEvent` so the next author knows it's queued for removal.
 
-**Partially addressed 2026-04-26 in PR #?.** Comment block added at `nethara-live.html:8966-9791` flagging the dead pipeline + tracking which live helpers (animateProjectile, animateAuraBurst, firework*, _castByEffect, _pill, _cloudShield, _triggerCardCastVisual) must be preserved. Hard delete deferred to the voxel-pixel rebuild (Phase 3).
+**Partially addressed 2026-04-26 in PR #280.** Comment block added at `nethara-live.html:8966-9791` flagging the dead pipeline + tracking which live helpers (animateProjectile, animateAuraBurst, firework*, _castByEffect, _pill, _cloudShield, _triggerCardCastVisual) must be preserved. Hard delete deferred to the voxel-pixel rebuild (Phase 3).
 
 ---
 
