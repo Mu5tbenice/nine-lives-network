@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const supabase = require('../config/supabaseAdmin');
 const supabaseAdmin = require('../config/supabaseAdmin');
+const {
+  validateSolanaAddress,
+  checkWalletChangeAllowed,
+} = require('./walletValidator');
 
 /**
  * GET /api/players/:id
@@ -29,7 +33,8 @@ router.get('/:id', async (req, res) => {
         created_at,
         last_cast_at,
         is_active,
-        streak
+        streak,
+        wallet_address
       `,
       )
       .eq('id', id)
@@ -276,4 +281,95 @@ router.post('/update-guild', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+// ═══════════════════════════════════════════
+// POST /api/players/link-wallet
+// Body: { player_id, wallet_address }
+// Links a Solana wallet to a player. Validates base58 / length, enforces
+// uniqueness via DB partial unique index (migration 007), rate-limits
+// changes to once per 7 days. The wallet powers the future points→token
+// withdrawal flow (see project_nft_as_withdrawal_key.md) — no value is
+// sent to the wallet here; sign-message verification happens at NFT drop
+// time, not at link time.
+// ═══════════════════════════════════════════
+
+router.post('/link-wallet', async (req, res) => {
+  try {
+    const { player_id, wallet_address } = req.body || {};
+    if (!player_id) {
+      return res.status(400).json({ error: 'player_id required', code: 'NO_PLAYER' });
+    }
+
+    const v = validateSolanaAddress(wallet_address);
+    if (!v.ok) {
+      return res.status(400).json({ error: v.error, code: v.code });
+    }
+    const normalized = v.normalized;
+
+    const { data: current, error: readErr } = await supabaseAdmin
+      .from('players')
+      .select('id, wallet_address, wallet_changed_at')
+      .eq('id', player_id)
+      .single();
+
+    if (readErr || !current) {
+      return res.status(404).json({ error: 'Player not found', code: 'NO_PLAYER' });
+    }
+
+    if (current.wallet_address === normalized) {
+      return res.json({
+        success: true,
+        wallet_address: normalized,
+        no_change: true,
+        message: 'Wallet already linked',
+      });
+    }
+
+    const rl = checkWalletChangeAllowed(current.wallet_changed_at);
+    if (!rl.ok) {
+      return res.status(429).json({
+        error: `Wallet was changed recently — try again in ${rl.days_left} day${rl.days_left === 1 ? '' : 's'}.`,
+        code: 'RATE_LIMITED',
+        days_left: rl.days_left,
+      });
+    }
+
+    const { data: updated, error: writeErr } = await supabaseAdmin
+      .from('players')
+      .update({
+        wallet_address: normalized,
+        wallet_changed_at: new Date().toISOString(),
+      })
+      .eq('id', player_id)
+      .select('id, wallet_address')
+      .single();
+
+    if (writeErr) {
+      // Postgres unique-violation — wallet already linked to another player
+      if (writeErr.code === '23505') {
+        return res.status(409).json({
+          error: 'That wallet is already linked to another player.',
+          code: 'ALREADY_LINKED',
+        });
+      }
+      console.error('[link-wallet] write error:', writeErr);
+      return res.status(500).json({ error: 'Failed to link wallet', code: 'WRITE_ERROR' });
+    }
+
+    console.log(
+      `[link-wallet] player_id=${player_id} old=${current.wallet_address || 'null'} new=${normalized}`,
+    );
+
+    return res.json({
+      success: true,
+      wallet_address: updated.wallet_address,
+      message: current.wallet_address ? 'Wallet updated.' : 'Wallet linked.',
+      previous: current.wallet_address || null,
+    });
+  } catch (err) {
+    console.error('[link-wallet] server error:', err);
+    res.status(500).json({ error: 'Server error', code: 'SERVER_ERROR' });
+  }
+});
+
 module.exports = router;

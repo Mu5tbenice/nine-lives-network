@@ -2333,6 +2333,68 @@ Spec touches:
 
 ---
 
+### 9.101 NFT-as-withdrawal-key policy — load-bearing for the rewards layer
+
+**Decision (2026-04-26).** The Nines NFT is the **withdrawal key for the points-to-token conversion**, not a gate on registration, gameplay, or point accumulation. Anyone can register, play, and earn points; only NFT-holders can convert points → $9LV tokens once the Solana backend ships. NFT distribution is curated (hand-picked or claim-gated), targeting in-game high-scorers + Chronicle-engaged players + KOLs cross-referenced against X analytics. This policy is the reason registration anti-Sybil gates (account-age / followers / tweets in `auth.js:496–524`) are intentionally disabled — bots can register and play, but cannot cash out without an NFT.
+
+**Effect.** Any future "rewards / payout / claim" code path must check NFT-holding on the linked wallet, not "is this a real human" or "did they earn enough points." Gating gameplay or point-earning on NFT-holding is explicitly out of scope and would break the audience-growth premise.
+
+**Resolution plan.** Strategy entry, no code changes — locks the policy for future contributors so the rewards layer stays correctly framed. Resolved with the wallet-link infrastructure that operationalizes it.
+
+**Resolved 2026-04-26 in PR #?** — wallet-link infrastructure landed (POST /api/players/link-wallet + admin eligibility flags + curated CSV export). The `players.eligibility_flags` jsonb column + `wallet_address` partial-unique index together form the curation database that future NFT distribution drops will read.
+
+---
+
+### 9.102 Wallet signature verification required before any NFT or token send
+
+**Symptom.** The wallet-link flow shipped in PR #? is trust-on-first-submit — `POST /api/players/link-wallet` validates Solana base58 format and uniqueness but does not verify the player controls the linked wallet. Anyone can paste any address. This is acceptable for an interest-list surface (no value is sent to the wallet at link time), but becomes a **hard-blocking risk the moment the first NFT or token is sent** — a malicious or careless link could route value to a wallet the intended recipient does not control.
+
+**Effect.** Hard-blocks the first NFT drop and any future automated token claim. Without sign-message verification, a curated airdrop could send NFTs to wallets attackers pre-emptively linked to popular handles.
+
+**Resolution plan.** Just-in-time (not link-time) flow: when Wray hand-picks a recipient via the admin eligibility export, the recipient is prompted in-app to sign a server-issued message with their linked wallet (Phantom / SIWS pattern). Server verifies the signature against the linked `wallet_address` before releasing the NFT or queuing a claim. Adds a Phantom dependency only at drop time, not at every link. Ship as part of the first-NFT-drop PR; do not delay until then to write the helper.
+
+---
+
+### 9.103 Stale Twitter profile image + handle never refresh post-signup
+
+**Symptom.** `players.profile_image` and `players.twitter_handle` are written once at OAuth callback (`server/routes/auth.js:356–369`) and never updated. A player who changes their X avatar or renames their handle keeps the original cache forever — broken/old pfps render on dashboards and `/p/<old-handle>` URLs continue to resolve to a stale identity.
+
+**Effect.** Visible drift between the in-game profile and the live X profile. Low severity but increasingly visible as the audience rotates handles or refreshes branding.
+
+**Resolution plan.** On every successful `/auth/twitter/callback` (returning user branch), re-fetch `users.read` fields and update `players.profile_image` + `players.twitter_handle` if they differ. `twitter_id` stays canonical, so handle changes don't break the link. Pair with a backfill cron that walks active players weekly to catch users who haven't logged in but renamed.
+
+---
+
+### 9.104 Daily pack requires manual click — auto-claim on login would lift retention
+
+**Symptom.** `POST /api/packs/claim-daily` (`server/routes/packs.js:48–72`) only fires when a player navigates to `/packs.html` and clicks the button. Players who log in and head straight to arena or duels never collect the daily pack — they see no reward signal at all on most sessions.
+
+**Effect.** Retention loss. The daily pack is the only login-tied reward in the game; gating it behind an extra click on a separate page disconnects "I logged in" from "I got something." Audience research (per memory `project_round_end_dopamine.md`) puts immediate-feedback rewards at the top of the retention lever list.
+
+**Resolution plan.** In the OAuth returning-user branch (`auth.js:243–281`), after the `last_login` + streak update, call `packSystem.grantDailyPack(playerId)` if `isDailyClaimedToday(playerId)` returns false. Surface the grant on the dashboard via a one-shot toast or sticky widget (so the player sees the reward, not just the side-effect). Edge: ensure timezone alignment with the existing midnight-UTC pack scheduler — the auto-claim must consult the same UTC-day boundary the manual claim uses, not local time, or players in distant timezones could double-claim.
+
+---
+
+### 9.105 Account recovery story — losing X access loses the Nine
+
+**Symptom.** Identity is anchored exclusively on Twitter (`twitter_id`). A player who loses access to their X account (suspension, lockout, deletion) has no path to recover their Nine, lifetime points, NFTs, or wallet link.
+
+**Effect.** Severity rises sharply once the points→token withdrawal goes live — a player losing X access could lose access to their accrued claim. Pre-token economy this is a bad UX bug; post-token it's a financial loss.
+
+**Resolution plan.** Once wallet-link adoption is non-trivial, treat the linked wallet as a secondary recovery factor: a player who can sign a message from their linked Solana wallet can be re-bound to a new Twitter ID. Requires the §9.102 sign-message helper to exist first. Defer until §9.102 ships.
+
+---
+
+### 9.106 API auth model — all POSTs trust `player_id` in the body, no session/JWT
+
+**Symptom (audit during 2026-04-26 wallet-link build).** Every player-mutating route in `server/routes/players.js` (`/update-guild`, `/link-wallet`) and elsewhere accepts `player_id` from the request body with no session token, no JWT, no cookie auth, no Twitter-token verification. The dashboard reads `player_id` from `localStorage` and POSTs it directly. Anyone with another player's `player_id` (visible via the public profile API) can mutate that player's row — change guild tags, link wallets, etc.
+
+**Effect.** Identity-spoofing surface. For the wallet-link case specifically: an attacker can pre-emptively link their own wallet to a popular `player_id`, then when Wray sets an eligibility flag on that player the export will route NFTs to the attacker's wallet. The 7-day rate limit on rotations and the one-wallet-per-player unique index slow the attack but do not prevent it.
+
+**Resolution plan.** Codebase-wide refactor — out of scope for any single feature PR. Possible paths: (a) require an OAuth-issued access token in every player-mutating request and verify against `twitter_id`; (b) issue a session JWT at OAuth callback and require it as a `Bearer` header; (c) cookie session via a server-side session store. Wray to scope. Until this lands, the curated NFT-distribution model partially mitigates risk: §9.102's sign-message verification at drop time will catch wallet swaps before any value is sent.
+
+---
+
 Definitions of terms used throughout this PRD. Each ≤15 words.
 
 | Term | Definition |

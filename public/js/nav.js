@@ -12,6 +12,7 @@
     { href: '/packs.html', label: 'Packs' },
     { href: '/token.html', label: '$9LV' },
     { href: '/spellbook.html', label: 'Spellbook' },
+    { href: '/settings.html', label: 'Settings' },
     { href: '/how-to-play.html', label: 'Help' }
   ];
 

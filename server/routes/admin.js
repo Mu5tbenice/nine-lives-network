@@ -989,4 +989,128 @@ router.post(
   },
 );
 
+// ╔═══════════════════════════════════════════════════════════════════╗
+// ║  ELIGIBILITY FLAGS — admin-side NFT/whitelist/giveaway curation   ║
+// ║  (see project memory project_nft_as_withdrawal_key.md)            ║
+// ╚═══════════════════════════════════════════════════════════════════╝
+//
+// Players never see these flags in v1. Wray sets them per-curation to
+// build a snapshot of eligible (handle, wallet_address) pairs that any
+// future airdrop tool can consume. No claim contract, no on-chain calls.
+
+const FLAG_NAME_RE = /^[a-z][a-z0-9_]{0,63}$/;
+
+// POST /api/admin/players/:id/eligibility
+// Body: { flag: 'whitelist_round_1', value: true }
+// Sets or unsets one key on players.eligibility_flags. value=false removes
+// the key (instead of storing false) so flags-set checks remain truthy.
+router.post('/players/:id/eligibility', async (req, res) => {
+  try {
+    const playerId = parseInt(req.params.id, 10);
+    if (!playerId || Number.isNaN(playerId)) {
+      return res.status(400).json({ error: 'Invalid player id' });
+    }
+    const { flag, value } = req.body || {};
+    if (!flag || !FLAG_NAME_RE.test(String(flag))) {
+      return res.status(400).json({
+        error: 'flag must match ^[a-z][a-z0-9_]{0,63}$ (e.g. whitelist_round_1)',
+      });
+    }
+
+    const { data: current, error: readErr } = await supabaseAdmin
+      .from('players')
+      .select('id, eligibility_flags, twitter_handle, wallet_address')
+      .eq('id', playerId)
+      .single();
+    if (readErr || !current) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+
+    const flags = { ...(current.eligibility_flags || {}) };
+    if (value === false || value === null) {
+      delete flags[flag];
+    } else {
+      flags[flag] = true;
+    }
+
+    const { data: updated, error: writeErr } = await supabaseAdmin
+      .from('players')
+      .update({ eligibility_flags: flags })
+      .eq('id', playerId)
+      .select('id, twitter_handle, wallet_address, eligibility_flags')
+      .single();
+    if (writeErr) throw writeErr;
+
+    console.log(
+      `[admin/eligibility] player_id=${playerId} handle=${current.twitter_handle} flag=${flag} value=${flags[flag] ? 'true' : 'unset'}`,
+    );
+
+    res.json({
+      success: true,
+      player_id: updated.id,
+      twitter_handle: updated.twitter_handle,
+      wallet_address: updated.wallet_address || null,
+      eligibility_flags: updated.eligibility_flags,
+    });
+  } catch (e) {
+    console.error('[admin/eligibility] set error:', e);
+    res.status(500).json({ error: e.message || 'Server error' });
+  }
+});
+
+// GET /api/admin/eligibility/:flag?format=csv|json (default json)
+// Returns every player with the flag set to truthy. CSV mode emits a
+// header + rows of handle,wallet_address,player_id, filtered to only
+// rows that have a wallet_address — that's the airdrop-ready set.
+router.get('/eligibility/:flag', async (req, res) => {
+  try {
+    const flag = String(req.params.flag || '');
+    if (!FLAG_NAME_RE.test(flag)) {
+      return res.status(400).json({ error: 'Invalid flag name' });
+    }
+    const format = (req.query.format || 'json').toLowerCase();
+
+    const { data, error } = await supabaseAdmin
+      .from('players')
+      .select('id, twitter_handle, wallet_address, eligibility_flags, created_at')
+      .filter(`eligibility_flags->>${flag}`, 'eq', 'true')
+      .order('id', { ascending: true });
+    if (error) throw error;
+
+    const rows = data || [];
+
+    if (format === 'csv') {
+      const ready = rows.filter((r) => r.wallet_address);
+      const lines = ['twitter_handle,wallet_address,player_id'];
+      ready.forEach((r) => {
+        // Defensive — none of these fields should contain commas, but escape anyway.
+        const handle = String(r.twitter_handle || '').replace(/"/g, '""');
+        const wallet = String(r.wallet_address || '').replace(/"/g, '""');
+        lines.push(`"${handle}","${wallet}",${r.id}`);
+      });
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="eligibility-${flag}-${new Date().toISOString().slice(0, 10)}.csv"`,
+      );
+      return res.send(lines.join('\n') + '\n');
+    }
+
+    res.json({
+      flag,
+      total: rows.length,
+      with_wallet: rows.filter((r) => r.wallet_address).length,
+      players: rows.map((r) => ({
+        id: r.id,
+        twitter_handle: r.twitter_handle,
+        wallet_address: r.wallet_address || null,
+        created_at: r.created_at,
+      })),
+    });
+  } catch (e) {
+    console.error('[admin/eligibility] export error:', e);
+    res.status(500).json({ error: e.message || 'Server error' });
+  }
+});
+
 module.exports = router;
