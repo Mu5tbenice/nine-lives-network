@@ -91,6 +91,12 @@ function buildAttackBroadcastPayload({
     slot: slot + 1,
     card_name: card?.name || null,
     effect: card?.effect_1 || null,
+    // PR-E: classify the slot card so the client log can suppress the
+    // "X CardName → Y -dmg [HEAL]" narration when the slot's effect is
+    // non-OFFENSIVE — auto-attacks always damage an enemy regardless of
+    // what the slot card does, so labelling the swing with a heal/buff
+    // name was misleading.
+    recipient: classifyEffectRecipient(card?.effect_1),
     hp,
     maxHp,
     guildA: caster.guildTag,
@@ -185,7 +191,7 @@ function buildWindupBroadcastPayload({
  * ALLY_AOE casts (BLESS/INSPIRE) and is the caster for SELF casts; the
  * recipient field tells the client how to narrate it.
  */
-function buildEffectBroadcastPayload({ caster, target, recipient, effect, card }) {
+function buildEffectBroadcastPayload({ caster, target, recipient, effect, card, slot }) {
   return {
     effect,
     by: caster.playerName,
@@ -194,6 +200,9 @@ function buildEffectBroadcastPayload({ caster, target, recipient, effect, card }
     targetId: target?.playerId || null,
     recipient: recipient || 'OFFENSIVE',
     card_name: card?.name || null,
+    // PR-E: slot is 1-indexed (matches combat:windup + combat:attack). null
+    // when caller doesn't know (legacy callers / non-cast pathways).
+    slot: typeof slot === 'number' ? slot + 1 : null,
     x: caster.x,
     y: caster.y,
     tx: target?.x,

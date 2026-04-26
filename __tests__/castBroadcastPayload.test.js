@@ -121,6 +121,7 @@ describe('buildEffectBroadcastPayload — PR-1 card_name field', () => {
       recipient: 'OFFENSIVE',
       effect: 'BURN',
       card: cinderSnap,
+      slot: 0,
     });
     expect(out).toEqual({
       effect: 'BURN',
@@ -130,6 +131,7 @@ describe('buildEffectBroadcastPayload — PR-1 card_name field', () => {
       targetId: 'p-defender',
       recipient: 'OFFENSIVE',
       card_name: 'Cinder Snap',
+      slot: 1, // 1-indexed for UI
       x: 100,
       y: 200,
       tx: 300,
@@ -309,5 +311,91 @@ describe('buildEffectBroadcastPayload — PR-A recipient field', () => {
     expect(out.recipient).toBe('ALLY_AOE');
     expect(out.on).toBeNull();
     expect(out.targetId).toBeNull();
+  });
+
+  test('slot omitted → null (defensive for legacy callers)', () => {
+    const out = buildEffectBroadcastPayload({
+      caster,
+      target: defender,
+      effect: 'BURN',
+      card: cinderSnap,
+    });
+    expect(out.slot).toBeNull();
+  });
+
+  test('slot is 1-indexed when provided', () => {
+    const out = buildEffectBroadcastPayload({
+      caster,
+      target: defender,
+      effect: 'BURN',
+      card: cinderSnap,
+      slot: 2,
+    });
+    expect(out.slot).toBe(3);
+  });
+});
+
+describe('buildAttackBroadcastPayload — PR-E recipient classification', () => {
+  test('OFFENSIVE card emits recipient=OFFENSIVE', () => {
+    const out = buildAttackBroadcastPayload({
+      caster,
+      defender,
+      dmg: 38,
+      isCrit: false,
+      critMult: 1,
+      slot: 0,
+      card: { name: 'Cinder Snap', effect_1: 'BURN' },
+      hp: 62,
+      maxHp: 100,
+    });
+    expect(out.recipient).toBe('OFFENSIVE');
+  });
+
+  test('ALLY_PICK card (HEAL) emits recipient=ALLY_PICK on auto-attack', () => {
+    const out = buildAttackBroadcastPayload({
+      caster,
+      defender,
+      dmg: 14,
+      isCrit: false,
+      critMult: 1,
+      slot: 0,
+      card: { name: 'Regrowth', effect_1: 'HEAL' },
+      hp: 86,
+      maxHp: 100,
+    });
+    // Damage is real (auto-attack always hits enemy) but recipient field
+    // tells the client to drop the card name + effect tag from the log.
+    expect(out.recipient).toBe('ALLY_PICK');
+    expect(out.dmg).toBe(14);
+  });
+
+  test('SELF card (WARD) emits recipient=SELF on auto-attack', () => {
+    const out = buildAttackBroadcastPayload({
+      caster,
+      defender,
+      dmg: 22,
+      isCrit: false,
+      critMult: 1,
+      slot: 0,
+      card: { name: 'Stone Bulwark', effect_1: 'WARD' },
+      hp: 78,
+      maxHp: 100,
+    });
+    expect(out.recipient).toBe('SELF');
+  });
+
+  test('null/missing card defaults to OFFENSIVE', () => {
+    const out = buildAttackBroadcastPayload({
+      caster,
+      defender,
+      dmg: 10,
+      isCrit: false,
+      critMult: 1,
+      slot: 0,
+      card: null,
+      hp: 90,
+      maxHp: 100,
+    });
+    expect(out.recipient).toBe('OFFENSIVE');
   });
 });

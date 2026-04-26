@@ -504,7 +504,7 @@ function healAmp(caster) {
   return bk === 'heal_amp' ? caster._zoneBonus.bonus.mult || 1.5 : 1.0;
 }
 
-function applyEffect(caster, target, card, all) {
+function applyEffect(caster, target, card, all, slot) {
   const e = card?.effect_1;
   if (!e) return;
   if (caster.silenced > 0) {
@@ -737,6 +737,7 @@ function applyEffect(caster, target, card, all) {
       recipient,
       effect: e,
       card,
+      slot, // PR-E: client uses this to clear .slot-windup on the matching slot
     }),
   );
 }
@@ -748,7 +749,7 @@ function resolveAttack(caster, defender, all) {
 
   const slot = caster.cardIdx % Math.max(1, caster.cards.length);
   const card = caster.cards[slot];
-  applyEffect(caster, defender, card, all);
+  applyEffect(caster, defender, card, all, slot);
 
   // Zone bonus: smoulders +20% ATK
   const bk = caster._zoneBonus?.bonus?.key;
@@ -1267,7 +1268,7 @@ async function tickZone(zoneId, zs) {
       // For ALLY_AOE, tgt stays as windup-locked (or null) — applyEffect
       // ignores the param and loops allies internally for BLESS/INSPIRE.
 
-      if (card) applyEffect(nine, tgt || nine, card, all);
+      if (card) applyEffect(nine, tgt || nine, card, all, slot);
       nine.cardIdx++;
       nine.drainActive = false;
       nine._windupActive = false;
