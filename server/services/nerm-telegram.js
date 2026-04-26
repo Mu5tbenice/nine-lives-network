@@ -741,8 +741,27 @@ VOICE:
     }
   }
 
+  // /link <code>           — canonical link handshake (group-canonical)
+  // /link@Nerm9LV_Bot <code> — bot-scoped form for multi-bot groups
+  // Using a non-/start command avoids triggering every other bot in the
+  // 9LV group that responds to /start. The @bot suffix scopes to Nerm
+  // even if some other bot ever registers /link.
+  bot.onText(/^\/link(?:@\w+)?(?:\s+([A-Za-z0-9]+))?/, (msg, match) => {
+    const payload = match && match[1] ? match[1].trim() : null;
+    if (!payload) {
+      bot.sendMessage(
+        msg.chat.id,
+        'Usage: /link <code> — get the code from Settings on the site.',
+      );
+      return;
+    }
+    return handleLinkStart(msg, payload);
+  });
+
   // /start  — group flavor reply
-  // /start <code>  — link handshake (private chat OR group)
+  // /start <code>  — link handshake (kept as fallback / for any external
+  //                  caller that still uses the t.me/<bot>?start=<code>
+  //                  deeplink form)
   // /start@Nerm9LV_Bot <code>  — Telegram emits this form when the bot
   //                              is added to a group; same handler.
   bot.onText(/^\/start(?:@\w+)?(?:\s+([A-Za-z0-9]+))?/, (msg, match) => {
