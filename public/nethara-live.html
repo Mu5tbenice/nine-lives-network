@@ -4178,6 +4178,68 @@
       });
     });
 
+    // ── WINDUP CHARGE BAR ──────────────────────────────────────────────
+    // Pixi-side charge bar that fills under each fighter's HP bar during
+    // the 1.2s windup window emitted by the server. Cleared when the cast
+    // resolves (combat:effect / combat:attack from same attacker) or when
+    // the attacker is KO'd mid-windup.
+    function startWindupBar(spriteId, durationMs) {
+      const sp = S.nines.get(resolveId(spriteId));
+      if (!sp || !sp.container || !S.arenaApp) return;
+      // Cancel any in-flight bar for this fighter
+      clearWindupBar(spriteId);
+      const bar = new PIXI.Graphics();
+      bar.zIndex = 5;
+      sp.container.addChild(bar);
+      sp._windupBar = bar;
+      const startedAt = performance.now();
+      const dur = Math.max(200, Math.min(3000, durationMs || 1200));
+      const tickerFn = () => {
+        const elapsed = performance.now() - startedAt;
+        const t = Math.min(1, elapsed / dur);
+        bar.clear();
+        bar.beginFill(0x111111, 0.7);
+        bar.drawRoundedRect(-14, (window.SPRITE_SIZE || 26) * 0.34 + 5, 28, 2, 1);
+        bar.endFill();
+        bar.beginFill(0xffd23f, 0.95);
+        bar.drawRoundedRect(-14, SPRITE_SIZE * 0.34 + 5, 28 * t, 2, 1);
+        bar.endFill();
+        if (t >= 1) {
+          S.arenaApp.ticker.remove(tickerFn);
+          sp._windupTickerFn = null;
+        }
+      };
+      S.arenaApp.ticker.add(tickerFn);
+      sp._windupTickerFn = tickerFn;
+    }
+
+    function clearWindupBar(spriteId) {
+      const sp = S.nines.get(resolveId(spriteId));
+      if (!sp) return;
+      if (sp._windupTickerFn && S.arenaApp) {
+        try { S.arenaApp.ticker.remove(sp._windupTickerFn); } catch (e) {}
+        sp._windupTickerFn = null;
+      }
+      if (sp._windupBar && sp.container) {
+        try { sp.container.removeChild(sp._windupBar); sp._windupBar.destroy(); } catch (e) {}
+        sp._windupBar = null;
+      }
+    }
+
+    socket.on('combat:windup', (data) => {
+      const fromId = String(data.attackerId || data.attacker);
+      const toId   = String(data.targetId   || data.target);
+      const attacker = S.nines.get(resolveId(fromId));
+      const target   = S.nines.get(resolveId(toId));
+      const from = attacker ? (attacker.name || getNineName(fromId)) : (data.attacker || getNineName(fromId));
+      const to   = target   ? (target.name   || getNineName(toId))   : (data.target   || getNineName(toId));
+      startWindupBar(fromId, data.duration_ms);
+      if (data.card_name) {
+        addFeedEvent(`✨ ${from} charges <span class="feed-card">${data.card_name}</span> at ${to}…`, 'cast');
+        addBattleLog(`${from} charges ${data.card_name} at ${to}…`, 'default');
+      }
+    });
+
     socket.on('combat:attack', (data) => {
       const fromId = String(data.attackerId || data.attacker);
       const toId   = String(data.defenderId || data.defender);
@@ -4186,6 +4248,7 @@
       const target   = S.nines.get(resolveId(toId));
       const from = attacker ? (attacker.name || getNineName(fromId)) : getNineName(fromId);
       const to   = target   ? (target.name   || getNineName(toId))   : getNineName(toId);
+      clearWindupBar(fromId);
 
       // Screen positions — prefer live sprite, fall back to engine coords from event
       const sx = attacker
@@ -4276,6 +4339,8 @@
       const tId  = resolveId(data.targetId || data.on);
       const caster = S.nines.get(cId);
       const target  = S.nines.get(tId);
+      // Resolution clears the charge bar
+      clearWindupBar(cId);
 
       // Named cast beat — render once per spell-cast event so each card gets
       // a moment in the log. Skip if no card_name (legacy events / non-card
@@ -4350,6 +4415,7 @@
       const killerId = resolveId(data.killerId);
       const sprite = S.nines.get(koId);
       if (sprite) animateKO(sprite);
+      clearWindupBar(koId);
       if (String(koId) === String(S.playerId)) {
         S.isDeployed = false;
         S._withdrawnAfterKO = true;
@@ -4449,6 +4515,9 @@
       // §9.94: round just ended → deploy is open during intermission, any
       // in-flight lockout countdown is stale. Clear before any other state work.
       if (typeof window._clearDeployLockout === 'function') window._clearDeployLockout();
+      // Clear any in-flight windup bars — server resets state on round
+      // transitions; this is a defensive sweep so client never holds stale.
+      S.nines.forEach((_, id) => clearWindupBar(id));
       S._roundState     = 'INTERMISSION';
       S._roundNumber    = (data.roundNumber || 1) + 1;
       // §9.48: prefer the server's absolute nextRoundAt timestamp when

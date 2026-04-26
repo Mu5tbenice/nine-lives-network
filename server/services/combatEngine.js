@@ -16,6 +16,7 @@ const {
   calculateRoundXP,
   buildAttackBroadcastPayload,
   buildEffectBroadcastPayload,
+  buildWindupBroadcastPayload,
 } = require('./combatEnginePayloads');
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────
@@ -30,6 +31,7 @@ const INTERMISSION_MS = 35 * 1000; // §9.48: 35s between rounds (was 25s — to
 // then removed in §9.77. See §9.41 item 2.
 const SPD_FLOOR = 5.5; // card cycle floor (effects stay deliberate)
 const ATK_FLOOR = 2.5; // auto-attack floor (constant visual activity)
+const WINDUP_S = 1.2; // arena rhythm — telegraph cast 1.2s before resolution
 const CORRODE_CD = 5.0; // 5 second cooldown — time-based, tick-rate independent
 const ZONE_W = 900;
 const ZONE_H = 500;
@@ -872,6 +874,10 @@ function handleKO(nine, zoneId, all) {
   // Mark as waiting — will become withdrawn at round start (must click rejoin)
   nine.waitingForRound = true;
   nine._wasKOdThisRound = true;
+  // Cancel any in-flight windup — client clears bar on combat:ko anyway,
+  // but server-side state must reset so the next round starts clean.
+  nine._windupActive = false;
+  nine._windupTarget = null;
 
   // Derive killer per PRD §9.2 — direct hit takes priority, DOT applier as fallback.
   const killerId = nine._lastHitById ?? nine._dotAppliedById ?? null;
@@ -1149,14 +1155,54 @@ async function tickZone(zoneId, zs) {
     );
     if (!enemies.length) continue;
 
+    // Windup telegraph — fire once per cycle when cardTimer enters its
+    // last WINDUP_S window. Locks target so the telegraph is honest;
+    // resolution re-picks only if the locked target dies/withdraws.
+    if (
+      nine.cardTimer > 0 &&
+      nine.cardTimer <= WINDUP_S &&
+      !nine._windupActive
+    ) {
+      const slot = nine.cardIdx % Math.max(1, nine.cards.length);
+      const card = nine.cards[slot];
+      const tgt = pickTarget(nine, all);
+      if (card && tgt) {
+        nine._windupActive = true;
+        nine._windupTarget = tgt;
+        broadcast(
+          zoneId,
+          'combat:windup',
+          buildWindupBroadcastPayload({
+            caster: nine,
+            target: tgt,
+            card,
+            slot,
+            durationMs: Math.round(WINDUP_S * 1000),
+          }),
+        );
+      }
+    }
+
     // Card effect rotation
     if (nine.cardTimer <= 0) {
       const slot = nine.cardIdx % Math.max(1, nine.cards.length);
       const card = nine.cards[slot];
-      const tgt = pickTarget(nine, all);
+      // Prefer the windup-locked target if still valid; else re-pick so the
+      // cast lands on a live enemy when the locked one died mid-windup.
+      let tgt = nine._windupTarget;
+      if (
+        !tgt ||
+        tgt.hp <= 0 ||
+        tgt.waitingForRound ||
+        tgt.withdrawn
+      ) {
+        tgt = pickTarget(nine, all);
+      }
       if (card) applyEffect(nine, tgt || nine, card, all);
       nine.cardIdx++;
       nine.drainActive = false;
+      nine._windupActive = false;
+      nine._windupTarget = null;
       const spd = nine.stats.spd + (nine.hasteBonus || 0);
       nine.cardTimer = cardInterval(spd);
       if (nine.hasteTurns > 0) {
@@ -1551,6 +1597,8 @@ function startRound(zoneId, zs, all) {
     n.lx = 0;
     n.ly = 0;
     n._wasKOdThisRound = false;
+    n._windupActive = false;
+    n._windupTarget = null;
   });
 
   broadcast(zoneId, 'arena:round_start', {
