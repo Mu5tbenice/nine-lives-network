@@ -2309,6 +2309,30 @@ Spec touches:
 
 ---
 
+### 9.99 Plaguemire `poison_aura` zone bonus declared but never wired — strip pending balance simulator
+
+**Symptom (2026-04-26 combat-engine alignment audit).** `combatEngine.js:97` declared `plaguemire: { key: 'poison_aura' }` in `HOUSE_BONUSES`, intending the canon §13 effect "enemies start each round with 1 POISON stack." `loadDeploymentIntoEngine` at line 1782–1796 had a deploy-time apply block keyed on `bonus.key === 'poison_aura'`. But `HOUSE_BONUSES.plaguemire` carried no payload (no `mult`, no `pct`, no `value`) — only the `key` string — and zoneBonusCache passed that hollow object straight through. Net: when Plaguemire dominates a zone, the deploy-time check evaluated truthy on the key match but the apply block was the only side effect path, and even that path was inert because §13's "round start poison" was never wired into `startRound` (the deploy-time fallback only fires for newly-deployed Nines mid-round, not at round start). Result: Plaguemire has had no effective zone bonus all along.
+
+**Effect.** One of nine houses runs without its zone-control passive. Low practical impact today (zone bonuses are a low-attention area), but a dishonest mechanic on the books. Wray's call 2026-04-26: "things like that should be removed until we do a full game balance sim for the core mechanics. I still think a house identity passive or zone bonus is a cool feature to have but right now the game is in a state of ambiguous balance." Strip the half-wired feature; restore as part of the balance-simulator initiative when the broader house/zone tuning happens cleanly.
+
+**Resolution plan.** Remove `plaguemire` entry from `HOUSE_BONUSES`. Remove the inert deploy-time `poison_aura` apply block in `loadDeploymentIntoEngine`. Plaguemire continues to function as a house — base stats + house-effect catalog (POISON/CORRODE/WITHER) unchanged. Zone-control bonus simply becomes "no bonus" when Plaguemire dominates, same as a zone with no dominant house. House identity / zone bonus redesign queued for the simulator-paired balance pass.
+
+**Resolved 2026-04-26 in PR #?.** Plaguemire entry removed from `HOUSE_BONUSES` (`combatEngine.js:88-99`); inert deploy-time apply block removed from `loadDeploymentIntoEngine` (`combatEngine.js:1780-1796`). Documented both with comments referencing this entry. The 8 working zone bonuses (Smoulders ATK, Stonebark HP, etc.) deliberately untouched — they're in clean state today and queued for the simulator pass as a designed initiative, not a strip. See `project_combat_design_2026_04_26.md` for the full ruling.
+
+---
+
+### 9.100 Stale `processArenaEvent` legacy event router — flagged for removal in voxel rebuild
+
+**Symptom (2026-04-26 combat-engine alignment audit).** `nethara-live.html:8966-9791` (~830 lines) defines `processArenaEvent` + private helpers (`processEffectCast`, `getEffectEmoji`, `animateSpellProjectile`) — a V2-era event-routing pipeline that maps legacy event types (`effect_applied`, `dot_damage`, `cast`, `effect_tick`, etc.) to per-effect visual handlers. The current arena pipeline routes directly through `socket.on('combat:attack' | 'combat:effect' | 'combat:dot' | 'combat:ko' | 'combat:windup' | 'combat:regen')` handlers — `processArenaEvent` has no call sites today.
+
+**Effect.** Dead code surface area + maintenance ambiguity. Newer contributors might mistake it for the live pipeline. Live functions referenced from inside `processArenaEvent` (firework helpers, `animateAuraBurst`, `_castByEffect`, etc.) ARE used elsewhere and must be preserved.
+
+**Resolution plan.** Defer hard deletion until the voxel-pixel visual rebuild (Phase 3 of the 2026-04-26 alignment plan) scopes which helpers get carried forward. The voxel rebuild replaces the visual surface — same direction means deleting now is wasted effort. Tagged with a `§9.100` comment block at the top of `processArenaEvent` so the next author knows it's queued for removal.
+
+**Partially addressed 2026-04-26 in PR #?.** Comment block added at `nethara-live.html:8966-9791` flagging the dead pipeline + tracking which live helpers (animateProjectile, animateAuraBurst, firework*, _castByEffect, _pill, _cloudShield, _triggerCardCastVisual) must be preserved. Hard delete deferred to the voxel-pixel rebuild (Phase 3).
+
+---
+
 Definitions of terms used throughout this PRD. Each ≤15 words.
 
 | Term | Definition |
