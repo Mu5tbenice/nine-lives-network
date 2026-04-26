@@ -2403,7 +2403,7 @@ Spec touches:
 
 **Resolution plan.** Daily TTL cron in `services/scheduler.js` at 03:00 UTC that DELETEs rows older than 30 days (configurable via `ZONE_CONTROL_TTL_DAYS` env var). 30 days is a 30× buffer past the 24h read window — generous forensic retention without unbounded growth. Caps the table at ~420k rows at peak saturation. No reader code changes needed.
 
-**Resolved 2026-04-26 in PR #?.** New cron at `scheduler.js` (03:00 UTC daily) — `DELETE FROM zone_control_history WHERE snapped_at < NOW() - INTERVAL '30 days'`. Logs row count removed each run. Tunable via `ZONE_CONTROL_TTL_DAYS` env var (default 30). `point_log` retention is intentionally NOT touched here — it's the canonical points-awarded audit trail tied to season scoring and future token distribution; needs its own scoping decision before any TTL.
+**Resolved 2026-04-26 in PR #285.** New cron at `scheduler.js` (03:00 UTC daily) — `DELETE FROM zone_control_history WHERE snapped_at < NOW() - INTERVAL '30 days'`. Logs row count removed each run. Tunable via `ZONE_CONTROL_TTL_DAYS` env var (default 30). `point_log` retention is intentionally NOT touched here — it's the canonical points-awarded audit trail tied to season scoring and future token distribution; needs its own scoping decision before any TTL.
 
 ---
 
