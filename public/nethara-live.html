@@ -4330,10 +4330,18 @@
       }
 
       const critPart = data.crit ? ` <span class="feed-crit">★ CRIT!</span>` : '';
-      const cardLabel = data.card_name ? `<span class="feed-card">${data.card_name}</span> ` : '';
-      const cardPlain = data.card_name ? `${data.card_name} ` : '';
-      addFeedEvent(`⚔️ ${from} ${cardLabel}→ ${to} <strong>-${dmg}</strong>${critPart}${data.effect ? ` [${data.effect}]` : ''}`, 'attack');
-      addBattleLog(`${from} ${cardPlain}→ ${to} -${dmg}${data.crit?' CRIT':''}${data.effect?' ['+data.effect+']':''}`, 'default');
+      // PR-E: only show card name + effect tag for OFFENSIVE-slot auto-attacks.
+      // Auto-attacks always damage an enemy regardless of slot card type, so
+      // labelling a HEAL/WARD/SURGE swing with "[HEAL]" misled players into
+      // thinking the heal was hitting them. Damage still appears; the slot
+      // card just isn't narrated for non-offensive cycles (cast cycle still
+      // narrates via combat:effect).
+      const isOffensiveSlot = (data.recipient || 'OFFENSIVE') === 'OFFENSIVE';
+      const cardLabel = (isOffensiveSlot && data.card_name) ? `<span class="feed-card">${data.card_name}</span> ` : '';
+      const cardPlain = (isOffensiveSlot && data.card_name) ? `${data.card_name} ` : '';
+      const effTag = (isOffensiveSlot && data.effect) ? ` [${data.effect}]` : '';
+      addFeedEvent(`⚔️ ${from} ${cardLabel}→ ${to} <strong>-${dmg}</strong>${critPart}${effTag}`, 'attack');
+      addBattleLog(`${from} ${cardPlain}→ ${to} -${dmg}${data.crit?' CRIT':''}${effTag}`, 'default');
 
       // Self: drive timeline + ATK bar
       if (fromId === String(S.playerId) && data.slot) {
@@ -4384,6 +4392,18 @@
       const target  = S.nines.get(tId);
       // Resolution clears the charge bar
       clearWindupBar(cId);
+      // PR-E: clear the slot-windup pulse on the matching slot when this is
+      // the local player's cast. The cast cycle and auto-attack timers run
+      // independently; combat:attack alone wasn't enough to clear .slot-windup
+      // because it might fire for a different slot than the one that just
+      // wound up. Belt-and-braces: also clear ALL three slots' windup classes
+      // when the local player casts, in case any leaked from a prior cycle.
+      if (String(cId) === String(S.playerId)) {
+        for (let i = 0; i < 3; i++) {
+          document.getElementById(`card-slot-${i}`)?.classList.remove('slot-windup');
+          document.getElementById(`mob-card-slot-${i}`)?.classList.remove('slot-windup');
+        }
+      }
 
       // Named cast beat — render once per spell-cast event so each card gets
       // a moment in the log. Skip if no card_name (legacy events / non-card
