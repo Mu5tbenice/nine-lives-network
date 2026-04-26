@@ -242,7 +242,7 @@
             STEP 2 — PASTE THIS IN THE CHAT
           </div>
           <div style="display:flex; gap:8px; align-items:stretch;">
-            <code id="telegram-cmd" style="flex:1; font-family:var(--font-data); font-size:13px; letter-spacing:0.5px; padding:10px 12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); border-radius:8px; color:var(--gold); user-select:all; word-break:break-all;">/start ABCD1234</code>
+            <code id="telegram-cmd" style="flex:1; font-family:var(--font-data); font-size:13px; letter-spacing:0.5px; padding:10px 12px; background:rgba(0,0,0,0.5); border:1px solid var(--border); border-radius:8px; color:var(--gold); user-select:all; word-break:break-all;">/link@Nerm9LV_Bot ABCD1234</code>
             <button class="btn" id="telegram-cmd-copy">COPY</button>
           </div>
 
@@ -566,7 +566,10 @@
             }
             // Show the code + group link panel. User joins, pastes the
             // command, the bot processes in-channel, our poll picks it up.
-            tgEls.cmd.textContent = '/start ' + res.body.code;
+            // /link@<bot> form avoids triggering every other bot in the
+            // group (most respond to /start; few register /link).
+            var botU = res.body.bot_username || 'Nerm9LV_Bot';
+            tgEls.cmd.textContent = '/link@' + botU + ' ' + res.body.code;
             showHandshakePanel(true);
             setTgMsg('Waiting for the bot in the group…', '');
             // Poll for ~3 minutes (the code itself is valid 10min server-side).
