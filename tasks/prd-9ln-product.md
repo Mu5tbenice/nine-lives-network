@@ -2415,7 +2415,7 @@ Spec touches:
 
 **Resolution plan.** Extract the round-end evaluation into a pure helper `evaluateRoundEnd(nines, anyKO)` returning `'last_standing' | 'mutual_ko' | null`. The new `mutual_ko` reason covers the empty-survivors case. `tickZone` calls the helper and invokes `endRound(zoneId, zs, all, endReason)` whenever the helper returns non-null.
 
-**Resolved 2026-04-26 in PR #?.** Helper added to `combatEnginePayloads.js` with 9 unit tests (last-guild-standing variants, lone wolf, 1v1 mutual KO, AOE wipe, withdrawn-as-dead handling, null/empty defensive cases). `tickZone` refactored to call `evaluateRoundEnd` instead of inlining the check. Behavior change: a 1v1 mutual KO now ends the round with `endReason: 'mutual_ko'` (no winning guild) and the standard 35s intermission fires.
+**Resolved 2026-04-26 in PR #287.** Helper added to `combatEnginePayloads.js` with 9 unit tests (last-guild-standing variants, lone wolf, 1v1 mutual KO, AOE wipe, withdrawn-as-dead handling, null/empty defensive cases). `tickZone` refactored to call `evaluateRoundEnd` instead of inlining the check. Behavior change: a 1v1 mutual KO now ends the round with `endReason: 'mutual_ko'` (no winning guild) and the standard 35s intermission fires.
 
 ---
 
