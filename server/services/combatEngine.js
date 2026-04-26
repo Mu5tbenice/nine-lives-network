@@ -17,6 +17,7 @@ const {
   buildAttackBroadcastPayload,
   buildEffectBroadcastPayload,
   buildWindupBroadcastPayload,
+  classifyEffectRecipient,
 } = require('./combatEnginePayloads');
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────
@@ -509,6 +510,11 @@ function applyEffect(caster, target, card, all) {
   }
   const amp = effectAmp(caster);
   const hamp = healAmp(caster);
+  // Track who the cast actually lands on, for the combat:effect broadcast.
+  // Defaults to the param `target` (caller-supplied enemy for OFFENSIVE).
+  // HEAL overrides inside its case to the picked ally; SELF/ALLY_AOE
+  // override after the switch via the classifier.
+  let bcastTarget = target;
   switch (e) {
     case 'BURN':
       target.burnStacks = Math.min(3, target.burnStacks + 1);
@@ -536,6 +542,7 @@ function applyEffect(caster, target, card, all) {
     case 'HEAL':
       {
         const a = pickHealTarget(caster, all);
+        bcastTarget = a; // narrate the actual heal recipient, not the enemy passed in
         const amt = Math.floor(caster.maxHp * 0.07 * amp * hamp);
         const raw = a.witherActive > 0 ? Math.floor(amt * 0.5) : amt;
         const before = a.hp;
@@ -712,10 +719,22 @@ function applyEffect(caster, target, card, all) {
     default:
       break;
   }
+  // Override broadcast target by recipient category — SELF effects (WARD,
+  // BARRIER, etc.) narrate as caster-on-self; ALLY_AOE (BLESS, INSPIRE)
+  // narrate as no-target (AOE on allies).
+  const recipient = classifyEffectRecipient(e);
+  if (recipient === 'SELF') bcastTarget = caster;
+  else if (recipient === 'ALLY_AOE') bcastTarget = null;
   broadcast(
     caster.zoneId,
     'combat:effect',
-    buildEffectBroadcastPayload({ caster, target, effect: e, card }),
+    buildEffectBroadcastPayload({
+      caster,
+      target: bcastTarget,
+      recipient,
+      effect: e,
+      card,
+    }),
   );
 }
 
@@ -1160,8 +1179,11 @@ async function tickZone(zoneId, zs) {
     if (!enemies.length) continue;
 
     // Windup telegraph — fire once per cycle when cardTimer enters its
-    // last WINDUP_S window. Locks target so the telegraph is honest;
-    // resolution re-picks only if the locked target dies/withdraws.
+    // last WINDUP_S window. The broadcast target depends on the card's
+    // effect category: enemy for OFFENSIVE, ally for ALLY_PICK (HEAL),
+    // null for ALLY_AOE (BLESS/INSPIRE), caster for SELF (WARD/etc.).
+    // Bible §10's per-card-type targeting is retired — we only use the
+    // classifier to pick the right LOG recipient, not the cast mechanics.
     if (
       nine.cardTimer > 0 &&
       nine.cardTimer <= WINDUP_S &&
@@ -1169,16 +1191,30 @@ async function tickZone(zoneId, zs) {
     ) {
       const slot = nine.cardIdx % Math.max(1, nine.cards.length);
       const card = nine.cards[slot];
-      const tgt = pickTarget(nine, all);
-      if (card && tgt) {
+      const recipient = classifyEffectRecipient(card?.effect_1);
+      let bcastTarget = null;
+      if (recipient === 'OFFENSIVE') bcastTarget = pickTarget(nine, all);
+      else if (recipient === 'ALLY_PICK') bcastTarget = pickHealTarget(nine, all);
+      else if (recipient === 'SELF') bcastTarget = nine;
+      // ALLY_AOE → bcastTarget stays null
+
+      // Only emit windup if we have a card AND (the cast can land somewhere).
+      // For OFFENSIVE we need an enemy; for ALLY_PICK we need an ally;
+      // for SELF / ALLY_AOE the cast always lands on caster/allies.
+      const canCast =
+        card &&
+        (recipient !== 'OFFENSIVE' || bcastTarget);
+      if (canCast) {
         nine._windupActive = true;
-        nine._windupTarget = tgt;
+        nine._windupTarget = bcastTarget;
+        nine._windupRecipient = recipient;
         broadcast(
           zoneId,
           'combat:windup',
           buildWindupBroadcastPayload({
             caster: nine,
-            target: tgt,
+            target: bcastTarget,
+            recipient,
             card,
             slot,
             durationMs: Math.round(WINDUP_S * 1000),
@@ -1191,22 +1227,31 @@ async function tickZone(zoneId, zs) {
     if (nine.cardTimer <= 0) {
       const slot = nine.cardIdx % Math.max(1, nine.cards.length);
       const card = nine.cards[slot];
-      // Prefer the windup-locked target if still valid; else re-pick so the
-      // cast lands on a live enemy when the locked one died mid-windup.
+      const recipient =
+        nine._windupRecipient || classifyEffectRecipient(card?.effect_1);
+      // Re-pick target at fire time only when the locked one is gone OR
+      // when the recipient type re-picks every cast (HEAL prefers the
+      // currently-most-wounded ally; OFFENSIVE re-picks if locked enemy died).
       let tgt = nine._windupTarget;
       if (
-        !tgt ||
-        tgt.hp <= 0 ||
-        tgt.waitingForRound ||
-        tgt.withdrawn
+        recipient === 'OFFENSIVE' &&
+        (!tgt || tgt.hp <= 0 || tgt.waitingForRound || tgt.withdrawn)
       ) {
         tgt = pickTarget(nine, all);
+      } else if (recipient === 'ALLY_PICK') {
+        tgt = pickHealTarget(nine, all);
+      } else if (recipient === 'SELF') {
+        tgt = nine;
       }
+      // For ALLY_AOE, tgt stays as windup-locked (or null) — applyEffect
+      // ignores the param and loops allies internally for BLESS/INSPIRE.
+
       if (card) applyEffect(nine, tgt || nine, card, all);
       nine.cardIdx++;
       nine.drainActive = false;
       nine._windupActive = false;
       nine._windupTarget = null;
+      nine._windupRecipient = null;
       const spd = nine.stats.spd + (nine.hasteBonus || 0);
       nine.cardTimer = cardInterval(spd);
       if (nine.hasteTurns > 0) {
