@@ -2,6 +2,33 @@ const { NERM_SYSTEM_PROMPT } = require('./nermBrain');
 const TelegramBot = require('node-telegram-bot-api');
 const Anthropic = require('@anthropic-ai/sdk');
 const supabase = require('../config/supabaseAdmin');
+const telegramLinkCodes = require('../routes/telegramLinkCodes');
+
+// Module-level: original-case bot username, set when bot.getMe()
+// resolves inside startNermBot. Read by the players.js link route via
+// getBotUsername() to construct https://t.me/<username>?start=<code>
+// deeplinks. Null until the bot has booted.
+let _botUsername = null;
+function getBotUsername() {
+  return _botUsername;
+}
+
+// Functional placeholder copy — Nerm voice polish is a dedicated PR
+// per feedback_nerm_voice_dedicated_pr.md. Strings localized here so the
+// polish PR is a one-touch swap.
+const LINK_REPLIES = {
+  expired:
+    'Link code expired or already used. Open Settings on the site to get a new one.',
+  alreadyLinked: 'Already linked to another account.',
+  errorGeneric: 'Something broke linking that. Try again from Settings.',
+  success: (twitterHandle, groupUrl) => {
+    const base = `Linked. @${twitterHandle} is now bound here.`;
+    return groupUrl ? `${base}\nJoin the community: ${groupUrl}` : base;
+  },
+};
+
+const COMMUNITY_URL =
+  process.env.TELEGRAM_GROUP_URL || 'https://t.me/iduj9q8mx98';
 
 // ╔══════════════════════════════════════════╗
 // ║                                          ║
@@ -663,7 +690,75 @@ VOICE:
   // COMMANDS (group chat only)
   // =============================================
 
-  bot.onText(/\/start/, (msg) => {
+  // ---- LINK HANDSHAKE (private OR group chat with a payload) ----
+  // Handles the /api/players/start-telegram-link → t.me/<bot>?start=<code>
+  // deeplink. Bound here (not at module scope) so the closure has access
+  // to the bot instance.
+  async function handleLinkStart(msg, payload) {
+    try {
+      const playerId = telegramLinkCodes.consumeCode(payload);
+      if (!playerId) {
+        bot.sendMessage(msg.chat.id, LINK_REPLIES.expired);
+        return;
+      }
+
+      const { data: player, error: readErr } = await supabase
+        .from('players')
+        .select('id, twitter_handle')
+        .eq('id', playerId)
+        .single();
+      if (readErr || !player) {
+        console.error('[handleLinkStart] player lookup failed:', readErr);
+        bot.sendMessage(msg.chat.id, LINK_REPLIES.errorGeneric);
+        return;
+      }
+
+      const tgUserId = String(msg.from.id);
+      const tgUsername = msg.from.username || null;
+
+      const { error: writeErr } = await supabase
+        .from('players')
+        .update({
+          telegram_user_id: tgUserId,
+          telegram_username: tgUsername,
+          telegram_linked_at: new Date().toISOString(),
+        })
+        .eq('id', playerId);
+
+      if (writeErr) {
+        // Postgres unique violation — this Telegram user is already
+        // linked to a different player.
+        if (writeErr.code === '23505') {
+          bot.sendMessage(msg.chat.id, LINK_REPLIES.alreadyLinked);
+          return;
+        }
+        console.error('[handleLinkStart] write error:', writeErr);
+        bot.sendMessage(msg.chat.id, LINK_REPLIES.errorGeneric);
+        return;
+      }
+
+      console.log(
+        `[handleLinkStart] linked player_id=${playerId} tg_user_id=${tgUserId} tg_username=${tgUsername || 'null'}`,
+      );
+      bot.sendMessage(
+        msg.chat.id,
+        LINK_REPLIES.success(player.twitter_handle, COMMUNITY_URL),
+      );
+    } catch (err) {
+      console.error('[handleLinkStart] error:', err);
+      bot.sendMessage(msg.chat.id, LINK_REPLIES.errorGeneric);
+    }
+  }
+
+  // /start  — group flavor reply
+  // /start <code>  — link handshake (private chat OR group)
+  // /start@Nerm9LV_Bot <code>  — Telegram emits this form when the bot
+  //                              is added to a group; same handler.
+  bot.onText(/^\/start(?:@\w+)?(?:\s+([A-Za-z0-9]+))?/, (msg, match) => {
+    const payload = match && match[1] ? match[1].trim() : null;
+    if (payload) {
+      return handleLinkStart(msg, payload);
+    }
     if (!isGroupChat(msg)) return;
     bot.sendMessage(
       msg.chat.id,
@@ -872,7 +967,8 @@ VOICE:
 
   let botUsername = null;
   bot.getMe().then((me) => {
-    botUsername = me.username.toLowerCase();
+    botUsername = me.username.toLowerCase(); // for @-mention matching in messages
+    _botUsername = me.username; // module-level, original-case for deeplinks
     console.log(`✅ Nerm Telegram running as @${me.username}`);
   });
 
@@ -931,4 +1027,4 @@ VOICE:
   });
 }
 
-module.exports = { startNermBot };
+module.exports = { startNermBot, getBotUsername };

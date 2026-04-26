@@ -2363,6 +2363,8 @@ Spec touches:
 
 **Resolution plan.** On every successful `/auth/twitter/callback` (returning user branch), re-fetch `users.read` fields and update `players.profile_image` + `players.twitter_handle` if they differ. `twitter_id` stays canonical, so handle changes don't break the link. Pair with a backfill cron that walks active players weekly to catch users who haven't logged in but renamed.
 
+**Resolved 2026-04-26 in PR #?** — `auth.js:243+` returning-user branch now compares `twitterUser.profile_image_url` and `twitterUser.username` against the stored values and folds the diff into the same `last_login`/streak update. Defensive: if X user-fetch returned partial data, the comparison no-ops rather than overwriting with nulls. Backfill cron (catching renamed-but-not-logged-in users) deferred — login refresh covers >90% of cases. Bundled with §9.104 + §9.109 in the same PR.
+
 ---
 
 ### 9.104 Daily pack requires manual click — auto-claim on login would lift retention
@@ -2373,6 +2375,8 @@ Spec touches:
 
 **Resolution plan.** In the OAuth returning-user branch (`auth.js:243–281`), after the `last_login` + streak update, call `packSystem.grantDailyPack(playerId)` if `isDailyClaimedToday(playerId)` returns false. Surface the grant on the dashboard via a one-shot toast or sticky widget (so the player sees the reward, not just the side-effect). Edge: ensure timezone alignment with the existing midnight-UTC pack scheduler — the auto-claim must consult the same UTC-day boundary the manual claim uses, not local time, or players in distant timezones could double-claim.
 
+**Resolved 2026-04-26 in PR #?** — auth.js callback now calls `packSystem.isDailyClaimedToday()` then `grantDailyPack()` on a miss. Reuses the live UTC-day query that `/api/packs/claim-daily` already uses, so manual + auto can't double-grant. On grant, redirect URL gains `&daily_pack=1`; `dashboard.html` reads that param, shows a one-shot toast (auto-dismissing after 7s), and strips the param via `history.replaceState` so refresh doesn't re-show. If `grantDailyPack` throws (transient DB blip), login still completes and the manual button still works. Bundled with §9.103 + §9.109 in the same PR.
+
 ---
 
 ### 9.105 Account recovery story — losing X access loses the Nine
@@ -2382,6 +2386,8 @@ Spec touches:
 **Effect.** Severity rises sharply once the points→token withdrawal goes live — a player losing X access could lose access to their accrued claim. Pre-token economy this is a bad UX bug; post-token it's a financial loss.
 
 **Resolution plan.** Once wallet-link adoption is non-trivial, treat the linked wallet as a secondary recovery factor: a player who can sign a message from their linked Solana wallet can be re-bound to a new Twitter ID. Requires the §9.102 sign-message helper to exist first. Defer until §9.102 ships.
+
+**Update 2026-04-26 (after §9.109 ships):** linked **Telegram** is now a candidate secondary recovery factor alongside wallet. Recovery handshake would prompt the user to send a recovery code from the Telegram account that's bound to the abandoned Twitter ID — Telegram side has lower-friction proof-of-control (just send a message) than Solana sign-message. Same caveat: needs a recovery flow PR; deferred.
 
 ---
 
@@ -2416,6 +2422,23 @@ Spec touches:
 **Resolution plan.** Extract the round-end evaluation into a pure helper `evaluateRoundEnd(nines, anyKO)` returning `'last_standing' | 'mutual_ko' | null`. The new `mutual_ko` reason covers the empty-survivors case. `tickZone` calls the helper and invokes `endRound(zoneId, zs, all, endReason)` whenever the helper returns non-null.
 
 **Resolved 2026-04-26 in PR #287.** Helper added to `combatEnginePayloads.js` with 9 unit tests (last-guild-standing variants, lone wolf, 1v1 mutual KO, AOE wipe, withdrawn-as-dead handling, null/empty defensive cases). `tickZone` refactored to call `evaluateRoundEnd` instead of inlining the check. Behavior change: a 1v1 mutual KO now ends the round with `endReason: 'mutual_ko'` (no winning guild) and the standard 35s intermission fires.
+
+---
+
+### 9.109 Telegram link surface — multi-platform identity for the rewards/notification layer
+
+**Symptom (gap, not bug).** Players have no path to bind their Telegram account to their Nine. The Nerm bot (`@Nerm9LV_Bot`, `server/services/nerm-telegram.js`) is live in the community group and tracks per-Telegram-user character memory in `nerm_user_memory`, but that table has no FK to `players` — bot conversations are character-only, not player-aware. Without the link, the planned multi-platform retention surfaces (drop notifications via DM, deploy-via-Telegram, leaderboard broadcasts, off-platform whitelist comms) cannot be addressed to the right human.
+
+**Effect.** Blocks the multi-platform retention angle Wray called out 2026-04-26 (web + X Chronicle + Telegram). Also blocks Telegram-as-secondary-recovery-factor for §9.105.
+
+**Resolution plan.** Standard Telegram bot deep-link handshake:
+1. **Migration 008** adds `players.telegram_user_id` (varchar, partial unique index) + `telegram_username` + `telegram_linked_at`.
+2. **Three player routes** in `server/routes/players.js`: `POST /start-telegram-link` issues a one-time 8-char code (10-min TTL, in-memory store at `server/routes/telegramLinkCodes.js`) + builds the deeplink. `GET /:id/telegram-status` powers the settings poll. `DELETE /:id/telegram` unlinks.
+3. **Bot `/start <code>`** in `nerm-telegram.js` — regex captures the payload (works in private chat *and* group, because driving traffic through the group via `/start <code>` doubles as a community signal). Consume the code, write the link, reply with neutral functional copy + community CTA. Strings localized as constants for the dedicated personality PR to swap later (per `feedback_nerm_voice_dedicated_pr.md`).
+4. **`/settings`** swaps the "Coming later" placeholder with an active LINK TELEGRAM button: opens deeplink, polls status every 3s for 2min, flips pill to LINKED + reveals `Join the community →` CTA. UNLINK button confirms then hits the DELETE route.
+5. **Tests** at `__tests__/telegramLinkCodes.test.js` (17 cases) cover code generation, store/consume, expiry, double-consume, cleanup, isolation between codes.
+
+**Resolved 2026-04-26 in PR #?** — full handshake live end-to-end. Bot username sourced at runtime via `getBotUsername()` (exported from `nerm-telegram.js` after `bot.getMe()` resolves) with env (`TELEGRAM_BOT_USERNAME`) + literal `Nerm9LV_Bot` fallbacks. Community URL defaults to `https://t.me/iduj9q8mx98`, overridable via `TELEGRAM_GROUP_URL` env var. Bundled with §9.103 + §9.104 in the same PR — all three touch the post-login / settings surface and share the same smoke run.
 
 ---
 
