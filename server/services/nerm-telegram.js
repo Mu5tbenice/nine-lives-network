@@ -982,6 +982,26 @@ VOICE:
     console.log(`✅ Nerm Telegram running as @${me.username}`);
   });
 
+  // Register the bot's command list with BotFather. This is what populates
+  // the autocomplete menu when users type "/" in chat AND ensures Telegram's
+  // privacy-mode delivers these commands to the bot in groups even when they
+  // aren't @-suffixed. Without this, /link looks "unregistered" to users and
+  // may get filtered by privacy mode. Idempotent — overwrites on each boot.
+  bot
+    .setMyCommands([
+      { command: 'link', description: 'Bind your 9LV account: /link <code> from Settings' },
+      { command: 'help', description: 'Show what Nerm can do' },
+      { command: 'sort', description: 'Get assigned a house' },
+      { command: 'houses', description: 'List the nine houses' },
+      { command: 'lore', description: 'Ask about Nethara or the game' },
+      { command: 'cards', description: 'Card system overview' },
+      { command: 'scamcheck', description: 'Group scam stats' },
+    ])
+    .then(() => console.log('✅ Nerm Telegram command list registered with BotFather'))
+    .catch((err) =>
+      console.error('⚠️ setMyCommands failed (non-fatal):', err.message),
+    );
+
   bot.on('message', async (msg) => {
     if (!isGroupChat(msg)) return;
     if (msg.text?.startsWith('/')) return;
