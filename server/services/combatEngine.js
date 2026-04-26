@@ -1,6 +1,6 @@
 // ══════════════════════════════════════════════════════════════════════
-// server/services/combatEngine.js  —  9LV Combat Engine V3
-// Sequential rotation · Range-based targeting · Spatial positions
+// server/services/combatEngine.js  —  9LV Combat Engine V4
+// Round-based · Last guild standing · Time-based DOT · FFA targeting
 // ══════════════════════════════════════════════════════════════════════
 'use strict';
 
@@ -95,7 +95,10 @@ const HOUSE_BONUSES = {
   nighthollow: { key: 'luck', bonus: 10 },
   dawnbringer: { key: 'heal_amp', mult: 1.5 },
   manastorm: { key: 'effect_amp', mult: 1.3 },
-  plaguemire: { key: 'poison_aura' }, // enemies start with 1 POISON stack
+  // §9.99: Plaguemire's `poison_aura` declared here historically but never
+  // wired into round start. Stripped 2026-04-26 pending the balance-simulator
+  // pass — Plaguemire gets no zone bonus today rather than an aspirational
+  // one. House identity / zone bonus redesign is a downstream initiative.
 };
 
 // In-memory cache: zoneId → { house, bonus } loaded at startup + refreshed nightly
@@ -1776,21 +1779,10 @@ async function loadDeploymentIntoEngine(dep) {
   );
   if (dep.current_hp > 0) state.hp = Math.min(state.maxHp, dep.current_hp);
 
-  // Zone bonus: plaguemire — newly deployed Nine enters with existing
-  // nines pre-poisoned. §9.52: FFA — poisons every existing live nine on
-  // the zone except the newly-deployed caster itself, guild-indiscriminate.
-  if (zoneBonus?.bonus?.key === 'poison_aura') {
-    const zs = zones.get(zoneId);
-    if (zs) {
-      for (const existing of zs.nines.values()) {
-        if (existing.hp > 0 && existing.deploymentId !== state.deploymentId) {
-          existing.poisonStacks = Math.min(3, (existing.poisonStacks || 0) + 1);
-          if (!existing._poisonNextAt || Date.now() > existing._poisonNextAt)
-            existing._poisonNextAt = Date.now() + 1500;
-        }
-      }
-    }
-  }
+  // §9.99: Plaguemire poison_aura zone bonus deleted 2026-04-26 pending
+  // balance simulator. The deploy-time apply block that used to live here
+  // was inert anyway (HOUSE_BONUSES.plaguemire was missing the side effect
+  // since day one). Removed to keep the deploy path clean.
 
   zones.get(zoneId).nines.set(String(dep.id), state);
   console.log(

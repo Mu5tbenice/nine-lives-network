@@ -8967,6 +8967,15 @@
   // V2 EVENT PROCESSOR — handles continuous combat + legacy events
   // V2 types: attack, dot_damage, effect_*, ko, reflected_damage
   // Legacy V6 types: cast, effect_tick, dodge, ward_pop, anchor_save
+  //
+  // §9.100 (2026-04-26) — `processArenaEvent` + private helpers
+  // (`processEffectCast`, `getEffectEmoji`, `animateSpellProjectile`) have
+  // no call sites today. Combat events route directly through
+  // socket.on('combat:*') handlers. Block left in place for now — the
+  // voxel-pixel visual rebuild will replace this surface organically;
+  // deleting ~830 lines mid-cleanup-PR is destructive risk for no
+  // immediate gain. Tagged for removal once the voxel pipeline scoping
+  // identifies which helpers (if any) get reused.
   // ═══════════════════════════════════════════════════════════════
   function processArenaEvent(ev) {
     // Map V2 engine event types to frontend handler types
