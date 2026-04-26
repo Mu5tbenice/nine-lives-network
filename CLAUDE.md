@@ -90,7 +90,6 @@ Historical specs live in `docs/archive/` (V3 bible, the April 2026 round-battle 
 
 Other reference docs in the repo root:
 
-- `EFFECTS_REFERENCE_V5.md` — card effect catalog
 - `spellbook.md` — spell system reference
 - `ADMIN_COMMANDS.md` — operational runbook and cron schedule
 - `replit.md` — deployment-environment notes

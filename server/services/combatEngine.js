@@ -84,27 +84,6 @@ const HOUSE_STATS = {
   darktide: { atk: 25, hp: 450, spd: 20, def: 20, luck: 10 },
 };
 
-// ─── ZONE PRESENCE BONUSES ────────────────────────────────────────────
-// Applied globally to ALL fighters on a zone. Recalculated nightly from
-// yesterday's dominant house (by fighter count, not HP).
-const HOUSE_BONUSES = {
-  smoulders: { key: 'atk', mult: 1.2 },
-  darktide: { key: 'regen', pct: 0.03 }, // 3% maxHP per minute (every 30 ticks)
-  stonebark: { key: 'hp', mult: 1.25 },
-  ashenvale: { key: 'spd', mult: 1.15 },
-  stormrage: { key: 'crit_mult', value: 3 }, // crits deal 3× instead of 2×
-  nighthollow: { key: 'luck', bonus: 10 },
-  dawnbringer: { key: 'heal_amp', mult: 1.5 },
-  manastorm: { key: 'effect_amp', mult: 1.3 },
-  // §9.99: Plaguemire's `poison_aura` declared here historically but never
-  // wired into round start. Stripped 2026-04-26 pending the balance-simulator
-  // pass — Plaguemire gets no zone bonus today rather than an aspirational
-  // one. House identity / zone bonus redesign is a downstream initiative.
-};
-
-// In-memory cache: zoneId → { house, bonus } loaded at startup + refreshed nightly
-const zoneBonusCache = new Map();
-
 // ─── SCHOOL_ID → HOUSE KEY (DB stores numeric IDs, engine needs strings) ──────
 const SCHOOL_TO_HOUSE = {
   1: 'smoulders',
@@ -138,31 +117,6 @@ function slotMult(slot, hpPct) {
   if (slot === 0) return 1.35;
   if (slot === 2 && hpPct < 0.4) return 1.5;
   return 1.0;
-}
-
-// ─── ZONE BONUS CACHE ─────────────────────────────────────────────────
-async function refreshZoneBonusCache() {
-  try {
-    const { data } = await supabaseAdmin
-      .from('zones')
-      .select('id, dominant_house');
-    (data || []).forEach((row) => {
-      const bonus = row.dominant_house
-        ? HOUSE_BONUSES[row.dominant_house]
-        : null;
-      zoneBonusCache.set(String(row.id), {
-        house: row.dominant_house,
-        bonus,
-      });
-    });
-    console.log(`✅ Zone bonus cache refreshed — ${data?.length || 0} zones`);
-  } catch (e) {
-    console.error('❌ Zone bonus cache refresh failed:', e.message);
-  }
-}
-
-function getZoneBonus(zoneId) {
-  return zoneBonusCache.get(String(zoneId)) || null;
 }
 
 // ─── PER-ZONE METRICS (§9.50) ─────────────────────────────────────────
@@ -234,19 +188,14 @@ const zones = new Map();
 let _tickInt = null;
 
 // ─── BUILD NINE STATE ─────────────────────────────────────────────────
-function buildNineState(dep, nine, cards, zoneBonus) {
+function buildNineState(dep, nine, cards) {
   const houseKey = resolveHouseKey(nine.house_key || nine.house_id);
   const h = HOUSE_STATS[houseKey] || HOUSE_STATS.stormrage;
   const atk = h.atk + cards.reduce((s, c) => s + (c.base_atk || 0), 0);
-  let hp = h.hp + cards.reduce((s, c) => s + (c.base_hp || 0), 0);
-  let spd = h.spd + cards.reduce((s, c) => s + (c.base_spd || 0), 0);
+  const hp = h.hp + cards.reduce((s, c) => s + (c.base_hp || 0), 0);
+  const spd = h.spd + cards.reduce((s, c) => s + (c.base_spd || 0), 0);
   const def = h.def + cards.reduce((s, c) => s + (c.base_def || 0), 0);
   const luck = h.luck + cards.reduce((s, c) => s + (c.base_luck || 0), 0);
-
-  // Apply zone bonuses that affect base pool at spawn time
-  const bk = zoneBonus?.bonus?.key;
-  if (bk === 'hp') hp = Math.round(hp * (zoneBonus.bonus.mult || 1));
-  if (bk === 'spd') spd = Math.round(spd * (zoneBonus.bonus.mult || 1));
 
   const x = ZONE_MARGIN + Math.random() * (ZONE_W - ZONE_MARGIN * 2);
   const y = ZONE_MARGIN + Math.random() * (ZONE_H - ZONE_MARGIN * 2);
@@ -297,7 +246,6 @@ function buildNineState(dep, nine, cards, zoneBonus) {
     witherActive: 0,
     blindTurns: 0,
     zoneId: String(dep.zone_id),
-    _zoneBonus: zoneBonus || null,
     _koProcessed: false,
     _currentTarget: null,
     _targetLockedUntil: 0,
@@ -494,17 +442,6 @@ function stepPos(nine) {
 }
 
 // ─── APPLY EFFECT ─────────────────────────────────────────────────────
-function effectAmp(caster) {
-  // manastorm zone bonus: all effects +30%
-  const bk = caster._zoneBonus?.bonus?.key;
-  return bk === 'effect_amp' ? caster._zoneBonus.bonus.mult || 1.3 : 1.0;
-}
-function healAmp(caster) {
-  // dawnbringer zone bonus: HEAL and BLESS +50%
-  const bk = caster._zoneBonus?.bonus?.key;
-  return bk === 'heal_amp' ? caster._zoneBonus.bonus.mult || 1.5 : 1.0;
-}
-
 function applyEffect(caster, target, card, all, slot) {
   const e = card?.effect_1;
   if (!e) return;
@@ -512,8 +449,10 @@ function applyEffect(caster, target, card, all, slot) {
     caster.silenced = Math.max(0, caster.silenced - 1);
     return;
   }
-  const amp = effectAmp(caster);
-  const hamp = healAmp(caster);
+  // Zone-bonus modifiers stripped 2026-04-26 — see §9.110. These constants
+  // preserve the formula shape so a future redesign can re-attach scaling.
+  const amp = 1.0;
+  const hamp = 1.0;
   // Track who the cast actually lands on, for the combat:effect broadcast.
   // Defaults to the param `target` (caller-supplied enemy for OFFENSIVE).
   // HEAL overrides inside its case to the picked ally; SELF/ALLY_AOE
@@ -752,13 +691,8 @@ function resolveAttack(caster, defender, all) {
   const card = caster.cards[slot];
   applyEffect(caster, defender, card, all, slot);
 
-  // Zone bonus: smoulders +20% ATK
-  const bk = caster._zoneBonus?.bonus?.key;
-  const atkMult = bk === 'atk' ? caster._zoneBonus.bonus.mult || 1.2 : 1.0;
-  const atkStat = Math.max(
-    1,
-    Math.round((caster.stats.atk - (caster.hexAmt || 0)) * atkMult),
-  );
+  // Zone bonus modifiers stripped 2026-04-26 — see §9.110.
+  const atkStat = Math.max(1, caster.stats.atk - (caster.hexAmt || 0));
 
   let dmg = baseDmg(atkStat, defender.stats.def);
   dmg = Math.floor(
@@ -776,21 +710,12 @@ function resolveAttack(caster, defender, all) {
   if (caster._execute && defender.hp / Math.max(1, defender.maxHp) < 0.3)
     dmg = Math.floor(dmg * 1.5);
 
-  // Zone bonus: nighthollow +10 LUCK
-  const luckBonus = bk === 'luck' ? caster._zoneBonus.bonus.bonus || 10 : 0;
-  const luck = defender.blindTurns > 0 ? 0 : caster.stats.luck + luckBonus;
+  const luck = defender.blindTurns > 0 ? 0 : caster.stats.luck;
   const isCrit = caster._crit
     ? Math.random() * 100 < luck
     : Math.random() * 100 < luck * 0.3;
 
-  // Zone bonus: stormrage crits deal 3× instead of 2×
-  const critMult =
-    isCrit && bk === 'crit_mult'
-      ? caster._zoneBonus.bonus.value || 3
-      : isCrit
-        ? 2
-        : 1;
-  if (isCrit) dmg = Math.floor(dmg * critMult);
+  if (isCrit) dmg = Math.floor(dmg * 2);
 
   if (defender.blindTurns > 0)
     defender.blindTurns = Math.max(0, defender.blindTurns - 1);
@@ -1149,25 +1074,7 @@ async function tickZone(zoneId, zs) {
     }
   });
 
-  // Zone bonus: darktide regen — 3% maxHP per minute = every 120 ticks (60s / 0.5s per tick)
-  const zBonus = getZoneBonus(zoneId);
-  if (zBonus?.bonus?.key === 'regen' && zs.tick % 300 === 0) {
-    // 300 ticks × 200ms = 60s
-    all.forEach((n) => {
-      if (n.hp > 0) {
-        const regen = Math.floor(n.maxHp * (zBonus.bonus.pct || 0.03));
-        n.hp = Math.min(n.maxHp, n.hp + regen);
-        broadcast(zoneId, 'combat:regen', {
-          nine: n.playerName,
-          amt: regen,
-          hp: n.hp,
-          maxHp: n.maxHp,
-          x: n.x,
-          y: n.y,
-        });
-      }
-    });
-  }
+  // Zone-bonus regen path stripped 2026-04-26 (§9.110).
 
   // Update movement targets every 10 ticks (= 5s at 500ms per tick) — slow deliberate shuffle
   // Update dest only when Nine has nearly reached its current dest (within 18px)
@@ -1437,49 +1344,10 @@ async function endRound(zoneId, zs, all, endReason) {
   const prevWinner = zs._lastRoundWinner || null;
   zs._lastRoundWinner = winner;
 
-  // Per-round dominant house: most-deployed house; tiebreak = winning
-  // guild's dominant house; second tiebreak = random.
-  const houseCounts = {};
-  for (const n of all) {
-    const h = n.houseKey || 'unknown';
-    houseCounts[h] = (houseCounts[h] || 0) + 1;
-  }
-  let dominantHouse = null;
-  if (all.length > 0) {
-    const maxCount = Math.max(...Object.values(houseCounts));
-    const topHouses = Object.entries(houseCounts)
-      .filter(([, c]) => c === maxCount)
-      .map(([h]) => h);
-    if (topHouses.length === 1) {
-      dominantHouse = topHouses[0];
-    } else if (winner) {
-      const winnerHouseCounts = {};
-      for (const n of all) {
-        if (n.guildTag === winner) {
-          const h = n.houseKey || 'unknown';
-          winnerHouseCounts[h] = (winnerHouseCounts[h] || 0) + 1;
-        }
-      }
-      const ranked = topHouses
-        .map((h) => [h, winnerHouseCounts[h] || 0])
-        .sort((a, b) => b[1] - a[1]);
-      dominantHouse =
-        ranked[0][1] > 0
-          ? ranked[0][0]
-          : topHouses[Math.floor(Math.random() * topHouses.length)];
-    } else {
-      dominantHouse = topHouses[Math.floor(Math.random() * topHouses.length)];
-    }
-  }
-
-  // Track round wins for daily guild branding
-  if (winner) zs.roundWins[winner] = (zs.roundWins[winner] || 0) + 1;
-
-  // Track house presence for daily house bonus
-  all.forEach((n) => {
-    const h = n.houseKey || 'unknown';
-    zs.housePresence[h] = (zs.housePresence[h] || 0) + 1;
-  });
+  // Per-round dominant_house calc + zs.roundWins/housePresence tracking
+  // stripped 2026-04-26 (§9.110) — dominant_house column is being dropped
+  // and the bonus path it fed has been removed. branded_guild stays for
+  // future banner-display redesign.
 
   // ── ROUND SCORING ──────────────────────────────────────────────────
   // Alive at end: +3 pts  |  Guild controls: +5  |  Guild flips: +10 bonus
@@ -1560,7 +1428,7 @@ async function endRound(zoneId, zs, all, endReason) {
 
   // Append round history. branded_guild at round level equals winner
   // (they're the same concept per round; daily aggregation differentiates).
-  // snapshot_hp omitted — column is deprecated V1 (§9.22), scheduled for drop.
+  // snapshot_hp + dominant_house dropped via §9.110 cleanup migration.
   await supabaseAdmin
     .from('zone_control_history')
     .insert({
@@ -1568,7 +1436,6 @@ async function endRound(zoneId, zs, all, endReason) {
       controlling_guild: winner,
       round_number: zs.roundNumber,
       snapped_at: now,
-      dominant_house: dominantHouse,
       branded_guild: winner,
     })
     .then(({ error }) => {
@@ -1711,8 +1578,8 @@ async function loadDeploymentIntoEngine(dep) {
       roundStartedAt: Date.now(),
       roundEndsAt: Date.now() + ROUND_CAP_MS,
       roundNumber: 1,
-      roundWins: {}, // guildTag → round wins today (for branding calc)
-      housePresence: {}, // houseKey → fighter-days (for house bonus)
+      roundWins: {}, // guildTag → round wins today (legacy, not read; kept for arena:round_end payload shape)
+      housePresence: {}, // legacy (unused after §9.110)
     });
 
   // Step 1: Get active card slots for this deployment
@@ -1768,7 +1635,6 @@ async function loadDeploymentIntoEngine(dep) {
   }
 
   const nine = dep.nine || {};
-  const zoneBonus = getZoneBonus(String(dep.zone_id));
   const state = buildNineState(
     dep,
     {
@@ -1776,18 +1642,12 @@ async function loadDeploymentIntoEngine(dep) {
       name: nine.name || 'Unknown',
     },
     cards,
-    zoneBonus,
   );
   if (dep.current_hp > 0) state.hp = Math.min(state.maxHp, dep.current_hp);
 
-  // §9.99: Plaguemire poison_aura zone bonus deleted 2026-04-26 pending
-  // balance simulator. The deploy-time apply block that used to live here
-  // was inert anyway (HOUSE_BONUSES.plaguemire was missing the side effect
-  // since day one). Removed to keep the deploy path clean.
-
   zones.get(zoneId).nines.set(String(dep.id), state);
   console.log(
-    `⚔️  ${state.playerName} (${state.houseKey}) → zone ${zoneId} [${cards.length} cards]${zoneBonus?.house ? ` | zone bonus: ${zoneBonus.house}` : ''}`,
+    `⚔️  ${state.playerName} (${state.houseKey}) → zone ${zoneId} [${cards.length} cards]`,
   );
 }
 
@@ -1854,7 +1714,6 @@ function broadcast(zoneId, event, data) {
 // ─── LIFECYCLE ────────────────────────────────────────────────────────
 function startCombatEngine() {
   if (_tickInt) return;
-  refreshZoneBonusCache();
   loadActiveDeployments();
   _tickInt = setInterval(async () => {
     for (const [id, zs] of zones) {
@@ -1927,16 +1786,13 @@ async function fetchCardsByPlayerCardIds(cardIds) {
     .filter(Boolean);
 }
 
-function applyCardsInPlace(nine, newCards, zoneBonus) {
+function applyCardsInPlace(nine, newCards) {
   const h = HOUSE_STATS[nine.houseKey] || HOUSE_STATS.stormrage;
   const atk = h.atk + newCards.reduce((s, c) => s + (c.base_atk || 0), 0);
-  let hp = h.hp + newCards.reduce((s, c) => s + (c.base_hp || 0), 0);
-  let spd = h.spd + newCards.reduce((s, c) => s + (c.base_spd || 0), 0);
+  const hp = h.hp + newCards.reduce((s, c) => s + (c.base_hp || 0), 0);
+  const spd = h.spd + newCards.reduce((s, c) => s + (c.base_spd || 0), 0);
   const def = h.def + newCards.reduce((s, c) => s + (c.base_def || 0), 0);
   const luck = h.luck + newCards.reduce((s, c) => s + (c.base_luck || 0), 0);
-  const bk = zoneBonus?.bonus?.key;
-  if (bk === 'hp') hp = Math.round(hp * (zoneBonus.bonus.mult || 1));
-  if (bk === 'spd') spd = Math.round(spd * (zoneBonus.bonus.mult || 1));
   nine.cards = newCards;
   nine.stats = { atk, hp, spd, def, luck };
   nine.maxHp = hp;
@@ -1953,7 +1809,6 @@ function applyCardsInPlace(nine, newCards, zoneBonus) {
 // includes maxHp).
 function applyPendingCardsAtRoundStart(zoneId, zs) {
   const zoneKey = String(zoneId);
-  const zoneBonus = getZoneBonus(zoneKey);
   const appliedPlayerIds = [];
   for (const n of zs.nines.values()) {
     const key = `${zoneKey}:${n.deploymentId}`;
@@ -1961,7 +1816,7 @@ function applyPendingCardsAtRoundStart(zoneId, zs) {
     if (!entry) continue;
     pendingCardQueue.delete(key);
     try {
-      applyCardsInPlace(n, entry.cards, zoneBonus);
+      applyCardsInPlace(n, entry.cards);
       appliedPlayerIds.push(n.playerId);
       // Fire-and-forget DB sync so zone_card_slots eventually reflects
       // what's actually firing. Old slots deactivated, new slots inserted
@@ -2004,7 +1859,6 @@ module.exports = {
   rejoinRound,
   removeDeploymentFromEngine,
   getZoneState: (id) => zones.get(String(id)) || null,
-  refreshZoneBonusCache,
   queuePendingCards, // §9.69
   fetchCardsByPlayerCardIds, // §9.69 — route fetches before queueing
 };

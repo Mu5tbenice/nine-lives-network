@@ -901,8 +901,7 @@ router.get('/', async (req, res) => {
       .order('id');
     if (error) return res.status(500).json({ error: error.message });
 
-    // Merge in live zone_control data (controlling_guild only; zones is
-    // authoritative for dominant_house per Task 4.5 Q4).
+    // Merge in live zone_control data (controlling_guild only).
     const { data: control } = await supabaseAdmin
       .from('zone_control')
       .select('zone_id, controlling_guild');
@@ -927,12 +926,6 @@ router.get('/', async (req, res) => {
       ...z,
       controlling_guild:
         controlMap[z.id]?.controlling_guild || z.controlling_guild || null,
-      dominant_house: z.dominant_house || null,
-      house_bonus_label:
-        z.house_bonus_label ||
-        (z.dominant_house
-          ? HOUSE_BONUSES[z.dominant_house]?.label || null
-          : null),
       deployment_count: deployCountMap[z.id] || 0, // live fighter count
     }));
 
@@ -1072,229 +1065,10 @@ router.get('/:zoneId', async (req, res) => {
   }
 });
 
-// ═══════════════════════════════════════════════════
-// HOUSE PRESENCE BONUS SYSTEM
-// ═══════════════════════════════════════════════════
-
-const HOUSE_BONUSES = {
-  smoulders: {
-    key: 'atk',
-    label: '+20% ATK',
-    description: 'The ember wastes harden every blade.',
-  },
-  darktide: {
-    key: 'regen',
-    label: '+3% HP regen per minute',
-    description: 'Dark tides carry life back to the wounded.',
-  },
-  stonebark: {
-    key: 'hp',
-    label: '+25% max HP',
-    description: 'The bark remembers every scar. It grows.',
-  },
-  ashenvale: {
-    key: 'spd',
-    label: '+15% SPD',
-    description: 'The wind here has no patience.',
-  },
-  stormrage: {
-    key: 'crit_mult',
-    label: 'Crits deal 3× instead of 2×',
-    description: 'Lightning hits once. It hits everything.',
-  },
-  nighthollow: {
-    key: 'luck',
-    label: '+10 LUCK',
-    description: 'Fortune favours those who walk in shadow.',
-  },
-  dawnbringer: {
-    key: 'heal_amp',
-    label: 'HEAL and BLESS +50% stronger',
-    description: 'This ground was consecrated in old light.',
-  },
-  manastorm: {
-    key: 'effect_amp',
-    label: 'All card effects +30% stronger',
-    description: 'Every spell lands harder here.',
-  },
-  plaguemire: {
-    key: 'poison_aura',
-    label: 'Enemies start with 1 POISON stack',
-    description: 'The air itself is infected.',
-  },
-};
-
-// ═══════════════════════════════════════════════════
-// GET /api/zones/:zoneId/zone-bonus
-// Returns today's house bonus + branded guild for a zone
-// ═══════════════════════════════════════════════════
-router.get('/:zoneId/zone-bonus', async (req, res) => {
-  try {
-    const zoneId = parseInt(req.params.zoneId);
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-
-    const { data: history } = await supabaseAdmin
-      .from('zone_control_history')
-      .select('dominant_house, branded_guild')
-      .eq('zone_id', zoneId)
-      .gte('snapped_at', since);
-
-    if (!history || !history.length) {
-      return res.json({
-        zone_id: zoneId,
-        branded_guild: null,
-        dominant_house: null,
-        house_bonus: null,
-        message: 'No fighters yesterday — no zone identity yet.',
-      });
-    }
-
-    // Dominant house = most snapshot appearances in last 24h (fighter count, not HP)
-    const houseCounts = {};
-    history.forEach((h) => {
-      if (h.dominant_house)
-        houseCounts[h.dominant_house] =
-          (houseCounts[h.dominant_house] || 0) + 1;
-    });
-    const [dominantHouse] =
-      Object.entries(houseCounts).sort((a, b) => b[1] - a[1])[0] || [];
-
-    // Branded guild = most appearances as the top guild in snapshots
-    const guildCounts = {};
-    history.forEach((h) => {
-      if (h.branded_guild)
-        guildCounts[h.branded_guild] = (guildCounts[h.branded_guild] || 0) + 1;
-    });
-    const [brandedGuild] =
-      Object.entries(guildCounts).sort((a, b) => b[1] - a[1])[0] || [];
-
-    const houseBonus = dominantHouse
-      ? HOUSE_BONUSES[dominantHouse] || null
-      : null;
-
-    res.json({
-      zone_id: zoneId,
-      branded_guild: brandedGuild || null,
-      dominant_house: dominantHouse || null,
-      house_bonus: houseBonus,
-    });
-  } catch (err) {
-    console.error('Zone bonus error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// ═══════════════════════════════════════════════════
-// POST /api/zones/recalculate-identities  (called nightly by scheduler)
-// Reads last 24h history, writes dominant_house + branded_guild
-// back to the zones table for fast reads on zone list
-// ═══════════════════════════════════════════════════
-router.post('/recalculate-identities', async (req, res) => {
-  try {
-    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-
-    const { data: allZones } = await supabaseAdmin
-      .from('zones')
-      .select('id')
-      .eq('is_active', true);
-
-    const { data: history } = await supabaseAdmin
-      .from('zone_control_history')
-      .select('zone_id, dominant_house, branded_guild')
-      .gte('snapped_at', since);
-
-    // Tiebreak source: distinct deployment instances in the 24h window,
-    // grouped by zone_id. Row-count per deployment, not per round (strict
-    // per-round sum would need a JSONB house_counts column — out of slice 1).
-    const { data: deps } = await supabaseAdmin
-      .from('zone_deployments')
-      .select('zone_id, guild_tag, player_nines!inner(houses!inner(slug))')
-      .gte('deployed_at', since);
-
-    const depCountsByZone = {};
-    for (const d of deps || []) {
-      const z = d.zone_id;
-      if (!depCountsByZone[z]) depCountsByZone[z] = { houses: {}, guilds: {} };
-      const slug = d.player_nines?.houses?.slug;
-      if (slug)
-        depCountsByZone[z].houses[slug] =
-          (depCountsByZone[z].houses[slug] || 0) + 1;
-      if (d.guild_tag)
-        depCountsByZone[z].guilds[d.guild_tag] =
-          (depCountsByZone[z].guilds[d.guild_tag] || 0) + 1;
-    }
-
-    const pickTopWithTiebreak = (primaryCounts, tiebreakCounts) => {
-      const keys = Object.keys(primaryCounts);
-      if (!keys.length) return null;
-      const maxCount = Math.max(...Object.values(primaryCounts));
-      const top = keys.filter((k) => primaryCounts[k] === maxCount);
-      if (top.length === 1) return top[0];
-      const ranked = top
-        .map((k) => [k, tiebreakCounts[k] || 0])
-        .sort((a, b) => b[1] - a[1]);
-      // If tiebreak 1 (deployment count) resolves, use it; else random.
-      if (ranked[0][1] > (ranked[1]?.[1] || 0)) return ranked[0][0];
-      return top[Math.floor(Math.random() * top.length)];
-    };
-
-    let updated = 0;
-    for (const zone of allZones || []) {
-      const zoneHistory = (history || []).filter((h) => h.zone_id === zone.id);
-      if (!zoneHistory.length) continue;
-
-      const houseRoundWins = {};
-      const guildRoundWins = {};
-      for (const h of zoneHistory) {
-        if (h.dominant_house)
-          houseRoundWins[h.dominant_house] =
-            (houseRoundWins[h.dominant_house] || 0) + 1;
-        if (h.branded_guild)
-          guildRoundWins[h.branded_guild] =
-            (guildRoundWins[h.branded_guild] || 0) + 1;
-      }
-
-      const depTiebreak = depCountsByZone[zone.id] || {
-        houses: {},
-        guilds: {},
-      };
-      const dominantHouse = pickTopWithTiebreak(
-        houseRoundWins,
-        depTiebreak.houses,
-      );
-      const brandedGuild = pickTopWithTiebreak(
-        guildRoundWins,
-        depTiebreak.guilds,
-      );
-
-      const houseBonus = dominantHouse ? HOUSE_BONUSES[dominantHouse] : null;
-
-      await supabaseAdmin
-        .from('zones')
-        .update({
-          dominant_house: dominantHouse || null,
-          branded_guild: brandedGuild || null,
-          house_bonus_label: houseBonus?.label || null,
-        })
-        .eq('id', zone.id);
-
-      updated++;
-    }
-
-    // Refresh combat engine's in-memory bonus cache
-    try {
-      const combatEngine = require('../services/combatEngine');
-      if (combatEngine.refreshZoneBonusCache)
-        await combatEngine.refreshZoneBonusCache();
-    } catch (e) {}
-
-    console.log(`🌅 Zone identities recalculated — ${updated} zones updated`);
-    res.json({ success: true, updated });
-  } catch (err) {
-    console.error('Recalculate identities error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
+// HOUSE_BONUSES table, /:zoneId/zone-bonus endpoint, and
+// /recalculate-identities endpoint stripped 2026-04-26 (§9.110). The whole
+// zone-bonus model needs a clean redesign — see project memory note
+// "house-of-the-day zone bonus" for the intended target.
 
 // ── POST /api/zones/:zoneId/rejoin — player clicks rejoin after KO ────
 router.post('/:zoneId/rejoin', async (req, res) => {

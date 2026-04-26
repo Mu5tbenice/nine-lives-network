@@ -2105,11 +2105,8 @@
     manastorm:{atk:30,hp:380,spd:25,def:15,luck:10},   plaguemire:{atk:20,hp:450,spd:20,def:25,luck:10},
     darktide:{atk:25,hp:450,spd:20,def:20,luck:10},
   };
-  const CLIENT_HOUSE_BONUSES = {
-    smoulders:'+20% ATK', darktide:'+3% HP regen/min', stonebark:'+25% max HP',
-    ashenvale:'+15% SPD', stormrage:'Crits deal 3× dmg', nighthollow:'+10 LUCK',
-    dawnbringer:'HEAL & BLESS +50%', manastorm:'Effects +30%', plaguemire:'Enemies start poisoned',
-  };
+  // CLIENT_HOUSE_BONUSES removed 2026-04-26 (§9.110) — server-side bonuses
+  // are stripped pending a redesign of the per-zone bonus model.
   const EFFECT_COLORS = {
     CHAIN:'#FFD700',CRIT:'#FFEE00',PIERCE:'#FFC040',
     BURN:'#FF6B35',SURGE:'#FF3355',EXECUTE:'#FF9500',
@@ -2297,9 +2294,9 @@
   }
 
   function buildZoneCard(zone) {
-    const houseKey = zone.dominant_house || null;
-    const bonusLabel = houseKey ? CLIENT_HOUSE_BONUSES[houseKey] : null;
-    const hColor = houseKey ? (HOUSES[houseKey]?.color || '#D4A64B') : '#D4A64B';
+    const houseKey = null; // §9.110: dominant_house bonus stripped
+    const bonusLabel = null;
+    const hColor = '#D4A64B';
     const casters = zone.deployment_count || zone.arena_nines || 0;
     const isDeployed = S.deployedZoneIds.has(zone.id);
     // Use getBiomeUrl if available (defined in PIXI IIFE), else fallback inline
@@ -2424,16 +2421,7 @@
     // #16 Update zone tab bonus display immediately on zone entry
     if (window.updateZoneBonusPill) updateZoneBonusPill(zone);
     const ztBonus = document.getElementById('zt-bonus');
-    if (ztBonus) {
-      const dh = zone.dominant_house;
-      if (dh && CLIENT_HOUSE_BONUSES?.[dh]) {
-        const hc = HOUSES[dh]?.color || '#D4A64B';
-        const icon = HOUSES[dh]?.icon || '';
-        ztBonus.innerHTML = `<span style="color:${hc}">${icon} ${HOUSES[dh]?.name||dh}: ${CLIENT_HOUSE_BONUSES[dh]}</span>`;
-      } else {
-        ztBonus.textContent = 'No active bonus';
-      }
-    }
+    if (ztBonus) ztBonus.textContent = 'No active bonus'; // §9.110
     const ztCtrl = document.getElementById('zt-controlling');
     if (ztCtrl) ztCtrl.textContent = zone.controlling_guild || '—';
 
@@ -2455,7 +2443,7 @@
 
 
     document.getElementById('arena-zone-name').textContent = zone.name;
-    const houseKey = zone.dominant_house || SCHOOL_TO_HOUSE[zone.school_id] || null;
+    const houseKey = SCHOOL_TO_HOUSE[zone.school_id] || null;
     const h = houseKey ? HOUSES[houseKey] : { color:'#888', icon:'❓' };
     const regionEl = document.getElementById('arena-zone-region');
     if (regionEl) { regionEl.style.color = h.color; regionEl.textContent = `${h.icon} ${zone.region || zone.region_name || ''}`; }
@@ -2504,13 +2492,9 @@
   window.__9lv_openArena = openArena;
 
   function updateZoneBonusPill(zone) {
+    // §9.110: zone-bonus pill cleared while bonus model awaits redesign.
     const pill = document.getElementById('guild-control-pill');
-    if (!pill) return;
-    const dh = zone.dominant_house;
-    if (dh && CLIENT_HOUSE_BONUSES[dh]) {
-      const hc = HOUSES[dh]?.color || '#D4A64B';
-      pill.innerHTML = `<span style="font-family:'Press Start 2P',monospace;font-size:7px;color:${hc};background:${hc}18;border:1px solid ${hc}30;padding:2px 6px;border-radius:3px;">✦ ${CLIENT_HOUSE_BONUSES[dh]} active</span>`;
-    } else { pill.innerHTML = ''; }
+    if (pill) pill.innerHTML = '';
   }
 
   // ── CLOSE ARENA — leave zone, clean up socket + PIXI ──────────────
@@ -5009,17 +4993,11 @@
       ctrl.style.color = hc;
     }
 
-    // Zone bonus
+    // §9.110: zone bonus stripped pending redesign.
     const bonusEl = document.getElementById('zt-bonus');
     if (bonusEl) {
-      const dh = zone.dominant_house;
-      const houseInfo = HOUSES[dh] || {};
-      const bonusText = dh && CLIENT_HOUSE_BONUSES[dh]
-        ? `${houseInfo.icon || '✦'} ${dh.charAt(0).toUpperCase()+dh.slice(1)} — ${CLIENT_HOUSE_BONUSES[dh]}`
-        : 'No active bonus';
-      const hc = houseInfo.color || 'rgba(255,255,255,0.4)';
-      bonusEl.textContent = bonusText;
-      bonusEl.style.color = dh ? hc : 'rgba(204,197,219,0.4)';
+      bonusEl.textContent = 'No active bonus';
+      bonusEl.style.color = 'rgba(204,197,219,0.4)';
     }
 
     // Guild strength bars from last snapshot
