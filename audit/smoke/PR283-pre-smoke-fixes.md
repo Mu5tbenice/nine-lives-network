@@ -1,6 +1,6 @@
-# PR #281 — PR-E: PR-A/PR-C smoke bug fixes
+# PR #283 — PR-E: PR-A/PR-C smoke bug fixes
 
-**URL:** https://github.com/Mu5tbenice/Mu5tbenice/nine-lives-network/pull/281 (placeholder — see actual PR for real number)
+**URL:** https://github.com/Mu5tbenice/nine-lives-network/pull/283
 **Merged:** 2026-04-26
 **Surfaces:** `/nethara-live.html` combat log + HUD card slots
 
