@@ -262,8 +262,12 @@ function buildNineState(dep, nine, cards, zoneBonus) {
     destX: x,
     destY: y,
     moveSpeed: 6 + spd * 0.15, // slow shuffle: ~7-11 units/tick → 5-7s per wander step
-    atkTimer: atkInterval(spd),
-    cardTimer: cardInterval(spd),
+    // Phase jitter — adds 0-1s to cardTimer and 0-0.5s to atkTimer at deploy
+    // so two fighters with the same SPD don't lock-step into cluster casts
+    // every cycle. Average interval is unchanged after the first cycle (timers
+    // reset via cardInterval/atkInterval which are deterministic).
+    atkTimer: atkInterval(spd) + Math.random() * 0.5,
+    cardTimer: cardInterval(spd) + Math.random() * 1.0,
     cardIdx: 0,
     burnStacks: 0,
     burnTimer: 0,
@@ -1211,8 +1215,11 @@ async function tickZone(zoneId, zs) {
       }
     }
 
-    // Auto-attack
-    if (nine.atkTimer <= 0) {
+    // Auto-attack — paused during windup so the cast gets its own narrative
+    // beat without a competing jab from the same fighter on the same tick.
+    // The pause is at most WINDUP_S; atkTimer keeps ticking, so a queued
+    // auto-attack fires the tick after windup resolves (resolution + slap).
+    if (nine.atkTimer <= 0 && !nine._windupActive) {
       const tgt = pickTarget(nine, all);
       if (tgt) {
         resolveAttack(nine, tgt, all);
