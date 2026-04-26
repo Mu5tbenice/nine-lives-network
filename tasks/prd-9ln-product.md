@@ -360,7 +360,7 @@ No bonus if zone had zero fighters the previous day. Both layers recalculate at 
 
 ### 4.12 Effects — 36 Active (V4-Tuned)
 
-**Note:** `EFFECTS_REFERENCE_V5.md` (Feb 26 2026) predates the April 15 V4 balance pass and is deprecated. Its values (POISON "per cycle", BURN "per cycle", HEX "-12/stack max -36", WARD reapplies) are wrong. Use §4.12 of this PRD.
+**Note:** `EFFECTS_REFERENCE_V5.md` was deleted 2026-04-26 in §9.110. Its values (POISON "per cycle", BURN "per cycle", HEX "-12/stack max -36", WARD reapplies) drifted significantly from the live engine. Use §4.12 of this PRD; for live constants see `audit/balance/2026-04-26-spell-catalog.md` §4 (cited to `combatEngine.js` line numbers).
 
 **Removed since V5 doc:** GRAVITY, MIRROR, PARASITE, OVERCHARGE, SWIFT, RESURRECT, PHASE, AMPLIFY, LEECH AURA, SLOW (merged into WEAKEN), STEALTH (merged into DODGE).
 
@@ -2445,6 +2445,28 @@ Spec touches:
 **Follow-up 2026-04-26 in PR #292** — `/start <code>` triggered every other bot in the 9LV group (Wray: *"/start is going to trigger other bots so we need to do something different"*). `/start` is the standard onboarding command, registered globally by most bots. Switched to **`/link@Nerm9LV_Bot <code>`** as the canonical paste form: `/link` is a non-standard command few bots register, and the `@Nerm9LV_Bot` suffix scopes the command to Nerm even when collisions exist. Bot now registers both `/link <code>` (preferred) and `/start <code>` (legacy / external-deeplink fallback) — both delegate to the same `handleLinkStart` helper. `/link` without a payload returns a usage hint. FE pulls the bot username from the API response so the copy adapts if the bot ever rebrands.
 
 **Follow-up 2026-04-26 in PR #?** — `/link` was code-registered in PR #292 but didn't surface in Telegram's autocomplete and may have been filtered by Nerm's privacy mode (Wray: *"doesnt seem to be a /link command for nerm"*). Added `bot.setMyCommands([...])` on bot startup — populates the BotFather-side command list (autocomplete menu) AND ensures Telegram delivers these commands to the bot in groups even without the @-suffix. Idempotent: overwrites the command list on every boot so the canonical set lives in code, not in BotFather UI. List: `/link`, `/help`, `/sort`, `/houses`, `/lore`, `/cards`, `/scamcheck`. Logs `✅ Nerm Telegram command list registered with BotFather` on success, non-fatal on failure.
+
+### 9.110 Zone-bonus drift + legacy V2/V3 schema cleanup
+
+**Symptom (drift, not bug).** The arena V4 audit (`audit/balance/2026-04-26-live-data.md`) surfaced two pathologies driven by `zones.house_bonus_label` static values: Hanwu Boglands (manastorm "+30% all effects") produced 285k damage + 280k heals in 17 rounds with only 2 KOs (the +30% buffs both sides equally on round-based combat = stalemate generator); Twilight Grove (plaguemire "enemies start with 1 POISON stack") produced 8 KOs / 0 heals from one deployment. Wray's framing 2026-04-26 evening: *"I dont even remember setting zone specific bonuses, just the house bonuses for whichever house had the most deploys the previous day."* The static zone-bonus model in the live engine is accidental drift — the house-of-the-day bonus tied to guild ownership + banner display (per `project_house_of_day_bonus.md`) is the intended target and is not implemented.
+
+Companion findings from `audit/balance/2026-04-26-spell-catalog.md`:
+- `EFFECTS_REFERENCE_V5.md` (root, 2026-02-26) is comprehensively wrong vs. the live engine. WARD blocks the entire next attack (not 3-absorb), ANCHOR is last-stand-save (not flat -2), HEAL/BURN/POISON/BLESS use formulas the doc never describes.
+- `effect_definitions` DB table (24 rows) describes a V2/V3 zone-influence-economy game (e.g. *BURN: "adds flat % extra influence to your house"*), not real-time combat.
+- `casts`, `events`, `zone_effects`, `card_durability_log`, `combat_cycles` are empty post-V4 — schema for systems that never reached production.
+- `docs/design/zone-identity-v4.md` documented the broken state of the bonus pipeline; superseded by this resolution.
+
+**Effect.** Combat balance reads as random because two of the most-used zones produce systemically unbalanced outcomes for reasons unrelated to player choices. Future contributors / AI agents reading `EFFECTS_REFERENCE_V5.md` or `effect_definitions` get a wrong mental model of the engine.
+
+**Resolution plan.** Strip the entire static zone-bonus path so the bonus model can be redesigned cleanly. Specifically:
+- Code: remove `HOUSE_BONUSES` constants (both copies — `combatEngine.js` + `routes/zones.js`), `zoneBonusCache` / `getZoneBonus` / `refreshZoneBonusCache` / `effectAmp` / `healAmp`, and all bonus key reads (`atk`, `hp`, `spd`, `luck`, `regen`, `heal_amp`, `effect_amp`, `crit_mult`). Remove the `/api/zones/:zoneId/zone-bonus` and `/api/zones/recalculate-identities` endpoints + nightly cron call. Strip `CLIENT_HOUSE_BONUSES` + 5 UI display sites in `nethara-live.html`.
+- Schema (migration 009): drop `zones.house_bonus_label`, `zones.dominant_house`, `zone_control.dominant_house`, `zone_control_history.dominant_house`. Drop legacy tables `effect_definitions`, `casts`, `events`, `zone_effects`, `card_durability_log`, `combat_cycles`.
+- Docs: delete `EFFECTS_REFERENCE_V5.md` and `docs/design/zone-identity-v4.md`. Remove inbound references in `CLAUDE.md` and the §4.12 footnote in this PRD.
+- Kept (intentional, hooks for future redesign): `zones.controlling_guild`, `zones.branded_guild`, `zone_control_history.branded_guild` — the banner / guild-ownership surface Wray described as the intended bonus model.
+
+Deferred to follow-up PR (cross-engine audit needed before stripping safely): unused `TAUNT` / `REFLECT` / `CLEANSE` effect handlers in `combatEngine.js`. They have no card using them as `base_effect` but are referenced in `effectEngine.js`, `duelEngine.js`, and a unit test — the cross-engine cleanup is its own slice.
+
+**Resolved 2026-04-26 in PR #?.** Code stripped, migration `009_strip_zone_bonus_legacy_drift.sql` applied via Supabase SQL editor, docs deleted. Engine reads no zone bonus paths after this PR. Companion audit docs (Doc A `live-data.md`, Doc B `spell-catalog.md`) ship in their own docs PRs (#294, #295) and are the artifact for the next session's balance-simulator scoping. Voxel primitive design (Doc C, PR #296) is independent.
 
 ---
 

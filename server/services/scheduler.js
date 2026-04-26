@@ -159,15 +159,8 @@ function initializeScheduledJobs() {
       console.error('❌ Midnight banking error:', e.message);
     }
 
-    // Recalculate zone identities (house presence bonus + guild branding)
-    await fetch(
-      'http://localhost:' +
-        (process.env.PORT || 5000) +
-        '/api/zones/recalculate-identities',
-      {
-        method: 'POST',
-      },
-    ).catch((e) => console.error('Zone identity recalc failed:', e.message));
+    // Zone-identity recalc removed 2026-04-26 (§9.110) — endpoint deleted;
+    // bonus model awaits redesign per project_house_of_day_bonus.md.
 
     // Heal all Nines to full HP at midnight
     try {
