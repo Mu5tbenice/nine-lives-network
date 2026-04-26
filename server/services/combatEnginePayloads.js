@@ -103,6 +103,32 @@ function buildAttackBroadcastPayload({
 }
 
 /**
+ * Build the `combat:windup` socket payload emitted 1.2s before a card cast
+ * resolves. Tells the client which fighter is charging which card at which
+ * target, so it can render a charge bar + log telegraph beat.
+ *
+ * Target is locked at windup start — the telegraph promises the player who
+ * the cast will hit. If the locked target dies during windup, the engine
+ * re-picks at fire time (handled in combatEngine.js, not here).
+ */
+function buildWindupBroadcastPayload({ caster, target, card, slot, durationMs }) {
+  return {
+    attacker: caster.playerName,
+    attackerId: caster.playerId,
+    target: target.playerName,
+    targetId: target.playerId,
+    card_name: card?.name || null,
+    effect: card?.effect_1 || null,
+    slot: slot + 1,
+    duration_ms: durationMs,
+    x: caster.x,
+    y: caster.y,
+    tx: target.x,
+    ty: target.y,
+  };
+}
+
+/**
  * Build the `combat:effect` socket payload emitted at the end of applyEffect.
  *
  * Includes `card_name` so the client can log a dedicated cast line
@@ -129,4 +155,5 @@ module.exports = {
   calculateRoundXP,
   buildAttackBroadcastPayload,
   buildEffectBroadcastPayload,
+  buildWindupBroadcastPayload,
 };

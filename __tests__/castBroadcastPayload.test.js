@@ -5,6 +5,7 @@
 const {
   buildAttackBroadcastPayload,
   buildEffectBroadcastPayload,
+  buildWindupBroadcastPayload,
 } = require('../server/services/combatEnginePayloads');
 
 const caster = {
@@ -155,5 +156,54 @@ describe('buildEffectBroadcastPayload — PR-1 card_name field', () => {
       card: undefined,
     });
     expect(out.card_name).toBeNull();
+  });
+});
+
+describe('buildWindupBroadcastPayload — PR-2 telegraph', () => {
+  test('payload includes attacker, target, card_name, duration_ms', () => {
+    const out = buildWindupBroadcastPayload({
+      caster,
+      target: defender,
+      card: cinderSnap,
+      slot: 0,
+      durationMs: 1200,
+    });
+    expect(out).toEqual({
+      attacker: 'Goosebumps',
+      attackerId: 'p-caster',
+      target: 'Velvet',
+      targetId: 'p-defender',
+      card_name: 'Cinder Snap',
+      effect: 'BURN',
+      slot: 1,
+      duration_ms: 1200,
+      x: 100,
+      y: 200,
+      tx: 300,
+      ty: 250,
+    });
+  });
+
+  test('slot is 1-indexed for UI consistency with combat:attack payload', () => {
+    const out = buildWindupBroadcastPayload({
+      caster,
+      target: defender,
+      card: cinderSnap,
+      slot: 2,
+      durationMs: 1200,
+    });
+    expect(out.slot).toBe(3);
+  });
+
+  test('card_name is null when card has no name (defensive)', () => {
+    const out = buildWindupBroadcastPayload({
+      caster,
+      target: defender,
+      card: { effect_1: 'BURN' }, // no name
+      slot: 0,
+      durationMs: 1200,
+    });
+    expect(out.card_name).toBeNull();
+    expect(out.effect).toBe('BURN');
   });
 });
