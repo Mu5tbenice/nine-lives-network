@@ -208,14 +208,41 @@
         </p>
       </div>
 
+      <div class="field">
+        <div class="field__head">
+          <span class="field__title">Telegram</span>
+          <span class="pill-empty" id="telegram-status">NOT LINKED</span>
+        </div>
+        <p class="field__hint">
+          Link your Telegram so the bot can ping you when drops or events go live.
+        </p>
+
+        <div class="field__input-row" id="telegram-link-row">
+          <button class="btn" id="telegram-link-btn" style="flex:1;">LINK TELEGRAM</button>
+        </div>
+
+        <div class="field__input-row" id="telegram-linked-row" style="display:none;">
+          <span class="row__value" id="telegram-linked-handle" style="flex:1; text-align:left;">—</span>
+          <button class="btn" id="telegram-unlink-btn">UNLINK</button>
+        </div>
+
+        <div class="field__msg" id="telegram-msg"></div>
+
+        <a
+          href="https://t.me/iduj9q8mx98"
+          target="_blank"
+          rel="noopener"
+          id="telegram-community-cta"
+          style="display:none; font-family:var(--font-data); font-size:10px; letter-spacing:1px; color:var(--gold); margin-top:6px;"
+        >
+          Join the community →
+        </a>
+      </div>
+
       <!-- PREFERENCES -->
       <div class="section-label">
         <span class="section-label__text">PREFERENCES</span>
         <span class="section-label__line"></span>
-      </div>
-      <div class="row">
-        <span class="row__label">Telegram</span>
-        <span class="row__value row__value--muted">Coming later</span>
       </div>
       <div class="row">
         <span class="row__label">Email alerts</span>
@@ -306,6 +333,10 @@
             els.input.value = p.wallet_address;
             showStatus(true);
           }
+          setTelegramLinked({
+            linked: !!p.telegram_user_id,
+            telegram_username: p.telegram_username || null
+          });
           content.style.display = '';
         })
         .catch(function(e) {
@@ -374,6 +405,135 @@
           els.save.disabled = false;
         });
     });
+
+    // ─── TELEGRAM LINK ───
+    var tgEls = {
+      status: document.getElementById('telegram-status'),
+      linkBtn: document.getElementById('telegram-link-btn'),
+      linkRow: document.getElementById('telegram-link-row'),
+      linkedRow: document.getElementById('telegram-linked-row'),
+      linkedHandle: document.getElementById('telegram-linked-handle'),
+      unlinkBtn: document.getElementById('telegram-unlink-btn'),
+      msg: document.getElementById('telegram-msg'),
+      cta: document.getElementById('telegram-community-cta')
+    };
+
+    var tgPollHandle = null;
+
+    function setTgMsg(text, kind) {
+      if (!tgEls.msg) return;
+      tgEls.msg.textContent = text || '';
+      tgEls.msg.className = 'field__msg ' + (kind === 'err' ? 'msg-err' : kind === 'ok' ? 'msg-ok' : '');
+    }
+
+    function setTelegramLinked(state) {
+      var linked = !!(state && state.linked);
+      if (linked) {
+        tgEls.status.textContent = 'LINKED';
+        tgEls.status.className = 'pill-ok';
+        tgEls.linkRow.style.display = 'none';
+        tgEls.linkedRow.style.display = '';
+        tgEls.linkedHandle.textContent = state.telegram_username
+          ? '@' + state.telegram_username
+          : '(no public username)';
+        tgEls.cta.style.display = '';
+      } else {
+        tgEls.status.textContent = 'NOT LINKED';
+        tgEls.status.className = 'pill-empty';
+        tgEls.linkRow.style.display = '';
+        tgEls.linkedRow.style.display = 'none';
+        tgEls.cta.style.display = 'none';
+      }
+    }
+
+    function stopTgPoll() {
+      if (tgPollHandle) {
+        clearInterval(tgPollHandle);
+        tgPollHandle = null;
+      }
+    }
+
+    function startTgPoll(deadlineMs) {
+      stopTgPoll();
+      var attempt = 0;
+      tgPollHandle = setInterval(function() {
+        attempt++;
+        if (Date.now() > deadlineMs) {
+          stopTgPoll();
+          tgEls.linkBtn.disabled = false;
+          setTgMsg("Didn't see a confirmation. Tap LINK TELEGRAM to try again.", 'err');
+          return;
+        }
+        fetch('/api/players/' + encodeURIComponent(playerId) + '/telegram-status')
+          .then(function(r){ return r.json(); })
+          .then(function(s) {
+            if (s && s.linked) {
+              stopTgPoll();
+              setTelegramLinked({ linked: true, telegram_username: s.telegram_username });
+              setTgMsg('Linked. Welcome aboard.', 'ok');
+              tgEls.linkBtn.disabled = false;
+            } else {
+              var secsLeft = Math.max(0, Math.round((deadlineMs - Date.now()) / 1000));
+              setTgMsg('Waiting for confirmation in Telegram… (' + secsLeft + 's)', '');
+            }
+          })
+          .catch(function(){ /* swallow transient errors during polling */ });
+      }, 3000);
+    }
+
+    if (tgEls.linkBtn) {
+      tgEls.linkBtn.addEventListener('click', function() {
+        tgEls.linkBtn.disabled = true;
+        setTgMsg('Generating link…', '');
+        fetch('/api/players/start-telegram-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ player_id: playerId })
+        })
+          .then(function(r){ return r.json().then(function(j){ return { status: r.status, body: j }; }); })
+          .then(function(res) {
+            if (res.status < 200 || res.status >= 300 || !res.body.success) {
+              tgEls.linkBtn.disabled = false;
+              setTgMsg((res.body && res.body.error) || 'Could not start link', 'err');
+              return;
+            }
+            window.open(res.body.deeplink, '_blank');
+            setTgMsg('Waiting for confirmation in Telegram…', '');
+            // Poll for ~2 minutes; the code itself is valid 10min server-side
+            // but most users complete in seconds.
+            startTgPoll(Date.now() + 120000);
+          })
+          .catch(function(e) {
+            tgEls.linkBtn.disabled = false;
+            setTgMsg('Network error: ' + e.message, 'err');
+          });
+      });
+    }
+
+    if (tgEls.unlinkBtn) {
+      tgEls.unlinkBtn.addEventListener('click', function() {
+        if (!confirm('Unlink your Telegram? You can link again any time.')) return;
+        tgEls.unlinkBtn.disabled = true;
+        setTgMsg('Unlinking…', '');
+        fetch('/api/players/' + encodeURIComponent(playerId) + '/telegram', {
+          method: 'DELETE'
+        })
+          .then(function(r){ return r.json().then(function(j){ return { status: r.status, body: j }; }); })
+          .then(function(res) {
+            tgEls.unlinkBtn.disabled = false;
+            if (res.status >= 200 && res.status < 300 && res.body.success) {
+              setTelegramLinked({ linked: false });
+              setTgMsg('Unlinked.', 'ok');
+            } else {
+              setTgMsg((res.body && res.body.error) || 'Unlink failed', 'err');
+            }
+          })
+          .catch(function(e) {
+            tgEls.unlinkBtn.disabled = false;
+            setTgMsg('Network error: ' + e.message, 'err');
+          });
+      });
+    }
   </script>
 </body>
 </html>

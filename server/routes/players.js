@@ -6,6 +6,27 @@ const {
   validateSolanaAddress,
   checkWalletChangeAllowed,
 } = require('./walletValidator');
+const telegramLinkCodes = require('./telegramLinkCodes');
+
+// Lazy import — nerm-telegram is graceful-degradation loaded by the
+// scheduler. Wrap in try so the route works even if the bot module
+// fails to load (the deeplink will fall back to env / literal username).
+let nermTelegram = null;
+try {
+  nermTelegram = require('../services/nerm-telegram');
+} catch (e) {
+  console.warn('[players route] nerm-telegram not loaded; deeplink username will fall back');
+}
+
+function resolveBotUsername() {
+  // Prefer the runtime value the bot pulled from getMe(); fall back to
+  // env var, then to the canonical literal.
+  if (nermTelegram && typeof nermTelegram.getBotUsername === 'function') {
+    const u = nermTelegram.getBotUsername();
+    if (u) return u;
+  }
+  return process.env.TELEGRAM_BOT_USERNAME || 'Nerm9LV_Bot';
+}
 
 /**
  * GET /api/players/:id
@@ -34,7 +55,10 @@ router.get('/:id', async (req, res) => {
         last_cast_at,
         is_active,
         streak,
-        wallet_address
+        wallet_address,
+        telegram_user_id,
+        telegram_username,
+        telegram_linked_at
       `,
       )
       .eq('id', id)
@@ -369,6 +393,105 @@ router.post('/link-wallet', async (req, res) => {
   } catch (err) {
     console.error('[link-wallet] server error:', err);
     res.status(500).json({ error: 'Server error', code: 'SERVER_ERROR' });
+  }
+});
+
+// ═══════════════════════════════════════════
+// POST /api/players/start-telegram-link
+// Body: { player_id }
+// Issues a one-time link code and the t.me deeplink. The bot's
+// /start <code> handler (server/services/nerm-telegram.js) consumes
+// the code and writes the player↔telegram link. /settings polls
+// /telegram-status until the bind completes.
+// ═══════════════════════════════════════════
+
+router.post('/start-telegram-link', async (req, res) => {
+  try {
+    const { player_id } = req.body || {};
+    if (!player_id) {
+      return res.status(400).json({ error: 'player_id required', code: 'NO_PLAYER' });
+    }
+
+    // Ensure the player actually exists before issuing a code.
+    const { data: player, error: readErr } = await supabaseAdmin
+      .from('players')
+      .select('id')
+      .eq('id', player_id)
+      .single();
+    if (readErr || !player) {
+      return res.status(404).json({ error: 'Player not found', code: 'NO_PLAYER' });
+    }
+
+    const code = telegramLinkCodes.generateCode();
+    telegramLinkCodes.storeCode(code, player.id);
+
+    const username = resolveBotUsername();
+    const deeplink = `https://t.me/${username}?start=${code}`;
+
+    return res.json({
+      success: true,
+      code,
+      deeplink,
+      bot_username: username,
+      expires_in_seconds: Math.round(telegramLinkCodes.CODE_TTL_MS / 1000),
+    });
+  } catch (err) {
+    console.error('[start-telegram-link] server error:', err);
+    res.status(500).json({ error: 'Server error', code: 'SERVER_ERROR' });
+  }
+});
+
+// GET /api/players/:id/telegram-status
+// Polled by /settings every ~3s after the deeplink opens. Returns the
+// current link state so the UI can flip the pill the moment the bot
+// completes the handshake.
+router.get('/:id/telegram-status', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data, error } = await supabase
+      .from('players')
+      .select('telegram_user_id, telegram_username, telegram_linked_at')
+      .eq('id', id)
+      .single();
+    if (error || !data) {
+      return res.status(404).json({ error: 'Player not found' });
+    }
+    return res.json({
+      linked: !!data.telegram_user_id,
+      telegram_username: data.telegram_username || null,
+      telegram_linked_at: data.telegram_linked_at || null,
+    });
+  } catch (err) {
+    console.error('[telegram-status] server error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE /api/players/:id/telegram
+// Unlinks the Telegram account. Same trust-on-id model as the rest of
+// the codebase (see §9.106).
+router.delete('/:id/telegram', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { data, error } = await supabaseAdmin
+      .from('players')
+      .update({
+        telegram_user_id: null,
+        telegram_username: null,
+        telegram_linked_at: null,
+      })
+      .eq('id', id)
+      .select('id')
+      .single();
+    if (error || !data) {
+      console.error('[telegram-unlink] error:', error);
+      return res.status(404).json({ error: 'Player not found or unlink failed' });
+    }
+    console.log(`[telegram-unlink] player_id=${id}`);
+    return res.json({ success: true, message: 'Telegram unlinked.' });
+  } catch (err) {
+    console.error('[telegram-unlink] server error:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

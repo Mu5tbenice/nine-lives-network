@@ -265,20 +265,78 @@ router.get('/twitter/callback', async (req, res) => {
         }
       }
 
-      // Update last_login and streak
+      // §9.103: refresh stale Twitter pfp + handle if X has new values.
+      // twitter_id stays canonical; handle/pfp drift is just a cache
+      // refresh, never a gate. If the X user-fetch returned defensively,
+      // the comparison below will no-op.
+      const refreshed = {};
+      const newProfileImage =
+        twitterUser.profile_image_url?.replace('_normal', '_400x400') || null;
+      if (newProfileImage && newProfileImage !== existingPlayer.profile_image) {
+        refreshed.profile_image = newProfileImage;
+      }
+      if (
+        twitterUser.username &&
+        twitterUser.username !== existingPlayer.twitter_handle
+      ) {
+        refreshed.twitter_handle = twitterUser.username;
+      }
+
+      // Update last_login + streak (+ optional pfp/handle refresh)
       await supabase
         .from('players')
-        .update({ last_login: now.toISOString(), streak: newStreak })
+        .update({
+          last_login: now.toISOString(),
+          streak: newStreak,
+          ...refreshed,
+        })
         .eq('id', existingPlayer.id);
+
+      if (Object.keys(refreshed).length > 0) {
+        console.log(
+          `[§9.103] refreshed for player ${existingPlayer.id}: ${Object.keys(refreshed).join(', ')}`,
+        );
+      }
 
       console.log(
         `Streak updated: ${newStreak} days for player ${existingPlayer.id}`,
       );
+
+      // §9.104: auto-claim daily pack on login. Reuses the live UTC-day
+      // boundary (packSystem.isDailyClaimedToday), so this can't double
+      // -claim against a manual /api/packs/claim-daily click. If the
+      // grant errors (rate-limit collision, transient Supabase blip),
+      // log + continue — the manual button still works.
+      let dailyPackGranted = false;
+      if (packSystem) {
+        try {
+          const alreadyClaimed = await packSystem.isDailyClaimedToday(
+            existingPlayer.id,
+          );
+          if (!alreadyClaimed) {
+            const grant = await packSystem.grantDailyPack(existingPlayer.id);
+            if (grant && grant.success) {
+              dailyPackGranted = true;
+              console.log(
+                `[§9.104] auto-claimed daily pack for player ${existingPlayer.id}`,
+              );
+            }
+          }
+        } catch (e) {
+          console.error(
+            `[§9.104] daily-pack auto-claim error for player ${existingPlayer.id}:`,
+            e.message,
+          );
+        }
+      }
+
+      const redirectParams = `player_id=${existingPlayer.id}${dailyPackGranted ? '&daily_pack=1' : ''}`;
       console.log(
         'Redirecting to dashboard with player_id:',
         existingPlayer.id,
+        dailyPackGranted ? '(+ daily pack)' : '',
       );
-      return res.redirect(`/dashboard.html?player_id=${existingPlayer.id}`);
+      return res.redirect(`/dashboard.html?${redirectParams}`);
     }
 
     // Validate Twitter account requirements
