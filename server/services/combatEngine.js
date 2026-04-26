@@ -14,6 +14,8 @@ const { addXP, XP_REWARDS } = require('./xp-engine');
 const {
   buildRoundStartNinePayload,
   calculateRoundXP,
+  buildAttackBroadcastPayload,
+  buildEffectBroadcastPayload,
 } = require('./combatEnginePayloads');
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────
@@ -654,6 +656,7 @@ function applyEffect(caster, target, card, all) {
             defender: ct.playerName,
             dmg: d,
             effect: 'CHAIN',
+            card_name: card?.name || null,
             hp: ct.hp,
             maxHp: ct.maxHp,
             x: caster.x,
@@ -703,17 +706,11 @@ function applyEffect(caster, target, card, all) {
     default:
       break;
   }
-  broadcast(caster.zoneId, 'combat:effect', {
-    effect: e,
-    by: caster.playerName,
-    casterId: caster.playerId,
-    on: target?.playerName || null,
-    targetId: target?.playerId || null,
-    x: caster.x,
-    y: caster.y,
-    tx: target?.x,
-    ty: target?.y,
-  });
+  broadcast(
+    caster.zoneId,
+    'combat:effect',
+    buildEffectBroadcastPayload({ caster, target, effect: e, card }),
+  );
 }
 
 // ─── ATTACK RESOLUTION ───────────────────────────────────────────────
@@ -782,6 +779,7 @@ function resolveAttack(caster, defender, all) {
       defender: caster.playerName,
       dmg,
       effect: 'REFLECT',
+      card_name: card?.name || null,
       hp: caster.hp,
       maxHp: caster.maxHp,
       x: defender.x,
@@ -852,25 +850,21 @@ function resolveAttack(caster, defender, all) {
     }
   }
 
-  broadcast(caster.zoneId, 'combat:attack', {
-    attacker: caster.playerName,
-    attackerId: caster.playerId,
-    defender: defender.playerName,
-    defenderId: defender.playerId,
-    dmg,
-    crit: isCrit,
-    critMult,
-    slot: slot + 1,
-    effect: card?.effect_1 || null,
-    hp: defender.hp,
-    maxHp: defender.maxHp,
-    guildA: caster.guildTag,
-    guildB: defender.guildTag,
-    x: caster.x,
-    y: caster.y,
-    tx: defender.x,
-    ty: defender.y,
-  });
+  broadcast(
+    caster.zoneId,
+    'combat:attack',
+    buildAttackBroadcastPayload({
+      caster,
+      defender,
+      dmg,
+      isCrit,
+      critMult,
+      slot,
+      card,
+      hp: defender.hp,
+      maxHp: defender.maxHp,
+    }),
+  );
 }
 
 // ─── KO ───────────────────────────────────────────────────────────────

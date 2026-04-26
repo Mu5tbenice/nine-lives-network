@@ -58,4 +58,75 @@ function calculateRoundXP({ winner, flipped, livingNines }) {
   return log;
 }
 
-module.exports = { buildRoundStartNinePayload, calculateRoundXP };
+/**
+ * Build the `combat:attack` socket payload for the main resolveAttack path.
+ *
+ * Adds `card_name` so the client log can render the named beat
+ * ("Goosebumps's Cinder Snap → Velvet -38") instead of just the effect tag.
+ * The card is the slot-active card on the caster, used both to modulate the
+ * auto-attack damage (slotMult) and to surface the card identity in the log.
+ *
+ * Caller passes the resolved damage and crit metadata; this fn does not
+ * compute anything beyond shaping the payload.
+ */
+function buildAttackBroadcastPayload({
+  caster,
+  defender,
+  dmg,
+  isCrit,
+  critMult,
+  slot,
+  card,
+  hp,
+  maxHp,
+}) {
+  return {
+    attacker: caster.playerName,
+    attackerId: caster.playerId,
+    defender: defender.playerName,
+    defenderId: defender.playerId,
+    dmg,
+    crit: !!isCrit,
+    critMult,
+    slot: slot + 1,
+    card_name: card?.name || null,
+    effect: card?.effect_1 || null,
+    hp,
+    maxHp,
+    guildA: caster.guildTag,
+    guildB: defender.guildTag,
+    x: caster.x,
+    y: caster.y,
+    tx: defender.x,
+    ty: defender.y,
+  };
+}
+
+/**
+ * Build the `combat:effect` socket payload emitted at the end of applyEffect.
+ *
+ * Includes `card_name` so the client can log a dedicated cast line
+ * ("Goosebumps casts Cinder Snap on Velvet [POISON]"). target may be null
+ * for self-buffs (SURGE/CRIT/CLEANSE etc.) — caller resolves that.
+ */
+function buildEffectBroadcastPayload({ caster, target, effect, card }) {
+  return {
+    effect,
+    by: caster.playerName,
+    casterId: caster.playerId,
+    on: target?.playerName || null,
+    targetId: target?.playerId || null,
+    card_name: card?.name || null,
+    x: caster.x,
+    y: caster.y,
+    tx: target?.x,
+    ty: target?.y,
+  };
+}
+
+module.exports = {
+  buildRoundStartNinePayload,
+  calculateRoundXP,
+  buildAttackBroadcastPayload,
+  buildEffectBroadcastPayload,
+};
