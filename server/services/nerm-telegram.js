@@ -21,14 +21,8 @@ const LINK_REPLIES = {
     'Link code expired or already used. Open Settings on the site to get a new one.',
   alreadyLinked: 'Already linked to another account.',
   errorGeneric: 'Something broke linking that. Try again from Settings.',
-  success: (twitterHandle, groupUrl) => {
-    const base = `Linked. @${twitterHandle} is now bound here.`;
-    return groupUrl ? `${base}\nJoin the community: ${groupUrl}` : base;
-  },
+  success: (twitterHandle) => `Linked. @${twitterHandle} is now bound.`,
 };
-
-const COMMUNITY_URL =
-  process.env.TELEGRAM_GROUP_URL || 'https://t.me/iduj9q8mx98';
 
 // ╔══════════════════════════════════════════╗
 // ║                                          ║
@@ -740,10 +734,7 @@ VOICE:
       console.log(
         `[handleLinkStart] linked player_id=${playerId} tg_user_id=${tgUserId} tg_username=${tgUsername || 'null'}`,
       );
-      bot.sendMessage(
-        msg.chat.id,
-        LINK_REPLIES.success(player.twitter_handle, COMMUNITY_URL),
-      );
+      bot.sendMessage(msg.chat.id, LINK_REPLIES.success(player.twitter_handle));
     } catch (err) {
       console.error('[handleLinkStart] error:', err);
       bot.sendMessage(msg.chat.id, LINK_REPLIES.errorGeneric);
