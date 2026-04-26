@@ -1048,14 +1048,32 @@ async function tickZone(zoneId, zs) {
   const all = Array.from(zs.nines.values());
   if (!all.length) return;
 
-  // Timers — decrement by elapsed seconds so intervals are tick-rate independent
+  // Timers — decrement by elapsed seconds so intervals are tick-rate independent.
+  // Skipped during intermission so timers don't drift into negative during the
+  // 35s pause (which would cause every survivor to insta-cast on round start).
+  // startRound also re-sets timers as a defensive belt-and-braces.
   const TICK_S = TICK_MS / 1000;
-  all.forEach((n) => {
-    if (n.hp <= 0) return;
-    n.atkTimer = Math.max(0, n.atkTimer - TICK_S);
-    n.cardTimer = Math.max(0, n.cardTimer - TICK_S);
-    if (n.corrodeCd > 0) n.corrodeCd -= TICK_S;
-  });
+  if (zs.roundState === 'FIGHTING') {
+    all.forEach((n) => {
+      if (n.hp <= 0) return;
+      n.atkTimer = Math.max(0, n.atkTimer - TICK_S);
+      n.cardTimer = Math.max(0, n.cardTimer - TICK_S);
+      if (n.corrodeCd > 0) n.corrodeCd -= TICK_S;
+    });
+  }
+
+  // Intermission gate — skip combat, DOTs, movement, KO check during the
+  // 35s pause between rounds. Positions still broadcast (§9.76 — keeps the
+  // client stall detector quiet) and the intermission-expiry check still
+  // runs at the bottom of this fn (~line 1317) to fire startRound.
+  if (zs.roundState !== 'FIGHTING') {
+    // Intermission expiry → startRound
+    if (Date.now() >= zs.roundEndsAt) {
+      startRound(zoneId, zs, Array.from(zs.nines.values()));
+    }
+    broadcastArenaPositions(zoneId, zs);
+    return;
+  }
 
   // ── DOT EFFECTS — time-based, tick-rate independent ────────────────
   const nowTs = Date.now();
@@ -1313,21 +1331,10 @@ async function tickZone(zoneId, zs) {
 
   const now = Date.now();
 
-  // Intermission check — start new round when countdown expires
-  if (zs.roundState === 'INTERMISSION') {
-    if (now >= zs.roundEndsAt)
-      startRound(zoneId, zs, Array.from(zs.nines.values()));
-    // §9.76: broadcast frozen positions during the 35s intermission so the
-    // client stall detector (15s threshold, nethara-live.html:5297) doesn't
-    // false-fire on the natural silence. Positions don't change tick-to-tick
-    // during intermission (no combat ran) but keeping the wire alive lets
-    // the client deploy-status pill + HUD stay visible instead of being
-    // masked by the reconnect loading overlay at z-index:200.
-    broadcastArenaPositions(zoneId, zs);
-    return;
-  }
-
   // Hard cap — 5 minutes, end regardless
+  // (Intermission handling moved to the early gate at the top of this fn so
+  // combat/DOTs/movement also pause during the 35s pause, not just the
+  // round-state expiry check. §9.76 frozen-position broadcast lives there too.)
   if (zs.roundState === 'FIGHTING' && now >= zs.roundEndsAt) {
     await endRound(zoneId, zs, Array.from(zs.nines.values()), 'cap');
     return;
@@ -1651,6 +1658,13 @@ function startRound(zoneId, zs, all) {
     n._wasKOdThisRound = false;
     n._windupActive = false;
     n._windupTarget = null;
+    n._windupRecipient = null;
+    // Re-set timers + phase jitter so the 35s intermission doesn't leave
+    // every survivor at cardTimer<<0 → instant cluster-cast on round start.
+    // Matches the deploy-time jitter from buildNineState.
+    const spd = n.stats.spd + (n.hasteBonus || 0);
+    n.atkTimer = atkInterval(spd) + Math.random() * 0.5;
+    n.cardTimer = cardInterval(spd) + Math.random() * 1.0;
   });
 
   broadcast(zoneId, 'arena:round_start', {
