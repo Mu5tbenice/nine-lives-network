@@ -4336,12 +4336,16 @@
       // thinking the heal was hitting them. Damage still appears; the slot
       // card just isn't narrated for non-offensive cycles (cast cycle still
       // narrates via combat:effect).
+      // PR-F: explicit [auto attack] tag so spectators can scan the log
+      // and tell auto-attacks apart from spell casts at a glance.
       const isOffensiveSlot = (data.recipient || 'OFFENSIVE') === 'OFFENSIVE';
       const cardLabel = (isOffensiveSlot && data.card_name) ? `<span class="feed-card">${data.card_name}</span> ` : '';
       const cardPlain = (isOffensiveSlot && data.card_name) ? `${data.card_name} ` : '';
       const effTag = (isOffensiveSlot && data.effect) ? ` [${data.effect}]` : '';
-      addFeedEvent(`⚔️ ${from} ${cardLabel}→ ${to} <strong>-${dmg}</strong>${critPart}${effTag}`, 'attack');
-      addBattleLog(`${from} ${cardPlain}→ ${to} -${dmg}${data.crit?' CRIT':''}${effTag}`, 'default');
+      const attackTag = ` <span class="feed-effect">[auto attack]</span>`;
+      const attackTagPlain = ' [auto attack]';
+      addFeedEvent(`⚔️ ${from} ${cardLabel}→ ${to} <strong>-${dmg}</strong>${critPart}${effTag}${attackTag}`, 'attack');
+      addBattleLog(`${from} ${cardPlain}→ ${to} -${dmg}${data.crit?' CRIT':''}${effTag}${attackTagPlain}`, 'default');
 
       // Self: drive timeline + ATK bar
       if (fromId === String(S.playerId) && data.slot) {
@@ -4567,7 +4571,9 @@
     socket.on('combat:dot', (data) => {
       const id = resolveId(data.nineId);
       const sp = S.nines.get(id);
-      // Only show DOT text when it's your Nine taking the damage
+      // Only show DOT floating text when it's your Nine taking the damage —
+      // saves screen real estate. But ALL DOT ticks land in the log so
+      // spectators can see POISON/BURN damage ticking on any fighter.
       if (data.dmg > 0 && String(id) === String(S.playerId)) {
         const px = sp ? sp.container.x : (data.x != null ? engineToScreen({x:data.x,y:data.y||0}).x : null);
         const py = sp ? sp.container.y : (data.x != null ? engineToScreen({x:data.x,y:data.y||0}).y : null);
@@ -4575,6 +4581,15 @@
           const dotColor = (data.type === 'burn') ? 0xff6b35 : 0x76ff03;
           showFloatingText(px, py - 15, `-${data.dmg}`, dotColor, 10);
         }
+      }
+      // PR-F: log every DOT tick so the source of damage is visible to
+      // spectators. Without this the log only shows casts + auto-attacks
+      // and BURN/POISON ticks happen invisibly between them.
+      if (data.dmg > 0) {
+        const targetName = sp ? (sp.name || getNineName(id)) : (data.nine || getNineName(id));
+        const eff = data.effect || (data.type ? data.type.toUpperCase() : 'DOT');
+        addFeedEvent(`🩸 ${targetName} <strong>-${data.dmg}</strong> <span class="feed-effect">[${eff}]</span>`, 'effect');
+        addBattleLog(`${targetName} -${data.dmg} [${eff}]`, 'default');
       }
     });
 

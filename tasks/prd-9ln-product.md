@@ -2407,6 +2407,18 @@ Spec touches:
 
 ---
 
+### 9.108 Round stuck in FIGHTING after mutual KO — `alive.length===0` skipped endRound
+
+**Symptom (Wray smoke 2026-04-26 evening, post-PR #283).** *"Sprite gets left on the arena with 0 hp bar and the next round doesn't fire."* The combat tick's last-guild-standing check at `combatEngine.js` was guarded by `if (alive.length > 0)` before evaluating guild count. When a 1v1 (or AOE wipe) ended with **everyone dead the same tick**, `alive` was empty and the entire end-round block was skipped — round stayed in FIGHTING with all sprites visible at 0 HP, intermission never fired, the zone was effectively bricked until process restart.
+
+**Effect.** Rare in healthy multi-fighter rounds but trivial to reproduce in 1v1 testing. As more fighters deploy and DOTs/SHATTER/INFECT AOEs fire, mutual-KO ticks become more likely, not less. Hard-blocking gameplay loop bug.
+
+**Resolution plan.** Extract the round-end evaluation into a pure helper `evaluateRoundEnd(nines, anyKO)` returning `'last_standing' | 'mutual_ko' | null`. The new `mutual_ko` reason covers the empty-survivors case. `tickZone` calls the helper and invokes `endRound(zoneId, zs, all, endReason)` whenever the helper returns non-null.
+
+**Resolved 2026-04-26 in PR #?.** Helper added to `combatEnginePayloads.js` with 9 unit tests (last-guild-standing variants, lone wolf, 1v1 mutual KO, AOE wipe, withdrawn-as-dead handling, null/empty defensive cases). `tickZone` refactored to call `evaluateRoundEnd` instead of inlining the check. Behavior change: a 1v1 mutual KO now ends the round with `endReason: 'mutual_ko'` (no winning guild) and the standard 35s intermission fires.
+
+---
+
 Definitions of terms used throughout this PRD. Each ≤15 words.
 
 | Term | Definition |
