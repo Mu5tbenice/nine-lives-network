@@ -18,6 +18,7 @@ const {
   buildEffectBroadcastPayload,
   buildWindupBroadcastPayload,
   classifyEffectRecipient,
+  evaluateRoundEnd,
 } = require('./combatEnginePayloads');
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────
@@ -1344,23 +1345,22 @@ async function tickZone(zoneId, zs) {
     return;
   }
 
-  // Last guild standing — check after any KO this tick
-  if (anyKO && zs.roundState === 'FIGHTING') {
-    const alive = Array.from(zs.nines.values()).filter(
-      (n) => !n.waitingForRound && n.hp > 0,
+  // §9.108 — Last-guild-standing OR mutual-KO end round, post-KO processing.
+  // The pure helper handles the alive.length===0 case which previously left
+  // the round stuck in FIGHTING (mutual KO / AOE wipe with no survivors).
+  if (zs.roundState === 'FIGHTING') {
+    const endReason = evaluateRoundEnd(
+      Array.from(zs.nines.values()),
+      anyKO,
     );
-    if (alive.length > 0) {
-      const guilds = new Set(alive.map((n) => n.guildTag));
-      if (guilds.size <= 1) {
-        // Only one guild (or one lone wolf) remains — end round immediately
-        await endRound(
-          zoneId,
-          zs,
-          Array.from(zs.nines.values()),
-          'last_standing',
-        );
-        return;
-      }
+    if (endReason) {
+      await endRound(
+        zoneId,
+        zs,
+        Array.from(zs.nines.values()),
+        endReason,
+      );
+      return;
     }
   }
 

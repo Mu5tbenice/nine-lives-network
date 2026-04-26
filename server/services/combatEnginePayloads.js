@@ -210,6 +210,34 @@ function buildEffectBroadcastPayload({ caster, target, recipient, effect, card, 
   };
 }
 
+/**
+ * Evaluate whether the round should end this tick, post-KO processing.
+ *
+ * Returns the endReason if the round should end, or null to continue.
+ * Pure function — no side effects, no broadcasts. Caller uses the result
+ * to decide whether to invoke endRound().
+ *
+ * §9.108: a previous version of this check skipped endRound when
+ * `alive.length === 0` (mutual KO / AOE wipe), which left the round
+ * stuck in FIGHTING with all sprites visible at 0 HP and no intermission
+ * firing. Symptom Wray reported 2026-04-26: "sprite gets left on the
+ * arena with 0 hp bar and the next round doesn't fire."
+ *
+ * @param {Array<{guildTag, hp, waitingForRound}>} nines all fighters in zone
+ * @param {boolean} anyKO whether any fighter died this tick
+ * @returns {'last_standing'|'mutual_ko'|null}
+ */
+function evaluateRoundEnd(nines, anyKO) {
+  if (!anyKO) return null;
+  const alive = (nines || []).filter(
+    (n) => !n.waitingForRound && n.hp > 0,
+  );
+  if (alive.length === 0) return 'mutual_ko';
+  const guilds = new Set(alive.map((n) => n.guildTag));
+  if (guilds.size <= 1) return 'last_standing';
+  return null;
+}
+
 module.exports = {
   buildRoundStartNinePayload,
   calculateRoundXP,
@@ -217,4 +245,5 @@ module.exports = {
   buildEffectBroadcastPayload,
   buildWindupBroadcastPayload,
   classifyEffectRecipient,
+  evaluateRoundEnd,
 };

@@ -7,6 +7,7 @@ const {
   buildEffectBroadcastPayload,
   buildWindupBroadcastPayload,
   classifyEffectRecipient,
+  evaluateRoundEnd,
 } = require('../server/services/combatEnginePayloads');
 
 const caster = {
@@ -397,5 +398,80 @@ describe('buildAttackBroadcastPayload — PR-E recipient classification', () => 
       maxHp: 100,
     });
     expect(out.recipient).toBe('OFFENSIVE');
+  });
+});
+
+describe('evaluateRoundEnd — PR-F mutual-KO + last-guild-standing', () => {
+  test('returns null when no KO this tick', () => {
+    const nines = [
+      { guildTag: 'A', hp: 100, waitingForRound: false },
+      { guildTag: 'B', hp: 80, waitingForRound: false },
+    ];
+    expect(evaluateRoundEnd(nines, false)).toBeNull();
+  });
+
+  test('returns "last_standing" when one guild remains alive', () => {
+    const nines = [
+      { guildTag: 'A', hp: 100, waitingForRound: false },
+      { guildTag: 'B', hp: 0, waitingForRound: true },
+    ];
+    expect(evaluateRoundEnd(nines, true)).toBe('last_standing');
+  });
+
+  test('returns "last_standing" for solo survivor (lone wolf)', () => {
+    const nines = [
+      { guildTag: 'A', hp: 80, waitingForRound: false },
+      { guildTag: 'B', hp: 0, waitingForRound: true },
+      { guildTag: 'C', hp: 0, waitingForRound: true },
+    ];
+    expect(evaluateRoundEnd(nines, true)).toBe('last_standing');
+  });
+
+  test('returns "mutual_ko" when everyone died this tick (1v1 wipe)', () => {
+    // §9.108 fix: previously this case left the round stuck in FIGHTING
+    // because the alive.length>0 guard skipped endRound when nobody alive.
+    const nines = [
+      { guildTag: 'A', hp: 0, waitingForRound: true },
+      { guildTag: 'B', hp: 0, waitingForRound: true },
+    ];
+    expect(evaluateRoundEnd(nines, true)).toBe('mutual_ko');
+  });
+
+  test('returns "mutual_ko" on AOE wipe (3+ fighters all dead)', () => {
+    const nines = [
+      { guildTag: 'A', hp: 0, waitingForRound: true },
+      { guildTag: 'B', hp: 0, waitingForRound: true },
+      { guildTag: 'C', hp: 0, waitingForRound: true },
+    ];
+    expect(evaluateRoundEnd(nines, true)).toBe('mutual_ko');
+  });
+
+  test('returns null when KO happened but multiple guilds still alive', () => {
+    const nines = [
+      { guildTag: 'A', hp: 50, waitingForRound: false },
+      { guildTag: 'B', hp: 30, waitingForRound: false },
+      { guildTag: 'C', hp: 0, waitingForRound: true },
+    ];
+    expect(evaluateRoundEnd(nines, true)).toBeNull();
+  });
+
+  test('treats withdrawn (hp=0) Nines as dead — they do not extend a round', () => {
+    // Withdrawn from a prior round — hp=0, waitingForRound=false (cleared at startRound).
+    // The filter excludes them via hp > 0 check.
+    const nines = [
+      { guildTag: 'A', hp: 100, waitingForRound: false },
+      { guildTag: 'B', hp: 0, waitingForRound: false }, // withdrawn
+    ];
+    expect(evaluateRoundEnd(nines, true)).toBe('last_standing');
+  });
+
+  test('handles empty nines array', () => {
+    expect(evaluateRoundEnd([], true)).toBe('mutual_ko');
+    expect(evaluateRoundEnd([], false)).toBeNull();
+  });
+
+  test('handles null nines array (defensive)', () => {
+    expect(evaluateRoundEnd(null, true)).toBe('mutual_ko');
+    expect(evaluateRoundEnd(undefined, true)).toBe('mutual_ko');
   });
 });
