@@ -4228,16 +4228,29 @@
 
     socket.on('combat:windup', (data) => {
       const fromId = String(data.attackerId || data.attacker);
-      const toId   = String(data.targetId   || data.target);
       const attacker = S.nines.get(resolveId(fromId));
-      const target   = S.nines.get(resolveId(toId));
       const from = attacker ? (attacker.name || getNineName(fromId)) : (data.attacker || getNineName(fromId));
-      const to   = target   ? (target.name   || getNineName(toId))   : (data.target   || getNineName(toId));
       startWindupBar(fromId, data.duration_ms);
-      if (data.card_name) {
-        addFeedEvent(`✨ ${from} charges <span class="feed-card">${data.card_name}</span> at ${to}…`, 'cast');
-        addBattleLog(`${from} charges ${data.card_name} at ${to}…`, 'default');
+      if (!data.card_name) return;
+      // Recipient-aware narration — SELF/ALLY_AOE/ALLY_PICK/OFFENSIVE.
+      const r = data.recipient || 'OFFENSIVE';
+      let phrase;
+      if (r === 'SELF') {
+        phrase = `${from} channels <span class="feed-card">${data.card_name}</span>…`;
+      } else if (r === 'ALLY_AOE') {
+        phrase = `${from} channels <span class="feed-card">${data.card_name}</span> over allies…`;
+      } else {
+        const toId = String(data.targetId || data.target || '');
+        const target = toId ? S.nines.get(resolveId(toId)) : null;
+        const to = target ? (target.name || getNineName(toId)) : (data.target || getNineName(toId));
+        const verb = r === 'ALLY_PICK' ? 'reaches for' : 'charges';
+        const at = r === 'ALLY_PICK' ? '' : ' at';
+        phrase = `${from} ${verb} <span class="feed-card">${data.card_name}</span>${at} ${to}…`;
       }
+      addFeedEvent(`✨ ${phrase}`, 'cast');
+      // Plain log = strip the span tag.
+      const plain = phrase.replace(/<\/?span[^>]*>/g, '');
+      addBattleLog(plain, 'default');
     });
 
     socket.on('combat:attack', (data) => {
@@ -4347,11 +4360,26 @@
       // effects like CHAIN bounce which already log via combat:attack).
       if (data.card_name) {
         const casterName = caster ? (caster.name || getNineName(cId)) : (data.by || getNineName(cId));
-        const targetName = (data.on && data.on !== data.by)
-          ? (target ? (target.name || getNineName(tId)) : data.on)
-          : 'self';
-        addFeedEvent(`✨ ${casterName} casts <span class="feed-card">${data.card_name}</span> on ${targetName}${effName ? ` <span class="feed-effect">[${effName}]</span>` : ''}`, 'cast');
-        addBattleLog(`${casterName} casts ${data.card_name} on ${targetName}${effName ? ' ['+effName+']' : ''}`, 'default');
+        const r = data.recipient || (data.on && data.on !== data.by ? 'OFFENSIVE' : 'SELF');
+        const effTag = effName ? ` <span class="feed-effect">[${effName}]</span>` : '';
+        const effPlain = effName ? ' ['+effName+']' : '';
+        let phrase;
+        if (r === 'SELF') {
+          phrase = `${casterName} casts <span class="feed-card">${data.card_name}</span>${effTag}`;
+        } else if (r === 'ALLY_AOE') {
+          phrase = `${casterName} casts <span class="feed-card">${data.card_name}</span> on allies${effTag}`;
+        } else if (r === 'ALLY_PICK') {
+          const targetName = target ? (target.name || getNineName(tId)) : (data.on || 'an ally');
+          phrase = `${casterName} casts <span class="feed-card">${data.card_name}</span> on ${targetName}${effTag}`;
+        } else {
+          // OFFENSIVE
+          const targetName = target ? (target.name || getNineName(tId)) : (data.on || 'an enemy');
+          phrase = `${casterName} casts <span class="feed-card">${data.card_name}</span> on ${targetName}${effTag}`;
+        }
+        addFeedEvent(`✨ ${phrase}`, 'cast');
+        // Plain log: strip span tags.
+        const plain = phrase.replace(/<\/?span[^>]*>/g, '');
+        addBattleLog(plain, 'default');
       }
 
       // Screen position — sprite first, then engine coords fallback

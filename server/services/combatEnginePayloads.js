@@ -103,28 +103,77 @@ function buildAttackBroadcastPayload({
 }
 
 /**
+ * Classify a card's effect by the recipient category for log/telegraph
+ * narration. Bible §10's targeting-by-card-type spec is officially retired
+ * (random with sticky-lock is the design — see project_combat_design_2026_04_26),
+ * but the engine still has to know whether a cast is hitting an enemy, an
+ * ally, the caster, or an AOE so the windup + effect broadcasts narrate
+ * correctly. Otherwise heal cards say "casts Heal on [enemy]."
+ *
+ * Categories:
+ *  - OFFENSIVE → target is an enemy (BURN, POISON, HEX, MARK, etc.)
+ *  - ALLY_PICK → target is a specific ally (HEAL — picks lowest-HP ally)
+ *  - ALLY_AOE  → AOE on allies, no single target (BLESS, INSPIRE)
+ *  - SELF      → caster casts on themselves (WARD, BARRIER, SURGE, FEAST, etc.)
+ *
+ * Effects that don't fire on cast (FEAST/THORNS/SHATTER/INFECT — passive/on-KO)
+ * are classified SELF since the cast is "readying" the on-death trigger.
+ */
+const OFFENSIVE_EFFECTS = new Set([
+  'BURN', 'POISON', 'CORRODE', 'WEAKEN', 'MARK', 'HEX', 'BLIND',
+  'WITHER', 'SILENCE', 'NULLIFY', 'CHAIN',
+]);
+const ALLY_PICK_EFFECTS = new Set(['HEAL']);
+const ALLY_AOE_EFFECTS = new Set(['BLESS', 'INSPIRE']);
+const SELF_EFFECTS = new Set([
+  'WARD', 'BARRIER', 'ANCHOR', 'DODGE', 'REFLECT', 'TAUNT',
+  'SURGE', 'CRIT', 'PIERCE', 'EXECUTE', 'CLEANSE',
+  'HASTE', 'DRAIN', 'TETHER', 'FEAST', 'THORNS',
+  'SHATTER', 'INFECT',
+]);
+
+function classifyEffectRecipient(effect) {
+  if (!effect) return 'OFFENSIVE'; // null/missing effect defaults to enemy-target
+  const e = String(effect).toUpperCase();
+  if (OFFENSIVE_EFFECTS.has(e)) return 'OFFENSIVE';
+  if (ALLY_PICK_EFFECTS.has(e)) return 'ALLY_PICK';
+  if (ALLY_AOE_EFFECTS.has(e)) return 'ALLY_AOE';
+  if (SELF_EFFECTS.has(e)) return 'SELF';
+  return 'OFFENSIVE'; // unknown effects default to enemy-target (safe fallback)
+}
+
+/**
  * Build the `combat:windup` socket payload emitted 1.2s before a card cast
  * resolves. Tells the client which fighter is charging which card at which
  * target, so it can render a charge bar + log telegraph beat.
  *
- * Target is locked at windup start — the telegraph promises the player who
- * the cast will hit. If the locked target dies during windup, the engine
- * re-picks at fire time (handled in combatEngine.js, not here).
+ * Target may be null for ALLY_AOE casts (BLESS, INSPIRE) — caller passes
+ * `target: null` and the client renders "X charges Y" with no recipient.
+ * For SELF casts, caller passes target=caster so the log reads "X charges
+ * Y on self" via the recipient field.
  */
-function buildWindupBroadcastPayload({ caster, target, card, slot, durationMs }) {
+function buildWindupBroadcastPayload({
+  caster,
+  target,
+  recipient,
+  card,
+  slot,
+  durationMs,
+}) {
   return {
     attacker: caster.playerName,
     attackerId: caster.playerId,
-    target: target.playerName,
-    targetId: target.playerId,
+    target: target ? target.playerName : null,
+    targetId: target ? target.playerId : null,
+    recipient: recipient || 'OFFENSIVE',
     card_name: card?.name || null,
     effect: card?.effect_1 || null,
     slot: slot + 1,
     duration_ms: durationMs,
     x: caster.x,
     y: caster.y,
-    tx: target.x,
-    ty: target.y,
+    tx: target ? target.x : null,
+    ty: target ? target.y : null,
   };
 }
 
@@ -132,16 +181,18 @@ function buildWindupBroadcastPayload({ caster, target, card, slot, durationMs })
  * Build the `combat:effect` socket payload emitted at the end of applyEffect.
  *
  * Includes `card_name` so the client can log a dedicated cast line
- * ("Goosebumps casts Cinder Snap on Velvet [POISON]"). target may be null
- * for self-buffs (SURGE/CRIT/CLEANSE etc.) — caller resolves that.
+ * ("Goosebumps casts Cinder Snap on Velvet [POISON]"). target is null for
+ * ALLY_AOE casts (BLESS/INSPIRE) and is the caster for SELF casts; the
+ * recipient field tells the client how to narrate it.
  */
-function buildEffectBroadcastPayload({ caster, target, effect, card }) {
+function buildEffectBroadcastPayload({ caster, target, recipient, effect, card }) {
   return {
     effect,
     by: caster.playerName,
     casterId: caster.playerId,
     on: target?.playerName || null,
     targetId: target?.playerId || null,
+    recipient: recipient || 'OFFENSIVE',
     card_name: card?.name || null,
     x: caster.x,
     y: caster.y,
@@ -156,4 +207,5 @@ module.exports = {
   buildAttackBroadcastPayload,
   buildEffectBroadcastPayload,
   buildWindupBroadcastPayload,
+  classifyEffectRecipient,
 };

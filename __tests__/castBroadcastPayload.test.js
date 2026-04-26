@@ -6,6 +6,7 @@ const {
   buildAttackBroadcastPayload,
   buildEffectBroadcastPayload,
   buildWindupBroadcastPayload,
+  classifyEffectRecipient,
 } = require('../server/services/combatEnginePayloads');
 
 const caster = {
@@ -117,6 +118,7 @@ describe('buildEffectBroadcastPayload — PR-1 card_name field', () => {
     const out = buildEffectBroadcastPayload({
       caster,
       target: defender,
+      recipient: 'OFFENSIVE',
       effect: 'BURN',
       card: cinderSnap,
     });
@@ -126,6 +128,7 @@ describe('buildEffectBroadcastPayload — PR-1 card_name field', () => {
       casterId: 'p-caster',
       on: 'Velvet',
       targetId: 'p-defender',
+      recipient: 'OFFENSIVE',
       card_name: 'Cinder Snap',
       x: 100,
       y: 200,
@@ -164,6 +167,7 @@ describe('buildWindupBroadcastPayload — PR-2 telegraph', () => {
     const out = buildWindupBroadcastPayload({
       caster,
       target: defender,
+      recipient: 'OFFENSIVE',
       card: cinderSnap,
       slot: 0,
       durationMs: 1200,
@@ -173,6 +177,7 @@ describe('buildWindupBroadcastPayload — PR-2 telegraph', () => {
       attackerId: 'p-caster',
       target: 'Velvet',
       targetId: 'p-defender',
+      recipient: 'OFFENSIVE',
       card_name: 'Cinder Snap',
       effect: 'BURN',
       slot: 1,
@@ -205,5 +210,104 @@ describe('buildWindupBroadcastPayload — PR-2 telegraph', () => {
     });
     expect(out.card_name).toBeNull();
     expect(out.effect).toBe('BURN');
+  });
+
+  test('null target (ALLY_AOE) produces null target/targetId/tx/ty', () => {
+    const out = buildWindupBroadcastPayload({
+      caster,
+      target: null,
+      recipient: 'ALLY_AOE',
+      card: { name: 'Sun Hymn', effect_1: 'BLESS' },
+      slot: 0,
+      durationMs: 1200,
+    });
+    expect(out.target).toBeNull();
+    expect(out.targetId).toBeNull();
+    expect(out.tx).toBeNull();
+    expect(out.ty).toBeNull();
+    expect(out.recipient).toBe('ALLY_AOE');
+    expect(out.card_name).toBe('Sun Hymn');
+  });
+
+  test('recipient field defaults to OFFENSIVE when omitted', () => {
+    const out = buildWindupBroadcastPayload({
+      caster,
+      target: defender,
+      card: cinderSnap,
+      slot: 0,
+      durationMs: 1200,
+    });
+    expect(out.recipient).toBe('OFFENSIVE');
+  });
+});
+
+describe('classifyEffectRecipient — PR-A heal/buff log target', () => {
+  test('OFFENSIVE effects', () => {
+    expect(classifyEffectRecipient('BURN')).toBe('OFFENSIVE');
+    expect(classifyEffectRecipient('POISON')).toBe('OFFENSIVE');
+    expect(classifyEffectRecipient('HEX')).toBe('OFFENSIVE');
+    expect(classifyEffectRecipient('WEAKEN')).toBe('OFFENSIVE');
+    expect(classifyEffectRecipient('CORRODE')).toBe('OFFENSIVE');
+    expect(classifyEffectRecipient('SILENCE')).toBe('OFFENSIVE');
+    expect(classifyEffectRecipient('CHAIN')).toBe('OFFENSIVE');
+  });
+
+  test('ALLY_PICK effect (HEAL)', () => {
+    expect(classifyEffectRecipient('HEAL')).toBe('ALLY_PICK');
+  });
+
+  test('ALLY_AOE effects (BLESS, INSPIRE)', () => {
+    expect(classifyEffectRecipient('BLESS')).toBe('ALLY_AOE');
+    expect(classifyEffectRecipient('INSPIRE')).toBe('ALLY_AOE');
+  });
+
+  test('SELF effects', () => {
+    expect(classifyEffectRecipient('WARD')).toBe('SELF');
+    expect(classifyEffectRecipient('BARRIER')).toBe('SELF');
+    expect(classifyEffectRecipient('SURGE')).toBe('SELF');
+    expect(classifyEffectRecipient('CRIT')).toBe('SELF');
+    expect(classifyEffectRecipient('FEAST')).toBe('SELF');
+    expect(classifyEffectRecipient('THORNS')).toBe('SELF');
+    expect(classifyEffectRecipient('CLEANSE')).toBe('SELF');
+  });
+
+  test('case-insensitive', () => {
+    expect(classifyEffectRecipient('burn')).toBe('OFFENSIVE');
+    expect(classifyEffectRecipient('Heal')).toBe('ALLY_PICK');
+  });
+
+  test('null/undefined/unknown defaults to OFFENSIVE (safe fallback)', () => {
+    expect(classifyEffectRecipient(null)).toBe('OFFENSIVE');
+    expect(classifyEffectRecipient(undefined)).toBe('OFFENSIVE');
+    expect(classifyEffectRecipient('')).toBe('OFFENSIVE');
+    expect(classifyEffectRecipient('UNKNOWN_NEW_EFFECT')).toBe('OFFENSIVE');
+  });
+});
+
+describe('buildEffectBroadcastPayload — PR-A recipient field', () => {
+  test('SELF cast with caster as target renders correctly', () => {
+    const out = buildEffectBroadcastPayload({
+      caster,
+      target: caster,
+      recipient: 'SELF',
+      effect: 'WARD',
+      card: { name: 'Stone Bulwark', effect_1: 'WARD' },
+    });
+    expect(out.recipient).toBe('SELF');
+    expect(out.on).toBe('Goosebumps'); // caster as target
+    expect(out.targetId).toBe('p-caster');
+  });
+
+  test('ALLY_AOE cast with null target', () => {
+    const out = buildEffectBroadcastPayload({
+      caster,
+      target: null,
+      recipient: 'ALLY_AOE',
+      effect: 'BLESS',
+      card: { name: 'Sun Hymn', effect_1: 'BLESS' },
+    });
+    expect(out.recipient).toBe('ALLY_AOE');
+    expect(out.on).toBeNull();
+    expect(out.targetId).toBeNull();
   });
 });
