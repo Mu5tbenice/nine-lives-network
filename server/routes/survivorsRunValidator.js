@@ -83,8 +83,12 @@ function validateSurvivorsRunBody(body) {
     return { ok: false, status: 400, error: 'invalid kills' };
   }
 
+  // PR-D — `chapter` is repurposed as the round number (rounds are endless;
+  // the v1 6-chapter cap is gone). Allow up to 1000 to share the anti-AFK
+  // bound shape of the level cap; the migration's CHECK constraint is the
+  // hard ceiling.
   const chapter = toInt(body.chapter);
-  if (!Number.isFinite(chapter) || chapter < 1 || chapter > 6) {
+  if (!Number.isFinite(chapter) || chapter < 1 || chapter > 1000) {
     return { ok: false, status: 400, error: 'invalid chapter' };
   }
 

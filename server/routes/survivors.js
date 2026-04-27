@@ -7,6 +7,12 @@ const {
   HOUSES,
   DRAFT_SIZE,
 } = require('./survivorsRunValidator');
+const { computeScore, plausibilityCheck } = require('./survivorsScore');
+
+let pointsService = null;
+try { pointsService = require('../services/pointsService'); } catch (e) {
+  console.warn('[survivors] pointsService unavailable — payouts will be skipped:', e.message);
+}
 
 function toInt(v) {
   const n = parseInt(v, 10);
@@ -128,10 +134,21 @@ router.post('/runs', async (req, res) => {
       ? row.cards_used
       : drafted_card_ids.map((id) => ({ player_card_id: id }));
 
+    // PR-D — server-side kills-primary score recompute. Client-supplied
+    // `score` is intentionally ignored (the validator left it on the row;
+    // overwrite here). Plausibility check rejects impossible runs.
+    const plaus = plausibilityCheck({ kills: row.kills, time_sec: row.time_sec, level: row.level });
+    if (!plaus.ok) {
+      return res.status(400).json({ error: `implausible run: ${plaus.reason}` });
+    }
+    const recomputedScore = computeScore({
+      kills: row.kills, time_sec: row.time_sec, level: row.level,
+    });
+
     const { data, error } = await supabase
       .from('survivors_runs')
-      .insert({ ...row, cards_used })
-      .select('id, created_at, seed')
+      .insert({ ...row, cards_used, score: recomputedScore })
+      .select('id, created_at, seed, score')
       .single();
 
     if (error) {
@@ -139,7 +156,17 @@ router.post('/runs', async (req, res) => {
       return res.status(500).json({ error: 'insert failed' });
     }
 
-    res.json({ ok: true, id: data.id, created_at: data.created_at, seed: data.seed });
+    // PR-D — credit seasonal points. Fire-and-forget; the run row is
+    // already inserted, so we don't fail the response if the payout call
+    // errors (logged for follow-up).
+    if (pointsService && recomputedScore > 0) {
+      const desc = `Survivors run #${data.id} — ${row.kills} kills, ${row.time_sec}s, lvl ${row.level} (round ${row.chapter})`;
+      pointsService
+        .addPoints(row.player_id, recomputedScore, 'survivors_run_complete', desc)
+        .catch((err) => console.warn('[survivors] addPoints failed:', err && err.message));
+    }
+
+    res.json({ ok: true, id: data.id, created_at: data.created_at, seed: data.seed, score: data.score });
   } catch (err) {
     console.error('POST /api/survivors/runs:', err);
     res.status(500).json({ error: 'server error' });

@@ -578,7 +578,7 @@ var currentTab = 'season';
 var seasonWindow = 'season';
 var clashView = 'standings';
 var isAdmin = false;
-var data = { players:[], houses:[], duels:[], clashes:{ matches:[], standings:[] } };
+var data = { players:[], houses:[], duels:[], clashes:{ matches:[], standings:[] }, survivors:{ daily:[], weekly:[], alltime:[] } };
 
 // Score function for the active time-window. Used by getRankedPlayers()
 // for both the rendered list and the YOU pin's gap calculation.
@@ -1230,6 +1230,8 @@ function render() {
   html += '<button class="tab' + (currentTab==='houses'?' active':'') + '" data-color="sunset" onclick="switchTab(\'houses\')">' + gameIcon('flag','gi-md') + 'HOUSES</button>';
   html += '<button class="tab' + (currentTab==='duels'?' active':'') + '" data-color="red" onclick="switchTab(\'duels\')">' + gameIcon('swords','gi-md') + 'DUELS</button>';
   html += '<button class="tab' + (currentTab==='clash'?' active':'') + '" data-color="cyan" onclick="switchTab(\'clash\')">' + gameIcon('burst','gi-md') + 'CLASH</button>';
+  // PR-D — Survivors tab (kills-primary; daily / weekly / all-time sub-views).
+  html += '<button class="tab' + (currentTab==='survivors'?' active':'') + '" data-color="purple" onclick="switchTab(\'survivors\')">' + gameIcon('crown','gi-md') + 'SURVIVORS</button>';
   html += '</div>';
 
   // ═══ SEASON TAB ═══
@@ -1578,6 +1580,53 @@ function render() {
     html += '</div>';
   }
 
+  // ═══ SURVIVORS TAB (PR-D) ═══
+  // Kills-primary leaderboard for the survivors-mode runs. Daily / weekly /
+  // all-time sub-views match the season tab's sub-tab idiom. Rows fetched
+  // from GET /api/leaderboards/survivors.
+  if (currentTab === 'survivors') {
+    html += '<div class="sub-tabs sub-tabs--season">';
+    html += '<button class="sub-tab' + (survivorsWindow==='daily'  ?' active':'') + '" onclick="switchSurvivorsWindow(\'daily\')">DAILY</button>';
+    html += '<button class="sub-tab' + (survivorsWindow==='weekly' ?' active':'') + '" onclick="switchSurvivorsWindow(\'weekly\')">WEEK</button>';
+    html += '<button class="sub-tab' + (survivorsWindow==='alltime'?' active':'') + '" onclick="switchSurvivorsWindow(\'alltime\')">ALL-TIME</button>';
+    html += '</div>';
+
+    var rows = (data.survivors && data.survivors[survivorsWindow]) || [];
+    if (rows.length === 0) {
+      html += '<div class="empty-state" style="padding:30px 16px;text-align:center;color:var(--text-muted)">';
+      html += '<div style="font-size:32px;margin-bottom:8px;opacity:0.6">' + gameIcon('crown','gi-lg') + '</div>';
+      html += '<div>No survivors runs yet — set the bar.</div>';
+      html += '</div>';
+    } else {
+      html += '<div class="lb-table">';
+      html += '<div class="lb-row lb-row--head">'
+        +    '<span class="lb-col-rank">#</span>'
+        +    '<span class="lb-col-name">Player</span>'
+        +    '<span class="lb-col-house">House</span>'
+        +    '<span class="lb-col-kills">Kills</span>'
+        +    '<span class="lb-col-score">Score</span>'
+        +    '<span class="lb-col-time">Time</span>'
+        +    '<span class="lb-col-round">Round</span>'
+        +    '</div>';
+      rows.forEach(function(r) {
+        var mm = Math.floor(r.time_sec / 60);
+        var ss = Math.floor(r.time_sec % 60);
+        var timeStr = mm + ':' + (ss < 10 ? '0' + ss : ss);
+        var name = r.twitter_handle ? '@' + r.twitter_handle : ('Player ' + r.player_id);
+        html += '<div class="lb-row">'
+          +    '<span class="lb-col-rank">' + r.rank + '</span>'
+          +    '<span class="lb-col-name">' + escapeText(name) + '</span>'
+          +    '<span class="lb-col-house" style="text-transform:capitalize">' + escapeText(r.house || '—') + '</span>'
+          +    '<span class="lb-col-kills">' + r.kills + '</span>'
+          +    '<span class="lb-col-score">' + (r.score != null ? r.score : '—') + '</span>'
+          +    '<span class="lb-col-time">' + timeStr + '</span>'
+          +    '<span class="lb-col-round">' + (r.round || 1) + '</span>'
+          +    '</div>';
+      });
+      html += '</div>';
+    }
+  }
+
   document.getElementById('content').innerHTML = html;
 
   // Draw sparklines after DOM update. Real 7-day cumulative point trend per
@@ -1668,8 +1717,42 @@ function clashCard(c, i) {
 // ═══════════════════════════════════════
 // TAB SWITCHING
 // ═══════════════════════════════════════
-function switchTab(t) { currentTab = t; render(); }
+function switchTab(t) {
+  currentTab = t;
+  // PR-D — lazy-load survivors leaderboard rows when the tab opens.
+  if (t === 'survivors') loadSurvivorsLeaderboard(survivorsWindow);
+  render();
+}
 function switchClashView(v) { clashView = v; render(); }
+function switchSurvivorsWindow(w) {
+  survivorsWindow = w;
+  loadSurvivorsLeaderboard(w);
+  render();
+}
+
+// PR-D — survivors leaderboard tab state + fetcher.
+var survivorsWindow = 'daily';
+async function loadSurvivorsLeaderboard(window) {
+  try {
+    var r = await fetch('/api/leaderboards/survivors?window=' + encodeURIComponent(window) + '&limit=50', { cache: 'no-store' });
+    if (!r.ok) throw new Error('survivors leaderboard ' + r.status);
+    var body = await r.json();
+    data.survivors = data.survivors || {};
+    data.survivors[window] = body.rows || [];
+    if (currentTab === 'survivors') render();
+  } catch (e) {
+    console.warn('[lb] survivors fetch failed:', e && e.message);
+    data.survivors = data.survivors || {};
+    data.survivors[window] = [];
+    if (currentTab === 'survivors') render();
+  }
+}
+
+function escapeText(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
 
 // ═══════════════════════════════════════
 // ADMIN: CLASH MANAGEMENT

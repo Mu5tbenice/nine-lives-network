@@ -350,7 +350,8 @@ export function updateHUD(player, chapter, runTimeSec, chapterElapsed, boss) {
   if (chapLbl) {
     const secsInChapter = Math.max(0, chapter.durationSec - chapterElapsed);
     const mm = Math.floor(secsInChapter / 60), ss = Math.floor(secsInChapter % 60);
-    chapLbl.textContent = `Chapter ${chapter.id} — ${chapter.name}  ·  ${mm}:${String(ss).padStart(2,"0")}`;
+    // PR-D — chapter.id is now the round number (see spawner.currentChapter).
+    chapLbl.textContent = `Round ${chapter.id} — ${chapter.name}  ·  ${mm}:${String(ss).padStart(2,"0")}`;
   }
   if (gold) gold.textContent = `★ ${player.gold}`;
   if (kills) kills.textContent = `☠ ${player.kills}`;
