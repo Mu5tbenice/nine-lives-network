@@ -147,6 +147,52 @@ router.post('/runs', async (req, res) => {
 });
 
 /**
+ * GET /api/survivors/specs
+ *
+ * Returns every row from `survivors_weapon_specs` joined with the
+ * underlying spell's name + image_url + house so the client runtime
+ * (PR-C2) can map drafted card spell_ids to weapon behavior + visuals.
+ *
+ * Result is cached in-process for SPECS_CACHE_TTL_MS to avoid hitting the
+ * DB on every survivors session boot. PR-C2's runtime calls this once on
+ * run start. Admin upserts (POST /api/admin/survivors/specs) invalidate
+ * the cache.
+ */
+const SPECS_CACHE_TTL_MS = 60_000;
+let specsCache = { value: null, expiresAt: 0 };
+function invalidateSpecsCache() { specsCache = { value: null, expiresAt: 0 }; }
+
+router.get('/specs', async (req, res) => {
+  try {
+    const now = Date.now();
+    if (specsCache.value && specsCache.expiresAt > now) {
+      return res.json(specsCache.value);
+    }
+
+    const { data, error } = await supabase
+      .from('survivors_weapon_specs')
+      .select('spell_id, behavior_class, base_damage, base_cooldown_ms, projectile_speed, aoe_radius, pierce, activated_keybind, rarity_scaling, updated_at, spell:spell_id(name, house, spell_type, image_url, base_effect, effect_1)')
+      .order('spell_id', { ascending: true });
+
+    if (error) {
+      console.error('survivors specs query error:', error);
+      return res.status(500).json({ error: 'specs query failed' });
+    }
+
+    const payload = { ok: true, specs: data || [], cached_at: new Date(now).toISOString() };
+    specsCache = { value: payload, expiresAt: now + SPECS_CACHE_TTL_MS };
+    return res.json(payload);
+  } catch (err) {
+    console.error('GET /api/survivors/specs:', err);
+    return res.status(500).json({ error: 'server error' });
+  }
+});
+
+// Exposed so the admin upsert route can flush the cache after a write.
+router.invalidateSpecsCache = invalidateSpecsCache;
+module.exports.invalidateSpecsCache = invalidateSpecsCache;
+
+/**
  * GET /api/survivors/runs/top?limit=10&house=smoulders
  * Leaderboard — longest surviving runs first. Optionally filter by house.
  * (PR-D replaces this with kills-primary ranking + windowed views.)
