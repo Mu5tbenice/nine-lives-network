@@ -2466,7 +2466,21 @@ Companion findings from `audit/balance/2026-04-26-spell-catalog.md`:
 
 Deferred to follow-up PR (cross-engine audit needed before stripping safely): unused `TAUNT` / `REFLECT` / `CLEANSE` effect handlers in `combatEngine.js`. They have no card using them as `base_effect` but are referenced in `effectEngine.js`, `duelEngine.js`, and a unit test — the cross-engine cleanup is its own slice.
 
-**Resolved 2026-04-26 in PR #?.** Code stripped, migration `009_strip_zone_bonus_legacy_drift.sql` applied via Supabase SQL editor, docs deleted. Engine reads no zone bonus paths after this PR. Companion audit docs (Doc A `live-data.md`, Doc B `spell-catalog.md`) ship in their own docs PRs (#294, #295) and are the artifact for the next session's balance-simulator scoping. Voxel primitive design (Doc C, PR #296) is independent.
+**Resolved 2026-04-26 in PR #297.** Code stripped, migration `009_strip_zone_bonus_legacy_drift.sql` applied via Supabase SQL editor, docs deleted. Engine reads no zone bonus paths after this PR. Companion audit docs (Doc A `live-data.md`, Doc B `spell-catalog.md`) ship in their own docs PRs (#294, #295) and are the artifact for the next session's balance-simulator scoping. Voxel primitive design (Doc C, PR #296) is independent.
+
+### 9.111 Survivors Mode v1 anonymous-play path — players bypassed identity, runs orphaned from accounts
+
+**Symptom.** The v1 survivors-mode build (migration `004_create_survivors_runs.sql`, route `server/routes/survivors.js`) accepted `player_id IS NULL` rows: any visitor could submit a run with just a free-text `display_name`. Live dev DB had 19 rows on 2026-04-27, all anonymous (zero authed runs). The v2 design (PRD `tasks/prd-survivors-mode.md`) requires authenticated play so per-run payouts (`pointsService.addPoints`), the kills-primary leaderboard, daily/weekly bonus crons, and the 24h-rank-hold pack grants can attribute progression to a real account.
+
+**Effect.** Without `player_id` on every row, none of the v2 reward, leaderboard, or anti-cheat surfaces can function: no points payout target, no per-player rate limit, no plausibility window across runs. The v1 path also leaked the survivors HUD as an anonymous-progression sandbox detached from the rest of the game's progression loops.
+
+**Resolution plan (PR-A of survivors rebuild).** Three migrations and one route refactor:
+- Migration `010_extend_survivors_runs.sql`: add v2 telemetry columns (`seed`, `score`, `ended_reason`, `cards_used`, `crystals_earned`, `crystals_spent_reroll`, `crystals_spent_upgrade`, `client_version`); relax v1 anti-AFK caps (`time_sec ≤ 86400`, `level ≤ 1000`); delete the 19 anon test rows; flip `player_id` to `NOT NULL`.
+- Migration `011_create_survivors_weapon_specs.sql`: bespoke spec table keyed by `spell_id` with `behavior_class IN ('continuous','activated')`; sentinel fallback row at `spell_id=0` so unmapped spells stay playable. PR-C seeds bespoke specs.
+- Migration `012_create_survivors_holds_and_grants.sql`: `survivors_leaderboard_holds` (rank-hold spans for daily/weekly cron) + `survivors_pack_grants` (audit table for 24h-hold pack rewards). Consumed by PR-E.
+- Route `server/routes/survivors.js`: validator extracted to `survivorsRunValidator.js`; POST now requires positive integer `player_id` and accepts the new optional fields. Server generates `seed` if the client doesn't send one.
+
+**Resolved 2026-04-27 in PR #?.** Foundation only — no game logic shipped this PR. PR-B adds the auth-gated start + 9-house picker + 2-card draft; PR-C adds the weapon spec runtime + level-up modal; PR-D adds round structure + kills-primary scoring + leaderboard tab; PR-E adds the cron + 24h pack grants.
 
 ---
 

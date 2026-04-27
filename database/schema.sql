@@ -1,6 +1,6 @@
 -- =====================================================================
 -- Nine Lives Network — Supabase public schema
--- Generated: 2026-04-17T12:47:50.115Z
+-- Generated: 2026-04-27T06:13:27.361Z
 -- Source:    PostgREST OpenAPI spec at https://doorjltuhgouaraoxssz.supabase.co/rest/v1/
 -- Script:    scripts/dump-schema.js
 --
@@ -12,7 +12,7 @@
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
--- TABLES (59)
+-- TABLES (60)
 -- ---------------------------------------------------------------------
 
 CREATE TABLE battles (
@@ -491,22 +491,15 @@ CREATE TABLE player_weekly_rewards (
     claimed_at timestamp with time zone DEFAULT now()
 );
 
--- §9.50 per-zone session metrics. Daily rollover is implicit via metric_date
--- defaulting to (now() AT TIME ZONE 'UTC')::date — no cron needed.
--- Writes: combatEngine batches deltas per-tick and calls a read+upsert
--- sequence (single-writer per zone, so safe without PL/pgSQL). Reads:
--- /api/zones/:zone_id/metrics. Idempotent migration — safe to re-run.
-CREATE TABLE IF NOT EXISTS player_zone_metrics (
-    player_id integer NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-    zone_id integer NOT NULL REFERENCES zones(id) ON DELETE CASCADE,
-    metric_date date NOT NULL DEFAULT ((now() AT TIME ZONE 'UTC')::date),
-    damage integer NOT NULL DEFAULT 0,
-    heals integer NOT NULL DEFAULT 0,
-    kos integer NOT NULL DEFAULT 0,
-    updated_at timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (player_id, zone_id, metric_date)
+CREATE TABLE player_zone_metrics (
+    player_id integer NOT NULL,
+    zone_id integer NOT NULL,
+    metric_date date DEFAULT '((now() AT TIME ZONE ''UTC''::text))' NOT NULL,
+    damage integer DEFAULT 0 NOT NULL,
+    heals integer DEFAULT 0 NOT NULL,
+    kos integer DEFAULT 0 NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_pzm_zone_date ON player_zone_metrics(zone_id, metric_date);
 
 CREATE TABLE players (
     id integer NOT NULL,
@@ -529,7 +522,12 @@ CREATE TABLE players (
     arcane_energy_today integer DEFAULT 0,
     streak integer DEFAULT 0,
     duel_elo integer DEFAULT 1000,
-    season_points integer DEFAULT 0
+    season_points integer DEFAULT 0,
+    eligibility_flags jsonb NOT NULL,
+    wallet_changed_at timestamp with time zone,
+    telegram_user_id character varying,
+    telegram_username character varying,
+    telegram_linked_at timestamp with time zone
 );
 
 CREATE TABLE point_log (
@@ -586,6 +584,62 @@ CREATE TABLE spells (
     card_type text DEFAULT 'attack',
     effect_1 text,
     effect_2 text
+);
+
+CREATE TABLE survivors_leaderboard_holds (
+    id bigint NOT NULL,
+    player_id integer NOT NULL,
+    rank integer NOT NULL,
+    scope text NOT NULL,
+    held_since timestamp with time zone NOT NULL,
+    held_until timestamp with time zone,
+    run_id bigint,
+    reward_granted boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE survivors_pack_grants (
+    id bigint NOT NULL,
+    player_id integer NOT NULL,
+    source text NOT NULL,
+    run_id bigint,
+    hold_id bigint,
+    pack_id bigint,
+    granted_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE TABLE survivors_runs (
+    id bigint NOT NULL,
+    player_id integer NOT NULL,
+    display_name text,
+    house text NOT NULL,
+    time_sec integer NOT NULL,
+    level integer NOT NULL,
+    kills integer NOT NULL,
+    chapter integer NOT NULL,
+    won boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    seed bigint DEFAULT 0 NOT NULL,
+    score integer,
+    ended_reason text,
+    cards_used jsonb,
+    crystals_earned integer DEFAULT 0 NOT NULL,
+    crystals_spent_reroll integer DEFAULT 0 NOT NULL,
+    crystals_spent_upgrade integer DEFAULT 0 NOT NULL,
+    client_version text
+);
+
+CREATE TABLE survivors_weapon_specs (
+    spell_id integer NOT NULL,
+    behavior_class text NOT NULL,
+    base_damage numeric,
+    base_cooldown_ms integer,
+    projectile_speed numeric,
+    aoe_radius numeric,
+    pierce integer,
+    activated_keybind text,
+    rarity_scaling jsonb,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE TABLE territory_actions (
@@ -663,8 +717,6 @@ CREATE TABLE zone_control (
     id integer NOT NULL,
     zone_id integer NOT NULL,
     controlling_guild text,
-    snapshot_hp integer DEFAULT 0,
-    dominant_house text,
     updated_at timestamp with time zone DEFAULT now()
 );
 
@@ -672,7 +724,6 @@ CREATE TABLE zone_control_history (
     id integer NOT NULL,
     zone_id integer NOT NULL,
     controlling_guild text,
-    snapshot_hp integer DEFAULT 0,
     dominant_house text,
     branded_guild text,
     snapped_at timestamp with time zone DEFAULT now(),
@@ -700,11 +751,7 @@ CREATE TABLE zone_deployments (
     updated_at timestamp with time zone DEFAULT now(),
     is_mercenary boolean DEFAULT false,
     ko_at timestamp with time zone,
-    ko_until timestamp with time zone,
-    damage_dealt integer DEFAULT 0,
-    heals_done integer DEFAULT 0,
-    kos_dealt integer DEFAULT 0,
-    points_earned integer DEFAULT 0
+    ko_until timestamp with time zone
 );
 
 CREATE TABLE zone_effects (
@@ -767,7 +814,7 @@ CREATE TABLE zones (
 );
 
 -- ---------------------------------------------------------------------
--- PRIMARY KEYS (55)
+-- PRIMARY KEYS (60)
 -- ---------------------------------------------------------------------
 
 ALTER TABLE battles ADD CONSTRAINT battles_pkey PRIMARY KEY (id);
@@ -807,11 +854,16 @@ ALTER TABLE player_levels ADD CONSTRAINT player_levels_pkey PRIMARY KEY (id);
 ALTER TABLE player_nines ADD CONSTRAINT player_nines_pkey PRIMARY KEY (id);
 ALTER TABLE player_quests ADD CONSTRAINT player_quests_pkey PRIMARY KEY (id);
 ALTER TABLE player_weekly_rewards ADD CONSTRAINT player_weekly_rewards_pkey PRIMARY KEY (id);
+ALTER TABLE player_zone_metrics ADD CONSTRAINT player_zone_metrics_pkey PRIMARY KEY (player_id, zone_id, metric_date);
 ALTER TABLE players ADD CONSTRAINT players_pkey PRIMARY KEY (id);
 ALTER TABLE point_log ADD CONSTRAINT point_log_pkey PRIMARY KEY (id);
 ALTER TABLE scoring_config ADD CONSTRAINT scoring_config_pkey PRIMARY KEY (key);
 ALTER TABLE seasons ADD CONSTRAINT seasons_pkey PRIMARY KEY (id);
 ALTER TABLE spells ADD CONSTRAINT spells_pkey PRIMARY KEY (id);
+ALTER TABLE survivors_leaderboard_holds ADD CONSTRAINT survivors_leaderboard_holds_pkey PRIMARY KEY (id);
+ALTER TABLE survivors_pack_grants ADD CONSTRAINT survivors_pack_grants_pkey PRIMARY KEY (id);
+ALTER TABLE survivors_runs ADD CONSTRAINT survivors_runs_pkey PRIMARY KEY (id);
+ALTER TABLE survivors_weapon_specs ADD CONSTRAINT survivors_weapon_specs_pkey PRIMARY KEY (spell_id);
 ALTER TABLE territory_actions ADD CONSTRAINT territory_actions_pkey PRIMARY KEY (id);
 ALTER TABLE trait_categories ADD CONSTRAINT trait_categories_pkey PRIMARY KEY (id);
 ALTER TABLE traits ADD CONSTRAINT traits_pkey PRIMARY KEY (id);
@@ -827,7 +879,7 @@ ALTER TABLE zone_influence_history ADD CONSTRAINT zone_influence_history_pkey PR
 ALTER TABLE zones ADD CONSTRAINT zones_pkey PRIMARY KEY (id);
 
 -- ---------------------------------------------------------------------
--- FOREIGN KEYS (58)
+-- FOREIGN KEYS (66)
 -- ---------------------------------------------------------------------
 
 ALTER TABLE battles ADD CONSTRAINT battles_challenger_nft_id_fkey FOREIGN KEY (challenger_nft_id) REFERENCES nfts(id);
@@ -871,8 +923,16 @@ ALTER TABLE player_nines ADD CONSTRAINT player_nines_player_id_fkey FOREIGN KEY 
 ALTER TABLE player_nines ADD CONSTRAINT player_nines_house_id_fkey FOREIGN KEY (house_id) REFERENCES houses(id);
 ALTER TABLE player_quests ADD CONSTRAINT player_quests_player_id_fkey FOREIGN KEY (player_id) REFERENCES players(id);
 ALTER TABLE player_weekly_rewards ADD CONSTRAINT player_weekly_rewards_player_id_fkey FOREIGN KEY (player_id) REFERENCES players(id);
+ALTER TABLE player_zone_metrics ADD CONSTRAINT player_zone_metrics_player_id_fkey FOREIGN KEY (player_id) REFERENCES players(id);
+ALTER TABLE player_zone_metrics ADD CONSTRAINT player_zone_metrics_zone_id_fkey FOREIGN KEY (zone_id) REFERENCES zones(id);
 ALTER TABLE players ADD CONSTRAINT players_school_id_fkey FOREIGN KEY (school_id) REFERENCES houses(id);
 ALTER TABLE point_log ADD CONSTRAINT point_log_player_id_fkey FOREIGN KEY (player_id) REFERENCES players(id);
+ALTER TABLE survivors_leaderboard_holds ADD CONSTRAINT survivors_leaderboard_holds_player_id_fkey FOREIGN KEY (player_id) REFERENCES players(id);
+ALTER TABLE survivors_leaderboard_holds ADD CONSTRAINT survivors_leaderboard_holds_run_id_fkey FOREIGN KEY (run_id) REFERENCES survivors_runs(id);
+ALTER TABLE survivors_pack_grants ADD CONSTRAINT survivors_pack_grants_player_id_fkey FOREIGN KEY (player_id) REFERENCES players(id);
+ALTER TABLE survivors_pack_grants ADD CONSTRAINT survivors_pack_grants_run_id_fkey FOREIGN KEY (run_id) REFERENCES survivors_runs(id);
+ALTER TABLE survivors_pack_grants ADD CONSTRAINT survivors_pack_grants_hold_id_fkey FOREIGN KEY (hold_id) REFERENCES survivors_leaderboard_holds(id);
+ALTER TABLE survivors_runs ADD CONSTRAINT survivors_runs_player_id_fkey FOREIGN KEY (player_id) REFERENCES players(id);
 ALTER TABLE territory_actions ADD CONSTRAINT territory_actions_player_id_fkey FOREIGN KEY (player_id) REFERENCES players(id);
 ALTER TABLE territory_actions ADD CONSTRAINT territory_actions_zone_id_fkey FOREIGN KEY (zone_id) REFERENCES zones(id);
 ALTER TABLE territory_actions ADD CONSTRAINT territory_actions_school_id_fkey FOREIGN KEY (school_id) REFERENCES houses(id);
@@ -888,27 +948,6 @@ ALTER TABLE zone_guild_control ADD CONSTRAINT zone_guild_control_zone_id_fkey FO
 ALTER TABLE zone_influence_history ADD CONSTRAINT zone_influence_history_zone_id_fkey FOREIGN KEY (zone_id) REFERENCES zones(id);
 ALTER TABLE zones ADD CONSTRAINT zones_school_id_fkey FOREIGN KEY (school_id) REFERENCES houses(id);
 ALTER TABLE zones ADD CONSTRAINT zones_controlling_school_id_fkey FOREIGN KEY (controlling_school_id) REFERENCES houses(id);
-
--- §9.78 chronicle job log — persistent record of every Chronicle cron run
--- (acts 1-4 + reply scraping) + every manual admin-triggered fire-act. The
--- previous in-memory `jobLog` vaporized on restart and hid 6+ weeks of
--- silent failures. Writer: `server/services/chronicleJobLog.js` (tolerant
--- of missing table via 42P01 latch). Readers: admin health endpoint +
--- recent-runs endpoint in `server/routes/adminChronicle.js`.
-CREATE TABLE IF NOT EXISTS chronicle_job_log (
-    id bigserial PRIMARY KEY,
-    job_name text NOT NULL,
-    status text NOT NULL CHECK (status IN ('success','error','skip')),
-    run_at timestamptz NOT NULL DEFAULT now(),
-    duration_ms integer,
-    tweet_id text,
-    error_message text,
-    error_code text,
-    act_num integer,
-    metadata jsonb
-);
-CREATE INDEX IF NOT EXISTS idx_chronicle_job_log_run_at ON chronicle_job_log(run_at DESC);
-CREATE INDEX IF NOT EXISTS idx_chronicle_job_log_job_status ON chronicle_job_log(job_name, status, run_at DESC);
 
 -- ---------------------------------------------------------------------
 -- INDEXES, RLS POLICIES, TRIGGERS, CHECK CONSTRAINTS
