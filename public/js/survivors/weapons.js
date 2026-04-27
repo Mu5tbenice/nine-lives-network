@@ -40,6 +40,7 @@ export function grantWeaponFromCard(player, card, spec) {
   const def = specToContinuousDef(spec, card);
   player.specWeapons.push({
     id: def.id,
+    spellId: Number(spec.spell_id),  // top-level for duplicate-detection in main.js
     def,
     level: 1,
     cdLeft: 0,

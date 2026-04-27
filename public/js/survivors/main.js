@@ -28,6 +28,10 @@ import { showStartScreen, updateHUD, showLevelUp, showGameOver, playChapterBanne
 let phase = "BOOT";
 let runStart = 0;
 let lastT = 0;
+// PR-C3 hotfix — track wall-clock time spent paused on the level-up modal
+// so the run timer + run-end POST report only "in-play" seconds.
+let pausedAccMs = 0;
+let pauseStartedAt = 0;
 let fpsAcc = 0, fpsFrames = 0, fpsShown = 0;
 
 const canvas = document.getElementById("sv-canvas");
@@ -140,7 +144,19 @@ async function startRun(args) {
   playChapterBanner(`Round ${ch.id} — ${ch.name}`);
 
   runStart = performance.now();
+  pausedAccMs = 0;
+  pauseStartedAt = 0;
   phase = "PLAY";
+}
+
+// PR-C3 hotfix — true in-play wall-clock seconds (subtracts time spent
+// paused on the level-up modal). Both run-end and the HUD pill use this.
+function getRunTimeSec() {
+  let elapsed = performance.now() - runStart - pausedAccMs;
+  if (phase === "LEVELUP" && pauseStartedAt > 0) {
+    elapsed -= performance.now() - pauseStartedAt;
+  }
+  return Math.max(0, elapsed) / 1000;
 }
 
 let currentHouse = null;
@@ -153,7 +169,7 @@ function endRun(won) {
   const player = entities.player;
   const summary = {
     won,
-    timeSec: (performance.now() - runStart) / 1000,
+    timeSec: getRunTimeSec(),
     level: player?.level || 1,
     kills: player?.kills || 0,
     chapter: (currentChapter() && currentChapter().id) || 1,
@@ -465,13 +481,14 @@ function update(dt) {
   compact();
 
   // --- HUD ---
-  updateHUD(p, currentChapter(), (performance.now() - runStart) / 1000, spawnState.chapterElapsed, entities.boss);
+  updateHUD(p, currentChapter(), getRunTimeSec(), spawnState.chapterElapsed, entities.boss);
 
   // --- Level-up check (PR-C3 rewrite — see presentLevelUp below) ---
   while (p.xp >= xpForLevel(p.level)) {
     p.xp -= xpForLevel(p.level);
     p.level++;
     phase = "LEVELUP";
+    pauseStartedAt = performance.now(); // PR-C3 hotfix — pause the run timer
     rerollCostThisLevelUp = CRYSTAL_REROLL_BASE; // reset per level-up
     presentLevelUp(p);
     break; // show one at a time
@@ -663,6 +680,15 @@ window.addEventListener("keydown", e => {
 // the per-modal callbacks (reroll, upgrade, swap, skip). All paths set
 // phase back to "PLAY" so the engine resumes ticking.
 
+function resumePlay() {
+  // PR-C3 hotfix — record the paused interval so getRunTimeSec subtracts it.
+  if (pauseStartedAt > 0) {
+    pausedAccMs += performance.now() - pauseStartedAt;
+    pauseStartedAt = 0;
+  }
+  phase = "PLAY";
+}
+
 function presentLevelUp(p) {
   const offers = pickOffers(buildOffers(p, currentCollection), 3);
 
@@ -674,7 +700,7 @@ function presentLevelUp(p) {
     onPick(offer) {
       applyCardOrPassive(p, offer);
       if (p.hp < p.hpMax) p.hp = Math.min(p.hpMax, p.hp + 10);
-      phase = "PLAY";
+      resumePlay();
     },
 
     onReroll() {
@@ -723,7 +749,7 @@ function presentLevelUp(p) {
         recomputeSpecWeapon(target.slotRef, spec, target.nextRarity);
       }
       if (p.hp < p.hpMax) p.hp = Math.min(p.hpMax, p.hp + 10);
-      phase = "PLAY";
+      resumePlay();
     },
 
     shouldSwap(offer) {
@@ -771,11 +797,11 @@ function presentLevelUp(p) {
       }
       applyCardOrPassive(p, newOffer);
       if (p.hp < p.hpMax) p.hp = Math.min(p.hpMax, p.hp + 10);
-      phase = "PLAY";
+      resumePlay();
     },
 
     onSkip() {
-      phase = "PLAY";
+      resumePlay();
     },
   });
 }

@@ -360,7 +360,11 @@ export function updateHUD(player, chapter, runTimeSec, chapterElapsed, boss) {
   if (crystalsEl) crystalsEl.textContent = `◆ ${player.crystals || 0}`;
 
   if (weaps) {
-    weaps.innerHTML = player.weapons.map(w => {
+    // PR-C3 hotfix — drafted continuous cards (player.specWeapons) were
+    // invisible in the HUD because the strip only iterated legacy weapons.
+    // Render legacy + spec entries side by side; rarity tag replaces the
+    // "Lv N" badge for spec weapons since they don't level up the v1 way.
+    const legacyHtml = player.weapons.map(w => {
       const def = WEAPON_DEFS[w.id];
       if (!def) return "";
       return `<div class="sv-icon" title="${def.name} Lv ${w.level}">
@@ -368,6 +372,20 @@ export function updateHUD(player, chapter, runTimeSec, chapterElapsed, boss) {
         <span class="sv-lv">${w.level}</span>
       </div>`;
     }).join("");
+    const specHtml = (player.specWeapons || []).map(w => {
+      const def = w.def;
+      if (!def) return "";
+      const rarity = (def.rarity || "common").slice(0, 1).toUpperCase();
+      const art = def.art;
+      const inner = art
+        ? `<img src="${art}" alt="">`
+        : `<div class="sv-card-symbol" style="font-size:22px;color:var(--accent)">${(def.name || "?")[0]}</div>`;
+      return `<div class="sv-icon" title="${escapeHtml(def.name)} (${escapeHtml(def.rarity || "common")})">
+        ${inner}
+        <span class="sv-lv">${rarity}</span>
+      </div>`;
+    }).join("");
+    weaps.innerHTML = legacyHtml + specHtml;
   }
   if (pass) {
     pass.innerHTML = Object.entries(player.passives).map(([id, lv]) => {
