@@ -7,14 +7,29 @@
 
 const crypto = require('crypto');
 
-// Bounds match the CHECK constraints in migration 004 + the v2 anti-AFK
-// ceilings from migration 010. PR-B will replace HOUSES with the full 9-house
-// set; PR-D will add server-side score recompute. PR-A scope: telemetry only.
-const HOUSES = new Set(['smoulders', 'darktide', 'stonebark', 'plaguemire']);
+// All 9 canonical houses. PR-B replaced the v1 4-house gate
+// (smoulders/darktide/stonebark/plaguemire) with the full set per
+// register.html / card-v4.js / Game Bible.
+const HOUSES = new Set([
+  'smoulders',
+  'darktide',
+  'stonebark',
+  'ashenvale',
+  'stormrage',
+  'nighthollow',
+  'dawnbringer',
+  'manastorm',
+  'plaguemire',
+]);
+
+// PR-A telemetry caps + ended-reason allowlist.
 const MAX_TIME_SEC = 86400;
 const MAX_LEVEL = 1000;
 const MAX_KILLS = 100000;
 const ENDED_REASONS = new Set(['death', 'crash', 'timeout', 'quit']);
+
+// PR-B draft constants.
+const DRAFT_SIZE = 2;
 
 function toInt(v) {
   const n = parseInt(v, 10);
@@ -35,6 +50,10 @@ function generateSeed() {
  * Validate + sanitize a POST /api/survivors/runs body. Pure function — no I/O.
  * Returns { ok: true, row } where `row` is ready to insert, or
  *         { ok: false, status, error }.
+ *
+ * Card-ownership (drafted_card_ids belong to the session player) is enforced
+ * at the route layer via a DB lookup — this validator only checks the body
+ * shape (required, array length, positive integers).
  */
 function validateSurvivorsRunBody(body) {
   body = body || {};
@@ -73,6 +92,19 @@ function validateSurvivorsRunBody(body) {
     return { ok: false, status: 400, error: 'implausible kills/time ratio' };
   }
 
+  // PR-B — drafted_card_ids: required array of exactly 2 positive integers.
+  // Ownership is enforced at the route level via a separate DB query.
+  if (!Array.isArray(body.drafted_card_ids)) {
+    return { ok: false, status: 400, error: 'drafted_card_ids required' };
+  }
+  if (body.drafted_card_ids.length !== DRAFT_SIZE) {
+    return { ok: false, status: 400, error: 'drafted_card_ids must contain exactly 2 ids' };
+  }
+  const drafted_card_ids = body.drafted_card_ids.map((v) => toInt(v));
+  if (drafted_card_ids.some((id) => !Number.isFinite(id) || id <= 0)) {
+    return { ok: false, status: 400, error: 'drafted_card_ids must be positive integers' };
+  }
+
   const won = !!body.won;
   const display_name = typeof body.display_name === 'string'
     ? body.display_name.trim().slice(0, 24) || null
@@ -88,6 +120,10 @@ function validateSurvivorsRunBody(body) {
     ? body.ended_reason
     : null;
 
+  // cards_used is the run-end snapshot. PR-D will populate per-card final
+  // rarity once the level-up upgrades land. For PR-B the run-end snapshot
+  // is just the drafted ids tagged with their starting rarity (which the
+  // client now sends via drafted_card_ids; per-card rarity comes later).
   const cards_used = Array.isArray(body.cards_used) ? body.cards_used : null;
 
   const crystals_earned        = toIntOr(body.crystals_earned, 0);
@@ -118,6 +154,7 @@ function validateSurvivorsRunBody(body) {
       crystals_spent_upgrade,
       client_version,
     },
+    drafted_card_ids,
   };
 }
 
@@ -128,4 +165,5 @@ module.exports = {
   MAX_TIME_SEC,
   MAX_LEVEL,
   MAX_KILLS,
+  DRAFT_SIZE,
 };

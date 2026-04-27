@@ -61,8 +61,22 @@ async function boot() {
   requestAnimationFrame(tick);
 }
 
-async function startRun(house) {
+async function startRun(args) {
+  // PR-B: showStartScreen now invokes onStart({ house, draftedCardIds }).
+  // Old call shape (just a house object) is still accepted for the
+  // game-over → restart path so we don't lose the run's draft.
+  let house, draftedCardIds;
+  if (args && args.house) {
+    house = args.house;
+    draftedCardIds = Array.isArray(args.draftedCardIds) ? args.draftedCardIds : [];
+  } else {
+    house = args; // legacy
+    draftedCardIds = currentDraftedCardIds || [];
+  }
+
   currentHouse = house;
+  currentDraftedCardIds = draftedCardIds;
+
   resetEntities();
   resetSpawner();
   const player = makePlayer(house);
@@ -83,6 +97,7 @@ async function startRun(house) {
 }
 
 let currentHouse = null;
+let currentDraftedCardIds = [];
 
 function endRun(won) {
   const player = entities.player;
@@ -102,12 +117,20 @@ function endRun(won) {
 }
 
 // Fire-and-forget submission. Failures are logged but don't block the UI.
+// PR-B: includes player_id (server requires it post-§9.111) and
+// drafted_card_ids (the 2 cards the player picked at run start).
 function submitRunResult(summary) {
   try {
+    const playerId = getPlayerId();
+    if (!playerId) {
+      console.warn("[survivors] no player_id — skipping run submit");
+      return;
+    }
     fetch("/api/survivors/runs", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        player_id: playerId,
         house: currentHouse?.id || null,
         display_name: getSavedName() || null,
         time_sec: Math.floor(summary.timeSec),
@@ -115,10 +138,25 @@ function submitRunResult(summary) {
         kills: summary.kills,
         chapter: summary.chapter,
         won: !!summary.won,
+        drafted_card_ids: currentDraftedCardIds,
+        ended_reason: summary.won ? null : "death",
+        client_version: "survivors-v2-pr-b",
       }),
     }).catch(err => console.warn("[survivors] submit fail:", err.message));
   } catch (err) {
     console.warn("[survivors] submit exception:", err && err.message);
+  }
+}
+
+function getPlayerId() {
+  try {
+    const url = new URLSearchParams(window.location.search);
+    const fromQuery = url.get("player_id");
+    if (fromQuery) return parseInt(fromQuery, 10) || null;
+    const stored = localStorage.getItem("player_id");
+    return stored ? parseInt(stored, 10) || null : null;
+  } catch {
+    return null;
   }
 }
 
