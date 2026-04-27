@@ -169,9 +169,14 @@ router.get('/specs', async (req, res) => {
       return res.json(specsCache.value);
     }
 
+    // No FK is declared on survivors_weapon_specs.spell_id (deferred from
+    // PR-A migration 011 to keep the schema independent of spell catalog
+    // state). Without an FK, PostgREST's nested-resource embedding fails
+    // — so we return flat rows here. The client already has spell metadata
+    // from /api/packs/collection/:player_id and looks up spec by spell_id.
     const { data, error } = await supabase
       .from('survivors_weapon_specs')
-      .select('spell_id, behavior_class, base_damage, base_cooldown_ms, projectile_speed, aoe_radius, pierce, activated_keybind, rarity_scaling, updated_at, spell:spell_id(name, house, spell_type, image_url, base_effect, effect_1)')
+      .select('spell_id, behavior_class, base_damage, base_cooldown_ms, projectile_speed, aoe_radius, pierce, activated_keybind, rarity_scaling, updated_at')
       .order('spell_id', { ascending: true });
 
     if (error) {
