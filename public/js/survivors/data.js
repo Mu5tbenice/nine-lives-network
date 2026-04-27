@@ -36,46 +36,62 @@ export const WEAPONS_HELD = [
 
 export const FACIALS = ["CAT_MASK.001"];
 
-// Pre-built starter loadouts. Player picks one on the start screen.
+// All 9 houses. Ids match register.html / card-v4.js / server's HOUSE_CATALOGUE.
+// `startingWeapon` is a placeholder used by the engine until PR-C wires
+// drafted cards in as the actual run weapons.
 export const HOUSES = [
   {
-    id: "smoulders",
-    name: "Smoulders",
-    tagline: "Fire burns hottest when cornered.",
-    outfit: "EMBERROBES",
-    hat: "EMBER_HAT",
-    weapon: "EMBERSTAFF",
-    tint: [255, 128, 90],
+    id: "smoulders",   name: "Smoulders",   tagline: "Fire burns hottest when cornered.",
+    outfit: "EMBERROBES",       hat: "EMBER_HAT",        weapon: "EMBERSTAFF",
+    tint: [224, 60, 49],
     startingWeapon: "ember_toss",
   },
   {
-    id: "darktide",
-    name: "Darktide",
-    tagline: "The deep keeps its secrets.",
-    outfit: "TIDALROBE",
-    hat: "TIDALCREST",
-    weapon: "TRIDENT",
-    tint: [120, 180, 220],
+    id: "darktide",    name: "Darktide",    tagline: "The deep keeps its secrets.",
+    outfit: "TIDALROBE",        hat: "TIDALCREST",       weapon: "TRIDENT",
+    tint: [0, 180, 216],
     startingWeapon: "mana_bolt",
   },
   {
-    id: "stonebark",
-    name: "Stonebark",
-    tagline: "What stands, stays.",
-    outfit: "STONEPLATE",
-    hat: "STONEHELM",
-    weapon: "GNARLEDBRANCH",
-    tint: [200, 170, 120],
+    id: "stonebark",   name: "Stonebark",   tagline: "What stands, stays.",
+    outfit: "STONEPLATE",       hat: "STONEHELM",        weapon: "GNARLEDBRANCH",
+    tint: [92, 179, 56],
     startingWeapon: "terraform_slam",
   },
   {
-    id: "plaguemire",
-    name: "Plaguemire",
-    tagline: "The rot remembers.",
-    outfit: "DEATHSHROUD",
-    hat: "NULLVEIL",
-    weapon: "SCYTHE",
-    tint: [160, 200, 120],
+    id: "ashenvale",   name: "Ashenvale",   tagline: "Roots remember the rain.",
+    outfit: "VERDANTTUNIC",     hat: "VERDANTCROWN",     weapon: "VERDANTSTAFF",
+    tint: [176, 196, 222],
+    startingWeapon: "spore_cloud",
+  },
+  {
+    id: "stormrage",   name: "Stormrage",   tagline: "Lightning chooses no friend.",
+    outfit: "ROYALCAPE",        hat: "STARWEAVERCROWN",  weapon: "STAFFOFSTORMS",
+    tint: [255, 200, 0],
+    startingWeapon: "mana_bolt",
+  },
+  {
+    id: "nighthollow", name: "Nighthollow", tagline: "Some doors only open in the dark.",
+    outfit: "UMBRALSHROUD",     hat: "UMBRALCOWL",       weapon: "SHADOWWAND",
+    tint: [123, 45, 142],
+    startingWeapon: "arcane_shield",
+  },
+  {
+    id: "dawnbringer", name: "Dawnbringer", tagline: "A first light is still a fire.",
+    outfit: "CELESTIALVESTMENTS", hat: "RADIANT_HALO",   weapon: "RADIANTWAND",
+    tint: [255, 140, 0],
+    startingWeapon: "firewall",
+  },
+  {
+    id: "manastorm",   name: "Manastorm",   tagline: "Will is the only currency that bends.",
+    outfit: "ARCANEREGALIA",    hat: "ARCANECIRCLET",    weapon: "ARCANESTAFF",
+    tint: [91, 143, 224],
+    startingWeapon: "petrify_pulse",
+  },
+  {
+    id: "plaguemire",  name: "Plaguemire",  tagline: "The rot remembers.",
+    outfit: "DEATHSHROUD",      hat: "NULLVEIL",         weapon: "SCYTHE",
+    tint: [232, 67, 147],
     startingWeapon: "plague_aura",
   },
 ];
