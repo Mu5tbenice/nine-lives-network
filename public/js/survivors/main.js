@@ -12,9 +12,16 @@ import {
 import { getAtlas, angleIndex, drawChar } from "./sprite.js";
 import { camera, followCamera, loadBiome, drawWorldBackground, worldToScreen, clampToWorld } from "./world.js";
 import { grantWeapon, grantWeaponFromCard, fireActivated, updateWeapons, damage, drawOrbits } from "./weapons.js";
-import { fetchSpecs, lookupSpec } from "./specs.js";
+import {
+  fetchSpecs, lookupSpec, bumpRarity, isAtMaxRarity,
+  recomputeSpecWeapon, recomputeActivatedSlot, rarityMultiplier,
+} from "./specs.js";
 import { updateSpawner, state as spawnState, resetSpawner, currentChapter, advanceChapter } from "./spawner.js";
-import { buildOffers, pickOffers, applyOffer, recomputePassiveStats } from "./cards.js";
+import {
+  buildOffers, pickOffers, applyOffer, recomputePassiveStats,
+  CRYSTAL_REROLL_BASE, CRYSTAL_REROLL_MULT, CRYSTAL_UPGRADE_COST,
+  CRYSTAL_LEGENDARY_PAYOUT, BUILD_CAP,
+} from "./cards.js";
 import { showStartScreen, updateHUD, showLevelUp, showGameOver, playChapterBanner, updateFps, getSavedName } from "./ui.js";
 
 // Game state machine: BOOT → MENU → PLAY ⇄ LEVELUP → GAMEOVER → MENU
@@ -68,20 +75,23 @@ async function startRun(args) {
   // look up each spell's spec and grant the right weapon.
   // Game-over → restart path passes a bare house and we fall back to
   // whatever was drafted at the start of this session.
-  let house, draftedCardIds, draftedCards;
+  let house, draftedCardIds, draftedCards, collection;
   if (args && args.house) {
     house = args.house;
     draftedCardIds = Array.isArray(args.draftedCardIds) ? args.draftedCardIds : [];
     draftedCards   = Array.isArray(args.draftedCards)   ? args.draftedCards   : [];
+    collection     = Array.isArray(args.collection)     ? args.collection     : draftedCards;
   } else {
     house = args; // legacy
     draftedCardIds = currentDraftedCardIds || [];
     draftedCards   = currentDraftedCards   || [];
+    collection     = currentCollection     || draftedCards;
   }
 
   currentHouse = house;
   currentDraftedCardIds = draftedCardIds;
   currentDraftedCards   = draftedCards;
+  currentCollection     = collection;
 
   // Pre-load the spec catalogue so the per-card lookups below resolve.
   let specsLoaded = true;
@@ -136,6 +146,8 @@ async function startRun(args) {
 let currentHouse = null;
 let currentDraftedCardIds = [];
 let currentDraftedCards = [];
+let currentCollection = []; // PR-C3: full /api/survivors/start.cards for level-up offers
+let rerollCostThisLevelUp = CRYSTAL_REROLL_BASE;
 
 function endRun(won) {
   const player = entities.player;
@@ -427,13 +439,18 @@ function update(dt) {
     if (e.dead) {
       entities.player.kills++;
       dropXP(e.x, e.y, e.xp);
+      // PR-C3 — every kill drops 1 crystal pickup. Elite/boss tagging
+      // would scale this; PR-D's spawner adds elite tier ramping.
+      dropCrystal(e.x, e.y, 1);
       if (Math.random() < 0.04) dropHeal(e.x, e.y);
     }
   }
   if (entities.boss && entities.boss.dead) {
     entities.player.kills++;
     for (let i = 0; i < 8; i++) dropXP(entities.boss.x + (Math.random()-0.5)*80, entities.boss.y + (Math.random()-0.5)*80, Math.max(3, Math.floor(entities.boss.xp / 8)));
-    // Chapter progression
+    // PR-C3 — boss kill drops a crystal pile.
+    for (let i = 0; i < 5; i++) dropCrystal(entities.boss.x + (Math.random()-0.5)*60, entities.boss.y + (Math.random()-0.5)*60, 4);
+    // Chapter progression (PR-D will replace this with round structure).
     advanceChapter();
     const next = currentChapter();
     if (next) {
@@ -450,17 +467,13 @@ function update(dt) {
   // --- HUD ---
   updateHUD(p, currentChapter(), (performance.now() - runStart) / 1000, spawnState.chapterElapsed, entities.boss);
 
-  // --- Level-up check ---
+  // --- Level-up check (PR-C3 rewrite — see presentLevelUp below) ---
   while (p.xp >= xpForLevel(p.level)) {
     p.xp -= xpForLevel(p.level);
     p.level++;
     phase = "LEVELUP";
-    const offers = pickOffers(buildOffers(p), 3);
-    showLevelUp(offers, choice => {
-      applyOffer(p, choice, grantWeapon);
-      if (p.hp < p.hpMax) p.hp = Math.min(p.hpMax, p.hp + 10); // small heal on pick
-      phase = "PLAY";
-    });
+    rerollCostThisLevelUp = CRYSTAL_REROLL_BASE; // reset per level-up
+    presentLevelUp(p);
     break; // show one at a time
   }
 }
@@ -477,15 +490,22 @@ function nearestEnemyByPos(x, y, maxR) {
 function dtMsFromSec(dt) { return dt * 1000; }
 
 function collectPickup(p, pu) {
-  if (pu.type === "xp")   p.xp += pu.value * (p.xpMul || 1);
-  if (pu.type === "gold") p.gold += pu.value;
-  if (pu.type === "heal") p.hp   = Math.min(p.hpMax, p.hp + pu.value);
+  if (pu.type === "xp")      p.xp += pu.value * (p.xpMul || 1);
+  if (pu.type === "gold")    p.gold += pu.value;
+  if (pu.type === "heal")    p.hp   = Math.min(p.hpMax, p.hp + pu.value);
+  if (pu.type === "crystal") p.crystals = (p.crystals || 0) + pu.value;
 }
 
 function dropXP(x, y, value) {
   // pick gem size by value
   const idx = value >= 8 ? 2 : value >= 3 ? 1 : 0;
   addPickup(makePickup("xp", x, y, value, XP_GEM_SPRITES[idx]));
+}
+
+// PR-C3 — crystal pickup. Reuses the heal sprite for now (visual will be
+// replaced when crystal art lands; see project_round_end_dopamine memory).
+function dropCrystal(x, y, value) {
+  addPickup(makePickup("crystal", x, y, value, FAMILIAR("ORB_DAWNBRINGER")));
 }
 
 function dropHeal(x, y) {
@@ -635,5 +655,186 @@ window.addEventListener("keydown", e => {
     });
   }
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// PR-C3 — Level-up modal handlers.
+//
+// presentLevelUp(p) builds the offer pool from currentCollection and wires
+// the per-modal callbacks (reroll, upgrade, swap, skip). All paths set
+// phase back to "PLAY" so the engine resumes ticking.
+
+function presentLevelUp(p) {
+  const offers = pickOffers(buildOffers(p, currentCollection), 3);
+
+  showLevelUp(offers, p, {
+    upgradeCost: CRYSTAL_UPGRADE_COST,
+
+    rerollCost: () => rerollCostThisLevelUp,
+
+    onPick(offer) {
+      applyCardOrPassive(p, offer);
+      if (p.hp < p.hpMax) p.hp = Math.min(p.hpMax, p.hp + 10);
+      phase = "PLAY";
+    },
+
+    onReroll() {
+      p.crystals = (p.crystals || 0) - rerollCostThisLevelUp;
+      rerollCostThisLevelUp *= CRYSTAL_REROLL_MULT;
+      return pickOffers(buildOffers(p, currentCollection), 3);
+    },
+
+    upgradeTargets() {
+      const t = [];
+      for (const w of p.specWeapons) {
+        const r = (w.def && w.def.rarity) || "common";
+        if (isAtMaxRarity(r)) continue;
+        const card = findOriginalCard(w.spellId);
+        t.push({
+          card,
+          name: (card && card.spell && card.spell.name) || w.def.name,
+          rarity: r,
+          nextRarity: bumpRarity(r),
+          slotRef: w,
+          isActivated: false,
+        });
+      }
+      for (const slot of p.activatedSlots) {
+        const r = slot.rarity || "common";
+        if (isAtMaxRarity(r)) continue;
+        const card = findOriginalCard(slot.spellId);
+        t.push({
+          card,
+          name: (card && card.spell && card.spell.name) || slot.name,
+          rarity: r,
+          nextRarity: bumpRarity(r),
+          slotRef: slot,
+          isActivated: true,
+        });
+      }
+      return t;
+    },
+
+    onUpgradeBuildCard(target) {
+      p.crystals = (p.crystals || 0) - CRYSTAL_UPGRADE_COST;
+      const spec = lookupSpec(target.slotRef.spellId);
+      if (target.isActivated) {
+        recomputeActivatedSlot(target.slotRef, spec, target.nextRarity);
+      } else {
+        recomputeSpecWeapon(target.slotRef, spec, target.nextRarity);
+      }
+      if (p.hp < p.hpMax) p.hp = Math.min(p.hpMax, p.hp + 10);
+      phase = "PLAY";
+    },
+
+    shouldSwap(offer) {
+      if (offer.kind !== "card") return false;
+      // Duplicates never swap — they bump rarity (or pay legendary crystals).
+      if (isOwnedSpellId(p, offer.spellId)) return false;
+      const buildSize = p.specWeapons.length + p.activatedSlots.length;
+      return buildSize >= BUILD_CAP;
+    },
+
+    swapTargets() {
+      const t = [];
+      for (const w of p.specWeapons) {
+        const card = findOriginalCard(w.spellId);
+        t.push({
+          card,
+          name: (card && card.spell && card.spell.name) || w.def.name,
+          rarity: (w.def && w.def.rarity) || "common",
+          slotRef: w,
+          isActivated: false,
+        });
+      }
+      for (const slot of p.activatedSlots) {
+        const card = findOriginalCard(slot.spellId);
+        t.push({
+          card,
+          name: (card && card.spell && card.spell.name) || slot.name,
+          rarity: slot.rarity || "common",
+          slotRef: slot,
+          isActivated: true,
+        });
+      }
+      return t;
+    },
+
+    onSwap(discard, newOffer) {
+      if (discard.isActivated) {
+        const idx = p.activatedSlots.indexOf(discard.slotRef);
+        if (idx >= 0) p.activatedSlots.splice(idx, 1);
+        // Re-bind keys after removal — first remaining → Q, second → E.
+        p.activatedSlots.forEach((s, i) => { s.key = i === 0 ? "Q" : "E"; });
+      } else {
+        const idx = p.specWeapons.indexOf(discard.slotRef);
+        if (idx >= 0) p.specWeapons.splice(idx, 1);
+      }
+      applyCardOrPassive(p, newOffer);
+      if (p.hp < p.hpMax) p.hp = Math.min(p.hpMax, p.hp + 10);
+      phase = "PLAY";
+    },
+
+    onSkip() {
+      phase = "PLAY";
+    },
+  });
+}
+
+function applyCardOrPassive(p, offer) {
+  if (!offer) return;
+  if (offer.kind === "passive" || offer.kind === "weapon") {
+    applyOffer(p, offer, grantWeapon);
+    return;
+  }
+  if (offer.kind !== "card") return;
+
+  const spec = lookupSpec(offer.spellId);
+  if (!spec) return;
+
+  // Duplicate of an already-owned spell → rarity bump (or legendary payout).
+  if (isOwnedSpellId(p, offer.spellId)) {
+    bumpExistingCardRarity(p, offer.spellId);
+    return;
+  }
+  // New card → grant via PR-C2's weapon-or-activated-slot dispatcher.
+  grantWeaponFromCard(p, offer.card, spec);
+}
+
+function isOwnedSpellId(p, spellId) {
+  const id = Number(spellId);
+  return p.specWeapons.some(w => Number(w.spellId) === id) ||
+    p.activatedSlots.some(s => Number(s.spellId) === id);
+}
+
+function bumpExistingCardRarity(p, spellId) {
+  const spec = lookupSpec(spellId);
+  if (!spec) return;
+  const id = Number(spellId);
+
+  const specW = p.specWeapons.find(w => Number(w.spellId) === id);
+  if (specW) {
+    const cur = (specW.def && specW.def.rarity) || "common";
+    if (isAtMaxRarity(cur)) {
+      p.crystals = (p.crystals || 0) + CRYSTAL_LEGENDARY_PAYOUT;
+      return;
+    }
+    recomputeSpecWeapon(specW, spec, bumpRarity(cur));
+    return;
+  }
+
+  const actS = p.activatedSlots.find(s => Number(s.spellId) === id);
+  if (actS) {
+    const cur = actS.rarity || "common";
+    if (isAtMaxRarity(cur)) {
+      p.crystals = (p.crystals || 0) + CRYSTAL_LEGENDARY_PAYOUT;
+      return;
+    }
+    recomputeActivatedSlot(actS, spec, bumpRarity(cur));
+  }
+}
+
+function findOriginalCard(spellId) {
+  return currentCollection.find(c => Number(c.spell_id) === Number(spellId)) || null;
+}
 
 boot();

@@ -47,6 +47,7 @@ export function makePlayer(loadout) {
     specWeapons: [],     // PR-C2: continuous spec-derived weapons (drafted cards)
     activatedSlots: [],  // PR-C2: [{ spellId, key, name, cdLeft, ... }] — Q first, E second
     passives: {},        // { id: level }
+    crystals: 0,         // PR-C3: in-run crystal currency (resets at run end)
     flash: 0,
   };
 }

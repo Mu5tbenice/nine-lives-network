@@ -256,6 +256,54 @@
   #sv-hud { pointer-events: none; }
   #sv-hud > * { pointer-events: none; }
 
+  /* PR-C3 — Level-up modal (offers + reroll/upgrade/swap). */
+  .sv-lvl-panel {
+    max-width: 1000px; width: 100%;
+    background: var(--panel); border: 1px solid var(--panel-edge);
+    border-radius: 16px; padding: 22px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+    max-height: 90vh; overflow-y: auto;
+  }
+  .sv-lvl-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 14px;
+  }
+  .sv-lvl-title { font-size: 18px; color: var(--accent); font-weight: 700; letter-spacing: 0.04em; }
+  .sv-lvl-crystals {
+    font-size: 14px; color: var(--accent);
+    background: rgba(0,0,0,0.4); border: 1px solid var(--panel-edge);
+    padding: 4px 10px; border-radius: 999px;
+  }
+  .sv-lvl-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px; margin-bottom: 14px;
+  }
+  .sv-lvl-tile {
+    cursor: pointer; transition: transform 120ms ease;
+    position: relative;
+  }
+  .sv-lvl-tile:hover { transform: translateY(-3px); }
+  .sv-lvl-tile-meta {
+    text-align: center; margin-top: 4px;
+    color: var(--accent); font-size: 12px; letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .sv-lvl-tile-meta--warn { color: var(--hp); }
+  .sv-lvl-tile--discard:hover { box-shadow: 0 0 0 3px var(--hp); border-radius: 16px; }
+  .sv-lvl-passive .sv-card { min-height: 180px; }
+  .sv-lvl-actions {
+    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+    padding-top: 8px; border-top: 1px solid var(--panel-edge);
+  }
+  .sv-btn--ghost {
+    background: rgba(0,0,0,0.4); color: var(--ink);
+    border: 1px solid var(--panel-edge); border-radius: 10px;
+    padding: 9px 14px; font: inherit; font-weight: 600; cursor: pointer;
+    transition: border-color 120ms ease, color 120ms ease, opacity 120ms ease;
+  }
+  .sv-btn--ghost:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+  .sv-btn--ghost:disabled { opacity: 0.45; cursor: not-allowed; }
+
   /* PR-C2 — Activated Casts (Q / E) cooldown rings. Single self-contained
      style block; the icons reuse spell card art so the visual stays in
      family with the canonical card-v4 frames. */
@@ -337,6 +385,8 @@
       <span id="sv-kills">☠ 0</span>
       <span class="sep"></span>
       <span id="sv-gold">★ 0</span>
+      <span class="sep"></span>
+      <span id="sv-crystals" title="Crystals — spend on reroll / upgrade in level-up">◆ 0</span>
     </div>
 
     <div id="sv-boss">

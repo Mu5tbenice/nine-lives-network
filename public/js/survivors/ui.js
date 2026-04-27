@@ -300,11 +300,13 @@ function renderDraftPicker(root, data, houseUI, houseEngine, onStart) {
     const draftedCardIds = Array.from(picked);
     // PR-C2 — pass the full card objects so the runtime can look up each
     // spell's spec without having to re-fetch the collection.
+    // PR-C3 — also pass the full collection so the level-up offer pool
+    // can sample beyond the drafted 2.
     const draftedCards = draftedCardIds
       .map(id => cards.find(c => c.id === id))
       .filter(Boolean);
     root.style.display = "none";
-    onStart({ house: houseEngine, draftedCardIds, draftedCards });
+    onStart({ house: houseEngine, draftedCardIds, draftedCards, collection: cards });
   });
 
   refreshSummary();
@@ -352,6 +354,9 @@ export function updateHUD(player, chapter, runTimeSec, chapterElapsed, boss) {
   }
   if (gold) gold.textContent = `★ ${player.gold}`;
   if (kills) kills.textContent = `☠ ${player.kills}`;
+  // PR-C3 — crystal counter in the top HUD pill.
+  const crystalsEl = document.getElementById("sv-crystals");
+  if (crystalsEl) crystalsEl.textContent = `◆ ${player.crystals || 0}`;
 
   if (weaps) {
     weaps.innerHTML = player.weapons.map(w => {
@@ -404,38 +409,227 @@ export function updateHUD(player, chapter, runTimeSec, chapterElapsed, boss) {
   }
 }
 
-// --- Level-up modal (PR-C will rewrite this to use buildCardV4) ---
+// --- Level-up modal (PR-C3 rewrite: canonical card frames + crystals) ---
+//
+// Three modes inside #sv-modal:
+//   OFFER  — 3 card / passive offers + Reroll / Upgrade / Skip
+//   UPGRADE — picker over the player's current build to choose which card
+//             to bump (rarity)
+//   SWAP   — build is full, player accepted a new card; pick which existing
+//            build card to discard
+//
+// Handlers (all required):
+//   onPick(offer)              — accept an offer (card or passive)
+//   onReroll()                 — spend crystals and regenerate offers
+//   onUpgradeBuildCard(target) — bump rarity of an existing build card
+//   onSwap(discardTarget, newOffer) — replace a build card with the offer
+//   onSkip()                   — close without picking
 
-export function showLevelUp(offers, onPick) {
+export function showLevelUp(initialOffers, player, handlers) {
   const modal = document.getElementById("sv-modal");
   modal.style.display = "flex";
-  modal.innerHTML = `
-    <div class="sv-card-panel">
-      <div class="sv-card-head">Level Up!</div>
-      <div class="sv-cards">
-        ${offers.map((o, i) => `
-          <button class="sv-card ${o.isNew ? "is-new" : ""}" data-i="${i}">
-            <div class="sv-card-art">
-              ${o.kind === "weapon"
-                ? `<img src="${o.art}" alt="" />`
-                : `<div class="sv-card-symbol">${o.symbol || "◈"}</div>`}
-            </div>
-            <div class="sv-card-name">${o.name}</div>
-            <div class="sv-card-text">${o.text}</div>
-            ${o.isNew ? `<div class="sv-new-tag">NEW</div>` : ""}
-          </button>
-        `).join("")}
+
+  let offers = initialOffers;
+  let mode = "OFFER";
+  let pendingSwapOffer = null; // when build is full and player picks a new card
+
+  function close() {
+    modal.style.display = "none";
+    modal.innerHTML = "";
+  }
+
+  function buildCanonicalCardHtml(offer) {
+    // For card-kind offers: render via window.buildCardV4 if available,
+    // otherwise a minimal canonical-shape fallback. Passive offers fall
+    // through to a small-tile rendering — passives don't have spell-card art.
+    if (offer.kind !== "card") return null;
+
+    const c = offer.card || {};
+    const spell = c.spell || {};
+    const cardObj = {
+      name: spell.name || offer.name,
+      house: spell.house || "universal",
+      spell_type: spell.spell_type || "attack",
+      rarity: offer.rarity || c.rarity || "common",
+      base_atk: spell.base_atk || 0,
+      base_hp:  spell.base_hp  || 0,
+      base_spd: spell.base_spd || 0,
+      base_def: spell.base_def || 0,
+      base_luck: spell.base_luck || 0,
+      base_effect: spell.base_effect || "",
+      effect_1: spell.effect_1 || "",
+      bonus_effects: spell.bonus_effects || [],
+      flavor_text: spell.flavor_text || "",
+      image_url: spell.image_url || "",
+      sharpness: c.sharpness ?? 100,
+    };
+    const builder = (typeof window !== "undefined" && window.buildCardV4) || null;
+    return builder ? builder(cardObj, { size: "mini" }) : `
+      <div class="spell-card sc-mini-card">
+        <div class="sc-body" style="padding:14px;">
+          <div class="sc-name">${escapeHtml(cardObj.name)}</div>
+          <div class="sc-type-row"><span class="sc-type">${escapeHtml(cardObj.spell_type)}</span><span class="sc-rarity">${escapeHtml(cardObj.rarity)}</span></div>
+        </div>
+      </div>`;
+  }
+
+  function renderOfferTile(offer, idx) {
+    if (offer.kind === "card") {
+      return `<div class="sv-lvl-tile" data-i="${idx}">
+        ${buildCanonicalCardHtml(offer)}
+      </div>`;
+    }
+    // Passive offer — small canonical-feel tile (not a spell card).
+    return `<div class="sv-lvl-tile sv-lvl-passive" data-i="${idx}">
+      <div class="sv-card sv-card--passive">
+        <div class="sv-card-art"><div class="sv-card-symbol">${escapeHtml(offer.symbol || "◈")}</div></div>
+        <div class="sv-card-name">${escapeHtml(offer.name)}</div>
+        <div class="sv-card-text">${escapeHtml(offer.text || "")}</div>
+        ${offer.isNew ? `<div class="sv-new-tag">NEW</div>` : ""}
       </div>
-    </div>
-  `;
-  modal.querySelectorAll(".sv-card").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const i = parseInt(btn.dataset.i, 10);
-      modal.style.display = "none";
-      modal.innerHTML = "";
-      onPick(offers[i]);
+    </div>`;
+  }
+
+  function renderOffers() {
+    const cost = handlers.rerollCost ? handlers.rerollCost() : 0;
+    const canReroll = (player.crystals || 0) >= cost;
+    const buildSize = (player.specWeapons.length + player.activatedSlots.length);
+    const canUpgrade = buildSize > 0 && (player.crystals || 0) >= (handlers.upgradeCost || 0);
+
+    modal.innerHTML = `
+      <div class="sv-lvl-panel">
+        <div class="sv-lvl-head">
+          <div class="sv-lvl-title">Level Up — Pick One</div>
+          <div class="sv-lvl-crystals" title="Crystals">★ ${player.crystals || 0}</div>
+        </div>
+        <div class="sv-lvl-grid" id="sv-lvl-grid">
+          ${offers.map(renderOfferTile).join("")}
+        </div>
+        <div class="sv-lvl-actions">
+          <button class="sv-btn sv-btn--ghost" id="sv-lvl-reroll" ${canReroll ? "" : "disabled"}>Reroll · ${cost}★</button>
+          <button class="sv-btn sv-btn--ghost" id="sv-lvl-upgrade" ${canUpgrade ? "" : "disabled"}>Upgrade Build · ${handlers.upgradeCost || 0}★</button>
+          <button class="sv-btn sv-btn--ghost" id="sv-lvl-skip">Skip</button>
+        </div>
+      </div>
+    `;
+
+    // Init canonical card foil/particles after insertion.
+    const grid = document.getElementById("sv-lvl-grid");
+    if (grid && typeof window !== "undefined" && typeof window.initCards === "function") {
+      try { window.initCards(grid); } catch {}
+    }
+
+    grid.addEventListener("click", (ev) => {
+      const tile = ev.target.closest(".sv-lvl-tile");
+      if (!tile) return;
+      const i = parseInt(tile.dataset.i, 10);
+      const offer = offers[i];
+      if (!offer) return;
+
+      // Card offer + build full → enter SWAP mode.
+      if (offer.kind === "card" && handlers.shouldSwap && handlers.shouldSwap(offer)) {
+        pendingSwapOffer = offer;
+        renderSwap();
+        return;
+      }
+      handlers.onPick(offer);
+      close();
     });
-  });
+
+    document.getElementById("sv-lvl-reroll").addEventListener("click", () => {
+      if (!canReroll) return;
+      offers = handlers.onReroll();
+      renderOffers();
+    });
+    document.getElementById("sv-lvl-upgrade").addEventListener("click", () => {
+      if (!canUpgrade) return;
+      mode = "UPGRADE";
+      renderUpgrade();
+    });
+    document.getElementById("sv-lvl-skip").addEventListener("click", () => {
+      handlers.onSkip();
+      close();
+    });
+  }
+
+  function renderUpgrade() {
+    const targets = handlers.upgradeTargets ? handlers.upgradeTargets() : [];
+    modal.innerHTML = `
+      <div class="sv-lvl-panel">
+        <div class="sv-lvl-head">
+          <div class="sv-lvl-title">Upgrade — Pick a Build Card</div>
+          <div class="sv-lvl-crystals" title="Crystals">★ ${player.crystals || 0}</div>
+        </div>
+        <div class="sv-lvl-grid" id="sv-lvl-grid">
+          ${targets.map((t, i) => `<div class="sv-lvl-tile" data-i="${i}">
+            ${buildCanonicalCardHtml({ kind: "card", card: t.card, rarity: t.rarity, name: t.name })}
+            <div class="sv-lvl-tile-meta">${escapeHtml(t.rarity)} → ${escapeHtml(t.nextRarity)}</div>
+          </div>`).join("")}
+        </div>
+        <div class="sv-lvl-actions">
+          <button class="sv-btn sv-btn--ghost" id="sv-lvl-back">← Back</button>
+        </div>
+      </div>
+    `;
+    const grid = document.getElementById("sv-lvl-grid");
+    if (grid && typeof window !== "undefined" && typeof window.initCards === "function") {
+      try { window.initCards(grid); } catch {}
+    }
+    grid.addEventListener("click", (ev) => {
+      const tile = ev.target.closest(".sv-lvl-tile");
+      if (!tile) return;
+      const i = parseInt(tile.dataset.i, 10);
+      const target = targets[i];
+      if (!target) return;
+      handlers.onUpgradeBuildCard(target);
+      close();
+    });
+    document.getElementById("sv-lvl-back").addEventListener("click", () => {
+      mode = "OFFER";
+      renderOffers();
+    });
+  }
+
+  function renderSwap() {
+    const targets = handlers.swapTargets ? handlers.swapTargets() : [];
+    modal.innerHTML = `
+      <div class="sv-lvl-panel">
+        <div class="sv-lvl-head">
+          <div class="sv-lvl-title">Build Full — Pick One to Discard</div>
+          <div class="sv-lvl-crystals">★ ${player.crystals || 0}</div>
+        </div>
+        <div class="sv-lvl-grid" id="sv-lvl-grid">
+          ${targets.map((t, i) => `<div class="sv-lvl-tile sv-lvl-tile--discard" data-i="${i}">
+            ${buildCanonicalCardHtml({ kind: "card", card: t.card, rarity: t.rarity, name: t.name })}
+            <div class="sv-lvl-tile-meta sv-lvl-tile-meta--warn">discard</div>
+          </div>`).join("")}
+        </div>
+        <div class="sv-lvl-actions">
+          <button class="sv-btn sv-btn--ghost" id="sv-lvl-back">← Back to offers</button>
+        </div>
+      </div>
+    `;
+    const grid = document.getElementById("sv-lvl-grid");
+    if (grid && typeof window !== "undefined" && typeof window.initCards === "function") {
+      try { window.initCards(grid); } catch {}
+    }
+    grid.addEventListener("click", (ev) => {
+      const tile = ev.target.closest(".sv-lvl-tile");
+      if (!tile) return;
+      const i = parseInt(tile.dataset.i, 10);
+      const discard = targets[i];
+      if (!discard) return;
+      handlers.onSwap(discard, pendingSwapOffer);
+      close();
+    });
+    document.getElementById("sv-lvl-back").addEventListener("click", () => {
+      pendingSwapOffer = null;
+      mode = "OFFER";
+      renderOffers();
+    });
+  }
+
+  renderOffers();
 }
 
 // --- Game-over modal ---
