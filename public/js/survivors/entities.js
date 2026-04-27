@@ -43,8 +43,10 @@ export function makePlayer(loadout) {
     dodge: 0,
     gold: 0,
     kills: 0,
-    weapons: [],      // [{id, level, state}]
-    passives: {},     // { id: level }
+    weapons: [],         // legacy WEAPON_DEFS-driven weapons (level-up offers)
+    specWeapons: [],     // PR-C2: continuous spec-derived weapons (drafted cards)
+    activatedSlots: [],  // PR-C2: [{ spellId, key, name, cdLeft, ... }] — Q first, E second
+    passives: {},        // { id: level }
     flash: 0,
   };
 }

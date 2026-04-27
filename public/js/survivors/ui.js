@@ -298,8 +298,13 @@ function renderDraftPicker(root, data, houseUI, houseEngine, onStart) {
   beginBtn.addEventListener("click", () => {
     if (picked.size !== draftSize) return;
     const draftedCardIds = Array.from(picked);
+    // PR-C2 — pass the full card objects so the runtime can look up each
+    // spell's spec without having to re-fetch the collection.
+    const draftedCards = draftedCardIds
+      .map(id => cards.find(c => c.id === id))
+      .filter(Boolean);
     root.style.display = "none";
-    onStart({ house: houseEngine, draftedCardIds });
+    onStart({ house: houseEngine, draftedCardIds, draftedCards });
   });
 
   refreshSummary();
@@ -364,6 +369,27 @@ export function updateHUD(player, chapter, runTimeSec, chapterElapsed, boss) {
       if (!def) return "";
       return `<div class="sv-passive" title="${def.name} Lv ${lv}">${def.symbol}<span>${lv}</span></div>`;
     }).join("");
+  }
+
+  // PR-C2 — activated cards cooldown row (Q / E). Hidden when the player
+  // hasn't drafted any activated cards.
+  const actRow = document.getElementById("sv-activated");
+  if (actRow) {
+    const slots = player.activatedSlots || [];
+    if (slots.length === 0) {
+      actRow.style.display = "none";
+    } else {
+      actRow.style.display = "flex";
+      actRow.innerHTML = slots.map(slot => {
+        const cdPct = slot.cdLeft > 0 ? Math.max(0, Math.min(100, (slot.cdLeft / slot.cooldownMs) * 100)) : 0;
+        const ready = cdPct === 0;
+        return `<div class="sv-act-slot ${ready ? "is-ready" : ""}" title="${slot.name} — press ${slot.key}">
+          <div class="sv-act-key">${slot.key}</div>
+          ${slot.art ? `<img src="${slot.art}" alt="" />` : `<div class="sv-act-fallback">${slot.name[0] || "?"}</div>`}
+          <div class="sv-act-cd" style="height:${cdPct}%"></div>
+        </div>`;
+      }).join("");
+    }
   }
 
   const bossBar = document.getElementById("sv-boss");

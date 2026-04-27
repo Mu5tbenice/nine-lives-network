@@ -5,6 +5,7 @@ import { WEAPON_DEFS } from "./data.js";
 import {
   entities, addProjectile, addEffect, enemiesInRadius, nearestEnemy, makeProjectile, makeEffect,
 } from "./entities.js";
+import { specToContinuousDef, specToActivatedEntry } from "./specs.js";
 
 // Add a new weapon instance to the player (or level-up an existing one).
 export function grantWeapon(player, weaponId) {
@@ -23,6 +24,29 @@ export function grantWeapon(player, weaponId) {
   player.weapons.push(w);
 }
 
+// PR-C2 — Add a drafted-card-derived weapon to the player. Branches by
+// behavior_class: continuous specs go into player.specWeapons (ticked by
+// updateSpecWeapons), activated specs go into player.activatedSlots
+// (key-bound, fired by fireActivated on input).
+export function grantWeaponFromCard(player, card, spec) {
+  if (!spec) return;
+  if (spec.behavior_class === 'activated') {
+    if (player.activatedSlots.length >= 2) return; // PR-C3 may add a third slot
+    const key = player.activatedSlots.length === 0 ? 'Q' : 'E';
+    player.activatedSlots.push(specToActivatedEntry(spec, card, key));
+    return;
+  }
+  // continuous (default).
+  const def = specToContinuousDef(spec, card);
+  player.specWeapons.push({
+    id: def.id,
+    def,
+    level: 1,
+    cdLeft: 0,
+    angleCursor: 0,
+  });
+}
+
 // Effective level stats with passive modifiers applied.
 function stats(def, w, player) {
   const lv = def.levels[Math.min(w.level - 1, def.levels.length - 1)];
@@ -36,21 +60,84 @@ function stats(def, w, player) {
 
 // Tick all player weapons. dt in seconds.
 export function updateWeapons(player, dt, now) {
+  // Legacy WEAPON_DEFS-keyed weapons (level-up offers, until PR-C3).
   for (const w of player.weapons) {
     const def = WEAPON_DEFS[w.id];
     if (!def) continue;
-    const s = stats(def, w, player);
-    w.cdLeft -= dt * 1000;
-    switch (def.kind) {
-      case "projectile":   if (w.cdLeft <= 0) { fireProjectile(player, def, w, s); w.cdLeft = s.cd; } break;
-      case "rotating":     if (w.cdLeft <= 0) { fireRotating(player, def, w, s); w.cdLeft = s.cd; } break;
-      case "slam":         if (w.cdLeft <= 0) { fireSlam(player, def, w, s); w.cdLeft = s.cd; } break;
-      case "stun":         if (w.cdLeft <= 0) { firePetrify(player, def, w, s); w.cdLeft = s.cd; } break;
-      case "puddle":       if (w.cdLeft <= 0) { firePuddle(player, def, w, s); w.cdLeft = s.cd; } break;
-      case "orbit":        updateOrbit(player, def, w, s, dt); break;
-      case "aura":         updateAura(player, def, w, s, dt); break;
-    }
+    tickWeapon(player, w, def, dt);
   }
+
+  // PR-C2 — Spec-derived continuous weapons from drafted cards.
+  for (const w of player.specWeapons) {
+    if (!w.def) continue;
+    tickWeapon(player, w, w.def, dt);
+  }
+
+  // PR-C2 — Activated cooldowns tick down regardless of input; firing is
+  // gated separately by fireActivated() called from main.js when Q/E are
+  // pressed.
+  for (const slot of player.activatedSlots) {
+    if (slot.cdLeft > 0) slot.cdLeft = Math.max(0, slot.cdLeft - dt * 1000);
+  }
+}
+
+function tickWeapon(player, w, def, dt) {
+  const s = stats(def, w, player);
+  w.cdLeft -= dt * 1000;
+  switch (def.kind) {
+    case "projectile":   if (w.cdLeft <= 0) { fireProjectile(player, def, w, s); w.cdLeft = s.cd; } break;
+    case "rotating":     if (w.cdLeft <= 0) { fireRotating(player, def, w, s); w.cdLeft = s.cd; } break;
+    case "slam":         if (w.cdLeft <= 0) { fireSlam(player, def, w, s); w.cdLeft = s.cd; } break;
+    case "stun":         if (w.cdLeft <= 0) { firePetrify(player, def, w, s); w.cdLeft = s.cd; } break;
+    case "puddle":       if (w.cdLeft <= 0) { firePuddle(player, def, w, s); w.cdLeft = s.cd; } break;
+    case "orbit":        updateOrbit(player, def, w, s, dt); break;
+    case "aura":         updateAura(player, def, w, s, dt); break;
+  }
+}
+
+// PR-C2 — Player-triggered activated cast. Returns true if the cast
+// actually fired (cooldown was ready); main.js uses the return for HUD
+// flash. Behavior depends on spec shape:
+//   • baseDamage < 0           → self heal
+//   • projectile_speed > 0     → travels to nearest enemy + AOE on impact
+//   • aoe_radius > 0 only      → radial pulse around the player
+export function fireActivated(player, slot) {
+  if (!slot || slot.cdLeft > 0) return false;
+
+  if (slot.baseDamage < 0) {
+    // Heal pulse — clamp to hpMax.
+    const heal = Math.abs(slot.baseDamage);
+    player.hp = Math.min(player.hpMax, player.hp + heal);
+    addEffect(makeEffect("ring", player.x, player.y, {
+      rMax: 80, ttl: 500, color: "rgba(120,255,180,0.55)",
+    }));
+  } else if ((slot.projectileSpeed || 0) > 0) {
+    // Projectile that explodes on impact.
+    const target = nearestEnemy(player.x, player.y, 800) || { x: player.x + 1, y: player.y };
+    const a = Math.atan2(target.y - player.y, target.x - player.x);
+    addProjectile(makeProjectile("player", player.x, player.y,
+      Math.cos(a) * slot.projectileSpeed, Math.sin(a) * slot.projectileSpeed, {
+        r: 12,
+        dmg: slot.baseDamage,
+        life: 1500,
+        pierce: slot.pierce || 0,
+        aoe: slot.aoeRadius || 0,
+        icon: slot.art || null,
+        color: "#c98cff",
+        homing: 0.05,
+      }));
+  } else {
+    // Pure AOE pulse around player.
+    const r = slot.aoeRadius || 100;
+    addEffect(makeEffect("ring", player.x, player.y, {
+      rMax: r, ttl: 500, color: "rgba(200,140,255,0.55)",
+    }));
+    const hits = enemiesInRadius(player.x, player.y, r);
+    for (const e of hits) damage(e, slot.baseDamage, player);
+  }
+
+  slot.cdLeft = slot.cooldownMs;
+  return true;
 }
 
 function fireProjectile(player, def, w, s) {
