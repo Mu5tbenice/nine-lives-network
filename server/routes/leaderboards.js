@@ -553,4 +553,69 @@ router.get('/player/:id/rank', async (req, res) => {
   }
 });
 
+// ── SURVIVORS LEADERBOARD (PR-D) ──
+//
+// Kills-primary ranking. Sort: kills DESC, score DESC, time_sec ASC, id ASC.
+// Windows: daily (24h) / weekly (7d) / alltime.
+router.get('/survivors', async (req, res) => {
+  try {
+    const window = String(req.query.window || 'alltime').toLowerCase();
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 50));
+    const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
+
+    let q = supabase
+      .from('survivors_runs')
+      .select('id, player_id, house, kills, score, time_sec, level, chapter, created_at')
+      .order('kills',    { ascending: false })
+      .order('score',    { ascending: false })
+      .order('time_sec', { ascending: true })
+      .order('id',       { ascending: true })
+      .range(offset, offset + limit - 1);
+
+    if (window === 'daily') {
+      const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+      q = q.gte('created_at', since);
+    } else if (window === 'weekly') {
+      const since = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString();
+      q = q.gte('created_at', since);
+    }
+
+    const { data: runs, error } = await q;
+    if (error) {
+      console.error('survivors leaderboard error:', error);
+      return res.status(500).json({ error: 'query failed' });
+    }
+
+    // Hydrate twitter_handle for each row in a single follow-up query.
+    const playerIds = Array.from(new Set((runs || []).map((r) => r.player_id)));
+    const handles = new Map();
+    if (playerIds.length) {
+      const { data: players } = await supabase
+        .from('players')
+        .select('id, twitter_handle')
+        .in('id', playerIds);
+      for (const p of players || []) handles.set(p.id, p.twitter_handle);
+    }
+
+    const rows = (runs || []).map((r, i) => ({
+      rank: offset + i + 1,
+      run_id: r.id,
+      player_id: r.player_id,
+      twitter_handle: handles.get(r.player_id) || null,
+      house: r.house,
+      kills: r.kills,
+      score: r.score,
+      time_sec: r.time_sec,
+      level: r.level,
+      round: r.chapter,
+      created_at: r.created_at,
+    }));
+
+    return res.json({ window, limit, offset, rows });
+  } catch (err) {
+    console.error('GET /api/leaderboards/survivors:', err);
+    return res.status(500).json({ error: 'server error' });
+  }
+});
+
 module.exports = router;

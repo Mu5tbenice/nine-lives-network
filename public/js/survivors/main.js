@@ -134,10 +134,10 @@ async function startRun(args) {
   // Prewarm the player's atlas so we don't blink on first render.
   getAtlas(player.char).ready.catch(() => {});
 
-  // Load first chapter biome.
+  // Load first round biome.
   const ch = currentChapter();
   await loadBiome([ch.biome, ch.biomeFallback]);
-  playChapterBanner(`Chapter ${ch.id} — ${ch.name}`);
+  playChapterBanner(`Round ${ch.id} — ${ch.name}`);
 
   runStart = performance.now();
   phase = "PLAY";
@@ -186,11 +186,12 @@ function submitRunResult(summary) {
         time_sec: Math.floor(summary.timeSec),
         level: summary.level,
         kills: summary.kills,
+        // PR-D — `chapter` field on the wire is the round number now.
         chapter: summary.chapter,
         won: !!summary.won,
         drafted_card_ids: currentDraftedCardIds,
         ended_reason: summary.won ? null : "death",
-        client_version: "survivors-v2-pr-b",
+        client_version: "survivors-v2-pr-d",
       }),
     }).catch(err => console.warn("[survivors] submit fail:", err.message));
   } catch (err) {
@@ -450,15 +451,14 @@ function update(dt) {
     for (let i = 0; i < 8; i++) dropXP(entities.boss.x + (Math.random()-0.5)*80, entities.boss.y + (Math.random()-0.5)*80, Math.max(3, Math.floor(entities.boss.xp / 8)));
     // PR-C3 — boss kill drops a crystal pile.
     for (let i = 0; i < 5; i++) dropCrystal(entities.boss.x + (Math.random()-0.5)*60, entities.boss.y + (Math.random()-0.5)*60, 4);
-    // Chapter progression (PR-D will replace this with round structure).
+    // PR-D — endless rounds. advanceChapter() wraps the biome index and
+    // increments state.round; currentChapter() always returns a valid
+    // entry (no win-condition path).
     advanceChapter();
     const next = currentChapter();
     if (next) {
       loadBiome([next.biome, next.biomeFallback]);
-      playChapterBanner(`Chapter ${next.id} — ${next.name}`);
-    } else {
-      endRun(true);
-      return;
+      playChapterBanner(`Round ${next.id} Cleared — ${next.name}`);
     }
   }
 

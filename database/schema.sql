@@ -1,6 +1,6 @@
 -- =====================================================================
 -- Nine Lives Network — Supabase public schema
--- Generated: 2026-04-27T06:13:27.361Z
+-- Generated: 2026-04-27T10:59:15.609Z
 -- Source:    PostgREST OpenAPI spec at https://doorjltuhgouaraoxssz.supabase.co/rest/v1/
 -- Script:    scripts/dump-schema.js
 --

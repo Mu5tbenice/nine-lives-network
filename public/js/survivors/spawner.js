@@ -1,11 +1,18 @@
-// Spawner — wave director. Time-driven spawn ramp, elite intervals, chapter boss.
+// Spawner — wave director. Time-driven spawn ramp, elite intervals, round boss.
+//
+// PR-D — Endless rounds: the v1 "6 chapters then end" wraps now. Each round
+// reuses one of the 6 CHAPTERS biomes as the visual layer; difficulty (HP,
+// damage, boss HP) keeps climbing with `state.round` regardless of the
+// underlying chapter index. `chapterIdx` stays as a pointer into CHAPTERS
+// for biome lookup.
 
 import { CHAPTERS, ENEMY_DEFS, BOSS_DEFS, FAMILIAR, OUTFITS, HATS, WEAPONS_HELD } from "./data.js";
 import { entities, addEnemy, makeEnemy, makeBoss } from "./entities.js";
 
 export const state = {
-  chapterIdx: 0,
-  chapterElapsed: 0,    // seconds
+  round: 1,             // 1-indexed total rounds played this run
+  chapterIdx: 0,        // index into CHAPTERS for the biome (round - 1) % CHAPTERS.length
+  chapterElapsed: 0,    // seconds (still called "chapter" for HUD compatibility)
   spawnAcc: 0,          // accumulated spawn "tokens"
   eliteAcc: 0,
   bossSpawned: false,
@@ -13,6 +20,7 @@ export const state = {
 };
 
 export function resetSpawner() {
+  state.round = 1;
   state.chapterIdx = 0;
   state.chapterElapsed = 0;
   state.spawnAcc = 0;
@@ -21,7 +29,15 @@ export function resetSpawner() {
   state.chapterComplete = false;
 }
 
-export function currentChapter() { return CHAPTERS[state.chapterIdx]; }
+export function currentChapter() {
+  // Surface a stable biome reference. The `id` field still drives the
+  // HUD chapter label; main.js will show the round number alongside.
+  const ch = CHAPTERS[state.chapterIdx % CHAPTERS.length];
+  if (!ch) return null;
+  // Augment the surface with the round number so updateHUD's chapter pill
+  // can show "Round 7" instead of "Chapter 1".
+  return { ...ch, id: state.round, name: ch.name };
+}
 
 // Called from main each frame. dt in seconds.
 export function updateSpawner(dt, player) {
@@ -63,7 +79,10 @@ export function updateSpawner(dt, player) {
 }
 
 export function advanceChapter() {
-  state.chapterIdx++;
+  // PR-D — endless rounds. Increment the round counter; wrap the biome
+  // index through CHAPTERS.
+  state.round++;
+  state.chapterIdx = (state.chapterIdx + 1) % CHAPTERS.length;
   state.chapterElapsed = 0;
   state.spawnAcc = 0;
   state.eliteAcc = 0;
@@ -105,7 +124,7 @@ function spawnWaveEnemy(ch, player) {
   const char = randomCatChar(def.scale);
   const e = makeEnemy({ ...def, id: archetype }, pos.x, pos.y, char);
   // Scale HP with chapter index for difficulty
-  const hpMul = 1 + state.chapterIdx * 0.35;
+  const hpMul = 1 + (state.round - 1) * 0.35;
   e.hpMax = Math.floor(def.hp * hpMul);
   e.hp = e.hpMax;
   addEnemy(e);
@@ -118,7 +137,7 @@ function spawnElite(ch, player) {
   const pos = offScreenSpawnPos(player);
   const char = randomCatChar(def.scale * 1.5);
   const e = makeEnemy({ ...def, id: archetype }, pos.x, pos.y, char);
-  const hpMul = 1 + state.chapterIdx * 0.35;
+  const hpMul = 1 + (state.round - 1) * 0.35;
   e.hpMax = Math.floor(def.hp * hpMul * 5);
   e.hp = e.hpMax;
   e.dmg *= 1.4;
@@ -133,7 +152,7 @@ function spawnBoss(ch, player) {
   const pos = offScreenSpawnPos(player);
   const url = FAMILIAR(ch.boss);
   entities.boss = makeBoss(def, url, pos.x, pos.y);
-  entities.boss.hpMax = Math.floor(def.hp * (1 + state.chapterIdx * 0.2));
+  entities.boss.hpMax = Math.floor(def.hp * (1 + (state.round - 1) * 0.35));
   entities.boss.hp = entities.boss.hpMax;
   entities.boss.name = ch.boss.replace(/_/g, " ");
 }
