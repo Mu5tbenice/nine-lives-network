@@ -1113,4 +1113,48 @@ router.get('/eligibility/:flag', async (req, res) => {
   }
 });
 
+// ╔═══════════════════════════════════╗
+// ║  SURVIVORS — WEAPON SPEC TUNING   ║
+// ╚═══════════════════════════════════╝
+//
+// Admin upsert for survivors_weapon_specs rows. Mounted at
+// POST /api/admin/survivors/specs. Validates shape via the pure-function
+// helper in survivorsSpecValidator.js, then upserts on spell_id.
+// PR-C1 — Survivors Mode v2.
+
+const { validateSurvivorsSpecBody } = require('./survivorsSpecValidator');
+let survivorsRoutes = null;
+try { survivorsRoutes = require('./survivors'); } catch (e) {}
+
+router.post('/survivors/specs', async (req, res) => {
+  try {
+    const validated = validateSurvivorsSpecBody(req.body);
+    if (!validated.ok) {
+      return res.status(validated.status).json({ error: validated.error });
+    }
+
+    const { data, error } = await supabaseAdmin
+      .from('survivors_weapon_specs')
+      .upsert({ ...validated.row, updated_at: new Date().toISOString() }, { onConflict: 'spell_id' })
+      .select('spell_id, behavior_class, base_damage, base_cooldown_ms, updated_at')
+      .single();
+
+    if (error) {
+      console.error('[admin] survivors spec upsert error:', error);
+      return res.status(500).json({ error: 'upsert failed' });
+    }
+
+    // Flush the GET /api/survivors/specs in-memory cache so the new value
+    // is reflected immediately rather than waiting up to 60s.
+    if (survivorsRoutes && typeof survivorsRoutes.invalidateSpecsCache === 'function') {
+      survivorsRoutes.invalidateSpecsCache();
+    }
+
+    return res.json({ ok: true, spec: data });
+  } catch (e) {
+    console.error('[admin] survivors spec error:', e);
+    res.status(500).json({ error: e.message || 'Server error' });
+  }
+});
+
 module.exports = router;
