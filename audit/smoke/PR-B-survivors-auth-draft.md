@@ -1,6 +1,6 @@
 # PR-B — Survivors Mode auth-gated start + 9-house picker + 2-card draft
 
-**URL:** _(filled in after PR creation)_
+**URL:** https://github.com/Mu5tbenice/nine-lives-network/pull/299
 **Merged:** _(fill in)_
 **Surfaces:** `/survivors.html` start flow (auth → 9 houses → draft → begin), `GET /api/survivors/start`, `POST /api/survivors/runs` validator (`drafted_card_ids` required + ownership check)
 
