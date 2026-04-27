@@ -1598,32 +1598,35 @@ function render() {
       html += '<div>No survivors runs yet — set the bar.</div>';
       html += '</div>';
     } else {
-      html += '<div class="lb-table">';
-      html += '<div class="lb-row lb-row--head">'
-        +    '<span class="lb-col-rank">#</span>'
-        +    '<span class="lb-col-name">Player</span>'
-        +    '<span class="lb-col-house">House</span>'
-        +    '<span class="lb-col-kills">Kills</span>'
-        +    '<span class="lb-col-score">Score</span>'
-        +    '<span class="lb-col-time">Time</span>'
-        +    '<span class="lb-col-round">Round</span>'
+      // Header row uses the same .lb-row layout as canonical leaderboards;
+      // columns use inline styles to match the season-tab visual idiom
+      // (no separate .lb-col-* class set).
+      var headStyle = 'opacity:0.55;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;';
+      html += '<div class="lb-row" style="' + headStyle + '">'
+        +    '<span style="width:32px;text-align:right;">#</span>'
+        +    '<span style="flex:1.4;min-width:0;">Player</span>'
+        +    '<span style="flex:0.9;min-width:0;">House</span>'
+        +    '<span style="width:60px;text-align:right;">Kills</span>'
+        +    '<span style="width:64px;text-align:right;">Score</span>'
+        +    '<span style="width:54px;text-align:right;">Time</span>'
+        +    '<span style="width:54px;text-align:right;">Round</span>'
         +    '</div>';
       rows.forEach(function(r) {
         var mm = Math.floor(r.time_sec / 60);
         var ss = Math.floor(r.time_sec % 60);
         var timeStr = mm + ':' + (ss < 10 ? '0' + ss : ss);
         var name = r.twitter_handle ? '@' + r.twitter_handle : ('Player ' + r.player_id);
-        html += '<div class="lb-row">'
-          +    '<span class="lb-col-rank">' + r.rank + '</span>'
-          +    '<span class="lb-col-name">' + escapeText(name) + '</span>'
-          +    '<span class="lb-col-house" style="text-transform:capitalize">' + escapeText(r.house || '—') + '</span>'
-          +    '<span class="lb-col-kills">' + r.kills + '</span>'
-          +    '<span class="lb-col-score">' + (r.score != null ? r.score : '—') + '</span>'
-          +    '<span class="lb-col-time">' + timeStr + '</span>'
-          +    '<span class="lb-col-round">' + (r.round || 1) + '</span>'
+        var rankClass = r.rank <= 3 ? ' top3' : '';
+        html += '<div class="lb-row' + rankClass + '">'
+          +    '<span style="width:32px;text-align:right;color:var(--accent);font-weight:700;">' + r.rank + '</span>'
+          +    '<span style="flex:1.4;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeText(name) + '</span>'
+          +    '<span style="flex:0.9;min-width:0;text-transform:capitalize;color:var(--text-muted);">' + escapeText(r.house || '—') + '</span>'
+          +    '<span style="width:60px;text-align:right;font-variant-numeric:tabular-nums;font-weight:700;">' + r.kills + '</span>'
+          +    '<span style="width:64px;text-align:right;font-variant-numeric:tabular-nums;color:var(--text-muted);">' + (r.score != null ? r.score : '—') + '</span>'
+          +    '<span style="width:54px;text-align:right;font-variant-numeric:tabular-nums;color:var(--text-muted);">' + timeStr + '</span>'
+          +    '<span style="width:54px;text-align:right;font-variant-numeric:tabular-nums;color:var(--text-muted);">' + (r.round || 1) + '</span>'
           +    '</div>';
       });
-      html += '</div>';
     }
   }
 
