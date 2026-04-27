@@ -162,5 +162,43 @@ export function specToActivatedEntry(spec, card, key) {
   };
 }
 
+// PR-C3 — rarity bump chain. Duplicate cards in the level-up flow walk a
+// single rarity tier upward (cap at legendary, where the level-up handler
+// converts to a fixed crystal payout instead).
+export const RARITY_CHAIN = ['common', 'uncommon', 'rare', 'epic', 'legendary'];
+
+export function bumpRarity(rarity) {
+  const i = RARITY_CHAIN.indexOf(String(rarity || 'common').toLowerCase());
+  if (i < 0) return 'uncommon';
+  if (i >= RARITY_CHAIN.length - 1) return 'legendary'; // already at cap
+  return RARITY_CHAIN[i + 1];
+}
+
+export function isAtMaxRarity(rarity) {
+  return String(rarity || '').toLowerCase() === 'legendary';
+}
+
+// Recompute a continuous spec weapon's level entry after its in-run rarity
+// bumps. Mutates `weaponEntry.def.levels[0]` in place — same shape that
+// specToContinuousDef produced, just with the new multiplier applied.
+// Used by the level-up upgrade handler in main.js.
+export function recomputeSpecWeapon(weaponEntry, spec, newRarity) {
+  if (!weaponEntry || !weaponEntry.def || !spec) return;
+  const mult = rarityMultiplier(spec, newRarity);
+  const baseDmg = (Number(spec.base_damage) || 0) * mult;
+  const lv = weaponEntry.def.levels[0];
+  if (!lv) return;
+  lv.dmg = baseDmg;
+  weaponEntry.def.rarity = newRarity;
+}
+
+// Same idea for activated slots — bump in-place.
+export function recomputeActivatedSlot(slot, spec, newRarity) {
+  if (!slot || !spec) return;
+  const mult = rarityMultiplier(spec, newRarity);
+  slot.baseDamage = (Number(spec.base_damage) || 0) * mult;
+  slot.rarity = newRarity;
+}
+
 // Test hooks (exported for jest in node).
 export function _resetCacheForTesting() { _cache = null; _inflight = null; }
