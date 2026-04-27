@@ -11,7 +11,8 @@ import {
 } from "./data.js";
 import { getAtlas, angleIndex, drawChar } from "./sprite.js";
 import { camera, followCamera, loadBiome, drawWorldBackground, worldToScreen, clampToWorld } from "./world.js";
-import { grantWeapon, updateWeapons, damage, drawOrbits } from "./weapons.js";
+import { grantWeapon, grantWeaponFromCard, fireActivated, updateWeapons, damage, drawOrbits } from "./weapons.js";
+import { fetchSpecs, lookupSpec } from "./specs.js";
 import { updateSpawner, state as spawnState, resetSpawner, currentChapter, advanceChapter } from "./spawner.js";
 import { buildOffers, pickOffers, applyOffer, recomputePassiveStats } from "./cards.js";
 import { showStartScreen, updateHUD, showLevelUp, showGameOver, playChapterBanner, updateFps, getSavedName } from "./ui.js";
@@ -62,26 +63,62 @@ async function boot() {
 }
 
 async function startRun(args) {
-  // PR-B: showStartScreen now invokes onStart({ house, draftedCardIds }).
-  // Old call shape (just a house object) is still accepted for the
-  // game-over → restart path so we don't lose the run's draft.
-  let house, draftedCardIds;
+  // PR-B: showStartScreen invokes onStart({ house, draftedCardIds, draftedCards }).
+  // PR-C2: draftedCards carries the full card objects so the runtime can
+  // look up each spell's spec and grant the right weapon.
+  // Game-over → restart path passes a bare house and we fall back to
+  // whatever was drafted at the start of this session.
+  let house, draftedCardIds, draftedCards;
   if (args && args.house) {
     house = args.house;
     draftedCardIds = Array.isArray(args.draftedCardIds) ? args.draftedCardIds : [];
+    draftedCards   = Array.isArray(args.draftedCards)   ? args.draftedCards   : [];
   } else {
     house = args; // legacy
     draftedCardIds = currentDraftedCardIds || [];
+    draftedCards   = currentDraftedCards   || [];
   }
 
   currentHouse = house;
   currentDraftedCardIds = draftedCardIds;
+  currentDraftedCards   = draftedCards;
+
+  // Pre-load the spec catalogue so the per-card lookups below resolve.
+  let specsLoaded = true;
+  try { await fetchSpecs(); } catch (e) {
+    console.warn("[survivors] specs fetch failed; falling back to house starter:", e && e.message);
+    specsLoaded = false;
+  }
 
   resetEntities();
   resetSpawner();
   const player = makePlayer(house);
   entities.player = player;
-  grantWeapon(player, house.startingWeapon);
+
+  // PR-C2: drafted cards become the run's starting weapons. Activated
+  // specs bind to Q (first) / E (second); continuous specs auto-fire.
+  let grantedAny = false;
+  if (specsLoaded) {
+    for (const card of draftedCards) {
+      const spell_id = card && (card.spell_id ?? (card.spell && card.spell.id));
+      if (!spell_id) continue;
+      const spec = lookupSpec(spell_id);
+      if (!spec) continue;
+      grantWeaponFromCard(player, card, spec);
+      grantedAny = true;
+    }
+  }
+
+  // Safety net — if the spec fetch failed or the player drafted only
+  // activated cards (or zero viable cards), still grant the house's legacy
+  // starting weapon so the run isn't soft-locked.
+  if (!grantedAny || player.specWeapons.length === 0 && player.activatedSlots.length === 0) {
+    grantWeapon(player, house.startingWeapon);
+  } else if (player.specWeapons.length === 0) {
+    // Activated-only draft — give them the house starter for auto-fire.
+    grantWeapon(player, house.startingWeapon);
+  }
+
   recomputePassiveStats(player);
 
   // Prewarm the player's atlas so we don't blink on first render.
@@ -98,6 +135,7 @@ async function startRun(args) {
 
 let currentHouse = null;
 let currentDraftedCardIds = [];
+let currentDraftedCards = [];
 
 function endRun(won) {
   const player = entities.player;
@@ -210,6 +248,15 @@ function update(dt) {
 
   // --- Weapons ---
   updateWeapons(p, dt, now);
+
+  // PR-C2 — activated card key triggers (Q / E). Cooldowns tick inside
+  // updateWeapons; firing happens here when the player presses the bound
+  // key edge-trigger. Keys come through normalize() in input.js as their
+  // lowercased event.code (e.g. "keyq").
+  for (const slot of p.activatedSlots) {
+    const code = slot.key === 'Q' ? 'keyq' : slot.key === 'E' ? 'keye' : null;
+    if (code && wasPressed(code)) fireActivated(p, slot);
+  }
 
   // --- Enemies move & act ---
   for (const e of entities.enemies) {
