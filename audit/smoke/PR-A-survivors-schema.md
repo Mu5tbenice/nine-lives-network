@@ -1,6 +1,6 @@
 # PR-A — Survivors Mode schema + telemetry
 
-**URL:** _(filled in after PR creation)_
+**URL:** https://github.com/Mu5tbenice/nine-lives-network/pull/298
 **Merged:** _(fill in)_
 **Surfaces:** Supabase schema (3 migrations), `server/routes/survivors.js` POST handler, `tasks/prd-9ln-product.md` §9.111
 

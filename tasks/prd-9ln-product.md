@@ -2480,7 +2480,7 @@ Deferred to follow-up PR (cross-engine audit needed before stripping safely): un
 - Migration `012_create_survivors_holds_and_grants.sql`: `survivors_leaderboard_holds` (rank-hold spans for daily/weekly cron) + `survivors_pack_grants` (audit table for 24h-hold pack rewards). Consumed by PR-E.
 - Route `server/routes/survivors.js`: validator extracted to `survivorsRunValidator.js`; POST now requires positive integer `player_id` and accepts the new optional fields. Server generates `seed` if the client doesn't send one.
 
-**Resolved 2026-04-27 in PR #?.** Foundation only — no game logic shipped this PR. PR-B adds the auth-gated start + 9-house picker + 2-card draft; PR-C adds the weapon spec runtime + level-up modal; PR-D adds round structure + kills-primary scoring + leaderboard tab; PR-E adds the cron + 24h pack grants.
+**Resolved 2026-04-27 in PR #298.** Foundation only — no game logic shipped this PR. PR-B adds the auth-gated start + 9-house picker + 2-card draft; PR-C adds the weapon spec runtime + level-up modal; PR-D adds round structure + kills-primary scoring + leaderboard tab; PR-E adds the cron + 24h pack grants.
 
 ---
 
